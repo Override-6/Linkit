@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.server
 
 import java.io.IOException
-import java.net.{InetSocketAddress, SocketAddress}
+import java.net.{InetSocketAddress, SocketAddress, SocketException}
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
 import java.nio.file.Path
@@ -20,15 +20,15 @@ import scala.jdk.CollectionConverters
 
 class RelayServer(private val id: String)
         extends Relay {
-
     private val selector = Selector.open()
+
+
     private val serverSocket = configSocket()
     private val tasksHandler = new TasksHandler()
     private val completerFactory = new ServerTaskCompleterFactory(tasksHandler, this)
     private val keysPacketChannel = new ConcurrentHashMap[SocketAddress, SimplePacketChannel]()
-
-
     override val identifier: String = this.id
+
 
     override def doDownload(description: TransferDescription): Task[Unit] = {
         val target = description.target
@@ -45,7 +45,6 @@ class RelayServer(private val id: String)
 
     override def requestFileInformation(owner: InetSocketAddress, path: String): Task[TransferableFile] =
         new FileInfoTask(getPacketChannel(owner), tasksHandler, owner, path)
-
 
     override def start(): Unit = {
         println("ready !")
@@ -67,6 +66,17 @@ class RelayServer(private val id: String)
         selector.close()
     }
 
+    def disconnect(address: InetSocketAddress): Unit = {
+        val keys = toScalaSet(selector.selectedKeys())
+        for (key <- keys) {
+            val socketChannel = key.channel().asInstanceOf[SocketChannel]
+            if (address.equals(socketChannel.getRemoteAddress)) {
+                key.channel().close()
+                key.cancel()
+            }
+        }
+    }
+
     def getAddress(id: String): InetSocketAddress = {
         if (id.equals(this.id))
             return Constants.PUBLIC_ADDRESS
@@ -76,8 +86,8 @@ class RelayServer(private val id: String)
         //TODO send a init packet when a new client connects
         //FIXME it does not work !
         for (key <- keys) {
-            val socketChannel: InetSocketAddress = key.channel().asInstanceOf[InetSocketAddress]
-            return socketChannel
+            val socketChannel: SocketChannel = key.channel().asInstanceOf[SocketChannel]
+            return socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress]
         }
         null
     }

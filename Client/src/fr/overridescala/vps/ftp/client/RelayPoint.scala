@@ -7,7 +7,7 @@ import java.nio.file.Path
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.{PacketChannel, SimplePacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.{AddressTask, DownloadTask, FileInfoTask, UploadTask}
+import fr.overridescala.vps.ftp.api.task.tasks.{AddressTask, DisconnectTask, DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
 import fr.overridescala.vps.ftp.api.utils.{Constants, Protocol}
@@ -48,6 +48,7 @@ class RelayPoint(private val id: String,
 
     override def close(): Unit = {
         socketChannel.close()
+        new DisconnectTask(tasksHandler, packetChannel).complete()
     }
 
     def updateNetwork(buffer: ByteBuffer): Unit = {
@@ -63,12 +64,12 @@ class RelayPoint(private val id: String,
         buffer.clear()
     }
 
-        def configSocket(): SocketChannel = {
-            println("connecting to server...")
-            val socket = SocketChannel.open(serverAddress)
-            println("connected !")
-            socket.configureBlocking(true)
-            socket
-        }
-
+    def configSocket(): SocketChannel = {
+        println("connecting to server...")
+        val socket = SocketChannel.open(serverAddress)
+        println("connected !")
+        socket.configureBlocking(true)
+        socket
     }
+
+}

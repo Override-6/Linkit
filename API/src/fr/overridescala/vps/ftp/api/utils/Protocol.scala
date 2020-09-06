@@ -20,7 +20,6 @@ object Protocol {
 
     def getTaskHeader(bytes: Array[Byte]): String = {
         val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, HEADER) + HEADER.length, indexOf(bytes, CONTENT))
-        println(s"new String(cutBytes) = ${new String(cutBytes)}")
         new String(cutBytes)
     }
 

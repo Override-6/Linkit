@@ -33,7 +33,7 @@ class UploadTask(private val channel: PacketChannel,
         var id = -0
         while (totalBytesSent < totalBytes) {
             try {
-                val bytes = new Array[Byte](Constants.MAX_PACKET_LENGTH - 512)
+                val bytes = new Array[Byte](Constants.MAX_PACKET_LENGTH - 256)
                 totalBytesSent += stream.read(bytes)
                 id += 1
                 if (makeDataTransfer(bytes, id))

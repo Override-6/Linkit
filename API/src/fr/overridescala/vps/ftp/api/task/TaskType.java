@@ -3,9 +3,10 @@ package fr.overridescala.vps.ftp.api.task;
 public enum TaskType {
 
     ADDRESS("ADDRESS"),
-    FILE_INFO("FINFO"),
+    FILE_INFO("FILE_INFO"),
     DOWNLOAD("UPLOAD"),
-    UPLOAD("DOWNLOAD");
+    UPLOAD("DOWNLOAD"),
+    DISCONNECT("DISCONNECT");
 
     private final String[] completers;
 
