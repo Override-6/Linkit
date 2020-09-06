@@ -9,7 +9,21 @@ import fr.overridescala.vps.ftp.api.utils.Constants
 object Main {
 
     def main(args: Array[String]): Unit = {
-        val relayPoint: Relay = new RelayPoint("client1", new InetSocketAddress("161.97.104.230", Constants.PORT))
+        //runClient()
+        val a: Array[Byte] = Array(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+        val b: Array[Byte] = Array(5, 6, 7)
+        println(s"indexOf(a, b) = ${indexOf(a, b)}")
+        println(s"indexOf(a, b, false) = ${indexOf(a, b, true)}")
+    }
+
+
+
+
+
+    def runClient(): Unit = {
+        val relayPoint: Relay = new RelayPoint("client1", Constants.PUBLIC_ADDRESS)
+        // val relayPoint: Relay = new RelayPoint("client1", new InetSocketAddress("161.97.104.230", Constants.PORT))
+
         relayPoint.start()
 
         val serverAddress = relayPoint.requestAddress("server").complete()

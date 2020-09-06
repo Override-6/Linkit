@@ -73,6 +73,8 @@ class RelayServer(private val id: String)
 
 
         val keys = toScalaSet(selector.selectedKeys())
+        //TODO send a init packet when a new client connects
+        //FIXME it does not work !
         for (key <- keys) {
             val socketChannel: InetSocketAddress = key.channel().asInstanceOf[InetSocketAddress]
             return socketChannel

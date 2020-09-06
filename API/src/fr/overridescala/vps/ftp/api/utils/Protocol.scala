@@ -20,12 +20,12 @@ object Protocol {
     }
 
     def getTaskHeader(bytes: Array[Byte]): String = {
-        val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, HEADER) + HEADER.length, indexOf(bytes, CONTENT, lastIndex = true))
+        val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, HEADER) + HEADER.length, indexOf(bytes, CONTENT))
         new String(cutBytes)
     }
 
     def getTaskContent(bytes: Array[Byte]): Array[Byte] = {
-        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, indexOf(bytes, END))
+        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, indexOf(bytes, END, lastIndex = true))
     }
 
     def createTaskPacket(taskType: TaskType, header: String, content: Array[Byte] = Array()): ByteBuffer = {
@@ -45,14 +45,20 @@ object Protocol {
     }
 
     private def indexOf(a: Array[Byte], b: Array[Byte], lastIndex: Boolean = false): Int = {
-        val aRange = if (lastIndex) a.length to 0 else a.indices
-        val bRange = b.indices
+        var aRange = a.indices
+        var bRange = b.indices
+        if (lastIndex) {
+            aRange = aRange.reverse
+            bRange = bRange.reverse
+        }
         for (i <- aRange) {
             if (loop(i))
                 return i
         }
 
         def loop(index: Int): Boolean = {
+            if (index + b.length > a.length)
+                return false
             for (i <- bRange) {
                 if (a(index + i) != b(i)) {
                     return false
