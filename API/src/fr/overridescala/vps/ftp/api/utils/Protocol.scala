@@ -6,8 +6,6 @@ import java.util
 import fr.overridescala.vps.ftp.api.packet.TaskPacket
 import fr.overridescala.vps.ftp.api.task.TaskType
 
-import scala.util.control.Breaks.break
-
 object Protocol {
 
     private val TYPE = "<type>".getBytes
@@ -17,16 +15,17 @@ object Protocol {
 
 
     def getTaskType(bytes: Array[Byte]): TaskType = {
-        val name = new String(between(bytes, TYPE, HEADER))
-        TaskType.valueOf(name)
+        val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, TYPE) + TYPE.length, indexOf(bytes, HEADER))
+        TaskType.valueOf(new String(cutBytes))
     }
 
     def getTaskHeader(bytes: Array[Byte]): String = {
-        new String(between(bytes, HEADER, CONTENT))
+        val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, HEADER) + HEADER.length, indexOf(bytes, CONTENT, lastIndex = true))
+        new String(cutBytes)
     }
 
     def getTaskContent(bytes: Array[Byte]): Array[Byte] = {
-        between(bytes, CONTENT, END)
+        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, indexOf(bytes, END))
     }
 
     def createTaskPacket(taskType: TaskType, header: String, content: Array[Byte] = Array()): ByteBuffer = {
@@ -45,18 +44,16 @@ object Protocol {
         new TaskPacket(taskType, header, content)
     }
 
-    private def between(bytes: Array[Byte], a: Array[Byte], b: Array[Byte]): Array[Byte] = {
-        util.Arrays.copyOfRange(bytes, indexOf(bytes, a) + a.length, indexOf(bytes, b))
-    }
-
-    private def indexOf(a: Array[Byte], b: Array[Byte]): Int = {
-        for (i <- a.indices) {
+    private def indexOf(a: Array[Byte], b: Array[Byte], lastIndex: Boolean = false): Int = {
+        val aRange = if (lastIndex) a.length to 0 else a.indices
+        val bRange = b.indices
+        for (i <- aRange) {
             if (loop(i))
                 return i
         }
 
         def loop(index: Int): Boolean = {
-            for (i <- b.indices) {
+            for (i <- bRange) {
                 if (a(index + i) != b(i)) {
                     return false
                 }
