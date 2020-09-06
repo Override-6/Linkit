@@ -11,7 +11,8 @@ class SimplePacketChannel(private val socketChannel: SocketChannel)
     private val queue: BlockingQueue[TaskPacket] = new ArrayBlockingQueue[TaskPacket](200)
 
     override def sendPacket(packet: TaskPacket): Unit = {
-        socketChannel.write(Protocol.createTaskPacket(packet.taskType, packet.header, packet.content))
+        val bytes = Protocol.createTaskPacket(packet.taskType, packet.header, packet.content)
+        socketChannel.write(bytes)
     }
 
     override def nextPacket(): TaskPacket = {

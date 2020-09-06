@@ -94,7 +94,7 @@ class RelayServer(private val id: String)
         null
     }
 
-    private def handleNewConnection(key: SelectionKey): Unit = {
+    private def handleNewConnection(): Unit = {
         val channel = serverSocket.accept()
         channel.configureBlocking(false)
         channel.register(selector, SelectionKey.OP_READ)
@@ -105,7 +105,7 @@ class RelayServer(private val id: String)
 
     private def handleKey(key: SelectionKey): Unit = {
         if (key.isAcceptable)
-            handleNewConnection(key)
+            handleNewConnection()
         if (key.isReadable)
             handlePacket(key)
     }
@@ -113,14 +113,16 @@ class RelayServer(private val id: String)
     private def handlePacket(key: SelectionKey): Unit = {
         val channel = key.channel().asInstanceOf[SocketChannel]
         val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
-        channel.read(buffer)
-
+        val count = channel.read(buffer)
+        val bytes = new Array[Byte](count)
+        buffer.flip()
+        buffer.get(bytes)
         val packetChannel = keysPacketChannel.get(channel.getRemoteAddress)
-        val packet = Protocol.toPacket(buffer)
+        val packet = Protocol.toPacket(bytes)
 
         if (tasksHandler.handlePacket(packet, completerFactory, packetChannel))
             return
-        packetChannel.addPacket(Protocol.toPacket(buffer))
+        packetChannel.addPacket(packet)
     }
 
     private def configSocket(): ServerSocketChannel = {

@@ -25,7 +25,7 @@ object Protocol {
     }
 
     def getTaskContent(bytes: Array[Byte]): Array[Byte] = {
-        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, indexOf(bytes, END, lastIndex = true))
+        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, bytes.length - END.length)
     }
 
     def createTaskPacket(taskType: TaskType, header: String, content: Array[Byte] = Array()): ByteBuffer = {
@@ -36,21 +36,17 @@ object Protocol {
         ByteBuffer.wrap(bytes)
     }
 
-    def toPacket(buffer: ByteBuffer): TaskPacket = {
-        val bytes = buffer.array()
+    def toPacket(bytes: Array[Byte]): TaskPacket = {
+        println(s"new String(bytes) = ${new String(bytes)}")
         val taskType = getTaskType(bytes)
         val header = getTaskHeader(bytes)
         val content = getTaskContent(bytes)
         new TaskPacket(taskType, header, content)
     }
 
-    private def indexOf(a: Array[Byte], b: Array[Byte], lastIndex: Boolean = false): Int = {
-        var aRange = a.indices
-        var bRange = b.indices
-        if (lastIndex) {
-            aRange = aRange.reverse
-            bRange = bRange.reverse
-        }
+    private def indexOf(a: Array[Byte], b: Array[Byte]): Int = {
+        val aRange = a.indices
+        val bRange = b.indices
         for (i <- aRange) {
             if (loop(i))
                 return i

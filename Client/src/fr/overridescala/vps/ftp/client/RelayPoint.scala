@@ -51,8 +51,11 @@ class RelayPoint(private val id: String,
     }
 
     def updateNetwork(buffer: ByteBuffer): Unit = {
-        socketChannel.read(buffer)
-        val packet = Protocol.toPacket(buffer)
+        val count = socketChannel.read(buffer)
+        val bytes = new Array[Byte](count)
+        buffer.flip()
+        buffer.get(bytes)
+        val packet = Protocol.toPacket(bytes)
         if (tasksHandler.handlePacket(packet, completerFactory, packetChannel)) {
             return
         }
