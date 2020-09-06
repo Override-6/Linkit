@@ -1,0 +1,4 @@
+# Project exclude paths
+/out/
+/target/
+/target/idea_output/

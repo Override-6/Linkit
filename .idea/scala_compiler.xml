@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ScalaCompilerConfiguration">
+    <option name="postfixOps" value="true" />
+    <option name="implicitConversions" value="true" />
+    <profile name="mill 1" modules="main" />
+  </component>
+</project>
