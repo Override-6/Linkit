@@ -1,19 +1,22 @@
 package fr.overridescala.vps.ftp.api.task
 
+import java.net.SocketAddress
 import java.util
 
 import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskPacket}
 
+import scala.jdk.CollectionConverters
+
 
 class TasksHandler() {
-
     private val queue: util.Queue[TaskAchieverTicket] = new util.ArrayDeque[TaskAchieverTicket]()
 
 
     private var currentTaskType: TaskType = _
 
-    def register(achiever: TaskAchiever, ownFreeWill: Boolean): Unit = {
-        queue.offer(new TaskAchieverTicket(achiever, ownFreeWill))
+
+    def register(achiever: TaskAchiever, owner: SocketAddress, ownFreeWill: Boolean): Unit = {
+        queue.offer(new TaskAchieverTicket(achiever, owner, ownFreeWill))
         synchronized {
             notify()
         }
@@ -48,10 +51,14 @@ class TasksHandler() {
 
         def registerCompleter(): Unit = {
             val completer = factory.getCompleter(packetChannel, packet.taskType, packet.header, packet.content)
-            register(completer, ownFreeWill = false)
+            register(completer, packetChannel.getOwnerAddress, false)
         }
 
         false
+    }
+
+    def cancelTasks(address: SocketAddress): Unit = {
+        queue.removeIf(_.isOwner(address))
     }
 
     private def startNextTask(): Unit = {
@@ -66,7 +73,11 @@ class TasksHandler() {
         ticket.start()
     }
 
-    private class TaskAchieverTicket(val taskAchiever: TaskAchiever, val ownFreeWill: Boolean) {
+    private class TaskAchieverTicket(val taskAchiever: TaskAchiever,
+                                     val owner: SocketAddress,
+                                     val ownFreeWill: Boolean) {
+        def isOwner(address: SocketAddress): Boolean = address.equals(owner)
+
         def start(): Unit = {
             if (ownFreeWill)
                 taskAchiever.preAchieve()

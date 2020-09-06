@@ -18,7 +18,7 @@ class FileInfoTask(private val channel: PacketChannel,
 
     override val taskType: TaskType = TaskType.FILE_INFO
 
-    override def enqueue(): Unit = handler.register(this, ownFreeWill = true)
+    override def enqueue(): Unit = handler.register(this, channel.getOwnerAddress, true)
 
     override def achieve(): Unit = {
         channel.sendPacket(new TaskPacket(taskType, filePath, ownerAddress.getHostString.getBytes))

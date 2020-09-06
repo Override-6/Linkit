@@ -13,7 +13,7 @@ class AddressTask(private val channel: PacketChannel,
 
     override val taskType: TaskType = TaskType.ADDRESS
 
-    override def enqueue(): Unit = queue.register(this, ownFreeWill = true)
+    override def enqueue(): Unit = queue.register(this, channel.getOwnerAddress, true)
 
     override def achieve(): Unit = {
         channel.sendPacket(new TaskPacket(taskType, id))

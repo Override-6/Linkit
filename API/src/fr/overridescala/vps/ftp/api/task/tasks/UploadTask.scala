@@ -15,7 +15,7 @@ class UploadTask(private val channel: PacketChannel,
 
     override val taskType: TaskType = TaskType.UPLOAD
 
-    override def enqueue(): Unit = handler.register(this, ownFreeWill = true)
+    override def enqueue(): Unit = handler.register(this, channel.getOwnerAddress, true)
 
     override def preAchieve(): Unit = {
         val packet = new TaskPacket(taskType, "TD", Utils.serialize(desc))

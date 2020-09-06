@@ -27,6 +27,7 @@ class RelayServer(private val id: String)
     private val tasksHandler = new TasksHandler()
     private val completerFactory = new ServerTaskCompleterFactory(tasksHandler, this)
     private val keysPacketChannel = new ConcurrentHashMap[SocketAddress, SimplePacketChannel]()
+    private var open = true
     override val identifier: String = this.id
 
 
@@ -50,19 +51,34 @@ class RelayServer(private val id: String)
         println("ready !")
         tasksHandler.start()
 
-        while (true) {
+        while (open) {
             selector.select()
+            if (!open)
+                return
             val it: util.Iterator[SelectionKey] = selector.selectedKeys().iterator()
             while (it.hasNext) {
-                handleKey(it.next())
+                val key = it.next()
+                try {
+                    handleKey(key)
+                } catch {
+                    case e: Throwable =>
+                        val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
+                        tasksHandler.cancellTasks(address)
+                        key.cancel()
+                        println("a connection closed suddenly")
+                }
                 it.remove()
             }
         }
     }
 
     override def close(): Unit = {
+        open = false
         serverSocket.close()
-        selector.selectedKeys().forEach(_.channel().close())
+        selector.selectedKeys().forEach(key => {
+            key.cancel()
+            key.channel().close()
+        })
         selector.close()
     }
 
@@ -127,11 +143,13 @@ class RelayServer(private val id: String)
         val bytes = new Array[Byte](count)
         buffer.flip()
         buffer.get(bytes)
+
         val packetChannel = keysPacketChannel.get(channel.getRemoteAddress)
         val packet = Protocol.toPacket(bytes)
 
         if (tasksHandler.handlePacket(packet, completerFactory, packetChannel))
             return
+
         packetChannel.addPacket(packet)
     }
 
@@ -147,4 +165,6 @@ class RelayServer(private val id: String)
         CollectionConverters.SetHasAsScala(javaSet).asScala
     }
 
+    // default tasks
+    Runtime.getRuntime.addShutdownHook(new Thread(() => this.close()))
 }

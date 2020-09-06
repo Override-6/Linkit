@@ -15,7 +15,7 @@ class DownloadTask(private val channel: PacketChannel,
 
     override val taskType: TaskType = TaskType.DOWNLOAD
 
-    override def enqueue(): Unit = handler.register(this, ownFreeWill = true)
+    override def enqueue(): Unit = handler.register(this, channel.getOwnerAddress, true)
 
     override def preAchieve(): Unit = {
         val packet = new TaskPacket(taskType, "TD", Utils.serialize(desc))

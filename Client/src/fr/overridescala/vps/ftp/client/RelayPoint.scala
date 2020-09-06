@@ -3,14 +3,15 @@ package fr.overridescala.vps.ftp.client
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
-import java.nio.file.Path
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, SimplePacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.{AddressTask, DisconnectTask, DownloadTask, FileInfoTask, UploadTask}
+import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
+import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
 import fr.overridescala.vps.ftp.api.utils.{Constants, Protocol}
+
+import scala.::
 
 class RelayPoint(private val id: String,
                  private val serverAddress: InetSocketAddress) extends Relay {
@@ -71,5 +72,8 @@ class RelayPoint(private val id: String,
         socket.configureBlocking(true)
         socket
     }
+
+    //default tasks
+    Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
 
 }

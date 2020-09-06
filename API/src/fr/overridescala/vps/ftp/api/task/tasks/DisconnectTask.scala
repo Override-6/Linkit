@@ -7,7 +7,7 @@ class DisconnectTask(private val tasksHandler: TasksHandler,
                      private val channel: PacketChannel)
         extends Task[Unit] with TaskAchiever {
 
-    override def enqueue(): Unit = tasksHandler.register(this, true)
+    override def enqueue(): Unit = tasksHandler.register(this, channel.getOwnerAddress, true)
 
     override val taskType: TaskType = TaskType.DISCONNECT
 
