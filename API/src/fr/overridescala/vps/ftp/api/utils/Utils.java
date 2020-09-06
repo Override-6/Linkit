@@ -46,7 +46,7 @@ public class Utils {
             BufferedReader reader = new BufferedReader(
                     new InputStreamReader(connection.getInputStream())
             );
-            return new InetSocketAddress(reader.readLine(), 4848);
+            return new InetSocketAddress(reader.readLine(), Constants.PORT());
         } catch (IOException e) {
             e.printStackTrace();
         }

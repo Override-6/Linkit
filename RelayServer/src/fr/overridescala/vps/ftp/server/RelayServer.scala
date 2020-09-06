@@ -30,12 +30,12 @@ class RelayServer(private val id: String)
 
     override val identifier: String = this.id
 
-    override def requestDownload(description: TransferDescription): Task[Unit] = {
+    override def doDownload(description: TransferDescription): Task[Unit] = {
         val target = description.target
         new DownloadTask(getPacketChannel(target), tasksHandler, description)
     }
 
-    override def requestUpload(description: TransferDescription): Task[Unit] = {
+    override def doUpload(description: TransferDescription): Task[Unit] = {
         val target = description.target
         new UploadTask(getPacketChannel(target), tasksHandler, description)
     }

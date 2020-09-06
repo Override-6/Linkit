@@ -9,9 +9,9 @@ import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableF
 
 class RelayMock extends Relay {
 
-    override def requestDownload(description: TransferDescription): Task[Unit] = ???
+    override def doDownload(description: TransferDescription): Task[Unit] = ???
 
-    override def requestUpload(description: TransferDescription): Task[Unit] = ???
+    override def doUpload(description: TransferDescription): Task[Unit] = ???
 
     override def requestAddress(id: String): Task[InetSocketAddress] = ???
 

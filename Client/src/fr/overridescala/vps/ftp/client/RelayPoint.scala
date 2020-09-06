@@ -23,10 +23,10 @@ class RelayPoint(private val id: String,
 
     override val identifier: String = id
 
-    override def requestDownload(description: TransferDescription): Task[Unit] =
+    override def doDownload(description: TransferDescription): Task[Unit] =
         new DownloadTask(packetChannel, tasksHandler, description)
 
-    override def requestUpload(description: TransferDescription): Task[Unit] =
+    override def doUpload(description: TransferDescription): Task[Unit] =
         new UploadTask(packetChannel, tasksHandler, description)
 
     override def requestAddress(id: String): Task[InetSocketAddress] =

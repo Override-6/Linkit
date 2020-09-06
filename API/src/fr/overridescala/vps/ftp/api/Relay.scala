@@ -9,9 +9,9 @@ trait Relay extends AutoCloseable {
 
     val identifier: String
 
-    def requestDownload(description: TransferDescription): Task[Unit]
+    def doDownload(description: TransferDescription): Task[Unit]
 
-    def requestUpload(description: TransferDescription): Task[Unit]
+    def doUpload(description: TransferDescription): Task[Unit]
 
     def requestAddress(id: String): Task[InetSocketAddress]
 
