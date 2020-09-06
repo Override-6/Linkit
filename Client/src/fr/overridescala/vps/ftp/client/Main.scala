@@ -1,7 +1,6 @@
 package fr.overridescala.vps.ftp.client
 
 import java.net.InetSocketAddress
-import java.util.Scanner
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription

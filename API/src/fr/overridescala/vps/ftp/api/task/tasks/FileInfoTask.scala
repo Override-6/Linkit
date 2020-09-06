@@ -28,7 +28,6 @@ class FileInfoTask(private val channel: PacketChannel,
             error(new String(response.content))
             return
         }
-        println(s"response = ${response}")
         val size: Long = new String(response.content).toLong
         val transferableFile = TransferableFile.builder()
                 .setOwner(ownerAddress)

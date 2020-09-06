@@ -11,7 +11,6 @@ object Protocol {
     private val TYPE = "<type>".getBytes
     private val HEADER = "<header>".getBytes
     private val CONTENT = "<content>".getBytes
-    private val END = "<end>".getBytes
 
 
     def getTaskType(bytes: Array[Byte]): TaskType = {
@@ -21,18 +20,19 @@ object Protocol {
 
     def getTaskHeader(bytes: Array[Byte]): String = {
         val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, HEADER) + HEADER.length, indexOf(bytes, CONTENT))
+        println(s"new String(cutBytes) = ${new String(cutBytes)}")
         new String(cutBytes)
     }
 
     def getTaskContent(bytes: Array[Byte]): Array[Byte] = {
-        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, bytes.length - END.length)
+        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, bytes.length)
     }
 
     def createTaskPacket(taskType: TaskType, header: String, content: Array[Byte] = Array()): ByteBuffer = {
         val typeBytes = taskType.name().getBytes
         val headerBytes = header.getBytes
 
-        val bytes = TYPE ++ typeBytes ++ HEADER ++ headerBytes ++ CONTENT ++ content ++ END
+        val bytes = TYPE ++ typeBytes ++ HEADER ++ headerBytes ++ CONTENT ++ content
         ByteBuffer.wrap(bytes)
     }
 
@@ -44,25 +44,7 @@ object Protocol {
     }
 
     private def indexOf(a: Array[Byte], b: Array[Byte]): Int = {
-        val aRange = a.indices
-        val bRange = b.indices
-        for (i <- aRange) {
-            if (loop(i))
-                return i
-        }
-
-        def loop(index: Int): Boolean = {
-            if (index + b.length > a.length)
-                return false
-            for (i <- bRange) {
-                if (a(index + i) != b(i)) {
-                    return false
-                }
-            }
-            true
-        }
-
-        -1
+        a.toSeq.indexOfSlice(b.toSeq)
     }
 
 
