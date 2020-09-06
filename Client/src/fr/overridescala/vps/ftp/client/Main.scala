@@ -32,7 +32,10 @@ object Main {
                 .setDestination("C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/client.mp4")
                 .setTarget(serverAddress)
                 .build()
-        relayPoint.doDownload(download).complete()
+        //TODO handles multi tasks
+        relayPoint.doDownload(download).queue(_, _)
+        relayPoint.doDownload(download).queue(_, _)
+        relayPoint.doDownload(download).queue(_, _)
     }
 
 }

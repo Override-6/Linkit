@@ -63,7 +63,7 @@ class RelayServer(private val id: String)
                 } catch {
                     case e: Throwable =>
                         val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-                        tasksHandler.cancellTasks(address)
+                        tasksHandler.cancelTasks(address)
                         key.cancel()
                         println("a connection closed suddenly")
                 }
@@ -89,6 +89,8 @@ class RelayServer(private val id: String)
             if (address.equals(socketChannel.getRemoteAddress)) {
                 key.channel().close()
                 key.cancel()
+                keysPacketChannel.remove(socketChannel)
+                tasksHandler.cancelTasks(address)
             }
         }
     }
@@ -146,10 +148,8 @@ class RelayServer(private val id: String)
 
         val packetChannel = keysPacketChannel.get(channel.getRemoteAddress)
         val packet = Protocol.toPacket(bytes)
-
         if (tasksHandler.handlePacket(packet, completerFactory, packetChannel))
             return
-
         packetChannel.addPacket(packet)
     }
 
