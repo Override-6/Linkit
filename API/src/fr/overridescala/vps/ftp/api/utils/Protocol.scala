@@ -37,7 +37,6 @@ object Protocol {
     }
 
     def toPacket(bytes: Array[Byte]): TaskPacket = {
-        println(s"new String(bytes) = ${new String(bytes)}")
         val taskType = getTaskType(bytes)
         val header = getTaskHeader(bytes)
         val content = getTaskContent(bytes)
