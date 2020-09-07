@@ -16,8 +16,8 @@ class InitTask(private val handler: TasksHandler,
     }
 
     override def achieve(): Unit = {
-        val accepted = channel.nextPacket().header.equals("OK")
-        if (accepted)
+        val notAccepted = channel.nextPacket().header.equals("ERROR")
+        if (notAccepted)
             error("no id where available.")
         else success(id)
     }

@@ -24,7 +24,7 @@ object Main {
 
         val serverAddress = relayPoint.requestAddress("server").completeNow()
         println(s"serverAddress = ${serverAddress}")
-        val serverFile = relayPoint.requestFileInformation(serverAddress, "/home/override/VPS/Tests/FileTransferer/server.mp4").completeNow()
+        val serverFile = relayPoint.requestFileInformation(serverAddress, "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/server/server.mp4").completeNow()
         println(s"serverFile = ${serverFile}")
 
         val download = TransferDescription.builder()
@@ -33,9 +33,9 @@ object Main {
                 .setTarget(serverAddress)
                 .build()
         //TODO handles multi tasks
-        relayPoint.doDownload(download).queue(_, _)
-        relayPoint.doDownload(download).queue(_, _)
-        relayPoint.doDownload(download).queue(_, _)
+        relayPoint.doDownload(download).queue(() =>_, () =>_)
+        relayPoint.doDownload(download).queue(() =>_, () =>_)
+        relayPoint.doDownload(download).queue(() =>_, () =>_)
     }
 
 }

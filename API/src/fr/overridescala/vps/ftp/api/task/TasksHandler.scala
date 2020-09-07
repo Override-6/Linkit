@@ -16,7 +16,7 @@ class TasksHandler() {
 
     def register(achiever: TaskAchiever, owner: SocketAddress, ownFreeWill: Boolean): Unit = {
         queue.offer(new TaskAchieverTicket(achiever, owner, ownFreeWill))
-        synchronized (notifyAll())
+        synchronized(notifyAll())
     }
 
     def start(): Unit = {
@@ -56,7 +56,7 @@ class TasksHandler() {
 
     def cancelTasks(address: SocketAddress): Unit = {
         if (currentTaskOwner != null && currentTaskOwner.equals(address)) {
-            synchronized (notifyAll())
+            synchronized(notifyAll())
             currentTaskOwner = null
             currentTaskType = null
         }
@@ -82,11 +82,12 @@ class TasksHandler() {
         def isOwner(address: SocketAddress): Boolean = address.equals(owner)
 
         def start(): Unit = {
-            if (ownFreeWill)
-                taskAchiever.preAchieve()
             currentTaskType = taskAchiever.taskType
             currentTaskOwner = owner
+            if (ownFreeWill)
+                taskAchiever.preAchieve()
             taskAchiever.achieve()
+            println("task achieved !")
         }
     }
 

@@ -50,7 +50,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         new DisconnectTask(tasksHandler, packetChannel).completeNow()
     }
 
-    def updateNetwork(buffer: ByteBuffer): Unit = {
+    def updateNetwork(buffer: ByteBuffer): Unit = synchronized {
         val count = socketChannel.read(buffer)
         val bytes = new Array[Byte](count)
         buffer.flip()
@@ -74,7 +74,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
     new InitTask(tasksHandler, packetChannel, identifier).queueWithError(msg => {
-        println(s"unable to connect to the server : $msg")
+        Console.err.print(s"unable to connect to the server : $msg")
         close()
     })
 

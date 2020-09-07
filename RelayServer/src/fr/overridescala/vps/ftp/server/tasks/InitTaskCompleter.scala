@@ -12,7 +12,7 @@ class InitTaskCompleter(private var server: RelayServer,
 
     override def achieve(): Unit = {
         val success = server.attributeID(channel.getOwnerAddress, id)
-        if (!success)
-            channel.sendPacket(new TaskPacket(taskType, "ERROR"))
+        val response = if (success) "OK" else "ERROR"
+        channel.sendPacket(new TaskPacket(taskType, response))
     }
 }

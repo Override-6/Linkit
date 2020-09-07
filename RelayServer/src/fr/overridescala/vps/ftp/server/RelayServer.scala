@@ -27,6 +27,7 @@ class RelayServer(private val id: String)
     private val completerFactory = new ServerTaskCompleterFactory(tasksHandler, this)
     private val keysInfo = new ConcurrentHashMap[SocketAddress, KeyInfo]()
     private var open = true
+
     override val identifier: String = this.id
 
 
@@ -116,7 +117,7 @@ class RelayServer(private val id: String)
         if (relayPointID != null) {
             return false
         }
-        for ((_, info) <- scalaKeysInfo) {
+        for ((_, info) <- scalaKeysInfo if info.id != null) {
             if (info.id.equals(id)) {
                 return false
             }
