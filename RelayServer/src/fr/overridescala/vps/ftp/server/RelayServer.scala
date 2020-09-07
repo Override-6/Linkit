@@ -42,7 +42,7 @@ class RelayServer(private val id: String)
     }
 
     override def requestAddress(id: String): Task[InetSocketAddress] =
-        throw new UnsupportedOperationException("can't create this request from a RelayServer, please use RelayServer#getAddress instead")
+        throw new UnsupportedOperationException("can't create this request from a RelayServer, please use RelayServer#getAddress instead.")
 
     override def requestFileInformation(owner: InetSocketAddress, path: String): Task[TransferableFile] =
         new FileInfoTask(getPacketChannel(owner), tasksHandler, owner, path)
@@ -100,12 +100,10 @@ class RelayServer(private val id: String)
             return Constants.PUBLIC_ADDRESS
 
 
-        val keys = toScalaSet(selector.selectedKeys())
-        //TODO send a init packet when a new client connects
-        //FIXME it does not work !
-        for (key <- keys) {
-            val socketChannel: SocketChannel = key.channel().asInstanceOf[SocketChannel]
-            return socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress]
+        val scalaKeysInfo = CollectionConverters.MapHasAsScala(keysInfo).asScala
+        for ((_, info) <- scalaKeysInfo if info.id != null) {
+            if (info.id.equals(id))
+                return info.address.asInstanceOf[InetSocketAddress]
         }
         null
     }
