@@ -18,13 +18,13 @@ object Main {
         val isLocalhost = System.in.read() == 'y'
         val address = if (isLocalhost) Constants.LOCALHOST else new InetSocketAddress("161.97.104.230", Constants.PORT)
 
-        val relayPoint: Relay = new RelayPoint("client1", address)
+        val relayPoint: Relay = new RelayPoint(address, "client1")
 
         relayPoint.start()
 
-        val serverAddress = relayPoint.requestAddress("server").complete()
+        val serverAddress = relayPoint.requestAddress("server").completeNow()
         println(s"serverAddress = ${serverAddress}")
-        val serverFile = relayPoint.requestFileInformation(serverAddress, "/home/override/VPS/Tests/FileTransferer/server.mp4").complete()
+        val serverFile = relayPoint.requestFileInformation(serverAddress, "/home/override/VPS/Tests/FileTransferer/server.mp4").completeNow()
         println(s"serverFile = ${serverFile}")
 
         val download = TransferDescription.builder()

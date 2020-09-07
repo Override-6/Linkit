@@ -10,12 +10,10 @@ import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 class UploadTask(private val channel: PacketChannel,
                  private val handler: TasksHandler,
                  private val desc: TransferDescription)
-        extends Task[Unit]() with TaskAchiever {
+        extends Task[Unit](handler, channel.getOwnerAddress) with TaskAchiever {
 
 
     override val taskType: TaskType = TaskType.UPLOAD
-
-    override def enqueue(): Unit = handler.register(this, channel.getOwnerAddress, true)
 
     override def preAchieve(): Unit = {
         val packet = new TaskPacket(taskType, "TD", Utils.serialize(desc))

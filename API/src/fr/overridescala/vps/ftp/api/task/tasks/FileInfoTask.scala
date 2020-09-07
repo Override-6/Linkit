@@ -13,15 +13,15 @@ class FileInfoTask(private val channel: PacketChannel,
                    private val handler: TasksHandler,
                    private val ownerAddress: InetSocketAddress,
                    private val filePath: String)
-        extends Task[TransferableFile]()
+        extends Task[TransferableFile](handler, channel.getOwnerAddress)
                 with TaskAchiever {
 
     override val taskType: TaskType = TaskType.FILE_INFO
 
-    override def enqueue(): Unit = handler.register(this, channel.getOwnerAddress, true)
+    override def preAchieve(): Unit = channel.sendPacket(new TaskPacket(taskType, filePath, ownerAddress.getHostString.getBytes))
+
 
     override def achieve(): Unit = {
-        channel.sendPacket(new TaskPacket(taskType, filePath, ownerAddress.getHostString.getBytes))
         val response = channel.nextPacket()
 
         if (response.header.equals("ERROR")) {

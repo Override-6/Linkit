@@ -1,14 +1,11 @@
 package fr.overridescala.vps.ftp.server.tasks
 
-import java.net.InetSocketAddress
-
 import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskPacket}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TaskType, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{TaskAchiever, TaskType}
 import fr.overridescala.vps.ftp.server.RelayServer
 
 class AddressTaskCompleter(private val packetChannel: PacketChannel,
                            private val server: RelayServer,
-                           private val tasksHandler: TasksHandler,
                            private val id: String)
         extends TaskAchiever {
 

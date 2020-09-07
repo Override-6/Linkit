@@ -11,10 +11,8 @@ import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
 import fr.overridescala.vps.ftp.api.utils.{Constants, Protocol}
 
-import scala.::
-
-class RelayPoint(private val id: String,
-                 private val serverAddress: InetSocketAddress) extends Relay {
+class RelayPoint(private val serverAddress: InetSocketAddress,
+                 private val id: String) extends Relay {
 
 
     private val socketChannel = configSocket()
@@ -49,7 +47,7 @@ class RelayPoint(private val id: String,
 
     override def close(): Unit = {
         socketChannel.close()
-        new DisconnectTask(tasksHandler, packetChannel).complete()
+        new DisconnectTask(tasksHandler, packetChannel).completeNow()
     }
 
     def updateNetwork(buffer: ByteBuffer): Unit = {
@@ -73,7 +71,11 @@ class RelayPoint(private val id: String,
         socket
     }
 
-    //default tasks
+    //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
+    new InitTask(tasksHandler, packetChannel, identifier).queueWithError(msg => {
+        println(s"unable to connect to the server : $msg")
+        close()
+    })
 
 }

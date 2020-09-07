@@ -1,15 +1,13 @@
 package fr.overridescala.vps.ftp.server
 
-import java.io.IOException
-import java.net.{InetSocketAddress, SocketAddress, SocketException}
+import java.net.{InetSocketAddress, SocketAddress}
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
-import java.nio.file.Path
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
@@ -20,13 +18,14 @@ import scala.jdk.CollectionConverters
 
 class RelayServer(private val id: String)
         extends Relay {
+
     private val selector = Selector.open()
 
 
     private val serverSocket = configSocket()
     private val tasksHandler = new TasksHandler()
     private val completerFactory = new ServerTaskCompleterFactory(tasksHandler, this)
-    private val keysPacketChannel = new ConcurrentHashMap[SocketAddress, SimplePacketChannel]()
+    private val keysInfo = new ConcurrentHashMap[SocketAddress, KeyInfo]()
     private var open = true
     override val identifier: String = this.id
 
@@ -89,7 +88,7 @@ class RelayServer(private val id: String)
             if (address.equals(socketChannel.getRemoteAddress)) {
                 key.channel().close()
                 key.cancel()
-                keysPacketChannel.remove(socketChannel)
+                keysInfo.remove(address)
                 tasksHandler.cancelTasks(address)
             }
         }
@@ -110,16 +109,24 @@ class RelayServer(private val id: String)
         null
     }
 
-
-    private def getPacketChannel(target: InetSocketAddress): PacketChannel = {
-        val keys: util.Set[SelectionKey] = selector.selectedKeys()
-        val it = toScalaSet(keys)
-        for (key <- it) {
-            val channel: SocketChannel = key.channel().asInstanceOf[SocketChannel]
-            if (channel.getRemoteAddress equals target)
-                return keysPacketChannel.get(key)
+    def attributeID(address: InetSocketAddress, id: String): Boolean = {
+        val scalaKeysInfo = CollectionConverters.MapHasAsScala(keysInfo).asScala
+        val info = keysInfo.get(address)
+        val relayPointID = info.id
+        if (relayPointID != null) {
+            return false
         }
-        null
+        for ((_, info) <- scalaKeysInfo) {
+            if (info.id.equals(id)) {
+                return false
+            }
+        }
+        info.id = id
+        true
+    }
+
+    private def getPacketChannel(target: SocketAddress): SimplePacketChannel = {
+        keysInfo.get(target).packetChannel
     }
 
     private def handleNewConnection(): Unit = {
@@ -127,7 +134,8 @@ class RelayServer(private val id: String)
         channel.configureBlocking(false)
         channel.register(selector, SelectionKey.OP_READ)
         val socketChannel = channel.asInstanceOf[SocketChannel]
-        keysPacketChannel.put(socketChannel.getRemoteAddress, new SimplePacketChannel(channel))
+        val info = KeyInfo(socketChannel.getRemoteAddress, null, new SimplePacketChannel(channel))
+        keysInfo.put(socketChannel.getRemoteAddress, info)
     }
 
 
@@ -146,7 +154,7 @@ class RelayServer(private val id: String)
         buffer.flip()
         buffer.get(bytes)
 
-        val packetChannel = keysPacketChannel.get(channel.getRemoteAddress)
+        val packetChannel = getPacketChannel(channel.getRemoteAddress)
         val packet = Protocol.toPacket(bytes)
         if (tasksHandler.handlePacket(packet, completerFactory, packetChannel))
             return
@@ -156,7 +164,7 @@ class RelayServer(private val id: String)
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
-        socket.bind(Constants.PUBLIC_ADDRESS)
+        socket.bind(Constants.LOCALHOST)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket
     }
@@ -167,4 +175,9 @@ class RelayServer(private val id: String)
 
     // default tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => this.close()))
+
+    case class KeyInfo(address: SocketAddress,
+                       var id: String,
+                       packetChannel: SimplePacketChannel)
+
 }

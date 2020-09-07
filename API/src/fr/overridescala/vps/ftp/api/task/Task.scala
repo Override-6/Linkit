@@ -1,38 +1,35 @@
 package fr.overridescala.vps.ftp.api.task
 
+import java.net.InetSocketAddress
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 
 import fr.overridescala.vps.ftp.api.exceptions.TransferException
 
-abstract class Task[T]() {
+abstract class Task[T](handler: TasksHandler, owner: InetSocketAddress)
+        extends TaskAction[T] with TaskAchiever {
 
     private var onSuccess: Consumer[T] = _
     private var onError: Consumer[String] = _
 
-    val taskType: TaskType
-
-    def queueWithSuccess(onSuccess: Consumer[T]): Task[T] = {
+    override def queueWithSuccess(onSuccess: Consumer[T]): Unit = {
         this.onSuccess = onSuccess
-        enqueue()
-        this
+        handler.register(this, owner, true)
     }
 
-    def queueWithError(onError: Consumer[String]): Task[T] = {
+    override def queueWithError(onError: Consumer[String]): Unit = {
         this.onError = onError
-        enqueue()
-        this
+        handler.register(this, owner, true)
     }
 
-    def queue(onSuccess: Consumer[T], onError: Consumer[String]): Task[T] = {
+    override def queue(onSuccess: Consumer[T], onError: Consumer[String]): Unit = {
         this.onSuccess = onSuccess
         this.onError = onError
-        enqueue()
-        this
+        handler.register(this, owner, true)
     }
 
-    def complete(): T = {
-        enqueue()
+    override def completeNow(): T = {
+        handler.register(this, owner, true)
         val atomicResult = new AtomicReference[T]()
         onSuccess = result => synchronized {
             notify()
@@ -47,8 +44,6 @@ abstract class Task[T]() {
         }
         atomicResult.get()
     }
-
-    def enqueue(): Unit
 
     protected def error(msg: String): Unit = {
         if (onError != null)

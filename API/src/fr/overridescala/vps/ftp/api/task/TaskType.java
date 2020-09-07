@@ -2,11 +2,12 @@ package fr.overridescala.vps.ftp.api.task;
 
 public enum TaskType {
 
-    ADDRESS("ADDRESS"),
-    FILE_INFO("FILE_INFO"),
+    ADDRESS(),
+    FILE_INFO(),
     DOWNLOAD("UPLOAD"),
     UPLOAD("DOWNLOAD"),
-    DISCONNECT("DISCONNECT");
+    INITIALISATION(),
+    DISCONNECT();
 
     private final String[] completers;
 
@@ -15,6 +16,8 @@ public enum TaskType {
     }
 
     public boolean isCompleterOf(TaskType type) {
+        if (type == this)
+            return true;
         for (String completer : completers) {
             if (type.name().equals(completer))
                 return true;
