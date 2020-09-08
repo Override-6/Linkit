@@ -52,7 +52,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     override def close(): Unit = {
         socketChannel.close()
-        new DisconnectTask(tasksHandler, packetChannel).completeNow()
     }
 
     def updateNetwork(buffer: ByteBuffer): Unit = synchronized {

@@ -18,7 +18,6 @@ class ServerTaskCompleterFactory(private val tasksHandler: TasksHandler,
             case TaskType.DOWNLOAD => new UploadTask(channel, tasksHandler, Utils.deserialize(content))
             case TaskType.FILE_INFO => new FileInfoTask.Completer(channel, header)
             case TaskType.ADDRESS => new AddressTaskCompleter(channel, server, header)
-            case TaskType.DISCONNECT => new DisconnectTaskCompleter(server, channel.ownerAddress)
             case TaskType.INITIALISATION => new InitTaskCompleter(server, channel, header)
             case _ => throw new IllegalArgumentException("could not find completer for task " + taskType)
         }
