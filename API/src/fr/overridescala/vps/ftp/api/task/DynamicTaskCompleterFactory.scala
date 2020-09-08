@@ -4,6 +4,6 @@ import fr.overridescala.vps.ftp.api.packet.DataPacket
 
 trait DynamicTaskCompleterFactory extends TaskCompleterFactory {
 
-    def putCompleter[T](completerClass: Class[T], initPacket: DataPacket => T)
+    def putCompleter(completerType: String, supplier: DataPacket => TaskAchiever)
 
 }
