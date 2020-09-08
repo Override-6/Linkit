@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.api.task.tasks
 
 import java.nio.file.{Files, Path}
 
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskPacket}
+import fr.overridescala.vps.ftp.api.packet.{PacketChannel, DataPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
@@ -46,7 +46,7 @@ class DownloadTask(private val channel: PacketChannel,
      *
      * @return true if the task have to be aborted, false instead
      **/
-    def checkPacket(packet: TaskPacket): Boolean = {
+    def checkPacket(packet: DataPacket): Boolean = {
         if (packet.header.equals("ERROR")) {
             error(new String(packet.content))
             return true

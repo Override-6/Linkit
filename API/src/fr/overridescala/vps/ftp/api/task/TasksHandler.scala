@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.task
 import java.net.SocketAddress
 import java.util
 
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, SimplePacketChannel, TaskPacket}
+import fr.overridescala.vps.ftp.api.packet.{PacketChannel, SimplePacketChannel, DataPacket}
 
 
 class TasksHandler() {
@@ -26,7 +26,7 @@ class TasksHandler() {
         }).start()
     }
 
-    def handlePacket(packet: TaskPacket, factory: TaskCompleterFactory, channel: SimplePacketChannel): Unit = {
+    def handlePacket(packet: DataPacket, factory: TaskCompleterFactory, channel: SimplePacketChannel): Unit = {
         if (packet.sessionID != currentSessionID) {
             val completer = factory.getCompleter(channel, packet)
             register(completer, packet.sessionID, channel.ownerAddress, false)

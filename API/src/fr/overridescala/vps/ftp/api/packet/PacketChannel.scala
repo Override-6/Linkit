@@ -6,7 +6,7 @@ trait PacketChannel {
 
     def sendPacket(header: String, content: Array[Byte] = Array()): Unit
 
-    def nextPacket(): TaskPacket
+    def nextPacket(): DataPacket
 
     val ownerAddress: InetSocketAddress
 

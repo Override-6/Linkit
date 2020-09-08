@@ -10,7 +10,7 @@ class InitTask(private val handler: TasksHandler,
 
 
     override def preAchieve(): Unit = {
-        channel.sendPacket(taskType, id)
+        channel.sendPacket(id)
     }
 
     override def achieve(): Unit = {

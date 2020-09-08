@@ -1,15 +1,14 @@
 package fr.overridescala.vps.ftp.client
 
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskPacket}
+import fr.overridescala.vps.ftp.api.packet.{PacketChannel, DataPacket}
 import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
-import fr.overridescala.vps.ftp.api.task.{TaskAchiever, TaskCompleterFactory, TaskType, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{TaskAchiever, TaskCompleterFactory, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
         extends TaskCompleterFactory {
 
-    override def getCompleter(channel: PacketChannel, initTaskPacket: TaskPacket): TaskAchiever = {
-        val taskType = initTaskPacket.taskType
+    override def getCompleter(channel: PacketChannel, initTaskPacket: DataPacket): TaskAchiever = {
         val header = initTaskPacket.header
         val content = initTaskPacket.content
         taskType match {

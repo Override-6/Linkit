@@ -1,26 +1,17 @@
-package fr.overridescala.vps.ftp.api.utils
+package fr.overridescala.vps.ftp.api.packet
 
 import java.nio.ByteBuffer
 import java.util
 
-import fr.overridescala.vps.ftp.api.packet.TaskPacket
-import fr.overridescala.vps.ftp.api.task.TaskType
-
 object Protocol {
 
     private val SESSION = "<session_id>".getBytes
-    private val TYPE = "<type>".getBytes
     private val HEADER = "<header>".getBytes
     private val CONTENT = "<content>".getBytes
 
     def getSessionID(bytes: Array[Byte]): Int = {
-        val cutBytes = util.Arrays.copyOfRange(bytes, SESSION.length, indexOf(bytes, TYPE))
+        val cutBytes = util.Arrays.copyOfRange(bytes, SESSION.length, indexOf(bytes, HEADER))
         new String(cutBytes).toInt
-    }
-
-    def getTaskType(bytes: Array[Byte]): TaskType = {
-        val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, TYPE) + TYPE.length, indexOf(bytes, HEADER))
-        TaskType.valueOf(new String(cutBytes))
     }
 
     def getTaskHeader(bytes: Array[Byte]): String = {
@@ -32,20 +23,18 @@ object Protocol {
         util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, bytes.length)
     }
 
-    def createTaskPacket(sessionID: Int, taskType: TaskType, header: String, content: Array[Byte] = Array()): ByteBuffer = {
-        val typeBytes = taskType.name().getBytes
+    def createTaskPacket(sessionID: Int, header: String, content: Array[Byte] = Array()): ByteBuffer = {
         val headerBytes = header.getBytes
         val id = String.valueOf(sessionID).getBytes
-        val bytes = SESSION ++ id ++ TYPE ++ typeBytes ++ HEADER ++ headerBytes ++ CONTENT ++ content
+        val bytes = SESSION ++ id ++ HEADER ++ headerBytes ++ CONTENT ++ content
         ByteBuffer.wrap(bytes)
     }
 
-    def toPacket(bytes: Array[Byte]): TaskPacket = {
+    def toPacket(bytes: Array[Byte]): DataPacket = {
         val sessionID = getSessionID(bytes)
-        val taskType = getTaskType(bytes)
         val header = getTaskHeader(bytes)
         val content = getTaskContent(bytes)
-        new TaskPacket(sessionID, taskType, header, content)
+        new DataPacket(sessionID, header, content)
     }
 
     private def indexOf(a: Array[Byte], b: Array[Byte]): Int = {

@@ -7,11 +7,11 @@ import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
+import fr.overridescala.vps.ftp.api.packet.{Protocol, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
-import fr.overridescala.vps.ftp.api.utils.{Constants, Protocol}
+import fr.overridescala.vps.ftp.api.utils.Constants
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters
@@ -162,7 +162,7 @@ class RelayServer(private val id: String)
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
-        socket.bind(Constants.LOCALHOST)
+        socket.bind(Constants.PUBLIC_ADDRESS)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket
     }
