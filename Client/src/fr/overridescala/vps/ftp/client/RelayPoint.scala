@@ -17,7 +17,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     private val socketChannel = configSocket()
     private val tasksHandler = new TasksHandler()
-    private val packetChannel = new SimplePacketChannel(socketChannel)
+    private val packetChannel = new SimplePacketChannel(socketChannel, tasksHandler)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
 
     override val identifier: String = id
@@ -56,10 +56,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         buffer.flip()
         buffer.get(bytes)
         val packet = Protocol.toPacket(bytes)
-        if (tasksHandler.handlePacket(packet, completerFactory, packetChannel)) {
-            return
-        }
-        packetChannel.addPacket(packet)
+        tasksHandler.handlePacket(packet, completerFactory, packetChannel)
+
         buffer.clear()
     }
 

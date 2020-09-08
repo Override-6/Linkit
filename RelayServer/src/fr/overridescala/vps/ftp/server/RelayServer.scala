@@ -99,7 +99,6 @@ class RelayServer(private val id: String)
         if (id.equals(this.id))
             return Constants.PUBLIC_ADDRESS
 
-
         val scalaKeysInfo = CollectionConverters.MapHasAsScala(keysInfo).asScala
         for ((_, info) <- scalaKeysInfo if info.id != null) {
             if (info.id.equals(id))
@@ -125,7 +124,7 @@ class RelayServer(private val id: String)
     }
 
     private def getPacketChannel(target: SocketAddress): SimplePacketChannel = {
-        keysInfo.get(target).packetChannel
+        keysInfo.get(target).channelManager
     }
 
     private def handleNewConnection(): Unit = {
@@ -133,7 +132,7 @@ class RelayServer(private val id: String)
         channel.configureBlocking(false)
         channel.register(selector, SelectionKey.OP_READ)
         val socketChannel = channel.asInstanceOf[SocketChannel]
-        val info = KeyInfo(socketChannel.getRemoteAddress, null, new SimplePacketChannel(channel))
+        val info = KeyInfo(socketChannel.getRemoteAddress, null, new SimplePacketChannel(channel, tasksHandler))
         keysInfo.put(socketChannel.getRemoteAddress, info)
     }
 
@@ -155,9 +154,7 @@ class RelayServer(private val id: String)
 
         val packetChannel = getPacketChannel(channel.getRemoteAddress)
         val packet = Protocol.toPacket(bytes)
-        if (tasksHandler.handlePacket(packet, completerFactory, packetChannel))
-            return
-        packetChannel.addPacket(packet)
+        tasksHandler.handlePacket(packet, completerFactory, packetChannel)
     }
 
     private def configSocket(): ServerSocketChannel = {
@@ -177,6 +174,6 @@ class RelayServer(private val id: String)
 
     case class KeyInfo(address: SocketAddress,
                        var id: String,
-                       packetChannel: SimplePacketChannel)
+                       channelManager: SimplePacketChannel)
 
 }

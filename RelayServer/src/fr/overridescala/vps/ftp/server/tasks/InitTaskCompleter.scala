@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.server.tasks
 
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskPacket}
+import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.{TaskAchiever, TaskType}
 import fr.overridescala.vps.ftp.server.RelayServer
 
@@ -11,8 +11,8 @@ class InitTaskCompleter(private var server: RelayServer,
     override val taskType: TaskType = TaskType.INITIALISATION
 
     override def achieve(): Unit = {
-        val success = server.attributeID(channel.getOwnerAddress, id)
+        val success = server.attributeID(channel.ownerAddress, id)
         val response = if (success) "OK" else "ERROR"
-        channel.sendPacket(new TaskPacket(taskType, response))
+        channel.sendPacket(taskType, response)
     }
 }

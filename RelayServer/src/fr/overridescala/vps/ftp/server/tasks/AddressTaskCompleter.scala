@@ -15,12 +15,9 @@ class AddressTaskCompleter(private val packetChannel: PacketChannel,
         val address = server.getAddress(id)
         if (address == null) {
             val errorMsg = "unable to retrieve the associated address from identifier"
-            val errorResponse = new TaskPacket(taskType, "ERROR", errorMsg.getBytes)
-            packetChannel.sendPacket(errorResponse)
+            packetChannel.sendPacket(taskType, "ERROR", errorMsg.getBytes)
             return
         }
-
-        val response = new TaskPacket(taskType, "OK", address.toString.getBytes)
-        packetChannel.sendPacket(response)
+        packetChannel.sendPacket(taskType, "OK", address.toString.getBytes)
     }
 }

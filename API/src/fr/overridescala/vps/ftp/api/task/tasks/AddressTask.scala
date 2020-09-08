@@ -9,11 +9,11 @@ import fr.overridescala.vps.ftp.api.utils.{Constants, Protocol}
 class AddressTask(private val channel: PacketChannel,
                   private val handler: TasksHandler,
                   private val id: String)
-        extends Task[InetSocketAddress](handler, channel.getOwnerAddress) with TaskAchiever {
+        extends Task[InetSocketAddress](handler, channel.ownerAddress) with TaskAchiever {
 
     override val taskType: TaskType = TaskType.ADDRESS
 
-    override def preAchieve(): Unit = channel.sendPacket(new TaskPacket(taskType, id))
+    override def preAchieve(): Unit = channel.sendPacket(taskType, id)
 
     override def achieve(): Unit = {
         val response = channel.nextPacket()

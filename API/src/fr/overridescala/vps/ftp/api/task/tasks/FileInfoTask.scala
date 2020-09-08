@@ -13,12 +13,12 @@ class FileInfoTask(private val channel: PacketChannel,
                    private val handler: TasksHandler,
                    private val ownerAddress: InetSocketAddress,
                    private val filePath: String)
-        extends Task[TransferableFile](handler, channel.getOwnerAddress)
+        extends Task[TransferableFile](handler, channel.ownerAddress)
                 with TaskAchiever {
 
     override val taskType: TaskType = TaskType.FILE_INFO
 
-    override def preAchieve(): Unit = channel.sendPacket(new TaskPacket(taskType, filePath, ownerAddress.getHostString.getBytes))
+    override def preAchieve(): Unit = channel.sendPacket(taskType, filePath, ownerAddress.getHostString.getBytes)
 
 
     override def achieve(): Unit = {
@@ -49,15 +49,15 @@ object FileInfoTask {
         override def achieve(): Unit = {
             val path = Path.of(filePath)
             if (Files.notExists(path)) {
-                channel.sendPacket(new TaskPacket(taskType, "ERROR", "The file does not exists.".getBytes()))
+                channel.sendPacket(taskType, "ERROR", "The file does not exists.".getBytes())
                 return
             }
             if (!Files.isWritable(path) || !Files.isReadable(path)) {
-                channel.sendPacket(new TaskPacket(taskType, "ERROR", "Can't access to the file".getBytes()))
+                channel.sendPacket(taskType, "ERROR", "Can't access to the file".getBytes())
                 return
             }
             val size = Files.size(path)
-            channel.sendPacket(new TaskPacket(taskType, "OK", s"$size".getBytes()))
+            channel.sendPacket(taskType, "OK", s"$size".getBytes())
         }
     }
 

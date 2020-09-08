@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.api.task
 
 import java.net.InetSocketAddress
+import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Consumer
 
@@ -11,25 +12,26 @@ abstract class Task[T](handler: TasksHandler, owner: InetSocketAddress)
 
     private var onSuccess: Consumer[T] = _
     private var onError: Consumer[String] = _
+    private val sessionID = ThreadLocalRandom.current().nextInt()
 
     override def queueWithSuccess(onSuccess: Consumer[T]): Unit = {
         this.onSuccess = onSuccess
-        handler.register(this, owner, true)
+        handler.register(this, sessionID, owner, true)
     }
 
     override def queueWithError(onError: Consumer[String]): Unit = {
         this.onError = onError
-        handler.register(this, owner, true)
+        handler.register(this, sessionID, owner, true)
     }
 
     override def queue(onSuccess: Consumer[T], onError: Consumer[String]): Unit = {
         this.onSuccess = onSuccess
         this.onError = onError
-        handler.register(this, owner, true)
+        handler.register(this, sessionID, owner, true)
     }
 
     override def completeNow(): T = {
-        handler.register(this, owner, true)
+        handler.register(this, sessionID, owner, true)
         val atomicResult = new AtomicReference[T]()
         onSuccess = result => synchronized {
             notify()

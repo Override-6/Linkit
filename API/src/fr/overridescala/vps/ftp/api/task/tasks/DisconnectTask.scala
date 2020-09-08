@@ -5,12 +5,12 @@ import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TaskType, TasksHan
 
 class DisconnectTask(private val handler: TasksHandler,
                      private val channel: PacketChannel)
-        extends Task[Unit](handler, channel.getOwnerAddress) with TaskAchiever {
+        extends Task[Unit](handler, channel.ownerAddress) with TaskAchiever {
 
     override val taskType: TaskType = TaskType.DISCONNECT
 
     override def achieve(): Unit = {
-        channel.sendPacket(new TaskPacket(taskType, ""))
+        channel.sendPacket(taskType, "")
         success()
     }
 }
