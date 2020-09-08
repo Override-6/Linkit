@@ -4,7 +4,7 @@ import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskPacket}
 import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{TaskAchiever, TaskCompleterFactory, TaskType, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
-import fr.overridescala.vps.ftp.server.tasks.{AddressTaskCompleter, DisconnectTaskCompleter, InitTaskCompleter}
+import fr.overridescala.vps.ftp.server.tasks.{AddressTaskCompleter, InitTaskCompleter}
 
 class ServerTaskCompleterFactory(private val tasksHandler: TasksHandler,
                                  private val server: RelayServer) extends TaskCompleterFactory {

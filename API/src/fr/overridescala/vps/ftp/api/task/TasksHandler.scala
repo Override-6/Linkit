@@ -26,9 +26,6 @@ class TasksHandler() {
         }).start()
     }
 
-    /**
-     * determines if this packet is a new task request
-     **/
     def handlePacket(packet: TaskPacket, factory: TaskCompleterFactory, channel: SimplePacketChannel): Unit = {
         if (packet.sessionID != currentSessionID) {
             val completer = factory.getCompleter(channel, packet)

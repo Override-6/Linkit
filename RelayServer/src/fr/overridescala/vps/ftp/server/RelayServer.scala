@@ -61,11 +61,12 @@ class RelayServer(private val id: String)
                 try {
                     handleKey(key)
                 } catch {
-                    case e: Throwable =>
+                    case _: Throwable =>
                         val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
                         tasksHandler.cancelTasks(address)
                         key.cancel()
                         println("a connection closed suddenly")
+                        disconnect(address)
                 }
                 it.remove()
             }
@@ -82,11 +83,17 @@ class RelayServer(private val id: String)
         selector.close()
     }
 
-    def disconnect(address: InetSocketAddress): Unit = {
+    def disconnect(address: SocketAddress): Unit = {
         val keys = toScalaSet(selector.selectedKeys())
+        println(s"keys = ${keys}")
         for (key <- keys) {
             val socketChannel = key.channel().asInstanceOf[SocketChannel]
+
+            println(s"address = ${address}")
+            println(s"socketChannel.getRemoteAddress = ${socketChannel.getRemoteAddress}")
+
             if (address.equals(socketChannel.getRemoteAddress)) {
+                println("TROUVAI UNE POURRE " + address )
                 key.channel().close()
                 key.cancel()
                 keysInfo.remove(address)

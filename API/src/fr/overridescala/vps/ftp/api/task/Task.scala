@@ -39,7 +39,7 @@ abstract class Task[T](handler: TasksHandler, owner: InetSocketAddress)
         }
         onError = msg => synchronized {
             notify()
-            new TransferException(msg).printStackTrace()
+            new TransferException(msg + "\n").printStackTrace()
         }
         synchronized {
             wait()

@@ -6,8 +6,7 @@ public enum TaskType {
     FILE_INFO(),
     DOWNLOAD("UPLOAD"),
     UPLOAD("DOWNLOAD"),
-    INITIALISATION(),
-    DISCONNECT();
+    INITIALISATION();
 
     private final String[] completers;
 

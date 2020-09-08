@@ -12,15 +12,13 @@ import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableF
 import fr.overridescala.vps.ftp.api.utils.{Constants, Protocol}
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
-                 private val id: String) extends Relay {
+                 override val identifier: String) extends Relay {
 
 
     private val socketChannel = configSocket()
     private val tasksHandler = new TasksHandler()
     private val packetChannel = new SimplePacketChannel(socketChannel, tasksHandler)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
-
-    override val identifier: String = id
 
     override def doDownload(description: TransferDescription): Task[Unit] =
         new DownloadTask(packetChannel, tasksHandler, description)
@@ -41,7 +39,14 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         //enable the task management
         tasksHandler.start()
         while (true) {
-            updateNetwork(buffer)
+            try {
+                updateNetwork(buffer)
+            } catch {
+                case _: Throwable => {
+                    Console.err.println("suddenly disconnected from the server.")
+                    return
+                }
+            }
         }
     }).start()
 
