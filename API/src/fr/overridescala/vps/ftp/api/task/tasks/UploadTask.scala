@@ -2,8 +2,8 @@ package fr.overridescala.vps.ftp.api.task.tasks
 
 import java.nio.file.{Files, Path}
 
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskPacket}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TaskType, TasksHandler}
+import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
@@ -13,10 +13,8 @@ class UploadTask(private val channel: PacketChannel,
         extends Task[Unit](handler, channel.ownerAddress) with TaskAchiever {
 
 
-    override val taskType: TaskType = TaskType.UPLOAD
-
     override def preAchieve(): Unit = {
-        channel.sendPacket(taskType, "TD", Utils.serialize(desc))
+        channel.sendPacket("TD", Utils.serialize(desc))
     }
 
 
@@ -42,7 +40,7 @@ class UploadTask(private val channel: PacketChannel,
                     var msg = e.getMessage
                     if (msg == null)
                         msg = "an error occured while perforing file upload task"
-                    channel.sendPacket(taskType, "ERROR", msg.getBytes())
+                    channel.sendPacket("ERROR", msg.getBytes())
                     return
                 }
             }
@@ -55,7 +53,7 @@ class UploadTask(private val channel: PacketChannel,
     def checkPath(path: Path): Boolean = {
         if (Files.notExists(path)) {
             val errorMsg = "could not upload invalid file path : this file does not exists"
-            channel.sendPacket(taskType, "ERROR", errorMsg.getBytes())
+            channel.sendPacket("ERROR", errorMsg.getBytes())
             error(errorMsg)
             return true
         }
@@ -69,7 +67,7 @@ class UploadTask(private val channel: PacketChannel,
      **/
     def makeDataTransfer(bytes: Array[Byte], id: Int): Boolean = {
 
-        channel.sendPacket(taskType, s"$id", bytes)
+        channel.sendPacket(s"$id", bytes)
         val packet = channel.nextPacket()
         if (packet.header.equals("ERROR")) {
             error(new String(packet.content))
@@ -79,13 +77,13 @@ class UploadTask(private val channel: PacketChannel,
             val packetId = Integer.parseInt(packet.header)
             if (packetId != id) {
                 val errorMsg = new String(s"packet id was unexpected (id: $packetId, expected: $id")
-                channel.sendPacket(taskType, "ERROR", errorMsg.getBytes)
+                channel.sendPacket("ERROR", errorMsg.getBytes)
                 error(errorMsg)
                 return true
             }
         } catch {
             case e: NumberFormatException => {
-                channel.sendPacket(taskType, "ERROR", e.getMessage.getBytes())
+                channel.sendPacket("ERROR", e.getMessage.getBytes())
                 error(e.getMessage)
                 return true
             }

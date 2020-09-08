@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskPacket}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TaskType, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -13,10 +13,8 @@ class DownloadTask(private val channel: PacketChannel,
                    private val desc: TransferDescription)
         extends Task[Unit](handler, channel.ownerAddress) with TaskAchiever {
 
-    override val taskType: TaskType = TaskType.DOWNLOAD
-
     override def preAchieve(): Unit = {
-        channel.sendPacket(taskType, "TD", Utils.serialize(desc))
+        channel.sendPacket("TD", Utils.serialize(desc))
     }
 
     override def achieve(): Unit = {
@@ -34,7 +32,7 @@ class DownloadTask(private val channel: PacketChannel,
             totalBytesWritten += data.content.length
             stream.write(data.content)
             id += 1
-            channel.sendPacket(taskType, s"$id")
+            channel.sendPacket(s"$id")
             val percentage = totalBytesWritten / totalBytes * 100
             print(s"written = $totalBytesWritten, total = $totalBytes, percentage = $percentage\r")
         }
@@ -67,7 +65,7 @@ class DownloadTask(private val channel: PacketChannel,
         }
         if (!Files.isWritable(path) || !Files.isReadable(path)) {
             val errorMsg = "Can't access to the file"
-            channel.sendPacket(taskType, "ERROR", errorMsg.getBytes())
+            channel.sendPacket("ERROR", errorMsg.getBytes())
             error(errorMsg)
             return true
         }
