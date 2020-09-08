@@ -67,8 +67,11 @@ class TasksHandler() {
             currentSessionID = sessionID
             if (ownFreeWill)
                 taskAchiever.preAchieve()
-            taskAchiever.achieve()
-            println("task achieved !")
+            try {
+                taskAchiever.achieve()
+            } catch {
+                case e: Throwable => e.printStackTrace()
+            }
         }
     }
 

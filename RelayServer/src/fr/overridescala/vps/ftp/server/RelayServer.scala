@@ -85,15 +85,10 @@ class RelayServer(private val id: String)
 
     def disconnect(address: SocketAddress): Unit = {
         val keys = toScalaSet(selector.selectedKeys())
-        println(s"keys = ${keys}")
         for (key <- keys) {
             val socketChannel = key.channel().asInstanceOf[SocketChannel]
 
-            println(s"address = ${address}")
-            println(s"socketChannel.getRemoteAddress = ${socketChannel.getRemoteAddress}")
-
             if (address.equals(socketChannel.getRemoteAddress)) {
-                println("TROUVAI UNE POURRE " + address )
                 key.channel().close()
                 key.cancel()
                 keysInfo.remove(address)
