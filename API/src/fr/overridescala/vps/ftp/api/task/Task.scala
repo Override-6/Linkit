@@ -8,7 +8,7 @@ import java.util.function.Consumer
 import fr.overridescala.vps.ftp.api.exceptions.TransferException
 
 abstract class Task[T](handler: TasksHandler, owner: InetSocketAddress)
-        extends TaskAction[T] with TaskAchiever {
+        extends TaskAction[T] with TaskExecutor {
 
     private var onSuccess: Consumer[T] = _
     private var onError: Consumer[String] = _

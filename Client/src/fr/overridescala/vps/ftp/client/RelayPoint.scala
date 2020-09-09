@@ -42,7 +42,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             try {
                 updateNetwork(buffer)
             } catch {
-                case _: Throwable => {
+                case e: Throwable => {
+                    e.printStackTrace()
                     Console.err.println("suddenly disconnected from the server.")
                     return
                 }
@@ -56,6 +57,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     def updateNetwork(buffer: ByteBuffer): Unit = synchronized {
         val count = socketChannel.read(buffer)
+        if (count < 1)
+            return
         val bytes = new Array[Byte](count)
         buffer.flip()
         buffer.get(bytes)

@@ -7,12 +7,13 @@ import fr.overridescala.vps.ftp.api.packet.{PacketChannel, SimplePacketChannel, 
 
 
 class TasksHandler() {
+
     private val queue: util.Queue[TaskAchieverTicket] = new util.ArrayDeque[TaskAchieverTicket]()
     var currentSessionID: Int = -1
     private var currentTaskOwner: SocketAddress = _
 
 
-    def register(achiever: TaskAchiever, sessionID: Int, owner: SocketAddress, ownFreeWill: Boolean): Unit = {
+    def register(achiever: TaskExecutor, sessionID: Int, owner: SocketAddress, ownFreeWill: Boolean): Unit = {
         queue.offer(new TaskAchieverTicket(achiever, owner, sessionID, ownFreeWill))
         synchronized(notifyAll())
     }
@@ -55,7 +56,7 @@ class TasksHandler() {
         ticket.start()
     }
 
-    private class TaskAchieverTicket(val taskAchiever: TaskAchiever,
+    private class TaskAchieverTicket(val taskAchiever: TaskExecutor,
                                      val owner: SocketAddress,
                                      val sessionID: Int,
                                      val ownFreeWill: Boolean) {
@@ -66,9 +67,9 @@ class TasksHandler() {
             currentTaskOwner = owner
             currentSessionID = sessionID
             if (ownFreeWill)
-                taskAchiever.preAchieve()
+                taskAchiever.getInitPacket()
             try {
-                taskAchiever.achieve()
+                taskAchiever.execute()
             } catch {
                 case e: Throwable => e.printStackTrace()
             }

@@ -3,22 +3,22 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
 class UploadTask(private val channel: PacketChannel,
                  private val handler: TasksHandler,
                  private val desc: TransferDescription)
-        extends Task[Unit](handler, channel.ownerAddress) with TaskAchiever {
+        extends Task[Unit](handler, channel.ownerAddress) with TaskExecutor {
 
 
-    override def preAchieve(): Unit = {
-        channel.sendPacket("TD", Utils.serialize(desc))
+    override def getInitPacket(): Unit = {
+        channel.sendPacket("UP", Utils.serialize(desc))
     }
 
 
-    override def achieve(): Unit = {
+    override def execute(): Unit = {
         val path = Path.of(desc.source.getPath)
         if (checkPath(path))
             return

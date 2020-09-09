@@ -3,17 +3,17 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.net.InetSocketAddress
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 class AddressTask(private val channel: PacketChannel,
                   private val handler: TasksHandler,
                   private val id: String)
-        extends Task[InetSocketAddress](handler, channel.ownerAddress) with TaskAchiever {
+        extends Task[InetSocketAddress](handler, channel.ownerAddress) with TaskExecutor {
 
-    override def preAchieve(): Unit = channel.sendPacket(id)
+    override def getInitPacket(): Unit = channel.sendPacket("ADR", id.getBytes)
 
-    override def achieve(): Unit = {
+    override def execute(): Unit = {
         val response = channel.nextPacket()
         if (response.header.equals("ERROR")) {
             error(new String(response.content))

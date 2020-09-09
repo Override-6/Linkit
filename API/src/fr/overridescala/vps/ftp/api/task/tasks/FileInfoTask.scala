@@ -4,20 +4,20 @@ import java.net.InetSocketAddress
 import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAchiever, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferableFile
+import fr.overridescala.vps.ftp.api.utils.Utils
 
 class FileInfoTask(private val channel: PacketChannel,
                    private val handler: TasksHandler,
                    private val ownerAddress: InetSocketAddress,
                    private val filePath: String)
         extends Task[TransferableFile](handler, channel.ownerAddress)
-                with TaskAchiever {
+                with TaskExecutor {
 
-    override def preAchieve(): Unit = channel.sendPacket(filePath, ownerAddress.getHostString.getBytes)
+    override def getInitPacket(): Unit = channel.sendPacket("FINFO", Utils.serialize((filePath, ownerAddress.getHostString)))
 
-
-    override def achieve(): Unit = {
+    override def execute(): Unit = {
         val response = channel.nextPacket()
 
         if (response.header.equals("ERROR")) {
@@ -38,9 +38,9 @@ class FileInfoTask(private val channel: PacketChannel,
 object FileInfoTask {
 
     class Completer(channel: PacketChannel,
-                    filePath: String) extends TaskAchiever {
+                    filePath: String) extends TaskExecutor {
 
-        override def achieve(): Unit = {
+        override def execute(): Unit = {
             val path = Path.of(filePath)
             if (Files.notExists(path)) {
                 channel.sendPacket("ERROR", "The file does not exists.".getBytes())

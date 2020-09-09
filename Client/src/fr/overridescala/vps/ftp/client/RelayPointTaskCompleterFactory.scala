@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.client
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
-import fr.overridescala.vps.ftp.api.task.{DynamicTaskCompleterFactory, TaskAchiever, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{DynamicTaskCompleterFactory, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 import scala.collection.mutable
@@ -10,9 +10,9 @@ import scala.collection.mutable
 class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
         extends DynamicTaskCompleterFactory {
 
-    private lazy val completers: mutable.Map[String, DataPacket => TaskAchiever] = new mutable.HashMap[String, DataPacket => TaskAchiever]()
+    private lazy val completers: mutable.Map[String, DataPacket => TaskExecutor] = new mutable.HashMap[String, DataPacket => TaskExecutor]()
 
-    override def getCompleter(channel: PacketChannel, initPacket: DataPacket): TaskAchiever = {
+    override def getCompleter(channel: PacketChannel, initPacket: DataPacket): TaskExecutor = {
         val taskType = initPacket.header
         val content = initPacket.content
         taskType match {
@@ -26,6 +26,6 @@ class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
         }
     }
 
-    override def putCompleter(completerType: String, supplier: DataPacket => TaskAchiever): Unit =
+    override def putCompleter(completerType: String, supplier: DataPacket => TaskExecutor): Unit =
         completers.put(completerType, supplier)
 }
