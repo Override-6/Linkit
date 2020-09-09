@@ -4,6 +4,6 @@ trait TaskExecutor {
 
     def execute(): Unit
 
-    def getInitInfo(): Unit = _
+    def sendTaskInfo(): Unit = {}
 
 }

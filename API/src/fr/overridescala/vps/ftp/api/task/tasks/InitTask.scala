@@ -2,7 +2,6 @@ package fr.overridescala.vps.ftp.api.task.tasks
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
-import fr.overridescala.vps.ftp.api.utils.Utils
 
 class InitTask(private val handler: TasksHandler,
                private val channel: PacketChannel,
@@ -10,7 +9,7 @@ class InitTask(private val handler: TasksHandler,
         extends Task[Unit](handler, channel.ownerAddress) with TaskExecutor {
 
 
-    override def getInitPacket(): Unit = {
+    override def sendTaskInfo(): Unit = {
         channel.sendPacket("INIT", id.getBytes)
     }
 

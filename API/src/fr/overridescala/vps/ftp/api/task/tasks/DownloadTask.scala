@@ -13,7 +13,7 @@ class DownloadTask(private val channel: PacketChannel,
                    private val desc: TransferDescription)
         extends Task[Unit](handler, channel.ownerAddress) with TaskExecutor {
 
-    override def getInitPacket(): Unit = {
+    override def sendTaskInfo(): Unit = {
         channel.sendPacket("DWN", Utils.serialize(desc))
     }
 

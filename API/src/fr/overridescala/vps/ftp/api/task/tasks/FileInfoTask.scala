@@ -15,7 +15,7 @@ class FileInfoTask(private val channel: PacketChannel,
         extends Task[TransferableFile](handler, channel.ownerAddress)
                 with TaskExecutor {
 
-    override def getInitPacket(): Unit = channel.sendPacket("FINFO", Utils.serialize((filePath, ownerAddress.getHostString)))
+    override def sendTaskInfo(): Unit = channel.sendPacket("FINFO", Utils.serialize((filePath, ownerAddress.getHostString)))
 
     override def execute(): Unit = {
         val response = channel.nextPacket()

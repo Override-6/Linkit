@@ -11,7 +11,7 @@ class AddressTask(private val channel: PacketChannel,
                   private val id: String)
         extends Task[InetSocketAddress](handler, channel.ownerAddress) with TaskExecutor {
 
-    override def getInitPacket(): Unit = channel.sendPacket("ADR", id.getBytes)
+    override def sendTaskInfo(): Unit = channel.sendPacket("ADR", id.getBytes)
 
     override def execute(): Unit = {
         val response = channel.nextPacket()

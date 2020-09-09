@@ -13,7 +13,7 @@ class UploadTask(private val channel: PacketChannel,
         extends Task[Unit](handler, channel.ownerAddress) with TaskExecutor {
 
 
-    override def getInitPacket(): Unit = {
+    override def sendTaskInfo(): Unit = {
         channel.sendPacket("UP", Utils.serialize(desc))
     }
 

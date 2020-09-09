@@ -67,7 +67,7 @@ class TasksHandler() {
             currentTaskOwner = owner
             currentSessionID = sessionID
             if (ownFreeWill)
-                taskAchiever.getInitPacket()
+                taskAchiever.sendTaskInfo()
             try {
                 taskAchiever.execute()
             } catch {
