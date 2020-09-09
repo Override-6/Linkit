@@ -48,6 +48,7 @@ class UploadTask(private val channel: PacketChannel,
         val percentage = totalBytesSent / totalBytes * 100
         println(s"sent = $totalBytesSent, total = $totalBytes, percentage = $percentage\r")
         success(path)
+        stream.close()
     }
 
     def checkPath(path: Path): Boolean = {

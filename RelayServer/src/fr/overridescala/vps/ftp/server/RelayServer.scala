@@ -162,7 +162,7 @@ class RelayServer(private val id: String)
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
-        socket.bind(Constants.LOCALHOST)
+        socket.bind(Constants.PUBLIC_ADDRESS)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket
     }

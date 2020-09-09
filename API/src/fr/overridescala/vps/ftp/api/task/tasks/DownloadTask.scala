@@ -39,6 +39,7 @@ class DownloadTask(private val channel: PacketChannel,
         val percentage = totalBytesWritten / totalBytes * 100
         println(s"written = $totalBytesWritten, total = $totalBytes, percentage = $percentage\r")
         success(path)
+        stream.close()
     }
 
     /**
