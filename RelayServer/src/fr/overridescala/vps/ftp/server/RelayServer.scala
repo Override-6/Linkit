@@ -1,8 +1,9 @@
 package fr.overridescala.vps.ftp.server
 
-import java.net.{InetSocketAddress, SocketAddress}
+import java.net.{InetSocketAddress, SocketAddress, SocketException}
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
+import java.nio.charset.Charset
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 
@@ -49,6 +50,7 @@ class RelayServer(private val id: String)
 
     override def start(): Unit = {
         println("ready !")
+        println("current encoding is " + Charset.defaultCharset().name())
         tasksHandler.start()
 
         while (open) {
@@ -61,12 +63,13 @@ class RelayServer(private val id: String)
                 try {
                     handleKey(key)
                 } catch {
-                    case _: Throwable =>
+                    case e: Throwable =>
                         val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
                         tasksHandler.cancelTasks(address)
                         key.cancel()
                         println("a connection closed suddenly")
                         disconnect(address)
+                        e.printStackTrace()
                 }
                 it.remove()
             }
@@ -162,6 +165,7 @@ class RelayServer(private val id: String)
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
+
         socket.bind(Constants.PUBLIC_ADDRESS)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket

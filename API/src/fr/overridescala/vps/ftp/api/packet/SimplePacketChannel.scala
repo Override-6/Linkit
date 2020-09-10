@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import java.net.InetSocketAddress
+import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
@@ -16,6 +17,8 @@ class SimplePacketChannel(private val socketChannel: SocketChannel,
 
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
         val bytes = Protocol.createTaskPacket(tasksHandler.currentSessionID, header, content)
+        //only debug
+        Protocol.toPacket(bytes.array())
         socketChannel.write(bytes)
     }
 

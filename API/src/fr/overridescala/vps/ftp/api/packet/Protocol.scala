@@ -5,12 +5,13 @@ import java.util
 
 object Protocol {
 
-    private val SESSION = "<session_id>".getBytes
-    private val HEADER = "<header>".getBytes
-    private val CONTENT = "<content>".getBytes
+
+    private val HEADER: Array[Byte] = "<header>".getBytes
+    private val CONTENT: Array[Byte] = "<content>".getBytes
 
     def getSessionID(bytes: Array[Byte]): Int = {
-        val cutBytes = util.Arrays.copyOfRange(bytes, SESSION.length, indexOf(bytes, HEADER))
+        println(s"bytes = ${bytes.mkString("Array(", ", ", ")")}")
+        val cutBytes = util.Arrays.copyOfRange(bytes, 0, indexOf(bytes, HEADER))
         new String(cutBytes).toInt
     }
 
@@ -26,7 +27,7 @@ object Protocol {
     def createTaskPacket(sessionID: Int, header: String, content: Array[Byte] = Array()): ByteBuffer = {
         val headerBytes = header.getBytes
         val id = String.valueOf(sessionID).getBytes
-        val bytes = SESSION ++ id ++ HEADER ++ headerBytes ++ CONTENT ++ content
+        val bytes = id ++ HEADER ++ headerBytes ++ CONTENT ++ content
         ByteBuffer.wrap(bytes)
     }
 

@@ -39,7 +39,7 @@ class DownloadTask(private val channel: PacketChannel,
         val percentage = totalBytesWritten / totalBytes * 100
         println(s"written = $totalBytesWritten, total = $totalBytes, percentage = $percentage\r")
         success(path)
-        stream.close()
+    //    stream.close()
     }
 
     /**
@@ -49,6 +49,7 @@ class DownloadTask(private val channel: PacketChannel,
      **/
     def checkPacket(packet: DataPacket): Boolean = {
         if (packet.header.equals("ERROR")) {
+            Console.err.println(new String(packet.content))
             error(new String(packet.content))
             return true
         }

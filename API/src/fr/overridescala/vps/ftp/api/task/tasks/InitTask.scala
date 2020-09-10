@@ -11,6 +11,7 @@ class InitTask(private val handler: TasksHandler,
 
     override def sendTaskInfo(): Unit = {
         channel.sendPacket("INIT", id.getBytes)
+        channel.sendPacket("1", "nieu nieu nieu ceci est un packet de test pour comprendre pk mon vps bug quand il commence une task download ca kasse lékouys".getBytes)
     }
 
     override def execute(): Unit = {

@@ -3,6 +3,7 @@ package fr.overridescala.vps.ftp.client
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
+import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.{Protocol, SimplePacketChannel}
@@ -34,7 +35,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     override def start(): Unit = new Thread(() => {
         println("ready !")
-
+        println("current encoding is " + Charset.defaultCharset().name())
         val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
         //enable the task management
         tasksHandler.start()

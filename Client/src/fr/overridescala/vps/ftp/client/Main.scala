@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.client
 import java.net.InetSocketAddress
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.transfer.TransferDescription
+import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 object Main {
@@ -16,8 +16,25 @@ object Main {
     def runClient(): Unit = {
         print("say 'y' to connect to chose localhost ")
         val isLocalhost = System.in.read() == 'y'
-        val address = if (isLocalhost) Constants.LOCALHOST else new InetSocketAddress("161.97.104.230", Constants.PORT)
 
+        if (isLocalhost)
+            runLocalhostTests()
+        else runOnlineTests()
+    }
+
+    def runLocalhostTests(): Unit = {
+        runTests(Constants.LOCALHOST,
+            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/client.mp4",
+            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/server/server.mp4")
+    }
+
+    def runOnlineTests(): Unit = {
+        runTests(new InetSocketAddress("161.97.104.230", Constants.PORT),
+            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/client.mp4",
+            "/home/override/VPS/Tests/FileTransferer/clientToServer.mp4")
+    }
+
+    def runTests(address: InetSocketAddress, source: String, destination: String): Unit = {
         val relayPoint: Relay = new RelayPoint(address, "client1")
 
         relayPoint.start()
@@ -25,20 +42,12 @@ object Main {
         val serverAddress = relayPoint.requestAddress("server").completeNow()
         println(s"serverAddress = ${serverAddress}")
 
-        synchronized(wait())
-
-        val serverFile = relayPoint.requestFileInformation(serverAddress, "/home/override/VPS/Tests/FileTransferer/server.mp4").completeNow()
-        println(s"serverFile = ${serverFile}")
-
-        val download = TransferDescription.builder()
-                .setSource(serverFile)
-                .setDestination("C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/client.mp4")
+        val upload = TransferDescription.builder()
+                .setSource(TransferableFile.fromLocal(source))
+                .setDestination(destination)
                 .setTarget(serverAddress)
                 .build()
-        //TODO handles multi tasks
-        relayPoint.doDownload(download).queue(() =>_, () =>_)
-        relayPoint.doDownload(download).queue(() =>_, () =>_)
-        relayPoint.doDownload(download).queue(() =>_, () =>_)
+        relayPoint.doUpload(upload).queueWithError(msg => Console.print(msg))
     }
 
 }

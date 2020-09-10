@@ -19,7 +19,7 @@ class ServerTaskCompleterFactory(private val tasksHandler: TasksHandler,
         taskType match {
             case "UP" => new DownloadTask(channel, tasksHandler, Utils.deserialize(content))
             case "DWN" => new UploadTask(channel, tasksHandler, Utils.deserialize(content))
-            case "FINFO" => new FileInfoTask.Completer(channel, new String(content))
+            case "FINFO" => new FileInfoTask.Completer(channel, Utils.deserialize(content).asInstanceOf[(String, _)]._1)
             case "ADR" => new AddressTaskCompleter(channel, server, new String(content))
             case "INIT" => new InitTaskCompleter(server, channel, new String(content))
             case _ => val completerSupplier = completers(taskType)
