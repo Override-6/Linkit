@@ -4,7 +4,7 @@ import java.net.SocketAddress
 import java.util
 import java.util.UUID
 
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel, PacketChannelManager, SimplePacketChannel}
 
 
 class TasksHandler() {

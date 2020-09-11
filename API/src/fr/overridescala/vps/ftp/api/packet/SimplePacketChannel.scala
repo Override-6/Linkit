@@ -17,8 +17,6 @@ class SimplePacketChannel(private val socketChannel: SocketChannel,
 
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
         val bytes = Protocol.createTaskPacket(tasksHandler.currentSessionID, header, content)
-        //only debug
-        Protocol.toPacket(bytes.array())
         socketChannel.write(bytes)
     }
 
@@ -27,6 +25,8 @@ class SimplePacketChannel(private val socketChannel: SocketChannel,
     }
 
     override def addPacket(packet: DataPacket): Boolean = {
+        if (packet.sessionID != tasksHandler.currentSessionID)
+            queue.clear()
         queue.add(packet)
     }
 

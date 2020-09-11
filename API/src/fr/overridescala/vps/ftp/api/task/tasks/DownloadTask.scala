@@ -34,12 +34,12 @@ class DownloadTask(private val channel: PacketChannel,
             id += 1
             channel.sendPacket(s"$id")
             val percentage = totalBytesWritten / totalBytes * 100
-            print(s"written = $totalBytesWritten, total = $totalBytes, percentage = $percentage\r")
+            print(s"written = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets sent = $id             \r")
         }
         val percentage = totalBytesWritten / totalBytes * 100
-        println(s"written = $totalBytesWritten, total = $totalBytes, percentage = $percentage\r")
+        println(s"written = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets sent = $id")
         success(path)
-    //    stream.close()
+        stream.close()
     }
 
     /**
@@ -63,6 +63,7 @@ class DownloadTask(private val channel: PacketChannel,
      **/
     def checkPath(path: Path): Boolean = {
         if (Files.notExists(path)) {
+            Files.createDirectories(path.getParent)
             Files.createFile(path)
         }
         if (!Files.isWritable(path) || !Files.isReadable(path)) {

@@ -34,26 +34,26 @@ class UploadTask(private val channel: PacketChannel,
                 if (makeDataTransfer(bytes, id))
                     return
                 val percentage = totalBytesSent / totalBytes * 100
-                print(s"sent = $totalBytesSent, total = $totalBytes, percentage = ${percentage}\r")
+                print(s"sent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $id\r")
             } catch {
                 case e: Throwable => {
                     var msg = e.getMessage
                     if (msg == null)
-                        msg = "an error occured while perforing file upload task"
+                        msg = "an error occured while perfomring file upload task"
                     channel.sendPacket("ERROR", msg.getBytes())
                     return
                 }
             }
         }
         val percentage = totalBytesSent / totalBytes * 100
-        println(s"sent = $totalBytesSent, total = $totalBytes, percentage = $percentage\r")
+        println(s"sent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $id")
         success(path)
         stream.close()
     }
 
     def checkPath(path: Path): Boolean = {
         if (Files.notExists(path)) {
-            val errorMsg = "could not upload invalid file path : this file does not exists"
+            val errorMsg = s"(${path}) could not upload invalid file path : this file does not exists"
             channel.sendPacket("ERROR", errorMsg.getBytes())
             error(errorMsg)
             return true
