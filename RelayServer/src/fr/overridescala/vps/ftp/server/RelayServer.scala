@@ -8,7 +8,7 @@ import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{Protocol, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
@@ -17,7 +17,7 @@ import fr.overridescala.vps.ftp.api.utils.Constants
 import scala.collection.mutable
 import scala.jdk.CollectionConverters
 
-class RelayServer(private val id: String)
+class RelayServer(override val identifier: String)
         extends Relay {
 
     private val selector = Selector.open()
@@ -27,9 +27,9 @@ class RelayServer(private val id: String)
     private val tasksHandler = new TasksHandler()
     private val completerFactory = new ServerTaskCompleterFactory(tasksHandler, this)
     private val keysInfo = new ConcurrentHashMap[SocketAddress, KeyInfo]()
-    private var open = true
+    private val packetLoader = new PacketLoader()
 
-    override val identifier: String = this.id
+    private var open = true
 
 
     override def doDownload(description: TransferDescription): Task[Unit] = {
@@ -101,7 +101,7 @@ class RelayServer(private val id: String)
     }
 
     def getAddress(id: String): InetSocketAddress = {
-        if (id.equals(this.id))
+        if (id.equals(identifier))
             return Constants.PUBLIC_ADDRESS
 
         val scalaKeysInfo = CollectionConverters.MapHasAsScala(keysInfo).asScala
@@ -154,11 +154,15 @@ class RelayServer(private val id: String)
         val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
         val count = channel.read(buffer)
         val bytes = new Array[Byte](count)
+
         buffer.flip()
         buffer.get(bytes)
+        packetLoader.add(bytes)
+        if (!packetLoader.isPacketPresent)
+            return
 
+        val packet = packetLoader.retrievePacket
         val packetChannel = getPacketChannel(channel.getRemoteAddress)
-        val packet = Protocol.toPacket(bytes)
         tasksHandler.handlePacket(packet, completerFactory, packetChannel)
     }
 
@@ -166,7 +170,7 @@ class RelayServer(private val id: String)
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
 
-        socket.bind(Constants.PUBLIC_ADDRESS)
+        socket.bind(Constants.LOCALHOST)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket
     }

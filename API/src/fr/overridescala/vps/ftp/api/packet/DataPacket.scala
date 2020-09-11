@@ -8,6 +8,6 @@ class DataPacket(protected[api] val sessionID: Int,
     lazy val haveContent: Boolean = !content.isEmpty
 
     override def toString: String =
-        s"TaskPacket{header: $header, content: ${new String(content)}}"
+        s"TaskPacket{id: $sessionID, header: $header, content: ${new String(content)}}"
 
 }

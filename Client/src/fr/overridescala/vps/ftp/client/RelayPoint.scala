@@ -6,7 +6,7 @@ import java.nio.channels.SocketChannel
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{Protocol, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
@@ -20,6 +20,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val tasksHandler = new TasksHandler()
     private val packetChannel = new SimplePacketChannel(socketChannel, tasksHandler)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
+    private val packetLoader = new PacketLoader()
 
     override def doDownload(description: TransferDescription): Task[Unit] =
         new DownloadTask(packetChannel, tasksHandler, description)
@@ -63,7 +64,12 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         val bytes = new Array[Byte](count)
         buffer.flip()
         buffer.get(bytes)
-        val packet = Protocol.toPacket(bytes)
+
+        packetLoader.add(bytes)
+        if (!packetLoader.isPacketPresent)
+            return
+
+        val packet = packetLoader.retrievePacket
         tasksHandler.handlePacket(packet, completerFactory, packetChannel)
 
         buffer.clear()

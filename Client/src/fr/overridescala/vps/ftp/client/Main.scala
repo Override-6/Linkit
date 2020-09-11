@@ -25,7 +25,7 @@ object Main {
     def runLocalhostTests(): Unit = {
         runTests(Constants.LOCALHOST,
             "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/client.mp4",
-            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/server/server.mp4")
+            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/server/clientToServer.mp4")
     }
 
     def runOnlineTests(): Unit = {

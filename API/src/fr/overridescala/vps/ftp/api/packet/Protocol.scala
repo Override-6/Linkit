@@ -5,42 +5,60 @@ import java.util
 
 object Protocol {
 
-
-    private val HEADER: Array[Byte] = "<header>".getBytes
-    private val CONTENT: Array[Byte] = "<content>".getBytes
-
-    def getSessionID(bytes: Array[Byte]): Int = {
-        println(s"bytes = ${bytes.mkString("Array(", ", ", ")")}")
-        val cutBytes = util.Arrays.copyOfRange(bytes, 0, indexOf(bytes, HEADER))
-        new String(cutBytes).toInt
-    }
-
-    def getTaskHeader(bytes: Array[Byte]): String = {
-        val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, HEADER) + HEADER.length, indexOf(bytes, CONTENT))
-        new String(cutBytes)
-    }
-
-    def getTaskContent(bytes: Array[Byte]): Array[Byte] = {
-        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, bytes.length)
-    }
+    protected val BEGIN: Array[Byte] = "<begin>".getBytes
+    protected val HEADER: Array[Byte] = "<header>".getBytes
+    protected val CONTENT: Array[Byte] = "<content>".getBytes
+    protected val END: Array[Byte] = "<end>".getBytes
 
     def createTaskPacket(sessionID: Int, header: String, content: Array[Byte] = Array()): ByteBuffer = {
         val headerBytes = header.getBytes
         val id = String.valueOf(sessionID).getBytes
-        val bytes = id ++ HEADER ++ headerBytes ++ CONTENT ++ content
+        val bytes = BEGIN ++ id ++ HEADER ++ headerBytes ++ CONTENT ++ content ++ END
         ByteBuffer.wrap(bytes)
     }
 
-    def toPacket(bytes: Array[Byte]): DataPacket = {
+    /**
+     * creates a packet from a byte Array.
+     *
+     * @return Tuple of DataPacket and his length in the array
+     * */
+    protected[packet] def toPacket(bytes: Array[Byte]): DataPacket = {
         val sessionID = getSessionID(bytes)
         val header = getTaskHeader(bytes)
         val content = getTaskContent(bytes)
         new DataPacket(sessionID, header, content)
     }
 
-    private def indexOf(a: Array[Byte], b: Array[Byte]): Int = {
-        a.toSeq.indexOfSlice(b.toSeq)
+    protected[packet] def containsPacket(bytes: Array[Byte]): Boolean = {
+        val beginIndex = indexOf(bytes, BEGIN)
+        val headerIndex = indexOf(bytes, HEADER)
+        val contentIndex = indexOf(bytes, CONTENT)
+        val endIndex = lastIndexOf(bytes, END)
+
+        beginIndex != -1 && headerIndex > beginIndex && contentIndex > headerIndex && endIndex > contentIndex
     }
 
+    private def getSessionID(bytes: Array[Byte]): Int = {
+        val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, BEGIN) + BEGIN.length, indexOf(bytes, HEADER))
+        new String(cutBytes).toInt
+    }
+
+    private def getTaskHeader(bytes: Array[Byte]): String = {
+        val cutBytes = util.Arrays.copyOfRange(bytes, indexOf(bytes, HEADER) + HEADER.length, indexOf(bytes, CONTENT))
+        new String(cutBytes)
+    }
+
+    private def getTaskContent(bytes: Array[Byte]): Array[Byte] = {
+      //  println(s"new String(bytes) = ${new String(bytes)}")
+        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, lastIndexOf(bytes, END))
+    }
+
+    private def indexOf(src: Array[Byte], toFind: Array[Byte]): Int = {
+        src.toSeq.indexOfSlice(toFind.toSeq)
+    }
+
+    private def lastIndexOf(src: Array[Byte], toFind: Array[Byte]): Int = {
+        src.lastIndexOfSlice(toFind)
+    }
 
 }
