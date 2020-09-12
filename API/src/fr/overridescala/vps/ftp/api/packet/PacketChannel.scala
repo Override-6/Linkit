@@ -4,7 +4,13 @@ import java.net.InetSocketAddress
 
 trait PacketChannel {
 
-    def sendPacket(header: String, content: Array[Byte] = Array()): Unit
+    def sendPacket(header: String, content: Array[Byte]): Unit
+
+    def sendPacket(header: String, content: String): Unit =
+        sendPacket(header, content.getBytes)
+
+    def sendPacket(header: String): Unit =
+        sendPacket(header, Array().asInstanceOf[Array[Byte]])
 
     def nextPacket(): DataPacket
 

@@ -18,7 +18,12 @@ class DownloadTask(private val channel: PacketChannel,
     }
 
     override def execute(): Unit = {
-        val path = Path.of(desc.destination)
+        val response = channel.nextPacket()
+        downloadFile(Path.of(new String(response.content)))
+    }
+
+
+    def downloadFile(path: Path): Unit = {
         if (checkPath(path))
             return
         val stream = Files.newOutputStream(path)
@@ -38,9 +43,18 @@ class DownloadTask(private val channel: PacketChannel,
         }
         val percentage = totalBytesWritten / totalBytes * 100
         println(s"written = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets sent = $id")
-        success(path)
         stream.close()
+
+
+        val transferResponse = channel.nextPacket()
+        val header = transferResponse.header
+        if (header.equals("EOT"))
+            success()
+        else if (header.equals("UPF"))
+            downloadFile(Path.of(new String(transferResponse.content)))
+        else throw new IllegalArgumentException("EOF or UPF expected " + transferResponse.toString)
     }
+
 
     /**
      * checks if this packet does not contains ERROR Header
