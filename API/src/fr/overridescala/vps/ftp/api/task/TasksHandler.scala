@@ -15,7 +15,9 @@ class TasksHandler() {
 
 
     def register(achiever: TaskExecutor, sessionID: Int, owner: SocketAddress, ownFreeWill: Boolean): Unit = {
-        queue.offer(new TaskAchieverTicket(achiever, owner, sessionID, ownFreeWill))
+        val ticket = new TaskAchieverTicket(achiever, owner, sessionID, ownFreeWill)
+        queue.offer(ticket)
+        println()
         synchronized(notifyAll())
     }
 
@@ -62,19 +64,28 @@ class TasksHandler() {
                                      val sessionID: Int,
                                      val ownFreeWill: Boolean) {
 
+        val name: String = taskAchiever.getClass.getSimpleName
+
         def isOwner(address: SocketAddress): Boolean = address.equals(owner)
 
         def start(): Unit = {
             currentTaskOwner = owner
             currentSessionID = sessionID
-            if (ownFreeWill)
-                taskAchiever.sendTaskInfo()
             try {
+                println(s"executing $name...")
+                if (ownFreeWill)
+                    taskAchiever.sendTaskInfo()
                 taskAchiever.execute()
             } catch {
                 case e: Throwable => e.printStackTrace()
             }
         }
+
+        override def toString: String = s"Ticket(name = ${name}," +
+                s" owner = $owner," +
+                s" id = $sessionID," +
+                s" freeWill = $ownFreeWill)"
+
     }
 
 }

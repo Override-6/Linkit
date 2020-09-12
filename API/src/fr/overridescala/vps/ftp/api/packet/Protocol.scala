@@ -29,11 +29,21 @@ object Protocol {
         new DataPacket(sessionID, header, content)
     }
 
+    protected[packet] def getPacketLength(bytes: Array[Byte]): Int = {
+        val begin = indexOf(bytes, BEGIN)
+        val end = lastIndexOf(bytes, END) + END.length
+        //fast check
+        if (begin == -1 || end == -1) {
+            throw new IllegalArgumentException("this byte sequence does not contains valid packet !")
+        }
+        end - begin
+    }
+
     protected[packet] def containsPacket(bytes: Array[Byte]): Boolean = {
         val beginIndex = indexOf(bytes, BEGIN)
-        val headerIndex = indexOf(bytes, HEADER)
-        val contentIndex = indexOf(bytes, CONTENT)
-        val endIndex = lastIndexOf(bytes, END)
+        lazy val headerIndex = indexOf(bytes, HEADER)
+        lazy val contentIndex = indexOf(bytes, CONTENT)
+        lazy val endIndex = lastIndexOf(bytes, END)
 
         beginIndex != -1 && headerIndex > beginIndex && contentIndex > headerIndex && endIndex > contentIndex
     }

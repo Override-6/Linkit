@@ -15,9 +15,12 @@ class PacketLoader {
 
     def retrievePacket: DataPacket = {
         if (!isPacketPresent)
-            throw new NoSuchPacketException("this Packet")
+            throw new NoSuchPacketException("this PacketLoader doesn't have any packet in his buffer")
         val bytes = buffer.array()
+        val packetLength = Protocol.getPacketLength(bytes)
+        val bytesToKeep = bytes.slice(packetLength, buffer.position())
         buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH * 3)
+        buffer.put(bytesToKeep)
         Protocol.toPacket(bytes)
     }
 

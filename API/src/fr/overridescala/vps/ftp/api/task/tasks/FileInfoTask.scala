@@ -43,11 +43,11 @@ object FileInfoTask {
         override def execute(): Unit = {
             val path = Path.of(filePath)
             if (Files.notExists(path)) {
-                channel.sendPacket("ERROR", "The file does not exists.".getBytes())
+                channel.sendPacket("ERROR", s"($path) The file does not exists.".getBytes())
                 return
             }
             if (!Files.isWritable(path) || !Files.isReadable(path)) {
-                channel.sendPacket("ERROR", "Can't access to the file".getBytes())
+                channel.sendPacket("ERROR", s"($path) Can't access to the file".getBytes())
                 return
             }
             val size = Files.size(path)

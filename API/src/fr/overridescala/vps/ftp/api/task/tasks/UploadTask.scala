@@ -40,7 +40,7 @@ class UploadTask(private val channel: PacketChannel,
                     var msg = e.getMessage
                     if (msg == null)
                         msg = "an error occured while perfomring file upload task"
-                    channel.sendPacket("ERROR", msg.getBytes())
+                    channel.sendPacket("ERROR", (s"($path) " + msg).getBytes)
                     return
                 }
             }
@@ -67,7 +67,6 @@ class UploadTask(private val channel: PacketChannel,
      * @return true if the transfer need to be aborted, false instead
      **/
     def makeDataTransfer(bytes: Array[Byte], id: Int): Boolean = {
-
         channel.sendPacket(s"$id", bytes)
         val packet = channel.nextPacket()
         if (packet.header.equals("ERROR")) {

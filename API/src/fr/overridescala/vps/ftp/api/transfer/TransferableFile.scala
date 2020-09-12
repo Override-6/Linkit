@@ -21,7 +21,7 @@ class TransferableFile private(private val path: String,
 object TransferableFile {
 
     def fromLocal(stringPath: String): TransferableFile = {
-        val path: Path = Path of stringPath
+        val path: Path = Path.of(stringPath.replace("/", "\\"))
         if (Files notExists path) {
             throw new NoSuchFileException(stringPath)
         }

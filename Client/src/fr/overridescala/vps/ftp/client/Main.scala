@@ -28,8 +28,8 @@ object Main {
 
     def runLocalhostTests(): Unit = {
         runTests(Constants.LOCALHOST,
-            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/client.mp4",
-            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/server/server.mp4")
+            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/server/server.mp4",
+            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/server/serqver.mp4")
     }
 
     def runOnlineTests(): Unit = {
@@ -49,22 +49,29 @@ object Main {
         relayPoint.start()
 
         val serverAddress = relayPoint.requestAddress("server").completeNow()
-        println(s"serverAddress = ${serverAddress}")
+        println(s"serverAddress = $serverAddress")
 
         val upload = TransferDescription.builder()
                 .setSource(TransferableFile.fromLocal(source))
                 .setDestination(destination)
                 .setTarget(serverAddress)
                 .build()
+        relayPoint.doUpload(upload).completeNow()
         val download = TransferDescription.builder()
                 .setSource(relayPoint.requestFileInformation(serverAddress, destination).completeNow())
                 .setDestination(source)
                 .setTarget(serverAddress)
                 .build()
+
         relayPoint.doDownload(download).queueWithError(msg => Console.err.println(msg))
         relayPoint.doUpload(upload).queueWithError(msg => Console.err.println(msg))
         relayPoint.doDownload(download).queueWithError(msg => Console.err.println(msg))
         relayPoint.doUpload(upload).queueWithError(msg => Console.err.println(msg))
+        relayPoint.doDownload(download).queueWithError(msg => Console.err.println(msg))
+        relayPoint.doUpload(upload).queueWithError(msg => Console.err.println(msg))
+        relayPoint.doDownload(download).queueWithError(msg => Console.err.println(msg))
+        relayPoint.doUpload(upload).queueWithError(msg => Console.err.println(msg))
+
     }
 
 }
