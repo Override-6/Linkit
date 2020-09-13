@@ -20,8 +20,27 @@ class DownloadTask(private val channel: PacketChannel,
 
     override def execute(): Unit = {
         val response = channel.nextPacket()
-        val downloadPath = Path.of(desc.destination)
-        downloadFile(downloadPath)
+        val root = Path.of(desc.source.rootPath)
+        val uploadedFile = Path.of(new String(response.content))
+        println(s"root = ${root}")
+        println(s"uploadedFile = ${uploadedFile}")
+        val subPath = root.subpath(root.getNameCount - 1, uploadedFile.getNameCount - 1)
+        println(s"subPath = ${subPath}")
+        val downloadPath = root.relativize(subPath)
+        try {
+            downloadFile(downloadPath)
+        } catch {
+            case e: Throwable => {
+                e.printStackTrace()
+                val typeName = e.getClass.getCanonicalName
+                var msg = s"$typeName : ${e.getMessage}"
+                if (msg == null)
+                    msg = s"got an error of type : $typeName"
+                msg = s"Trying to download into file / folder $downloadPath when exception lifted suddenly : " + msg
+                channel.sendPacket(ABORT, msg)
+                error(msg)
+            }
+        }
     }
 
 

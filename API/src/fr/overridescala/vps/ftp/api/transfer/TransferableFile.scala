@@ -22,12 +22,8 @@ object TransferableFile {
             throw new NoSuchFileException(stringPath)
         }
         val isDirectory = Files.isDirectory(path)
-        val directoryName = if (isDirectory) path.toFile
-                .getName
-        else path.getParent
-                .toFile
-                .getName
-        new TransferableFile(stringPath, Constants.PUBLIC_ADDRESS, isDirectory, directoryName, Files.size(path))
+        val rootPath = if (Files.isDirectory(path)) path else path.getParent
+        new TransferableFile(stringPath, Constants.PUBLIC_ADDRESS, isDirectory, rootPath.toString, Files.size(path))
 
     }
 

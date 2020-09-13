@@ -23,7 +23,9 @@ class UploadTask(private val channel: PacketChannel,
         val path = Path.of(desc.source.path)
         val downloadPath = Path.of(desc.destination)
         if (Files.isDirectory(path)) {
-            if (!Files.isDirectory(downloadPath)){
+            if (Files.notExists(downloadPath))
+                Files.createDirectories(downloadPath)
+            else if (!Files.isDirectory(downloadPath)) {
                 val msg = "download root path have to be a folder path when downloading other folders"
                 channel.sendPacket(ABORT, msg)
                 error(msg)
@@ -91,7 +93,7 @@ class UploadTask(private val channel: PacketChannel,
      * makes one data transfer.
      *
      * @return true if the transfer need to be aborted, false instead
-     **/
+     * */
     def makeDataTransfer(bytes: Array[Byte], id: Int): Boolean = {
         channel.sendPacket(s"$id", bytes)
         val packet = channel.nextPacket()
@@ -114,7 +116,6 @@ class UploadTask(private val channel: PacketChannel,
         }
         false
     }
-
 
 
 }

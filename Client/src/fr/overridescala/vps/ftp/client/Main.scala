@@ -28,8 +28,8 @@ object Main {
 
     def runLocalhostTests(): Unit = {
         runTests(Constants.LOCALHOST,
-            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/client.mp4",
-            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/server/server.mp4")
+            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/MyVideos/",
+            "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/server/ClientVideos")
     }
 
     def runOnlineTests(): Unit = {
@@ -64,13 +64,6 @@ object Main {
                 .build()
 
         relayPoint.doDownload(download).queueWithSuccess(msg => Console.out.println(msg))
-        relayPoint.doUpload(upload).queueWithError(msg => Console.err.println(msg))
-        relayPoint.doDownload(download).queueWithError(msg => Console.err.println(msg))
-        relayPoint.doUpload(upload).queueWithError(msg => Console.err.println(msg))
-        relayPoint.doDownload(download).queueWithError(msg => Console.err.println(msg))
-        relayPoint.doUpload(upload).queueWithError(msg => Console.err.println(msg))
-        relayPoint.doDownload(download).queueWithError(msg => Console.err.println(msg))
-        relayPoint.doUpload(upload).queueWithError(msg => Console.err.println(msg))
 
     }
 
