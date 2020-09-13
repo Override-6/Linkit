@@ -1,14 +1,13 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import java.net.InetSocketAddress
-import java.nio.ByteBuffer
 import java.nio.channels.SocketChannel
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.task.TasksHandler
 
 class SimplePacketChannel(private val socketChannel: SocketChannel,
-                         private val tasksHandler: TasksHandler)
+                          private val tasksHandler: TasksHandler)
         extends PacketChannel with PacketChannelManager {
 
     private val queue: BlockingQueue[DataPacket] = new ArrayBlockingQueue[DataPacket](200)

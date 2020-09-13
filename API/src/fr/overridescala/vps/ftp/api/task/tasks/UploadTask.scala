@@ -1,14 +1,12 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
 import java.nio.file.{Files, Path}
-import java.util.stream.Collectors
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
+import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, UPLOAD, UPLOAD_FILE}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
-
-import scala.jdk.CollectionConverters
 
 class UploadTask(private val channel: PacketChannel,
                  private val handler: TasksHandler,
@@ -17,15 +15,25 @@ class UploadTask(private val channel: PacketChannel,
 
 
     override def sendTaskInfo(): Unit = {
-        channel.sendPacket("UP", Utils.serialize(desc))
+        channel.sendPacket(UPLOAD, Utils.serialize(desc))
     }
 
 
     override def execute(): Unit = {
-        val path = Path.of(desc.source.getPath)
-        if (Files.isDirectory(path))
+        val path = Path.of(desc.source.path)
+        val downloadPath = Path.of(desc.destination)
+        if (Files.isDirectory(path)) {
+            if (!Files.isDirectory(downloadPath)){
+                val msg = "download root path have to be a folder path when downloading other folders"
+                channel.sendPacket(ABORT, msg)
+                error(msg)
+                return
+            }
             uploadDirectory(path)
-        else uploadFile(path)
+
+        } else uploadFile(path)
+        channel.sendPacket(END_OF_TRANSFER)
+        success(path)
     }
 
     private def uploadDirectory(path: Path): Unit = {
@@ -43,13 +51,8 @@ class UploadTask(private val channel: PacketChannel,
         var totalBytesSent: Long = 0
         val totalBytes: Float = desc.transferSize
         var id = -0
-        channel.sendPacket("UPF", path.toString)
-        val response = channel.nextPacket()
-
+        channel.sendPacket(UPLOAD_FILE, path.toString)
         println("UPLOADING " + path)
-
-        if (checkPacketUploadStart(response))
-            return
 
         while (totalBytesSent < totalBytes) {
             try {
@@ -59,37 +62,25 @@ class UploadTask(private val channel: PacketChannel,
                 if (makeDataTransfer(bytes, id))
                     return
                 val percentage = totalBytesSent / totalBytes * 100
-                print(s"sent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $id\r")
+                print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $id")
             } catch {
                 case e: Throwable => {
                     var msg = e.getMessage
                     if (msg == null)
                         msg = "an error has  occurred while performing file upload task"
-                    channel.sendPacket("ERROR", s"($path) " + msg)
+                    channel.sendPacket(ABORT, s"($path) " + msg)
                     return
                 }
             }
         }
-        val percentage = totalBytesSent / totalBytes * 100
-        println(s"sent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $id")
-        success(path)
+        println("done !")
         stream.close()
-    }
-
-    def checkPacketUploadStart(response: DataPacket): Boolean = {
-        if (!response.header.equals("DWNF")) {
-            val errorMsg = s"Header response was unexpected. (${response.header}, expected : DWNF)"
-            channel.sendPacket("ERROR", errorMsg)
-            error(errorMsg)
-            return true
-        }
-        true
     }
 
     def checkPath(path: Path): Boolean = {
         if (Files.notExists(path)) {
-            val errorMsg = s"(${path}) could not upload invalid file path : this file does not exists"
-            channel.sendPacket("ERROR", errorMsg)
+            val errorMsg = s"($path) could not upload invalid file path : this file does not exists"
+            channel.sendPacket(ABORT, errorMsg)
             error(errorMsg)
             return true
         }
@@ -104,7 +95,7 @@ class UploadTask(private val channel: PacketChannel,
     def makeDataTransfer(bytes: Array[Byte], id: Int): Boolean = {
         channel.sendPacket(s"$id", bytes)
         val packet = channel.nextPacket()
-        if (packet.header.equals("ERROR")) {
+        if (packet.header.equals(ABORT)) {
             error(new String(packet.content))
             return true
         }
@@ -112,18 +103,25 @@ class UploadTask(private val channel: PacketChannel,
             val packetId = Integer.parseInt(packet.header)
             if (packetId != id) {
                 val errorMsg = new String(s"packet id was unexpected (id: $packetId, expected: $id")
-                channel.sendPacket("ERROR", errorMsg)
+                channel.sendPacket(ABORT, errorMsg)
                 error(errorMsg)
                 return true
             }
         } catch {
-            case e: NumberFormatException => {
-                channel.sendPacket("ERROR", e.getMessage)
+            case e: NumberFormatException =>
+                channel.sendPacket(ABORT, e.getMessage)
                 error(e.getMessage)
-                return true
-            }
         }
-
         false
     }
+
+
+
+}
+
+object UploadTask {
+    protected[tasks] val END_OF_TRANSFER: String = "EOT"
+    protected[tasks] val UPLOAD_FILE: String = "UPF"
+    private val UPLOAD: String = "UP"
+    private val ABORT: String = "ERROR"
 }

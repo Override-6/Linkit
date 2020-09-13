@@ -31,7 +31,7 @@ object Protocol {
 
     protected[packet] def getPacketLength(bytes: Array[Byte]): Int = {
         val begin = indexOf(bytes, BEGIN)
-        val end = lastIndexOf(bytes, END) + END.length
+        val end = indexOf(bytes, END) + END.length
         //fast check
         if (begin == -1 || end == -1) {
             throw new IllegalArgumentException("this byte sequence does not contains valid packet !")
@@ -43,7 +43,7 @@ object Protocol {
         val beginIndex = indexOf(bytes, BEGIN)
         lazy val headerIndex = indexOf(bytes, HEADER)
         lazy val contentIndex = indexOf(bytes, CONTENT)
-        lazy val endIndex = lastIndexOf(bytes, END)
+        lazy val endIndex = indexOf(bytes, END)
 
         beginIndex != -1 && headerIndex > beginIndex && contentIndex > headerIndex && endIndex > contentIndex
     }
@@ -59,16 +59,11 @@ object Protocol {
     }
 
     private def getTaskContent(bytes: Array[Byte]): Array[Byte] = {
-      //  println(s"new String(bytes) = ${new String(bytes)}")
-        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, lastIndexOf(bytes, END))
+        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, indexOf(bytes, END))
     }
 
     private def indexOf(src: Array[Byte], toFind: Array[Byte]): Int = {
         src.toSeq.indexOfSlice(toFind.toSeq)
-    }
-
-    private def lastIndexOf(src: Array[Byte], toFind: Array[Byte]): Int = {
-        src.lastIndexOfSlice(toFind)
     }
 
 }

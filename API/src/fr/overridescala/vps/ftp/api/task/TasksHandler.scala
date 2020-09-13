@@ -2,9 +2,8 @@ package fr.overridescala.vps.ftp.api.task
 
 import java.net.SocketAddress
 import java.util
-import java.util.UUID
 
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel, PacketChannelManager, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, SimplePacketChannel}
 
 
 class TasksHandler() {
@@ -81,7 +80,7 @@ class TasksHandler() {
             }
         }
 
-        override def toString: String = s"Ticket(name = ${name}," +
+        override def toString: String = s"Ticket(name = $name," +
                 s" owner = $owner," +
                 s" id = $sessionID," +
                 s" freeWill = $ownFreeWill)"

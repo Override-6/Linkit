@@ -11,21 +11,21 @@ abstract class Task[T](private val handler: TasksHandler,
                        private val target: InetSocketAddress)
         extends TaskAction[T] with TaskExecutor {
 
-    private var onSuccess: Consumer[T] = _
-    private var onError: Consumer[String] = _
+    private var onSuccess: T => Unit = _
+    private var onError: String => Unit = _
     private val sessionID = ThreadLocalRandom.current().nextInt()
 
-    override def queueWithSuccess(onSuccess: Consumer[T]): Unit = {
+    override def queueWithSuccess(consumer:T => Unit): Unit = {
         this.onSuccess = onSuccess
         handler.register(this, sessionID, target, true)
     }
 
-    override def queueWithError(onError: Consumer[String]): Unit = {
+    override def queueWithError(onError: String => Unit): Unit = {
         this.onError = onError
         handler.register(this, sessionID, target, true)
     }
 
-    override def queue(onSuccess: Consumer[T], onError: Consumer[String]): Unit = {
+    override def queue(onSuccess: T => Unit, onError: String => Unit): Unit = {
         this.onSuccess = onSuccess
         this.onError = onError
         handler.register(this, sessionID, target, true)
@@ -50,12 +50,12 @@ abstract class Task[T](private val handler: TasksHandler,
 
     protected def error(msg: String): Unit = {
         if (onError != null)
-            onError.accept(msg)
+            onError(msg)
     }
 
     protected def success(t: T): Unit = {
         if (onSuccess != null)
-            onSuccess.accept(t)
+            onSuccess(t)
     }
 
 }

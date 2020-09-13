@@ -5,16 +5,12 @@ import java.nio.file.{Files, NoSuchFileException, Path}
 
 import fr.overridescala.vps.ftp.api.utils.Constants
 
-class TransferableFile private(private val path: String,
-                               private val ownerAddress: InetSocketAddress,
-                               private val size: Long) extends Serializable {
+case class TransferableFile private(path: String,
+                                    ownerAddress: InetSocketAddress,
+                                    isDirectory: Boolean,
+                                    rootPath: String,
+                                    size: Long) extends Serializable {
 
-
-    def getPath: String = path
-
-    def getOwnerAddress: InetSocketAddress = ownerAddress
-
-    def getSize: Long = size
 
 }
 
@@ -25,7 +21,14 @@ object TransferableFile {
         if (Files notExists path) {
             throw new NoSuchFileException(stringPath)
         }
-        new TransferableFile(stringPath, Constants.PUBLIC_ADDRESS, Files size path)
+        val isDirectory = Files.isDirectory(path)
+        val directoryName = if (isDirectory) path.toFile
+                .getName
+        else path.getParent
+                .toFile
+                .getName
+        new TransferableFile(stringPath, Constants.PUBLIC_ADDRESS, isDirectory, directoryName, Files.size(path))
+
     }
 
     def builder(): Builder = new Builder()
@@ -35,13 +38,19 @@ object TransferableFile {
         private var path: String = _
         private var ownerAddress: InetSocketAddress = _
         private var size: Long = _
+        private var isDirectory: Boolean = false
+        private var rootPath: Path = _
+
 
         def setPath(path: String): Builder = {
             this.path = path
+            val filePath = Path.of(path)
+            rootPath = if (Files.isDirectory(filePath)) filePath else filePath.getParent
+            isDirectory = filePath.toFile.getName.contains(".")
             this
         }
 
-        def setOwner(address: InetSocketAddress) = {
+        def setOwner(address: InetSocketAddress): Builder = {
             this.ownerAddress = address
             this
         }
@@ -51,7 +60,8 @@ object TransferableFile {
             this
         }
 
-        def build(): TransferableFile = new TransferableFile(path, ownerAddress, size)
+        def build(): TransferableFile =
+            new TransferableFile(path, ownerAddress, isDirectory, rootPath.toString, size)
 
     }
 

@@ -66,11 +66,12 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         buffer.get(bytes)
 
         packetLoader.add(bytes)
-        if (!packetLoader.isPacketPresent)
-            return
 
-        val packet = packetLoader.retrievePacket
-        tasksHandler.handlePacket(packet, completerFactory, packetChannel)
+        var packet = packetLoader.nextPacket
+        while (packet != null) {
+            tasksHandler.handlePacket(packet, completerFactory, packetChannel)
+            packet = packetLoader.nextPacket
+        }
 
         buffer.clear()
     }

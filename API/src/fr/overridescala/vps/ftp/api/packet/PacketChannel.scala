@@ -10,7 +10,7 @@ trait PacketChannel {
         sendPacket(header, content.getBytes)
 
     def sendPacket(header: String): Unit =
-        sendPacket(header, Array().asInstanceOf[Array[Byte]])
+        sendPacket(header, "")
 
     def nextPacket(): DataPacket
 

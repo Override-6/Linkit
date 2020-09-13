@@ -8,7 +8,7 @@ import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, Protocol, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
@@ -160,19 +160,20 @@ class RelayServer(override val identifier: String)
         buffer.flip()
         buffer.get(bytes)
         packetLoader.add(bytes)
-        if (!packetLoader.isPacketPresent)
-            return
 
-        val packet = packetLoader.retrievePacket
         val packetChannel = getPacketChannel(channel.getRemoteAddress)
-        tasksHandler.handlePacket(packet, completerFactory, packetChannel)
+        var packet: DataPacket = packetLoader.nextPacket
+        while (packet != null) {
+            tasksHandler.handlePacket(packet, completerFactory, packetChannel)
+            packet = packetLoader.nextPacket
+        }
     }
 
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
 
-        socket.bind(Constants.PUBLIC_ADDRESS)
+        socket.bind(Constants.LOCALHOST)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket
     }

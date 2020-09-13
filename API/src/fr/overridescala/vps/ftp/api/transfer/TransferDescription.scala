@@ -10,9 +10,9 @@ class TransferDescription private(val source: TransferableFile,
                                   val target: InetSocketAddress,
                                   val sender: InetSocketAddress) extends Serializable {
 
-    val transferSize: Long = source getSize
+    val transferSize: Long = source size
 
-    override def toString: String = s"TransferDescription{source: ${source.getPath}, length: $transferSize," +
+    override def toString: String = s"TransferDescription{source: ${source.path}, length: $transferSize," +
             s" destination: $destination, target: $target, sender: $sender}"
 
 }
