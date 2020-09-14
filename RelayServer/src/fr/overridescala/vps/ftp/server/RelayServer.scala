@@ -139,6 +139,7 @@ class RelayServer(override val identifier: String)
         val socketChannel = channel.asInstanceOf[SocketChannel]
         val info = KeyInfo(socketChannel.getRemoteAddress, null, new SimplePacketChannel(channel, tasksHandler))
         keysInfo.put(socketChannel.getRemoteAddress, info)
+        println(s"new connection : ${socketChannel.getRemoteAddress}")
     }
 
 
@@ -152,9 +153,11 @@ class RelayServer(override val identifier: String)
     private def handlePacket(key: SelectionKey): Unit = {
         val channel = key.channel().asInstanceOf[SocketChannel]
         val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
+
         val count = channel.read(buffer)
         if  (count < 1)
             return
+        
         val bytes = new Array[Byte](count)
 
         buffer.flip()
@@ -173,7 +176,7 @@ class RelayServer(override val identifier: String)
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
 
-        socket.bind(Constants.LOCALHOST)
+        socket.bind(Constants.PUBLIC_ADDRESS)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket
     }

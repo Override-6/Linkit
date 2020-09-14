@@ -2,8 +2,9 @@ package fr.overridescala.vps.ftp.api.task.tasks
 
 import java.nio.file.{Files, Path}
 
+import fr.overridescala.vps.ftp.api.exceptions.TransferException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, DOWNLOAD, DOWNLOAD_FILE}
+import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, DOWNLOAD}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
@@ -22,11 +23,9 @@ class DownloadTask(private val channel: PacketChannel,
         val response = channel.nextPacket()
         val root = Path.of(desc.source.rootPath)
         val uploadedFile = Path.of(new String(response.content))
-        println(s"root = ${root}")
-        println(s"uploadedFile = ${uploadedFile}")
-        val subPath = root.subpath(root.getNameCount - 1, uploadedFile.getNameCount - 1)
-        println(s"subPath = ${subPath}")
-        val downloadPath = root.relativize(subPath)
+        val destination = Path.of(desc.destination)
+
+        val downloadPath = destination.resolve(uploadedFile.subpath(root.getNameCount - 1, uploadedFile.getNameCount))
         try {
             downloadFile(downloadPath)
         } catch {
@@ -45,6 +44,7 @@ class DownloadTask(private val channel: PacketChannel,
 
 
     def downloadFile(downloadPath: Path): Unit = {
+        println(s"DOWNLOAD START $downloadPath")
         if (checkPath(downloadPath))
             return
         val stream = Files.newOutputStream(downloadPath)
@@ -64,7 +64,8 @@ class DownloadTask(private val channel: PacketChannel,
             print(s"\rwritten = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets sent = $id")
         }
         stream.close()
-
+        println()
+        println(s"DOWNLOAD ENDED FOR $downloadPath")
         handleLastTransferResponse(packet)
     }
 
@@ -75,7 +76,8 @@ class DownloadTask(private val channel: PacketChannel,
         else if (header.equals(UploadTask.UPLOAD_FILE)) {
             val path = Path.of(new String(packet.content))
             val root = Path.of(desc.source.rootPath)
-            val downloadPath = root.relativize(path.subpath(root.getNameCount - 1, path.getNameCount - 1))
+            val destination = Path.of(desc.destination)
+            val downloadPath = destination.resolve(path.subpath(root.getNameCount - 1, path.getNameCount))
             downloadFile(downloadPath)
         } else throw new IllegalArgumentException(s"${UploadTask.END_OF_TRANSFER} or ${UploadTask.UPLOAD_FILE} expected, received : " + packet.toString)
     }
@@ -85,27 +87,32 @@ class DownloadTask(private val channel: PacketChannel,
      * checks if this packet does not contains ERROR, EOFT or EOT header
      *
      * @return true if the transfer still continue, false instead
-     **/
+     * */
     def stillForTransfer(packet: DataPacket): Boolean = {
         val header = packet.header
         if (header.equals(ABORT)) {
-            Console.err.println(new String(packet.content))
-            error(new String(packet.content))
-            return false
+            val msg = new String(packet.content)
+            Console.err.println(msg)
+            error(msg)
+            throw new TransferException(msg)
         }
-        !header.equals(UploadTask.END_OF_TRANSFER)
+        header.matches("[0-9]+")
     }
 
     /**
      * check the validity of this transfer
      *
      * @return true if the transfer needs to be aborted, false instead
-     **/
+     * */
     def checkPath(path: Path): Boolean = {
+        val root = Path.of(desc.source.rootPath)
+        val parent = path.getParent
         if (Files.notExists(path)) {
-            val parent = path.getParent
-            if (parent != null && !Files.exists(parent))
-                Files.createDirectories(parent)
+            if (desc.source.isDirectory && parent.equals(root)) {
+                Files.createDirectories(path)
+                return false
+            }
+            Files.createDirectories(parent)
             Files.createFile(path)
         }
         if (!Files.isWritable(path) || !Files.isReadable(path)) {

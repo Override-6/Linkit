@@ -2,7 +2,8 @@ package fr.overridescala.vps.ftp.api.task.tasks
 
 import java.nio.file.{Files, Path}
 
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
+import fr.overridescala.vps.ftp.api.exceptions.TransferException
+import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, UPLOAD, UPLOAD_FILE}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
@@ -51,8 +52,8 @@ class UploadTask(private val channel: PacketChannel,
             return
         val stream = Files.newInputStream(path)
         var totalBytesSent: Long = 0
-        val totalBytes: Float = desc.transferSize
-        var id = -0
+        val totalBytes: Float = Files.size(path)
+        var id = 0
         channel.sendPacket(UPLOAD_FILE, path.toString)
         println("UPLOADING " + path)
 
@@ -61,21 +62,21 @@ class UploadTask(private val channel: PacketChannel,
                 val bytes = new Array[Byte](Constants.MAX_PACKET_LENGTH - 512)
                 totalBytesSent += stream.read(bytes)
                 id += 1
-                if (makeDataTransfer(bytes, id))
-                    return
+                makeDataTransfer(bytes, id)
+
                 val percentage = totalBytesSent / totalBytes * 100
                 print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $id")
             } catch {
                 case e: Throwable => {
                     var msg = e.getMessage
                     if (msg == null)
-                        msg = "an error has  occurred while performing file upload task"
+                        msg = "an error has occurred while performing file upload task"
                     channel.sendPacket(ABORT, s"($path) " + msg)
                     return
                 }
             }
         }
-        println("done !")
+        println()
         stream.close()
     }
 
@@ -94,27 +95,27 @@ class UploadTask(private val channel: PacketChannel,
      *
      * @return true if the transfer need to be aborted, false instead
      * */
-    def makeDataTransfer(bytes: Array[Byte], id: Int): Boolean = {
+    def makeDataTransfer(bytes: Array[Byte], id: Int): Unit = {
         channel.sendPacket(s"$id", bytes)
         val packet = channel.nextPacket()
         if (packet.header.equals(ABORT)) {
-            error(new String(packet.content))
-            return true
+            val errorMsg = new String(packet.content)
+            error(errorMsg)
+            throw new TransferException(errorMsg)
         }
         try {
             val packetId = Integer.parseInt(packet.header)
             if (packetId != id) {
-                val errorMsg = new String(s"packet id was unexpected (id: $packetId, expected: $id")
+                val errorMsg = new String(s"packet id was unexpected (id: $packetId, expected: $id)")
                 channel.sendPacket(ABORT, errorMsg)
                 error(errorMsg)
-                return true
+                throw new TransferException(errorMsg)
             }
         } catch {
             case e: NumberFormatException =>
                 channel.sendPacket(ABORT, e.getMessage)
                 error(e.getMessage)
         }
-        false
     }
 
 
