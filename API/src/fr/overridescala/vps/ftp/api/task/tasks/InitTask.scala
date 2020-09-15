@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.task.tasks.InitTask.{ERROR, INIT}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 
 class InitTask(private val handler: TasksHandler,
@@ -10,14 +11,21 @@ class InitTask(private val handler: TasksHandler,
 
 
     override def sendTaskInfo(): Unit = {
-        channel.sendPacket("INIT", id.getBytes)
+        channel.sendPacket(INIT, id.getBytes)
     }
 
     override def execute(): Unit = {
-        val notAccepted = channel.nextPacket().header.equals("ERROR")
+        val notAccepted = channel.nextPacket().header.equals(ERROR)
         if (notAccepted)
             error("no id where available.")
         else success(id)
     }
 
+
+
+}
+
+object InitTask {
+    val INIT = "INIT"
+    private val ERROR = "ERROR"
 }

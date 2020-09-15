@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.client
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
+import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{DynamicTaskCompleterFactory, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -15,10 +15,17 @@ class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
     override def getCompleter(channel: PacketChannel, initPacket: DataPacket): TaskExecutor = {
         val taskType = initPacket.header
         val content = initPacket.content
+        val contentString = new String(content)
         taskType match {
-            case "UP" => new DownloadTask(channel, tasksHandler, Utils.deserialize(content))
-            case "DOWN" => new UploadTask(channel, tasksHandler, Utils.deserialize(content))
-            case "FINFO" => new FileInfoTask.Completer(channel, new String(content))
+            case UploadTask.UPLOAD =>
+                new DownloadTask(channel, tasksHandler, Utils.deserialize(content))
+            case DownloadTask.DOWNLOAD =>
+                new UploadTask(channel, tasksHandler, Utils.deserialize(content))
+            case FileInfoTask.FILE_INFO =>
+                new FileInfoTask.Completer(channel, contentString)
+            case CreateFileTask.CREATE_FILE =>
+                new CreateFileTask.Completer(channel, contentString)
+
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)
                     throw new IllegalArgumentException("could not find completer for task " + taskType)

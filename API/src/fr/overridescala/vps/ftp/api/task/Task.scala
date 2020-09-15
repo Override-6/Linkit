@@ -3,7 +3,6 @@ package fr.overridescala.vps.ftp.api.task
 import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
-import java.util.function.Consumer
 
 import fr.overridescala.vps.ftp.api.exceptions.TransferException
 
@@ -12,7 +11,7 @@ abstract class Task[T](private val handler: TasksHandler,
         extends TaskAction[T] with TaskExecutor {
 
     private var onSuccess: T => Unit = _
-    private var onError: String => Unit = _
+    private var onError: String => Unit = Console.err.println
     private val sessionID = ThreadLocalRandom.current().nextInt()
 
     override def queueWithSuccess(consumer:T => Unit): Unit = {

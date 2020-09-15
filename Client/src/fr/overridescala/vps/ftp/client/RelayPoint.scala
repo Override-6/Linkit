@@ -34,24 +34,28 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override def requestFileInformation(owner: InetSocketAddress, path: String): Task[TransferableFile] =
         new FileInfoTask(packetChannel, tasksHandler, owner, path)
 
-    override def start(): Unit = new Thread(() => {
-        println("ready !")
-        println("current encoding is " + Charset.defaultCharset().name())
-        val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
-        //enable the task management
-        tasksHandler.start()
-        while (true) {
-            try {
-                updateNetwork(buffer)
-            } catch {
-                case e: Throwable => {
-                    e.printStackTrace()
-                    Console.err.println("suddenly disconnected from the server.")
-                    return
+    override def start(): Unit = {
+        val thread = new Thread(() => {
+            println("ready !")
+            println("current encoding is " + Charset.defaultCharset().name())
+            val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
+            //enable the task management
+            tasksHandler.start()
+            while (true) {
+                try {
+                    updateNetwork(buffer)
+                } catch {
+                    case e: Throwable => {
+                        e.printStackTrace()
+                        Console.err.println("suddenly disconnected from the server.")
+                        return
+                    }
                 }
             }
-        }
-    }).start()
+        })
+        thread.setName("RelayPoint")
+        thread.start()
+    }
 
     override def close(): Unit = {
         socketChannel.close()

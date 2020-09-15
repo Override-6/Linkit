@@ -22,11 +22,15 @@ class UploadTask(private val channel: PacketChannel,
 
     override def execute(): Unit = {
         val path = Path.of(desc.source.path)
-        val downloadPath = Path.of(desc.destination)
+        val destination = Path.of(desc.destination)
+
+        println(s"path = ${path}")
+        println(s"destination* = ${destination}")
+
         if (Files.isDirectory(path)) {
-            if (Files.notExists(downloadPath))
-                Files.createDirectories(downloadPath)
-            else if (!Files.isDirectory(downloadPath)) {
+            if (Files.notExists(destination))
+                Files.createDirectories(destination)
+            else if (!Files.isDirectory(destination)) {
                 val msg = "download root path have to be a folder path when downloading other folders"
                 channel.sendPacket(ABORT, msg)
                 error(msg)
@@ -41,6 +45,7 @@ class UploadTask(private val channel: PacketChannel,
 
     private def uploadDirectory(path: Path): Unit = {
         Files.list(path).forEach(children => {
+            println(s"children = ${children}")
             if (Files.isDirectory(children))
                 uploadDirectory(children)
             else uploadFile(children)
@@ -124,6 +129,6 @@ class UploadTask(private val channel: PacketChannel,
 object UploadTask {
     protected[tasks] val END_OF_TRANSFER: String = "EOT"
     protected[tasks] val UPLOAD_FILE: String = "UPF"
-    private val UPLOAD: String = "UP"
+    val UPLOAD: String = "UP"
     private val ABORT: String = "ERROR"
 }

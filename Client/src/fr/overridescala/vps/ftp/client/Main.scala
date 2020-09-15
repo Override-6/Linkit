@@ -11,63 +11,43 @@ object Main {
 
     private val SERVER_ADDRESS = new InetSocketAddress("161.97.104.230", Constants.PORT)
 
-    def main(args: Array[String]): Unit = {
-        runClient()
-    }
+    print("say 'y' to connect to chose localhost : ")
+    private val isLocalhost = new Scanner(System.in).nextLine().startsWith("y")
+    private val address = if (isLocalhost) Constants.LOCALHOST else SERVER_ADDRESS
+    private val relayPoint: Relay = new RelayPoint(address, "client1")
+    private val source = "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/MyVideos"
+    private val destinationUpload = "/home/override/VPS/Tests/FileTransferer/client-upload"
 
+
+
+    def main(args: Array[String]): Unit =
+        runClient()
 
     def runClient(): Unit = {
-        print("say 'y' to connect to chose localhost : ")
-        val isLocalhost = new Scanner(System.in).nextLine().startsWith("y")
-        val address = if (isLocalhost) Constants.LOCALHOST else SERVER_ADDRESS
-        val relayPoint: Relay = new RelayPoint(address, "client1")
-        val source = "C:/Users/maxim/Desktop/Dev/VPS/transfertTests/client/MyVideos"
-        val destinationUpload = "/home/override/VPS/Tests/FileTransferer/client-upload"
-        val destinationDownload = "/home/override/VPS/Tests/FileTransferer/client-download"
-
         relayPoint.start()
 
         val serverAddress = relayPoint.requestAddress("server").completeNow()
         println(s"serverAddress = $serverAddress")
 
-        /*val upload = TransferDescription.builder()
-                .setSource(TransferableFile.fromLocal(source))
-                .setDestination(destinationUpload)
-                .setTarget(serverAddress)
-                .build()
-        relayPoint.doUpload(upload).completeNow()
-         */
-          val download = TransferDescription.builder()
-                  .setSource(relayPoint.requestFileInformation(serverAddress, destinationUpload).completeNow())
-                  .setDestination(source)
-                  .setTarget(serverAddress)
-                  .build()
-         relayPoint.doDownload(download).completeNow()
-
+        relayPoint.requestFileInformation(serverAddress, destinationUpload)
+                .queueWithSuccess(nextStep)
     }
 
-
-    def runTests(address: InetSocketAddress, source: String, destination: String): Unit = {
-        val relayPoint: Relay = new RelayPoint(address, "client1")
-
-        relayPoint.start()
-
-        val serverAddress = relayPoint.requestAddress("server").completeNow()
-        println(s"serverAddress = $serverAddress")
-
+    def nextStep(fileInfo: TransferableFile): Unit = {
+        println("a")
+        val download = TransferDescription.builder()
+                .setSource(fileInfo)
+                .setDestination(source)
+                .setTarget(address)
+                .build()
         val upload = TransferDescription.builder()
                 .setSource(TransferableFile.fromLocal(source))
-                .setDestination(destination)
-                .setTarget(serverAddress)
+                .setDestination(destinationUpload)
+                .setTarget(address)
                 .build()
-        relayPoint.doUpload(upload).completeNow()
-      /*  val download = TransferDescription.builder()
-                .setSource(relayPoint.requestFileInformation(serverAddress, destination).completeNow())
-                .setDestination(source)
-                .setTarget(serverAddress)
-                .build()
-       */
-
+        relayPoint.doDownload(download).queue(e => println("le fichier a été download"), Console.err.println)
+        relayPoint.doUpload(upload).queue(e => println("le fichier a été upload"), Console.err.println)
+        println("toutes les tâches ont étées ajoutées et vont être éxécutées")
     }
 
 }

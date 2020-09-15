@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 
 import fr.overridescala.vps.ftp.api.exceptions.TransferException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
@@ -21,11 +21,7 @@ class DownloadTask(private val channel: PacketChannel,
 
     override def execute(): Unit = {
         val response = channel.nextPacket()
-        val root = Path.of(desc.source.rootPath)
-        val uploadedFile = Path.of(new String(response.content))
-        val destination = Path.of(desc.destination)
-
-        val downloadPath = destination.resolve(uploadedFile.subpath(root.getNameCount - 1, uploadedFile.getNameCount))
+        val downloadPath = findDownloadPath(response)
         try {
             downloadFile(downloadPath)
         } catch {
@@ -43,7 +39,7 @@ class DownloadTask(private val channel: PacketChannel,
     }
 
 
-    def downloadFile(downloadPath: Path): Unit = {
+    private def downloadFile(downloadPath: Path): Unit = {
         println(s"DOWNLOAD START $downloadPath")
         if (checkPath(downloadPath))
             return
@@ -69,15 +65,37 @@ class DownloadTask(private val channel: PacketChannel,
         handleLastTransferResponse(packet)
     }
 
-    def handleLastTransferResponse(packet: DataPacket): Unit = {
+    private def findDownloadPath(packet: DataPacket): Path = {
+        val root = Path.of(desc.source.rootPath)
+        val uploadedFile = Paths.get(new String(packet.content))
+        val destination = Paths.get(desc.destination)
+        val rootNameCount = root.toString.count(char => char == '/' || char == '\\')
+        println(s"rootNameCount = ${rootNameCount}")
+        val relativePath = subPathOfUnknownFile(uploadedFile, rootNameCount)
+        println(s"relativePath = ${relativePath}")
+        destination.resolve(relativePath)
+    }
+
+    private def subPathOfUnknownFile(unknownFile: Path, from: Int): Path = {
+        val path = unknownFile.toString
+        var currentNameCount = 0
+        val subPathBuilder = new StringBuilder()
+        for (char <- path) {
+            if (char == '/' || char == '\\')
+                currentNameCount += 1
+            if (currentNameCount >= from) {
+                subPathBuilder.append(char)
+            }
+        }
+        Path.of(subPathBuilder.toString().replace('\\', '/'))
+    }
+
+    private def handleLastTransferResponse(packet: DataPacket): Unit = {
         val header = packet.header
         if (header.equals(UploadTask.END_OF_TRANSFER))
             success()
         else if (header.equals(UploadTask.UPLOAD_FILE)) {
-            val path = Path.of(new String(packet.content))
-            val root = Path.of(desc.source.rootPath)
-            val destination = Path.of(desc.destination)
-            val downloadPath = destination.resolve(path.subpath(root.getNameCount - 1, path.getNameCount))
+            val downloadPath = findDownloadPath(packet)
             downloadFile(downloadPath)
         } else throw new IllegalArgumentException(s"${UploadTask.END_OF_TRANSFER} or ${UploadTask.UPLOAD_FILE} expected, received : " + packet.toString)
     }
@@ -88,7 +106,7 @@ class DownloadTask(private val channel: PacketChannel,
      *
      * @return true if the transfer still continue, false instead
      * */
-    def stillForTransfer(packet: DataPacket): Boolean = {
+    private def stillForTransfer(packet: DataPacket): Boolean = {
         val header = packet.header
         if (header.equals(ABORT)) {
             val msg = new String(packet.content)
@@ -104,15 +122,13 @@ class DownloadTask(private val channel: PacketChannel,
      *
      * @return true if the transfer needs to be aborted, false instead
      * */
-    def checkPath(path: Path): Boolean = {
+    private def checkPath(path: Path): Boolean = {
         val root = Path.of(desc.source.rootPath)
         val parent = path.getParent
         if (Files.notExists(path)) {
-            if (desc.source.isDirectory && parent.equals(root)) {
-                Files.createDirectories(path)
+            Files.createDirectories(path)
+            if (desc.source.isDirectory && parent.equals(root))
                 return false
-            }
-            Files.createDirectories(parent)
             Files.createFile(path)
         }
         if (!Files.isWritable(path) || !Files.isReadable(path)) {
@@ -128,7 +144,6 @@ class DownloadTask(private val channel: PacketChannel,
 }
 
 object DownloadTask {
-    protected[tasks] val DOWNLOAD_FILE: String = "DWNF"
-    protected[tasks] val DOWNLOAD: String = "DWN"
+    val DOWNLOAD: String = "DWN"
     private val ABORT: String = "ERROR"
 }

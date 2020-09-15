@@ -21,12 +21,14 @@ class TasksHandler() {
     }
 
     def start(): Unit = {
-        new Thread(() => {
+        val thread = new Thread(() => {
             while (true) {
                 startNextTask()
                 println("waiting for another task to complete...")
             }
-        }).start()
+        })
+        thread.setName("Tasks")
+        thread.start()
     }
 
     def handlePacket(packet: DataPacket, factory: TaskCompleterFactory, channel: SimplePacketChannel): Unit = {
