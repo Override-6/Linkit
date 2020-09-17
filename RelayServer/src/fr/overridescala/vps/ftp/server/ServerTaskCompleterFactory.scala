@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.server
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.{AddressTask, CreateFileTask, DownloadTask, FileInfoTask, InitTask, UploadTask}
+import fr.overridescala.vps.ftp.api.task.tasks.{AddressTask, CreateFileTask, DownloadTask, FileInfoTask, InitTask, StressTestTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{DynamicTaskCompleterFactory, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 import fr.overridescala.vps.ftp.server.tasks.{AddressTaskCompleter, InitTaskCompleter}
@@ -18,6 +18,8 @@ class ServerTaskCompleterFactory(private val tasksHandler: TasksHandler,
         val content = initPacket.content
         val contentString = new String(content)
         taskType match {
+            case "STRSS" =>
+                new StressTestTask.Completer(channel, contentString.toLong)
             case UploadTask.UPLOAD =>
                 new DownloadTask(channel, tasksHandler, Utils.deserialize(content))
             case DownloadTask.DOWNLOAD =>
@@ -28,7 +30,8 @@ class ServerTaskCompleterFactory(private val tasksHandler: TasksHandler,
                 new AddressTaskCompleter(channel, server, contentString)
             case InitTask.INIT =>
                 new InitTaskCompleter(server, channel, contentString)
-            case CreateFileTask.CREATE_FILE => new CreateFileTask.Completer(channel, contentString)
+            case CreateFileTask.CREATE_FILE =>
+                new CreateFileTask.Completer(channel, contentString)
 
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)

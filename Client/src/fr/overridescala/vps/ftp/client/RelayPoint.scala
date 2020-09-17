@@ -101,4 +101,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         close()
     })
 
+    //TESTS
+    start()
+    new StressTestTask(packetChannel, tasksHandler, 750000000) //750Mo
+            .completeNow()
+
 }

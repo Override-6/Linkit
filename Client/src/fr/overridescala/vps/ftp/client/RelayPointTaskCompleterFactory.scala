@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.client
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
+import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, StressTestTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{DynamicTaskCompleterFactory, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -25,6 +25,8 @@ class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
                 new FileInfoTask.Completer(channel, contentString)
             case CreateFileTask.CREATE_FILE =>
                 new CreateFileTask.Completer(channel, contentString)
+            case "STRSS" =>
+                new StressTestTask.Completer(channel, contentString.toLong)
 
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)

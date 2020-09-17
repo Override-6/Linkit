@@ -14,13 +14,13 @@ abstract class Task[T](private val handler: TasksHandler,
     private val onError: AtomicReference[String => Unit] = new AtomicReference[String => Unit]()
     private val sessionID = ThreadLocalRandom.current().nextInt()
 
-    override def queue(onSuccess: T => Unit = t => {}, onError: String => Unit = Console.err.println): Unit = {
+    final override def queue(onSuccess: T => Unit = t => {}, onError: String => Unit = Console.err.println): Unit = {
         this.onSuccess.set(onSuccess)
         this.onError.set(onError)
         handler.register(this, sessionID, target, true)
     }
 
-    override def completeNow(): T = {
+    final override def completeNow(): T = {
         handler.register(this, sessionID, target, true)
         val atomicResult = new AtomicReference[T]()
         val onSuccess: T => Unit = result => synchronized {
