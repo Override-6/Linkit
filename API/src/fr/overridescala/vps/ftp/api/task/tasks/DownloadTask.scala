@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
+import java.io.File
 import java.nio.file.{Files, Path, Paths}
 
 import fr.overridescala.vps.ftp.api.exceptions.TransferException
@@ -31,7 +32,6 @@ class DownloadTask(private val channel: PacketChannel,
                 var msg = s"$typeName : ${e.getMessage}"
                 if (msg == null)
                     msg = s"got an error of type : $typeName"
-                msg = s"Trying to download into file / folder $downloadPath when exception lifted suddenly : " + msg
                 channel.sendPacket(ABORT, msg)
                 error(msg)
             }
@@ -40,54 +40,38 @@ class DownloadTask(private val channel: PacketChannel,
 
 
     private def downloadFile(downloadPath: Path): Unit = {
-        println(s"DOWNLOAD START $downloadPath")
+        println(s"DOWNLOAD START $downloadPath\n")
         if (checkPath(downloadPath))
             return
         val stream = Files.newOutputStream(downloadPath)
         val totalBytes: Float = desc.transferSize
         var totalBytesWritten = 0
-        var id = 0
+        var count = 0
 
         var packet: DataPacket = channel.nextPacket()
         while (stillForTransfer(packet)) {
             totalBytesWritten += packet.content.length
             stream.write(packet.content)
-            id += 1
-            channel.sendPacket(s"$id")
+            count += 1
+            channel.sendPacket(s"$count")
             packet = channel.nextPacket()
 
             val percentage = totalBytesWritten / totalBytes * 100
-            print(s"\rwritten = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets sent = $id")
+            print(s"\rwritten = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets sent = $count")
         }
         stream.close()
         println()
-        println(s"DOWNLOAD ENDED FOR $downloadPath")
         handleLastTransferResponse(packet)
     }
 
     private def findDownloadPath(packet: DataPacket): Path = {
-        val root = Path.of(desc.source.rootPath)
-        val uploadedFile = Paths.get(new String(packet.content))
-        val destination = Paths.get(desc.destination)
-        val rootNameCount = root.toString.count(char => char == '/' || char == '\\')
-        println(s"rootNameCount = ${rootNameCount}")
-        val relativePath = subPathOfUnknownFile(uploadedFile, rootNameCount)
-        println(s"relativePath = ${relativePath}")
-        destination.resolve(relativePath)
-    }
-
-    private def subPathOfUnknownFile(unknownFile: Path, from: Int): Path = {
-        val path = unknownFile.toString
-        var currentNameCount = 0
-        val subPathBuilder = new StringBuilder()
-        for (char <- path) {
-            if (char == '/' || char == '\\')
-                currentNameCount += 1
-            if (currentNameCount >= from) {
-                subPathBuilder.append(char)
-            }
-        }
-        Path.of(subPathBuilder.toString().replace('\\', '/'))
+        val root = Utils.formatPath(desc.source.rootPath)
+        val uploadedFile = Utils.formatPath(new String(packet.content))
+        val destination = Utils.formatPath(new String(desc.destination))
+        val rootNameCount = root.toString.count(char => char == File.separatorChar)
+        val relativePath = Utils.subPathOfUnknownFile(uploadedFile, rootNameCount)
+        val path = Utils.formatPath(destination.toString + relativePath)
+        path
     }
 
     private def handleLastTransferResponse(packet: DataPacket): Unit = {
@@ -123,12 +107,9 @@ class DownloadTask(private val channel: PacketChannel,
      * @return true if the transfer needs to be aborted, false instead
      * */
     private def checkPath(path: Path): Boolean = {
-        val root = Path.of(desc.source.rootPath)
-        val parent = path.getParent
         if (Files.notExists(path)) {
             Files.createDirectories(path)
-            if (desc.source.isDirectory && parent.equals(root))
-                return false
+            Files.delete(path)
             Files.createFile(path)
         }
         if (!Files.isWritable(path) || !Files.isReadable(path)) {

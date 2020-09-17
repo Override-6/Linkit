@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.server
 
-import java.net.{InetSocketAddress, SocketAddress, SocketException}
+import java.net.{InetSocketAddress, SocketAddress}
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
 import java.nio.charset.Charset
@@ -8,9 +8,9 @@ import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, Protocol, SimplePacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
-import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
@@ -31,22 +31,24 @@ class RelayServer(override val identifier: String)
 
     private var open = true
 
-
-    override def doDownload(description: TransferDescription): Task[Unit] = {
+    override def doDownload(description: TransferDescription): TaskAction[Unit] = {
         val target = description.target
         new DownloadTask(getPacketChannel(target), tasksHandler, description)
     }
 
-    override def doUpload(description: TransferDescription): Task[Unit] = {
+    override def doUpload(description: TransferDescription): TaskAction[Unit] = {
         val target = description.target
         new UploadTask(getPacketChannel(target), tasksHandler, description)
     }
 
-    override def requestAddress(id: String): Task[InetSocketAddress] =
+    override def requestAddress(id: String): TaskAction[InetSocketAddress] =
         throw new UnsupportedOperationException("can't create this request from a RelayServer, please use RelayServer#getAddress instead.")
 
-    override def requestFileInformation(owner: InetSocketAddress, path: String): Task[TransferableFile] =
+    override def requestFileInformation(owner: InetSocketAddress, path: String): TaskAction[TransferableFile] =
         new FileInfoTask(getPacketChannel(owner), tasksHandler, owner, path)
+
+    override def requestCreateFile(owner: InetSocketAddress, path: String): TaskAction[Unit] =
+        new CreateFileTask(path, owner, getPacketChannel(owner), tasksHandler)
 
     override def start(): Unit = {
         println("ready !")

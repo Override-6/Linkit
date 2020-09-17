@@ -19,14 +19,15 @@ class SimplePacketChannel(private val socketChannel: SocketChannel,
         socketChannel.write(bytes)
     }
 
-    override def nextPacket(): DataPacket = {
+    override def nextPacket(): DataPacket =
         queue.take()
-    }
+
+    override def haveMorePackets: Boolean =
+        !queue.isEmpty
 
     override def addPacket(packet: DataPacket): Boolean = {
         if (packet.sessionID != tasksHandler.currentSessionID)
             queue.clear()
         queue.add(packet)
     }
-
 }

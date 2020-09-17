@@ -16,7 +16,6 @@ class CreateFileTask(private val path: String,
 
 
     override def execute(): Unit = {
-        channel.sendPacket(CREATE_FILE, path)
         val packet = channel.nextPacket()
         val header = packet.header
         val content = packet.content
@@ -27,7 +26,8 @@ class CreateFileTask(private val path: String,
         success()
     }
 
-
+    override def sendTaskInfo(): Unit =
+        channel.sendPacket(CREATE_FILE, path)
 }
 
 object CreateFileTask {

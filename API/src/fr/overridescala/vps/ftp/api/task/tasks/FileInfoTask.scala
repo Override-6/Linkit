@@ -20,17 +20,12 @@ class FileInfoTask(private val channel: PacketChannel,
 
     override def execute(): Unit = {
         val response = channel.nextPacket()
+        val content = response.content
         if (response.header.equals(ERROR)) {
-            error(new String(response.content))
+            error(new String(content))
             return
         }
-        val size: Long = new String(response.content).toLong
-        val transferableFile = TransferableFile.builder()
-                .setOwner(ownerAddress)
-                .setPath(filePath)
-                .setSize(size)
-                .build()
-        success(transferableFile)
+        success(Utils.deserialize(content))
     }
 
 }
@@ -54,8 +49,9 @@ object FileInfoTask {
                 channel.sendPacket(ERROR, s"($path) Can't access to the file".getBytes())
                 return
             }
-            val size = Files.size(path)
-            channel.sendPacket(OK, s"$size".getBytes())
+            val fileInfo = TransferableFile.fromLocal(filePath)
+            val content = Utils.serialize(fileInfo)
+            channel.sendPacket(OK, content)
         }
     }
 

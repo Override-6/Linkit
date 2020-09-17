@@ -8,7 +8,7 @@ import java.nio.charset.Charset
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks._
-import fr.overridescala.vps.ftp.api.task.{Task, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
@@ -33,6 +33,10 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     override def requestFileInformation(owner: InetSocketAddress, path: String): Task[TransferableFile] =
         new FileInfoTask(packetChannel, tasksHandler, owner, path)
+
+    override def requestCreateFile(owner: InetSocketAddress, path: String): TaskAction[Unit] = {
+        new CreateFileTask(path, owner, packetChannel, tasksHandler)
+    }
 
     override def start(): Unit = {
         val thread = new Thread(() => {
@@ -92,7 +96,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
-    new InitTask(tasksHandler, packetChannel, identifier).queueWithError(msg => {
+    new InitTask(tasksHandler, packetChannel, identifier).queue(_, msg => {
         Console.err.print(s"unable to connect to the server : $msg")
         close()
     })

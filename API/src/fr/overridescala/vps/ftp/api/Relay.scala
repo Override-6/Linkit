@@ -17,6 +17,8 @@ trait Relay extends AutoCloseable {
 
     def requestFileInformation(owner: InetSocketAddress, path: String): TaskAction[TransferableFile]
 
+    def requestCreateFile(owner: InetSocketAddress, path: String): TaskAction[Unit]
+
     def start():Unit
 
 }

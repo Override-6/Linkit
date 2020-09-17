@@ -1,9 +1,10 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
 import java.nio.file.{Files, Path}
+import java.util
 
-import fr.overridescala.vps.ftp.api.exceptions.TransferException
-import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.exceptions.{TransferException, UnexpectedPacketException}
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, UPLOAD, UPLOAD_FILE}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
@@ -24,9 +25,6 @@ class UploadTask(private val channel: PacketChannel,
         val path = Path.of(desc.source.path)
         val destination = Path.of(desc.destination)
 
-        println(s"path = ${path}")
-        println(s"destination* = ${destination}")
-
         if (Files.isDirectory(path)) {
             if (Files.notExists(destination))
                 Files.createDirectories(destination)
@@ -45,7 +43,6 @@ class UploadTask(private val channel: PacketChannel,
 
     private def uploadDirectory(path: Path): Unit = {
         Files.list(path).forEach(children => {
-            println(s"children = ${children}")
             if (Files.isDirectory(children))
                 uploadDirectory(children)
             else uploadFile(children)
@@ -58,19 +55,26 @@ class UploadTask(private val channel: PacketChannel,
         val stream = Files.newInputStream(path)
         var totalBytesSent: Long = 0
         val totalBytes: Float = Files.size(path)
-        var id = 0
+        var count = 0
         channel.sendPacket(UPLOAD_FILE, path.toString)
         println("UPLOADING " + path)
 
         while (totalBytesSent < totalBytes) {
             try {
-                val bytes = new Array[Byte](Constants.MAX_PACKET_LENGTH - 512)
-                totalBytesSent += stream.read(bytes)
-                id += 1
-                makeDataTransfer(bytes, id)
+                var bytes = new Array[Byte](Constants.MAX_PACKET_LENGTH - 256)
+                val read = stream.read(bytes)
+                bytes = util.Arrays.copyOf(bytes, read)
+
+                count += 1
+                totalBytesSent += read
+                makeDataTransfer(bytes, count)
+
+                if (channel.haveMorePackets) {
+                    handleUnexpectedPacket(channel.nextPacket())
+                }
 
                 val percentage = totalBytesSent / totalBytes * 100
-                print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $id")
+                print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
             } catch {
                 case e: Throwable => {
                     var msg = e.getMessage
@@ -85,22 +89,12 @@ class UploadTask(private val channel: PacketChannel,
         stream.close()
     }
 
-    def checkPath(path: Path): Boolean = {
-        if (Files.notExists(path)) {
-            val errorMsg = s"($path) could not upload invalid file path : this file does not exists"
-            channel.sendPacket(ABORT, errorMsg)
-            error(errorMsg)
-            return true
-        }
-        false
-    }
-
     /**
      * makes one data transfer.
      *
      * @return true if the transfer need to be aborted, false instead
      * */
-    def makeDataTransfer(bytes: Array[Byte], id: Int): Unit = {
+    private def makeDataTransfer(bytes: Array[Byte], id: Int): Unit = {
         channel.sendPacket(s"$id", bytes)
         val packet = channel.nextPacket()
         if (packet.header.equals(ABORT)) {
@@ -121,6 +115,26 @@ class UploadTask(private val channel: PacketChannel,
                 channel.sendPacket(ABORT, e.getMessage)
                 error(e.getMessage)
         }
+    }
+
+    private def handleUnexpectedPacket(packet: DataPacket): Unit = {
+        val header = packet.header
+        val content = packet.content
+        if (header.equals(ABORT)) {
+            error(new String(content))
+            return
+        }
+        throw UnexpectedPacketException(s"unexpected packet with header $header was received.")
+    }
+
+    private def checkPath(path: Path): Boolean = {
+        if (Files.notExists(path)) {
+            val errorMsg = s"($path) could not upload invalid file path : this file does not exists"
+            channel.sendPacket(ABORT, errorMsg)
+            error(errorMsg)
+            return true
+        }
+        false
     }
 
 

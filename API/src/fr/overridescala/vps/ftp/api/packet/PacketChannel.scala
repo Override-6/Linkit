@@ -14,6 +14,8 @@ trait PacketChannel {
 
     def nextPacket(): DataPacket
 
+    def haveMorePackets: Boolean
+
     val ownerAddress: InetSocketAddress
 
 

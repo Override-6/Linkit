@@ -12,19 +12,23 @@ case class TransferableFile private(path: String,
                                     size: Long) extends Serializable {
 
 
+
 }
 
-object TransferableFile {
+object TransferableFile extends Serializable {
+
+    val serialVersionUID = 151
 
     def fromLocal(stringPath: String): TransferableFile = {
-        val path: Path = Path.of(stringPath.replace("/", "\\"))
-        if (Files notExists path) {
+        val path = Path.of(stringPath)
+        if (Files.notExists(path)) {
             throw new NoSuchFileException(stringPath)
         }
-        val isDirectory = Files.isDirectory(path)
-        val rootPath = if (Files.isDirectory(path)) path else path.getParent
-        new TransferableFile(stringPath, Constants.PUBLIC_ADDRESS, isDirectory, rootPath.toString, Files.size(path))
-
+        builder()
+                .setOwner(Constants.PUBLIC_ADDRESS)
+                .setPath(stringPath)
+                .setSize(Files.size(path))
+                .build()
     }
 
     def builder(): Builder = new Builder()
