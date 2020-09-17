@@ -24,6 +24,8 @@ class UploadTask(private val channel: PacketChannel,
     override def execute(): Unit = {
         val path = Path.of(desc.source.path)
         val destination = Path.of(desc.destination)
+        println(s"path = ${path}")
+        println(s"destination = ${destination}")
 
         if (Files.isDirectory(path)) {
             if (Files.notExists(destination))
@@ -42,6 +44,7 @@ class UploadTask(private val channel: PacketChannel,
     }
 
     private def uploadDirectory(path: Path): Unit = {
+        println(s"UPLOADING DIRECTORY ${path}")
         Files.list(path).forEach(children => {
             if (Files.isDirectory(children))
                 uploadDirectory(children)

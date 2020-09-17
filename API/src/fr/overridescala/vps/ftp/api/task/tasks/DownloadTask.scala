@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.io.File
 import java.nio.file.{Files, Path, Paths}
 
-import fr.overridescala.vps.ftp.api.exceptions.TransferException
+import fr.overridescala.vps.ftp.api.exceptions.{TransferException, UnexpectedPacketException}
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, DOWNLOAD}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
@@ -22,6 +22,10 @@ class DownloadTask(private val channel: PacketChannel,
 
     override def execute(): Unit = {
         val response = channel.nextPacket()
+        if (response.header.equals(UploadTask.END_OF_TRANSFER)) {
+            success()
+            return
+        }
         val downloadPath = findDownloadPath(response)
         try {
             downloadFile(downloadPath)
@@ -65,6 +69,7 @@ class DownloadTask(private val channel: PacketChannel,
     }
 
     private def findDownloadPath(packet: DataPacket): Path = {
+        Utils.checkPacketHeader(packet, Array(UploadTask.UPLOAD_FILE))
         val root = Utils.formatPath(desc.source.rootPath)
         val uploadedFile = Utils.formatPath(new String(packet.content))
         val destination = Utils.formatPath(new String(desc.destination))
@@ -74,14 +79,18 @@ class DownloadTask(private val channel: PacketChannel,
         path
     }
 
+
     private def handleLastTransferResponse(packet: DataPacket): Unit = {
         val header = packet.header
+
+        Utils.checkPacketHeader(packet, Array(UploadTask.END_OF_TRANSFER, UploadTask.UPLOAD_FILE))
+
         if (header.equals(UploadTask.END_OF_TRANSFER))
             success()
         else if (header.equals(UploadTask.UPLOAD_FILE)) {
             val downloadPath = findDownloadPath(packet)
             downloadFile(downloadPath)
-        } else throw new IllegalArgumentException(s"${UploadTask.END_OF_TRANSFER} or ${UploadTask.UPLOAD_FILE} expected, received : " + packet.toString)
+        }
     }
 
 

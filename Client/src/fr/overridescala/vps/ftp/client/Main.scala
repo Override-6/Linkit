@@ -51,7 +51,7 @@ object Main {
                 .setTarget(address)
                 .build()
         relayPoint.doDownload(download).queue(e => println("le fichier a été download"), Console.err.println)
-       // relayPoint.doUpload(upload).queue(e => println("le fichier a été upload"), Console.err.println)
+        relayPoint.doUpload(upload).queue(e => println("le fichier a été upload"), Console.err.println)
         println("toutes les tâches ont étées ajoutées et vont être éxécutées")
     }
 

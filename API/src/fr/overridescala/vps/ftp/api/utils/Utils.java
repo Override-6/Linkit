@@ -1,5 +1,10 @@
 package fr.overridescala.vps.ftp.api.utils;
 
+import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException;
+import fr.overridescala.vps.ftp.api.packet.DataPacket;
+import scala.Array;
+import scala.collection.Seq;
+
 import java.io.*;
 import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
@@ -57,6 +62,13 @@ public class Utils {
             }
         }
         return Path.of(subPathBuilder.toString().replace('\\', '/'));
+    }
+
+    public static void checkPacketHeader(DataPacket packet, Seq<String> expectedHeaders) throws UnexpectedPacketException {
+        if (expectedHeaders.contains(packet.header()))
+            return;
+        var msg = expectedHeaders.mkString("or") + " expected, received : " + packet.toString();
+        throw new UnexpectedPacketException(msg);
     }
 
 

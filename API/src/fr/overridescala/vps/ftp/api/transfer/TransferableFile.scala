@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.transfer
 import java.net.InetSocketAddress
 import java.nio.file.{Files, NoSuchFileException, Path}
 
-import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
 case class TransferableFile private(path: String,
                                     ownerAddress: InetSocketAddress,
@@ -20,13 +20,10 @@ object TransferableFile extends Serializable {
     val serialVersionUID = 151
 
     def fromLocal(stringPath: String): TransferableFile = {
-        val path = Path.of(stringPath)
-        if (Files.notExists(path)) {
-            throw new NoSuchFileException(stringPath)
-        }
+        val path = Utils.formatPath(stringPath).toRealPath()
         builder()
                 .setOwner(Constants.PUBLIC_ADDRESS)
-                .setPath(stringPath)
+                .setPath(path.toString)
                 .setSize(Files.size(path))
                 .build()
     }
