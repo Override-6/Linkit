@@ -93,12 +93,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
-    new InitTask(tasksHandler, packetChannel, identifier).queue(_, msg => {
-        Console.err.print(s"unable to connect to the server : $msg")
-        close()
-    })
-
-    //TESTS
-    start()
+    packetChannel.sendPacket("INIT", identifier)
 
 }

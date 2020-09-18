@@ -11,8 +11,9 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TasksHandler}
-import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, FileDescription}
+import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
+import sun.nio.ch.Net
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters
@@ -26,7 +27,7 @@ class RelayServer(override val identifier: String)
     private val serverSocket = configSocket()
     private val tasksHandler = new TasksHandler()
     private val completerFactory = new ServerTaskCompleterFactory(tasksHandler, this)
-    private val keysInfo = new ConcurrentHashMap[SocketAddress, RelayPointConnection]()
+    private val connectionsManager = new RelayPointConnectionManager(tasksHandler)
     private val packetLoader = new PacketLoader()
 
     private var open = true
@@ -63,8 +64,10 @@ class RelayServer(override val identifier: String)
                     handleKey(key)
                 } catch {
                     case e: Throwable =>
-                        val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-                        val identifier = keysInfo.get(address).identifier
+                        val address = key.channel()
+                                .asInstanceOf[SocketChannel]
+                                .getRemoteAddress
+                        val identifier = connectionsManager.getConnectionFromAddress(address).identifier
                         tasksHandler.cancelTasks(identifier)
                         key.cancel()
                         println("a connection closed suddenly")
@@ -95,41 +98,14 @@ class RelayServer(override val identifier: String)
         val keys = toScalaSet(selector.selectedKeys())
         for (key <- keys) {
             val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-            val keyId = keysInfo.get(address).identifier
+            val keyId = connectionsManager.getConnectionFromAddress(address).identifier
             if (keyId.equals(identifier)) {
                 key.channel().close()
                 key.cancel()
-                keysInfo.remove(address)
-                tasksHandler.cancelTasks(identifier)
+                connectionsManager.disconnect(address)
                 return
             }
         }
-    }
-
-    /**
-     * attributes a identifier to a connected Relay Point.
-     * this method is called from InitTaskCompleter.
-     *
-     * @param address    the address in which we attribute the identifier
-     * @param identifier the identifier of the address/connection
-     * @throws IllegalArgumentException when a id is already set for this address, or another connection is known under this id.
-     * @see InitTaskCompleter
-     * */
-    def initConnection(address: SocketAddress, identifier: String): Unit = {
-        val scalaKeysInfo = CollectionConverters.MapHasAsScala(keysInfo).asScala
-        if (keysInfo.containsKey(address))
-            throw new IllegalArgumentException(s"RelayPointConnection is already set for address $address")
-
-        for ((_, info) <- scalaKeysInfo if info.identifier != null) {
-            if (info.identifier.equals(identifier)) {
-                throw new IllegalArgumentException(s"another relay point have the same identifier")
-            }
-        }
-
-        val packetChannel = new SimplePacketChannel(channel, "", tasksHandler)
-
-        val info = RelayPointConnection(null, packetChannel, address)
-        keysInfo.put(socketChannel.getRemoteAddress, info)
     }
 
     /**
@@ -139,7 +115,7 @@ class RelayServer(override val identifier: String)
     private def getPacketChannel(identifier: String): SimplePacketChannel = {
         if (identifier.equals(this.identifier))
             throw new IllegalArgumentException("requested Packet Channel of server")
-        keysInfo.get(identifier).packetChannel
+        connectionsManager.getConnectionFromIdentifier(identifier).packetChannel
     }
 
     /**
@@ -152,6 +128,7 @@ class RelayServer(override val identifier: String)
 
         val socketChannel = channel.asInstanceOf[SocketChannel]
         val address = socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress]
+        channel.shutdownInput()
 
         println(s"new connection : ${address}")
     }
@@ -183,7 +160,7 @@ class RelayServer(override val identifier: String)
         buffer.get(bytes)
         packetLoader.add(bytes)
 
-        val identifier = keysInfo.get(channel.getRemoteAddress).identifier
+        val identifier = connectionsManager.getConnectionFromAddress(channel.getRemoteAddress).identifier
         val packetChannel = getPacketChannel(identifier)
         var packet: DataPacket = packetLoader.nextPacket
         while (packet != null) {
