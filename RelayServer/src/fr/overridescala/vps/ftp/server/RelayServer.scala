@@ -8,6 +8,7 @@ import java.util
 import java.util.concurrent.ConcurrentHashMap
 
 import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TasksHandler}
@@ -22,7 +23,7 @@ class RelayServer(override val identifier: String)
         extends Relay {
 
     private val selector = Selector.open()
-
+    private val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
 
     private val serverSocket = configSocket()
     private val tasksHandler = new TasksHandler()
@@ -64,6 +65,7 @@ class RelayServer(override val identifier: String)
                     handleKey(key)
                 } catch {
                     case e: Throwable =>
+                        e.printStackTrace()
                         val address = key.channel()
                                 .asInstanceOf[SocketChannel]
                                 .getRemoteAddress
@@ -72,7 +74,6 @@ class RelayServer(override val identifier: String)
                         key.cancel()
                         println("a connection closed suddenly")
                         disconnect(identifier)
-                        e.printStackTrace()
                 }
                 it.remove()
             }
@@ -128,7 +129,6 @@ class RelayServer(override val identifier: String)
 
         val socketChannel = channel.asInstanceOf[SocketChannel]
         val address = socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress]
-        channel.shutdownInput()
 
         println(s"new connection : ${address}")
     }
@@ -140,33 +140,74 @@ class RelayServer(override val identifier: String)
         if (key.isAcceptable)
             handleNewConnection()
         if (key.isReadable)
-            handlePacket(key)
+            readKey(key)
     }
 
     /**
-     * handles the data
+     * read / refreshes a key
+     *
+     * @param key the key to read
      * */
-    private def handlePacket(key: SelectionKey): Unit = {
-        val channel = key.channel().asInstanceOf[SocketChannel]
-        val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
+    private def readKey(key: SelectionKey): Unit = {
+        val socket = key.channel().asInstanceOf[SocketChannel]
+        val read = readSocket(socket)
+        if (read > 0)
+            handlePacket(socket)
+    }
 
-        val count = channel.read(buffer)
-        if (count < 1)
-            return
+    /**
+     * read the socket and print the data into a Buffer
+     *
+     * @param socket the socket to read
+     * @return the number of bytes read
+     * */
+    private def readSocket(socket: SocketChannel): Int = {
+
+        val count = socket.read(buffer)
+        if (count < 0)
+            return count
 
         val bytes = new Array[Byte](count)
 
         buffer.flip()
         buffer.get(bytes)
+        buffer.clear()
         packetLoader.add(bytes)
+        count
+    }
 
-        val identifier = connectionsManager.getConnectionFromAddress(channel.getRemoteAddress).identifier
-        val packetChannel = getPacketChannel(identifier)
+    /**
+     * handles the data, then creates one or multiple packets in function of the PacketLoader.
+     * then distribute the packets to other handlers
+     * */
+    def handlePacket(socket: SocketChannel): Unit = {
         var packet: DataPacket = packetLoader.nextPacket
+        val connection = connectionsManager.getConnectionFromAddress(socket.getRemoteAddress)
+
+        if (connection == null) {
+            handleInit(packet, socket)
+            return
+        }
+
+        val identifier = connection.identifier
+        val packetChannel = getPacketChannel(identifier)
         while (packet != null) {
             tasksHandler.handlePacket(packet, completerFactory, packetChannel)
             packet = packetLoader.nextPacket
         }
+    }
+
+    /**
+     * handles an presumed INIT Packet, then init the RelayPointConnection
+     *
+     * @throws UnexpectedPacketException if the packet header isn't "INIT"
+     * */
+    def handleInit(packet: DataPacket, socket: SocketChannel): Unit = {
+        val header = packet.header
+        if (!header.equals("INIT"))
+            throw UnexpectedPacketException(s"received packet $packet when attempting to init a RelayPointConnection")
+        val identifier = new String(packet.content)
+        connectionsManager.initConnection(socket, identifier)
     }
 
     private def configSocket(): ServerSocketChannel = {
@@ -178,9 +219,8 @@ class RelayServer(override val identifier: String)
         socket
     }
 
-    private def toScalaSet[T](javaSet: java.util.Set[T]): mutable.Set[T] = {
+    private def toScalaSet[T](javaSet: java.util.Set[T]): mutable.Set[T] =
         CollectionConverters.SetHasAsScala(javaSet).asScala
-    }
 
     // default tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => this.close()))

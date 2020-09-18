@@ -29,8 +29,9 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
      * @param identifier the identifier of the address/connection
      * @throws IllegalArgumentException when a id is already set for this address, or another connection is known under this id.
      * */
-    def initConnection(address: InetSocketAddress, socket: SocketChannel, identifier: String): Unit = {
+    def initConnection(socket: SocketChannel, identifier: String): Unit = {
         val scalaMap = CollectionConverters.MapHasAsScala(connections).asScala
+        val address = socket.getRemoteAddress
         if (connections.containsKey(address))
             throw new IllegalArgumentException(s"RelayPointConnection is already set for address $address")
 
@@ -42,8 +43,9 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
 
         val packetChannel = new SimplePacketChannel(socket, "", tasksHandler)
 
-        val info = RelayPointConnection(null, packetChannel, address)
+        val info = RelayPointConnection(identifier, packetChannel, address)
         connections.put(address, info)
+        println(s"connections = ${connections}")
     }
 
 
@@ -65,6 +67,7 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
      * @return the linked RelayPointConnection instance, null instead
      * */
     def getConnectionFromAddress(address: SocketAddress): RelayPointConnection = {
+        println(s"connections = ${connections}")
         connections.get(address)
     }
 
