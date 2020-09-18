@@ -4,7 +4,6 @@ import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{DynamicTaskCompleterFactory, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
-import fr.overridescala.vps.ftp.server.tasks.InitTaskCompleter
 
 import scala.collection.mutable
 
@@ -26,8 +25,6 @@ class ServerTaskCompleterFactory(private val tasksHandler: TasksHandler,
                 new UploadTask(channel, tasksHandler, Utils.deserialize(content))
             case FileInfoTask.FILE_INFO =>
                 new FileInfoTask.FileInfoCompleter(channel, Utils.deserialize(content).asInstanceOf[(String, _)]._1)
-            case InitTask.INIT =>
-                new InitTaskCompleter(server, channel, contentString)
             case CreateFileTask.CREATE_FILE =>
                 new CreateFileTask.CreateFileCompleter(channel, contentString)
 

@@ -1,5 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet
 
+import java.net.SocketAddress
+
 trait PacketChannel {
 
     def sendPacket(header: String, content: Array[Byte]): Unit
@@ -16,5 +18,5 @@ trait PacketChannel {
 
     val ownerID: String
 
-
+    val ownerAddress: SocketAddress
 }

@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
+import java.net.SocketAddress
 import java.nio.channels.SocketChannel
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
@@ -28,4 +29,6 @@ class SimplePacketChannel(private val socketChannel: SocketChannel,
             queue.clear()
         queue.add(packet)
     }
+
+    override val ownerAddress: SocketAddress = socketChannel.getRemoteAddress
 }
