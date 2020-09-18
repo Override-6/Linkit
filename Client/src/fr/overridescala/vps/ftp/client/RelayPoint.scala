@@ -63,11 +63,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     def updateNetwork(buffer: ByteBuffer): Unit = synchronized {
-        val a = socketChannel.isConnected
-        val b = socketChannel.isConnectionPending
-        val c = socketChannel.isOpen
-        val d = socketChannel.isRegistered
-        println(a, b, c, d)
         val count = socketChannel.read(buffer)
         if (count < 1)
             return

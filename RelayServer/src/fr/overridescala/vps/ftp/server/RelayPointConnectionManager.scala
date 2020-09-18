@@ -45,7 +45,6 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
 
         val info = RelayPointConnection(identifier, packetChannel, address)
         connections.put(address, info)
-        println(s"connections = ${connections}")
     }
 
 
