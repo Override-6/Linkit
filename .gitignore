@@ -2,3 +2,5 @@
 /out/
 /target/
 /target/idea_output/
+.idea
+.idea_modules
