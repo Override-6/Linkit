@@ -1,10 +1,10 @@
 package fr.overridescala.vps.ftp.server
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.{AddressTask, CreateFileTask, DownloadTask, FileInfoTask, InitTask, StressTestTask, UploadTask}
+import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{DynamicTaskCompleterFactory, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
-import fr.overridescala.vps.ftp.server.tasks.{AddressTaskCompleter, InitTaskCompleter}
+import fr.overridescala.vps.ftp.server.tasks.InitTaskCompleter
 
 import scala.collection.mutable
 
@@ -19,19 +19,17 @@ class ServerTaskCompleterFactory(private val tasksHandler: TasksHandler,
         val contentString = new String(content)
         taskType match {
             case "STRSS" =>
-                new StressTestTask.Completer(channel, contentString.toLong)
+                new StressTestTask.StressTestCompleter(channel, contentString.toLong)
             case UploadTask.UPLOAD =>
                 new DownloadTask(channel, tasksHandler, Utils.deserialize(content))
             case DownloadTask.DOWNLOAD =>
                 new UploadTask(channel, tasksHandler, Utils.deserialize(content))
             case FileInfoTask.FILE_INFO =>
-                new FileInfoTask.Completer(channel, Utils.deserialize(content).asInstanceOf[(String, _)]._1)
-            case AddressTask.ADDRESS =>
-                new AddressTaskCompleter(channel, server, contentString)
+                new FileInfoTask.FileInfoCompleter(channel, Utils.deserialize(content).asInstanceOf[(String, _)]._1)
             case InitTask.INIT =>
                 new InitTaskCompleter(server, channel, contentString)
             case CreateFileTask.CREATE_FILE =>
-                new CreateFileTask.Completer(channel, contentString)
+                new CreateFileTask.CreateFileCompleter(channel, contentString)
 
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)

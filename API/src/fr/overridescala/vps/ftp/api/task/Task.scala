@@ -1,13 +1,12 @@
 package fr.overridescala.vps.ftp.api.task
 
-import java.net.InetSocketAddress
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 import fr.overridescala.vps.ftp.api.exceptions.TransferException
 
 abstract class Task[T](private val handler: TasksHandler,
-                       private val target: InetSocketAddress)
+                       private val targetID: String)
         extends TaskAction[T] with TaskExecutor {
 
     private val onSuccess: AtomicReference[T => Unit] = new AtomicReference[T => Unit]()
@@ -17,11 +16,11 @@ abstract class Task[T](private val handler: TasksHandler,
     final override def queue(onSuccess: T => Unit = t => {}, onError: String => Unit = Console.err.println): Unit = {
         this.onSuccess.set(onSuccess)
         this.onError.set(onError)
-        handler.register(this, sessionID, target, true)
+        handler.register(this, sessionID, targetID, true)
     }
 
     final override def complete(): T = {
-        handler.register(this, sessionID, target, true)
+        handler.register(this, sessionID, targetID, true)
         val atomicResult = new AtomicReference[T]()
         val onSuccess: T => Unit = result => synchronized {
             notify()

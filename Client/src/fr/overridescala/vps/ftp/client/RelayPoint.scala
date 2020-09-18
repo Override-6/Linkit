@@ -18,7 +18,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     private val socketChannel = configSocket()
     private val tasksHandler = new TasksHandler()
-    private val packetChannel = new SimplePacketChannel(socketChannel, tasksHandler)
+    private val packetChannel = new SimplePacketChannel(socketChannel, identifier, tasksHandler)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
     private val packetLoader = new PacketLoader()
 
@@ -28,14 +28,11 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override def doUpload(description: TransferDescription): Task[Unit] =
         new UploadTask(packetChannel, tasksHandler, description)
 
-    override def requestAddress(id: String): Task[InetSocketAddress] =
-        new AddressTask(packetChannel, tasksHandler, id)
+    override def requestFileInformation(ownerID: String, path: String): Task[FileDescription] =
+        new FileInfoTask(packetChannel, tasksHandler, ownerID, path)
 
-    override def requestFileInformation(owner: InetSocketAddress, path: String): Task[FileDescription] =
-        new FileInfoTask(packetChannel, tasksHandler, owner, path)
-
-    override def requestCreateFile(owner: InetSocketAddress, path: String): TaskAction[Unit] = {
-        new CreateFileTask(path, owner, packetChannel, tasksHandler)
+    override def requestCreateFile(ownerID: String, path: String): TaskAction[Unit] = {
+        new CreateFileTask(path, ownerID, packetChannel, tasksHandler)
     }
 
     override def start(): Unit = {

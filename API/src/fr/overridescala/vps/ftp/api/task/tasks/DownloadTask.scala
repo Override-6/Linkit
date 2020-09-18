@@ -14,7 +14,7 @@ import fr.overridescala.vps.ftp.api.utils.Utils
 class DownloadTask(private val channel: PacketChannel,
                    private val handler: TasksHandler,
                    private val desc: TransferDescription)
-        extends Task[Unit](handler, channel.ownerAddress) with TaskExecutor {
+        extends Task[Unit](handler, desc.targetID) with TaskExecutor {
 
     override def sendTaskInfo(): Unit = {
         channel.sendPacket(DOWNLOAD, Utils.serialize(desc))

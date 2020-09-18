@@ -5,10 +5,10 @@ import java.util
 
 object Protocol {
 
-    protected val BEGIN: Array[Byte] = "<begin>".getBytes
-    protected val HEADER: Array[Byte] = "<header>".getBytes
-    protected val CONTENT: Array[Byte] = "<content>".getBytes
-    protected val END: Array[Byte] = "<end>".getBytes
+    protected val BEGIN: Array[Byte] = "beg".getBytes
+    protected val HEADER: Array[Byte] = "head".getBytes
+    protected val CONTENT: Array[Byte] = "cont".getBytes
+    protected val END: Array[Byte] = "end".getBytes
 
     def createTaskPacket(sessionID: Int, header: String, content: Array[Byte] = Array()): ByteBuffer = {
         val headerBytes = header.getBytes

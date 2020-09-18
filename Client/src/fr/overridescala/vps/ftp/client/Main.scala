@@ -30,12 +30,10 @@ object Main {
 
     def runClient(): Unit = {
         relayPoint.start()
-        val serverAddress = relayPoint.requestAddress("server").complete()
-        println(s"serverAddress = $serverAddress")
 
-        relayPoint.requestCreateFile(serverAddress, serverFolderTest)
+        relayPoint.requestCreateFile(Constants.SERVER_ID, serverFolderTest)
                 .queue()
-        val fileInfo = relayPoint.requestFileInformation(serverAddress, serverFolderTest)
+        val fileInfo = relayPoint.requestFileInformation(Constants.SERVER_ID, serverFolderTest)
                 .complete()
         performDownload(fileInfo)
         performUpload()
@@ -45,7 +43,7 @@ object Main {
         val download = TransferDescription.builder()
                 .setSource(fileInfo)
                 .setDestination(downloadFolder)
-                .setTarget(address)
+                .setTargetID(Constants.SERVER_ID)
                 .build()
         relayPoint.doDownload(download).queue(e => println("le fichier a été download"), Console.err.println)
     }
@@ -54,7 +52,7 @@ object Main {
         val upload = TransferDescription.builder()
                 .setSource(FileDescription.fromLocal(uploadFolder))
                 .setDestination(serverFolderTest)
-                .setTarget(address)
+                .setTargetID(Constants.SERVER_ID)
                 .build()
         relayPoint.doUpload(upload).queue(e => println("le fichier a été upload"), Console.err.println)
         println("toutes les tâches ont étées ajoutées et vont être éxécutées")

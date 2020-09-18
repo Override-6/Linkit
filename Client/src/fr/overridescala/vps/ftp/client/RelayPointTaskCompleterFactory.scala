@@ -22,11 +22,11 @@ class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
             case DownloadTask.DOWNLOAD =>
                 new UploadTask(channel, tasksHandler, Utils.deserialize(content))
             case FileInfoTask.FILE_INFO =>
-                new FileInfoTask.Completer(channel, contentString)
+                new FileInfoTask.FileInfoCompleter(channel, contentString)
             case CreateFileTask.CREATE_FILE =>
-                new CreateFileTask.Completer(channel, contentString)
+                new CreateFileTask.CreateFileCompleter(channel, contentString)
             case "STRSS" =>
-                new StressTestTask.Completer(channel, contentString.toLong)
+                new StressTestTask.StressTestCompleter(channel, contentString.toLong)
 
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)

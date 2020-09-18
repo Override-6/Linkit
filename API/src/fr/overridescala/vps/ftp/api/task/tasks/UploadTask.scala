@@ -13,7 +13,7 @@ import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 class UploadTask(private val channel: PacketChannel,
                  private val handler: TasksHandler,
                  private val desc: TransferDescription)
-        extends Task[Unit](handler, channel.ownerAddress) with TaskExecutor {
+        extends Task[Unit](handler, desc.targetID) with TaskExecutor {
 
 
     override def sendTaskInfo(): Unit = {

@@ -32,23 +32,20 @@ class RelayServer(override val identifier: String)
     private var open = true
 
     override def doDownload(description: TransferDescription): TaskAction[Unit] = {
-        val target = description.target
+        val target = description.targetID
         new DownloadTask(getPacketChannel(target), tasksHandler, description)
     }
 
     override def doUpload(description: TransferDescription): TaskAction[Unit] = {
-        val target = description.target
+        val target = description.targetID
         new UploadTask(getPacketChannel(target), tasksHandler, description)
     }
 
-    override def requestAddress(id: String): TaskAction[InetSocketAddress] =
-        throw new UnsupportedOperationException("can't create this request from a RelayServer, please use RelayServer#getAddress instead.")
+    override def requestFileInformation(ownerID: String, path: String): TaskAction[FileDescription] =
+        new FileInfoTask(getPacketChannel(ownerID), tasksHandler, ownerID, path)
 
-    override def requestFileInformation(owner: InetSocketAddress, path: String): TaskAction[FileDescription] =
-        new FileInfoTask(getPacketChannel(owner), tasksHandler, owner, path)
-
-    override def requestCreateFile(owner: InetSocketAddress, path: String): TaskAction[Unit] =
-        new CreateFileTask(path, owner, getPacketChannel(owner), tasksHandler)
+    override def requestCreateFile(ownerID: String, path: String): TaskAction[Unit] =
+        new CreateFileTask(path, ownerID, getPacketChannel(ownerID), tasksHandler)
 
     override def start(): Unit = {
         println("ready !")
@@ -67,10 +64,11 @@ class RelayServer(override val identifier: String)
                 } catch {
                     case e: Throwable =>
                         val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-                        tasksHandler.cancelTasks(address)
+                        val identifier = keysInfo.get(address).identifier
+                        tasksHandler.cancelTasks(identifier)
                         key.cancel()
                         println("a connection closed suddenly")
-                        disconnect(address)
+                        disconnect(identifier)
                         e.printStackTrace()
                 }
                 it.remove()
@@ -88,16 +86,17 @@ class RelayServer(override val identifier: String)
         selector.close()
     }
 
-    def disconnect(address: SocketAddress): Unit = {
+    def disconnect(id: String): Unit = {
         val keys = toScalaSet(selector.selectedKeys())
         for (key <- keys) {
-            val socketChannel = key.channel().asInstanceOf[SocketChannel]
-
-            if (address.equals(socketChannel.getRemoteAddress)) {
+            val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
+            val keyId = keysInfo.get(address).identifier
+            if (keyId.equals(id)) {
                 key.channel().close()
                 key.cancel()
                 keysInfo.remove(address)
-                tasksHandler.cancelTasks(address)
+                tasksHandler.cancelTasks(identifier)
+                return
             }
         }
     }
@@ -107,8 +106,8 @@ class RelayServer(override val identifier: String)
             return Constants.PUBLIC_ADDRESS
 
         val scalaKeysInfo = CollectionConverters.MapHasAsScala(keysInfo).asScala
-        for ((_, info) <- scalaKeysInfo if info.id != null) {
-            if (info.id.equals(id))
+        for ((_, info) <- scalaKeysInfo if info.identifier != null) {
+            if (info.identifier.equals(id))
                 return info.address.asInstanceOf[InetSocketAddress]
         }
         null
@@ -117,20 +116,20 @@ class RelayServer(override val identifier: String)
     def attributeID(address: InetSocketAddress, id: String): Boolean = {
         val scalaKeysInfo = CollectionConverters.MapHasAsScala(keysInfo).asScala
         val info = keysInfo.get(address)
-        val relayPointID = info.id
+        val relayPointID = info.identifier
         if (relayPointID != null) {
             return false
         }
-        for ((_, info) <- scalaKeysInfo if info.id != null) {
-            if (info.id.equals(id)) {
+        for ((_, info) <- scalaKeysInfo if info.identifier != null) {
+            if (info.identifier.equals(id)) {
                 return false
             }
         }
-        info.id = id
+        info.identifier = id
         true
     }
 
-    private def getPacketChannel(target: SocketAddress): SimplePacketChannel = {
+    private def getPacketChannel(target: String): SimplePacketChannel = {
         keysInfo.get(target).channelManager
     }
 
@@ -139,7 +138,7 @@ class RelayServer(override val identifier: String)
         channel.configureBlocking(false)
         channel.register(selector, SelectionKey.OP_READ)
         val socketChannel = channel.asInstanceOf[SocketChannel]
-        val info = KeyInfo(socketChannel.getRemoteAddress, null, new SimplePacketChannel(channel, tasksHandler))
+        val info = KeyInfo(socketChannel.getRemoteAddress, null, new SimplePacketChannel(channel, "", tasksHandler))
         keysInfo.put(socketChannel.getRemoteAddress, info)
         println(s"new connection : ${socketChannel.getRemoteAddress}")
     }
@@ -159,14 +158,15 @@ class RelayServer(override val identifier: String)
         val count = channel.read(buffer)
         if  (count < 1)
             return
-        
+
         val bytes = new Array[Byte](count)
 
         buffer.flip()
         buffer.get(bytes)
         packetLoader.add(bytes)
 
-        val packetChannel = getPacketChannel(channel.getRemoteAddress)
+        val identifier = keysInfo.get(channel.getRemoteAddress).identifier
+        val packetChannel = getPacketChannel(identifier)
         var packet: DataPacket = packetLoader.nextPacket
         while (packet != null) {
             tasksHandler.handlePacket(packet, completerFactory, packetChannel)
@@ -191,7 +191,7 @@ class RelayServer(override val identifier: String)
     Runtime.getRuntime.addShutdownHook(new Thread(() => this.close()))
 
     case class KeyInfo(address: SocketAddress,
-                       var id: String,
+                       var identifier: String,
                        channelManager: SimplePacketChannel)
 
 }

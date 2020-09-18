@@ -7,13 +7,13 @@ import fr.overridescala.vps.ftp.api.utils.Constants
 
 class TransferDescription private(val source: FileDescription,
                                   val destination: String,
-                                  val target: InetSocketAddress,
-                                  val sender: InetSocketAddress) extends Serializable {
+                                  val targetID: String,
+                                  val senderID: String) extends Serializable {
 
     val transferSize: Long = source size
 
     override def toString: String = s"TransferDescription{source: ${source.path}, length: $transferSize," +
-            s" destination: $destination, target: $target, sender: $sender}"
+            s" destination: $destination, target: $targetID, sender: $senderID}"
 
 }
 
@@ -24,7 +24,7 @@ object TransferDescription {
     class Builder() {
         private var source: FileDescription = _
         private var destination: String = _
-        private var target: InetSocketAddress = _
+        private var targetID: String = _
 
         def setSource(source: FileDescription): Builder = {
             this.source = source
@@ -36,12 +36,12 @@ object TransferDescription {
             this
         }
 
-        def setTarget(target: InetSocketAddress): Builder = {
-            this.target = target
+        def setTargetID(targetID: String): Builder = {
+            this.targetID = targetID
             this
         }
 
-        def build(): TransferDescription = new TransferDescription(source, destination, Constants.PUBLIC_ADDRESS, target)
+        def build(): TransferDescription = new TransferDescription(source, destination, targetID, Constants.SELF_ID)
     }
 
 }
