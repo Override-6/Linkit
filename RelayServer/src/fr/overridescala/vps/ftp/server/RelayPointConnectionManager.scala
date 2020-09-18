@@ -67,7 +67,6 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
      * @return the linked RelayPointConnection instance, null instead
      * */
     def getConnectionFromAddress(address: SocketAddress): RelayPointConnection = {
-        println(s"connections = ${connections}")
         connections.get(address)
     }
 

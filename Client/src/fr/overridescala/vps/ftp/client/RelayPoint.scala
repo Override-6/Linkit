@@ -97,7 +97,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
-    start()
-    new StressTestTask(packetChannel, tasksHandler, 150000000).complete()
+    packetChannel.sendPacket("INIT", identifier)
 
 }
