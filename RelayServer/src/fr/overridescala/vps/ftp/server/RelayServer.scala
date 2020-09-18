@@ -11,7 +11,7 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TasksHandler}
-import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
+import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, FileDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 import scala.collection.mutable
@@ -44,7 +44,7 @@ class RelayServer(override val identifier: String)
     override def requestAddress(id: String): TaskAction[InetSocketAddress] =
         throw new UnsupportedOperationException("can't create this request from a RelayServer, please use RelayServer#getAddress instead.")
 
-    override def requestFileInformation(owner: InetSocketAddress, path: String): TaskAction[TransferableFile] =
+    override def requestFileInformation(owner: InetSocketAddress, path: String): TaskAction[FileDescription] =
         new FileInfoTask(getPacketChannel(owner), tasksHandler, owner, path)
 
     override def requestCreateFile(owner: InetSocketAddress, path: String): TaskAction[Unit] =

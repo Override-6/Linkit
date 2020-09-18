@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TasksHandler}
-import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
+import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, FileDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
@@ -31,7 +31,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override def requestAddress(id: String): Task[InetSocketAddress] =
         new AddressTask(packetChannel, tasksHandler, id)
 
-    override def requestFileInformation(owner: InetSocketAddress, path: String): Task[TransferableFile] =
+    override def requestFileInformation(owner: InetSocketAddress, path: String): Task[FileDescription] =
         new FileInfoTask(packetChannel, tasksHandler, owner, path)
 
     override def requestCreateFile(owner: InetSocketAddress, path: String): TaskAction[Unit] = {
@@ -103,7 +103,5 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     //TESTS
     start()
-    new StressTestTask(packetChannel, tasksHandler, 750000000) //750Mo
-            .completeNow()
 
 }

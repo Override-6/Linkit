@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api
 import java.net.InetSocketAddress
 
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction}
-import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
+import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, FileDescription}
 
 trait Relay extends AutoCloseable {
 
@@ -15,7 +15,7 @@ trait Relay extends AutoCloseable {
 
     def requestAddress(id: String): TaskAction[InetSocketAddress]
 
-    def requestFileInformation(owner: InetSocketAddress, path: String): TaskAction[TransferableFile]
+    def requestFileInformation(owner: InetSocketAddress, path: String): TaskAction[FileDescription]
 
     def requestCreateFile(owner: InetSocketAddress, path: String): TaskAction[Unit]
 

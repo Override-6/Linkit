@@ -6,14 +6,14 @@ import java.nio.file.{Files, Path}
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.FileInfoTask.{ERROR, FILE_INFO}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
-import fr.overridescala.vps.ftp.api.transfer.TransferableFile
+import fr.overridescala.vps.ftp.api.transfer.FileDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 class FileInfoTask(private val channel: PacketChannel,
                    private val handler: TasksHandler,
                    private val ownerAddress: InetSocketAddress,
                    private val filePath: String)
-        extends Task[TransferableFile](handler, channel.ownerAddress)
+        extends Task[FileDescription](handler, channel.ownerAddress)
                 with TaskExecutor {
 
     override def sendTaskInfo(): Unit = channel.sendPacket(FILE_INFO, Utils.serialize((filePath, ownerAddress.getHostString)))
@@ -49,7 +49,7 @@ object FileInfoTask {
                 channel.sendPacket(ERROR, s"($path) Can't access to the file".getBytes())
                 return
             }
-            val fileInfo = TransferableFile.fromLocal(filePath)
+            val fileInfo = FileDescription.fromLocal(filePath)
             val content = Utils.serialize(fileInfo)
             channel.sendPacket(OK, content)
         }

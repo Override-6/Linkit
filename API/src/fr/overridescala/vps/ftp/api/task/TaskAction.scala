@@ -4,6 +4,6 @@ trait TaskAction[T] {
 
     def queue(onSuccess: T => Unit = t => {}, onError: String => Unit = Console.err.println): Unit
 
-    def completeNow(): T
+    def complete(): T
 
 }

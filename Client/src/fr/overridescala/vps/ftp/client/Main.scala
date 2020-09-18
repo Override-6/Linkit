@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 import java.util.Scanner
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferableFile}
+import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, FileDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 object Main {
@@ -30,27 +30,32 @@ object Main {
 
     def runClient(): Unit = {
         relayPoint.start()
-        val serverAddress = relayPoint.requestAddress("server").completeNow()
+        val serverAddress = relayPoint.requestAddress("server").complete()
         println(s"serverAddress = $serverAddress")
 
         relayPoint.requestCreateFile(serverAddress, serverFolderTest)
                 .queue()
-        relayPoint.requestFileInformation(serverAddress, serverFolderTest)
-                .queue(nextStep)
+        val fileInfo = relayPoint.requestFileInformation(serverAddress, serverFolderTest)
+                .complete()
+        performDownload(fileInfo)
+        performUpload()
     }
 
-    def nextStep(fileInfo: TransferableFile): Unit = {
+    def performDownload(fileInfo: FileDescription): Unit = {
         val download = TransferDescription.builder()
                 .setSource(fileInfo)
                 .setDestination(downloadFolder)
                 .setTarget(address)
                 .build()
+        relayPoint.doDownload(download).queue(e => println("le fichier a été download"), Console.err.println)
+    }
+
+    def performUpload(): Unit = {
         val upload = TransferDescription.builder()
-                .setSource(TransferableFile.fromLocal(uploadFolder))
+                .setSource(FileDescription.fromLocal(uploadFolder))
                 .setDestination(serverFolderTest)
                 .setTarget(address)
                 .build()
-        relayPoint.doDownload(download).queue(e => println("le fichier a été download"), Console.err.println)
         relayPoint.doUpload(upload).queue(e => println("le fichier a été upload"), Console.err.println)
         println("toutes les tâches ont étées ajoutées et vont être éxécutées")
     }

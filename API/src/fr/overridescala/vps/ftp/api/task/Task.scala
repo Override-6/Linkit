@@ -20,7 +20,7 @@ abstract class Task[T](private val handler: TasksHandler,
         handler.register(this, sessionID, target, true)
     }
 
-    final override def completeNow(): T = {
+    final override def complete(): T = {
         handler.register(this, sessionID, target, true)
         val atomicResult = new AtomicReference[T]()
         val onSuccess: T => Unit = result => synchronized {

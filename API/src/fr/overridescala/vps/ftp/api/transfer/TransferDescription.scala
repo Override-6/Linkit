@@ -5,7 +5,7 @@ import java.net.InetSocketAddress
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 
-class TransferDescription private(val source: TransferableFile,
+class TransferDescription private(val source: FileDescription,
                                   val destination: String,
                                   val target: InetSocketAddress,
                                   val sender: InetSocketAddress) extends Serializable {
@@ -22,11 +22,11 @@ object TransferDescription {
     def builder(): Builder = new Builder()
 
     class Builder() {
-        private var source: TransferableFile = _
+        private var source: FileDescription = _
         private var destination: String = _
         private var target: InetSocketAddress = _
 
-        def setSource(source: TransferableFile): Builder = {
+        def setSource(source: FileDescription): Builder = {
             this.source = source
             this
         }

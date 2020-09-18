@@ -5,21 +5,21 @@ import java.nio.file.{Files, NoSuchFileException, Path}
 
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
-case class TransferableFile private(path: String,
-                                    ownerAddress: InetSocketAddress,
-                                    isDirectory: Boolean,
-                                    rootPath: String,
-                                    size: Long) extends Serializable {
+case class FileDescription private(path: String,
+                                   ownerAddress: InetSocketAddress,
+                                   isDirectory: Boolean,
+                                   rootPath: String,
+                                   size: Long) extends Serializable {
 
 
 
 }
 
-object TransferableFile extends Serializable {
+object FileDescription extends Serializable {
 
     val serialVersionUID = 151
 
-    def fromLocal(stringPath: String): TransferableFile = {
+    def fromLocal(stringPath: String): FileDescription = {
         val path = Utils.formatPath(stringPath).toRealPath()
         builder()
                 .setOwner(Constants.PUBLIC_ADDRESS)
@@ -57,8 +57,8 @@ object TransferableFile extends Serializable {
             this
         }
 
-        def build(): TransferableFile =
-            new TransferableFile(path, ownerAddress, isDirectory, rootPath.toString, size)
+        def build(): FileDescription =
+            new FileDescription(path, ownerAddress, isDirectory, rootPath.toString, size)
 
     }
 
