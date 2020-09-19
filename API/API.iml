@@ -7,8 +7,8 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scala-library-2.13.3.jar" level="project" />
-    <orderEntry type="module-library">
+    <orderEntry type="library" exported="" name="scala-library-2.13.3.jar" level="project" />
+    <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
           <root url="jar://$MAVEN_REPOSITORY$/org/jetbrains/annotations/19.0.0/annotations-19.0.0.jar!/" />
@@ -17,6 +17,7 @@
         <SOURCES />
       </library>
     </orderEntry>
-    <orderEntry type="library" name="scala-reflect-2.12.8.jar" level="project" />
+    <orderEntry type="library" exported="" name="scala-reflect-2.12.8.jar" level="project" />
+    <orderEntry type="library" exported="" name="scala-sdk-2.13.3" level="project" />
   </component>
 </module>

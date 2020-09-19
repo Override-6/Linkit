@@ -10,7 +10,7 @@ class TransferDescription private(val source: FileDescription,
                                   val targetID: String,
                                   val senderID: String) extends Serializable {
 
-    val transferSize: Long = source size
+    val transferSize: Long = source.size
 
     override def toString: String = s"TransferDescription{source: ${source.path}, length: $transferSize," +
             s" destination: $destination, target: $targetID, sender: $senderID}"

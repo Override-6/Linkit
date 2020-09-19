@@ -77,7 +77,7 @@ class UploadTask(private val channel: PacketChannel,
                 }
 
                 val percentage = totalBytesSent / totalBytes * 100
-                print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
+                println(s"sent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
             } catch {
                 case e: Throwable => {
                     var msg = e.getMessage
