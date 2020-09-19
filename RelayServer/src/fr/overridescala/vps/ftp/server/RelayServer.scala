@@ -171,8 +171,8 @@ class RelayServer(override val identifier: String)
 
         buffer.flip()
         buffer.get(bytes)
-        buffer.clear()
         packetLoader.add(bytes)
+        buffer.clear()
         count
     }
 
@@ -182,8 +182,10 @@ class RelayServer(override val identifier: String)
      * */
     def handlePacket(socket: SocketChannel): Unit = {
         var packet: DataPacket = packetLoader.nextPacket
-        val connection = connectionsManager.getConnectionFromAddress(socket.getRemoteAddress)
+        if (packet == null)
+            return
 
+        val connection = connectionsManager.getConnectionFromAddress(socket.getRemoteAddress)
         if (connection == null) {
             handleInit(packet, socket)
             return
@@ -213,7 +215,6 @@ class RelayServer(override val identifier: String)
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
-
         socket.bind(Constants.PUBLIC_ADDRESS)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket

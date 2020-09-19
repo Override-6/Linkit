@@ -1,13 +1,14 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import java.net.SocketAddress
-import java.nio.channels.SocketChannel
+import java.nio.channels.ByteChannel
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.task.TasksHandler
 
-class SimplePacketChannel(private val socketChannel: SocketChannel,
+class SimplePacketChannel(private val byteChannel: ByteChannel,
                           override val ownerID: String,
+                          override val ownerAddress: SocketAddress,
                           private val tasksHandler: TasksHandler)
         extends PacketChannel with PacketChannelManager {
 
@@ -15,7 +16,7 @@ class SimplePacketChannel(private val socketChannel: SocketChannel,
 
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
         val bytes = Protocol.createTaskPacket(tasksHandler.currentSessionID, header, content)
-        socketChannel.write(bytes)
+        byteChannel.write(bytes)
     }
 
     override def nextPacket(): DataPacket =
@@ -30,5 +31,4 @@ class SimplePacketChannel(private val socketChannel: SocketChannel,
         queue.add(packet)
     }
 
-    override val ownerAddress: SocketAddress = socketChannel.getRemoteAddress
 }

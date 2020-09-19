@@ -36,7 +36,7 @@ object Main {
         val fileInfo = relayPoint.requestFileInformation(Constants.SERVER_ID, serverFolderTest)
                 .complete()
         performDownload(fileInfo)
-        performUpload()
+        //performUpload()
     }
 
     def performDownload(fileInfo: FileDescription): Unit = {

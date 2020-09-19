@@ -2,23 +2,23 @@ package fr.overridescala.vps.ftp.client
 
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.nio.channels.SocketChannel
+import java.nio.channels.ByteChannel
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{PacketLoader, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TasksHandler}
-import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, FileDescription}
+import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
 
-    private val socketChannel = configSocket()
+    private val socket: ByteChannel = new ByteSocket(serverAddress.getAddress, serverAddress.getPort)
     private val tasksHandler = new TasksHandler()
-    private val packetChannel = new SimplePacketChannel(socketChannel, identifier, tasksHandler)
+    private val packetChannel = new SimplePacketChannel(socket, identifier, Constants.PUBLIC_ADDRESS, tasksHandler)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
     private val packetLoader = new PacketLoader()
 
@@ -59,11 +59,11 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     override def close(): Unit = {
-        socketChannel.close()
+        socket.close()
     }
 
     def updateNetwork(buffer: ByteBuffer): Unit = synchronized {
-        val count = socketChannel.read(buffer)
+        val count = socket.read(buffer)
         if (count < 1)
             return
 
@@ -80,14 +80,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         }
 
         buffer.clear()
-    }
-
-    def configSocket(): SocketChannel = {
-        println("connecting to server...")
-        val socket = SocketChannel.open(serverAddress)
-        println("connected !")
-        socket.configureBlocking(true)
-        socket
     }
 
     //initial tasks

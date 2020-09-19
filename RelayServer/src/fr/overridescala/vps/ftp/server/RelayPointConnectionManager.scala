@@ -41,7 +41,7 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
             }
         }
 
-        val packetChannel = new SimplePacketChannel(socket, "", tasksHandler)
+        val packetChannel = new SimplePacketChannel(socket, "", address, tasksHandler)
 
         val info = RelayPointConnection(identifier, packetChannel, address)
         connections.put(address, info)
