@@ -8,6 +8,6 @@ object Constants {
     val MAX_PACKET_LENGTH: Int = 4096 * 8
     val LOCALHOST: InetSocketAddress = new InetSocketAddress("localhost", PORT)
     val PUBLIC_ADDRESS: InetSocketAddress = Utils.getPublicAddress
-    val SERVER_ID = "%server%"
+    val SERVER_ID = "server"
 
 }

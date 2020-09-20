@@ -7,7 +7,7 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 import fr.overridescala.vps.ftp.api.task.TasksHandler
 
 class SimplePacketChannel(private val socket: SocketChannel,
-                          override val ownerID: String,
+                          override val identifier: String,
                           override val ownerAddress: SocketAddress,
                           private val tasksHandler: TasksHandler)
         extends PacketChannel with PacketChannelManager {

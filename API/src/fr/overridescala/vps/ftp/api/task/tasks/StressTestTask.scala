@@ -14,7 +14,7 @@ class StressTestTask(private val channel: PacketChannel,
 
     override def execute(): Unit = {
         var totalSent: Float = 0
-        val capacity = Constants.MAX_PACKET_LENGTH - 256
+        val capacity = Constants.MAX_PACKET_LENGTH - 512
         var bytes = new Array[Byte](capacity)
         while (totalSent < totalDataLength) {
             if (totalDataLength - totalSent < capacity)
@@ -46,16 +46,17 @@ object StressTestTask {
             var totalReceived: Float = 0
             while (packet.header.equals("PCKT")) {
                 val t0 = System.currentTimeMillis()
-                packet = channel.nextPacket()
                 channel.sendPacket("OK")
+                packet = channel.nextPacket()
                 val dataLength = packet.content.length
                 val t1 = System.currentTimeMillis()
-                val time:Float = t1 - t0
+                val time: Float = t1 - t0
 
                 totalReceived += dataLength
 
                 val percentage = totalReceived / totalDataLength * 100
-                print(s"\rjust received ${dataLength} in $time ms ${dataLength / (time / 1000)} bytes/s ($totalReceived / $totalDataLength $percentage%)")
+                val bps = dataLength / (time / 1000)
+                print(s"\rjust received ${dataLength} in $time ms $bps  bytes/s ($totalReceived / $totalDataLength $percentage%)")
             }
         }
     }

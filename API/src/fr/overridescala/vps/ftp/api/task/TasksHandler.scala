@@ -34,7 +34,7 @@ class TasksHandler() {
     def handlePacket(packet: DataPacket, factory: TaskCompleterFactory, channel: SimplePacketChannel): Unit = {
         if (packet.sessionID != currentSessionID) {
             val completer = factory.getCompleter(channel, packet)
-            register(completer, packet.sessionID, channel.ownerID, false)
+            register(completer, packet.sessionID, channel.identifier, false)
             return
         }
         channel.addPacket(packet)

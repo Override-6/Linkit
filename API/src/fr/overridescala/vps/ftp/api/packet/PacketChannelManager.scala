@@ -4,6 +4,6 @@ trait PacketChannelManager {
 
     def addPacket(packet: DataPacket): Boolean
 
-    val ownerID: String
+    val identifier: String
 
 }

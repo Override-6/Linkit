@@ -16,7 +16,7 @@ trait PacketChannel {
 
     def haveMorePackets: Boolean
 
-    val ownerID: String
+    val identifier: String
 
     val ownerAddress: SocketAddress
 }

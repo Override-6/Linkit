@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.net.{ServerSocket, Socket, SocketAddress}
-import java.nio.channels.{SelectionKey, SocketChannel}
+import java.net.SocketAddress
+import java.nio.channels.SocketChannel
 import java.util
 
 import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
@@ -15,11 +15,11 @@ import scala.jdk.CollectionConverters
  * @see RelayServer
  * @see RelayPointConnection
  * */
-class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
+class ChannelsManager(private val tasksHandler: TasksHandler) {
     /**
      * java map containing all RelayPointConnection instances
      * */
-    private val connections: util.Map[SocketAddress, RelayPointConnection] = new util.HashMap[SocketAddress, RelayPointConnection]()
+    private val connections: util.Map[SocketAddress, SimplePacketChannel] = new util.HashMap[SocketAddress, SimplePacketChannel]()
 
 
     /**
@@ -42,8 +42,7 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
             }
         }
         val packetChannel = new SimplePacketChannel(socket, identifier, address, tasksHandler)
-        val connection = RelayPointConnection(packetChannel)
-        connections.put(address, connection)
+        connections.put(address, packetChannel)
     }
 
     /**
@@ -52,7 +51,7 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
      * @param address the address to disconnect
      * */
     def disconnect(address: SocketAddress): Unit = {
-        val connection = getConnectionFromAddress(address)
+        val connection = getChannelFromAddress(address)
         tasksHandler.cancelTasks(connection.identifier)
         connections.remove(address)
     }
@@ -63,7 +62,7 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
      * @param address the address to retrieve the affected connection
      * @return the linked RelayPointConnection instance, null instead
      * */
-    def getConnectionFromAddress(address: SocketAddress): RelayPointConnection = {
+    def getChannelFromAddress(address: SocketAddress): SimplePacketChannel = {
         connections.get(address)
     }
 
@@ -73,7 +72,7 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
      * @param identifier the identifier to retrieve the linked connection
      * @return the associated RelayPoinConnection instance, null instead
      * */
-    def getConnectionFromIdentifier(identifier: String): RelayPointConnection = {
+    def getChannelFromIdentifier(identifier: String): SimplePacketChannel = {
         val scalaMap = CollectionConverters.MapHasAsScala(connections).asScala
         for ((_, connection) <- scalaMap) {
             if (connection.identifier.equals(identifier))

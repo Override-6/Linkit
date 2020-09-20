@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.client
 
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.nio.channels.{ByteChannel, SocketChannel}
+import java.nio.channels.SocketChannel
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
@@ -15,6 +15,7 @@ import fr.overridescala.vps.ftp.api.utils.Constants
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
+    val buffer: ByteBuffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
 
     private val channel = configSocket()
     private val tasksHandler = new TasksHandler()
@@ -39,12 +40,12 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         val thread = new Thread(() => {
             println("ready !")
             println("current encoding is " + Charset.defaultCharset().name())
-            val buffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
+            println("listening on port " + Constants.PORT)
             //enable the task management
             tasksHandler.start()
             while (true) {
                 try {
-                    updateNetwork(buffer)
+                    updateNetwork()
                 } catch {
                     case e: Throwable => {
                         e.printStackTrace()
@@ -62,7 +63,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         channel.close()
     }
 
-    def updateNetwork(buffer: ByteBuffer): Unit = synchronized {
+    def updateNetwork(): Unit = synchronized {
         val count = channel.read(buffer)
         if (count < 1)
             return
@@ -93,21 +94,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
     packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    packetChannel.sendPacket("INIT", identifier)
-    start()
-    new StressTestTask(packetChannel, tasksHandler, 500000000)
+    /*new StressTestTask(packetChannel, tasksHandler, 100000000)
             .complete()
-
+     */
 }

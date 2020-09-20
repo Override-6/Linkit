@@ -14,8 +14,9 @@ object Protocol {
         val headerBytes = header.getBytes
         val id = String.valueOf(sessionID).getBytes
         val bytes = BEGIN ++ id ++ HEADER ++ headerBytes ++ CONTENT ++ content ++ END
-        val directBuffer = ByteBuffer.allocateDirect(bytes.length)
-        directBuffer.put(bytes)
+        ByteBuffer.allocateDirect(bytes.length)
+                .put(bytes)
+                .flip()
     }
 
     /**
