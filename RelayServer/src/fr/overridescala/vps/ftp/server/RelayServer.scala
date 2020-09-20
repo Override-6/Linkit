@@ -59,7 +59,7 @@ class RelayServer()
             selector.select()
             if (!open)
                 return
-            val it: util.Iterator[SelectionKey] = selector.selectedKeys().iterator()
+            val it = selector.selectedKeys().iterator()
             while (it.hasNext) {
                 val key = it.next()
                 try {
@@ -73,7 +73,6 @@ class RelayServer()
                         key.cancel()
                         println("a connection closed suddenly")
                         disconnect(id)
-                        e.printStackTrace()
                 }
                 it.remove()
             }
@@ -131,8 +130,9 @@ class RelayServer()
 
 
     /**
-     * read / refreshes a connection
+     * updates key
      *
+     * @param key the key to update
      * */
     private def updateKey(key: SelectionKey): Unit = {
         if (key.isAcceptable)
@@ -206,7 +206,6 @@ class RelayServer()
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
-
         socket.bind(Constants.LOCALHOST)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket

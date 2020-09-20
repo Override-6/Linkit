@@ -22,14 +22,14 @@ class StressTestTask(private val channel: PacketChannel,
 
             val t0 = System.currentTimeMillis()
             channel.sendPacket("PCKT", bytes)
-            //channel.nextPacket()
+            channel.nextPacket()
             val t1 = System.currentTimeMillis()
             val time: Float = t1 - t0
 
             totalSent += capacity
 
             val percentage = totalSent / totalDataLength * 100
-            print(s"\rjust sent ${capacity} in $time ms ", s"${capacity / (time / 1000)} bytes/s", s"$totalSent / $totalDataLength, $percentage%")
+            print(s"\rjust sent ${capacity} in $time ms ${capacity / (time / 1000)} bytes/s ($totalSent / $totalDataLength $percentage%)")
         }
         channel.sendPacket("END")
     }
@@ -47,6 +47,7 @@ object StressTestTask {
             while (packet.header.equals("PCKT")) {
                 val t0 = System.currentTimeMillis()
                 packet = channel.nextPacket()
+                channel.sendPacket("OK")
                 val dataLength = packet.content.length
                 val t1 = System.currentTimeMillis()
                 val time:Float = t1 - t0
@@ -54,7 +55,7 @@ object StressTestTask {
                 totalReceived += dataLength
 
                 val percentage = totalReceived / totalDataLength * 100
-                print(s"\rjust received ${dataLength} in $time s", (dataLength / time) * 1000, "bytes/s ", s"$totalReceived / $totalDataLength, $percentage%")
+                print(s"\rjust received ${dataLength} in $time ms ${dataLength / (time / 1000)} bytes/s ($totalReceived / $totalDataLength $percentage%)")
             }
         }
     }

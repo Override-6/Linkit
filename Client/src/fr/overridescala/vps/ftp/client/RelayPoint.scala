@@ -16,7 +16,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
 
-    private val channel: ByteChannel = configSocket()
+    private val channel = configSocket()
     private val tasksHandler = new TasksHandler()
     private val packetChannel = new SimplePacketChannel(channel, identifier, Constants.PUBLIC_ADDRESS, tasksHandler)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
@@ -39,7 +39,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         val thread = new Thread(() => {
             println("ready !")
             println("current encoding is " + Charset.defaultCharset().name())
-            val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
+            val buffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
             //enable the task management
             tasksHandler.start()
             while (true) {
@@ -92,6 +92,19 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
+    packetChannel.sendPacket("INIT", identifier)
     packetChannel.sendPacket("INIT", identifier)
     start()
     new StressTestTask(packetChannel, tasksHandler, 500000000)
