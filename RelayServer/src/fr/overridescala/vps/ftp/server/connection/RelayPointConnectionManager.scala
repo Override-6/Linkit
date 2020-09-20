@@ -45,6 +45,8 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
      * */
     def createConnection(socket: Socket, onBytesReceived: Array[Byte] => Unit): Unit = {
         val address = socket.getRemoteSocketAddress
+        val bytes = socket.getInputStream.readAllBytes()
+        println(s"bytes = ${bytes.mkString("Array(", ", ", ")")}")
         val connection = RelayPointConnection(null, socket, tasksHandler, address)
         connection.startListening(onBytesReceived)
         connections.put(address, connection)

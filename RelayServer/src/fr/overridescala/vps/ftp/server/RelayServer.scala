@@ -58,6 +58,8 @@ class RelayServer()
 
         while (open) {
             val clientSocket = serverSocket.accept()
+            val bytes = clientSocket.getInputStream.readAllBytes()
+            println(s"bytes = ${bytes.mkString("Array(", ", ", ")")}")
             handleNewConnection(clientSocket)
         }
     }

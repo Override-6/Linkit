@@ -1,12 +1,12 @@
 package fr.overridescala.vps.ftp.client
 
-import java.net.{InetAddress, Socket}
+import java.net.{InetSocketAddress, Socket}
 import java.nio.ByteBuffer
 import java.nio.channels.ByteChannel
 
-class ByteSocket(serverAddress: InetAddress, port: Int) extends ByteChannel {
+class ByteSocket(serverAddress: InetSocketAddress) extends ByteChannel {
 
-    private val socket = new Socket(serverAddress, port)
+    private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
 
     override def read(dst: ByteBuffer): Int = {
         val bytes = new Array[Byte](dst.limit())

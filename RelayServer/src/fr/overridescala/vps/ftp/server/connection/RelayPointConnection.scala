@@ -9,8 +9,7 @@ case class RelayPointConnection protected(private[connection] var identifier: St
                                           private val socket: Socket,
                                           private val tasksHandler: TasksHandler,
                                           address: SocketAddress) extends AutoCloseable {
-
-    val packetChannel = new SimplePacketChannel(new ByteSocket(socket), identifier, address, tasksHandler)
+    val packetChannel = new SimplePacketChannel(new ByteSocket(socket), identifier, socket.getRemoteSocketAddress, tasksHandler)
     val id: String = this.identifier
 
     private var isListening = false
@@ -20,9 +19,8 @@ case class RelayPointConnection protected(private[connection] var identifier: St
         if (isListening)
             throw new IllegalAccessException("already listening !")
         val connectionThread = new Thread(() => listen(onBytesReceived))
-        connectionThread.setDaemon(true)
-        connectionThread.setPriority(1)
         connectionThread.setName("Listen Thread for connection " + address)
+        isListening = true
         connectionThread.start()
     }
 
@@ -30,6 +28,7 @@ case class RelayPointConnection protected(private[connection] var identifier: St
     private def listen(onBytesReceived: Array[Byte] => Unit): Unit = {
         while (isListening) {
             val bytes = socket.getInputStream.readAllBytes()
+            println(s"bytes = ${bytes.mkString("Array(", ", ", ")")}")
             onBytesReceived(bytes)
         }
     }

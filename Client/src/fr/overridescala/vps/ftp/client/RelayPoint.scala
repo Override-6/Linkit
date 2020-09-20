@@ -16,9 +16,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
 
-    private val socket: ByteChannel = new ByteSocket(serverAddress.getAddress, serverAddress.getPort)
+    private val channel: ByteChannel = new ByteSocket(serverAddress)
     private val tasksHandler = new TasksHandler()
-    private val packetChannel = new SimplePacketChannel(socket, identifier, Constants.PUBLIC_ADDRESS, tasksHandler)
+    private val packetChannel = new SimplePacketChannel(channel, identifier, Constants.PUBLIC_ADDRESS, tasksHandler)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
     private val packetLoader = new PacketLoader()
 
@@ -59,11 +59,11 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     override def close(): Unit = {
-        socket.close()
+        channel.close()
     }
 
     def updateNetwork(buffer: ByteBuffer): Unit = synchronized {
-        val count = socket.read(buffer)
+        val count = channel.read(buffer)
         if (count < 1)
             return
 
