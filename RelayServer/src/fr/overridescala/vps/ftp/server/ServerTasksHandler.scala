@@ -20,6 +20,10 @@ class ServerTasksHandler() extends TasksHandler {
         thread.addTicket(ticket)
     }
 
+    //TODO
+    //get la tache en cours d'execution
+    //lui ajouter les packets si les ids correspondent
+    //créer une nouvelle tâche si non
     def handlePacket(packet: DataPacket, factory: TaskCompleterFactory, ownerID: String, socket: SocketChannel): Unit = {
         checkOwner(ownerID, socket)
         val completer = factory.getCompleter(packet)
