@@ -53,14 +53,30 @@ class RelayServer()
     override def start(): Unit = {
         println("ready !")
         println("current encoding is " + Charset.defaultCharset().name())
-        println(s"listening on port ${Constants.PORT}")
         tasksHandler.start()
 
         while (open) {
-            val clientSocket = serverSocket.accept()
-            val bytes = clientSocket.getInputStream.readAllBytes()
-            println(s"bytes = ${bytes.mkString("Array(", ", ", ")")}")
-            handleNewConnection(clientSocket)
+            selector.select()
+            if (!open)
+                return
+            val it: util.Iterator[SelectionKey] = selector.selectedKeys().iterator()
+            while (it.hasNext) {
+                val key = it.next()
+                try {
+                    updateKey(key)
+                } catch {
+                    case e: Throwable =>
+                        e.printStackTrace()
+                        val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
+                        val id = connectionsManager.getConnectionFromAddress(address).identifier
+                        tasksHandler.cancelTasks(id)
+                        key.cancel()
+                        println("a connection closed suddenly")
+                        disconnect(id)
+                        e.printStackTrace()
+                }
+                it.remove()
+            }
         }
     }
 
@@ -83,7 +99,7 @@ class RelayServer()
         val keys = toScalaSet(selector.selectedKeys())
         for (key <- keys) {
             val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-            val keyId = connectionsManager.getConnectionFromAddress(address).id
+            val keyId = connectionsManager.getConnectionFromAddress(address).identifier
             if (keyId.equals(identifier)) {
                 key.channel().close()
                 key.cancel()
@@ -106,53 +122,68 @@ class RelayServer()
     /**
      * handles a new RelayPoint connection.
      * */
-    private def handleNewConnection(socket: Socket): Unit = {
-        val address = socket.getRemoteSocketAddress
-        connectionsManager.createConnection(socket, bytes => onConnectionUpdate(bytes, address))
-        println(s"new connection : ${address}")
+    private def handleNewConnection(): Unit = {
+        val channel = serverSocket.accept()
+        channel.configureBlocking(false)
+        channel.register(selector, SelectionKey.OP_READ)
+        println(s"new connection : ${channel.getRemoteAddress}")
     }
+
 
     /**
      * read / refreshes a connection
      *
-     * @param bytes the bytes read from the socket
-     * @param address the socket address
      * */
-    private def onConnectionUpdate(bytes: Array[Byte], address: SocketAddress ): Unit = {
-        handleBytes(bytes)
-        handlePacket(address)
+    private def updateKey(key: SelectionKey): Unit = {
+        if (key.isAcceptable)
+            handleNewConnection()
+        if (key.isReadable)
+            handleKey(key)
+    }
+
+    def handleKey(key: SelectionKey): Unit = {
+        readKey(key)
+        handlePacket(key)
     }
 
     /**
      * prints the bytes into the buffer and update packetLoader
      *
-     * @param bytes the bytes to perform
      * @return the number of bytes read
      * */
-    private def handleBytes(bytes: Array[Byte]): Unit = {
+    private def readKey(key: SelectionKey): Unit = {
+        val channel = key.channel().asInstanceOf[SocketChannel]
+        val buffer = ByteBuffer.allocate(Constants.MAX_PACKET_LENGTH)
+
+        val count = channel.read(buffer)
+        if (count < 1)
+            return
+
+        val bytes = new Array[Byte](count)
+
         buffer.flip()
         buffer.get(bytes)
         packetLoader.add(bytes)
-        buffer.clear()
     }
 
     /**
      * handles the data, then creates one or multiple packets in function of the PacketLoader.
      * then distribute the packets to other handlers
      * */
-    def handlePacket(address: SocketAddress): Unit = {
+    private def handlePacket(key: SelectionKey): Unit = {
         var packet: DataPacket = packetLoader.nextPacket
         if (packet == null)
             return
 
-        val connection = connectionsManager.getConnectionFromAddress(address: SocketAddress)
-        if (connection == null) {
-            handleInit(packet, address)
+        val socket = key.channel().asInstanceOf[SocketChannel]
+        val address = socket.getRemoteAddress
+
+        if (connectionsManager.isNotRegistered(address)) {
+            handleInit(packet, socket)
             return
         }
 
-        val identifier = connection.id
-        val packetChannel = getPacketChannel(identifier)
+        val packetChannel = connectionsManager.getConnectionFromAddress(address).packetChannel
         while (packet != null) {
             tasksHandler.handlePacket(packet, completerFactory, packetChannel)
             packet = packetLoader.nextPacket
@@ -164,16 +195,20 @@ class RelayServer()
      *
      * @throws UnexpectedPacketException if the packet header isn't "INIT"
      * */
-    def handleInit(packet: DataPacket, address: SocketAddress): Unit = {
+    def handleInit(packet: DataPacket, socket: SocketChannel): Unit = {
         val header = packet.header
         if (!header.equals("INIT"))
             throw UnexpectedPacketException(s"received packet $packet when attempting to init a RelayPointConnection")
         val identifier = new String(packet.content)
-        connectionsManager.initConnection(address, identifier)
+        connectionsManager.register(socket, identifier)
     }
 
-    private def configSocket(): ServerSocket = {
-        val socket = new ServerSocket(Constants.PORT)
+    private def configSocket(): ServerSocketChannel = {
+        val socket = ServerSocketChannel.open()
+        socket.configureBlocking(false)
+
+        socket.bind(Constants.LOCALHOST)
+        socket.register(selector, SelectionKey.OP_ACCEPT)
         socket
     }
 

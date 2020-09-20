@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.client
 
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.nio.channels.ByteChannel
+import java.nio.channels.{ByteChannel, SocketChannel}
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
@@ -16,7 +16,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
 
-    private val channel: ByteChannel = new ByteSocket(serverAddress)
+    private val channel: ByteChannel = configSocket()
     private val tasksHandler = new TasksHandler()
     private val packetChannel = new SimplePacketChannel(channel, identifier, Constants.PUBLIC_ADDRESS, tasksHandler)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
@@ -80,6 +80,14 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         }
 
         buffer.clear()
+    }
+
+    def configSocket(): SocketChannel = {
+        println("connecting to server...")
+        val socket = SocketChannel.open(serverAddress)
+        println("connected !")
+        socket.configureBlocking(true)
+        socket
     }
 
     //initial tasks

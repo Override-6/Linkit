@@ -1,8 +1,10 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.net.{Socket, SocketAddress}
+import java.net.{ServerSocket, Socket, SocketAddress}
+import java.nio.channels.{SelectionKey, SocketChannel}
 import java.util
 
+import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 import fr.overridescala.vps.ftp.api.task.TasksHandler
 
 import scala.jdk.CollectionConverters
@@ -14,7 +16,6 @@ import scala.jdk.CollectionConverters
  * @see RelayPointConnection
  * */
 class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
-
     /**
      * java map containing all RelayPointConnection instances
      * */
@@ -22,33 +23,26 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
 
 
     /**
-     * attributes a identifier to a connected Relay Point.
+     * creates and register a RelayPoint connection.
      *
-     * @param address     the address to attribute the identifier
-     * @param identifier the identifier of the address/connection
+     * @param socket     the socket connection
+     * @param identifier the identifier for the connection
      * @throws IllegalArgumentException when a id is already set for this address, or another connection is known under this id.
      * */
-    def initConnection(address: SocketAddress, identifier: String): Unit = {
+    def register(socket: SocketChannel, identifier: String): Unit = {
         val scalaMap = CollectionConverters.MapHasAsScala(connections).asScala
+        val address = socket.getRemoteAddress
+
+        if (connections.containsKey(address))
+            throw new IllegalAccessException("this socket is already registered !")
 
         for ((_, info) <- scalaMap if info.identifier != null) {
             if (info.identifier.equals(identifier)) {
                 throw new IllegalArgumentException(s"another relay point have the same identifier")
             }
         }
-
-        connections.get(address).identifier = identifier
-    }
-
-    /**
-     * creates a connection from the socket. attributes it an action when bytes get read and start listening
-     * */
-    def createConnection(socket: Socket, onBytesReceived: Array[Byte] => Unit): Unit = {
-        val address = socket.getRemoteSocketAddress
-        val bytes = socket.getInputStream.readAllBytes()
-        println(s"bytes = ${bytes.mkString("Array(", ", ", ")")}")
-        val connection = RelayPointConnection(null, socket, tasksHandler, address)
-        connection.startListening(onBytesReceived)
+        val packetChannel = new SimplePacketChannel(socket, identifier, address, tasksHandler)
+        val connection = RelayPointConnection(packetChannel)
         connections.put(address, connection)
     }
 
@@ -86,6 +80,16 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
                 return connection
         }
         null
+    }
+
+    /**
+     * determines if the address is not registered
+     *
+     * @param address the address to test
+     * @return true if the address is not registered, false instead
+     * */
+    def isNotRegistered(address: SocketAddress): Boolean = {
+        !connections.containsKey(address)
     }
 
 }
