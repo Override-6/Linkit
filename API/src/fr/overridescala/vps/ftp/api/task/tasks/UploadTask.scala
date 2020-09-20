@@ -67,7 +67,6 @@ class UploadTask(private val channel: PacketChannel,
                 var bytes = new Array[Byte](Constants.MAX_PACKET_LENGTH - 256)
                 val read = stream.read(bytes)
                 bytes = util.Arrays.copyOf(bytes, read)
-
                 count += 1
                 totalBytesSent += read
                 makeDataTransfer(bytes, count)
@@ -77,7 +76,7 @@ class UploadTask(private val channel: PacketChannel,
                 }
 
                 val percentage = totalBytesSent / totalBytes * 100
-                println(s"sent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
+                print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
             } catch {
                 case e: Throwable => {
                     var msg = e.getMessage

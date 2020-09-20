@@ -1,9 +1,9 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
 import java.io.File
-import java.nio.file.{Files, Path, Paths}
+import java.nio.file.{Files, Path}
 
-import fr.overridescala.vps.ftp.api.exceptions.{TransferException, UnexpectedPacketException}
+import fr.overridescala.vps.ftp.api.exceptions.{TransferException, SuddenStopTask}
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, DOWNLOAD}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
@@ -59,9 +59,8 @@ class DownloadTask(private val channel: PacketChannel,
             count += 1
             channel.sendPacket(s"$count")
             packet = channel.nextPacket()
-
             val percentage = totalBytesWritten / totalBytes * 100
-            print(s"\rwritten = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets sent = $count")
+            print(s"\rsent = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets sent = $count")
         }
         stream.close()
         println()
@@ -82,9 +81,7 @@ class DownloadTask(private val channel: PacketChannel,
 
     private def handleLastTransferResponse(packet: DataPacket): Unit = {
         val header = packet.header
-
         Utils.checkPacketHeader(packet, Array(UploadTask.END_OF_TRANSFER, UploadTask.UPLOAD_FILE))
-
         if (header.equals(UploadTask.END_OF_TRANSFER))
             success()
         else if (header.equals(UploadTask.UPLOAD_FILE)) {
@@ -103,7 +100,6 @@ class DownloadTask(private val channel: PacketChannel,
         val header = packet.header
         if (header.equals(ABORT)) {
             val msg = new String(packet.content)
-            Console.err.println(msg)
             error(msg)
             throw new TransferException(msg)
         }
