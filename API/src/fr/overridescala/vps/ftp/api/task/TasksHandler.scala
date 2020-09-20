@@ -1,91 +1,38 @@
 package fr.overridescala.vps.ftp.api.task
 
-import java.util
+import java.nio.channels.SocketChannel
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, SimplePacketChannel}
+
+import scala.collection.mutable
 
 
 class TasksHandler() {
 
-    private val queue: util.Queue[TaskAchieverTicket] = new util.ArrayDeque[TaskAchieverTicket]()
-    var currentSessionID: Int = -1
-    private var currentTaskOwner: String = _
+    private val clientThreads = mutable.Map.empty[String, (ClientTaskThread, SocketChannel)]
 
-
-    def register(achiever: TaskExecutor, sessionID: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
-        val ticket = new TaskAchieverTicket(achiever, ownerID, sessionID, ownFreeWill)
-        queue.offer(ticket)
-        println()
-        synchronized(notifyAll())
+    def register(executor: TaskExecutor, sessionID: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
+        val pair = clientThreads(ownerID)
+        val thread = pair._1
+        val ticket = new TaskTicket(executor, sessionID, pair._2, ownerID, ownFreeWill)
+        thread.addTicket(ticket)
     }
 
-    def start(): Unit = {
-        val thread = new Thread(() => {
-            while (true) {
-                startNextTask()
-                println("waiting for another task to complete...")
-            }
-        })
-        thread.setName("Tasks")
-        thread.start()
-    }
+    def handlePacket(packet: DataPacket, factory: TaskCompleterFactory, ownerID: String, socket: SocketChannel): Unit = {
 
-    def handlePacket(packet: DataPacket, factory: TaskCompleterFactory, channel: SimplePacketChannel): Unit = {
-        if (packet.sessionID != currentSessionID) {
-            val completer = factory.getCompleter(channel, packet)
-            register(completer, packet.sessionID, channel.identifier, false)
-            return
+        if (!clientThreads.contains(ownerID)) {
+            val thread = new ClientTaskThread
+            clientThreads.put(ownerID, (thread, socket))
+            thread.start()
         }
-        channel.addPacket(packet)
+        val completer = factory.getCompleter(packet)
+        register(completer, packet.sessionID, ownerID, false)
+
     }
 
     def cancelTasks(ownerID: String): Unit = {
-        if (currentTaskOwner != null && currentTaskOwner.equals(ownerID)) {
-            synchronized(notifyAll())
-            currentTaskOwner = ""
-        }
-        queue.removeIf(_.isOwner(ownerID))
-    }
-
-    private def startNextTask(): Unit = {
-        val ticket = queue.poll()
-        if (ticket == null) {
-            synchronized {
-                wait()
-            }
-            startNextTask()
-            return
-        }
-        ticket.start()
-    }
-
-    private class TaskAchieverTicket(val taskAchiever: TaskExecutor,
-                                     val ownerID: String,
-                                     val sessionID: Int,
-                                     val ownFreeWill: Boolean) {
-
-        val name: String = taskAchiever.getClass.getSimpleName
-
-        def isOwner(id: String): Boolean = id.equals(ownerID)
-
-        def start(): Unit = {
-            currentTaskOwner = ownerID
-            currentSessionID = sessionID
-            try {
-                println(s"executing $name...")
-                if (ownFreeWill)
-                    taskAchiever.sendTaskInfo()
-                taskAchiever.execute()
-            } catch {
-                case e: Throwable => e.printStackTrace()
-            }
-        }
-
-        override def toString: String = s"Ticket(name = $name," +
-                s" ownerID = $ownerID," +
-                s" id = $sessionID," +
-                s" freeWill = $ownFreeWill)"
-
+        clientThreads(ownerID)._1.close()
+        clientThreads.remove(ownerID)
     }
 
 }

@@ -4,15 +4,14 @@ import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
-class StressTestTask(private val channel: PacketChannel,
-                     private val handler: TasksHandler,
+class StressTestTask(private val handler: TasksHandler,
                      private val totalDataLength: Long) extends Task[Unit](handler, Constants.SERVER_ID) {
 
-    override def sendTaskInfo(): Unit = {
+    override def sendTaskInfo(channel :PacketChannel): Unit = {
         channel.sendPacket("STRSS", s"$totalDataLength")
     }
 
-    override def execute(): Unit = {
+    override def execute(channel :PacketChannel): Unit = {
         var totalSent: Float = 0
         val capacity = Constants.MAX_PACKET_LENGTH - 512
         var bytes = new Array[Byte](capacity)
@@ -39,9 +38,8 @@ class StressTestTask(private val channel: PacketChannel,
 
 object StressTestTask {
 
-    class StressTestCompleter(private val channel: PacketChannel,
-                              private val totalDataLength: Long) extends TaskExecutor {
-        override def execute(): Unit = {
+    class StressTestCompleter(private val totalDataLength: Long) extends TaskExecutor {
+        override def execute(channel :PacketChannel): Unit = {
             var packet = channel.nextPacket()
             var totalReceived: Float = 0
             while (packet.header.equals("PCKT")) {

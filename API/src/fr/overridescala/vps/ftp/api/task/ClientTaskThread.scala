@@ -5,7 +5,7 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 class ClientTaskThread() extends Thread with Closeable {
 
-    @volatile private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](-1)
+    private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     @volatile private var open = false
 
     override def run(): Unit = {

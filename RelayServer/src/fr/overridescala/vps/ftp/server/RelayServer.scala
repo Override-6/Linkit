@@ -70,7 +70,7 @@ class RelayServer()
                     case e: Throwable =>
                         e.printStackTrace()
                         val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-                        val id = connectionsManager.getChannelFromAddress(address).identifier
+                        val id = connectionsManager.getChannelFromAddress(address).ownerID
                         println("a connection closed suddenly")
                         disconnect(id)
                 }
@@ -84,7 +84,7 @@ class RelayServer()
         serverSocket.close()
         selector.selectedKeys().forEach(key => {
             val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-            disconnect(connectionsManager.getChannelFromAddress(address).identifier)
+            disconnect(connectionsManager.getChannelFromAddress(address).ownerID)
         })
         selector.close()
     }
@@ -98,7 +98,7 @@ class RelayServer()
         val keys = toScalaSet(selector.selectedKeys())
         for (key <- keys) {
             val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-            val keyId = connectionsManager.getChannelFromAddress(address).identifier
+            val keyId = connectionsManager.getChannelFromAddress(address).ownerID
             if (keyId.equals(identifier)) {
                 key.channel().close()
                 key.cancel()

@@ -12,21 +12,21 @@ class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
 
     private lazy val completers: mutable.Map[String, DataPacket => TaskExecutor] = new mutable.HashMap[String, DataPacket => TaskExecutor]()
 
-    override def getCompleter(channel: PacketChannel, initPacket: DataPacket): TaskExecutor = {
+    override def getCompleter(initPacket: DataPacket): TaskExecutor = {
         val taskType = initPacket.header
         val content = initPacket.content
         val contentString = new String(content)
         taskType match {
             case UploadTask.UPLOAD =>
-                new DownloadTask(channel, tasksHandler, Utils.deserialize(content))
+                new DownloadTask(tasksHandler, Utils.deserialize(content))
             case DownloadTask.DOWNLOAD =>
-                new UploadTask(channel, tasksHandler, Utils.deserialize(content))
+                new UploadTask(tasksHandler, Utils.deserialize(content))
             case FileInfoTask.FILE_INFO =>
-                new FileInfoTask.FileInfoCompleter(channel, contentString)
+                new FileInfoTask.FileInfoCompleter(contentString)
             case CreateFileTask.CREATE_FILE =>
-                new CreateFileTask.CreateFileCompleter(channel, contentString)
+                new CreateFileTask.CreateFileCompleter(contentString)
             case "STRSS" =>
-                new StressTestTask.StressTestCompleter(channel, contentString.toLong)
+                new StressTestTask.StressTestCompleter(contentString.toLong)
 
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)

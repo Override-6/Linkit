@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.io.File
 import java.nio.file.{Files, Path}
 
-import fr.overridescala.vps.ftp.api.exceptions.{TransferException, SuddenStopTask}
+import fr.overridescala.vps.ftp.api.exceptions.TransferException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, DOWNLOAD}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
@@ -11,16 +11,18 @@ import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 
-class DownloadTask(private val channel: PacketChannel,
-                   private val handler: TasksHandler,
+class DownloadTask(private val handler: TasksHandler,
                    private val desc: TransferDescription)
         extends Task[Unit](handler, desc.targetID) with TaskExecutor {
 
-    override def sendTaskInfo(): Unit = {
+    private var channel: PacketChannel = _
+
+    override def sendTaskInfo(channel: PacketChannel): Unit = {
         channel.sendPacket(DOWNLOAD, Utils.serialize(desc))
     }
 
-    override def execute(): Unit = {
+    override def execute(channel: PacketChannel): Unit = {
+        this.channel = channel
         val response = channel.nextPacket()
         if (response.header.equals(UploadTask.END_OF_TRANSFER)) {
             success()

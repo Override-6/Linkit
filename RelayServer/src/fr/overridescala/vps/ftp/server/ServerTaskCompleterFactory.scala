@@ -1,32 +1,31 @@
 package fr.overridescala.vps.ftp.server
 
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
+import fr.overridescala.vps.ftp.api.packet.DataPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{DynamicTaskCompleterFactory, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 import scala.collection.mutable
 
-class ServerTaskCompleterFactory(private val tasksHandler: TasksHandler,
-                                 private val server: RelayServer) extends DynamicTaskCompleterFactory {
+class ServerTaskCompleterFactory(private val tasksHandler: TasksHandler) extends DynamicTaskCompleterFactory {
 
     private lazy val completers: mutable.Map[String, DataPacket => TaskExecutor] = new mutable.HashMap[String, DataPacket => TaskExecutor]()
 
-    override def getCompleter(channel: PacketChannel, initPacket: DataPacket): TaskExecutor = {
+    override def getCompleter(initPacket: DataPacket): TaskExecutor = {
         val taskType = initPacket.header
         val content = initPacket.content
         val contentString = new String(content)
         taskType match {
             case "STRSS" =>
-                new StressTestTask.StressTestCompleter(channel, contentString.toLong)
+                new StressTestTask.StressTestCompleter(contentString.toLong)
             case UploadTask.UPLOAD =>
-                new DownloadTask(channel, tasksHandler, Utils.deserialize(content))
+                new DownloadTask(tasksHandler, Utils.deserialize(content))
             case DownloadTask.DOWNLOAD =>
-                new UploadTask(channel, tasksHandler, Utils.deserialize(content))
+                new UploadTask(tasksHandler, Utils.deserialize(content))
             case FileInfoTask.FILE_INFO =>
-                new FileInfoTask.FileInfoCompleter(channel, Utils.deserialize(content).asInstanceOf[(String, _)]._1)
+                new FileInfoTask.FileInfoCompleter(Utils.deserialize(content).asInstanceOf[(String, _)]._1)
             case CreateFileTask.CREATE_FILE =>
-                new CreateFileTask.CreateFileCompleter(channel, contentString)
+                new CreateFileTask.CreateFileCompleter(contentString)
 
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)

@@ -38,8 +38,6 @@ abstract class Task[T](private val handler: TasksHandler,
         atomicResult.get()
     }
 
-    def sendTaskInfo(): Unit
-
     protected def error(msg: String): Unit = {
         val onError = this.onError.get()
         if (onError != null)

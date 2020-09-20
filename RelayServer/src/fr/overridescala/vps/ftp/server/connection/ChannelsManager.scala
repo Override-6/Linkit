@@ -36,8 +36,8 @@ class ChannelsManager(private val tasksHandler: TasksHandler) {
         if (connections.containsKey(address))
             throw new IllegalAccessException("this socket is already registered !")
 
-        for ((_, info) <- scalaMap if info.identifier != null) {
-            if (info.identifier.equals(identifier)) {
+        for ((_, info) <- scalaMap if info.ownerID != null) {
+            if (info.ownerID.equals(identifier)) {
                 throw new IllegalArgumentException(s"another relay point have the same identifier")
             }
         }
@@ -52,7 +52,7 @@ class ChannelsManager(private val tasksHandler: TasksHandler) {
      * */
     def disconnect(address: SocketAddress): Unit = {
         val connection = getChannelFromAddress(address)
-        tasksHandler.cancelTasks(connection.identifier)
+        tasksHandler.cancelTasks(connection.ownerID)
         connections.remove(address)
     }
 
@@ -75,7 +75,7 @@ class ChannelsManager(private val tasksHandler: TasksHandler) {
     def getChannelFromIdentifier(identifier: String): SimplePacketChannel = {
         val scalaMap = CollectionConverters.MapHasAsScala(connections).asScala
         for ((_, connection) <- scalaMap) {
-            if (connection.identifier.equals(identifier))
+            if (connection.ownerID.equals(identifier))
                 return connection
         }
         null

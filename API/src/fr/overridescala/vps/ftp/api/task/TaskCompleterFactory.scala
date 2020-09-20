@@ -1,9 +1,9 @@
 package fr.overridescala.vps.ftp.api.task
 
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, DataPacket}
+import fr.overridescala.vps.ftp.api.packet.DataPacket
 
 trait TaskCompleterFactory {
 
-    def getCompleter(channel: PacketChannel, initPacket: DataPacket): TaskExecutor
+    def getCompleter(initPacket: DataPacket): TaskExecutor
 
 }

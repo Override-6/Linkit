@@ -19,21 +19,20 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     private val channel = configSocket()
     private val tasksHandler = new TasksHandler()
-    private val packetChannel = new SimplePacketChannel(channel, identifier, Constants.PUBLIC_ADDRESS, tasksHandler)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
     private val packetLoader = new PacketLoader()
 
     override def doDownload(description: TransferDescription): Task[Unit] =
-        new DownloadTask(packetChannel, tasksHandler, description)
+        new DownloadTask(tasksHandler, description)
 
     override def doUpload(description: TransferDescription): Task[Unit] =
-        new UploadTask(packetChannel, tasksHandler, description)
+        new UploadTask(tasksHandler, description)
 
     override def requestFileInformation(ownerID: String, path: String): Task[FileDescription] =
-        new FileInfoTask(packetChannel, tasksHandler, ownerID, path)
+        new FileInfoTask(tasksHandler, ownerID, path)
 
     override def requestCreateFile(ownerID: String, path: String): TaskAction[Unit] = {
-        new CreateFileTask(path, ownerID, packetChannel, tasksHandler)
+        new CreateFileTask(path, ownerID, tasksHandler)
     }
 
     override def start(): Unit = {
@@ -42,7 +41,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             println("current encoding is " + Charset.defaultCharset().name())
             println("listening on port " + Constants.PORT)
             //enable the task management
-            tasksHandler.start()
             while (true) {
                 try {
                     updateNetwork()
@@ -76,7 +74,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
         var packet = packetLoader.nextPacket
         while (packet != null) {
-            tasksHandler.handlePacket(packet, completerFactory, packetChannel)
+            tasksHandler.handlePacket(packet, completerFactory, )
             packet = packetLoader.nextPacket
         }
 

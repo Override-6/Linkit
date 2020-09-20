@@ -10,18 +10,19 @@ import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
-class UploadTask(private val channel: PacketChannel,
-                 private val handler: TasksHandler,
+class UploadTask(private val handler: TasksHandler,
                  private val desc: TransferDescription)
         extends Task[Unit](handler, desc.targetID) with TaskExecutor {
 
+    private var channel: PacketChannel = _
 
-    override def sendTaskInfo(): Unit = {
+    override def sendTaskInfo(channel :PacketChannel): Unit = {
         channel.sendPacket(UPLOAD, Utils.serialize(desc))
     }
 
 
-    override def execute(): Unit = {
+    override def execute(channel :PacketChannel): Unit = {
+        this.channel = channel;
         val path = Path.of(desc.source.path)
         val destination = Path.of(desc.destination)
         println(s"path = ${path}")
