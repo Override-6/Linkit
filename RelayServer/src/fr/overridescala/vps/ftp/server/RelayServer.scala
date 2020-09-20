@@ -12,7 +12,7 @@ import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, Fi
 import fr.overridescala.vps.ftp.api.task.{TaskAction, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
-import fr.overridescala.vps.ftp.server.connection.ChannelsManager
+import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
 
 import scala.collection.mutable
 import scala.jdk.CollectionConverters
@@ -25,8 +25,8 @@ class RelayServer()
 
     private val serverSocket = configSocket()
     private val tasksHandler = new TasksHandler()
-    private val completerFactory = new ServerTaskCompleterFactory(tasksHandler, this)
-    private val connectionsManager = new ChannelsManager(tasksHandler)
+    private val completerFactory = new ServerTaskCompleterFactory(tasksHandler)
+    private val connectionsManager = new ConnectionsManager(tasksHandler)
     private val packetLoader = new PacketLoader()
 
     private var open = true
@@ -35,25 +35,24 @@ class RelayServer()
 
     override def doDownload(description: TransferDescription): TaskAction[Unit] = {
         val target = description.targetID
-        new DownloadTask(getPacketChannel(target), tasksHandler, description)
+        new DownloadTask(tasksHandler, description)
     }
 
     override def doUpload(description: TransferDescription): TaskAction[Unit] = {
         val target = description.targetID
-        new UploadTask(getPacketChannel(target), tasksHandler, description)
+        new UploadTask(tasksHandler, description)
     }
 
     override def requestFileInformation(ownerID: String, path: String): TaskAction[FileDescription] =
-        new FileInfoTask(getPacketChannel(ownerID), tasksHandler, ownerID, path)
+        new FileInfoTask(tasksHandler, ownerID, path)
 
     override def requestCreateFile(ownerID: String, path: String): TaskAction[Unit] =
-        new CreateFileTask(path, ownerID, getPacketChannel(ownerID), tasksHandler)
+        new CreateFileTask(path, ownerID, tasksHandler)
 
     override def start(): Unit = {
         println("ready !")
         println("current encoding is " + Charset.defaultCharset().name())
         println("listening on port " + Constants.PORT)
-        tasksHandler.start()
 
         while (open) {
             selector.select()
@@ -70,7 +69,7 @@ class RelayServer()
                     case e: Throwable =>
                         e.printStackTrace()
                         val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-                        val id = connectionsManager.getChannelFromAddress(address).ownerID
+                        val id = connectionsManager.getIdentifierFromAddress(address)
                         println("a connection closed suddenly")
                         disconnect(id)
                 }
@@ -84,7 +83,7 @@ class RelayServer()
         serverSocket.close()
         selector.selectedKeys().forEach(key => {
             val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-            disconnect(connectionsManager.getChannelFromAddress(address).ownerID)
+            disconnect(connectionsManager.getIdentifierFromAddress(address))
         })
         selector.close()
     }
@@ -98,7 +97,7 @@ class RelayServer()
         val keys = toScalaSet(selector.selectedKeys())
         for (key <- keys) {
             val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-            val keyId = connectionsManager.getChannelFromAddress(address).ownerID
+            val keyId = connectionsManager.getIdentifierFromAddress(address)
             if (keyId.equals(identifier)) {
                 key.channel().close()
                 key.cancel()
@@ -107,16 +106,6 @@ class RelayServer()
                 return
             }
         }
-    }
-
-    /**
-     * @throws IllegalArgumentException if the identifier is the same as this server Identifier
-     * @return the PacketChannel of the connection, represented by his identifier
-     * */
-    private def getPacketChannel(identifier: String): SimplePacketChannel = {
-        if (identifier.equals(this.identifier))
-            throw new IllegalArgumentException("requested Packet Channel of server")
-        connectionsManager.getChannelFromIdentifier(identifier)
     }
 
     /**
@@ -184,9 +173,9 @@ class RelayServer()
             return
         }
 
-        val packetChannel = connectionsManager.getChannelFromAddress(address)
+        val ownerID = connectionsManager.getIdentifierFromAddress(address)
         while (packet != null) {
-            tasksHandler.handlePacket(packet, completerFactory, packetChannel)
+            tasksHandler.handlePacket(packet, completerFactory, ownerID, socket)
             packet = packetLoader.nextPacket
         }
     }
