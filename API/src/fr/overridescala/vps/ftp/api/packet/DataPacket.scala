@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
-class DataPacket(protected[api] val sessionID: Int,
+class DataPacket(val sessionID: Int,
                  val header: String,
                  val content: Array[Byte] = Array()) {
 

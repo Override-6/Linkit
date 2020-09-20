@@ -2,12 +2,10 @@ package fr.overridescala.vps.ftp.server.connection
 
 import java.net.SocketAddress
 import java.nio.channels.SocketChannel
-import java.util
 
-import fr.overridescala.vps.ftp.api.task.TasksHandler
+import fr.overridescala.vps.ftp.server.ServerTasksHandler
 
 import scala.collection.mutable
-import scala.jdk.CollectionConverters
 
 /**
  * TeamMate of RelayServer, handles the RelayPoint Connections.
@@ -15,7 +13,7 @@ import scala.jdk.CollectionConverters
  * @see RelayServer
  * @see RelayPointConnection
  * */
-class ConnectionsManager(private val tasksHandler: TasksHandler) {
+class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
     /**
      * java map containing all RelayPointConnection instances
      * */

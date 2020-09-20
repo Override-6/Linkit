@@ -6,9 +6,9 @@ import java.nio.channels.SocketChannel
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{PacketLoader, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks._
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAction}
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
@@ -17,8 +17,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     val buffer: ByteBuffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
 
-    private val channel = configSocket()
-    private val tasksHandler = new TasksHandler()
+    private val socket = configSocket()
+    private val tasksHandler = new ServerTasksHandler()
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
     private val packetLoader = new PacketLoader()
 
@@ -58,11 +58,11 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     override def close(): Unit = {
-        channel.close()
+        socket.close()
     }
 
     def updateNetwork(): Unit = synchronized {
-        val count = channel.read(buffer)
+        val count = socket.read(buffer)
         if (count < 1)
             return
 
@@ -74,7 +74,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
         var packet = packetLoader.nextPacket
         while (packet != null) {
-            tasksHandler.handlePacket(packet, completerFactory, )
+            tasksHandler.handlePacket(packet, completerFactory, identifier, socket)
             packet = packetLoader.nextPacket
         }
 
@@ -91,7 +91,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
-    packetChannel.sendPacket("INIT", identifier)
+    socket.write(Protocol.createTaskPacket(-1, "INIT", identifier.getBytes))
     /*new StressTestTask(packetChannel, tasksHandler, 100000000)
             .complete()
      */

@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
-import fr.overridescala.vps.ftp.api.task.{TaskAction, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.TaskAction
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
@@ -24,7 +24,7 @@ class RelayServer()
     private val buffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
 
     private val serverSocket = configSocket()
-    private val tasksHandler = new TasksHandler()
+    private val tasksHandler = new ServerTasksHandler()
     private val completerFactory = new ServerTaskCompleterFactory(tasksHandler)
     private val connectionsManager = new ConnectionsManager(tasksHandler)
     private val packetLoader = new PacketLoader()
