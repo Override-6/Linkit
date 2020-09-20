@@ -1,9 +1,8 @@
 package fr.overridescala.vps.ftp.api.task
 
-import java.net.SocketAddress
 import java.util
 
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel, PacketChannelManager, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, SimplePacketChannel}
 
 
 class TasksHandler() {

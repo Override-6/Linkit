@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.task
 
 class TaskTicket(private val taskExecutor: TaskExecutor,
-                 private val sessionID: Int,
+                 val sessionID: Int,
                  private val ownFreeWill: Boolean) {
 
     val taskName: String = taskExecutor.getClass.getSimpleName
