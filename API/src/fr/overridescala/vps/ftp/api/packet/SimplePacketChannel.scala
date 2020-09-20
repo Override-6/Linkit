@@ -15,16 +15,8 @@ class SimplePacketChannel(private val byteChannel: ByteChannel,
     private val queue: BlockingQueue[DataPacket] = new ArrayBlockingQueue[DataPacket](200)
 
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
-        val t0 = System.currentTimeMillis()
         val bytes = Protocol.createTaskPacket(tasksHandler.currentSessionID, header, content)
-        val t1 = System.currentTimeMillis()
-        val bytesTime = t1 - t0
-        println(s"time to create bytes : $bytesTime")
         byteChannel.write(bytes)
-        val t2 = System.currentTimeMillis()
-        val writeTime = t2 - t1
-        println("time to send bytes : " + writeTime)
-        println()
     }
 
     override def nextPacket(): DataPacket =

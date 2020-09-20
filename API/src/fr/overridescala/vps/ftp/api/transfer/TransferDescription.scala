@@ -1,19 +1,14 @@
 package fr.overridescala.vps.ftp.api.transfer
 
-import java.net.InetSocketAddress
-
-import fr.overridescala.vps.ftp.api.utils.Constants
-
 
 class TransferDescription private(val source: FileDescription,
                                   val destination: String,
-                                  val targetID: String,
-                                  val senderID: String) extends Serializable {
+                                  val targetID: String) extends Serializable {
 
     val transferSize: Long = source.size
 
     override def toString: String = s"TransferDescription{source: ${source.path}, length: $transferSize," +
-            s" destination: $destination, target: $targetID, sender: $senderID}"
+            s" destination: $destination, target: $targetID}"
 
 }
 
@@ -41,7 +36,7 @@ object TransferDescription {
             this
         }
 
-        def build(): TransferDescription = new TransferDescription(source, destination, targetID, Constants.SELF_ID)
+        def build(): TransferDescription = new TransferDescription(source, destination, targetID)
     }
 
 }

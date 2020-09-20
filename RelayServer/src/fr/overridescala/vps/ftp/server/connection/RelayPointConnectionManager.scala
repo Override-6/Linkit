@@ -1,16 +1,15 @@
-package fr.overridescala.vps.ftp.server
+package fr.overridescala.vps.ftp.server.connection
 
-import java.net.{InetSocketAddress, SocketAddress}
-import java.nio.channels.SocketChannel
+import java.net.{Socket, SocketAddress}
 import java.util
 
-import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 import fr.overridescala.vps.ftp.api.task.TasksHandler
 
 import scala.jdk.CollectionConverters
 
 /**
  * TeamMate of RelayServer, handles the RelayPoint Connections.
+ *
  * @see RelayServer
  * @see RelayPointConnection
  * */
@@ -25,15 +24,12 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
     /**
      * attributes a identifier to a connected Relay Point.
      *
-     * @param address    the address in which we attribute the identifier
+     * @param address     the address to attribute the identifier
      * @param identifier the identifier of the address/connection
      * @throws IllegalArgumentException when a id is already set for this address, or another connection is known under this id.
      * */
-    def initConnection(socket: SocketChannel, identifier: String): Unit = {
+    def initConnection(address: SocketAddress, identifier: String): Unit = {
         val scalaMap = CollectionConverters.MapHasAsScala(connections).asScala
-        val address = socket.getRemoteAddress
-        if (connections.containsKey(address))
-            throw new IllegalArgumentException(s"RelayPointConnection is already set for address $address")
 
         for ((_, info) <- scalaMap if info.identifier != null) {
             if (info.identifier.equals(identifier)) {
@@ -41,12 +37,18 @@ class RelayPointConnectionManager(private val tasksHandler: TasksHandler) {
             }
         }
 
-        val packetChannel = new SimplePacketChannel(socket, "", address, tasksHandler)
-
-        val info = RelayPointConnection(identifier, packetChannel, address)
-        connections.put(address, info)
+        connections.get(address).identifier = identifier
     }
 
+    /**
+     * creates a connection from the socket. attributes it an action when bytes get read and start listening
+     * */
+    def createConnection(socket: Socket, onBytesReceived: Array[Byte] => Unit): Unit = {
+        val address = socket.getRemoteSocketAddress
+        val connection = RelayPointConnection(null, socket, tasksHandler, address)
+        connection.startListening(onBytesReceived)
+        connections.put(address, connection)
+    }
 
     /**
      * disconnects a RelayPointConnection
