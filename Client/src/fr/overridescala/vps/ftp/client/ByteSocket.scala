@@ -16,7 +16,9 @@ class ByteSocket(serverAddress: InetAddress, port: Int) extends ByteChannel {
     }
 
     override def write(src: ByteBuffer): Int = {
-        socket.getOutputStream.write(src.array())
+        val bytes = new Array[Byte](src.limit())
+        src.get(bytes)
+        socket.getOutputStream.write(bytes)
         src.limit()
     }
 

@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.server
 
-import java.net.{InetSocketAddress, SocketAddress}
+import java.net.{InetSocketAddress, ServerSocket, SocketAddress}
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
 import java.nio.charset.Charset
@@ -124,8 +124,10 @@ class RelayServer(override val identifier: String)
      * */
     private def handleNewConnection(): Unit = {
         val channel = serverSocket.accept()
+
         channel.configureBlocking(false)
         channel.register(selector, SelectionKey.OP_READ)
+
 
         val socketChannel = channel.asInstanceOf[SocketChannel]
         val address = socketChannel.getRemoteAddress.asInstanceOf[InetSocketAddress]
@@ -214,8 +216,8 @@ class RelayServer(override val identifier: String)
 
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()
-        socket.configureBlocking(false)
         socket.bind(Constants.PUBLIC_ADDRESS)
+        socket.configureBlocking(false)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket
     }
@@ -224,6 +226,6 @@ class RelayServer(override val identifier: String)
         CollectionConverters.SetHasAsScala(javaSet).asScala
 
     // default tasks
-    Runtime.getRuntime.addShutdownHook(new Thread(() => this.close()))
+    Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
 
 }
