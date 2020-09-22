@@ -12,8 +12,8 @@ class ClientTasksHandler(socket: SocketChannel) extends TasksHandler{
     private var currentChannelManager: PacketChannelManager = _
     private val completerFactory = new RelayPointTaskCompleterFactory(this)
 
-    override def registerTask(achiever: TaskExecutor, sessionID: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
-        val ticket = new TaskAchieverTicket(achiever, ownerID, sessionID, ownFreeWill)
+    override def registerTask(achiever: TaskExecutor, taskIdentifier: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
+        val ticket = new TaskAchieverTicket(achiever, ownerID, taskIdentifier, ownFreeWill)
         queue.offer(ticket)
         println("new task registered !")
     }

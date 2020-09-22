@@ -13,11 +13,11 @@ class ServerTasksHandler() extends TasksHandler {
     private val clientsThreads = mutable.Map.empty[String, (ClientTasksThread, SocketChannel)]
     private val completerFactory = new ServerTaskCompleterFactory(this)
 
-    override def registerTask(executor: TaskExecutor, sessionID: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
         val pair = clientsThreads(ownerID)
         val thread = pair._1
         val socket = pair._2
-        val ticket = new TaskTicket(executor, sessionID, socket, ownerID, ownFreeWill)
+        val ticket = new TaskTicket(executor, taskIdentifier, socket, ownerID, ownFreeWill)
         thread.addTicket(ticket)
         println("new task registered !")
     }
