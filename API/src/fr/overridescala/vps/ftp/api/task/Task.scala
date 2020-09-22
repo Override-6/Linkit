@@ -72,9 +72,9 @@ abstract class Task[T](private val handler: TasksHandler,
     }
 
     /**
-     * Completes the task. that doesn't mean that this task is not enqueued to be executed later.
+     * Completes the task. That does not mean that this task is not enqueued.
      * The particularity of this method, is that it will wait until the task end.
-     * if the task was unsuccessful, throw an error, return the result instead.
+     * If the task was unsuccessful, throw an error, return the result instead.
      *
      * @throws TaskException if the task was unsuccessful
      * @return the task result

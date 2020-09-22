@@ -34,6 +34,6 @@ class ServerTaskCompleterFactory(private val tasksHandler: ServerTasksHandler) e
         }
     }
 
-    override def putCompleter(completerType: String, supplier: (DataPacket, TasksHandler) => TaskExecutor): Unit =
-        completers.put(completerType, supplier)
+    override def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler) => TaskExecutor): Unit =
+        completers.put(taskType, supplier)
 }
