@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
-class DataPacket(val sessionID: Int,
+class DataPacket(val taskID: Int,
                  val header: String,
                  val content: Array[Byte] = Array()) {
 
@@ -8,6 +8,6 @@ class DataPacket(val sessionID: Int,
     lazy val haveContent: Boolean = !content.isEmpty
 
     override def toString: String =
-        s"TaskPacket{id: $sessionID, header: $header, content: ${new String(content)}}"
+        s"TaskPacket{id: $taskID, header: $header, content: ${new String(content)}}"
 
 }

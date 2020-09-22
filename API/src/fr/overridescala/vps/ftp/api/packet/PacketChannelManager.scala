@@ -4,6 +4,6 @@ trait PacketChannelManager {
 
     def addPacket(packet: DataPacket): Unit
 
-    val ownerID: String
+    val taskID: Int
 
 }

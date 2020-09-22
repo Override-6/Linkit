@@ -8,7 +8,7 @@ import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 
 class SimplePacketChannel(private val socket: SocketChannel,
                           override val ownerID: String,
-                          private val sessionID: Int)
+                          override val taskID: Int)
         extends PacketChannel with PacketChannelManager {
 
     private val queue: BlockingQueue[DataPacket] = new ArrayBlockingQueue[DataPacket](200)
@@ -16,7 +16,7 @@ class SimplePacketChannel(private val socket: SocketChannel,
     override val ownerAddress: SocketAddress = socket.getRemoteAddress
 
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
-        val bytes = Protocol.createTaskPacket(sessionID, header, content)
+        val bytes = Protocol.createTaskPacket(taskID, header, content)
         socket.write(bytes)
     }
 
@@ -27,7 +27,7 @@ class SimplePacketChannel(private val socket: SocketChannel,
         !queue.isEmpty
 
     override def addPacket(packet: DataPacket): Unit = {
-        if (packet.sessionID != sessionID)
+        if (packet.taskID != taskID)
             throw UnexpectedPacketException("packet sessions differs ! ")
         queue.add(packet)
     }

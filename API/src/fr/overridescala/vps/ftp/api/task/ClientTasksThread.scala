@@ -3,15 +3,20 @@ package fr.overridescala.vps.ftp.api.task
 import java.io.Closeable
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
-class ClientTaskThread() extends Thread with Closeable {
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannelManager}
+
+class ClientTasksThread() extends Thread with Closeable {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     @volatile private var open = false
+    @volatile private var currentChannelManager: PacketChannelManager = _
 
     override def run(): Unit = {
         open = true
         while (open) {
-            queue.take().start()
+            val ticket = queue.take()
+            currentChannelManager = ticket.channel
+            ticket.start()
         }
     }
 
@@ -22,7 +27,15 @@ class ClientTaskThread() extends Thread with Closeable {
         interrupt()
     }
 
+    def injectPacket(packet: DataPacket): Unit =
+        currentChannelManager.addPacket(packet)
+
+
     def addTicket(ticket: TaskTicket): Unit = {
         queue.add(ticket)
+    }
+
+    def tasksIDMatches(packet: DataPacket): Boolean = {
+        packet.taskID != currentChannelManager.taskID
     }
 }

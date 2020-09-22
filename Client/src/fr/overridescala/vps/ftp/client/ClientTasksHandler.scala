@@ -7,10 +7,10 @@ import fr.overridescala.vps.ftp.api.task.{TaskCompleterFactory, TaskExecutor, Ta
 
 import scala.collection.mutable
 
-class ClientTasksHandler extends TasksHandler{
+class ClientTasksHandler(socket: SocketChannel) extends TasksHandler{
 
     private val queue: mutable.Queue[TaskAchieverTicket] = mutable.Queue.empty
-    private var currentChannel: PacketChannel = _
+    private var currentSessionID = -1
 
     override def registerTask(achiever: TaskExecutor, sessionID: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
         val ticket = new TaskAchieverTicket(achiever, ownerID, sessionID, ownFreeWill)
@@ -31,9 +31,9 @@ class ClientTasksHandler extends TasksHandler{
     }
 
     override def handlePacket(packet: DataPacket, factory: TaskCompleterFactory, ownerID: String, socket: SocketChannel): Unit = {
-        if (packet.sessionID != currentSessionID) {
+        if (packet.taskID != currentSessionID) {
             val completer = factory.getCompleter(packet)
-            registerTask(completer, packet.sessionID, ownerID, false)
+            registerTask(completer, packet.taskID, ownerID, false)
             return
         }
         channel.addPacket(packet)

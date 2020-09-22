@@ -5,17 +5,17 @@ import java.nio.channels.SocketChannel
 import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 
 class TaskTicket(private val taskExecutor: TaskExecutor,
-                 val sessionID: Int,
+                 private val currentTaskID: Int,
                  private val socket: SocketChannel,
                  private val ownerID: String,
                  private val ownFreeWill: Boolean) {
 
+    val channel = new SimplePacketChannel(socket, ownerID, currentTaskID)
     val taskName: String = taskExecutor.getClass.getSimpleName
 
     def start(): Unit = {
         try {
             println(s"executing $taskName...")
-            val channel = new SimplePacketChannel(socket, ownerID, sessionID)
             if (ownFreeWill)
                 taskExecutor.sendTaskInfo(channel)
             taskExecutor.execute(channel)
@@ -26,7 +26,7 @@ class TaskTicket(private val taskExecutor: TaskExecutor,
 
     override def toString: String =
         s"Ticket(name = $taskName," +
-                s" id = $sessionID," +
+                s" id = $currentTaskID," +
                 s" freeWill = $ownFreeWill)"
 
 }
