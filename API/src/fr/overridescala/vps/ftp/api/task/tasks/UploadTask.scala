@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.nio.file.{Files, Path}
 import java.util
 
-import fr.overridescala.vps.ftp.api.exceptions.{TransferException, UnexpectedPacketException}
+import fr.overridescala.vps.ftp.api.exceptions.{TaskException, UnexpectedPacketException}
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, UPLOAD, UPLOAD_FILE}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
@@ -103,7 +103,7 @@ class UploadTask(private val handler: TasksHandler,
         if (packet.header.equals(ABORT)) {
             val errorMsg = new String(packet.content)
             error(errorMsg)
-            throw new TransferException(errorMsg)
+            throw new TaskException(errorMsg)
         }
         try {
             val packetId = Integer.parseInt(packet.header)
@@ -111,7 +111,7 @@ class UploadTask(private val handler: TasksHandler,
                 val errorMsg = new String(s"packet id was unexpected (id: $packetId, expected: $id)")
                 channel.sendPacket(ABORT, errorMsg)
                 error(errorMsg)
-                throw new TransferException(errorMsg)
+                throw new TaskException(errorMsg)
             }
         } catch {
             case e: NumberFormatException =>

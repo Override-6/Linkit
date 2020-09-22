@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.task
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
-import fr.overridescala.vps.ftp.api.exceptions.TransferException
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask
 import org.jetbrains.annotations.Nullable
 
@@ -62,6 +62,8 @@ abstract class Task[T](private val handler: TasksHandler,
 
     /**
      * Enqueue / register this task to the [[TasksHandler]]
+     * @param onSuccess the action to perform when the task was successful
+     * @param onError the action to perform when the task was unsuccessful
      * */
     final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError): Unit = {
         this.onSuccess = onSuccess
@@ -69,6 +71,14 @@ abstract class Task[T](private val handler: TasksHandler,
         handler.registerTask(this, identifier, targetID, true)
     }
 
+    /**
+     * Completes the task. that doesn't mean that this task is not enqueued to be executed later.
+     * The particularity of this method, is that it will wait until the task end.
+     * if the task was unsuccessful, throw an error, return the result instead.
+     *
+     * @throws TaskException if the task was unsuccessful
+     * @return the task result
+     * */
     final override def complete(): T = {
         handler.registerTask(this, identifier, targetID, true)
         val atomicResult = new AtomicReference[T]()
@@ -77,7 +87,7 @@ abstract class Task[T](private val handler: TasksHandler,
             atomicResult.set(result)
         }
         val onError: String => Unit = msg => synchronized {
-            new TransferException(msg + "\n").printStackTrace()
+            throw TaskException(msg + "\n")
             notify()
         }
         this.onSuccess = onSuccess
@@ -88,11 +98,17 @@ abstract class Task[T](private val handler: TasksHandler,
         atomicResult.get()
     }
 
+    /**
+     * Invoked by TaskExecutors to signal that this task was unsuccessful
+     * */
     protected def error(msg: String): Unit = {
         if (onError != null)
             onError(msg)
     }
 
+    /**
+     * Invoked by TaskExecutors to signal that this task was successful
+     * */
     protected def success(t: T): Unit = {
         if (onSuccess != null)
             onSuccess(t)

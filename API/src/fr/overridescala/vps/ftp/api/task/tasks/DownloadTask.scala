@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.io.File
 import java.nio.file.{Files, Path}
 
-import fr.overridescala.vps.ftp.api.exceptions.TransferException
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, DOWNLOAD}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
@@ -103,7 +103,7 @@ class DownloadTask(private val handler: TasksHandler,
         if (header.equals(ABORT)) {
             val msg = new String(packet.content)
             error(msg)
-            throw new TransferException(msg)
+            throw new TaskException(msg)
         }
         header.matches("[0-9]+")
     }
