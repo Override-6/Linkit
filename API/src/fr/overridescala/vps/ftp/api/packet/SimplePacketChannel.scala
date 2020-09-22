@@ -20,8 +20,9 @@ class SimplePacketChannel(private val socket: SocketChannel,
         socket.write(bytes)
     }
 
-    override def nextPacket(): DataPacket =
+    override def nextPacket(): DataPacket = try {
         queue.take()
+    }
 
     override def haveMorePackets: Boolean =
         !queue.isEmpty

@@ -4,7 +4,6 @@ import java.io.Closeable
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannelManager}
-import fr.overridescala.vps.ftp.api.task.TaskTicket
 
 class ClientTasksThread() extends Thread with Closeable {
 
@@ -21,11 +20,9 @@ class ClientTasksThread() extends Thread with Closeable {
         }
     }
 
-    override def start(): Unit = super.start()
-
     override def close(): Unit = {
         open = false
-        interrupt()
+        stop()
     }
 
     def injectPacket(packet: DataPacket): Unit =
@@ -37,6 +34,6 @@ class ClientTasksThread() extends Thread with Closeable {
     }
 
     def tasksIDMatches(packet: DataPacket): Boolean = {
-        packet.taskID != currentChannelManager.taskID
+        currentChannelManager != null && packet.taskID == currentChannelManager.taskID
     }
 }

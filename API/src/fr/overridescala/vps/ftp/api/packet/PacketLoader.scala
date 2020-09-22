@@ -6,7 +6,7 @@ import fr.overridescala.vps.ftp.api.utils.Constants
 
 class PacketLoader {
 
-    private var buffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH * 3)
+    private val buffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH * 3)
 
     def add(bytes: Array[Byte]): Unit = {
         //println(s"bytes.length = ${bytes.length}")

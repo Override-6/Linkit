@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.server
 
-import java.net.InetSocketAddress
+import java.net.{InetSocketAddress, SocketException}
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
 import java.nio.charset.Charset
@@ -67,7 +67,8 @@ class RelayServer()
                     updateKey(key)
                 } catch {
                     case e: Throwable =>
-                        e.printStackTrace()
+                        if (e.getMessage == null || !e.getMessage.equalsIgnoreCase("Connection reset"))
+                            e.printStackTrace()
                         val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
                         val id = connectionsManager.getIdentifierFromAddress(address)
                         println("a connection closed suddenly")

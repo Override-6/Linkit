@@ -18,7 +18,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     val buffer: ByteBuffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
 
     private val socket = configSocket()
-    private val tasksHandler = new ServerTasksHandler()
+    private val tasksHandler = new ClientTasksHandler(socket)
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
     private val packetLoader = new PacketLoader()
 
@@ -41,6 +41,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             println("current encoding is " + Charset.defaultCharset().name())
             println("listening on port " + Constants.PORT)
             //enable the task management
+            tasksHandler.start()
             while (true) {
                 try {
                     updateNetwork()
@@ -92,7 +93,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
     socket.write(Protocol.createTaskPacket(-1, "INIT", identifier.getBytes))
-    /*new StressTestTask(packetChannel, tasksHandler, 100000000)
+    start()
+    new StressTestTask(tasksHandler, 100000000)
             .complete()
-     */
+
 }
