@@ -45,7 +45,7 @@ class ServerTasksHandler() extends TasksHandler {
 
     private def checkOwner(ownerID: String, socket: SocketChannel): Unit = {
         if (!clientsThreads.contains(ownerID)) {
-            val thread = new ClientTasksThread
+            val thread = new ClientTasksThread(ownerID)
             clientsThreads.put(ownerID, (thread, socket))
             thread.start()
         }

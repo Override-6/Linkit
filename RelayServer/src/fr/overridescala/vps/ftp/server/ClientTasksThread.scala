@@ -5,7 +5,7 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannelManager}
 
-class ClientTasksThread() extends Thread with Closeable {
+class ClientTasksThread(ownerID: String) extends Thread with Closeable {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     @volatile private var open = false
@@ -41,4 +41,7 @@ class ClientTasksThread() extends Thread with Closeable {
     def tasksIDMatches(packet: DataPacket): Boolean = {
         currentChannelManager != null && packet.taskID == currentChannelManager.taskID
     }
+
+    setName(s"RP Task Execution ($ownerID)")
+
 }
