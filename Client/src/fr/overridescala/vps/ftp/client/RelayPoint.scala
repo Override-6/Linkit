@@ -23,6 +23,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     @volatile private var open = false
 
     override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R, TaskAction[R]]): TaskAction[R] = {
+        ensureOpen()
         concoctor.concoct(tasksHandler)
     }
 

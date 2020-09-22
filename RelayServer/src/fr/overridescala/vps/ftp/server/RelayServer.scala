@@ -34,6 +34,7 @@ class RelayServer()
     override val identifier: String = Constants.SERVER_ID
 
     override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R, TaskAction[R]]): TaskAction[R] = {
+        ensureOpen()
         concoctor.concoct(tasksHandler)
     }
 
