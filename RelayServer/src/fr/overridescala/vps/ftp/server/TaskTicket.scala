@@ -23,8 +23,9 @@ class TaskTicket(private val taskExecutor: TaskExecutor,
             taskExecutor.execute(channel)
         } catch {
             // do not prints those exceptions : normal errors when a task is brutally aborted via Thread.stop
-            case _: IllegalMonitorStateException => {}
-            case e: IOException if e.getMessage != null && e.getMessage.equalsIgnoreCase("Broken pipe") => {}
+            case _: IllegalMonitorStateException =>
+            case _: InterruptedException =>
+            case e: IOException if e.getMessage != null && e.getMessage.equalsIgnoreCase("Broken pipe") =>
 
             case e: Throwable => e.printStackTrace()
         }

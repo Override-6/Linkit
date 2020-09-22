@@ -14,15 +14,20 @@ class ClientTasksThread() extends Thread with Closeable {
     override def run(): Unit = {
         open = true
         while (open) {
-            val ticket = queue.take()
-            currentChannelManager = ticket.channel
-            ticket.start()
+            try {
+                val ticket = queue.take()
+                currentChannelManager = ticket.channel
+                ticket.start()
+            } catch {
+                //normal exception thrown when the thread was suddenly stopped
+                case _:InterruptedException => {}
+            }
         }
     }
 
     override def close(): Unit = {
         open = false
-        stop()
+        interrupt()
     }
 
     def injectPacket(packet: DataPacket): Unit =
