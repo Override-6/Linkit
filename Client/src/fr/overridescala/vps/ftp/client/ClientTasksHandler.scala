@@ -10,7 +10,7 @@ import scala.collection.mutable
 class ClientTasksHandler(socket: SocketChannel) extends TasksHandler{
 
     private val queue: mutable.Queue[TaskAchieverTicket] = mutable.Queue.empty
-    private var currentSessionID = -1
+    private var currentPacketChannelManager
 
     override def registerTask(achiever: TaskExecutor, sessionID: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
         val ticket = new TaskAchieverTicket(achiever, ownerID, sessionID, ownFreeWill)

@@ -1,9 +1,10 @@
-package fr.overridescala.vps.ftp.api.task
+package fr.overridescala.vps.ftp.server
 
 import java.io.Closeable
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannelManager}
+import fr.overridescala.vps.ftp.api.task.TaskTicket
 
 class ClientTasksThread() extends Thread with Closeable {
 

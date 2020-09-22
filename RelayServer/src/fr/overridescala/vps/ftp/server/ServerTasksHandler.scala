@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server
 import java.nio.channels.SocketChannel
 
 import fr.overridescala.vps.ftp.api.packet.DataPacket
-import fr.overridescala.vps.ftp.api.task.{ClientTasksThread, TaskCompleterFactory, TaskExecutor, TaskTicket, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterFactory, TaskExecutor, TaskTicket, TasksHandler}
 
 import scala.collection.mutable
 
