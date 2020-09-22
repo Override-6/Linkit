@@ -2,12 +2,12 @@ package fr.overridescala.vps.ftp.server
 
 import fr.overridescala.vps.ftp.api.packet.DataPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
-import fr.overridescala.vps.ftp.api.task.{DynamicTaskCompleterFactory, TaskExecutor}
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterFactory, TaskExecutor}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 import scala.collection.mutable
 
-class ServerTaskCompleterFactory(private val tasksHandler: ServerTasksHandler) extends DynamicTaskCompleterFactory {
+class ServerTaskCompleterFactory(private val tasksHandler: ServerTasksHandler) extends TaskCompleterFactory {
 
     private lazy val completers: mutable.Map[String, DataPacket => TaskExecutor] = new mutable.HashMap[String, DataPacket => TaskExecutor]()
 

@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path}
 import fr.overridescala.vps.ftp.api.exceptions.TransferException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, DOWNLOAD}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -134,4 +134,9 @@ class DownloadTask(private val handler: TasksHandler,
 object DownloadTask {
     val DOWNLOAD: String = "DWN"
     private val ABORT: String = "ERROR"
+
+    def concoct(transferDescription: TransferDescription): TaskConcoctor[Unit, DownloadTask] = tasksHandler => {
+        new DownloadTask(tasksHandler, transferDescription)
+    }
+
 }

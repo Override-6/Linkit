@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
-import fr.overridescala.vps.ftp.api.task.TaskAction
+import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterFactory, TaskConcoctor}
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
@@ -33,25 +33,11 @@ class RelayServer()
 
     override val identifier: String = Constants.SERVER_ID
 
-    override def doDownload(description: TransferDescription): TaskAction[Unit] = {
-        ensureOpen()
-        new DownloadTask(tasksHandler, description)
+    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R, TaskAction[R]]): TaskAction[R] = {
+        concoctor.concoct(tasksHandler)
     }
 
-    override def doUpload(description: TransferDescription): TaskAction[Unit] = {
-        ensureOpen()
-        new UploadTask(tasksHandler, description)
-    }
-
-    override def requestFileInformation(ownerID: String, path: String): TaskAction[FileDescription] = {
-        ensureOpen()
-        new FileInfoTask(tasksHandler, ownerID, path)
-    }
-
-    override def requestCreateFile(ownerID: String, path: String): TaskAction[Unit] = {
-        ensureOpen()
-        new CreateFileTask(path, ownerID, tasksHandler)
-    }
+    override def getCompleterFactory: TaskCompleterFactory = completerFactory
 
     override def start(): Unit = {
         println("ready !")

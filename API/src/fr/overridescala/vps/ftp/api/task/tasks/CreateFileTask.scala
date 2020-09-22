@@ -6,13 +6,14 @@ import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask.{CREATE_FILE, ERROR}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.tasks.FileInfoTask.FileInfoCompleter
+import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 
-class CreateFileTask(private val path: String,
+class CreateFileTask(private val tasksHandler: TasksHandler,
                      private val ownerID: String,
-                     private val tasksHandler: TasksHandler) extends Task[Unit](tasksHandler, ownerID) {
+                     private val path: String) extends Task[Unit](tasksHandler, ownerID) {
 
 
     override def sendTaskInfo(channel :PacketChannel): Unit =
@@ -62,6 +63,17 @@ object CreateFileTask {
                 }
             }
     }
+
+
+    def concoctCompleter(filePath: String): TaskConcoctor[Unit, CreateFileCompleter] = _ => {
+        new CreateFileCompleter(filePath)
+    }
+
+    def concoct(ownerID: String, filePath: String): TaskConcoctor[Unit, CreateFileTask] = tasksHandler => {
+        new CreateFileTask(tasksHandler, ownerID, filePath)
+    }
+
+
 
 }
 

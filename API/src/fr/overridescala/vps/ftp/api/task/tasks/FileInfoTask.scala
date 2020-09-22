@@ -4,7 +4,8 @@ import java.nio.file.Files
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.FileInfoTask.{ERROR, FILE_INFO}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.StressTestCompleter
+import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.FileDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -52,4 +53,11 @@ object FileInfoTask {
         }
     }
 
+    def concoctCompleter(filePath: String): TaskConcoctor[Unit, FileInfoCompleter] = _ => {
+        new FileInfoCompleter(filePath)
+    }
+
+    def concoct(ownerID: String, filePath: String): TaskConcoctor[Unit, FileInfoTask] = tasksHandler => {
+        new FileInfoTask(tasksHandler, ownerID, filePath)
+    }
 }

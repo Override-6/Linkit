@@ -6,10 +6,8 @@ import java.nio.channels.SocketChannel
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks._
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAction}
-import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
+import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol}
+import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterFactory, TaskConcoctor}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
@@ -24,25 +22,11 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     @volatile private var open = false
 
-    override def doDownload(description: TransferDescription): Task[Unit] = {
-        ensureOpen()
-        new DownloadTask(tasksHandler, description)
+    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R, TaskAction[R]]): TaskAction[R] = {
+        concoctor.concoct(tasksHandler)
     }
 
-    override def doUpload(description: TransferDescription): Task[Unit] = {
-        ensureOpen()
-        new UploadTask(tasksHandler, description)
-    }
-
-    override def requestFileInformation(ownerID: String, path: String): Task[FileDescription] = {
-        ensureOpen()
-        new FileInfoTask(tasksHandler, ownerID, path)
-    }
-
-    override def requestCreateFile(ownerID: String, path: String): TaskAction[Unit] = {
-        ensureOpen()
-        new CreateFileTask(path, ownerID, tasksHandler)
-    }
+    override def getCompleterFactory: TaskCompleterFactory = completerFactory
 
     override def start(): Unit = {
         val thread = new Thread(() => {
