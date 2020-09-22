@@ -2,14 +2,14 @@ package fr.overridescala.vps.ftp.server
 
 import fr.overridescala.vps.ftp.api.packet.DataPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
-import fr.overridescala.vps.ftp.api.task.{TaskCompleterFactory, TaskExecutor}
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterFactory, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 import scala.collection.mutable
 
 class ServerTaskCompleterFactory(private val tasksHandler: ServerTasksHandler) extends TaskCompleterFactory {
 
-    private lazy val completers: mutable.Map[String, DataPacket => TaskExecutor] = new mutable.HashMap[String, DataPacket => TaskExecutor]()
+    private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler) => TaskExecutor] = new mutable.HashMap[String, (DataPacket, TasksHandler) => TaskExecutor]()
 
     override def getCompleter(initPacket: DataPacket): TaskExecutor = {
         val taskType = initPacket.header
@@ -30,10 +30,10 @@ class ServerTaskCompleterFactory(private val tasksHandler: ServerTasksHandler) e
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)
                     throw new IllegalArgumentException("could not find completer for task " + taskType)
-                completerSupplier.apply(initPacket)
+                completerSupplier.apply(initPacket, tasksHandler)
         }
     }
 
-    override def putCompleter(completerType: String, supplier: DataPacket => TaskExecutor): Unit =
+    override def putCompleter(completerType: String, supplier: (DataPacket, TasksHandler) => TaskExecutor): Unit =
         completers.put(completerType, supplier)
 }

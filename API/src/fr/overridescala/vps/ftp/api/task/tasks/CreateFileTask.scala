@@ -64,11 +64,6 @@ object CreateFileTask {
             }
     }
 
-
-    def concoctCompleter(filePath: String): TaskConcoctor[Unit, CreateFileCompleter] = _ => {
-        new CreateFileCompleter(filePath)
-    }
-
     def concoct(ownerID: String, filePath: String): TaskConcoctor[Unit, CreateFileTask] = tasksHandler => {
         new CreateFileTask(tasksHandler, ownerID, filePath)
     }

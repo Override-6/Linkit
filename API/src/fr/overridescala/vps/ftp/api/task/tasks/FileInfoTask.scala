@@ -53,10 +53,6 @@ object FileInfoTask {
         }
     }
 
-    def concoctCompleter(filePath: String): TaskConcoctor[Unit, FileInfoCompleter] = _ => {
-        new FileInfoCompleter(filePath)
-    }
-
     def concoct(ownerID: String, filePath: String): TaskConcoctor[Unit, FileInfoTask] = tasksHandler => {
         new FileInfoTask(tasksHandler, ownerID, filePath)
     }

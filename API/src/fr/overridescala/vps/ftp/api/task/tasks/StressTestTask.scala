@@ -2,7 +2,6 @@ package fr.overridescala.vps.ftp.api.task.tasks
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
-import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 class StressTestTask(private val handler: TasksHandler,
@@ -58,10 +57,6 @@ object StressTestTask {
                 print(s"\rjust received ${dataLength} in $time ms $bps  bytes/s ($totalReceived / $totalDataLength $percentage%)")
             }
         }
-    }
-
-    def concoctCompleter(totalDataLength: Int): TaskConcoctor[Unit, StressTestCompleter] = _ => {
-        new StressTestCompleter(totalDataLength)
     }
 
     def concoct(totalDataLength: Int): TaskConcoctor[Unit, StressTestTask] = tasksHandler => {

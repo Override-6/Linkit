@@ -6,6 +6,6 @@ trait TaskCompleterFactory {
 
     def getCompleter(initPacket: DataPacket): TaskExecutor
 
-    def putCompleter(completerType: String, supplier: DataPacket => TaskExecutor)
+    def putCompleter(completerType: String, supplier: (DataPacket, TasksHandler) => TaskExecutor)
 
 }

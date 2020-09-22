@@ -4,23 +4,73 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 import fr.overridescala.vps.ftp.api.exceptions.TransferException
+import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask
+import org.jetbrains.annotations.Nullable
 
+/**
+ * <p>
+ *     Task is a abstract task, all Tasks (excepted Completers) have to extends this class to be considered as a
+ *     self-executable task.
+ * </p>
+ * <p>
+ *     TasksCompleters does not have specific Class or Trait to extends, they just have to extend the TaskExecutor.
+ *     TasksCompleters are created by the [[TaskCompleterFactory]], and are normally not instantiable from other classes.
+ *     TasksCompleters, are the tasks which completes the self-executable tasks.
+ *     @example
+ *          in [[CreateFileTask]], the self-executable (the class that directly extends from [[Task]]) will ask to the targeted Relay
+ *          if he could creates a file located on the specified path.
+ *          The targeted Relay will instantiate / execute the Completer of [[CreateFileTask]], in which the file will be created.
+ * </p>
+ * <p>
+ *      This class is a member of [[TaskAction]] and [[TaskExecutor]].
+ *      [[TaskAction]] is a Trait given to the user. this class only have enqueue and complete methods.
+ *      [[TaskExecutor]] is a Trait used by [[TasksHandler]] which will invoke TaskExecutor#execute nor TaskExecutor#sendTaskInfo if this task instance
+ *      was created by the program (!TaskCompleters)
+ * </p>
+ * @param handler the TasksHandler
+ * @param targetID the targeted / concerned Relay identifier
+ * @tparam T the return type of this Task when successfully executed
+ *
+ * @see [[TasksHandler]]
+ * @see [[TaskCompleterFactory]]
+ * @see [[TaskAction]]
+ * @see [[TaskExecutor]]
+ * */
 abstract class Task[T](private val handler: TasksHandler,
                        private val targetID: String)
         extends TaskAction[T] with TaskExecutor {
 
-    private val onSuccess: AtomicReference[T => Unit] = new AtomicReference[T => Unit]()
-    private val onError: AtomicReference[String => Unit] = new AtomicReference[String => Unit]()
-    private val sessionID = ThreadLocalRandom.current().nextInt()
+    /**
+     * Invoked when the task execution was successful.
+     * parameter 'T' is the return Type for why this task hardly worked for
+     * */
+    @volatile
+    @Nullable private var onSuccess: T => Unit = _
+    /**
+     *  Invoked when the task execution was unsuccessful.
+     *  The String is the error message.
+     *  Prints the error by default.
+     * */
+    @volatile
+    @Nullable private var onError: String => Unit = Console.err.println
+    /**
+     * The session identifier is different from the Relay identifiers.
+     * this identifier is implanted to packets who emerges from this task.
+     * and is used by [[TasksHandler]] to determine if a packet concern this Task or not.
+     * */
+    private val identifier = ThreadLocalRandom.current().nextInt()
 
-    final override def queue(onSuccess: T => Unit = t => {}, onError: String => Unit = Console.err.println): Unit = {
-        this.onSuccess.set(onSuccess)
-        this.onError.set(onError)
-        handler.registerTask(this, sessionID, targetID, true)
+    /**
+     * Enqueue / register this task to the [[TasksHandler]]
+     * */
+    final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError): Unit = {
+        this.onSuccess = onSuccess
+        this.onError = onError
+        handler.registerTask(this, identifier, targetID, true)
     }
 
     final override def complete(): T = {
-        handler.registerTask(this, sessionID, targetID, true)
+        handler.registerTask(this, identifier, targetID, true)
         val atomicResult = new AtomicReference[T]()
         val onSuccess: T => Unit = result => synchronized {
             notify()
@@ -30,8 +80,8 @@ abstract class Task[T](private val handler: TasksHandler,
             new TransferException(msg + "\n").printStackTrace()
             notify()
         }
-        this.onSuccess.set(onSuccess)
-        this.onError.set(onError)
+        this.onSuccess = onSuccess
+        this.onError = onError
         synchronized {
             wait()
         }
@@ -39,13 +89,11 @@ abstract class Task[T](private val handler: TasksHandler,
     }
 
     protected def error(msg: String): Unit = {
-        val onError = this.onError.get()
         if (onError != null)
             onError(msg)
     }
 
     protected def success(t: T): Unit = {
-        val onSuccess = this.onSuccess.get()
         if (onSuccess != null)
             onSuccess(t)
     }

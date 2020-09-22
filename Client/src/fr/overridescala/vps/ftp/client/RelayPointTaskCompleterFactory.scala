@@ -10,7 +10,7 @@ import scala.collection.mutable
 class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
         extends TaskCompleterFactory {
 
-    private lazy val completers: mutable.Map[String, DataPacket => TaskExecutor] = new mutable.HashMap[String, DataPacket => TaskExecutor]()
+    private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler) => TaskExecutor] = new mutable.HashMap[String, (DataPacket, TasksHandler) => TaskExecutor]()
 
     override def getCompleter(initPacket: DataPacket): TaskExecutor = {
         val taskType = initPacket.header
@@ -31,10 +31,10 @@ class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)
                     throw new IllegalArgumentException("could not find completer for task " + taskType)
-                completerSupplier(initPacket)
+                completerSupplier(initPacket, tasksHandler)
         }
     }
 
-    override def putCompleter(completerType: String, supplier: DataPacket => TaskExecutor): Unit =
+    override def putCompleter(completerType: String, supplier: (DataPacket, TasksHandler) => TaskExecutor): Unit =
         completers.put(completerType, supplier)
 }
