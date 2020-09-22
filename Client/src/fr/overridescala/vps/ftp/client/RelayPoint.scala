@@ -22,16 +22,25 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
     private val packetLoader = new PacketLoader()
 
-    override def doDownload(description: TransferDescription): Task[Unit] =
+    @volatile private var open = false
+
+    override def doDownload(description: TransferDescription): Task[Unit] = {
+        ensureOpen()
         new DownloadTask(tasksHandler, description)
+    }
 
-    override def doUpload(description: TransferDescription): Task[Unit] =
+    override def doUpload(description: TransferDescription): Task[Unit] = {
+        ensureOpen()
         new UploadTask(tasksHandler, description)
+    }
 
-    override def requestFileInformation(ownerID: String, path: String): Task[FileDescription] =
+    override def requestFileInformation(ownerID: String, path: String): Task[FileDescription] = {
+        ensureOpen()
         new FileInfoTask(tasksHandler, ownerID, path)
+    }
 
     override def requestCreateFile(ownerID: String, path: String): TaskAction[Unit] = {
+        ensureOpen()
         new CreateFileTask(path, ownerID, tasksHandler)
     }
 
@@ -42,15 +51,16 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             println("listening on port " + Constants.PORT)
             //enable the task management
             tasksHandler.start()
-            while (true) {
+
+            open = true
+            while (open) {
                 try {
                     updateNetwork()
                 } catch {
-                    case e: Throwable => {
+                    case e: Throwable =>
                         e.printStackTrace()
                         Console.err.println("suddenly disconnected from the server.")
-                        return
-                    }
+                        close()
                 }
             }
         })
@@ -59,10 +69,11 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     override def close(): Unit = {
+        open = false
         socket.close()
     }
 
-    def updateNetwork(): Unit = synchronized {
+    private def updateNetwork(): Unit = synchronized {
         val count = socket.read(buffer)
         if (count < 1)
             return
@@ -82,7 +93,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         buffer.clear()
     }
 
-    def configSocket(): SocketChannel = {
+    private def configSocket(): SocketChannel = {
         println("connecting to server...")
         val socket = SocketChannel.open(serverAddress)
         println("connected !")
@@ -90,11 +101,13 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         socket
     }
 
+    private def ensureOpen(): Unit = {
+        if (!open)
+            throw new UnsupportedOperationException("Relay Point have to be started !")
+    }
+
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
     socket.write(Protocol.createTaskPacket(-1, "INIT", identifier.getBytes))
-    start()
-    new StressTestTask(tasksHandler, 100000000)
-            .complete()
 
 }

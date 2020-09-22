@@ -34,20 +34,24 @@ class RelayServer()
     override val identifier: String = Constants.SERVER_ID
 
     override def doDownload(description: TransferDescription): TaskAction[Unit] = {
-        val target = description.targetID
+        ensureOpen()
         new DownloadTask(tasksHandler, description)
     }
 
     override def doUpload(description: TransferDescription): TaskAction[Unit] = {
-        val target = description.targetID
+        ensureOpen()
         new UploadTask(tasksHandler, description)
     }
 
-    override def requestFileInformation(ownerID: String, path: String): TaskAction[FileDescription] =
+    override def requestFileInformation(ownerID: String, path: String): TaskAction[FileDescription] = {
+        ensureOpen()
         new FileInfoTask(tasksHandler, ownerID, path)
+    }
 
-    override def requestCreateFile(ownerID: String, path: String): TaskAction[Unit] =
+    override def requestCreateFile(ownerID: String, path: String): TaskAction[Unit] = {
+        ensureOpen()
         new CreateFileTask(path, ownerID, tasksHandler)
+    }
 
     override def start(): Unit = {
         println("ready !")
@@ -79,22 +83,12 @@ class RelayServer()
         }
     }
 
-    override def close(): Unit = {
-        open = false
-        serverSocket.close()
-        selector.selectedKeys().forEach(key => {
-            val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-            disconnect(connectionsManager.getIdentifierFromAddress(address))
-        })
-        selector.close()
-    }
-
     /**
      * disconnects a RelayPoint connection
      *
      * @param identifier the identifier of the RelayPoint connection
      * */
-    def disconnect(identifier: String): Unit = {
+    private def disconnect(identifier: String): Unit = {
         val keys = toScalaSet(selector.selectedKeys())
         for (key <- keys) {
             val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
@@ -107,6 +101,16 @@ class RelayServer()
                 return
             }
         }
+    }
+
+    override def close(): Unit = {
+        open = false
+        serverSocket.close()
+        selector.selectedKeys().forEach(key => {
+            val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
+            disconnect(connectionsManager.getIdentifierFromAddress(address))
+        })
+        selector.close()
     }
 
     /**
@@ -132,7 +136,7 @@ class RelayServer()
             handleKey(key)
     }
 
-    def handleKey(key: SelectionKey): Unit = {
+    private def handleKey(key: SelectionKey): Unit = {
         readKey(key)
         handlePacket(key)
     }
@@ -186,7 +190,7 @@ class RelayServer()
      *
      * @throws UnexpectedPacketException if the packet header isn't "INIT"
      * */
-    def handleInit(packet: DataPacket, socket: SocketChannel): Unit = {
+    private def handleInit(packet: DataPacket, socket: SocketChannel): Unit = {
         val header = packet.header
         if (!header.equals("INIT"))
             throw UnexpectedPacketException(s"received packet $packet when attempting to init a RelayPointConnection")
@@ -205,6 +209,11 @@ class RelayServer()
 
     private def toScalaSet[T](javaSet: java.util.Set[T]): mutable.Set[T] =
         CollectionConverters.SetHasAsScala(javaSet).asScala
+
+    private def ensureOpen(): Unit = {
+        if (!open)
+            throw new UnsupportedOperationException("Relay Point have to be started !")
+    }
 
     // default tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
