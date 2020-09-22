@@ -10,12 +10,24 @@ class ClientTasksHandler(socket: SocketChannel) extends TasksHandler{
 
     private val queue: BlockingQueue[TaskAchieverTicket] = new ArrayBlockingQueue[TaskAchieverTicket](200)
     private var currentChannelManager: PacketChannelManager = _
+    private val completerFactory = new RelayPointTaskCompleterFactory(this)
 
     override def registerTask(achiever: TaskExecutor, sessionID: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
         val ticket = new TaskAchieverTicket(achiever, ownerID, sessionID, ownFreeWill)
         queue.offer(ticket)
         println("new task registered !")
     }
+
+    override def handlePacket(packet: DataPacket, ownerID: String, socket: SocketChannel): Unit = {
+        if (packet.taskID != currentChannelManager.taskID) {
+            val completer = completerFactory.getCompleter(packet)
+            registerTask(completer, packet.taskID, ownerID, false)
+            return
+        }
+        currentChannelManager.addPacket(packet)
+    }
+
+    override def getTaskCompleterFactory: TaskCompleterFactory = completerFactory
 
     def start(): Unit = {
         val thread = new Thread(() => {
@@ -28,15 +40,6 @@ class ClientTasksHandler(socket: SocketChannel) extends TasksHandler{
         })
         thread.setName("Client Tasks")
         thread.start()
-    }
-
-    override def handlePacket(packet: DataPacket, factory: TaskCompleterFactory, ownerID: String, socket: SocketChannel): Unit = {
-        if (packet.taskID != currentChannelManager.taskID) {
-            val completer = factory.getCompleter(packet)
-            registerTask(completer, packet.taskID, ownerID, false)
-            return
-        }
-        currentChannelManager.addPacket(packet)
     }
 
     private class TaskAchieverTicket(private val taskAchiever: TaskExecutor,

@@ -25,7 +25,6 @@ class RelayServer()
 
     private val serverSocket = configSocket()
     private val tasksHandler = new ServerTasksHandler()
-    private val completerFactory = new ServerTaskCompleterFactory(tasksHandler)
     private val connectionsManager = new ConnectionsManager(tasksHandler)
     private val packetLoader = new PacketLoader()
 
@@ -38,7 +37,7 @@ class RelayServer()
         concoctor.concoct(tasksHandler)
     }
 
-    override def getCompleterFactory: TaskCompleterFactory = completerFactory
+    override def getCompleterFactory: TaskCompleterFactory = tasksHandler.getTaskCompleterFactory
 
     override def start(): Unit = {
         println("ready !")

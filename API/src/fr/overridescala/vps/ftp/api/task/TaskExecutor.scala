@@ -14,11 +14,12 @@ trait TaskExecutor {
     /**
      * This method is invoked straight before [[execute]] but is only invoked if this task was created by the Local Relay
      * Content of this method must only send packets to initialise a potential TaskCompleter (more information about how tasks are
-     * created / enqueued from [[fr.overridescala.vps.ftp.api.packet.DataPacket]] in [[PacketChannel]] scala doc)
+     * created / enqueued from [[fr.overridescala.vps.ftp.api.packet.DataPacket]] in [[TasksHandler]] scala doc)
      * @param channel the channel where the packet will be send and received
      *
      * @see [[PacketChannel]]
-     * @see [[DataPacket]]
+     * @see [[PacketChannel]]
+     * @see [[fr.overridescala.vps.ftp.api.packet.DataPacket]]
      * */
     def sendTaskInfo(channel: PacketChannel): Unit = {}
 
@@ -28,7 +29,7 @@ trait TaskExecutor {
      * @param channel the channel where the packet will be send and received
      *
      * @see [[PacketChannel]]
-     * @see [[DataPacket]]
+     * @see [[fr.overridescala.vps.ftp.api.packet.DataPacket]]
      * */
     def execute(channel: PacketChannel): Unit
 

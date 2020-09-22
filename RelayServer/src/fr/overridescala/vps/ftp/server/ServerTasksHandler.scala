@@ -11,6 +11,7 @@ import scala.collection.mutable
 class ServerTasksHandler() extends TasksHandler {
 
     private val clientsThreads = mutable.Map.empty[String, (ClientTasksThread, SocketChannel)]
+    private val completerFactory = new ServerTaskCompleterFactory(this)
 
     override def registerTask(executor: TaskExecutor, sessionID: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
         val pair = clientsThreads(ownerID)
@@ -22,7 +23,7 @@ class ServerTasksHandler() extends TasksHandler {
     }
 
 
-    override def handlePacket(packet: DataPacket, factory: TaskCompleterFactory, ownerID: String, socket: SocketChannel): Unit = {
+    override def handlePacket(packet: DataPacket, ownerID: String, socket: SocketChannel): Unit = {
         checkOwner(ownerID, socket)
         val thread = clientsThreads(ownerID)._1
 
@@ -31,7 +32,7 @@ class ServerTasksHandler() extends TasksHandler {
             return
         }
 
-        val completer = factory.getCompleter(packet)
+        val completer = completerFactory.getCompleter(packet)
         registerTask(completer, packet.taskID, ownerID, false)
 
     }

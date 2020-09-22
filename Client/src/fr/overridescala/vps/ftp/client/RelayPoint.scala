@@ -17,7 +17,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     private val socket = configSocket()
     private val tasksHandler = new ClientTasksHandler(socket)
-    private val completerFactory = new RelayPointTaskCompleterFactory(tasksHandler)
     private val packetLoader = new PacketLoader()
 
     @volatile private var open = false
@@ -27,7 +26,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         concoctor.concoct(tasksHandler)
     }
 
-    override def getCompleterFactory: TaskCompleterFactory = completerFactory
+    override def getCompleterFactory: TaskCompleterFactory = tasksHandler.getTaskCompleterFactory
 
     override def start(): Unit = {
         val thread = new Thread(() => {
@@ -71,7 +70,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
         var packet = packetLoader.nextPacket
         while (packet != null) {
-            tasksHandler.handlePacket(packet, completerFactory, identifier, socket)
+            tasksHandler.handlePacket(packet, identifier, socket)
             packet = packetLoader.nextPacket
         }
 
