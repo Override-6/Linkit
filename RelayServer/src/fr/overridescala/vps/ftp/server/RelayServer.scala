@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
-import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterFactory, TaskConcoctor}
+import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor}
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
@@ -37,7 +37,7 @@ class RelayServer()
         concoctor.concoct(tasksHandler)
     }
 
-    override def getCompleterFactory: TaskCompleterFactory = tasksHandler.getTaskCompleterFactory
+    override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTaskCompleterFactory
 
     override def start(): Unit = {
         println("ready !")

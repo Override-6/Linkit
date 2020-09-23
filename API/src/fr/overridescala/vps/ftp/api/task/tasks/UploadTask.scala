@@ -16,7 +16,7 @@ import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
  * @param desc the description about this transfer
  * @see [[TransferDescription]]
  * */
-class UploadTask private(private val handler: TasksHandler,
+class UploadTask (private val handler: TasksHandler,
                          private val desc: TransferDescription)
         extends Task[Unit](handler, desc.targetID) with TaskExecutor {
 

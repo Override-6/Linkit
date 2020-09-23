@@ -4,7 +4,6 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask
 import org.jetbrains.annotations.Nullable
 
@@ -15,7 +14,7 @@ import org.jetbrains.annotations.Nullable
  * </p>
  * <p>
  *     TasksCompleters does not have specific Class or Trait to extends, they just have to extend the TaskExecutor.
- *     TasksCompleters are created by the [[TaskCompleterFactory]], and are normally not instantiable from other classes.
+ *     TasksCompleters are created by the [[TaskCompleterHandler]], and are normally not instantiable from other classes.
  *     TasksCompleters, are the tasks which completes the self-executable tasks.
  *     @example
  *          in [[CreateFileTask]], the self-executable (the class that directly extends from [[Task]]) will ask to the targeted Relay
@@ -33,7 +32,7 @@ import org.jetbrains.annotations.Nullable
  * @tparam T the return type of this Task when successfully executed
  *
  * @see [[TasksHandler]]
- * @see [[TaskCompleterFactory]]
+ * @see [[TaskCompleterHandler]]
  * @see [[TaskAction]]
  * @see [[TaskExecutor]]
  * */
@@ -73,18 +72,6 @@ abstract class Task[T](private val handler: TasksHandler,
     }
 
     /**
-     * This method is invoked straight before [[execute]] but is only invoked if this task was created by the Local Relay
-     * Content of this method must only send packets to initialise a potential TaskCompleter (more information about how tasks are
-     * created / enqueued from [[fr.overridescala.vps.ftp.api.packet.DataPacket]] in [[TasksHandler]] scala doc)
-     * @param channel the channel where the packet will be send and received
-     *
-     * @see [[PacketChannel]]
-     * @see [[PacketChannel]]
-     * @see [[fr.overridescala.vps.ftp.api.packet.DataPacket]]
-     * */
-    def sendTaskInfo(channel: PacketChannel): Unit = {}
-
-    /**
      * Completes the task. That does not mean that this task is not enqueued.
      * The particularity of this method, is that it will wait until the task end.
      * If the task was unsuccessful, throw an error, return the result instead.
@@ -100,7 +87,7 @@ abstract class Task[T](private val handler: TasksHandler,
             atomicResult.set(result)
         }
         val onError: String => Unit = msg => synchronized {
-            throw TaskException(msg + "\n")
+            throw new TaskException(msg + "\n")
             notify()
         }
         this.onSuccess = onSuccess

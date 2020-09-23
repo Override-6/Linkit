@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server
 import java.nio.channels.SocketChannel
 
 import fr.overridescala.vps.ftp.api.packet.DataPacket
-import fr.overridescala.vps.ftp.api.task.{TaskCompleterFactory, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 
 import scala.collection.mutable
 
@@ -11,7 +11,7 @@ import scala.collection.mutable
 class ServerTasksHandler() extends TasksHandler {
 
     private val clientsThreads = mutable.Map.empty[String, (ClientTasksThread, SocketChannel)]
-    private val completerFactory = new ServerTaskCompleterFactory(this)
+    private val completerFactory = new ServerTaskCompleterHandler(this)
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
         val pair = clientsThreads(ownerID)
@@ -32,7 +32,7 @@ class ServerTasksHandler() extends TasksHandler {
             return
         }
 
-        val completer = completerFactory.getCompleter(packet)
+        val completer = completerFactory.handleCompleter(packet)
         registerTask(completer, packet.taskID, ownerID, false)
 
     }

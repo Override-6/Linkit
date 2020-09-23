@@ -5,7 +5,7 @@ import java.net.InetSocketAddress
 object Constants {
 
     val PORT = 48484
-    val MAX_PACKET_LENGTH: Int = 4096 * 8 // 32ko
+    val MAX_PACKET_LENGTH: Int = 4096 * 8 // 32kb
     val LOCALHOST: InetSocketAddress = new InetSocketAddress("localhost", PORT)
     val PUBLIC_ADDRESS: InetSocketAddress = Utils.getPublicAddress
     /**

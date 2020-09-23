@@ -2,17 +2,17 @@ package fr.overridescala.vps.ftp.client
 
 import fr.overridescala.vps.ftp.api.packet.DataPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
-import fr.overridescala.vps.ftp.api.task.{TaskCompleterFactory, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 import scala.collection.mutable
 
-class RelayPointTaskCompleterFactory(private val tasksHandler: TasksHandler)
-        extends TaskCompleterFactory {
+class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler)
+        extends TaskCompleterHandler {
 
     private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler) => TaskExecutor] = new mutable.HashMap[String, (DataPacket, TasksHandler) => TaskExecutor]()
 
-    override def getCompleter(initPacket: DataPacket): TaskExecutor = {
+    override def handleCompleter(initPacket: DataPacket, ownerID: String): Unit = {
         val taskType = initPacket.header
         val content = initPacket.content
         val contentString = new String(content)
