@@ -7,7 +7,7 @@ import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol}
-import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterFactory, TaskConcoctor}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterFactory, TaskConcoctor, TaskExecutor}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
@@ -21,7 +21,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     @volatile private var open = false
 
-    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R, TaskAction[R]]): TaskAction[R] = {
+    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R, T]): T = {
         ensureOpen()
         concoctor.concoct(tasksHandler)
     }

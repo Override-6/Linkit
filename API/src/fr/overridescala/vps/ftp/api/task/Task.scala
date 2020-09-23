@@ -4,6 +4,7 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask
 import org.jetbrains.annotations.Nullable
 
@@ -70,6 +71,18 @@ abstract class Task[T](private val handler: TasksHandler,
         this.onError = onError
         handler.registerTask(this, identifier, targetID, true)
     }
+
+    /**
+     * This method is invoked straight before [[execute]] but is only invoked if this task was created by the Local Relay
+     * Content of this method must only send packets to initialise a potential TaskCompleter (more information about how tasks are
+     * created / enqueued from [[fr.overridescala.vps.ftp.api.packet.DataPacket]] in [[TasksHandler]] scala doc)
+     * @param channel the channel where the packet will be send and received
+     *
+     * @see [[PacketChannel]]
+     * @see [[PacketChannel]]
+     * @see [[fr.overridescala.vps.ftp.api.packet.DataPacket]]
+     * */
+    def sendTaskInfo(channel: PacketChannel): Unit = {}
 
     /**
      * Completes the task. That does not mean that this task is not enqueued.

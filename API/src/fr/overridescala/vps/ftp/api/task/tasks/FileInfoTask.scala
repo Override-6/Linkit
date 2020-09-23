@@ -45,11 +45,11 @@ object FileInfoTask {
         override def execute(channel :PacketChannel): Unit = {
             val path = Utils.formatPath(filePath)
             if (Files.notExists(path)) {
-                channel.sendPacket(ERROR, s"($path) The file does not exists.".getBytes())
+                channel.sendPacket(ERROR, s"($path) The file does not exists.")
                 return
             }
             if (!Files.isWritable(path) || !Files.isReadable(path)) {
-                channel.sendPacket(ERROR, s"($path) Can't access to the file".getBytes())
+                channel.sendPacket(ERROR, s"($path) Can't access to the file")
                 return
             }
             val fileInfo = FileDescription.fromLocal(filePath)

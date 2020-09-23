@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.api
 
 import java.io.Closeable
 
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterFactory, TaskConcoctor}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterFactory, TaskConcoctor, TaskExecutor}
 
 /**
  * <p>
@@ -39,8 +39,7 @@ trait Relay extends Closeable {
      * @return a [[TaskAction]] instance, this object allows you to enqueue or complete the task later.
      * @see [[TaskAction]]
      * */
-    def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R, T]): TaskAction[R]
-
+    def scheduleTask[R, T >: Task[R]](concoctor: TaskConcoctor[R, T]): T
 
     /**
      * @return the [[TaskCompleterFactory]] used by this Relay.
