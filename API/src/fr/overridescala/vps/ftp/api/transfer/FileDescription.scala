@@ -1,33 +1,32 @@
 package fr.overridescala.vps.ftp.api.transfer
 
 import java.net.InetSocketAddress
-import java.nio.file.{Files, NoSuchFileException, Path}
+import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
+/**
+ * Description of an known or unknown file / folder hosted by other Relays on the network.
+ *
+ * @param path the file / folder path
+ * @param ownerAddress the owner of this presumed file / folder
+ * @param isDirectory if the path points to a Folder
+ * @param rootPath the directory where this file is set. Or the same path if this path points to a Folder
+ * @param size the size of the file / folder
+ * */
 case class FileDescription private(path: String,
                                    ownerAddress: InetSocketAddress,
                                    isDirectory: Boolean,
                                    rootPath: String,
-                                   size: Long) extends Serializable {
-
-
-
-}
+                                   size: Long) extends Serializable
 
 object FileDescription extends Serializable {
 
     val serialVersionUID = 151
 
-    def getSize(path: Path): Long = {
-        if (Files.isDirectory(path)) {
-            return Files.list(path)
-                    .mapToLong(getSize)
-                    .sum()
-        }
-        Files.size(path)
-    }
-
+    /**
+     * @return a Description of a local path
+     * */
     def fromLocal(stringPath: String): FileDescription = {
         val path = Utils.formatPath(stringPath).toRealPath()
         builder()
@@ -37,6 +36,18 @@ object FileDescription extends Serializable {
                 .build()
     }
 
+    private def getSize(path: Path): Long = {
+        if (Files.isDirectory(path)) {
+            return Files.list(path)
+                    .mapToLong(getSize)
+                    .sum()
+        }
+        Files.size(path)
+    }
+
+    /**
+     * @return this FileDescription builder
+     * */
     def builder(): Builder = new Builder()
 
 

@@ -1,6 +1,12 @@
 package fr.overridescala.vps.ftp.api.transfer
 
-
+/**
+ * Description of a Download / Upload transfer.
+ *
+ * @param source the FileDescription to download or upload
+ * @param destination where the file / folder will be stored
+ * @param targetID the identifier of the Relay to perform the transfer
+ * */
 class TransferDescription private(val source: FileDescription,
                                   val destination: String,
                                   val targetID: String) extends Serializable {

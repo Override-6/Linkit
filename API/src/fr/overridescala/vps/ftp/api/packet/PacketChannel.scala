@@ -9,7 +9,8 @@ package fr.overridescala.vps.ftp.api.packet
 trait PacketChannel {
 
     /**
-     * Builds a [[DataPacket]] from a header string and a content byte array.
+     * Builds a [[DataPacket]] from a header string and a content byte array,
+     * then send it to the targeted Relay that complete the task
      *
      * @param header the packet header
      * @param content the packet content
@@ -17,7 +18,8 @@ trait PacketChannel {
     def sendPacket(header: String, content: Array[Byte]): Unit
 
     /**
-     * Builds a [[DataPacket]] from a header string and a content string.
+     * Builds a [[DataPacket]] from a header string and a content string,
+     * then send it to the targeted Relay that complete the task
      *
      * @param header the packet header
      * @param content the packet content
@@ -26,7 +28,8 @@ trait PacketChannel {
         sendPacket(header, content.getBytes)
 
     /**
-     * Builds a [[DataPacket]] from a header string and no content. (content is empty)
+     * Builds a [[DataPacket]] from a header string and no content (content is empty),
+     * then send it to the targeted Relay that complete the task
      *
      * @param header the packet header
      * */
