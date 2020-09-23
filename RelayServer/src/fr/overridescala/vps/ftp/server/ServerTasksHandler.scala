@@ -8,16 +8,16 @@ import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, Ta
 import scala.collection.mutable
 
 
-class ServerTasksHandler() extends TasksHandler {
+class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
 
     private val clientsThreads = mutable.Map.empty[String, (ClientTasksThread, SocketChannel)]
-    private val completerFactory = new ServerTaskCompleterHandler(this)
+    private val completerFactory = new ServerTaskCompleterHandler(this, server)
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
         val pair = clientsThreads(ownerID)
         val thread = pair._1
         val socket = pair._2
-        val ticket = new TaskTicket(executor, taskIdentifier, socket, ownerID, ownFreeWill)
+        val ticket = new TaskTicket(executor, taskIdentifier, socket, ownFreeWill)
         thread.addTicket(ticket)
         println("new task registered !")
     }
@@ -31,10 +31,7 @@ class ServerTasksHandler() extends TasksHandler {
             thread.injectPacket(packet)
             return
         }
-
-        val completer = completerFactory.handleCompleter(packet)
-        registerTask(completer, packet.taskID, ownerID, false)
-
+        completerFactory.handleCompleter(packet, ownerID)
     }
 
     def cancelTasks(ownerID: String): Unit = {
@@ -52,4 +49,9 @@ class ServerTasksHandler() extends TasksHandler {
         }
     }
 
+    /**
+     * @return the [[TaskCompleterHandler]]
+     * @see [[TaskCompleterHandler]]
+     * */
+    override def getTasksCompleterHandler: TaskCompleterHandler = ???
 }

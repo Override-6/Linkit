@@ -8,13 +8,13 @@ package fr.overridescala.vps.ftp.api.task
  * @see [[fr.overridescala.vps.ftp.api.Relay]]
  * */
 @FunctionalInterface
-trait TaskConcoctor[R, T >: TaskAction[R]] {
+trait TaskConcoctor[R] {
 
     /**
      * concoct the Task
      * @param tasksHandler the tasksHandler used by [[Task]]
      * @return the task instance
      * */
-    def concoct(tasksHandler: TasksHandler): T
+    def concoct(tasksHandler: TasksHandler): TaskAction[R]
 
 }

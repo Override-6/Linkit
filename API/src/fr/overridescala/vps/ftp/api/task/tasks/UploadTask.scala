@@ -154,7 +154,7 @@ object UploadTask {
     val UPLOAD: String = "UP"
     private val ABORT: String = "ERROR"
 
-    def concoct(transferDescription: TransferDescription): TaskConcoctor[Unit, UploadTask] = tasksHandler => {
+    def concoct(transferDescription: TransferDescription): TaskConcoctor[Unit] = tasksHandler => {
         new UploadTask(tasksHandler, transferDescription)
     }
 

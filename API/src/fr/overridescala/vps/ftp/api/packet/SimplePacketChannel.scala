@@ -41,9 +41,8 @@ class SimplePacketChannel(private val socket: SocketChannel,
      * @return the received packet
      * @see [[DataPacket]]
      * */
-    override def nextPacket(): DataPacket = try {
+    override def nextPacket(): DataPacket =
         queue.take()
-    }
 
     /**
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait

@@ -64,7 +64,7 @@ object StressTestTask {
         }
     }
 
-    def concoct(totalDataLength: Int): TaskConcoctor[Unit, StressTestTask] = tasksHandler => {
+    def concoct(totalDataLength: Int): TaskConcoctor[Unit] = tasksHandler => {
         new StressTestTask(tasksHandler, totalDataLength)
     }
 

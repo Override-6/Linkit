@@ -24,7 +24,7 @@ class RelayServer()
     private val buffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
 
     private val serverSocket = configSocket()
-    private val tasksHandler = new ServerTasksHandler()
+    private val tasksHandler = new ServerTasksHandler(this)
     private val connectionsManager = new ConnectionsManager(tasksHandler)
     private val packetLoader = new PacketLoader()
 
@@ -32,12 +32,12 @@ class RelayServer()
 
     override val identifier: String = Constants.SERVER_ID
 
-    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R, T]): T = {
+    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): T = {
         ensureOpen()
         concoctor.concoct(tasksHandler)
     }
 
-    override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTaskCompleterFactory
+    override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTasksCompleterHandler
 
     override def start(): Unit = {
         println("ready !")
@@ -166,7 +166,7 @@ class RelayServer()
 
         val ownerID = connectionsManager.getIdentifierFromAddress(address)
         while (packet != null) {
-            tasksHandler.handlePacket(packet, completerFactory, ownerID, socket)
+            tasksHandler.handlePacket(packet, ownerID, socket)
             packet = packetLoader.nextPacket
         }
     }

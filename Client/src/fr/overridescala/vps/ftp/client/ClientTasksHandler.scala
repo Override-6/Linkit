@@ -26,7 +26,7 @@ class ClientTasksHandler(socket: SocketChannel) extends TasksHandler{
         currentChannelManager.addPacket(packet)
     }
 
-    override def getTaskCompleterFactory: TaskCompleterHandler = completerFactory
+    override def getTasksCompleterHandler: TaskCompleterHandler = completerFactory
 
     def start(): Unit = {
         val thread = new Thread(() => {

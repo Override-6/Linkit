@@ -26,7 +26,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         concoctor.concoct(tasksHandler)
     }
 
-    override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTaskCompleterFactory
+    override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTasksCompleterHandler
 
     override def start(): Unit = {
         val thread = new Thread(() => {

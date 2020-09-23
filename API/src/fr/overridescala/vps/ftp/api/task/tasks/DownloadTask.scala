@@ -140,8 +140,8 @@ object DownloadTask {
     val DOWNLOAD: String = "DWN"
     private val ABORT: String = "ERROR"
 
-    def concoct(transferDescription: TransferDescription): TaskConcoctor[Unit, DownloadTask] = tasksHandler => {
+    def concoct(transferDescription: TransferDescription): TaskConcoctor[Unit] = tasksHandler =>
         new DownloadTask(tasksHandler, transferDescription)
-    }
+
 
 }

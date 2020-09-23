@@ -45,5 +45,5 @@ trait TasksHandler {
      * @return the [[TaskCompleterHandler]]
      * @see [[TaskCompleterHandler]]
      * */
-    def getTaskCompleterFactory: TaskCompleterHandler
+    def getTasksCompleterHandler: TaskCompleterHandler
 }

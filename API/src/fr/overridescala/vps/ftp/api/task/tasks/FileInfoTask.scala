@@ -58,7 +58,7 @@ object FileInfoTask {
         }
     }
 
-    def concoct(ownerID: String, filePath: String): TaskConcoctor[FileDescription, FileInfoTask] = tasksHandler => {
+    def concoct(ownerID: String, filePath: String): TaskConcoctor[FileDescription] = tasksHandler => {
         new FileInfoTask(tasksHandler, ownerID, filePath)
     }
 }
