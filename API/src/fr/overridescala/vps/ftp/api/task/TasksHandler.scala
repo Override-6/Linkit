@@ -13,7 +13,7 @@ import fr.overridescala.vps.ftp.api.packet.DataPacket
  *      DataPackets have an identifier, this identifier is the identifier from which Task this packet is concerned.
  *      2. If the packet identifier differs from the current Task, it means the Relay received a new Task to schedule and enqueue
  *      DataPackets contains a identifier, a header and some content bytes
- *      3. The TaskCompleterFactory creates a TaskExecutor from the init packet header. (the header is the task name) then,
+ *      3. The TaskCompleterFactory creates a TaskExecutor from the init packet header (which is the task name). Then,
  *      the TasksHandler will register the task.
  *
  *      <b>Notes:</b>

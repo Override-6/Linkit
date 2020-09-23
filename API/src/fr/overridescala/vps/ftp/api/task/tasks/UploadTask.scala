@@ -10,23 +10,29 @@ import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, Tas
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
-class UploadTask(private val handler: TasksHandler,
-                 private val desc: TransferDescription)
+/**
+ * Uploads a File or Folder to a targeted Relay
+ *
+ * @param desc the description about this transfer
+ * @see [[TransferDescription]]
+ * */
+class UploadTask private(private val handler: TasksHandler,
+                         private val desc: TransferDescription)
         extends Task[Unit](handler, desc.targetID) with TaskExecutor {
 
     private var channel: PacketChannel = _
 
-    override def sendTaskInfo(channel :PacketChannel): Unit = {
+    override def sendTaskInfo(channel: PacketChannel): Unit = {
         channel.sendPacket(UPLOAD, Utils.serialize(desc))
     }
 
 
-    override def execute(channel :PacketChannel): Unit = {
-        this.channel = channel;
+    override def execute(channel: PacketChannel): Unit = {
+        this.channel = channel
         val path = Path.of(desc.source.path)
         val destination = Path.of(desc.destination)
-        println(s"path = ${path}")
-        println(s"destination = ${destination}")
+        println(s"path = $path")
+        println(s"destination = $destination")
 
         if (Files.isDirectory(path)) {
             if (Files.notExists(destination))
@@ -45,7 +51,7 @@ class UploadTask(private val handler: TasksHandler,
     }
 
     private def uploadDirectory(path: Path): Unit = {
-        println(s"UPLOADING DIRECTORY ${path}")
+        println(s"UPLOADING DIRECTORY $path")
         Files.list(path).forEach(children => {
             if (Files.isDirectory(children))
                 uploadDirectory(children)
@@ -79,13 +85,12 @@ class UploadTask(private val handler: TasksHandler,
                 val percentage = totalBytesSent / totalBytes * 100
                 print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
             } catch {
-                case e: Throwable => {
+                case e: Throwable =>
                     var msg = e.getMessage
                     if (msg == null)
                         msg = "an error has occurred while performing file upload task"
                     channel.sendPacket(ABORT, s"($path) " + msg)
                     return
-                }
             }
         }
         println()

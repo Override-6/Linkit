@@ -4,8 +4,11 @@ import java.net.InetSocketAddress
 import java.util.Scanner
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, FileDescription}
+import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskConcoctor}
+import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
+import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.api.utils.Constants.SERVER_ID
 
 object Main {
 
@@ -31,9 +34,9 @@ object Main {
     def runClient(): Unit = {
         relayPoint.start()
 
-        relayPoint.requestCreateFile(Constants.SERVER_ID, serverFolderTest)
-                .queue()
-        val fileInfo = relayPoint.requestFileInformation(Constants.SERVER_ID, serverFolderTest)
+        relayPoint.scheduleTask(CreateFileTask.concoct(SERVER_ID, serverFolderTest)).queue()
+
+        val fileInfo = relayPoint.scheduleTask(FileInfoTask.concoct(Constants.SERVER_ID, serverFolderTest))
                 .complete()
         performDownload(fileInfo)
         //performUpload()
@@ -45,7 +48,8 @@ object Main {
                 .setDestination(downloadFolder)
                 .setTargetID(Constants.SERVER_ID)
                 .build()
-        relayPoint.doDownload(download).queue(e => println("le fichier a été download"), Console.err.println)
+        relayPoint.scheduleTask(DownloadTask.concoct(download))
+                .queue(e => println("le fichier a été download"), Console.err.println)
     }
 
     def performUpload(): Unit = {
@@ -54,7 +58,8 @@ object Main {
                 .setDestination(serverFolderTest)
                 .setTargetID(Constants.SERVER_ID)
                 .build()
-        relayPoint.doUpload(upload).queue(e => println("le fichier a été upload"), Console.err.println)
+        relayPoint.scheduleTask(UploadTask.concoct(upload))
+                .queue(e => println("le fichier a été upload"), Console.err.println)
         println("toutes les tâches ont étées ajoutées et vont être éxécutées")
     }
 

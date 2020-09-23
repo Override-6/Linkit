@@ -4,6 +4,11 @@ import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
+/**
+ * This is a Test task, will not be documented.
+ *
+ * wait
+ * */
 class StressTestTask(private val handler: TasksHandler,
                      private val totalDataLength: Long) extends Task[Unit](handler, Constants.SERVER_ID) {
 

@@ -19,12 +19,21 @@ object FileDescription extends Serializable {
 
     val serialVersionUID = 151
 
+    def getSize(path: Path): Long = {
+        if (Files.isDirectory(path)) {
+            return Files.list(path)
+                    .mapToLong(getSize)
+                    .sum()
+        }
+        Files.size(path)
+    }
+
     def fromLocal(stringPath: String): FileDescription = {
         val path = Utils.formatPath(stringPath).toRealPath()
         builder()
                 .setOwner(Constants.PUBLIC_ADDRESS)
                 .setPath(path.toString)
-                .setSize(Files.size(path))
+                .setSize(getSize(path))
                 .build()
     }
 

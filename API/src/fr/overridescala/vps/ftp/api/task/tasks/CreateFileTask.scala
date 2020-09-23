@@ -10,7 +10,9 @@ import fr.overridescala.vps.ftp.api.task.tasks.FileInfoTask.FileInfoCompleter
 import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
-
+/**
+ * Ask to create a File / folder to the targeted ownerID
+ * */
 class CreateFileTask(private val tasksHandler: TasksHandler,
                      private val ownerID: String,
                      private val path: String) extends Task[Unit](tasksHandler, ownerID) {
@@ -36,6 +38,10 @@ object CreateFileTask {
     private val ERROR = "ERROR"
     private val OK = "OK"
 
+    /**
+     * Creates a File / Folder to the desired path
+     * @param pathString the file / folder path to be created
+     * */
     class CreateFileCompleter(private val pathString: String) extends TaskExecutor {
 
         private var channel: PacketChannel = _

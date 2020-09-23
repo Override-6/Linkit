@@ -8,7 +8,12 @@ import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.StressTestComplete
 import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.FileDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
-
+/**
+ * Retrieves the information about a file / folder such as his size
+ *
+ * @param ownerID the supposed owner of the file path
+ * @param filePath the path of the file / folder to retrieves info
+ * */
 class FileInfoTask(private val handler: TasksHandler,
                    private val ownerID: String,
                    private val filePath: String)
@@ -53,7 +58,7 @@ object FileInfoTask {
         }
     }
 
-    def concoct(ownerID: String, filePath: String): TaskConcoctor[Unit, FileInfoTask] = tasksHandler => {
+    def concoct(ownerID: String, filePath: String): TaskConcoctor[FileDescription, FileInfoTask] = tasksHandler => {
         new FileInfoTask(tasksHandler, ownerID, filePath)
     }
 }

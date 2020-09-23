@@ -10,7 +10,12 @@ import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, Tas
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 
-
+/**
+ * Downloads a File or folder from a targeted Relay
+ *
+ * @param desc the description about this transfer
+ * @see [[TransferDescription]]
+ * */
 class DownloadTask(private val handler: TasksHandler,
                    private val desc: TransferDescription)
         extends Task[Unit](handler, desc.targetID) with TaskExecutor {
