@@ -4,6 +4,7 @@ import java.nio.channels.SocketChannel
 
 import fr.overridescala.vps.ftp.api.packet.DataPacket
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.utils.Constants
 
 import scala.collection.mutable
 
@@ -11,10 +12,15 @@ import scala.collection.mutable
 class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
 
     private val clientsThreads = mutable.Map.empty[String, (ClientTasksThread, SocketChannel)]
-    private val completerFactory = new ServerTaskCompleterHandler(this, server)
+    private val completersHandler = new ServerTaskCompleterHandler(this, server)
 
-    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
-        val pair = clientsThreads(ownerID)
+    override val identifier: String = Constants.SERVER_ID
+
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean, targetID: String, senderID: String = identifier): Unit = {
+        println(s"targetID = ${targetID}")
+        println(s"identifier = ${identifier}")
+        println(s"senderID = ${senderID}")
+        val pair = clientsThreads(if (targetID.equals(identifier)) senderID else targetID)
         val thread = pair._1
         val socket = pair._2
         val ticket = new TaskTicket(executor, taskIdentifier, socket, ownFreeWill)
@@ -31,7 +37,7 @@ class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
             thread.injectPacket(packet)
             return
         }
-        completerFactory.handleCompleter(packet, ownerID)
+        completersHandler.handleCompleter(packet, ownerID)
     }
 
     def cancelTasks(ownerID: String): Unit = {
@@ -53,5 +59,5 @@ class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
      * @return the [[TaskCompleterHandler]]
      * @see [[TaskCompleterHandler]]
      * */
-    override def getTasksCompleterHandler: TaskCompleterHandler = ???
+    override def getTasksCompleterHandler: TaskCompleterHandler = completersHandler
 }

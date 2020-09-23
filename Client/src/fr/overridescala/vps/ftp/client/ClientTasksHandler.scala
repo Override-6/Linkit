@@ -6,21 +6,22 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannelManager, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 
-class ClientTasksHandler(socket: SocketChannel) extends TasksHandler{
+class ClientTasksHandler(private val socket: SocketChannel,
+                         override val identifier: String) extends TasksHandler {
 
-    private val queue: BlockingQueue[TaskAchieverTicket] = new ArrayBlockingQueue[TaskAchieverTicket](200)
+    private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private var currentChannelManager: PacketChannelManager = _
     private val completerFactory = new ClientTaskCompleterHandler(this)
 
-    override def registerTask(achiever: TaskExecutor, taskIdentifier: Int, ownerID: String, ownFreeWill: Boolean): Unit = {
-        val ticket = new TaskAchieverTicket(achiever, ownerID, taskIdentifier, ownFreeWill)
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean, targetID: String, senderID: String = identifier): Unit = {
+        val ticket = new TaskTicket(executor, senderID, taskIdentifier, ownFreeWill)
         queue.offer(ticket)
         println("new task registered !")
     }
 
     override def handlePacket(packet: DataPacket, ownerID: String, socket: SocketChannel): Unit = {
         if (packet.taskID != currentChannelManager.taskID) {
-            completerFactory.handleCompleter(packet)
+            completerFactory.handleCompleter(packet, ownerID)
             return
         }
         currentChannelManager.addPacket(packet)
@@ -41,13 +42,13 @@ class ClientTasksHandler(socket: SocketChannel) extends TasksHandler{
         thread.start()
     }
 
-    private class TaskAchieverTicket(private val taskAchiever: TaskExecutor,
-                                     private val ownerID: String,
-                                     private val taskID: Int,
-                                     private val ownFreeWill: Boolean) {
+    private class TaskTicket(private val taskAchiever: TaskExecutor,
+                             private val ownerID: String,
+                             private val taskID: Int,
+                             private val ownFreeWill: Boolean) {
 
         val name: String = taskAchiever.getClass.getSimpleName
-        private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, ownerID, taskID)
+        private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, taskID)
 
         def start(): Unit = {
             try {

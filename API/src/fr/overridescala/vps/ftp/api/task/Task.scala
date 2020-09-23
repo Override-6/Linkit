@@ -68,7 +68,7 @@ abstract class Task[T](private val handler: TasksHandler,
     final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError): Unit = {
         this.onSuccess = onSuccess
         this.onError = onError
-        handler.registerTask(this, identifier, targetID, true)
+        handler.registerTask(this, identifier, true, targetID)
     }
 
     /**
@@ -80,7 +80,7 @@ abstract class Task[T](private val handler: TasksHandler,
      * @return the task result
      * */
     final override def complete(): T = {
-        handler.registerTask(this, identifier, targetID, true)
+        handler.registerTask(this, identifier, true, targetID)
         val atomicResult = new AtomicReference[T]()
         val onSuccess: T => Unit = result => synchronized {
             notify()

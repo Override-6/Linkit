@@ -24,6 +24,11 @@ import fr.overridescala.vps.ftp.api.packet.DataPacket
 trait TasksHandler {
 
     /**
+     * The relay identifier
+     * */
+    val identifier: String
+
+    /**
      * Handles the packet.
      * @param packet packet to handle
      * @param ownerID the sender identifier
@@ -35,10 +40,11 @@ trait TasksHandler {
      * Registers a task
      * @param executor the task to execute
      * @param taskIdentifier the task identifier
-     * @param ownerID the identifier of from who this task come from
+     * @param senderID the identifier of who requested this task
+     * @param targetID the identifier of who is targeted by the task
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
-    def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownerID: String, ownFreeWill: Boolean): Unit
+    def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean, targetID: String, senderID: String = identifier): Unit
 
 
     /**

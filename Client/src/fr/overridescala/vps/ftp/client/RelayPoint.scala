@@ -16,12 +16,12 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     val buffer: ByteBuffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
 
     private val socket = configSocket()
-    private val tasksHandler = new ClientTasksHandler(socket)
+    private val tasksHandler = new ClientTasksHandler(socket, identifier)
     private val packetLoader = new PacketLoader()
 
     @volatile private var open = false
 
-    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R, T]): T = {
+    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): TaskAction[R] = {
         ensureOpen()
         concoctor.concoct(tasksHandler)
     }

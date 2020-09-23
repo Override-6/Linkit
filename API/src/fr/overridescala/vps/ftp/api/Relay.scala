@@ -39,7 +39,7 @@ trait Relay extends Closeable {
      * @return a [[TaskAction]] instance, this object allows you to enqueue or complete the task later.
      * @see [[TaskAction]]
      * */
-    def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): T
+    def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): TaskAction[R]
 
     /**
      * @return the [[TaskCompleterHandler]] used by this Relay.

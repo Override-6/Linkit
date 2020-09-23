@@ -32,7 +32,7 @@ class RelayServer()
 
     override val identifier: String = Constants.SERVER_ID
 
-    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): T = {
+    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): TaskAction[R] = {
         ensureOpen()
         concoctor.concoct(tasksHandler)
     }
@@ -188,7 +188,7 @@ class RelayServer()
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()
         socket.configureBlocking(false)
-        socket.bind(Constants.PUBLIC_ADDRESS)
+        socket.bind(Constants.LOCALHOST)
         socket.register(selector, SelectionKey.OP_ACCEPT)
         socket
     }

@@ -17,48 +17,51 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
     private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler, String) => TaskExecutor]
     = new mutable.HashMap[String, (DataPacket, TasksHandler, String) => TaskExecutor]()
 
-    override def handleCompleter(initPacket: DataPacket, ownerID: String): Unit = {
+    override def handleCompleter(initPacket: DataPacket, senderId: String): Unit = {
         val taskType = initPacket.header
         val taskIdentifier = initPacket.taskID
         val content = initPacket.content
         val contentString = new String(content)
         taskType match {
             case UploadTask.UPLOAD =>
-                handleUpload(Utils.deserialize(content))
+                handleUpload(Utils.deserialize(content), senderId)
             case DownloadTask.DOWNLOAD =>
-                handleDownload(Utils.deserialize(content), ownerID)
+                handleDownload(Utils.deserialize(content), senderId)
             case FileInfoTask.FILE_INFO =>
-                val completer = new FileInfoTask.FileInfoCompleter(Utils.deserialize(content).asInstanceOf[(String, _)]._1)
-                tasksHandler.registerTask(completer, taskIdentifier, ownerID, false)
-            case CreateFileTask.CREATE_FILE =>
+                val pair: (String, String) = Utils.deserialize(content)
+                val completer = new FileInfoTask.FileInfoCompleter(pair._1)
+                tasksHandler.registerTask(completer, taskIdentifier, true, pair._2, senderId)
+                //TODO handle CreateFileTask and StressTask
+            /*case CreateFileTask.CREATE_FILE =>
                 val completer = new CreateFileTask.CreateFileCompleter(contentString)
-                tasksHandler.registerTask(completer, taskIdentifier, ownerID, false)
+                tasksHandler.registerTask(completer, taskIdentifier, senderId, false)
             case "STRSS" =>
                 val completer = new StressTestTask.StressTestCompleter(contentString.toLong)
-                tasksHandler.registerTask(completer, taskIdentifier, ownerID, false)
+                tasksHandler.registerTask(completer, taskIdentifier, senderId, false)
+             */
 
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)
                     throw new IllegalArgumentException("could not find completer for task " + taskType)
-                completerSupplier.apply(initPacket, tasksHandler, ownerID)
+                completerSupplier.apply(initPacket, tasksHandler, senderId)
         }
     }
 
     override def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler, String) => TaskExecutor): Unit =
         completers.put(taskType, supplier)
 
-    def handleUpload(uploadDesc: TransferDescription): Unit = {
+    def handleUpload(uploadDesc: TransferDescription, ownerID: String): Unit = {
         var onCompleted: Unit => Unit = null
         var desc = uploadDesc
         if (!uploadDesc.targetID.equals(server.identifier)) {
             desc = TransferDescription.builder()
-                    .setTargetID(server.identifier)
+                    .setTargetID(uploadDesc.targetID)
                     .setSource(uploadDesc.source)
                     .setDestination(TempFolder)
                     .build()
             onCompleted = _ => {
                 val uploadToTarget = TransferDescription.builder()
-                        .setTargetID(uploadDesc.targetID)
+                        .setTargetID(ownerID)
                         .setSource(FileDescription.fromLocal(TempFolder))
                         .setDestination(uploadDesc.destination)
                         .build()
@@ -74,7 +77,7 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
 
     def handleDownload(downloadDesc: TransferDescription, ownerID: String): Unit = {
         var onCompleted: Unit => Unit = null
-        var desc = downloadDesc
+        var desc: TransferDescription = null
         if (!downloadDesc.targetID.equals(server.identifier)) {
             desc = TransferDescription.builder()
                     .setTargetID(downloadDesc.targetID)
@@ -90,7 +93,12 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
                 new UploadTask(tasksHandler, uploadToOwner).queue(_ =>
                     Files.deleteIfExists(Utils.formatPath(TempFolder)))
             }
-        }
+        } else desc = TransferDescription.builder()
+                .setTargetID(ownerID)
+                .setSource(downloadDesc.source)
+                .setDestination(downloadDesc.destination)
+                .build()
+
 
         new DownloadTask(tasksHandler, desc)
                 .queue(onCompleted)

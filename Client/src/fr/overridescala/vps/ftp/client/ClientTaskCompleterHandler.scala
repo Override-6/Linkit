@@ -10,7 +10,8 @@ import scala.collection.mutable
 class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler)
         extends TaskCompleterHandler {
 
-    private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler) => TaskExecutor] = new mutable.HashMap[String, (DataPacket, TasksHandler) => TaskExecutor]()
+    private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler, String) => TaskExecutor] =
+        new mutable.HashMap[String, (DataPacket, TasksHandler, String) => TaskExecutor]()
 
     override def handleCompleter(initPacket: DataPacket, ownerID: String): Unit = {
         val taskType = initPacket.header
@@ -31,10 +32,10 @@ class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler)
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)
                     throw new IllegalArgumentException("could not find completer for task " + taskType)
-                completerSupplier(initPacket, tasksHandler)
+                completerSupplier(initPacket, tasksHandler, ownerID)
         }
     }
 
-    override def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler) => TaskExecutor): Unit =
+    override def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler, String) => TaskExecutor): Unit =
         completers.put(taskType, supplier)
 }

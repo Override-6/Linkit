@@ -4,7 +4,6 @@ import java.net.InetSocketAddress
 import java.util.Scanner
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskConcoctor}
 import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
@@ -20,11 +19,11 @@ object Main {
     private val address = if (isLocalhost) Constants.LOCALHOST else SERVER_ADDRESS
     private val relayPoint: Relay = new RelayPoint(address, "client1")
     print("server folder to make your tests : ")
-    private val serverFolderTest = scanner.nextLine()
+    private val serverFolderTest = "/home/override/VPS/Tests/FileTransferer/LorDi"
     print("download folder : ")
-    private val downloadFolder = scanner.nextLine()
+    private val downloadFolder = "C:\\Users\\maxim\\Desktop\\Dev\\VPS\\transfertTests\\client\\downloads\\LorDi"
     print("upload folder : ")
-    private val uploadFolder = scanner.nextLine()
+    private val uploadFolder = "C:\\Users\\maxim\\Desktop\\Dev\\VPS\\transfertTests\\client\\uploads"
 
 
     def main(args: Array[String]): Unit = {
@@ -34,7 +33,7 @@ object Main {
     def runClient(): Unit = {
         relayPoint.start()
 
-        relayPoint.scheduleTask(CreateFileTask.concoct(SERVER_ID, serverFolderTest)).queue()
+        //relayPoint.scheduleTask(CreateFileTask.concoct(SERVER_ID, serverFolderTest)).queue()
 
         val fileInfo = relayPoint.scheduleTask(FileInfoTask.concoct(Constants.SERVER_ID, serverFolderTest))
                 .complete()
