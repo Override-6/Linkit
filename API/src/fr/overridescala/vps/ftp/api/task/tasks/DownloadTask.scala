@@ -21,6 +21,8 @@ class DownloadTask(private val handler: TasksHandler,
         extends Task[Unit](handler, desc.targetID) with TaskExecutor {
 
     private var channel: PacketChannel = _
+    private val totalBytes: Float = desc.transferSize
+    private var totalBytesWritten = 0
 
     override def sendTaskInfo(channel: PacketChannel): Unit = {
         channel.sendPacket(DOWNLOAD, Utils.serialize(desc))
@@ -55,8 +57,6 @@ class DownloadTask(private val handler: TasksHandler,
         if (checkPath(downloadPath))
             return
         val stream = Files.newOutputStream(downloadPath)
-        val totalBytes: Float = desc.transferSize
-        var totalBytesWritten = 0
         var count = 0
 
         var packet: DataPacket = channel.nextPacket()

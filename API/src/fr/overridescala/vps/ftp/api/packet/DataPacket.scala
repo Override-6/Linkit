@@ -10,7 +10,7 @@ package fr.overridescala.vps.ftp.api.packet
  * @param header the header of the packet, or the type of this data. Headers allows to classify packets / data to send or receive
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
-case class DataPacket(taskID: Int,
+case class DataPacket private[packet](taskID: Int,
                  header: String,
                  content: Array[Byte] = Array()) {
 

@@ -17,9 +17,6 @@ class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
     override val identifier: String = Constants.SERVER_ID
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean, targetID: String, senderID: String = identifier): Unit = {
-        println(s"targetID = ${targetID}")
-        println(s"identifier = ${identifier}")
-        println(s"senderID = ${senderID}")
         val pair = clientsThreads(if (targetID.equals(identifier)) senderID else targetID)
         val thread = pair._1
         val socket = pair._2

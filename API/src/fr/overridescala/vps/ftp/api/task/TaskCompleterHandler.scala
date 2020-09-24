@@ -18,11 +18,11 @@ trait TaskCompleterHandler {
     def handleCompleter(initPacket: DataPacket, ownerID: String): Unit
 
     /**
-     * To be extensible, the user need to add Completer suppliers to factories in order to inject his own tasks into the program.
+     * To be extensible, the user need to add Completer suppliers to handlers in order to inject his own tasks into the program.
      * @param taskType the task type for what the supplier will be called.
      * @param supplier this lambda takes a DataPacket (wish is the Initialization packet) the Tasks Handler
-     *                 and the task owner identifier then return a TaskExecutor
+     *                 and the task owner identifier
      * */
-    def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler, String) => TaskExecutor)
+    def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler, String) => Unit)
 
 }
