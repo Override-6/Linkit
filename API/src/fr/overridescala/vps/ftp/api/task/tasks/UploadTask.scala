@@ -22,17 +22,13 @@ class UploadTask (private val handler: TasksHandler,
 
     private var channel: PacketChannel = _
 
-    override def sendTaskInfo(channel: PacketChannel): Unit = {
+    override def sendTaskInfo(channel: PacketChannel): Unit =
         channel.sendPacket(UPLOAD, Utils.serialize(desc))
-    }
-
 
     override def execute(channel: PacketChannel): Unit = {
         this.channel = channel
         val path = Path.of(desc.source.path)
         val destination = Path.of(desc.destination)
-        println(s"path = $path")
-        println(s"destination = $destination")
 
         if (Files.isDirectory(path)) {
             if (Files.notExists(destination))
@@ -67,7 +63,7 @@ class UploadTask (private val handler: TasksHandler,
         val totalBytes: Float = Files.size(path)
         var count = 0
         channel.sendPacket(UPLOAD_FILE, path.toString)
-        println("UPLOADING " + path)
+        println("\rUPLOADING " + path)
 
         while (totalBytesSent < totalBytes) {
             try {
@@ -83,7 +79,7 @@ class UploadTask (private val handler: TasksHandler,
                 }
 
                 val percentage = totalBytesSent / totalBytes * 100
-                print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
+                print(s"\\033[2K sent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
             } catch {
                 case e: Throwable =>
                     var msg = e.getMessage
@@ -93,7 +89,6 @@ class UploadTask (private val handler: TasksHandler,
                     return
             }
         }
-        println()
         stream.close()
     }
 
