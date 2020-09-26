@@ -18,27 +18,26 @@ class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler)
         val content = initPacket.content
         val contentString = new String(content)
         val taskID = initPacket.taskID
-        taskType match {
+        val task = taskType match {
             case UploadTask.UPLOAD =>
                 new DownloadTask(tasksHandler, Utils.deserialize(content))
-                        .queue()
             case DownloadTask.DOWNLOAD =>
                 new UploadTask(tasksHandler, Utils.deserialize(content))
-                        .queue()
             case FileInfoTask.FILE_INFO =>
-                val task = new FileInfoTask.FileInfoCompleter(contentString)
-                tasksHandler.registerTask(task, taskID, false, ownerID)
+                new FileInfoTask.FileInfoCompleter(contentString)
             case CreateFileTask.CREATE_FILE =>
-                val task = new CreateFileTask.CreateFileCompleter(contentString)
-                tasksHandler.registerTask(task, taskID, false, ownerID)
+                new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
             case "STRSS" =>
-                val task = new StressTestTask.StressTestCompleter(contentString.toLong)
-                tasksHandler.registerTask(task, taskID, false, ownerID)
-            case _ => val completerSupplier = completers(taskType)
-                if (completerSupplier == null)
-                    throw new IllegalArgumentException("could not find completer for task " + taskType)
-                completerSupplier(initPacket, tasksHandler, ownerID)
+                new StressTestTask.StressTestCompleter(contentString.toLong)
+            case _ => null
         }
+        if (task != null)
+        tasksHandler.registerTask(task, taskID, false, ownerID)
+
+        val completerSupplier = completers(taskType)
+        if (completerSupplier == null)
+            throw new IllegalArgumentException("could not find completer for task " + taskType)
+        completerSupplier(initPacket, tasksHandler, ownerID)
     }
 
     override def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler, String) => Unit): Unit =

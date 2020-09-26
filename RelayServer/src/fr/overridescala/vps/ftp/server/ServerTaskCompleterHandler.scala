@@ -32,12 +32,11 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
                 val completer = new FileInfoTask.FileInfoCompleter(pair._1)
                 tasksHandler.registerTask(completer, taskID, true, pair._2, senderId)
             case CreateFileTask.CREATE_FILE =>
-                val completer = new CreateFileTask.CreateFileCompleter(contentString)
+                val completer = new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
                 tasksHandler.registerTask(completer, taskID, false, senderId)
             case "STRSS" =>
                 val completer = new StressTestTask.StressTestCompleter(contentString.toLong)
                 tasksHandler.registerTask(completer, taskID, false, senderId)
-
 
             case _ => val completerSupplier = completers(taskType)
                 if (completerSupplier == null)

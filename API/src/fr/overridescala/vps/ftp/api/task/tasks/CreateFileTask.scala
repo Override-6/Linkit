@@ -13,11 +13,14 @@ import fr.overridescala.vps.ftp.api.utils.Utils
  * */
 class CreateFileTask(private val tasksHandler: TasksHandler,
                      private val ownerID: String,
-                     private val path: String) extends Task[Unit](tasksHandler, ownerID) {
+                     private val path: String,
+                     private val isDirectory: Boolean) extends Task[Unit](tasksHandler, ownerID) {
 
 
-    override def sendTaskInfo(channel: PacketChannel): Unit =
-        channel.sendPacket(CREATE_FILE, path)
+    override def sendTaskInfo(channel: PacketChannel): Unit = {
+        val bit: Byte = if (isDirectory) 1 else 0
+        channel.sendPacket(CREATE_FILE, Array(bit) ++ path.getBytes)
+    }
 
     override def execute(channel: PacketChannel): Unit = {
         val packet = channel.nextPacket()
@@ -40,28 +43,27 @@ object CreateFileTask {
      * Creates a File / Folder to the desired path
      * @param pathString the file / folder path to be created
      * */
-    class CreateFileCompleter(private val pathString: String) extends TaskExecutor {
+    class CreateFileCompleter(private val pathString: String,
+                              private val isDirectory: Boolean) extends TaskExecutor {
 
         private var channel: PacketChannel = _
 
         override def execute(channel: PacketChannel): Unit = {
             this.channel = channel
             val path = Utils.formatPath(pathString)
-            val isFile = path.toFile.getName.contains(".")
-            createFile(path, isFile)
+            createFile(path)
         }
 
-        def createFile(path: Path, isFile: Boolean): Unit =
+        def createFile(path: Path): Unit =
             try {
-                if (isFile)
+                if (!isDirectory)
                     Files.createFile(path)
                 else Files.createDirectories(path)
                 channel.sendPacket(OK)
             } catch {
-                case e: IOException => {
+                case e: IOException =>
                     e.printStackTrace()
                     channel.sendPacket(ERROR, e.getMessage)
-                }
             }
     }
 
@@ -70,4 +72,3 @@ object CreateFileTask {
 
 
 }
-
