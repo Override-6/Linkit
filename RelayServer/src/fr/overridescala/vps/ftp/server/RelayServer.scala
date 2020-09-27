@@ -52,30 +52,32 @@ class RelayServer()
         println("current encoding is " + Charset.defaultCharset().name())
         println("listening on port " + Constants.PORT)
 
-        while (open) {
-            selector.select()
-            if (!open) {
-                println("CLOSED")
-                return
+        while (open) updateNetwork()
+    }
+
+    def updateNetwork(): Unit = {
+        selector.select()
+        if (!open) {
+            println("CLOSED")
+            return
+        }
+        val it = selector.selectedKeys().iterator()
+        while (it.hasNext) {
+            val key = it.next()
+            try {
+                updateKey(key)
+            } catch {
+                case e: Throwable =>
+                    if (e.getMessage == null || !e.getMessage.equalsIgnoreCase("Connection reset"))
+                        e.printStackTrace()
+                    val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
+                    val id = connectionsManager.getIdentifierFromAddress(address)
+                    if (id == null)
+                        return
+                    println("a connection closed suddenly")
+                    disconnect(id)
             }
-            val it = selector.selectedKeys().iterator()
-            while (it.hasNext) {
-                val key = it.next()
-                try {
-                    updateKey(key)
-                } catch {
-                    case e: Throwable =>
-                        if (e.getMessage == null || !e.getMessage.equalsIgnoreCase("Connection reset"))
-                            e.printStackTrace()
-                        val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
-                        val id = connectionsManager.getIdentifierFromAddress(address)
-                        if (id == null)
-                            return
-                        println("a connection closed suddenly")
-                        disconnect(id)
-                }
-                it.remove()
-            }
+            it.remove()
         }
     }
 
@@ -89,7 +91,7 @@ class RelayServer()
         for (key <- keys) {
             val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
             val keyId = connectionsManager.getIdentifierFromAddress(address)
-            if (keyId.equals(identifier)) {
+            if (keyId != null && keyId.equals(identifier)) {
                 key.channel().close()
                 key.cancel()
                 connectionsManager.disconnect(address)
@@ -97,9 +99,11 @@ class RelayServer()
                 return
             }
         }
+        println(s"disconnected $identifier")
     }
 
     override def close(): Unit = {
+        println("closing server...")
         open = false
         serverSocket.close()
         selector.selectedKeys().forEach(key => {
@@ -107,6 +111,7 @@ class RelayServer()
             disconnect(connectionsManager.getIdentifierFromAddress(address))
         })
         selector.close()
+        println("server disconnected !")
     }
 
     /**
@@ -192,7 +197,6 @@ class RelayServer()
         val address = socket.getRemoteAddress
 
         val ownerID = connectionsManager.getIdentifierFromAddress(address)
-
         while (packet != null) {
             if (currentSocketInitialisationChannel != null) {
                 currentSocketInitialisationChannel.addPacket(packet)

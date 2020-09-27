@@ -28,6 +28,7 @@ class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
 
 
     override def handlePacket(packet: DataPacket, ownerID: String, socket: SocketChannel): Unit = {
+        println(s"handling packet $packet")
         checkOwner(ownerID, socket)
         val thread = clientsThreads(ownerID)._1
 

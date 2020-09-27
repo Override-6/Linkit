@@ -9,9 +9,11 @@ import fr.overridescala.vps.ftp.api.utils.Utils
 import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler.TempFolder
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
-                                 private val server: Relay ) extends TaskCompleterHandler {
+                                 private val server: Relay) extends TaskCompleterHandler {
 
     private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler, String) => Unit]
     = new mutable.HashMap[String, (DataPacket, TasksHandler, String) => Unit]()
@@ -24,73 +26,108 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
         taskType match {
             case UploadTask.UPLOAD =>
                 handleUpload(Utils.deserialize(content), senderId, taskID)
+
             case DownloadTask.DOWNLOAD =>
                 handleDownload(Utils.deserialize(content), senderId, taskID)
-            case FileInfoTask.FILE_INFO =>
-                val pair: (String, String) = Utils.deserialize(content)
-                val completer = new FileInfoTask.FileInfoCompleter(pair._1)
-                tasksHandler.registerTask(completer, taskID, true, pair._2, senderId)
-            case CreateFileTask.CREATE_FILE =>
-                val completer = new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
-                tasksHandler.registerTask(completer, taskID, false, senderId)
-            case "STRSS" =>
-                val completer = new StressTestTask.StressTestCompleter(contentString.toLong)
-                tasksHandler.registerTask(completer, taskID, false, senderId)
 
-            case _ => val completerSupplier = completers(taskType)
-                if (completerSupplier == null)
-                    throw new IllegalArgumentException("could not find completer for task " + taskType)
-                completerSupplier.apply(initPacket, tasksHandler, senderId)
+            case PingTask.PING =>
+                new PingTask.PingCompleter
+
+            case FileInfoTask.FILE_INFO =>
+                val pair: (String, _) = Utils.deserialize(content)
+                new FileInfoTask.FileInfoCompleter(pair._1)
+
+            case CreateFileTask.CREATE_FILE =>
+                new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
+
+            case "STRSS" =>
+                new StressTestTask.StressTestCompleter(contentString.toLong)
+
+            case _ =>
         }
     }
 
     override def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler, String) => Unit): Unit =
         completers.put(taskType, supplier)
 
-    def handleUpload(uploadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {
-        if (!uploadDesc.targetID.equals(server.identifier)) {
-            redirectUpload(uploadDesc, ownerID, taskID)
-            return
-        }
-
-        val task = new DownloadTask(tasksHandler, uploadDesc)
-        tasksHandler.registerTask(task, taskID, false, ownerID)
-    }
-
-    def handleDownload(downloadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {
-        if (!downloadDesc.targetID.equals(server.identifier)) {
-            redirectDownload(downloadDesc, ownerID, taskID)
-            return
-        }
+    private def handleUpload(uploadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {
         val desc = TransferDescription.builder()
-                .setSource(downloadDesc.source)
-                .setDestination(downloadDesc.destination)
-                .setTargetID(ownerID)
-                .build()
-        val task = new UploadTask(tasksHandler, desc)
-        tasksHandler.registerTask(task, taskID, false, ownerID)
-    }
-
-    def redirectDownload(downloadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {
-        val desc = TransferDescription.builder()
-                .setSource(downloadDesc.source)
-                .setDestination(downloadDesc.destination)
-                .setTargetID(ownerID)
-                .build()
-        val task = new DownloadTask(tasksHandler, desc)
-        tasksHandler.registerTask(task, taskID, false, ownerID)
-    }
-
-    def redirectUpload(uploadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {
-        val desc = TransferDescription.builder()
-                .setTargetID(uploadDesc.targetID)
                 .setSource(uploadDesc.source)
-                .setDestination(TempFolder)
+                .setDestination(uploadDesc.destination)
+                .setTargetID(ownerID)
                 .build()
-        val task = new DownloadTask(tasksHandler, desc)
-        tasksHandler.registerTask(task, taskID, false, ownerID)
+        if (!uploadDesc.targetID.equals(server.identifier)) {
+            val redirectedTransferDesc = TransferDescription.builder()
+                    .setTargetID(uploadDesc.targetID)
+                    .setDestination(TempFolder)
+                    .setSource(uploadDesc.source)
+                    .build()
+            new DownloadTask(tasksHandler, desc).queue(_ => {
+                new UploadTask(tasksHandler, redirectedTransferDesc)
+            }, _, taskID)
+            return
+        }
+
+        new DownloadTask(tasksHandler, desc).queue(_, _, taskID)
     }
 
+    private def handleDownload(downloadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {
+        val desc = TransferDescription.builder()
+                .setSource(downloadDesc.source)
+                .setDestination(downloadDesc.destination)
+                .setTargetID(ownerID)
+                .build()
+        if (!downloadDesc.targetID.equals(server.identifier)) {
+            val redirectedTransferDesc = TransferDescription.builder()
+                    .setTargetID(downloadDesc.targetID)
+                    .setDestination(TempFolder)
+                    .setSource(downloadDesc.source)
+                    .build()
+            new DownloadTask(tasksHandler, redirectedTransferDesc).queue(_ => {
+                new UploadTask(tasksHandler, desc)
+            }, _, taskID)
+            return
+        }
+        new UploadTask(tasksHandler, desc).queue(_, _, taskID)
+    }
+
+    private def testTransfer(packet: DataPacket, senderId: String): Boolean = {
+        val taskType = packet.header
+        val taskID = packet.taskID
+        val content = packet.content
+        taskType match {
+            case UploadTask.UPLOAD =>
+                handleUpload(Utils.deserialize(content), senderId, taskID)
+                true
+
+            case DownloadTask.DOWNLOAD =>
+                handleDownload(Utils.deserialize(content), senderId, taskID)
+                true
+            case _ => false
+        }
+    }
+
+    private def testOther(packet: DataPacket, senderId: String): Boolean = {
+        val taskType = packet.header
+        val content = packet.content
+        val contentString = new String(content)
+        val pairTaskAndTarget = taskType match {
+            case PingTask.PING =>
+                new PingTask.PingCompleter
+
+            case FileInfoTask.FILE_INFO =>
+                val pair: (String, _) = Utils.deserialize(content)
+                new FileInfoTask.FileInfoCompleter(pair._1)
+
+            case CreateFileTask.CREATE_FILE =>
+                new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
+
+            case "STRSS" =>
+                new StressTestTask.StressTestCompleter(contentString.toLong)
+        }
+        val taskID = packet.taskID
+        tasksHandler.registerTask(task, taskID, false, )
+    }
 
 }
 

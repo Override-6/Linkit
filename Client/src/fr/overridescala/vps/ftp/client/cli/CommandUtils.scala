@@ -8,7 +8,7 @@ object CommandUtils {
             return
 
         val errorMsg = s"missing or wrong argument in command syntax. Expected : $expected"
-        throw new IllegalArgumentException(errorMsg)
+        throw new CommandException(errorMsg)
     }
 
 

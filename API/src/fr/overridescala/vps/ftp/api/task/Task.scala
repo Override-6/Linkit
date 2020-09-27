@@ -64,8 +64,9 @@ abstract class Task[T](private val handler: TasksHandler,
      * Enqueue / register this task to the [[TasksHandler]]
      * @param onSuccess the action to perform when the task was successful
      * @param onError the action to perform when the task was unsuccessful
+     * @param identifier specifies the task identifier used for packet channels.
      * */
-    final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError): Unit = {
+    final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError, identifier: Int = identifier): Unit = {
         this.onSuccess = onSuccess
         this.onError = onError
         handler.registerTask(this, identifier, true, targetID)
@@ -79,7 +80,7 @@ abstract class Task[T](private val handler: TasksHandler,
      * @throws TaskException if the task was unsuccessful
      * @return the task result
      * */
-    final override def complete(): T = {
+    final override def complete(identifier: Int = identifier): T = {
         handler.registerTask(this, identifier, true, targetID)
         val atomicResult = new AtomicReference[T]()
         val onSuccess: T => Unit = result => synchronized {

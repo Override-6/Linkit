@@ -1,9 +1,10 @@
-package fr.overridescala.vps.ftp.client.cli
+package fr.overridescala.vps.ftp.client.cli.commands
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.task.TaskConcoctor
 import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
+import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor}
 import fr.overridescala.vps.ftp.client.cli.CommandUtils._
 
 /**
@@ -38,7 +39,7 @@ class TransferCommand private(private val relay: Relay,
 
     def checkArgs(args: Array[String]): Unit = {
         if (args.length != 6)
-            throw new IllegalArgumentException("argument length must be 6")
+            throw new CommandException("argument length must be 6")
         checkArgsContains(args, "-t", "-s", "-d")
     }
 

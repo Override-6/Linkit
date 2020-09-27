@@ -14,8 +14,9 @@ trait TaskAction[T] {
      * The task will be executed after all task before are ended.
      * @param onSuccess the action to perform when the task was successful
      * @param onError the action to perform when the task was unsuccessful
+     * @param identifier specifies the task identifier used for packet channels.
      * */
-    def queue(onSuccess: T => Unit = t => {}, onError: String => Unit = Console.err.println): Unit
+    def queue(onSuccess: T => Unit = _, onError: String => Unit = _, identifier: Int = _): Unit
 
     /**
      * Completes the task. That does not mean that this task is not enqueued.
@@ -24,6 +25,6 @@ trait TaskAction[T] {
      *
      * @return the task result
      * */
-    def complete(): T
+    def complete(identifier: Int = _): T
 
 }

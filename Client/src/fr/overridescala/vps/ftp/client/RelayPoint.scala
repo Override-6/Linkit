@@ -2,15 +2,13 @@ package fr.overridescala.vps.ftp.client
 
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
-import java.nio.channels.SocketChannel
+import java.nio.channels.{AsynchronousCloseException, SocketChannel}
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler, TaskConcoctor, TaskExecutor}
+import fr.overridescala.vps.ftp.api.packet.PacketLoader
+import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor}
 import fr.overridescala.vps.ftp.api.utils.Constants
-import fr.overridescala.vps.ftp.client.tasks.InitTaskCompleter
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
@@ -18,15 +16,16 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     val buffer: ByteBuffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
 
     private val socket = configSocket()
-    private val tasksHandler = new ClientTasksHandler(socket, identifier)
+    private val tasksHandler = new ClientTasksHandler(socket, this)
     private val packetLoader = new PacketLoader()
 
 
     @volatile private var open = false
 
-    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): TaskAction[R] = {
+    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): RelayTaskAction[R] = {
         ensureOpen()
-        concoctor.concoct(tasksHandler)
+        val taskAction = concoctor.concoct(tasksHandler)
+        new RelayTaskAction[R](taskAction)
     }
 
     override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTasksCompleterHandler
@@ -44,6 +43,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                 try {
                     updateNetwork()
                 } catch {
+                    case _: AsynchronousCloseException =>
                     case e: Throwable =>
                         e.printStackTrace()
                         Console.err.println("suddenly disconnected from the server.")

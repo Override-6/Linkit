@@ -26,6 +26,7 @@ class CommandManager(input: Scanner) {
             try {
                 commands(cmd).execute(args)
             } catch {
+                case e: CommandException => Console.err.println(e.getMessage)
                 case e: Throwable => e.printStackTrace()
             }
             return

@@ -20,6 +20,7 @@ class TaskTicket(private val taskExecutor: TaskExecutor,
             if (ownFreeWill)
                 taskExecutor.sendTaskInfo(channel)
             taskExecutor.execute(channel)
+            println(s"$taskName completed !")
         } catch {
             // do not prints those exceptions : normal errors when a task is brutally aborted via Thread.stop
             case _: IllegalMonitorStateException =>

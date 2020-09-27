@@ -5,7 +5,8 @@ import java.util.Scanner
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.utils.Constants
-import fr.overridescala.vps.ftp.client.cli.{CommandManager, CreateFileCommand, TransferCommand}
+import fr.overridescala.vps.ftp.client.cli.CommandManager
+import fr.overridescala.vps.ftp.client.cli.commands.{CreateFileCommand, PingCommand, TransferCommand}
 
 object Main {
 
@@ -26,6 +27,7 @@ object Main {
         commandsManager.register("download", TransferCommand.download(relayPoint))
         commandsManager.register("upload", TransferCommand.upload(relayPoint))
         commandsManager.register("CRTF", new CreateFileCommand(relayPoint))
+        commandsManager.register("ping", new PingCommand(relayPoint))
         commandsManager.start()
     }
 

@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.client
 
-import fr.overridescala.vps.ftp.api.packet.DataPacket
+import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
@@ -9,17 +10,18 @@ import fr.overridescala.vps.ftp.client.tasks.InitTaskCompleter
 import scala.collection.mutable
 
 class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler,
-                                 private val relayIdentifier: String)
+                                 private val relay: Relay)
         extends TaskCompleterHandler {
 
-    private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler, String) => Unit] =
-        new mutable.HashMap[String, (DataPacket, TasksHandler, String) => Unit]()
+    private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler, String) => Unit] =
+        new mutable.HashMap[String, (TaskInitPacket, TasksHandler, String) => Unit]()
 
-    override def handleCompleter(initPacket: DataPacket, ownerID: String): Unit = {
-        val taskType = initPacket.header
+    override def handleCompleter(initPacket: TaskInitPacket, ownerID: String): Unit = {
+        val taskType = initPacket.taskType
         val content = initPacket.content
-        val contentString = new String(content)
         val taskID = initPacket.taskID
+        val target = initPacket.targetId
+        val contentString = new String(content)
         val task = taskType match {
             case UploadTask.UPLOAD =>
                 new DownloadTask(tasksHandler, Utils.deserialize(content))
@@ -30,7 +32,9 @@ class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler,
             case CreateFileTask.CREATE_FILE =>
                 new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
             case InitTaskCompleter.INIT =>
-                new InitTaskCompleter(relayIdentifier)
+                new InitTaskCompleter(relay)
+            case PingTask.PING =>
+                new PingTask.PingCompleter
             case "STRSS" =>
                 new StressTestTask.StressTestCompleter(contentString.toLong)
             case _ => null
@@ -46,7 +50,7 @@ class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler,
         completerSupplier(initPacket, tasksHandler, ownerID)
     }
 
-    override def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler, String) => Unit): Unit =
+    override def putCompleter(taskType: String, supplier: (TaskInitPacket, TasksHandler, String) => Unit): Unit =
         completers.put(taskType, supplier)
 
 }

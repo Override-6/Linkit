@@ -37,10 +37,10 @@ trait Relay extends Closeable {
      * schedules a Task.
      *
      * @param concoctor the task to schedules
-     * @return a [[TaskAction]] instance, this object allows you to enqueue or complete the task later.
-     * @see [[TaskAction]]
+     * @return a [[RelayTaskAction]] instance, this object allows you to enqueue or complete the task later.
+     * @see [[RelayTaskAction]]
      * */
-    def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): TaskAction[R]
+    def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): RelayTaskAction[R]
 
     /**
      * @return the [[TaskCompleterHandler]] used by this Relay.
@@ -55,5 +55,18 @@ trait Relay extends Closeable {
      * @throws RelayInitialisationException for any init error
      * */
     def start(): Unit
+
+    /**
+     * RelayTaskAction is a wraps a [[TaskAction]] object.
+     * this class avoid the user to specify the task identifier
+     * @see [[TaskAction]]
+     * */
+    class RelayTaskAction[T](taskAction: TaskAction[T]) {
+        def queue(onSuccess: T => Unit = _, onError: String => Unit = _): Unit =
+            taskAction.queue(onSuccess, onError)
+
+        def complete(): T =
+            taskAction.complete()
+    }
 
 }

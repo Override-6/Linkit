@@ -30,7 +30,7 @@ class PacketLoader {
      *
      * @return a packet if found, null instead
      * */
-    @Nullable def nextPacket: DataPacket = {
+    @Nullable def nextPacket: Packet = {
         if (!isPacketPresent)
             return null
         val bytes = getBytes
