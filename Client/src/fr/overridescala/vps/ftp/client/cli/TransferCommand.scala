@@ -10,7 +10,7 @@ import fr.overridescala.vps.ftp.client.cli.CommandUtils._
  * syntax : <p>
  * upload | download -s "source path" -t "target identifier" -d "destination path"
  * */
-class TransferCommand(private val relay: Relay,
+class TransferCommand private(private val relay: Relay,
                       private val isDownload: Boolean) extends CommandExecutor {
 
 
@@ -33,11 +33,23 @@ class TransferCommand(private val relay: Relay,
                 .build()
         val concoctor: TransferDescription => TaskConcoctor[_] = if (isDownload) DownloadTask.concoct else UploadTask.concoct
         relay.scheduleTask(concoctor(transferDescription))
+                .complete()
     }
 
     def checkArgs(args: Array[String]): Unit = {
-        if (args.length != 5)
-            throw new IllegalArgumentException("argument length must be 5")
+        if (args.length != 6)
+            throw new IllegalArgumentException("argument length must be 6")
         checkArgsContains(args, "-t", "-s", "-d")
     }
+
+
+
+}
+
+object TransferCommand {
+    def download(relay: Relay): TransferCommand =
+        new TransferCommand(relay, true)
+
+    def upload(relay: Relay): TransferCommand =
+        new TransferCommand(relay, false)
 }

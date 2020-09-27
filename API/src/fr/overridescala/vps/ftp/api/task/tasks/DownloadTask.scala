@@ -67,7 +67,7 @@ class DownloadTask(private val handler: TasksHandler,
             channel.sendPacket(s"$count")
             packet = channel.nextPacket()
             val percentage = totalBytesWritten / totalBytes * 100
-            print(s"\rsent = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets sent = $count")
+            print(s"\rreceived = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets exchange = $count")
         }
         stream.close()
         println()

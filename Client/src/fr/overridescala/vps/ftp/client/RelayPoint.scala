@@ -6,9 +6,11 @@ import java.nio.channels.SocketChannel
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol}
+import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
+import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler, TaskConcoctor, TaskExecutor}
 import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.client.tasks.InitTaskCompleter
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
@@ -18,6 +20,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val socket = configSocket()
     private val tasksHandler = new ClientTasksHandler(socket, identifier)
     private val packetLoader = new PacketLoader()
+
 
     @volatile private var open = false
 
@@ -92,6 +95,5 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
-    socket.write(Protocol.createTaskPacket(-1, "INIT", identifier.getBytes))
 
 }

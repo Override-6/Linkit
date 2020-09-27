@@ -4,10 +4,12 @@ import fr.overridescala.vps.ftp.api.packet.DataPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
+import fr.overridescala.vps.ftp.client.tasks.InitTaskCompleter
 
 import scala.collection.mutable
 
-class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler)
+class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler,
+                                 private val relayIdentifier: String)
         extends TaskCompleterHandler {
 
     private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler, String) => Unit] =
@@ -27,12 +29,16 @@ class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler)
                 new FileInfoTask.FileInfoCompleter(contentString)
             case CreateFileTask.CREATE_FILE =>
                 new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
+            case InitTaskCompleter.INIT =>
+                new InitTaskCompleter(relayIdentifier)
             case "STRSS" =>
                 new StressTestTask.StressTestCompleter(contentString.toLong)
             case _ => null
         }
-        if (task != null)
-        tasksHandler.registerTask(task, taskID, false, ownerID)
+        if (task != null) {
+            tasksHandler.registerTask(task, taskID, false, ownerID)
+            return
+        }
 
         val completerSupplier = completers(taskType)
         if (completerSupplier == null)

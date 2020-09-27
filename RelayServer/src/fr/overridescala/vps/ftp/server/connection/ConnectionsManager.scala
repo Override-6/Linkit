@@ -3,7 +3,9 @@ package fr.overridescala.vps.ftp.server.connection
 import java.net.SocketAddress
 import java.nio.channels.SocketChannel
 
-import fr.overridescala.vps.ftp.server.ServerTasksHandler
+import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
+import fr.overridescala.vps.ftp.server.task.ServerTasksHandler
+import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 
@@ -23,26 +25,21 @@ class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
     /**
      * creates and register a RelayPoint connection.
      *
-     * @param socket     the socket connection
+     * @param address     the address to bind
      * @param identifier the identifier for the connection
-     * @throws IllegalArgumentException when a id is already set for this address, or another connection is known under this id.
+     * @throws RelayInitialisationException when a id is already set for this address, or another connection is known under this id.
      * */
-    def register(socket: SocketChannel, identifier: String): Unit = {
-        val address = socket.getRemoteAddress
-
-        if (connections.contains(address))
-            throw new IllegalAccessException("this socket is already registered !")
-
+    def register(address: SocketAddress, identifier: String): Unit = {
+        checkAddress(address)
         for ((_, id) <- connections if id != null) {
-            if (id.equals(identifier)) {
-                throw new IllegalArgumentException(s"another relay point have the same identifier")
-            }
+            if (id.equals(identifier))
+                throw RelayInitialisationException(s"another relay point have the same identifier '$identifier'")
         }
         connections.put(address, identifier)
     }
 
     /**
-     * disconnects a RelayPointConnection
+     * disconnects a Relay point
      *
      * @param address the address to disconnect
      * */
@@ -51,7 +48,9 @@ class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
         connections.remove(address)
     }
 
-    def getIdentifierFromAddress(address: SocketAddress): String = {
+    @Nullable def getIdentifierFromAddress(address: SocketAddress): String = {
+        if (!connections.contains(address))
+            return null
         connections(address)
     }
 
@@ -77,6 +76,11 @@ class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
      * */
     def isNotRegistered(address: SocketAddress): Boolean = {
         !connections.contains(address)
+    }
+
+    private def checkAddress(address: SocketAddress): Unit = {
+        if (connections.contains(address))
+            throw RelayInitialisationException("this address is already registered !")
     }
 
 }

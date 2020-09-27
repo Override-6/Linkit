@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.client.cli.CommandUtils._
  *  crtf "path" [-D] -t "relay identifier"
  *
  * */
-case class CreateFileCommand(relay: Relay) extends CommandExecutor {
+class CreateFileCommand(relay: Relay) extends CommandExecutor {
 
 
     override def execute(args: Array[String]): Unit = {
@@ -17,11 +17,12 @@ case class CreateFileCommand(relay: Relay) extends CommandExecutor {
         val path = args(0)
         val isDirectory = args.contains("-D")
         val target = argAfter(args, "-t")
-        relay.scheduleTask(CreateFileTask.concoct(target, path))
+        relay.scheduleTask(CreateFileTask.concoct(target, path, isDirectory))
+                .complete()
     }
 
     def checkArgs(args: Array[String]): Unit = {
-        if (args.length != 3 || args.length != 4)
+        if (args.length != 3 && args.length != 4)
             throw new IllegalArgumentException("args length expected is 3 or 4")
         checkArgsContains(args, "-t")
     }

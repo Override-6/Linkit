@@ -4,7 +4,6 @@ import java.net.InetSocketAddress
 import java.util.Scanner
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, UploadTask}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.client.cli.{CommandManager, CreateFileCommand, TransferCommand}
 
@@ -24,8 +23,8 @@ object Main {
 
     def main(args: Array[String]): Unit = {
         relayPoint.start()
-        commandsManager.register("upload", new TransferCommand(relayPoint, UploadTask.concoct))
-        commandsManager.register("download", new TransferCommand(relayPoint, DownloadTask.concoct))
+        commandsManager.register("download", TransferCommand.download(relayPoint))
+        commandsManager.register("upload", TransferCommand.upload(relayPoint))
         commandsManager.register("CRTF", new CreateFileCommand(relayPoint))
         commandsManager.start()
     }

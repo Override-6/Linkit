@@ -11,7 +11,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private var currentChannelManager: PacketChannelManager = _
-    private val completerFactory = new ClientTaskCompleterHandler(this)
+    private val completerFactory = new ClientTaskCompleterHandler(this, identifier)
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean, targetID: String, senderID: String = identifier): Unit = {
         val ticket = new TaskTicket(executor, senderID, taskIdentifier, ownFreeWill)
@@ -20,7 +20,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
     }
 
     override def handlePacket(packet: DataPacket, ownerID: String, socket: SocketChannel): Unit = {
-        if (packet.taskID != currentChannelManager.taskID) {
+        if (currentChannelManager == null || packet.taskID != currentChannelManager.taskID) {
             completerFactory.handleCompleter(packet, ownerID)
             return
         }

@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.server
+package fr.overridescala.vps.ftp.server.task
 
 import java.io.IOException
 import java.nio.channels.SocketChannel

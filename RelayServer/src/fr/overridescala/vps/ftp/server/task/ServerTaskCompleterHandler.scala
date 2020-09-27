@@ -1,18 +1,17 @@
-package fr.overridescala.vps.ftp.server
+package fr.overridescala.vps.ftp.server.task
 
-import java.nio.file.Files
-
+import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.DataPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
-import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
-import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
+import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
-import fr.overridescala.vps.ftp.server.ServerTaskCompleterHandler.TempFolder
+import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler.TempFolder
 
 import scala.collection.mutable
 
 class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
-                                 private val server: RelayServer) extends TaskCompleterHandler {
+                                 private val server: Relay ) extends TaskCompleterHandler {
 
     private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler, String) => Unit]
     = new mutable.HashMap[String, (DataPacket, TasksHandler, String) => Unit]()

@@ -56,6 +56,10 @@ object CreateFileTask {
 
         def createFile(path: Path): Unit =
             try {
+                if (Files.exists(path)) {
+                    channel.sendPacket(ERROR, "$path already exists !")
+                    return
+                }
                 if (!isDirectory)
                     Files.createFile(path)
                 else Files.createDirectories(path)
@@ -67,8 +71,8 @@ object CreateFileTask {
             }
     }
 
-    def concoct(ownerID: String, filePath: String): TaskConcoctor[Unit] = tasksHandler =>
-        new CreateFileTask(tasksHandler, ownerID, filePath)
+    def concoct(ownerID: String, filePath: String, isDirectory: Boolean): TaskConcoctor[Unit] = tasksHandler =>
+        new CreateFileTask(tasksHandler, ownerID, filePath, isDirectory)
 
 
 }

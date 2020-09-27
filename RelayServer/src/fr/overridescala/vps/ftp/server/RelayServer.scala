@@ -1,24 +1,26 @@
 package fr.overridescala.vps.ftp.server
 
-import java.net.{InetSocketAddress, SocketException}
 import java.nio.ByteBuffer
 import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
+import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, SimplePacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.{CreateFileTask, DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor}
-import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
+import fr.overridescala.vps.ftp.server.task.ServerTasksHandler
+import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.jdk.CollectionConverters
 
 class RelayServer()
         extends Relay {
+
 
     private val selector = Selector.open()
     private val buffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
@@ -27,6 +29,12 @@ class RelayServer()
     private val tasksHandler = new ServerTasksHandler(this)
     private val connectionsManager = new ConnectionsManager(tasksHandler)
     private val packetLoader = new PacketLoader()
+    /**
+     * this channel is only open / must be only used to register a newly socket connection.
+     * it can't be used to send or receive ordinary packets
+     * */
+    @Nullable
+    @volatile private var currentSocketInitialisationChannel: SimplePacketChannel = _
 
     private var open = true
 
@@ -61,6 +69,8 @@ class RelayServer()
                             e.printStackTrace()
                         val address = key.channel().asInstanceOf[SocketChannel].getRemoteAddress
                         val id = connectionsManager.getIdentifierFromAddress(address)
+                        if (id == null)
+                            return
                         println("a connection closed suddenly")
                         disconnect(id)
                 }
@@ -103,10 +113,32 @@ class RelayServer()
      * handles a new RelayPoint connection.
      * */
     private def handleNewConnection(): Unit = {
-        val channel = serverSocket.accept()
-        channel.configureBlocking(false)
-        channel.register(selector, SelectionKey.OP_READ)
-        println(s"new connection : ${channel.getRemoteAddress}")
+        val socket = serverSocket.accept()
+        val address = socket.getRemoteAddress
+        socket.configureBlocking(false)
+        socket.register(selector, SelectionKey.OP_READ)
+        println(s"new connection : ${address}")
+        Future {
+            registerConnection(socket)
+        }
+    }
+
+    private def registerConnection(socket: SocketChannel): Unit = {
+        val channel = new SimplePacketChannel(socket, -1)
+        channel.sendPacket("GID")
+        currentSocketInitialisationChannel = channel
+        val identifier = channel.nextPacket().header
+        var response = "OK"
+        try {
+            connectionsManager.register(socket.getRemoteAddress, identifier)
+            println(s"successfully registered relay point with identifier '$identifier'")
+        } catch {
+            case e: RelayInitialisationException =>
+                Console.err.println(e.getMessage)
+                response = "ERROR"
+        }
+        channel.sendPacket(response)
+        currentSocketInitialisationChannel = null
     }
 
 
@@ -159,31 +191,19 @@ class RelayServer()
         val socket = key.channel().asInstanceOf[SocketChannel]
         val address = socket.getRemoteAddress
 
-        if (connectionsManager.isNotRegistered(address)) {
-            handleInit(packet, socket)
-            return
-        }
-
         val ownerID = connectionsManager.getIdentifierFromAddress(address)
+
         while (packet != null) {
-            tasksHandler.handlePacket(packet, ownerID, socket)
+            if (currentSocketInitialisationChannel != null) {
+                currentSocketInitialisationChannel.addPacket(packet)
+                return
+            }
+            else tasksHandler.handlePacket(packet, ownerID, socket)
+
             packet = packetLoader.nextPacket
         }
     }
 
-    /**
-     * handles an presumed INIT Packet, then init the RelayPointConnection
-     *
-     * @throws UnexpectedPacketException if the packet header isn't "INIT"
-     * */
-    private def handleInit(packet: DataPacket, socket: SocketChannel): Unit = {
-        val header = packet.header
-        if (!header.equals("INIT"))
-            throw UnexpectedPacketException(s"received packet $packet when attempting to init a RelayPointConnection")
-        val identifier = new String(packet.content)
-        connectionsManager.register(socket, identifier)
-        println(s"registered connection with identifier ${identifier}")
-    }
 
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()

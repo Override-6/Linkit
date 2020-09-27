@@ -1,10 +1,11 @@
-package fr.overridescala.vps.ftp.server
+package fr.overridescala.vps.ftp.server.task
 
 import java.nio.channels.SocketChannel
 
 import fr.overridescala.vps.ftp.api.packet.DataPacket
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.collection.mutable
 

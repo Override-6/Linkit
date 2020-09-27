@@ -2,7 +2,8 @@ package fr.overridescala.vps.ftp.api
 
 import java.io.Closeable
 
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler, TaskConcoctor, TaskExecutor}
+import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler, TaskConcoctor}
 
 /**
  * <p>
@@ -51,6 +52,7 @@ trait Relay extends Closeable {
      * <b>Starts the Relay.</b>
      * <p>
      * This action is not automatically done, but is required to start the program
+     * @throws RelayInitialisationException for any init error
      * */
     def start(): Unit
 
