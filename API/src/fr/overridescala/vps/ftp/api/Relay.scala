@@ -61,7 +61,7 @@ trait Relay extends Closeable {
      * this class avoid the user to specify the task identifier
      * @see [[TaskAction]]
      * */
-    class RelayTaskAction[T](taskAction: TaskAction[T]) {
+    class RelayTaskAction[T] (taskAction: TaskAction[T]) {
         def queue(onSuccess: T => Unit = _, onError: String => Unit = _): Unit =
             taskAction.queue(onSuccess, onError)
 

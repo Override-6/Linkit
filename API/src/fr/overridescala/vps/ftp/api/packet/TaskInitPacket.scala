@@ -4,7 +4,7 @@ package fr.overridescala.vps.ftp.api.packet
 /**
  * this type of packet is sent when a relay ask to server to schedule a task between him, the server, and the target
  * The type of packets ([[TaskInitPacket]] & [[DataPacket]]) is determined by [[Protocol]]
- *
+ * @see [[Packet]]
  * */
 case class TaskInitPacket(override val taskID: Int,
                           targetId: String,

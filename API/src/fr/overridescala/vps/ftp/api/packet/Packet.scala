@@ -11,4 +11,6 @@ trait Packet {
      * */
     lazy val haveContent: Boolean = !content.isEmpty
 
+    def toString: String
+
 }

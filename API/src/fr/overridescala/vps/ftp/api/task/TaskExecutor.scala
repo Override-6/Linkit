@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.task
 
-import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskInitPacket}
 
 /**
  * The usable side for a [[TasksHandler]] to handle this task.
@@ -11,19 +11,13 @@ import fr.overridescala.vps.ftp.api.packet.PacketChannel
  * */
 trait TaskExecutor {
 
-
-
     /**
-     * This method is invoked straight before [[execute]] but is only invoked if this task was created by the Local Relay
-     * Content of this method must only send packets to initialise a potential TaskCompleter (more information about how tasks are
-     * created / enqueued from [[fr.overridescala.vps.ftp.api.packet.DataPacket]] in [[TasksHandler]] scala doc)
-     * @param channel the channel where the packet will be send and received
+     * This method is invoked straight before [[execute]] but is only invoked if this task was created by the local Relay
      *
-     * @see [[PacketChannel]]
-     * @see [[PacketChannel]]
-     * @see [[fr.overridescala.vps.ftp.api.packet.DataPacket]]
+     * @return a TaskInitPacket that will be send in order to initialise target task's completer.
+     * @see [[TaskInitPacket]]
      * */
-    def sendTaskInfo(channel: PacketChannel): Unit = {}
+    def newInitPacket(): TaskInitPacket = null
 
     /**
      * Executes this task.

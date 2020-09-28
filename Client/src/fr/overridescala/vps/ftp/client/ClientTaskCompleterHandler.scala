@@ -20,7 +20,6 @@ class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler,
         val taskType = initPacket.taskType
         val content = initPacket.content
         val taskID = initPacket.taskID
-        val target = initPacket.targetId
         val contentString = new String(content)
         val task = taskType match {
             case UploadTask.UPLOAD =>

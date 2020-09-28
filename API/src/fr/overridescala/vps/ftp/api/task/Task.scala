@@ -4,6 +4,7 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask
 import org.jetbrains.annotations.Nullable
 
@@ -98,6 +99,13 @@ abstract class Task[T](private val handler: TasksHandler,
         }
         atomicResult.get()
     }
+
+    /**
+     * forces Override for method into [[newInitPacket]] in trait [[TaskExecutor]]
+     *
+     * @see [[newInitPacket]]
+     * */
+    def newInitPacket(): TaskInitPacket
 
     /**
      * Invoked by TaskExecutors to signal that this task was unsuccessful
