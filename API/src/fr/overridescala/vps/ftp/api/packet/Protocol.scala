@@ -120,9 +120,9 @@ object Protocol {
     }
 
     private def getPacketType(bytes: Array[Byte]): PacketType = {
-        if (bytes.contains(DATA_PACKET_TYPE))
+        if (bytes.containsSlice(DATA_PACKET_TYPE))
             PacketType.DATA_PACKET
-        if (bytes.contains(TASK_INIT_PACKET_TYPE))
+        if (bytes.containsSlice(TASK_INIT_PACKET_TYPE))
             PacketType.TASK_INIT_PACKET
         else throw new IllegalArgumentException("this byte array do not have any packet type field")
     }
@@ -139,7 +139,7 @@ object Protocol {
     }
 
 
-    private class PacketType private
+    private class PacketType private ()
     private object PacketType {
         val DATA_PACKET: PacketType = new PacketType
         val TASK_INIT_PACKET: PacketType = new PacketType

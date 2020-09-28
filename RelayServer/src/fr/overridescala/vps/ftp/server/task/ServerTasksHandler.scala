@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.server.task
 
 import java.nio.channels.SocketChannel
 
-import fr.overridescala.vps.ftp.api.packet.DataPacket
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.RelayServer
@@ -27,16 +27,15 @@ class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
     }
 
 
-    override def handlePacket(packet: DataPacket, ownerID: String, socket: SocketChannel): Unit = {
+    override def handlePacket(packet: Packet, senderID: String, socket: SocketChannel): Unit = {
         println(s"handling packet $packet")
-        checkOwner(ownerID, socket)
-        val thread = clientsThreads(ownerID)._1
+        checkOwner(senderID, socket)
+        val thread = clientsThreads(senderID)._1
 
-        if (thread.tasksIDMatches(packet)) {
-            thread.injectPacket(packet)
-            return
+        packet match {
+            case init: TaskInitPacket => completersHandler.handleCompleter(init, senderID)
+            case data: DataPacket => thread.injectPacket(data)
         }
-        completersHandler.handleCompleter(packet, ownerID)
     }
 
     def cancelTasks(ownerID: String): Unit = {

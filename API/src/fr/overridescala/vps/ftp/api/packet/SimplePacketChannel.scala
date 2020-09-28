@@ -4,6 +4,7 @@ import java.nio.channels.SocketChannel
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
+import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 /**
  * this class is the implementation of [[PacketChannel]] and [[PacketChannelManager]]
@@ -32,6 +33,11 @@ class SimplePacketChannel(private val socket: SocketChannel,
      * */
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
         val bytes = Protocol.createDataPacket(taskID, header, content)
+        socket.write(bytes)
+    }
+    //TODO doc
+    override def sendInitPacket(taskID: Int, initInfo: TaskInitInfo): Unit = {
+        val bytes = Protocol.createTaskInitPacket(taskID, initInfo.targetID, initInfo.taskType, initInfo.content)
         socket.write(bytes)
     }
 

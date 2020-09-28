@@ -11,7 +11,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private var currentChannelManager: PacketChannelManager = _
-    private val completerFactory = new ClientTaskCompleterHandler(this, relay)
+    private val completerHandler = new ClientTaskCompleterHandler(this, relay)
 
     override val identifier: String = relay.identifier
 
@@ -21,20 +21,18 @@ class ClientTasksHandler(private val socket: SocketChannel,
         println("new task registered !")
     }
 
-    override def handlePacket(packet: Packet, ownerID: String, socket: SocketChannel): Unit = {
-        if (packet.isInstanceOf[TaskInitPacket]) {
-            completerFactory.handleCompleter(packet.asInstanceOf[TaskInitPacket], ownerID)
-            return
+    override def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit = {
+        packet match {
+            case init: TaskInitPacket => completerHandler.handleCompleter(init, senderId)
+            case data: DataPacket if currentChannelManager != null => currentChannelManager.addPacket(data)
         }
-        currentChannelManager.addPacket(packet)
     }
 
-    override def getTasksCompleterHandler: TaskCompleterHandler = completerFactory
+    override def getTasksCompleterHandler: TaskCompleterHandler = completerHandler
 
     def start(): Unit = {
         val thread = new Thread(() => {
             while (true) {
-                println("waiting for another task to complete...")
                 val ticket = queue.take()
                 currentChannelManager = ticket.channel
                 ticket.start()
@@ -44,20 +42,22 @@ class ClientTasksHandler(private val socket: SocketChannel,
         thread.start()
     }
 
-    private class TaskTicket(private val taskAchiever: TaskExecutor,
+    private class TaskTicket(private val executor: TaskExecutor,
                              private val ownerID: String,
                              private val taskID: Int,
                              private val ownFreeWill: Boolean) {
 
-        val taskName: String = taskAchiever.getClass.getSimpleName
+        val taskName: String = executor.getClass.getSimpleName
         private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, taskID)
 
         def start(): Unit = {
             try {
                 println(s"executing $taskName...")
-                if (ownFreeWill)
-                    taskAchiever.sendTaskInfo(channel)
-                taskAchiever.execute(channel)
+                if (ownFreeWill) {
+                    val initInfo = executor.initInfo
+                    channel.sendInitPacket(taskID, initInfo)
+                }
+                executor.execute(channel)
                 println(s"$taskName completed !")
             } catch {
                 case e: Throwable => e.printStackTrace()

@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask.{CREATE_FILE, ERROR}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 /**
@@ -17,9 +17,9 @@ class CreateFileTask(private val tasksHandler: TasksHandler,
                      private val isDirectory: Boolean) extends Task[Unit](tasksHandler, ownerID) {
 
 
-    override def sendTaskInfo(channel: PacketChannel): Unit = {
+    override val initInfo: TaskInitInfo = {
         val bit: Byte = if (isDirectory) 1 else 0
-        channel.sendPacket(CREATE_FILE, Array(bit) ++ path.getBytes)
+        TaskInitInfo.of(CREATE_FILE, Array(bit) ++ path.getBytes)
     }
 
     override def execute(channel: PacketChannel): Unit = {

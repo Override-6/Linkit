@@ -17,7 +17,7 @@ trait TaskExecutor {
      * @return a TaskInitPacket that will be send in order to initialise target task's completer.
      * @see [[TaskInitPacket]]
      * */
-    def newInitPacket(): TaskInitPacket = null
+    val initInfo: TaskInitInfo = null
 
     /**
      * Executes this task.

@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.server.task
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.DataPacket
+import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
@@ -9,45 +9,20 @@ import fr.overridescala.vps.ftp.api.utils.Utils
 import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler.TempFolder
 
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
                                  private val server: Relay) extends TaskCompleterHandler {
 
-    private lazy val completers: mutable.Map[String, (DataPacket, TasksHandler, String) => Unit]
-    = new mutable.HashMap[String, (DataPacket, TasksHandler, String) => Unit]()
+    private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler, String) => Unit]
+    = new mutable.HashMap[String, (TaskInitPacket, TasksHandler, String) => Unit]()
 
-    override def handleCompleter(initPacket: DataPacket, senderId: String): Unit = {
-        val taskType = initPacket.header
-        val taskID = initPacket.taskID
-        val content = initPacket.content
-        val contentString = new String(content)
-        taskType match {
-            case UploadTask.UPLOAD =>
-                handleUpload(Utils.deserialize(content), senderId, taskID)
-
-            case DownloadTask.DOWNLOAD =>
-                handleDownload(Utils.deserialize(content), senderId, taskID)
-
-            case PingTask.PING =>
-                new PingTask.PingCompleter
-
-            case FileInfoTask.FILE_INFO =>
-                val pair: (String, _) = Utils.deserialize(content)
-                new FileInfoTask.FileInfoCompleter(pair._1)
-
-            case CreateFileTask.CREATE_FILE =>
-                new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
-
-            case "STRSS" =>
-                new StressTestTask.StressTestCompleter(contentString.toLong)
-
-            case _ =>
-        }
+    override def handleCompleter(initPacket: TaskInitPacket, senderId: String): Unit = {
+        if (testTransfer(initPacket, senderId))
+            if (testOther(initPacket, senderId))
+                testMap(initPacket, senderId)
     }
 
-    override def putCompleter(taskType: String, supplier: (DataPacket, TasksHandler, String) => Unit): Unit =
+    override def putCompleter(taskType: String, supplier: (TaskInitPacket, TasksHandler, String) => Unit): Unit =
         completers.put(taskType, supplier)
 
     private def handleUpload(uploadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {
@@ -91,8 +66,13 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
         new UploadTask(tasksHandler, desc).queue(_, _, taskID)
     }
 
-    private def testTransfer(packet: DataPacket, senderId: String): Boolean = {
-        val taskType = packet.header
+    private def testMap(initPacket: TaskInitPacket, senderId: String): Unit = {
+        val supplier = completers(initPacket.taskType)
+        supplier(initPacket, tasksHandler, senderId)
+    }
+
+    private def testTransfer(packet: TaskInitPacket, senderId: String): Boolean = {
+        val taskType = packet.taskType
         val taskID = packet.taskID
         val content = packet.content
         taskType match {
@@ -107,11 +87,11 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
         }
     }
 
-    private def testOther(packet: DataPacket, senderId: String): Boolean = {
-        val taskType = packet.header
+    private def testOther(packet: TaskInitPacket, senderId: String): Boolean = {
+        val taskType = packet.taskType
         val content = packet.content
         val contentString = new String(content)
-        val pairTaskAndTarget = taskType match {
+        val task = taskType match {
             case PingTask.PING =>
                 new PingTask.PingCompleter
 
@@ -124,9 +104,12 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
 
             case "STRSS" =>
                 new StressTestTask.StressTestCompleter(contentString.toLong)
+            case _ => null
         }
-        val taskID = packet.taskID
-        tasksHandler.registerTask(task, taskID, false, )
+        if (task == null)
+            return true
+        tasksHandler.registerTask(task, packet.taskID, false, packet.targetId)
+        false
     }
 
 }

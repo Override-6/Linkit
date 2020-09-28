@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
+import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 /**
  * this class is used by [[fr.overridescala.vps.ftp.api.Relay]] and [[fr.overridescala.vps.ftp.api.task.TasksHandler]]
@@ -15,6 +16,12 @@ trait PacketChannelManager {
      * @throws UnexpectedPacketException if the packet id not equals the channel task ID
      * */
     def addPacket(packet: DataPacket): Unit
+    //TODO doc
+
+    /**
+     *
+     * */
+    def sendInitPacket(taskID: Int, initInfo: TaskInitInfo): Unit
 
     /**
      * the identifier of this task

@@ -24,9 +24,6 @@ class DownloadTask(private val handler: TasksHandler,
     private val totalBytes: Float = desc.transferSize
     private var totalBytesWritten = 0
 
-    override def newInitPacket(): TaskInitPacket = {
-
-    }
 
     override def execute(channel: PacketChannel): Unit = {
         this.channel = channel

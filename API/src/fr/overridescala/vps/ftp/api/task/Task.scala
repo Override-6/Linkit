@@ -101,11 +101,11 @@ abstract class Task[T](private val handler: TasksHandler,
     }
 
     /**
-     * forces Override for method into [[newInitPacket]] in trait [[TaskExecutor]]
+     * forces Override of method [[initInfo]] in trait [[TaskExecutor]]
      *
-     * @see [[newInitPacket]]
+     * @see [[initInfo]]
      * */
-    def newInitPacket(): TaskInitPacket
+    override val getInitInfo: TaskInitInfo
 
     /**
      * Invoked by TaskExecutors to signal that this task was unsuccessful

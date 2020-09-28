@@ -6,20 +6,22 @@ import java.nio.channels.SocketChannel
 import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 import fr.overridescala.vps.ftp.api.task.TaskExecutor
 
-class TaskTicket(private val taskExecutor: TaskExecutor,
-                 private val currentTaskID: Int,
+class TaskTicket(private val executor: TaskExecutor,
+                 private val taskID: Int,
                  private val socket: SocketChannel,
                  private val ownFreeWill: Boolean) {
 
-    val channel = new SimplePacketChannel(socket, currentTaskID)
-    val taskName: String = taskExecutor.getClass.getSimpleName
+    val channel = new SimplePacketChannel(socket, taskID)
+    val taskName: String = executor.getClass.getSimpleName
 
     def start(): Unit = {
         try {
             println(s"executing $taskName...")
-            if (ownFreeWill)
-                taskExecutor.sendTaskInfo(channel)
-            taskExecutor.execute(channel)
+            if (ownFreeWill) {
+                val initInfo = executor.initInfo
+                channel.sendInitPacket(taskID, initInfo)
+            }
+            executor.execute(channel)
             println(s"$taskName completed !")
         } catch {
             // do not prints those exceptions : normal errors when a task is brutally aborted via Thread.stop

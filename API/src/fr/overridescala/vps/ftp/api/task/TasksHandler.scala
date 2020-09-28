@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.api.task
 
 import java.nio.channels.SocketChannel
 
-import fr.overridescala.vps.ftp.api.packet.DataPacket
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet}
 
 /**
  * This class is the hearth of this program.
@@ -31,10 +31,10 @@ trait TasksHandler {
     /**
      * Handles the packet.
      * @param packet packet to handle
-     * @param ownerID the sender identifier
+     * @param senderId the sender identifier
      * @param socket the sender socket
      * */
-    def handlePacket(packet: DataPacket, ownerID: String, socket: SocketChannel): Unit
+    def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit
 
     /**
      * Registers a task
