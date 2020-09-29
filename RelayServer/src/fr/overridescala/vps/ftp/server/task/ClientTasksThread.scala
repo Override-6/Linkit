@@ -20,7 +20,7 @@ class ClientTasksThread(ownerID: String) extends Thread with Closeable {
                 ticket.start()
             } catch {
                 //normal exception thrown when the thread was suddenly stopped
-                case _:InterruptedException =>
+                case _: InterruptedException =>
             }
         }
     }

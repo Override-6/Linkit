@@ -22,6 +22,11 @@ object Protocol {
     private val CONTENT: Array[Byte] = "<content>".getBytes
     private val END: Array[Byte] = "<end>".getBytes
 
+    val INIT_ID: Int = -1
+    val ERROR_ID: Int = -2
+
+    val ABORT_TASK_PACKET: DataPacket = DataPacket(ERROR_ID, "ABORT_TASK")
+
     /**
      * build a [[ByteBuffer]] containing the bytes of a packet from the parameters:
      *
@@ -29,24 +34,24 @@ object Protocol {
      * @param header the packet header
      * @param content the packet content
      * */
-    def createDataPacket(taskID: Int, header: String, content: Array[Byte] = Array()): ByteBuffer = {
-        val idBytes = String.valueOf(taskID).getBytes
-        val headerBytes = header.getBytes
+    def toBytes(packet: DataPacket): ByteBuffer = {
+        val idBytes = String.valueOf(packet.taskID).getBytes
+        val headerBytes = packet.header.getBytes
         val bytes = DATA_PACKET_TYPE ++ idBytes ++
                 DP_HEADER ++ headerBytes ++
-                CONTENT ++ content ++ END
+                CONTENT ++ packet.content ++ END
         ByteBuffer.wrap(bytes)
     }
 
-    def createTaskInitPacket(taskID: Int, taskType: String, targetID: String, additionalContent: Array[Byte] = Array()): ByteBuffer = {
-        val taskIDBytes = String.valueOf(taskID).getBytes
-        val typeBytes = taskType.getBytes
-        val targetIdBytes = targetID.getBytes
+    def toBytes(packet: TaskInitPacket): ByteBuffer = {
+        val taskIDBytes = String.valueOf(packet.taskID).getBytes
+        val typeBytes = packet.taskType.getBytes
+        val targetIdBytes = packet.targetId.getBytes
         val bytes =
             TASK_INIT_PACKET_TYPE ++ taskIDBytes ++
                     TIP_TARGET_ID ++ targetIdBytes ++
                     TIP_TASK_TYPE ++ typeBytes ++
-                    CONTENT ++ additionalContent ++ END
+                    CONTENT ++ packet.content ++ END
         ByteBuffer.wrap(bytes)
     }
 

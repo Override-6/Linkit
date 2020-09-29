@@ -32,12 +32,12 @@ class SimplePacketChannel(private val socket: SocketChannel,
      * @param content the packet content
      * */
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
-        val bytes = Protocol.createDataPacket(taskID, header, content)
+        val bytes = DataPacket(taskID, header, content).toBytes
         socket.write(bytes)
     }
     //TODO doc
     override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
-        val bytes = Protocol.createTaskInitPacket(taskID, initInfo.taskType, initInfo.targetID, initInfo.content)
+        val bytes = TaskInitPacket.of(taskID, initInfo).toBytes
         socket.write(bytes)
     }
 

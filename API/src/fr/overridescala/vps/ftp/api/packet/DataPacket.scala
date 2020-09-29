@@ -1,4 +1,5 @@
 package fr.overridescala.vps.ftp.api.packet
+import java.nio.ByteBuffer
 
 /**
  * this class is used to represent a packet to send or to receive.
@@ -10,7 +11,7 @@ package fr.overridescala.vps.ftp.api.packet
  * @param header the header of the packet, or the type of this data. Headers allows to classify packets / data to send or receive
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
-case class DataPacket private[packet](override val taskID: Int,
+class DataPacket private[packet](override val taskID: Int,
                                       header: String,
                                       override val content: Array[Byte] = Array()) extends Packet {
 
@@ -20,4 +21,15 @@ case class DataPacket private[packet](override val taskID: Int,
     override def toString: String =
         s"TaskPacket{id: $taskID, header: $header, content: ${new String(content)}}"
 
+    /**
+     * the packet represented to bytes sequence.
+     * */
+    override def toBytes: ByteBuffer = Protocol.toBytes(this)
+
+    override def equals(obj: Any): Boolean = {
+        if (!obj.isInstanceOf[DataPacket])
+            return false
+        val packet = obj.asInstanceOf[DataPacket]
+        taskID.equals(packet.taskID) && header.equals(packet.header) && content.sameElements(packet.content)
+    }
 }

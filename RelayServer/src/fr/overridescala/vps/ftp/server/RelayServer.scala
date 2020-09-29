@@ -6,7 +6,7 @@ import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, PacketLoader, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, PacketLoader, Protocol, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
@@ -128,7 +128,7 @@ class RelayServer()
     }
 
     private def registerConnection(socket: SocketChannel): Unit = {
-        val channel = new SimplePacketChannel(socket, -1)
+        val channel = new SimplePacketChannel(socket, Protocol.INIT_ID)
         channel.sendInitPacket(TaskInitInfo.of("GID", "nowhere"))
         currentSocketInitialisationChannel = channel
         val identifier = channel.nextPacket().header
@@ -183,6 +183,7 @@ class RelayServer()
         buffer.clear()
     }
 
+
     /**
      * handles the data, then creates one or multiple packets in function of the PacketLoader.
      * then distribute the packets to other handlers
@@ -190,7 +191,7 @@ class RelayServer()
     private def handlePacket(key: SelectionKey): Unit = {
         var packet: Packet = packetLoader.nextPacket
         if (packet == null)
-            return
+        return
 
         val socket = key.channel().asInstanceOf[SocketChannel]
         val address = socket.getRemoteAddress
@@ -202,11 +203,12 @@ class RelayServer()
                 currentSocketInitialisationChannel.addPacket(dataPacket)
                 return
             }
-            tasksHandler.handlePacket(packet, ownerID, socket)
+            val error = tasksHandler.handlePacket(packet, ownerID, socket)
+            if (error)
+                socket.write(Protocol.ABORT_TASK_PACKET.toBytes)
             packet = packetLoader.nextPacket
         }
     }
-
 
     private def configSocket(): ServerSocketChannel = {
         val socket = ServerSocketChannel.open()

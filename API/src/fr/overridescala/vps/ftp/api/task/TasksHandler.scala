@@ -33,8 +33,10 @@ trait TasksHandler {
      * @param packet packet to handle
      * @param senderId the sender identifier
      * @param socket the sender socket
+     *
+     * @return true if the handling throws any exception.
      * */
-    def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit
+    def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Boolean
 
     /**
      * Registers a task
