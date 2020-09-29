@@ -16,11 +16,9 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
     private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler, String) => Unit]
     = new mutable.HashMap[String, (TaskInitPacket, TasksHandler, String) => Unit]()
 
-    override def handleCompleter(initPacket: TaskInitPacket, senderId: String): Unit = {
-        if (testTransfer(initPacket, senderId))
-            if (testOther(initPacket, senderId))
-                testMap(initPacket, senderId)
-    }
+    override def handleCompleter(initPacket: TaskInitPacket, senderId: String): Unit =
+        if (testTransfer(initPacket, senderId) && testOther(initPacket, senderId))
+            testMap(initPacket, senderId)
 
     override def putCompleter(taskType: String, supplier: (TaskInitPacket, TasksHandler, String) => Unit): Unit =
         completers.put(taskType, supplier)
@@ -76,39 +74,40 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
         val taskID = packet.taskID
         val content = packet.content
         taskType match {
-            case UploadTask.UPLOAD =>
+            case UploadTask.TYPE =>
                 handleUpload(Utils.deserialize(content), senderId, taskID)
-                true
+                false
 
-            case DownloadTask.DOWNLOAD =>
+            case DownloadTask.TYPE =>
                 handleDownload(Utils.deserialize(content), senderId, taskID)
-                true
-            case _ => false
+                false
+            case _ => true
         }
     }
 
-    private def testOther(packet: TaskInitPacket, senderId: String): Boolean = {
+    private def testOther(packet: TaskInitPacket, senderID: String): Boolean = {
         val taskType = packet.taskType
         val content = packet.content
         val contentString = new String(content)
         val task = taskType match {
-            case PingTask.PING =>
+            case PingTask.TYPE =>
                 new PingTask.PingCompleter
 
-            case FileInfoTask.FILE_INFO =>
+            case FileInfoTask.TYPE =>
                 val pair: (String, _) = Utils.deserialize(content)
                 new FileInfoTask.FileInfoCompleter(pair._1)
 
-            case CreateFileTask.CREATE_FILE =>
+            case CreateFileTask.TYPE =>
                 new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
 
-            case "STRSS" =>
+            case StressTestTask.TYPE =>
                 new StressTestTask.StressTestCompleter(contentString.toLong)
+
             case _ => null
         }
         if (task == null)
             return true
-        tasksHandler.registerTask(task, packet.taskID, false, packet.targetId)
+        tasksHandler.registerTask(task, packet.taskID, false, packet.targetId, senderID)
         false
     }
 

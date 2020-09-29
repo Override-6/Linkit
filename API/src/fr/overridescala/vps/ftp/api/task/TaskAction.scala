@@ -1,5 +1,7 @@
 package fr.overridescala.vps.ftp.api.task
 
+import java.util.concurrent.ThreadLocalRandom
+
 /**
  * The usable side for a user to handle this Task.
  * this trait can only enqueue, or complete the task
@@ -8,6 +10,12 @@ package fr.overridescala.vps.ftp.api.task
  * @see [[TaskAction]]
  * */
 trait TaskAction[T] {
+    /**
+     * The session identifier is different from the Relay identifiers.
+     * this identifier is implanted to packets who emerges from this task.
+     * and is used by [[TasksHandler]] to determine if a packet concern this Task or not.
+     * */
+    protected val identifier: Int = ThreadLocalRandom.current().nextInt()
 
     /**
      * Enqueue / register this task.
@@ -16,7 +24,7 @@ trait TaskAction[T] {
      * @param onError the action to perform when the task was unsuccessful
      * @param identifier specifies the task identifier used for packet channels.
      * */
-    def queue(onSuccess: T => Unit = _, onError: String => Unit = _, identifier: Int = _): Unit
+    def queue(onSuccess: T => Unit = () => _, onError: String => Unit = () => _, identifier: Int = identifier): Unit
 
     /**
      * Completes the task. That does not mean that this task is not enqueued.
@@ -25,6 +33,6 @@ trait TaskAction[T] {
      *
      * @return the task result
      * */
-    def complete(identifier: Int = _): T
+    def complete(identifier: Int = identifier): T
 
 }

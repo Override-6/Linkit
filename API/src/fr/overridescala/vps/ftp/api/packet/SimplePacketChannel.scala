@@ -36,8 +36,8 @@ class SimplePacketChannel(private val socket: SocketChannel,
         socket.write(bytes)
     }
     //TODO doc
-    override def sendInitPacket(taskID: Int, initInfo: TaskInitInfo): Unit = {
-        val bytes = Protocol.createTaskInitPacket(taskID, initInfo.targetID, initInfo.taskType, initInfo.content)
+    override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
+        val bytes = Protocol.createTaskInitPacket(taskID, initInfo.taskType, initInfo.targetID, initInfo.content)
         socket.write(bytes)
     }
 

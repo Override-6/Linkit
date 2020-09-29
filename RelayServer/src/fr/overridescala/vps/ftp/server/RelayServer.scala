@@ -6,8 +6,8 @@ import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketLoader, SimplePacketChannel}
-import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor}
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, PacketLoader, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
 import fr.overridescala.vps.ftp.server.task.ServerTasksHandler
@@ -40,9 +40,9 @@ class RelayServer()
 
     override val identifier: String = Constants.SERVER_ID
 
-    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): TaskAction[R] = {
+    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): RelayTaskAction[R] = {
         ensureOpen()
-        concoctor.concoct(tasksHandler)
+        RelayTaskAction.of(concoctor.concoct(tasksHandler))
     }
 
     override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTasksCompleterHandler
@@ -51,7 +51,6 @@ class RelayServer()
         println("ready !")
         println("current encoding is " + Charset.defaultCharset().name())
         println("listening on port " + Constants.PORT)
-
         while (open) updateNetwork()
     }
 
@@ -122,7 +121,7 @@ class RelayServer()
         val address = socket.getRemoteAddress
         socket.configureBlocking(false)
         socket.register(selector, SelectionKey.OP_READ)
-        println(s"new connection : ${address}")
+        println(s"new connection : $address")
         Future {
             registerConnection(socket)
         }
@@ -130,7 +129,7 @@ class RelayServer()
 
     private def registerConnection(socket: SocketChannel): Unit = {
         val channel = new SimplePacketChannel(socket, -1)
-        channel.sendPacket("GID")
+        channel.sendInitPacket(TaskInitInfo.of("GID", "nowhere"))
         currentSocketInitialisationChannel = channel
         val identifier = channel.nextPacket().header
         var response = "OK"
@@ -189,7 +188,7 @@ class RelayServer()
      * then distribute the packets to other handlers
      * */
     private def handlePacket(key: SelectionKey): Unit = {
-        var packet: DataPacket = packetLoader.nextPacket
+        var packet: Packet = packetLoader.nextPacket
         if (packet == null)
             return
 
@@ -198,12 +197,12 @@ class RelayServer()
 
         val ownerID = connectionsManager.getIdentifierFromAddress(address)
         while (packet != null) {
-            if (currentSocketInitialisationChannel != null) {
-                currentSocketInitialisationChannel.addPacket(packet)
+            if (currentSocketInitialisationChannel != null && packet.isInstanceOf[DataPacket]) {
+                val dataPacket = packet.asInstanceOf[DataPacket]
+                currentSocketInitialisationChannel.addPacket(dataPacket)
                 return
             }
-            else tasksHandler.handlePacket(packet, ownerID, socket)
-
+            tasksHandler.handlePacket(packet, ownerID, socket)
             packet = packetLoader.nextPacket
         }
     }

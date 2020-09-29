@@ -4,9 +4,9 @@ import java.io.File
 import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel, TaskInitPacket}
-import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.ABORT
-import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
+import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, TYPE}
+import fr.overridescala.vps.ftp.api.task._
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -24,6 +24,8 @@ class DownloadTask(private val handler: TasksHandler,
     private val totalBytes: Float = desc.transferSize
     private var totalBytesWritten = 0
 
+    override val initInfo: TaskInitInfo =
+        TaskInitInfo.of(TYPE, desc.targetID, Utils.serialize(desc))
 
     override def execute(channel: PacketChannel): Unit = {
         this.channel = channel
@@ -134,7 +136,7 @@ class DownloadTask(private val handler: TasksHandler,
 }
 
 object DownloadTask {
-    val DOWNLOAD: String = "DWN"
+    val TYPE: String = "DWN"
     private val ABORT: String = "ERROR"
 
     def concoct(transferDescription: TransferDescription): TaskConcoctor[Unit] = tasksHandler =>

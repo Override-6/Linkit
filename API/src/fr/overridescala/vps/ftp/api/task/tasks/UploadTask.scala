@@ -5,8 +5,8 @@ import java.util
 
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, UnexpectedPacketException}
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
-import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, UPLOAD, UPLOAD_FILE}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, TYPE, UPLOAD_FILE}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
@@ -22,8 +22,8 @@ class UploadTask (private val handler: TasksHandler,
 
     private var channel: PacketChannel = _
 
-    override def sendTaskInfo(channel: PacketChannel): Unit =
-        channel.sendPacket(UPLOAD, Utils.serialize(desc))
+    override val initInfo: TaskInitInfo =
+        TaskInitInfo.of(TYPE, desc.targetID, Utils.serialize(desc))
 
     override def execute(channel: PacketChannel): Unit = {
         this.channel = channel
@@ -146,7 +146,7 @@ class UploadTask (private val handler: TasksHandler,
 object UploadTask {
     protected[tasks] val END_OF_TRANSFER: String = "EOT"
     protected[tasks] val UPLOAD_FILE: String = "UPF"
-    val UPLOAD: String = "UP"
+    val TYPE: String = "UP"
     private val ABORT: String = "ERROR"
 
     def concoct(transferDescription: TransferDescription): TaskConcoctor[Unit] = tasksHandler => {

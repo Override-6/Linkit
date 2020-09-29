@@ -55,7 +55,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
                 println(s"executing $taskName...")
                 if (ownFreeWill) {
                     val initInfo = executor.initInfo
-                    channel.sendInitPacket(taskID, initInfo)
+                    channel.sendInitPacket(initInfo)
                 }
                 executor.execute(channel)
                 println(s"$taskName completed !")

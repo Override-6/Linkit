@@ -4,7 +4,7 @@ import java.io.IOException
 import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask.{CREATE_FILE, ERROR}
+import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask.{TYPE, ERROR}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -19,7 +19,7 @@ class CreateFileTask(private val tasksHandler: TasksHandler,
 
     override val initInfo: TaskInitInfo = {
         val bit: Byte = if (isDirectory) 1 else 0
-        TaskInitInfo.of(CREATE_FILE, Array(bit) ++ path.getBytes)
+        TaskInitInfo.of(TYPE, ownerID, Array(bit) ++ path.getBytes)
     }
 
     override def execute(channel: PacketChannel): Unit = {
@@ -35,7 +35,7 @@ class CreateFileTask(private val tasksHandler: TasksHandler,
 }
 
 object CreateFileTask {
-    val CREATE_FILE = "CRTF"
+    val TYPE = "CRTF"
     private val ERROR = "ERROR"
     private val OK = "OK"
 

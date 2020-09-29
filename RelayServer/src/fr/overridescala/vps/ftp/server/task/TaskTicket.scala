@@ -17,10 +17,8 @@ class TaskTicket(private val executor: TaskExecutor,
     def start(): Unit = {
         try {
             println(s"executing $taskName...")
-            if (ownFreeWill) {
-                val initInfo = executor.initInfo
-                channel.sendInitPacket(taskID, initInfo)
-            }
+            if (ownFreeWill)
+                channel.sendInitPacket(executor.initInfo)
             executor.execute(channel)
             println(s"$taskName completed !")
         } catch {
@@ -35,7 +33,7 @@ class TaskTicket(private val executor: TaskExecutor,
 
     override def toString: String =
         s"Ticket(taskName = $taskName," +
-                s" id = $currentTaskID," +
+                s" taskID = $taskID," +
                 s" freeWill = $ownFreeWill)"
 
 }

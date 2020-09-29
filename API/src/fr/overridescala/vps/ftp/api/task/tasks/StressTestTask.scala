@@ -1,8 +1,9 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
-import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.{CONTINUE, END, TYPE}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TaskInitInfo, TasksHandler}
+import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
 /**
  * This is a Test task, will not be documented.
@@ -12,9 +13,8 @@ import fr.overridescala.vps.ftp.api.utils.Constants
 class StressTestTask(private val handler: TasksHandler,
                      private val totalDataLength: Long) extends Task[Unit](handler, Constants.SERVER_ID) {
 
-    override def sendTaskInfo(channel :PacketChannel): Unit = {
-        channel.sendPacket("STRSS", s"$totalDataLength")
-    }
+    override val initInfo: TaskInitInfo =
+        TaskInitInfo.of(TYPE, Constants.SERVER_ID, Utils.serialize(totalDataLength))
 
     override def execute(channel :PacketChannel): Unit = {
         var totalSent: Float = 0
@@ -25,7 +25,7 @@ class StressTestTask(private val handler: TasksHandler,
                 bytes = new Array[Byte]((totalDataLength - totalSent).asInstanceOf[Int])
 
             val t0 = System.currentTimeMillis()
-            channel.sendPacket("PCKT", bytes)
+            channel.sendPacket(CONTINUE, bytes)
             channel.nextPacket()
             val t1 = System.currentTimeMillis()
             val time: Float = t1 - t0
@@ -35,7 +35,7 @@ class StressTestTask(private val handler: TasksHandler,
             val percentage = totalSent / totalDataLength * 100
             print(s"\rjust sent ${capacity} in $time ms ${capacity / (time / 1000)} bytes/s ($totalSent / $totalDataLength $percentage%)")
         }
-        channel.sendPacket("END")
+        channel.sendPacket(END)
     }
 
 
@@ -43,13 +43,18 @@ class StressTestTask(private val handler: TasksHandler,
 
 object StressTestTask {
 
+    private val CONTINUE = "PCKT"
+    private val END = "END"
+    val TYPE = "STRSS"
+
+
     class StressTestCompleter(private val totalDataLength: Long) extends TaskExecutor {
         override def execute(channel :PacketChannel): Unit = {
             var packet = channel.nextPacket()
             var totalReceived: Float = 0
-            while (packet.header.equals("PCKT")) {
+            while (packet.header.equals(CONTINUE)) {
                 val t0 = System.currentTimeMillis()
-                channel.sendPacket("OK")
+                channel.sendPacket(CONTINUE)
                 packet = channel.nextPacket()
                 val dataLength = packet.content.length
                 val t1 = System.currentTimeMillis()

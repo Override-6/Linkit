@@ -22,20 +22,14 @@ class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler,
         val taskID = initPacket.taskID
         val contentString = new String(content)
         val task = taskType match {
-            case UploadTask.UPLOAD =>
-                new DownloadTask(tasksHandler, Utils.deserialize(content))
-            case DownloadTask.DOWNLOAD =>
-                new UploadTask(tasksHandler, Utils.deserialize(content))
-            case FileInfoTask.FILE_INFO =>
-                new FileInfoTask.FileInfoCompleter(contentString)
-            case CreateFileTask.CREATE_FILE =>
-                new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
-            case InitTaskCompleter.INIT =>
-                new InitTaskCompleter(relay)
-            case PingTask.PING =>
-                new PingTask.PingCompleter
-            case "STRSS" =>
-                new StressTestTask.StressTestCompleter(contentString.toLong)
+            case UploadTask.TYPE => new DownloadTask(tasksHandler, Utils.deserialize(content))
+            case DownloadTask.TYPE => new UploadTask(tasksHandler, Utils.deserialize(content))
+            case FileInfoTask.TYPE => new FileInfoTask.FileInfoCompleter(contentString)
+            case CreateFileTask.TYPE => new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
+            case InitTaskCompleter.TYPE => new InitTaskCompleter(relay)
+            case PingTask.TYPE => new PingTask.PingCompleter()
+            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(contentString.toLong)
+
             case _ => null
         }
         if (task != null) {

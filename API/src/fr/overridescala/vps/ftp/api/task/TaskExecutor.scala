@@ -14,7 +14,7 @@ trait TaskExecutor {
     /**
      * This method is invoked straight before [[execute]] but is only invoked if this task was created by the local Relay
      *
-     * @return a TaskInitPacket that will be send in order to initialise target task's completer.
+     * @return a TaskInitInfo that describe how the completer will be instantiated
      * @see [[TaskInitPacket]]
      * */
     val initInfo: TaskInitInfo = null

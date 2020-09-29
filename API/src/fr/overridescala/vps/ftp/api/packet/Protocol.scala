@@ -10,9 +10,7 @@ import java.util
  * */
 object Protocol {
     /**
-     * those flags enable to separate fields of packet;
-     * <b>
-     *     BEGIN <-> taskID <-> HEADER <-> header <-> CONTENT <-> content <-> END
+     * those flags enable to separate fields of packet, and packets type
      * */
     private val DATA_PACKET_TYPE = "[data]".getBytes
     private val DP_HEADER: Array[Byte] = "<header>".getBytes
@@ -37,9 +35,7 @@ object Protocol {
         val bytes = DATA_PACKET_TYPE ++ idBytes ++
                 DP_HEADER ++ headerBytes ++
                 CONTENT ++ content ++ END
-        ByteBuffer.allocateDirect(bytes.length)
-                .put(bytes)
-                .flip()
+        ByteBuffer.wrap(bytes)
     }
 
     def createTaskInitPacket(taskID: Int, taskType: String, targetID: String, additionalContent: Array[Byte] = Array()): ByteBuffer = {
@@ -51,9 +47,15 @@ object Protocol {
                     TIP_TARGET_ID ++ targetIdBytes ++
                     TIP_TASK_TYPE ++ typeBytes ++
                     CONTENT ++ additionalContent ++ END
-        ByteBuffer.allocateDirect(bytes.length)
-                .put(bytes)
-                .flip()
+        ByteBuffer.wrap(bytes)
+    }
+
+    private def toTIP(bytes: Array[Byte]): TaskInitPacket = {
+        val taskID = cut(bytes, TASK_INIT_PACKET_TYPE, TIP_TARGET_ID).toInt
+        val targetID = cut(bytes, TIP_TARGET_ID, TIP_TASK_TYPE)
+        val taskType = cut(bytes, TIP_TASK_TYPE, CONTENT)
+        val content = cut(bytes, CONTENT, END).getBytes
+        TaskInitPacket(taskID, targetID, taskType, content)
     }
 
     /**
@@ -70,19 +72,11 @@ object Protocol {
         }
     }
 
-    def toDP(bytes: Array[Byte]): DataPacket = {
+    private def toDP(bytes: Array[Byte]): DataPacket = {
         val taskID = cut(bytes, DATA_PACKET_TYPE, DP_HEADER).toInt
         val header = cut(bytes, DP_HEADER, CONTENT)
         val content = cut(bytes, CONTENT, END).getBytes
         DataPacket(taskID, header, content)
-    }
-
-    private def toTIP(bytes: Array[Byte]): TaskInitPacket = {
-        val taskID = cut(bytes, TASK_INIT_PACKET_TYPE, TIP_TARGET_ID).toInt
-        val targetID = cut(bytes, TIP_TARGET_ID, TIP_TASK_TYPE)
-        val taskType = cut(bytes, TIP_TASK_TYPE, CONTENT)
-        val content = cut(bytes, CONTENT, END).getBytes
-        TaskInitPacket(taskID, targetID, taskType, content)
     }
 
 
@@ -103,15 +97,8 @@ object Protocol {
      * @return true if this sequence contains a packet
      * @param bytes the sequence to test
      * */
-    protected[packet] def containsPacket(bytes: Array[Byte]): Boolean =
+    protected[packet] def containsPacket(bytes: Array[Byte]): Boolean = {
         getFirstPacketLength(bytes) > 0
-
-    /**
-     * @return the content of the packet
-     * @param bytes the sequence to find first content field
-     * */
-    private def getTaskContent(bytes: Array[Byte]): Array[Byte] = {
-        util.Arrays.copyOfRange(bytes, indexOf(bytes, CONTENT) + CONTENT.length, indexOf(bytes, END))
     }
 
     private def cut(src: Array[Byte], a: Array[Byte], b: Array[Byte]): String = {
@@ -122,16 +109,16 @@ object Protocol {
     private def getPacketType(bytes: Array[Byte]): PacketType = {
         if (bytes.containsSlice(DATA_PACKET_TYPE))
             PacketType.DATA_PACKET
-        if (bytes.containsSlice(TASK_INIT_PACKET_TYPE))
+        else if (bytes.containsSlice(TASK_INIT_PACKET_TYPE))
             PacketType.TASK_INIT_PACKET
         else throw new IllegalArgumentException("this byte array do not have any packet type field")
     }
 
     private def indexOfBegin(src: Array[Byte]): Int = {
-        val index = indexOf(src, DATA_PACKET_TYPE)
+        var index = indexOf(src, DATA_PACKET_TYPE)
         if (index == -1)
-            indexOf(src, TASK_INIT_PACKET_TYPE)
-        else index
+            index = indexOf(src, TASK_INIT_PACKET_TYPE)
+        index
     }
 
     private def indexOf(src: Array[Byte], toFind: Array[Byte]): Int = {
@@ -139,8 +126,9 @@ object Protocol {
     }
 
 
-    private class PacketType private ()
-    private object PacketType {
+    private class PacketType private()
+
+    private object PacketType extends Enumeration {
         val DATA_PACKET: PacketType = new PacketType
         val TASK_INIT_PACKET: PacketType = new PacketType
     }

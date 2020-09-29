@@ -19,5 +19,5 @@ class InitTaskCompleter(private val relay: Relay) extends TaskExecutor {
 }
 
 object InitTaskCompleter {
-    val INIT = "GID"
+    val TYPE = "GID"
 }

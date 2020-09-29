@@ -25,7 +25,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): RelayTaskAction[R] = {
         ensureOpen()
         val taskAction = concoctor.concoct(tasksHandler)
-        new RelayTaskAction[R](taskAction)
+        RelayTaskAction(taskAction)
     }
 
     override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTasksCompleterHandler
@@ -43,7 +43,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                 try {
                     updateNetwork()
                 } catch {
-                    case _: AsynchronousCloseException =>
+                    case _: AsynchronousCloseException => Console.err.println("asynchronous close.")
                     case e: Throwable =>
                         e.printStackTrace()
                         Console.err.println("suddenly disconnected from the server.")

@@ -54,12 +54,6 @@ abstract class Task[T](private val handler: TasksHandler,
      * */
     @volatile
     @Nullable private var onError: String => Unit = Console.err.println
-    /**
-     * The session identifier is different from the Relay identifiers.
-     * this identifier is implanted to packets who emerges from this task.
-     * and is used by [[TasksHandler]] to determine if a packet concern this Task or not.
-     * */
-    private val identifier = ThreadLocalRandom.current().nextInt()
 
     /**
      * Enqueue / register this task to the [[TasksHandler]]
@@ -67,7 +61,7 @@ abstract class Task[T](private val handler: TasksHandler,
      * @param onError the action to perform when the task was unsuccessful
      * @param identifier specifies the task identifier used for packet channels.
      * */
-    final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError, identifier: Int = identifier): Unit = {
+    final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError, identifier: Int): Unit = {
         this.onSuccess = onSuccess
         this.onError = onError
         handler.registerTask(this, identifier, true, targetID)
@@ -81,7 +75,7 @@ abstract class Task[T](private val handler: TasksHandler,
      * @throws TaskException if the task was unsuccessful
      * @return the task result
      * */
-    final override def complete(identifier: Int = identifier): T = {
+    final override def complete(identifier: Int): T = {
         handler.registerTask(this, identifier, true, targetID)
         val atomicResult = new AtomicReference[T]()
         val onSuccess: T => Unit = result => synchronized {
@@ -99,13 +93,6 @@ abstract class Task[T](private val handler: TasksHandler,
         }
         atomicResult.get()
     }
-
-    /**
-     * forces Override of method [[initInfo]] in trait [[TaskExecutor]]
-     *
-     * @see [[initInfo]]
-     * */
-    override val getInitInfo: TaskInitInfo
 
     /**
      * Invoked by TaskExecutors to signal that this task was unsuccessful

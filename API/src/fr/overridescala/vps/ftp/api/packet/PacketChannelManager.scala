@@ -5,7 +5,7 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 /**
  * this class is used by [[fr.overridescala.vps.ftp.api.Relay]] and [[fr.overridescala.vps.ftp.api.task.TasksHandler]]
- * to add packets into a PacketChannel.
+ * to add packets into a PacketChannel, or send special packet such as [[TaskInitPacket]]
  * */
 trait PacketChannelManager {
 
@@ -19,9 +19,9 @@ trait PacketChannelManager {
     //TODO doc
 
     /**
-     *
+     * Send a packet that will be used to determine the correct Task completer used by the targeted relay
      * */
-    def sendInitPacket(taskID: Int, initInfo: TaskInitInfo): Unit
+    def sendInitPacket(initInfo: TaskInitInfo): Unit
 
     /**
      * the identifier of this task

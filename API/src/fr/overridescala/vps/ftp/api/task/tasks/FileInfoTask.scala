@@ -3,11 +3,12 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.nio.file.Files
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.task.tasks.FileInfoTask.{ERROR, FILE_INFO}
+import fr.overridescala.vps.ftp.api.task.tasks.FileInfoTask.{ERROR, TYPE}
 import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.StressTestCompleter
-import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.FileDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
+
 /**
  * Retrieves the information about a file / folder such as his size
  *
@@ -20,9 +21,10 @@ class FileInfoTask(private val handler: TasksHandler,
         extends Task[FileDescription](handler, ownerID)
                 with TaskExecutor {
 
-    override def sendTaskInfo(channel :PacketChannel): Unit = channel.sendPacket(FILE_INFO, Utils.serialize((filePath, ownerID)))
+    override val initInfo: TaskInitInfo =
+        TaskInitInfo.of(TYPE, ownerID, filePath.getBytes)
 
-    override def execute(channel :PacketChannel): Unit = {
+    override def execute(channel: PacketChannel): Unit = {
         val response = channel.nextPacket()
         val content = response.content
         if (response.header.equals(ERROR)) {
@@ -36,13 +38,13 @@ class FileInfoTask(private val handler: TasksHandler,
 
 object FileInfoTask {
 
-    val FILE_INFO = "FINFO"
+    val TYPE = "FINFO"
     private val ERROR = "ERROR"
     private val OK = "OK"
 
     class FileInfoCompleter(filePath: String) extends TaskExecutor {
 
-        override def execute(channel :PacketChannel): Unit = {
+        override def execute(channel: PacketChannel): Unit = {
             val path = Utils.formatPath(filePath)
             if (Files.notExists(path)) {
                 channel.sendPacket(ERROR, s"($path) The file does not exists.")
