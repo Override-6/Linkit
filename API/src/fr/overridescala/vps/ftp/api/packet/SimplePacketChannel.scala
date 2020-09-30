@@ -32,7 +32,7 @@ class SimplePacketChannel(private val socket: SocketChannel,
      * @param content the packet content
      * */
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
-        val bytes = DataPacket(taskID, header, content).toBytes
+        val bytes = new DataPacket(taskID, header, content).toBytes
         socket.write(bytes)
     }
     //TODO doc

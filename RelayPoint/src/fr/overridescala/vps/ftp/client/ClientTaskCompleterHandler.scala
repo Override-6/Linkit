@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.client
 
 import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
@@ -39,7 +40,7 @@ class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler,
 
         val completerSupplier = completers(taskType)
         if (completerSupplier == null)
-            throw new IllegalArgumentException("could not find completer for task " + taskType)
+            throw new TaskException("could not find completer for task " + taskType)
         completerSupplier(initPacket, tasksHandler, ownerID)
     }
 

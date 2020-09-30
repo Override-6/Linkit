@@ -25,14 +25,12 @@ object Protocol {
     val INIT_ID: Int = -1
     val ERROR_ID: Int = -2
 
-    val ABORT_TASK_PACKET: DataPacket = DataPacket(ERROR_ID, "ABORT_TASK")
+    val ABORT_TASK_PACKET: DataPacket = new DataPacket(ERROR_ID, "ABORT_TASK")
 
     /**
      * build a [[ByteBuffer]] containing the bytes of a packet from the parameters:
      *
-     * @param taskID the task id from which this packet come from
-     * @param header the packet header
-     * @param content the packet content
+     * @param packet the packet to sequence
      * */
     def toBytes(packet: DataPacket): ByteBuffer = {
         val idBytes = String.valueOf(packet.taskID).getBytes
@@ -43,6 +41,11 @@ object Protocol {
         ByteBuffer.wrap(bytes)
     }
 
+    /**
+     * build a [[ByteBuffer]] containing the bytes of a packet from the parameters:
+     *
+     * @param packet the packet to sequence
+     * */
     def toBytes(packet: TaskInitPacket): ByteBuffer = {
         val taskIDBytes = String.valueOf(packet.taskID).getBytes
         val typeBytes = packet.taskType.getBytes
@@ -81,7 +84,7 @@ object Protocol {
         val taskID = cut(bytes, DATA_PACKET_TYPE, DP_HEADER).toInt
         val header = cut(bytes, DP_HEADER, CONTENT)
         val content = cut(bytes, CONTENT, END).getBytes
-        DataPacket(taskID, header, content)
+        new DataPacket(taskID, header, content)
     }
 
 

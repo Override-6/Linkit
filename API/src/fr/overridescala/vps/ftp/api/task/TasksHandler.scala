@@ -2,6 +2,7 @@ package fr.overridescala.vps.ftp.api.task
 
 import java.nio.channels.SocketChannel
 
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet}
 
 /**
@@ -34,9 +35,9 @@ trait TasksHandler {
      * @param senderId the sender identifier
      * @param socket the sender socket
      *
-     * @return true if the handling throws any exception.
+     * @throws TaskException if the handling went wrong
      * */
-    def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Boolean
+    def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit
 
     /**
      * Registers a task

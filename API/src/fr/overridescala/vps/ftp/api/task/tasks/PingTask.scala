@@ -17,8 +17,6 @@ class PingTask(private val handler: TasksHandler,
         val t1 = System.currentTimeMillis()
         success(t1 - t0)
     }
-
-
 }
 
 object PingTask {
@@ -26,8 +24,12 @@ object PingTask {
     val TYPE: String = PING
 
     class PingCompleter extends TaskExecutor {
-        override def execute(channel: PacketChannel): Unit =
+        override def execute(channel: PacketChannel): Unit = {
+            val t0 = System.currentTimeMillis()
             channel.sendPacket("OK")
+            val t01 = System.currentTimeMillis()
+            println(s"time to send the packet : ${t01 - t0}")
+        }
     }
 
     def concoct(targetID: String): TaskConcoctor[Long] =

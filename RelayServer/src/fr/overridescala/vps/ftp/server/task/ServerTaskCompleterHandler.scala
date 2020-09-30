@@ -1,11 +1,12 @@
 package fr.overridescala.vps.ftp.server.task
 
 import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
-import fr.overridescala.vps.ftp.api.utils.Utils
+import fr.overridescala.vps.ftp.api.utils.{PerformanceMeter, Utils}
 import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler.TempFolder
 
 import scala.collection.mutable
@@ -65,6 +66,9 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
     }
 
     private def testMap(initPacket: TaskInitPacket, senderId: String): Unit = {
+        val taskType = initPacket.taskType
+        if (!completers.contains(taskType))
+            throw new TaskException(s"no completer found for task type '$taskType'")
         val supplier = completers(initPacket.taskType)
         supplier(initPacket, tasksHandler, senderId)
     }
@@ -103,10 +107,8 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
             case StressTestTask.TYPE =>
                 new StressTestTask.StressTestCompleter(contentString.toLong)
 
-            case _ => null
+            case _ => return true
         }
-        if (task == null)
-            return true
         tasksHandler.registerTask(task, packet.taskID, false, packet.targetId, senderID)
         false
     }

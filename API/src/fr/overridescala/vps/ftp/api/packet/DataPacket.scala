@@ -12,14 +12,14 @@ import java.nio.ByteBuffer
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
 class DataPacket private[packet](override val taskID: Int,
-                                      header: String,
+                                      val header: String,
                                       override val content: Array[Byte] = Array()) extends Packet {
 
     /**
      * Represents this packet as a String
      * */
     override def toString: String =
-        s"TaskPacket{id: $taskID, header: $header, content: ${new String(content)}}"
+        s"DataPacket{id: $taskID, header: $header, content: ${new String(content)}}"
 
     /**
      * the packet represented to bytes sequence.

@@ -4,6 +4,7 @@ import java.io.Closeable
 import java.nio.channels.SocketChannel
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, PacketChannelManager, Protocol, SimplePacketChannel, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 
@@ -23,7 +24,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
         println("new task registered !")
     }
 
-    override def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Boolean = {
+    override def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit = {
         println(s"packet = ${packet}")
         println(s"Protocol.ABORT_TASK_PACKET = ${Protocol.ABORT_TASK_PACKET}")
         if (packet.equals(Protocol.ABORT_TASK_PACKET)) {
@@ -31,19 +32,18 @@ class ClientTasksHandler(private val socket: SocketChannel,
             //And wait / execute the other task
             close()
             start()
-            return false
+            return
         }
-
         try {
             packet match {
                 case init: TaskInitPacket => completerHandler.handleCompleter(init, senderId)
                 case data: DataPacket if currentChannelManager != null => currentChannelManager.addPacket(data)
             }
         } catch {
-            case e: Throwable => e.printStackTrace()
-                return true
+            case e: TaskException =>
+                socket.write(Protocol.ABORT_TASK_PACKET.toBytes)
+                throw e
         }
-        false
     }
 
     override def getTasksCompleterHandler: TaskCompleterHandler = completerHandler

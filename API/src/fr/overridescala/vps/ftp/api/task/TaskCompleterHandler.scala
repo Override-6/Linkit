@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.api.task
 
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
 
 /**
@@ -8,10 +9,11 @@ import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
  * */
 trait TaskCompleterHandler {
     //TODO edit doc
+
     /**
      * @param initPacket the initialization packet where the header is the targeted task type, and content is the arguments to initialise the completer.
      * @param ownerID the task owner identifier, the Relay that is at the origin of this task
-     * @throws NoSuchElementException if no completer where found from this packet header
+     * @throws TaskException if no completer where found from this packet header
      *
      * @see [[TaskInitPacket]]
      * */

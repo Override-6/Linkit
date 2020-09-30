@@ -2,9 +2,10 @@ package fr.overridescala.vps.ftp.server.task
 
 import java.nio.channels.SocketChannel
 
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, Protocol, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
-import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.api.utils.{Constants, PerformanceMeter}
 import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.collection.mutable
@@ -27,16 +28,19 @@ class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
     }
 
 
-    override def handlePacket(packet: Packet, senderID: String, socket: SocketChannel): Boolean = {
+    override def handlePacket(packet: Packet, senderID: String, socket: SocketChannel): Unit = {
         println(s"handling packet $packet")
+
         checkOwner(senderID, socket)
+
         val thread = clientsThreads(senderID)._1
+
         if (packet.equals(Protocol.ABORT_TASK_PACKET)) {
             //Restarting the thread causes the current task to be skipped
             //And wait / execute the other task
             thread.close()
             thread.start()
-            return false
+            return
         }
         try {
             packet match {
@@ -44,10 +48,10 @@ class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
                 case data: DataPacket => thread.injectPacket(data)
             }
         } catch {
-            case e: Throwable => e.printStackTrace()
-                return true
+            case e: TaskException =>
+                socket.write(Protocol.ABORT_TASK_PACKET.toBytes)
+                throw e
         }
-        false
     }
 
     def cancelTasks(ownerID: String): Unit = {

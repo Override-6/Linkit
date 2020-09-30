@@ -6,7 +6,7 @@ import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, PacketLoader, Protocol, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
@@ -159,8 +159,13 @@ class RelayServer()
     }
 
     private def handleKey(key: SelectionKey): Unit = {
+        val t0 = System.currentTimeMillis()
         readKey(key)
+        val t1 = System.currentTimeMillis()
+        println(s"time to read key ${t1 - t0}")
         handlePacket(key)
+        val t2 = System.currentTimeMillis()
+        println(s"time to handle packet ${t2 - t1}\n\n\n")
     }
 
     /**
@@ -191,21 +196,18 @@ class RelayServer()
     private def handlePacket(key: SelectionKey): Unit = {
         var packet: Packet = packetLoader.nextPacket
         if (packet == null)
-        return
-
+            return
         val socket = key.channel().asInstanceOf[SocketChannel]
         val address = socket.getRemoteAddress
-
         val ownerID = connectionsManager.getIdentifierFromAddress(address)
+
         while (packet != null) {
             if (currentSocketInitialisationChannel != null && packet.isInstanceOf[DataPacket]) {
                 val dataPacket = packet.asInstanceOf[DataPacket]
                 currentSocketInitialisationChannel.addPacket(dataPacket)
                 return
             }
-            val error = tasksHandler.handlePacket(packet, ownerID, socket)
-            if (error)
-                socket.write(Protocol.ABORT_TASK_PACKET.toBytes)
+            tasksHandler.handlePacket(packet, ownerID, socket)
             packet = packetLoader.nextPacket
         }
     }

@@ -6,9 +6,10 @@ import java.nio.channels.{AsynchronousCloseException, SocketChannel}
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.PacketLoader
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.packet.{PacketLoader, Protocol}
 import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor}
-import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.api.utils.{Constants, PerformanceMeter}
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
@@ -41,7 +42,10 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             open = true
             while (open) {
                 try {
+                    val t0 = System.currentTimeMillis()
                     updateNetwork()
+                    val t1 = System.currentTimeMillis()
+                    println(s"time to update ${t1 - t0}")
                 } catch {
                     case _: AsynchronousCloseException => Console.err.println("asynchronous close.")
                     case e: Throwable =>
@@ -61,19 +65,23 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     private def updateNetwork(): Unit = synchronized {
+        val meter = new PerformanceMeter
         val count = socket.read(buffer)
         if (count < 1)
             return
-
+        meter.printPerf("reading")
         val bytes = new Array[Byte](count)
         buffer.flip()
         buffer.get(bytes)
 
         packetLoader.add(bytes)
 
+        meter.printPerf("adding packet")
         var packet = packetLoader.nextPacket
         while (packet != null) {
+            meter.printPerf("getting next packet")
             tasksHandler.handlePacket(packet, identifier, socket)
+            meter.printPerf("handling packet")
             packet = packetLoader.nextPacket
         }
 
