@@ -25,8 +25,6 @@ class ClientTasksHandler(private val socket: SocketChannel,
     }
 
     override def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit = {
-        println(s"packet = ${packet}")
-        println(s"Protocol.ABORT_TASK_PACKET = ${Protocol.ABORT_TASK_PACKET}")
         if (packet.equals(Protocol.ABORT_TASK_PACKET)) {
             //Restarting the thread causes the current task to be skipped
             //And wait / execute the other task

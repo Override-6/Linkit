@@ -94,7 +94,7 @@ object Protocol {
      * */
     protected[packet] def getFirstPacketLength(bytes: Array[Byte]): Int = {
         val begin = indexOfBegin(bytes)
-        val end = indexOf(bytes, END) + END.length
+        val end = bytes.indexOfSlice(END) + END.length
         //fast check
         if (begin == -1 || end == -1)
             return -1
@@ -110,7 +110,7 @@ object Protocol {
     }
 
     private def cut(src: Array[Byte], a: Array[Byte], b: Array[Byte]): String = {
-        val cutBytes = util.Arrays.copyOfRange(src, indexOf(src, a) + a.length, indexOf(src, b))
+        val cutBytes = util.Arrays.copyOfRange(src, src.indexOfSlice(a) + a.length, src.indexOfSlice(b))
         new String(cutBytes)
     }
 
@@ -123,18 +123,17 @@ object Protocol {
     }
 
     private def indexOfBegin(src: Array[Byte]): Int = {
-        var index = indexOf(src, DATA_PACKET_TYPE)
-        if (index == -1)
-            index = indexOf(src, TASK_INIT_PACKET_TYPE)
-        index
+        val index1 = src.indexOfSlice(DATA_PACKET_TYPE)
+        val index2 = src.indexOfSlice(TASK_INIT_PACKET_TYPE)
+        if (index1 != -1 && index2 != -1)
+            if (index1 < index2) index1
+            else index2
+        else if (index1 == -1) index2
+        else index1
     }
 
-    private def indexOf(src: Array[Byte], toFind: Array[Byte]): Int = {
-        src.toSeq.indexOfSlice(toFind.toSeq)
-    }
 
-
-    private class PacketType private()
+    private class PacketType private ()
 
     private object PacketType extends Enumeration {
         val DATA_PACKET: PacketType = new PacketType

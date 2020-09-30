@@ -145,7 +145,6 @@ class RelayServer()
         currentSocketInitialisationChannel = null
     }
 
-
     /**
      * updates key
      *
@@ -159,13 +158,8 @@ class RelayServer()
     }
 
     private def handleKey(key: SelectionKey): Unit = {
-        val t0 = System.currentTimeMillis()
         readKey(key)
-        val t1 = System.currentTimeMillis()
-        println(s"time to read key ${t1 - t0}")
         handlePacket(key)
-        val t2 = System.currentTimeMillis()
-        println(s"time to handle packet ${t2 - t1}\n\n\n")
     }
 
     /**

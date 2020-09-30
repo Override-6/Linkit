@@ -94,18 +94,12 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
         val content = packet.content
         val contentString = new String(content)
         val task = taskType match {
-            case PingTask.TYPE =>
-                new PingTask.PingCompleter
-
             case FileInfoTask.TYPE =>
                 val pair: (String, _) = Utils.deserialize(content)
                 new FileInfoTask.FileInfoCompleter(pair._1)
-
-            case CreateFileTask.TYPE =>
-                new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
-
-            case StressTestTask.TYPE =>
-                new StressTestTask.StressTestCompleter(contentString.toLong)
+            case CreateFileTask.TYPE => new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
+            case PingTask.TYPE => new PingTask.PingCompleter
+            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(contentString.toLong)
 
             case _ => return true
         }
