@@ -29,7 +29,9 @@ class ClientTaskCompleterHandler(private val tasksHandler: TasksHandler,
             case CreateFileTask.TYPE => new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
             case InitTaskCompleter.TYPE => new InitTaskCompleter(relay)
             case PingTask.TYPE => new PingTask.PingCompleter()
-            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(contentString.toLong)
+            //reverse the boolean for completer
+            //(down <-> up & up <-> down)
+            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(new String(content.slice(1, content.length)).toLong, content(0) != 1)
 
             case _ => null
         }

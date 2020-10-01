@@ -6,11 +6,11 @@ import java.util.Scanner
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.client.cli.CommandManager
-import fr.overridescala.vps.ftp.client.cli.commands.{CreateFileCommand, PingCommand, TransferCommand}
+import fr.overridescala.vps.ftp.client.cli.commands.{CreateFileCommand, PingCommand, StressTestCommand, TransferCommand}
 
 object Main {
 
-    private val SERVER_ADDRESS = new InetSocketAddress("161.97.104.230", Constants.PORT)
+    private val SERVER_ADDRESS = new InetSocketAddress("159.65.222.132", Constants.PORT)
 
     print("say 'y' to connect to chose localhost : ")
     private val scanner = new Scanner(System.in)
@@ -26,8 +26,9 @@ object Main {
         relayPoint.start()
         commandsManager.register("download", TransferCommand.download(relayPoint))
         commandsManager.register("upload", TransferCommand.upload(relayPoint))
-        commandsManager.register("CRTF", new CreateFileCommand(relayPoint))
+        commandsManager.register("crtf", new CreateFileCommand(relayPoint))
         commandsManager.register("ping", new PingCommand(relayPoint))
+        commandsManager.register("stress", new StressTestCommand(relayPoint))
         commandsManager.start()
     }
 

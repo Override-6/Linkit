@@ -7,7 +7,7 @@ object CommandUtils {
         if (success)
             return
 
-        val errorMsg = s"missing or wrong argument in command syntax. Expected : $expected"
+        val errorMsg = s"missing or wrong argument in command syntax. Expected : ${expected.mkString(" and ")}"
         throw new CommandException(errorMsg)
     }
 

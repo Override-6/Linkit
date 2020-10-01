@@ -94,11 +94,12 @@ object Protocol {
      * */
     protected[packet] def getFirstPacketLength(bytes: Array[Byte]): Int = {
         val begin = indexOfBegin(bytes)
-        val end = bytes.indexOfSlice(END) + END.length
+        val endFront = bytes.indexOfSlice(END)
+        val endBack = endFront + END.length
         //fast check
-        if (begin == -1 || end == -1)
+        if (begin == -1 || endFront == -1)
             return -1
-        end - begin
+        endBack - begin
     }
 
     /**
@@ -128,8 +129,8 @@ object Protocol {
         if (index1 != -1 && index2 != -1)
             if (index1 < index2) index1
             else index2
-        else if (index1 == -1) index2
-        else index1
+        else if (index1 != -1) index1
+        else index2
     }
 
 

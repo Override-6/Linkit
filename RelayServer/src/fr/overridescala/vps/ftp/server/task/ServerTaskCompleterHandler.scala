@@ -6,7 +6,7 @@ import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
-import fr.overridescala.vps.ftp.api.utils.{PerformanceMeter, Utils}
+import fr.overridescala.vps.ftp.api.utils.Utils
 import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler.TempFolder
 
 import scala.collection.mutable
@@ -99,7 +99,9 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
                 new FileInfoTask.FileInfoCompleter(pair._1)
             case CreateFileTask.TYPE => new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
             case PingTask.TYPE => new PingTask.PingCompleter
-            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(contentString.toLong)
+            //reverse the boolean for completer
+            //(down <-> up & up <-> down)
+            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(new String(content.slice(1, content.length)).toLong, content(0) != 1)
 
             case _ => return true
         }
