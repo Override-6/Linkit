@@ -21,7 +21,6 @@ class ClientTasksHandler(private val socket: SocketChannel,
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean, targetID: String, senderID: String = identifier): Unit = {
         val ticket = new TaskTicket(executor, senderID, taskIdentifier, ownFreeWill)
         queue.offer(ticket)
-        println("new task registered !")
     }
 
     override def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit = {
@@ -79,7 +78,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
                     channel.sendInitPacket(initInfo)
                 }
                 executor.execute(channel)
-                println(s"$taskName completed !")
+                //println(s"$taskName completed !")
             } catch {
                 case e: Throwable => e.printStackTrace()
             }
