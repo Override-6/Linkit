@@ -10,7 +10,7 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * The type of packets ([[TaskInitPacket]] & [[DataPacket]]) is determined by [[Protocol]]
  * @see [[Packet]]
  * */
-case class TaskInitPacket(override val taskID: Int,
+case class TaskInitPacket private(override val taskID: Int,
                           targetId: String,
                           taskType: String,
                           override val content: Array[Byte] = Array()) extends Packet {

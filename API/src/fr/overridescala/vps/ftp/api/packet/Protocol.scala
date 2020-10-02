@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
 import java.util
 
 /**
@@ -58,14 +59,6 @@ object Protocol {
         ByteBuffer.wrap(bytes)
     }
 
-    private def toTIP(bytes: Array[Byte]): TaskInitPacket = {
-        val taskID = cut(bytes, TASK_INIT_PACKET_TYPE, TIP_TARGET_ID).toInt
-        val targetID = cut(bytes, TIP_TARGET_ID, TIP_TASK_TYPE)
-        val taskType = cut(bytes, TIP_TASK_TYPE, CONTENT)
-        val content = cut(bytes, CONTENT, END).getBytes
-        TaskInitPacket(taskID, targetID, taskType, content)
-    }
-
     /**
      * creates a [[DataPacket]] from a byte Array.
      *
@@ -80,11 +73,19 @@ object Protocol {
         }
     }
 
+    private def toTIP(bytes: Array[Byte]): TaskInitPacket = {
+        val taskID = cutString(bytes, TASK_INIT_PACKET_TYPE, TIP_TARGET_ID).toInt
+        val targetID = cutString(bytes, TIP_TARGET_ID, TIP_TASK_TYPE)
+        val taskType = cutString(bytes, TIP_TASK_TYPE, CONTENT)
+        val content = cut(bytes, CONTENT, END)
+        TaskInitPacket(taskID, targetID, taskType, content)
+    }
+
 
     private def toDP(bytes: Array[Byte]): DataPacket = {
-        val taskID = cut(bytes, DATA_PACKET_TYPE, DP_HEADER).toInt
-        val header = cut(bytes, DP_HEADER, CONTENT)
-        val content = cut(bytes, CONTENT, END).getBytes
+        val taskID = cutString(bytes, DATA_PACKET_TYPE, DP_HEADER).toInt
+        val header = cutString(bytes, DP_HEADER, CONTENT)
+        val content = cut(bytes, CONTENT, END)
         new DataPacket(taskID, header, content)
     }
 
@@ -111,10 +112,11 @@ object Protocol {
         getFirstPacketLength(bytes) > 0
     }
 
-    private def cut(src: Array[Byte], a: Array[Byte], b: Array[Byte]): String = {
-        val cutBytes = util.Arrays.copyOfRange(src, src.indexOfSlice(a) + a.length, src.indexOfSlice(b))
-        new String(cutBytes)
-    }
+    private def cut(src: Array[Byte], a: Array[Byte], b: Array[Byte]): Array[Byte] =
+        util.Arrays.copyOfRange(src, src.indexOfSlice(a) + a.length, src.indexOfSlice(b))
+
+    private def cutString(src: Array[Byte], a: Array[Byte], b: Array[Byte]) =
+        new String(cut(src, a, b))
 
     private def getPacketType(bytes: Array[Byte]): PacketType = {
         if (bytes.containsSlice(DATA_PACKET_TYPE))

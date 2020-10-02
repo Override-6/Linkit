@@ -196,11 +196,13 @@ class RelayServer()
         val ownerID = connectionsManager.getIdentifierFromAddress(address)
 
         while (packet != null) {
+            //println("PACKET : " + packet)
             if (currentSocketInitialisationChannel != null && packet.isInstanceOf[DataPacket]) {
                 val dataPacket = packet.asInstanceOf[DataPacket]
                 currentSocketInitialisationChannel.addPacket(dataPacket)
                 return
             }
+            println("a")
             tasksHandler.handlePacket(packet, ownerID, socket)
             packet = packetLoader.nextPacket
         }
