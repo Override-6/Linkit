@@ -18,7 +18,7 @@ import fr.overridescala.vps.ftp.api.utils.Utils
  * */
 class DownloadTask(private val handler: TasksHandler,
                    private val desc: TransferDescription)
-        extends Task[Unit](handler, desc.targetID) with TaskExecutor {
+        extends Task[Unit](handler, desc.targetID) {
 
     private var channel: PacketChannel = _
     private val totalBytes: Float = desc.transferSize

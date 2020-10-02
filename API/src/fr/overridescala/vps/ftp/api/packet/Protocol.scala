@@ -80,6 +80,7 @@ object Protocol {
         }
     }
 
+
     private def toDP(bytes: Array[Byte]): DataPacket = {
         val taskID = cut(bytes, DATA_PACKET_TYPE, DP_HEADER).toInt
         val header = cut(bytes, DP_HEADER, CONTENT)

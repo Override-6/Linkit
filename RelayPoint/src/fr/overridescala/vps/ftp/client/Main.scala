@@ -10,7 +10,7 @@ import fr.overridescala.vps.ftp.client.cli.commands.{CreateFileCommand, PingComm
 
 object Main {
 
-    private val SERVER_ADDRESS = new InetSocketAddress("159.65.222.132", Constants.PORT)
+    private val SERVER_ADDRESS = new InetSocketAddress("161.97.104.230", Constants.PORT)
 
     print("say 'y' to connect to chose localhost : ")
     private val scanner = new Scanner(System.in)
