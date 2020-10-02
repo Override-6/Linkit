@@ -76,7 +76,6 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
                 .setDestination(uploadDesc.destination)
                 .setTargetID(ownerID)
                 .build()
-        println("QDQZDDZD")
         if (!uploadDesc.targetID.equals(server.identifier)) {
             val redirectedTransferDesc = TransferDescription.builder()
                     .setTargetID(uploadDesc.targetID)
@@ -85,12 +84,13 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
                     .build()
             new DownloadTask(tasksHandler, desc).queue(_ => {
                 new UploadTask(tasksHandler, redirectedTransferDesc)
+                        .queue()
             }, _, taskID)
             return
         }
         println("zdZDQD")
 
-        new DownloadTask(tasksHandler, desc).queue(_, _, taskID)
+        new DownloadTask(tasksHandler, desc).queue(null, null, taskID)
     }
 
     private def handleDownload(downloadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {

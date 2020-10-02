@@ -31,7 +31,7 @@ class ClientTasksThread(ownerID: String) extends Thread with Closeable {
                 ticket.start()
             } catch {
                 //normal exception thrown when the thread was suddenly stopped
-                case _: InterruptedException =>
+                case e: InterruptedException => e.printStackTrace()
             }
         }
     }
@@ -59,11 +59,6 @@ class ClientTasksThread(ownerID: String) extends Thread with Closeable {
 
     def addTicket(ticket: TaskTicket): Unit = {
         queue.add(ticket)
-    }
-
-
-    def tasksIDMatches(packet: DataPacket): Boolean = {
-        currentChannelManager != null && packet.taskID == currentChannelManager.taskID
     }
 
     private def canInject(packet: DataPacket): Boolean =
