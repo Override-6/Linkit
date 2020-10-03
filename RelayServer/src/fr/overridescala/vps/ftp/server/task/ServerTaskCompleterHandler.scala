@@ -11,7 +11,7 @@ import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler.TempFolde
 
 import scala.collection.mutable
 
-class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
+class ServerTaskCompleterHandler(private val tasksHandler: TasksHandler,
                                  private val server: Relay) extends TaskCompleterHandler {
 
     private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler, String) => Unit]

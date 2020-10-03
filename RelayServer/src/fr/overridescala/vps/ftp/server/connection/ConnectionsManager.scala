@@ -1,10 +1,10 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.net.SocketAddress
+import java.net.{Socket, SocketAddress}
 import java.nio.channels.SocketChannel
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.server.task.ServerTasksHandler
+import fr.overridescala.vps.ftp.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -12,30 +12,30 @@ import scala.collection.mutable
 /**
  * TeamMate of RelayServer, handles the RelayPoint Connections.
  *
- * @see RelayServer
- * @see RelayPointConnection
+ * @see [[RelayServer]]
+ * @see [[ClientConnectionThread]]
  * */
-class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
+class ConnectionsManager(server: RelayServer) {
     /**
      * java map containing all RelayPointConnection instances
      * */
-    private val connections: mutable.Map[SocketAddress, String] = mutable.Map.empty[SocketAddress, String]
-
+    private val connections: mutable.Map[SocketAddress, ClientConnectionThread] = mutable.Map.empty
 
     /**
      * creates and register a RelayPoint connection.
      *
-     * @param address     the address to bind
      * @param identifier the identifier for the connection
      * @throws RelayInitialisationException when a id is already set for this address, or another connection is known under this id.
      * */
-    def register(address: SocketAddress, identifier: String): Unit = {
+    def register(socket: Socket, identifier: String): Unit = {
+        val address = socket.getRemoteSocketAddress
         checkAddress(address)
-        for ((_, id) <- connections if id != null) {
-            if (id.equals(identifier))
+        for ((_, connection) <- connections) {
+            if (connection.identifier.equals(identifier))
                 throw RelayInitialisationException(s"another relay point have the same identifier '$identifier'")
         }
-        connections.put(address, identifier)
+        val connection = new ClientConnectionThread(socket, identifier, server)
+        connections.put(address, connection)
     }
 
     /**
@@ -44,14 +44,14 @@ class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
      * @param address the address to disconnect
      * */
     def disconnect(address: SocketAddress): Unit = {
-        tasksHandler.cancelTasks(getIdentifierFromAddress(address))
+        connections(address).close()
         connections.remove(address)
     }
 
     @Nullable def getIdentifierFromAddress(address: SocketAddress): String = {
         if (!connections.contains(address))
             return null
-        connections(address)
+        connections(address).identifier
     }
 
     /**
@@ -61,8 +61,8 @@ class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
      * @return the associated RelayPoinConnection instance, null instead
      * */
     def getAddressFromIdentifier(identifier: String): SocketAddress = {
-        for ((address, id) <- connections) {
-            if (id.equals(identifier))
+        for ((address, connection) <- connections) {
+            if (connection.identifier.equals(identifier))
                 return address
         }
         null

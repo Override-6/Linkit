@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.nio.channels.SocketChannel
+import java.nio.channels.{ByteChannel, WritableByteChannel}
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
@@ -15,7 +15,7 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
-class SimplePacketChannel(private val socket: SocketChannel,
+class SimplePacketChannel(private val socket: WritableByteChannel,
                           override val taskID: Int)
         extends PacketChannel with PacketChannelManager {
 

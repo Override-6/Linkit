@@ -30,29 +30,25 @@ trait TasksHandler {
     val identifier: String
 
     /**
+     * @return the [[TaskCompleterHandler]]
+     * @see [[TaskCompleterHandler]]
+     * */
+    val tasksCompleterHandler: TaskCompleterHandler
+
+    /**
      * Handles the packet.
      * @param packet packet to handle
-     * @param senderId the sender identifier
-     * @param socket the sender socket
      *
      * @throws TaskException if the handling went wrong
      * */
-    def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit
+    def handlePacket(packet: Packet): Unit
+
 
     /**
      * Registers a task
      * @param executor the task to execute
      * @param taskIdentifier the task identifier
-     * @param senderID the identifier of who requested this task
-     * @param targetID the identifier of who is targeted by the task
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
-    def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean, targetID: String, senderID: String = identifier): Unit
-
-
-    /**
-     * @return the [[TaskCompleterHandler]]
-     * @see [[TaskCompleterHandler]]
-     * */
-    def getTasksCompleterHandler: TaskCompleterHandler
+    def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean): Unit
 }

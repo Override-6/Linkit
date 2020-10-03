@@ -1,7 +1,8 @@
 package fr.overridescala.vps.ftp.server
 
+import java.net.ServerSocket
 import java.nio.ByteBuffer
-import java.nio.channels.{SelectionKey, Selector, ServerSocketChannel, SocketChannel}
+import java.nio.channels.{SelectionKey, SocketChannel}
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
@@ -10,11 +11,9 @@ import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
-import fr.overridescala.vps.ftp.server.task.ServerTasksHandler
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.jdk.CollectionConverters
 
@@ -22,13 +21,12 @@ class RelayServer()
         extends Relay {
 
 
-    private val selector = Selector.open()
     private val buffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
 
-    private val serverSocket = configSocket()
-    private val tasksHandler = new ServerTasksHandler(this)
-    private val connectionsManager = new ConnectionsManager(tasksHandler)
-    private val packetLoader = new PacketLoader()
+    private val serverSocket = new ServerSocket(Constants.PORT)
+    private val connectionsManager = new ConnectionsManager(this)
+
+
     /**
      * this channel is only open / must be only used to register a newly socket connection.
      * it can't be used to send or receive ordinary packets
@@ -206,14 +204,6 @@ class RelayServer()
             tasksHandler.handlePacket(packet, ownerID, socket)
             packet = packetLoader.nextPacket
         }
-    }
-
-    private def configSocket(): ServerSocketChannel = {
-        val socket = ServerSocketChannel.open()
-        socket.configureBlocking(false)
-        socket.bind(Constants.PUBLIC_ADDRESS)
-        socket.register(selector, SelectionKey.OP_ACCEPT)
-        socket
     }
 
     private def toScalaSet[T](javaSet: java.util.Set[T]): mutable.Set[T] =
