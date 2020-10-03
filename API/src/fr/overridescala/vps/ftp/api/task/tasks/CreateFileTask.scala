@@ -5,16 +5,15 @@ import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask.{TYPE, ERROR}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TaskInitInfo, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
 /**
  * Ask to create a File / folder to the targeted ownerID
  * */
-class CreateFileTask(private val tasksHandler: TasksHandler,
-                     private val ownerID: String,
-                     private val path: String,
-                     private val isDirectory: Boolean) extends Task[Unit](tasksHandler, ownerID) {
+class CreateFileTask private(private val ownerID: String,
+                             private val path: String,
+                             private val isDirectory: Boolean) extends Task[Unit](ownerID) {
 
 
     override val initInfo: TaskInitInfo = {
@@ -71,8 +70,8 @@ object CreateFileTask {
             }
     }
 
-    def concoct(ownerID: String, filePath: String, isDirectory: Boolean): TaskConcoctor[Unit] = tasksHandler =>
-        new CreateFileTask(tasksHandler, ownerID, filePath, isDirectory)
+    def apply(ownerID: String, filePath: String, isDirectory: Boolean): CreateFileTask =
+        new CreateFileTask(ownerID, filePath, isDirectory)
 
 
 }

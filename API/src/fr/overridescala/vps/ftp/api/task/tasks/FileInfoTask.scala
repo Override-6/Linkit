@@ -5,7 +5,7 @@ import java.nio.file.Files
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.FileInfoTask.{ERROR, TYPE}
 import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.StressTestCompleter
-import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TaskInitInfo, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.FileDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -15,10 +15,9 @@ import fr.overridescala.vps.ftp.api.utils.Utils
  * @param ownerID the supposed owner of the file path
  * @param filePath the path of the file / folder to retrieves info
  * */
-class FileInfoTask(private val handler: TasksHandler,
-                   private val ownerID: String,
+class FileInfoTask(private val ownerID: String,
                    private val filePath: String)
-        extends Task[FileDescription](handler, ownerID)
+        extends Task[FileDescription](ownerID)
                 with TaskExecutor {
 
     override val initInfo: TaskInitInfo =
@@ -60,7 +59,6 @@ object FileInfoTask {
         }
     }
 
-    def concoct(ownerID: String, filePath: String): TaskConcoctor[FileDescription] = tasksHandler => {
-        new FileInfoTask(tasksHandler, ownerID, filePath)
-    }
+    def apply(ownerID: String, filePath: String): FileInfoTask =
+        new FileInfoTask(ownerID, filePath)
 }

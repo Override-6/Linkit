@@ -17,7 +17,7 @@ class ClientTasksHandler(override val identifier: String,
 
 
     private val tasksThread = new ClientTasksThread(identifier)
-    override val tasksCompleterHandler = new ServerTaskCompleterHandler(this, server)
+    override val tasksCompleterHandler = new ServerTaskCompleterHandler(server)
 
     /**
      * Handles the packet.
@@ -35,7 +35,7 @@ class ClientTasksHandler(override val identifier: String,
         }
         try {
             packet match {
-                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, identifier)
+                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, identifier, this)
                 case data: DataPacket => tasksThread.injectPacket(data)
             }
         } catch {
@@ -59,4 +59,11 @@ class ClientTasksHandler(override val identifier: String,
     def clearTasks(): Unit =
         tasksThread.close()
 
+    /**
+     * closes the current client tasks thread
+     * */
+    override def close(): Unit = {
+        tasksThread.close()
+
+    }
 }

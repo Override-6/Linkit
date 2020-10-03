@@ -7,7 +7,7 @@ import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.PacketLoader
-import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor}
+import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
@@ -28,7 +28,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         RelayTaskAction(taskAction)
     }
 
-    override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTasksCompleterHandler
+    override def getTaskCompleterHandler: TaskCompleterHandler = tasksHandler.getTasksCompleterHandler
 
     override def start(): Unit = {
         val thread = new Thread(() => {

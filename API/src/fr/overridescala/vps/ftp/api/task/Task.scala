@@ -37,9 +37,10 @@ import org.jetbrains.annotations.Nullable
  * @see [[TaskAction]]
  * @see [[TaskExecutor]]
  * */
-abstract class Task[T](private val handler: TasksHandler,
-                       private val targetID: String)
+abstract class Task[T](val targetID: String)
         extends TaskAction[T] with TaskExecutor {
+
+    @volatile private var handler: TasksHandler = _
 
     /**
      * Invoked when the task execution was successful.
@@ -55,6 +56,8 @@ abstract class Task[T](private val handler: TasksHandler,
     @volatile
     @Nullable private var onError: String => Unit = Console.err.println
 
+    final def init(tasksHandler: TasksHandler): Unit = handler = tasksHandler
+
     /**
      * Enqueue / register this task to the [[TasksHandler]]
      * @param onSuccess the action to perform when the task was successful
@@ -64,7 +67,7 @@ abstract class Task[T](private val handler: TasksHandler,
     final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError, identifier: Int): Unit = {
         this.onSuccess = onSuccess
         this.onError = onError
-        handler.registerTask(this, identifier, true, targetID)
+        handler.registerTask(this, identifier, true)
     }
 
     /**
@@ -76,7 +79,7 @@ abstract class Task[T](private val handler: TasksHandler,
      * @return the task result
      * */
     final override def complete(identifier: Int): T = {
-        handler.registerTask(this, identifier, true, targetID)
+        handler.registerTask(this, identifier, true)
         val atomicResult = new AtomicReference[T]()
         val onSuccess: T => Unit = result => synchronized {
             notify()

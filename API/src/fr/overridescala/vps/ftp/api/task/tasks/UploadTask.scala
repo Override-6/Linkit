@@ -6,7 +6,7 @@ import java.util
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, UnexpectedPacketException}
 import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, TYPE, UPLOAD_FILE}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TaskInitInfo, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 
@@ -16,9 +16,8 @@ import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
  * @param desc the description about this transfer
  * @see [[TransferDescription]]
  * */
-class UploadTask (private val handler: TasksHandler,
-                         private val desc: TransferDescription)
-        extends Task[Unit](handler, desc.targetID) with TaskExecutor {
+class UploadTask(private val desc: TransferDescription)
+        extends Task[Unit](desc.targetID) with TaskExecutor {
 
     private var channel: PacketChannel = _
 
@@ -149,8 +148,7 @@ object UploadTask {
     val TYPE: String = "UP"
     private val ABORT: String = "ERROR"
 
-    def concoct(transferDescription: TransferDescription): TaskConcoctor[Unit] = tasksHandler => {
-        new UploadTask(tasksHandler, transferDescription)
-    }
+    def apply(transferDescription: TransferDescription): TaskExecutor =
+        new UploadTask(transferDescription)
 
 }

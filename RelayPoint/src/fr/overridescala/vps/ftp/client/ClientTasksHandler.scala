@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, PacketChannelMan
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 
 class ClientTasksHandler(private val socket: SocketChannel,
-                         private val relay: RelayPoint) extends Thread with TasksHandler with Closeable {
+                         private val relay: RelayPoint) extends Thread with TasksHandler {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private val completerHandler = new ClientTaskCompleterHandler(this, relay)
@@ -18,12 +18,12 @@ class ClientTasksHandler(private val socket: SocketChannel,
     private var currentChannelManager: PacketChannelManager = _
     @volatile private var open = false;
 
-    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean, targetID: String, senderID: String = identifier): Unit = {
-        val ticket = new TaskTicket(executor, senderID, taskIdentifier, ownFreeWill)
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean): Unit = {
+        val ticket = new TaskTicket(executor, taskIdentifier, ownFreeWill)
         queue.offer(ticket)
     }
 
-    override def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit = {
+    override def handlePacket(packet: Packet): Unit = {
         if (packet.equals(Protocol.ABORT_TASK_PACKET)) {
             //Restarting the thread causes the current task to be skipped
             //And wait / execute the other task
@@ -33,7 +33,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
         }
         try {
             packet match {
-                case init: TaskInitPacket => completerHandler.handleCompleter(init, senderId)
+                case init: TaskInitPacket => completerHandler.handleCompleter(init, identifier, this)
                 case data: DataPacket if currentChannelManager != null => currentChannelManager.addPacket(data)
             }
         } catch {
@@ -63,7 +63,6 @@ class ClientTasksHandler(private val socket: SocketChannel,
     }
 
     private class TaskTicket(private val executor: TaskExecutor,
-                             private val ownerID: String,
                              private val taskID: Int,
                              private val ownFreeWill: Boolean) {
 
@@ -85,7 +84,6 @@ class ClientTasksHandler(private val socket: SocketChannel,
         }
 
         override def toString: String = s"Ticket(taskName = $taskName," +
-                s" ownerID = $ownerID," +
                 s" id = $taskID," +
                 s" freeWill = $ownFreeWill)"
 

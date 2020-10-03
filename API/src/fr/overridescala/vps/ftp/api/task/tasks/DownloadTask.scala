@@ -16,9 +16,8 @@ import fr.overridescala.vps.ftp.api.utils.Utils
  * @param desc the description about this transfer
  * @see [[TransferDescription]]
  * */
-class DownloadTask(private val handler: TasksHandler,
-                   private val desc: TransferDescription)
-        extends Task[Unit](handler, desc.targetID) {
+class DownloadTask private(private val desc: TransferDescription)
+        extends Task[Unit](desc.targetID) {
 
     private var channel: PacketChannel = _
     private val totalBytes: Float = desc.transferSize
@@ -138,8 +137,8 @@ object DownloadTask {
     val TYPE: String = "DWN"
     private val ABORT: String = "ERROR"
 
-    def concoct(transferDescription: TransferDescription): TaskConcoctor[Unit] = tasksHandler =>
-        new DownloadTask(tasksHandler, transferDescription)
+    def apply(transferDescription: TransferDescription): DownloadTask =
+        new DownloadTask(transferDescription)
 
 
 }

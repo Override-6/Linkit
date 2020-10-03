@@ -1,9 +1,9 @@
 package fr.overridescala.vps.ftp.api.task
 
-import java.nio.channels.SocketChannel
+import java.io.Closeable
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet}
+import fr.overridescala.vps.ftp.api.packet.Packet
 
 /**
  * This class is the hearth of this program.
@@ -22,7 +22,7 @@ import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet}
  *
  * @see PacketChannel
  * */
-trait TasksHandler {
+trait TasksHandler extends Closeable {
 
     /**
      * The relay identifier
@@ -34,6 +34,11 @@ trait TasksHandler {
      * @see [[TaskCompleterHandler]]
      * */
     val tasksCompleterHandler: TaskCompleterHandler
+
+    /**
+     * closes the current client tasks thread
+     * */
+    override def close(): Unit
 
     /**
      * Handles the packet.

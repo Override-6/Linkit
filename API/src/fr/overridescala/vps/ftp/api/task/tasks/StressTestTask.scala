@@ -12,10 +12,9 @@ import fr.overridescala.vps.ftp.api.utils.Constants
  *
  * wait
  * */
-class StressTestTask(private val handler: TasksHandler,
-                     private val totalDataLength: Long,
+class StressTestTask(private val totalDataLength: Long,
                      private val isDownload: Boolean,
-                     private val async: Boolean) extends Task[Unit](handler, Constants.SERVER_ID) {
+                     private val async: Boolean) extends Task[Unit](Constants.SERVER_ID) {
 
     override val initInfo: TaskInitInfo = {
         val downloadBit: Byte = if (isDownload) 1 else 0
@@ -108,9 +107,8 @@ object StressTestTask {
     private def format(value: Float): String =
         new DecimalFormat("### ### ### ### ### ###").format(value)
 
-    def concoct(totalDataLength: Int, isDownload: Boolean, async: Boolean): TaskConcoctor[Unit] =
-        tasksHandler =>
-            new StressTestTask(tasksHandler, totalDataLength, isDownload, async)
+    def concoct(totalDataLength: Int, isDownload: Boolean, async: Boolean): TaskExecutor =
+        new StressTestTask(totalDataLength, isDownload, async)
 
 
 }

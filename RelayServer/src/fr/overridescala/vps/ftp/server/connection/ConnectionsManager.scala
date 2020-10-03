@@ -1,11 +1,10 @@
 package fr.overridescala.vps.ftp.server.connection
 
+import java.io.Closeable
 import java.net.{Socket, SocketAddress}
-import java.nio.channels.SocketChannel
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
 import fr.overridescala.vps.ftp.server.RelayServer
-import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 
@@ -15,26 +14,28 @@ import scala.collection.mutable
  * @see [[RelayServer]]
  * @see [[ClientConnectionThread]]
  * */
-class ConnectionsManager(server: RelayServer) {
+class ConnectionsManager(server: RelayServer) extends Closeable {
+
     /**
      * java map containing all RelayPointConnection instances
      * */
     private val connections: mutable.Map[SocketAddress, ClientConnectionThread] = mutable.Map.empty
 
+    override def close(): Unit = {
+        for ((_, connection) <- connections)
+            connection.close()
+    }
+
     /**
      * creates and register a RelayPoint connection.
      *
-     * @param identifier the identifier for the connection
+     * @param socket the socket to start the connection
      * @throws RelayInitialisationException when a id is already set for this address, or another connection is known under this id.
      * */
-    def register(socket: Socket, identifier: String): Unit = {
+    def register(socket: Socket): Unit = {
         val address = socket.getRemoteSocketAddress
         checkAddress(address)
-        for ((_, connection) <- connections) {
-            if (connection.identifier.equals(identifier))
-                throw RelayInitialisationException(s"another relay point have the same identifier '$identifier'")
-        }
-        val connection = new ClientConnectionThread(socket, identifier, server)
+        val connection = new ClientConnectionThread(socket, server)
         connections.put(address, connection)
     }
 
@@ -48,22 +49,25 @@ class ConnectionsManager(server: RelayServer) {
         connections.remove(address)
     }
 
-    @Nullable def getIdentifierFromAddress(address: SocketAddress): String = {
+    /**
+     * get a relay from
+     * */
+    def getConnectionFromAddress(address: SocketAddress): ClientConnectionThread = {
         if (!connections.contains(address))
             return null
-        connections(address).identifier
+        connections(address)
     }
 
     /**
-     * get a RelayPointConnection based on the address
+     * retrieves a RelayPointConnection based on the address
      *
-     * @param identifier the identifier to retrieve the linked connection
-     * @return the associated RelayPoinConnection instance, null instead
+     * @param identifier the identifier linked [[ClientConnectionThread]]
+     * @return the found [[ClientConnectionThread]] bound with the identifier
      * */
-    def getAddressFromIdentifier(identifier: String): SocketAddress = {
-        for ((address, connection) <- connections) {
-            if (connection.identifier.equals(identifier))
-                return address
+    def getConnectionFromIdentifier(identifier: String): ClientConnectionThread = {
+        for ((_, connection) <- connections) {
+            if (connection.tasksHandler.identifier.equals(identifier))
+                return connection
         }
         null
     }
