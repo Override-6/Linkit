@@ -49,9 +49,10 @@ object StressTestTask {
     }
 
     private def upload(channel: PacketChannel, totalDataLength: Long, async: Boolean): Unit = {
+        println("UPLOAD")
         var totalSent: Float = 0
         val totalDataLengthFormatted = format(totalDataLength)
-        val capacity = Constants.MAX_PACKET_LENGTH - 512
+        val capacity = Constants.MAX_PACKET_LENGTH - 128
         var bytes = new Array[Byte](capacity)
         var maxBPS = 0F
         while (totalSent < totalDataLength) {
@@ -59,7 +60,6 @@ object StressTestTask {
                 bytes = new Array[Byte]((totalDataLength - totalSent).asInstanceOf[Int])
 
             val t0 = System.currentTimeMillis()
-            Thread.sleep(10)
             channel.sendPacket(CONTINUE, bytes)
             if (!async)
                 channel.nextPacket()
@@ -80,6 +80,7 @@ object StressTestTask {
     }
 
     private def download(channel: PacketChannel, totalDataLength: Long, async: Boolean): Unit = {
+        println("DOWNLOAD")
         var packet = channel.nextPacket()
         var totalReceived: Float = 0
         val totalDataLengthFormatted = format(totalDataLength)

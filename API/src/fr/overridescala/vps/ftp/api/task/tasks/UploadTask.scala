@@ -79,7 +79,7 @@ class UploadTask (private val handler: TasksHandler,
                 }
 
                 val percentage = totalBytesSent / totalBytes * 100
-                print(s"\\033[2K sent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
+                print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
             } catch {
                 case e: Throwable =>
                     var msg = e.getMessage

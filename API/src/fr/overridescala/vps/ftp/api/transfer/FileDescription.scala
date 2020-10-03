@@ -14,11 +14,13 @@ import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
  * @param rootPath the directory where this file is set. Or the same path if this path points to a Folder
  * @param size the size of the file / folder
  * */
-case class FileDescription private(path: String,
-                                   ownerAddress: InetSocketAddress,
-                                   isDirectory: Boolean,
-                                   rootPath: String,
-                                   size: Long) extends Serializable
+case class FileDescription(path: String,
+                      ownerAddress: InetSocketAddress,
+                      isDirectory: Boolean,
+                      rootPath: String,
+                      size: Long) extends Serializable {
+
+}
 
 object FileDescription extends Serializable {
 
@@ -28,12 +30,16 @@ object FileDescription extends Serializable {
      * @return a Description of a local path
      * */
     def fromLocal(stringPath: String): FileDescription = {
-        val path = Utils.formatPath(stringPath).toRealPath()
-        builder()
-                .setOwner(Constants.PUBLIC_ADDRESS)
-                .setPath(path.toString)
-                .setSize(getSize(path))
-                .build()
+        val realPath = Utils.formatPath(stringPath).toRealPath()
+        val dirRootPath = if (Files.isDirectory(realPath)) realPath else realPath.getParent
+
+        new FileDescriptionBuilder() {
+            size = getSize(realPath)
+            path = realPath.toString
+            rootPath = dirRootPath.toString
+            isDirectory = Files.isDirectory(realPath)
+            ownerAddress = Constants.PUBLIC_ADDRESS
+        }.build()
     }
 
     private def getSize(path: Path): Long = {
@@ -43,43 +49,6 @@ object FileDescription extends Serializable {
                     .sum()
         }
         Files.size(path)
-    }
-
-    /**
-     * @return this FileDescription builder
-     * */
-    def builder(): Builder = new Builder()
-
-
-    class Builder {
-        private var path: String = _
-        private var ownerAddress: InetSocketAddress = _
-        private var size: Long = _
-        private var isDirectory: Boolean = false
-        private var rootPath: Path = _
-
-
-        def setPath(path: String): Builder = {
-            this.path = path
-            val filePath = Path.of(path)
-            rootPath = if (Files.isDirectory(filePath)) filePath else filePath.getParent
-            isDirectory = filePath.toFile.getName.contains(".")
-            this
-        }
-
-        def setOwner(address: InetSocketAddress): Builder = {
-            this.ownerAddress = address
-            this
-        }
-
-        def setSize(size: Long): Builder = {
-            this.size = size
-            this
-        }
-
-        def build(): FileDescription =
-            new FileDescription(path, ownerAddress, isDirectory, rootPath.toString, size)
-
     }
 
 }

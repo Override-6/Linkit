@@ -69,7 +69,6 @@ class DownloadTask(private val handler: TasksHandler,
             print(s"\rreceived = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets exchange = $count")
         }
         stream.close()
-        println()
         handleLastTransferResponse(packet)
     }
 

@@ -41,14 +41,13 @@ class ServerTasksHandler(private val server: RelayServer) extends TasksHandler {
             return
         }
         try {
-            println(packet.getClass.getName)
+
             packet match {
                 case init: TaskInitPacket => completersHandler.handleCompleter(init, senderID)
                 case data: DataPacket => thread.injectPacket(data)
             }
         } catch {
             case e: TaskException =>
-                println("AIRREURRE")
                 socket.write(Protocol.ABORT_TASK_PACKET.toBytes)
                 throw e
         }

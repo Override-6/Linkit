@@ -5,7 +5,7 @@ import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
-import fr.overridescala.vps.ftp.api.transfer.TransferDescription
+import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferDescriptionBuilder}
 import fr.overridescala.vps.ftp.api.utils.Utils
 import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler.TempFolder
 
@@ -71,16 +71,13 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
 
     private def handleUpload(uploadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {
         println(uploadDesc)
-        val desc = TransferDescription.builder()
-                .setSource(uploadDesc.source)
-                .setDestination(uploadDesc.destination)
-                .setTargetID(ownerID)
-                .build()
+        val desc = uploadDesc.reversed(ownerID)
         if (!uploadDesc.targetID.equals(server.identifier)) {
-            val redirectedTransferDesc = TransferDescription.builder()
-                    .setTargetID(uploadDesc.targetID)
-                    .setDestination(TempFolder)
-                    .setSource(uploadDesc.source)
+            val redirectedTransferDesc = new TransferDescriptionBuilder {
+                targetID = uploadDesc.targetID
+                destination = TempFolder
+                source = uploadDesc.source
+            }
                     .build()
             new DownloadTask(tasksHandler, desc).queue(_ => {
                 new UploadTask(tasksHandler, redirectedTransferDesc)
@@ -88,23 +85,18 @@ class ServerTaskCompleterHandler(private val tasksHandler: ServerTasksHandler,
             }, _, taskID)
             return
         }
-        println("zdZDQD")
 
-        new DownloadTask(tasksHandler, desc).queue(null, null, taskID)
+        new DownloadTask(tasksHandler, desc).queue(_, _, taskID)
     }
 
     private def handleDownload(downloadDesc: TransferDescription, ownerID: String, taskID: Int): Unit = {
-        val desc = TransferDescription.builder()
-                .setSource(downloadDesc.source)
-                .setDestination(downloadDesc.destination)
-                .setTargetID(ownerID)
-                .build()
+        val desc = downloadDesc.reversed(ownerID)
         if (!downloadDesc.targetID.equals(server.identifier)) {
-            val redirectedTransferDesc = TransferDescription.builder()
-                    .setTargetID(downloadDesc.targetID)
-                    .setDestination(TempFolder)
-                    .setSource(downloadDesc.source)
-                    .build()
+            val redirectedTransferDesc = new TransferDescriptionBuilder {
+                targetID = downloadDesc.targetID
+                destination = TempFolder
+                source = downloadDesc.source
+            }
             new DownloadTask(tasksHandler, redirectedTransferDesc).queue(_ => {
                 new UploadTask(tasksHandler, desc)
             }, _, taskID)
