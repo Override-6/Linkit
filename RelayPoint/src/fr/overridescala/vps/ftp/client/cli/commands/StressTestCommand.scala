@@ -12,7 +12,7 @@ class StressTestCommand(relay: Relay) extends CommandExecutor {
         val dataLength = args(0).toInt
         val isDownload = args(1).equalsIgnoreCase("-D")
         val async = args.contains("async")
-        relay.scheduleTask(StressTestTask.concoct(dataLength, isDownload, async))
+        relay.scheduleTask(StressTestTask(dataLength, isDownload, async))
                 .complete()
     }
 

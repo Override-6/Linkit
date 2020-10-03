@@ -20,7 +20,7 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
         if (testTransfer(initPacket, senderId, handler) && testOther(initPacket, handler))
             testMap(initPacket, senderId, handler)
 
-    private def testTransfer(packet: TaskInitPacket, senderId: String, handler: TasksHandler ): Boolean = {
+    private def testTransfer(packet: TaskInitPacket, senderId: String, handler: TasksHandler): Boolean = {
         val taskType = packet.taskType
         val taskID = packet.taskID
         val content = packet.content
@@ -78,14 +78,15 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
                 source = uploadDesc.source
             }
                     .build()
-            DownloadTask(desc).queue(_ => {
+            DownloadTask(desc).init(handler).queue(_ => {
                 UploadTask(redirectedTransferDesc)
+                        .init(handler)
                         .queue()
             }, _, taskID)
             return
         }
 
-        new DownloadTask(handler, desc).queue(_, _, taskID)
+        DownloadTask(desc).init(handler).queue(_, _, taskID)
     }
 
     private def handleDownload(downloadDesc: TransferDescription, ownerID: String, taskID: Int, handler: TasksHandler): Unit = {
@@ -96,12 +97,13 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
                 destination = TempFolder
                 source = downloadDesc.source
             }
-            new DownloadTask(handler, redirectedTransferDesc).queue(_ => {
-                new UploadTask(handler, desc)
+            DownloadTask(redirectedTransferDesc).init(handler).queue(_ => {
+                new UploadTask(desc).init(handler).queue(_, _, taskID)
             }, _, taskID)
             return
         }
-        new UploadTask(handler, desc).queue(_, _, taskID)
+        DownloadTask(desc).init(handler).queue(_, _, taskID)
+
     }
 
 }

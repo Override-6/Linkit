@@ -148,7 +148,7 @@ object UploadTask {
     val TYPE: String = "UP"
     private val ABORT: String = "ERROR"
 
-    def apply(transferDescription: TransferDescription): TaskExecutor =
+    def apply(transferDescription: TransferDescription): UploadTask =
         new UploadTask(transferDescription)
 
 }

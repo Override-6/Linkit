@@ -56,7 +56,10 @@ abstract class Task[T](val targetID: String)
     @volatile
     @Nullable private var onError: String => Unit = Console.err.println
 
-    final def init(tasksHandler: TasksHandler): Unit = handler = tasksHandler
+    final def init(tasksHandler: TasksHandler): Task[T] = {
+        handler = tasksHandler
+        this
+    }
 
     /**
      * Enqueue / register this task to the [[TasksHandler]]

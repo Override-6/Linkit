@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.client.cli.commands
 
 import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.task.Task
 import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription, TransferDescriptionBuilder}
 import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor}
@@ -20,19 +21,19 @@ class TransferCommand private(private val relay: Relay,
         val sourcePath = argAfter(args, "-s")
         val dest = argAfter(args, "-d")
         val sourceP =
-            if (isDownload) relay.scheduleTask(FileInfoTask.concoct(target, sourcePath)).complete()
+            if (isDownload) relay.scheduleTask(FileInfoTask(target, sourcePath)).complete()
             else FileDescription.fromLocal(sourcePath)
         //abort execution if sourceP could not be found.
         if (sourceP == null)
             return
 
-        val transferDescription = new TransferDescriptionBuilder {
+        val desc = new TransferDescriptionBuilder {
             source = sourceP
             targetID = target
             destination = dest
         }
-        val concoctor: TransferDescription => TaskConcoctor[_] = if (isDownload) DownloadTask.concoct else UploadTask.concoct
-        relay.scheduleTask(concoctor(transferDescription))
+        val task: Task[Unit] = if (isDownload) DownloadTask(desc) else UploadTask(desc)
+        relay.scheduleTask(task)
                 .complete()
     }
 

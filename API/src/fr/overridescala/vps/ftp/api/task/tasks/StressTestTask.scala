@@ -107,7 +107,7 @@ object StressTestTask {
     private def format(value: Float): String =
         new DecimalFormat("### ### ### ### ### ###").format(value)
 
-    def concoct(totalDataLength: Int, isDownload: Boolean, async: Boolean): TaskExecutor =
+    def apply(totalDataLength: Int, isDownload: Boolean, async: Boolean): StressTestTask =
         new StressTestTask(totalDataLength, isDownload, async)
 
 

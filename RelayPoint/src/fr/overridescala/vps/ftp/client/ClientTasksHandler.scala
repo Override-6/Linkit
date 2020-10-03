@@ -12,7 +12,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
                          private val relay: RelayPoint) extends Thread with TasksHandler {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
-    private val completerHandler = new ClientTaskCompleterHandler(this, relay)
+    override val tasksCompleterHandler = new ClientTaskCompleterHandler(relay)
     override val identifier: String = relay.identifier
 
     private var currentChannelManager: PacketChannelManager = _
@@ -33,7 +33,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
         }
         try {
             packet match {
-                case init: TaskInitPacket => completerHandler.handleCompleter(init, identifier, this)
+                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, identifier, this)
                 case data: DataPacket if currentChannelManager != null => currentChannelManager.addPacket(data)
             }
         } catch {
@@ -42,8 +42,6 @@ class ClientTasksHandler(private val socket: SocketChannel,
                 throw e
         }
     }
-
-    override def getTasksCompleterHandler: TaskCompleterHandler = completerHandler
 
     override def run(): Unit = {
         open = true
