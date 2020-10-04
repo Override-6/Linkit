@@ -68,7 +68,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * */
     def getConnectionFromIdentifier(identifier: String): ClientConnectionThread = {
         for ((_, connection) <- connections) {
-            if (connection.tasksHandler.identifier.equals(identifier))
+            if (connection.identifier.equals(identifier))
                 return connection
         }
         null
@@ -90,7 +90,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * */
     def containsIdentifier(identifier: String): Boolean = {
         for (connection <- connections.values)
-            if (connection.tasksHandler.identifier.equals(identifier))
+            if (connection.identifier.equals(identifier))
                 return true
         false
     }

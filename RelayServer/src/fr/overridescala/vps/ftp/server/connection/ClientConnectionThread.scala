@@ -15,26 +15,27 @@ class ClientConnectionThread(socket: Socket,
     private val packetReader: PacketReader = new PacketReader(socket)
 
     val tasksHandler: TasksHandler = initialiseConnection()
-
+    val identifier: String = tasksHandler.identifier //shortcut
     @volatile private var open = false
 
     override def run(): Unit = {
+        open = true
         while (open)
             update(tasksHandler.handlePacket)
     }
 
-    def update(onPacketReceived: Packet => Unit): Unit = {
-        onPacketReceived(packetReader.readPacket())
-    }
-
-    def close(): Unit = {
+    override def close(): Unit = {
         tasksHandler.close()
         socket.close()
         open = false
     }
 
+    private def update(onPacketReceived: Packet => Unit): Unit = {
+        onPacketReceived(packetReader.readPacket())
+    }
 
-    def initialiseConnection(): TasksHandler = {
+
+    private def initialiseConnection(): TasksHandler = {
         setName(s"RP Connection (unknownId)")
         val channel = new SimplePacketChannel(socket, Protocol.INIT_ID)
         channel.sendInitPacket(TaskInitInfo.of("GID", "nowhere"))
@@ -44,8 +45,10 @@ class ClientConnectionThread(socket: Socket,
         val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
         channel.sendPacket(response)
 
-        if (response.equals("ERROR"))
+        if (response.equals("ERROR")) {
+            println("a Relay point connection have been rejected.")
             return null
+        }
         println(s"Relay Point connected with identifier '$identifier'")
         setName(s"RP Connection ($identifier)")
         new ClientTasksHandler(identifier, server, socket)

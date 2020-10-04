@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.server.task
 
+import java.io.BufferedOutputStream
 import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.Relay
@@ -18,7 +19,7 @@ class ClientTasksHandler(override val identifier: String,
                          private val socket: Socket) extends TasksHandler {
 
 
-    private val out = socket.getOutputStream
+    private val out = new BufferedOutputStream(socket.getOutputStream)
     private val tasksThread = new ClientTasksThread(identifier)
     tasksThread.start()
 

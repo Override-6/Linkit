@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.client
 
+import java.io.BufferedOutputStream
 import java.net.Socket
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
@@ -11,7 +12,7 @@ class ClientTasksHandler(private val socket: Socket,
                          private val relay: RelayPoint) extends Thread with TasksHandler {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
-    private val out = socket.getOutputStream
+    private val out = new BufferedOutputStream(socket.getOutputStream)
 
 
     private var currentChannelManager: PacketChannelManager = _

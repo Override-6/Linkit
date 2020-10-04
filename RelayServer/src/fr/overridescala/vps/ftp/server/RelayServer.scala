@@ -43,9 +43,9 @@ class RelayServer()
 
     def awaitClientConnection(): Unit = {
         val clientSocket = serverSocket.accept()
-        connectionsManager.register(clientSocket)
         val address = clientSocket.getRemoteSocketAddress
         println(s"new connection : $address")
+        connectionsManager.register(clientSocket)
     }
 
     override def close(): Unit = {

@@ -30,8 +30,7 @@ class ClientTaskCompleterHandler(private val relay: Relay)
             case PingTask.TYPE => new PingTask.PingCompleter()
             //reverse the boolean for completer
             //(down <-> up & up <-> down)
-            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(new String(content.slice(2, content.length)).toLong, content(0) != 1, content(1) == 1)
-
+            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(new String(content.slice(1, content.length)).toLong, content(0) != 1)
             case _ => null
         }
         if (task != null) {

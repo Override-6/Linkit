@@ -49,7 +49,7 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
             case PingTask.TYPE => new PingTask.PingCompleter
             //reverse the boolean for completer
             //(down <-> up & up <-> down)
-            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(contentString.slice(2, content.length).toLong, content(0) != 1, content(1) == 1)
+            case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(new String(content.slice(1, content.length)).toLong, content(0) != 1)
 
             case _ => return true
         }

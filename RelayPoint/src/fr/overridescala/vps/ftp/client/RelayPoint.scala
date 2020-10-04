@@ -13,6 +13,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
     private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
+    socket.setPerformancePreferences(0, 0, Integer.MAX_VALUE)
     private val tasksHandler = new ClientTasksHandler(socket, this)
     private val packetReader = new PacketReader(socket)
 
@@ -50,7 +51,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                 }
             }
         })
-        thread.setName("RelayPoint")
+        thread.setName("RelayPoint Packet handling")
         thread.start()
     }
 

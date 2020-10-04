@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
+import java.io.{BufferedOutputStream, DataOutputStream}
 import java.net.Socket
 import java.nio.channels.{ByteChannel, WritableByteChannel}
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
@@ -20,7 +21,7 @@ class SimplePacketChannel(private val socket: Socket,
                           override val taskID: Int)
         extends PacketChannel with PacketChannelManager {
 
-    private val out = socket.getOutputStream
+    private val out = new BufferedOutputStream(socket.getOutputStream)
 
     /**
      * this blocking queue stores the received packets until they are requested
@@ -36,7 +37,8 @@ class SimplePacketChannel(private val socket: Socket,
      * */
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
         val bytes = new DataPacket(taskID, header, content).toBytes
-        socket.getOutputStream.write(bytes)
+        out.write(bytes)
+        out.flush()
     }
     //TODO doc
     override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
@@ -44,6 +46,7 @@ class SimplePacketChannel(private val socket: Socket,
         //println("SENDING : " + packet.toBytes.array().mkString("Array(", ", ", ")"))
         //println("SENDING (asString): " + new String(packet.toBytes.array()))
         out.write(packet.toBytes)
+        out.flush()
     }
 
     /**
@@ -72,4 +75,5 @@ class SimplePacketChannel(private val socket: Socket,
             throw UnexpectedPacketException("packet sessions differs ! ")
         queue.add(packet)
     }
+
 }
