@@ -1,14 +1,14 @@
 package fr.overridescala.vps.ftp.server.task
 
 import java.io.IOException
-import java.nio.channels.SocketChannel
+import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 import fr.overridescala.vps.ftp.api.task.TaskExecutor
 
 class TaskTicket(private val executor: TaskExecutor,
                  private val taskID: Int,
-                 private val socket: SocketChannel,
+                 private val socket: Socket,
                  private val ownFreeWill: Boolean) {
 
     val channel = new SimplePacketChannel(socket, taskID)

@@ -2,10 +2,9 @@ package fr.overridescala.vps.ftp.api.task.tasks
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.task.tasks.PingTask.{PING, TYPE}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskConcoctor, TaskExecutor, TaskInitInfo, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
 
-class PingTask(private val handler: TasksHandler,
-               private val targetID: String) extends Task[Long](handler, targetID) {
+class PingTask(private val targetId: String) extends Task[Long](targetId) {
 
     override val initInfo: TaskInitInfo =
         TaskInitInfo.of(TYPE, targetID)
@@ -29,7 +28,7 @@ object PingTask {
             channel.sendPacket(PONG)
     }
 
-    def concoct(targetID: String): TaskConcoctor[Long] =
-        handler => new PingTask(handler, targetID)
+    def apply(targetID: String): PingTask =
+        new PingTask(targetID)
 
 }

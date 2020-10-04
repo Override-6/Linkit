@@ -24,7 +24,7 @@ class DataPacket private[packet](override val taskID: Int,
     /**
      * the packet represented to bytes sequence.
      * */
-    override def toBytes: ByteBuffer = Protocol.toBytes(this)
+    override def toBytes: Array[Byte] = Protocol.toBytes(this)
 
     override def equals(obj: Any): Boolean = {
         if (!obj.isInstanceOf[DataPacket])

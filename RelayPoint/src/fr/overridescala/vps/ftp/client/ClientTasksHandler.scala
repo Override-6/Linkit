@@ -1,29 +1,32 @@
 package fr.overridescala.vps.ftp.client
 
-import java.io.Closeable
-import java.nio.channels.SocketChannel
+import java.io.BufferedOutputStream
+import java.net.Socket
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, PacketChannelManager, Protocol, SimplePacketChannel, TaskInitPacket}
-import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.packet._
+import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
 
-class ClientTasksHandler(private val socket: SocketChannel,
-                         private val relay: RelayPoint) extends Thread with TasksHandler with Closeable {
+class ClientTasksHandler(private val socket: Socket,
+                         private val relay: RelayPoint) extends Thread with TasksHandler {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
-    private val completerHandler = new ClientTaskCompleterHandler(this, relay)
-    override val identifier: String = relay.identifier
+    private val out = new BufferedOutputStream(socket.getOutputStream)
+
 
     private var currentChannelManager: PacketChannelManager = _
-    @volatile private var open = false;
+    @volatile private var open = false
 
-    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean, targetID: String, senderID: String = identifier): Unit = {
-        val ticket = new TaskTicket(executor, senderID, taskIdentifier, ownFreeWill)
+    override val tasksCompleterHandler = new ClientTaskCompleterHandler(relay)
+    override val identifier: String = relay.identifier
+
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean): Unit = {
+        val ticket = new TaskTicket(executor, taskIdentifier, ownFreeWill)
         queue.offer(ticket)
     }
 
-    override def handlePacket(packet: Packet, senderId: String, socket: SocketChannel): Unit = {
+    override def handlePacket(packet: Packet): Unit = {
         if (packet.equals(Protocol.ABORT_TASK_PACKET)) {
             //Restarting the thread causes the current task to be skipped
             //And wait / execute the other task
@@ -33,17 +36,15 @@ class ClientTasksHandler(private val socket: SocketChannel,
         }
         try {
             packet match {
-                case init: TaskInitPacket => completerHandler.handleCompleter(init, senderId)
+                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, identifier, this)
                 case data: DataPacket if currentChannelManager != null => currentChannelManager.addPacket(data)
             }
         } catch {
             case e: TaskException =>
-                socket.write(Protocol.ABORT_TASK_PACKET.toBytes)
+                out.write(Protocol.ABORT_TASK_PACKET.toBytes)
                 throw e
         }
     }
-
-    override def getTasksCompleterHandler: TaskCompleterHandler = completerHandler
 
     override def run(): Unit = {
         open = true
@@ -63,7 +64,6 @@ class ClientTasksHandler(private val socket: SocketChannel,
     }
 
     private class TaskTicket(private val executor: TaskExecutor,
-                             private val ownerID: String,
                              private val taskID: Int,
                              private val ownFreeWill: Boolean) {
 
@@ -72,20 +72,17 @@ class ClientTasksHandler(private val socket: SocketChannel,
 
         def start(): Unit = {
             try {
-                println(s"executing $taskName...")
                 if (ownFreeWill) {
                     val initInfo = executor.initInfo
                     channel.sendInitPacket(initInfo)
                 }
                 executor.execute(channel)
-                //println(s"$taskName completed !")
             } catch {
                 case e: Throwable => e.printStackTrace()
             }
         }
 
         override def toString: String = s"Ticket(taskName = $taskName," +
-                s" ownerID = $ownerID," +
                 s" id = $taskID," +
                 s" freeWill = $ownFreeWill)"
 

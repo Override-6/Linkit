@@ -1,10 +1,14 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.nio.channels.SocketChannel
-import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
+import java.io.BufferedOutputStream
+import java.net.Socket
+import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
+
+import scala.collection.mutable
+import scala.util.control.NonFatal
 
 /**
  * this class is the implementation of [[PacketChannel]] and [[PacketChannelManager]]
@@ -15,14 +19,17 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
-class SimplePacketChannel(private val socket: SocketChannel,
+class SimplePacketChannel(private val socket: Socket,
                           override val taskID: Int)
         extends PacketChannel with PacketChannelManager {
+
+    private val out = new BufferedOutputStream(socket.getOutputStream)
 
     /**
      * this blocking queue stores the received packets until they are requested
      * */
-    private val queue: BlockingQueue[DataPacket] = new ArrayBlockingQueue[DataPacket](200)
+    private val queue: BlockingDeque[DataPacket] = new LinkedBlockingDeque(200)
+    private val listeners: mutable.Map[String, PacketEventTicket] = mutable.Map.empty
 
     /**
      * Builds a [[DataPacket]] from a header string and a content byte array,
@@ -33,14 +40,17 @@ class SimplePacketChannel(private val socket: SocketChannel,
      * */
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
         val bytes = new DataPacket(taskID, header, content).toBytes
-        socket.write(bytes)
+        out.write(bytes)
+        out.flush()
     }
+
     //TODO doc
     override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
         val packet = TaskInitPacket.of(taskID, initInfo)
         //println("SENDING : " + packet.toBytes.array().mkString("Array(", ", ", ")"))
         //println("SENDING (asString): " + new String(packet.toBytes.array()))
-        socket.write(packet.toBytes)
+        out.write(packet.toBytes)
+        out.flush()
     }
 
     /**
@@ -49,8 +59,9 @@ class SimplePacketChannel(private val socket: SocketChannel,
      * @return the received packet
      * @see [[DataPacket]]
      * */
-    override def nextPacket(): DataPacket =
-        queue.take()
+    override def nextPacket(): DataPacket = {
+        queue.takeLast()
+    }
 
     /**
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
@@ -67,6 +78,44 @@ class SimplePacketChannel(private val socket: SocketChannel,
     override def addPacket(packet: DataPacket): Unit = {
         if (packet.taskID != taskID)
             throw UnexpectedPacketException("packet sessions differs ! ")
-        queue.add(packet)
+        if (handleListener(packet))
+            queue.addFirst(packet)
     }
+
+    /**
+     * Targets a event when a specified packet with the targeted header is received.
+     * @param uses the number of time the event can be fired
+     * @param header the header to target.
+     * @param onReceived the event to call
+     * */
+    override def putListener(header: String, onReceived: DataPacket => Unit, uses: Int, enqueuePacket: Boolean): Unit =
+        listeners.put(header, PacketEventTicket(uses, enqueuePacket, onReceived))
+
+
+    override def removeListener(header: String): Unit =
+        listeners.remove(header)
+
+    /**
+     * @return true if the packet have to be enqueued
+     * */
+    private def handleListener(packet: DataPacket): Boolean = {
+        val header = packet.header
+        if (!listeners.contains(header))
+            return true
+        val ticket = listeners(header)
+        if (ticket.uses == 0) {
+            listeners.remove(header)
+            return true
+        }
+        ticket.uses -= 0
+        try {
+            ticket.onReceived(packet)
+        } catch {
+            case NonFatal(ex) => ex.printStackTrace()
+        }
+        ticket.enqueuePacket
+    }
+
+    private case class PacketEventTicket(var uses: Int, enqueuePacket: Boolean, onReceived: DataPacket => Unit)
+
 }

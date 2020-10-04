@@ -18,7 +18,7 @@ case class TaskInitPacket private(override val taskID: Int,
     /**
      * the packet represented to bytes sequence.
      * */
-    override def toBytes: ByteBuffer = Protocol.toBytes(this)
+    override def toBytes: Array[Byte] = Protocol.toBytes(this)
 
     /**
      * Represents this packet as a String

@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api
 import java.io.Closeable
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler, TaskConcoctor}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler, TaskExecutor}
 
 /**
  * <p>
@@ -34,19 +34,19 @@ trait Relay extends Closeable {
     val identifier: String
 
     /**
-     * schedules a Task.
+     * schedules a TaskExecutor.
      *
-     * @param concoctor the task to schedules
+     * @param executor the task to schedule
      * @return a [[RelayTaskAction]] instance, this object allows you to enqueue or complete the task later.
      * @see [[RelayTaskAction]]
      * */
-    def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): RelayTaskAction[R]
+    def scheduleTask[R](task: Task[R]): RelayTaskAction[R]
 
     /**
      * @return the [[TaskCompleterHandler]] used by this Relay.
      * @see [[TaskCompleterHandler]]
      * */
-    def getCompleterFactory: TaskCompleterHandler
+    def getTaskCompleterHandler: TaskCompleterHandler
 
     /**
      * <b>Starts the Relay.</b>

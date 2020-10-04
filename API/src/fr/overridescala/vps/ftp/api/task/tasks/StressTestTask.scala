@@ -1,10 +1,8 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
-import java.text.{DecimalFormat, NumberFormat}
-
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.{TYPE, download, upload}
 import fr.overridescala.vps.ftp.api.task._
+import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.{TYPE, download, upload}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 /**
@@ -12,21 +10,18 @@ import fr.overridescala.vps.ftp.api.utils.Constants
  *
  * wait
  * */
-class StressTestTask(private val handler: TasksHandler,
-                     private val totalDataLength: Long,
-                     private val isDownload: Boolean,
-                     private val async: Boolean) extends Task[Unit](handler, Constants.SERVER_ID) {
+class StressTestTask(private val totalDataLength: Long,
+                     private val isDownload: Boolean) extends Task[Unit](Constants.SERVER_ID) {
 
     override val initInfo: TaskInitInfo = {
         val downloadBit: Byte = if (isDownload) 1 else 0
-        val asyncBit: Byte = if (async) 1 else 0
-        TaskInitInfo.of(TYPE, Constants.SERVER_ID, Array(downloadBit) ++ Array(asyncBit) ++ s"$totalDataLength".getBytes())
+        TaskInitInfo.of(TYPE, Constants.SERVER_ID, Array(downloadBit) ++ s"$totalDataLength".getBytes())
     }
 
     override def execute(channel: PacketChannel): Unit = {
         if (isDownload)
-            download(channel, totalDataLength, async)
-        else upload(channel, totalDataLength, async)
+            download(channel, totalDataLength)
+        else upload(channel, totalDataLength)
         success()
     }
 
@@ -40,29 +35,29 @@ object StressTestTask {
     val TYPE = "STRSS"
 
 
-    class StressTestCompleter(private val totalDataLength: Long, isDownload: Boolean, waitResponsePacket: Boolean) extends TaskExecutor {
+    class StressTestCompleter(private val totalDataLength: Long, isDownload: Boolean) extends TaskExecutor {
         override def execute(channel: PacketChannel): Unit = {
             if (isDownload)
-                download(channel, totalDataLength, waitResponsePacket)
-            else upload(channel, totalDataLength, waitResponsePacket)
+                download(channel, totalDataLength)
+            else upload(channel, totalDataLength)
         }
     }
 
-    private def upload(channel: PacketChannel, totalDataLength: Long, async: Boolean): Unit = {
+    private def upload(channel: PacketChannel, totalDataLength: Long): Unit = {
         println("UPLOAD")
         var totalSent: Float = 0
-        val totalDataLengthFormatted = format(totalDataLength)
-        val capacity = Constants.MAX_PACKET_LENGTH - 128
+        val capacity = Constants.MAX_PACKET_LENGTH - 512
         var bytes = new Array[Byte](capacity)
+        java.util.Arrays.fill(bytes, 45.asInstanceOf[Byte])
         var maxBPS = 0F
         while (totalSent < totalDataLength) {
             if (totalDataLength - totalSent < capacity)
-                bytes = new Array[Byte]((totalDataLength - totalSent).asInstanceOf[Int])
+                bytes = new Array[Byte]((totalDataLength - totalSent).toInt)
 
             val t0 = System.currentTimeMillis()
+
             channel.sendPacket(CONTINUE, bytes)
-            if (!async)
-                channel.nextPacket()
+
             val t1 = System.currentTimeMillis()
             val time: Float = t1 - t0
 
@@ -73,22 +68,19 @@ object StressTestTask {
             if (bps == Float.PositiveInfinity)
                 bps = 0
             maxBPS = Math.max(bps, maxBPS)
-            print(s"\rjust sent ${capacity} in $time ms ${format(bps)} bytes/s (${format(totalSent)} / $totalDataLengthFormatted $percentage%) (max b/s = ($maxBPS)")
+            print(s"\rjust sent ${capacity} in $time ms ${bps} bytes/s (${totalSent} / $totalDataLength $percentage%) (max b/s = ($maxBPS)")
         }
         channel.sendPacket(END)
         println()
     }
 
-    private def download(channel: PacketChannel, totalDataLength: Long, async: Boolean): Unit = {
+    private def download(channel: PacketChannel, totalDataLength: Long): Unit = {
         println("DOWNLOAD")
         var packet = channel.nextPacket()
         var totalReceived: Float = 0
-        val totalDataLengthFormatted = format(totalDataLength)
         var maxBPS = 0F
-        while (packet.header.equals(CONTINUE)) {
+        while (!packet.header.equals(END)) {
             val t0 = System.currentTimeMillis()
-            if (!async)
-                channel.sendPacket(CONTINUE)
             packet = channel.nextPacket()
             val dataLength = packet.content.length
             val t1 = System.currentTimeMillis()
@@ -101,16 +93,12 @@ object StressTestTask {
             if (bps == Float.PositiveInfinity)
                 bps = 0
             maxBPS = Math.max(bps, maxBPS)
-            print(s"\rjust received ${dataLength} in $time ms ${format(bps)}  bytes/s (${format(dataLength)} / $totalDataLengthFormatted $percentage%) (max b/s = ($maxBPS)")
+            print(s"\rjust received ${dataLength} in $time ms ${bps}  bytes/s (${dataLength} / $totalDataLength $percentage%) (max b/s = ($maxBPS)")
         }
     }
 
-    private def format(value: Float): String =
-        new DecimalFormat("### ### ### ### ### ###").format(value)
-
-    def concoct(totalDataLength: Int, isDownload: Boolean, async: Boolean): TaskConcoctor[Unit] =
-        tasksHandler =>
-            new StressTestTask(tasksHandler, totalDataLength, isDownload, async)
+    def apply(totalDataLength: Int, isDownload: Boolean): StressTestTask =
+        new StressTestTask(totalDataLength, isDownload)
 
 
 }

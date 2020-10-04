@@ -38,6 +38,8 @@ class ClientTasksThread(ownerID: String) extends Thread with Closeable {
 
     override def close(): Unit = {
         open = false
+        queue.clear()
+        lostPackets.clear()
         interrupt()
     }
 

@@ -1,41 +1,44 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.net.SocketAddress
-import java.nio.channels.SocketChannel
+import java.io.Closeable
+import java.net.{Socket, SocketAddress}
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.server.task.ServerTasksHandler
-import org.jetbrains.annotations.Nullable
+import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.collection.mutable
 
 /**
  * TeamMate of RelayServer, handles the RelayPoint Connections.
  *
- * @see RelayServer
- * @see RelayPointConnection
+ * @see [[RelayServer]]
+ * @see [[ClientConnectionThread]]
  * */
-class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
+class ConnectionsManager(server: RelayServer) extends Closeable {
+
+
     /**
      * java map containing all RelayPointConnection instances
      * */
-    private val connections: mutable.Map[SocketAddress, String] = mutable.Map.empty[SocketAddress, String]
+    private val connections: mutable.Map[SocketAddress, ClientConnectionThread] = mutable.Map.empty
 
+    override def close(): Unit = {
+        for ((_, connection) <- connections)
+            connection.close()
+    }
 
     /**
      * creates and register a RelayPoint connection.
      *
-     * @param address     the address to bind
-     * @param identifier the identifier for the connection
+     * @param socket the socket to start the connection
      * @throws RelayInitialisationException when a id is already set for this address, or another connection is known under this id.
      * */
-    def register(address: SocketAddress, identifier: String): Unit = {
+    def register(socket: Socket): Unit = {
+        val address = socket.getRemoteSocketAddress
         checkAddress(address)
-        for ((_, id) <- connections if id != null) {
-            if (id.equals(identifier))
-                throw RelayInitialisationException(s"another relay point have the same identifier '$identifier'")
-        }
-        connections.put(address, identifier)
+        val connection = new ClientConnectionThread(socket, server, this)
+        connection.start()
+        connections.put(address, connection)
     }
 
     /**
@@ -44,26 +47,29 @@ class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
      * @param address the address to disconnect
      * */
     def disconnect(address: SocketAddress): Unit = {
-        tasksHandler.cancelTasks(getIdentifierFromAddress(address))
+        connections(address).close()
         connections.remove(address)
     }
 
-    @Nullable def getIdentifierFromAddress(address: SocketAddress): String = {
+    /**
+     * get a relay from
+     * */
+    def getConnectionFromAddress(address: SocketAddress): ClientConnectionThread = {
         if (!connections.contains(address))
             return null
         connections(address)
     }
 
     /**
-     * get a RelayPointConnection based on the address
+     * retrieves a RelayPointConnection based on the address
      *
-     * @param identifier the identifier to retrieve the linked connection
-     * @return the associated RelayPoinConnection instance, null instead
+     * @param identifier the identifier linked [[ClientConnectionThread]]
+     * @return the found [[ClientConnectionThread]] bound with the identifier
      * */
-    def getAddressFromIdentifier(identifier: String): SocketAddress = {
-        for ((address, id) <- connections) {
-            if (id.equals(identifier))
-                return address
+    def getConnectionFromIdentifier(identifier: String): ClientConnectionThread = {
+        for ((_, connection) <- connections) {
+            if (connection.identifier.equals(identifier))
+                return connection
         }
         null
     }
@@ -76,6 +82,17 @@ class ConnectionsManager(private val tasksHandler: ServerTasksHandler) {
      * */
     def isNotRegistered(address: SocketAddress): Boolean = {
         !connections.contains(address)
+    }
+
+    /**
+     * @param identifier the identifier to test
+     * @return true if any connected Relay have the specified identifier
+     * */
+    def containsIdentifier(identifier: String): Boolean = {
+        for (connection <- connections.values)
+            if (connection.identifier.equals(identifier))
+                return true
+        false
     }
 
     private def checkAddress(address: SocketAddress): Unit = {

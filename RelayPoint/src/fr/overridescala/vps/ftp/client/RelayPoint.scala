@@ -1,34 +1,32 @@
 package fr.overridescala.vps.ftp.client
 
-import java.net.InetSocketAddress
-import java.nio.ByteBuffer
-import java.nio.channels.{AsynchronousCloseException, SocketChannel}
+import java.net.{InetSocketAddress, Socket}
+import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.PacketLoader
-import fr.overridescala.vps.ftp.api.task.{TaskAction, TaskCompleterHandler, TaskConcoctor}
+import fr.overridescala.vps.ftp.api.packet.PacketReader
+import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
-    val buffer: ByteBuffer = ByteBuffer.allocateDirect(Constants.MAX_PACKET_LENGTH)
-
-    private val socket = configSocket()
+    private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
+    socket.setPerformancePreferences(0, 0, Integer.MAX_VALUE)
     private val tasksHandler = new ClientTasksHandler(socket, this)
-    private val packetLoader = new PacketLoader()
+    private val packetReader = new PacketReader(socket)
 
 
     @volatile private var open = false
 
-    override def scheduleTask[R, T >: TaskAction[R]](concoctor: TaskConcoctor[R]): RelayTaskAction[R] = {
+    override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
-        val taskAction = concoctor.concoct(tasksHandler)
-        RelayTaskAction(taskAction)
+        task.init(tasksHandler)
+        RelayTaskAction(task)
     }
 
-    override def getCompleterFactory: TaskCompleterHandler = tasksHandler.getTasksCompleterHandler
+    override def getTaskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
 
     override def start(): Unit = {
         val thread = new Thread(() => {
@@ -41,7 +39,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             open = true
             while (open) {
                 try {
-                    updateNetwork()
+                    tasksHandler.handlePacket(packetReader.readPacket())
                 } catch {
                     case _: AsynchronousCloseException =>
                         Console.err.println("asynchronous close.")
@@ -53,40 +51,13 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                 }
             }
         })
-        thread.setName("RelayPoint")
+        thread.setName("RelayPoint Packet handling")
         thread.start()
     }
 
     override def close(): Unit = {
         open = false
         socket.close()
-    }
-
-    private def updateNetwork(): Unit = synchronized {
-        val count = socket.read(buffer)
-        if (count < 1)
-            return
-        val bytes = new Array[Byte](count)
-        buffer.flip()
-        buffer.get(bytes)
-
-        packetLoader.add(bytes)
-
-        var packet = packetLoader.nextPacket
-        while (packet != null) {
-            tasksHandler.handlePacket(packet, identifier, socket)
-            packet = packetLoader.nextPacket
-        }
-
-        buffer.clear()
-    }
-
-    private def configSocket(): SocketChannel = {
-        println("connecting to server...")
-        val socket = SocketChannel.open(serverAddress)
-        println("connected !")
-        socket.configureBlocking(true)
-        socket
     }
 
     private def ensureOpen(): Unit = {

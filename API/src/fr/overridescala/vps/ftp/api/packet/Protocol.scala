@@ -1,7 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import java.nio.ByteBuffer
-import java.nio.charset.Charset
 import java.util
 
 /**
@@ -23,6 +22,8 @@ object Protocol {
     private val CONTENT: Array[Byte] = "<content>".getBytes
     private val END: Array[Byte] = "<end>".getBytes
 
+    protected[packet] val PACKET_SIZE_FLAG: Array[Byte] = "(size:".getBytes
+
     val INIT_ID: Int = -1
     val ERROR_ID: Int = -2
 
@@ -33,13 +34,14 @@ object Protocol {
      *
      * @param packet the packet to sequence
      * */
-    def toBytes(packet: DataPacket): ByteBuffer = {
+    def toBytes(packet: DataPacket): Array[Byte] = {
         val idBytes = String.valueOf(packet.taskID).getBytes
         val headerBytes = packet.header.getBytes
         val bytes = DATA_PACKET_TYPE ++ idBytes ++
                 DP_HEADER ++ headerBytes ++
                 CONTENT ++ packet.content ++ END
-        ByteBuffer.wrap(bytes)
+        val bytesLength = bytes.length
+        PACKET_SIZE_FLAG ++ s"$bytesLength)".getBytes ++ bytes
     }
 
     /**
@@ -47,16 +49,16 @@ object Protocol {
      *
      * @param packet the packet to sequence
      * */
-    def toBytes(packet: TaskInitPacket): ByteBuffer = {
+    def toBytes(packet: TaskInitPacket): Array[Byte] = {
         val taskIDBytes = String.valueOf(packet.taskID).getBytes
         val typeBytes = packet.taskType.getBytes
         val targetIdBytes = packet.targetId.getBytes
-        val bytes =
-            TASK_INIT_PACKET_TYPE ++ taskIDBytes ++
-                    TIP_TARGET_ID ++ targetIdBytes ++
-                    TIP_TASK_TYPE ++ typeBytes ++
-                    CONTENT ++ packet.content ++ END
-        ByteBuffer.wrap(bytes)
+        val bytes = TASK_INIT_PACKET_TYPE ++ taskIDBytes ++
+                TIP_TARGET_ID ++ targetIdBytes ++
+                TIP_TASK_TYPE ++ typeBytes ++
+                CONTENT ++ packet.content ++ END
+        val bytesLength = bytes.length
+        PACKET_SIZE_FLAG ++ s"$bytesLength)".getBytes ++ bytes
     }
 
     /**
@@ -95,13 +97,8 @@ object Protocol {
      * @param bytes the bytes to find first packet length
      * */
     protected[packet] def getFirstPacketLength(bytes: Array[Byte]): Int = {
-        val begin = indexOfBegin(bytes)
-        val endFront = bytes.indexOfSlice(END)
-        val endBack = endFront + END.length
-        //fast check
-        if (begin == -1 || endFront == -1)
-            return -1
-        endBack - begin
+        val lengthString = bytes.slice(PACKET_SIZE_FLAG.length, bytes.indexOfSlice(")"))
+        new String(lengthString).toInt
     }
 
     /**
@@ -110,6 +107,12 @@ object Protocol {
      * */
     protected[packet] def containsPacket(bytes: Array[Byte]): Boolean = {
         getFirstPacketLength(bytes) > 0
+    }
+
+    protected[packet] def containsFlag(bytes: Array[Byte]): Boolean = {
+        if (!bytes.containsSlice(PACKET_SIZE_FLAG))
+            return false
+        bytes.slice(PACKET_SIZE_FLAG.length, bytes.length).containsSlice(")")
     }
 
     private def cut(src: Array[Byte], a: Array[Byte], b: Array[Byte]): Array[Byte] =
@@ -126,18 +129,8 @@ object Protocol {
         else throw new IllegalArgumentException("this byte array do not have any packet type field")
     }
 
-    private def indexOfBegin(src: Array[Byte]): Int = {
-        val index1 = src.indexOfSlice(DATA_PACKET_TYPE)
-        val index2 = src.indexOfSlice(TASK_INIT_PACKET_TYPE)
-        if (index1 != -1 && index2 != -1)
-            if (index1 < index2) index1
-            else index2
-        else if (index1 != -1) index1
-        else index2
-    }
 
-
-    private class PacketType private ()
+    private class PacketType private()
 
     private object PacketType extends Enumeration {
         val DATA_PACKET: PacketType = new PacketType

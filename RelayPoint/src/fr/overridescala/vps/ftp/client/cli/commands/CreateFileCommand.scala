@@ -18,7 +18,7 @@ class CreateFileCommand(relay: Relay) extends CommandExecutor {
         val path = args(0)
         val isDirectory = args.contains("-D")
         val target = argAfter(args, "-t")
-        relay.scheduleTask(CreateFileTask.concoct(target, path, isDirectory))
+        relay.scheduleTask(CreateFileTask(target, path, isDirectory))
                 .complete()
     }
 

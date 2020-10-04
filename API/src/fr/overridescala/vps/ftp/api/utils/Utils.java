@@ -67,7 +67,7 @@ public class Utils {
     public static void checkPacketHeader(DataPacket packet, Seq<String> expectedHeaders) throws UnexpectedPacketException {
         if (expectedHeaders.contains(packet.header()))
             return;
-        var msg = expectedHeaders.mkString("or") + " expected, received : " + packet.toString();
+        var msg = expectedHeaders.mkString("or") + " expected, received : " + packet.header();
         throw new UnexpectedPacketException(msg);
     }
 

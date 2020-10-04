@@ -17,7 +17,7 @@ trait TaskCompleterHandler {
      *
      * @see [[TaskInitPacket]]
      * */
-    def handleCompleter(initPacket: TaskInitPacket, ownerID: String): Unit
+    def handleCompleter(initPacket: TaskInitPacket, ownerID: String, tasksHandler: TasksHandler): Unit
 
     /**
      * To be extensible, the user need to add Completer suppliers to handlers in order to inject his own tasks into the program.

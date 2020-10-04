@@ -11,7 +11,7 @@ class PingCommand(relay: Relay) extends CommandExecutor {
         val target = args(0)
         val ownIdentifier = relay.identifier
         println("pinging...")
-        val ping = relay.scheduleTask(PingTask.concoct(target))
+        val ping = relay.scheduleTask(PingTask(target))
                 .complete()
         println(s"$ownIdentifier <- $ping ms -> $target")
     }
