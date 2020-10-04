@@ -1,7 +1,5 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.nio.ByteBuffer
-
 trait Packet {
 
     /**
@@ -13,6 +11,10 @@ trait Packet {
      * */
     val content: Array[Byte] = Array()
 
+    /**
+     * the targeted Relay identifier that will receive the packet
+     * */
+    val targetIdentifier: String
 
     /**
      * @return true if this packet contains content, false instead
@@ -22,6 +24,12 @@ trait Packet {
     /**
      * the packet represented to bytes sequence.
      * */
-    def toBytes: Array[Byte]
+    implicit def toBytes: Array[Byte]
 
+
+}
+
+object Packet {
+    implicit def autoBytes(packet: Packet): Array[Byte] =
+        packet.toBytes
 }

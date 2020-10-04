@@ -6,7 +6,7 @@ import java.net.Socket
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 
 /**
  * handle tasks between a RelayPoint.
@@ -23,7 +23,7 @@ class ClientTasksHandler(override val identifier: String,
     private val tasksThread = new ClientTasksThread(identifier)
     tasksThread.start()
 
-    override val tasksCompleterHandler = new ServerTaskCompleterHandler(server)
+    override val tasksCompleterHandler: TaskCompleterHandler = server.getTaskCompleterHandler
 
     /**
      * Handles the packet.
@@ -32,7 +32,7 @@ class ClientTasksHandler(override val identifier: String,
      * @throws TaskException if the handling went wrong
      * */
     override def handlePacket(packet: Packet): Unit = {
-        if (packet.equals(Protocol.ABORT_TASK_PACKET)) {
+        if (isAbortPacket(packet)) {
             //Restarting the thread causes the current task to be skipped
             //And wait / execute the other task
             tasksThread.close()
@@ -46,8 +46,8 @@ class ClientTasksHandler(override val identifier: String,
             }
         } catch {
             case e: TaskException =>
-                out.write(Protocol.ABORT_TASK_PACKET.toBytes)
-                throw e
+                out.write(Protocol.ABORT_TASK.getBytes)
+                e.printStackTrace()
         }
     }
 
@@ -57,13 +57,8 @@ class ClientTasksHandler(override val identifier: String,
      * @param taskIdentifier the task identifier
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
-    override def registerTask(executor: TaskExecutor,
-                              taskIdentifier: Int,
-                              ownFreeWill: Boolean): Unit =
-        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, socket, ownFreeWill))
-
-    def clearTasks(): Unit =
-        tasksThread.close()
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit =
+        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, identifier, socket, ownFreeWill))
 
     /**
      * closes the current client tasks thread
@@ -71,5 +66,12 @@ class ClientTasksHandler(override val identifier: String,
     override def close(): Unit = {
         tasksThread.close()
         out.close()
+    }
+
+    private def isAbortPacket(packet: Packet): Boolean = {
+        if (!packet.isInstanceOf[DataPacket])
+            return false
+        val dataPacket = packet.asInstanceOf[DataPacket]
+        dataPacket.taskID == Protocol.ERROR_ID && dataPacket.header.equals(Protocol.ABORT_TASK)
     }
 }

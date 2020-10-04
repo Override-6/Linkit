@@ -40,6 +40,7 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
     private def testOther(packet: TaskInitPacket, handler: TasksHandler): Boolean = {
         val taskType = packet.taskType
         val content = packet.content
+        val targetID = packet.targetIdentifier
         val contentString = new String(content)
         val task = taskType match {
             case FileInfoTask.TYPE => new FileInfoTask.FileInfoCompleter(contentString)
@@ -51,7 +52,7 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
 
             case _ => return true
         }
-        handler.registerTask(task, packet.taskID, false)
+        handler.registerTask(task, packet.taskID, targetID, false)
         false
     }
 
@@ -70,7 +71,7 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
         println(uploadDesc)
         val desc = uploadDesc.reversed(ownerID)
         if (uploadDesc.targetID.equals(server.identifier)) {
-            handler.registerTask(DownloadTask(desc), taskID, false)
+            handler.registerTask(DownloadTask(desc), taskID, ownerID, false)
             return
         }
 
@@ -85,14 +86,14 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
         * the server firsts download the folder from A
         * then upload the downloaded file to B
         * */
-        handler.registerTask(DownloadTask(desc), taskID, false)
-        handler.registerTask(UploadTask(redirectedTransferDesc), taskID, false)
+        handler.registerTask(DownloadTask(desc), taskID, ownerID, false)
+        handler.registerTask(UploadTask(redirectedTransferDesc), taskID, desc.targetID, false)
     }
 
     private def handleDownload(downloadDesc: TransferDescription, ownerID: String, taskID: Int, handler: TasksHandler): Unit = {
         val desc = downloadDesc.reversed(ownerID)
         if (downloadDesc.targetID.equals(server.identifier)) {
-            handler.registerTask(UploadTask(desc), taskID, false)
+            handler.registerTask(UploadTask(desc), taskID, ownerID, false)
             return
         }
 
@@ -106,8 +107,8 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
         * the server firsts download the folder from B
         * then upload the downloaded file to A
         * */
-        handler.registerTask(DownloadTask(desc), taskID, false)
-        handler.registerTask(UploadTask(redirectedTransferDesc), taskID, false)
+        handler.registerTask(DownloadTask(desc), taskID, desc.targetID, false)
+        handler.registerTask(UploadTask(redirectedTransferDesc), taskID, ownerID, false)
     }
 
 }

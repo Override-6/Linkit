@@ -17,8 +17,8 @@ object Protocol {
 
     private val TASK_INIT_PACKET_TYPE = "[task_init]".getBytes
     private val TIP_TASK_TYPE = "<task_type>".getBytes
-    private val TIP_TARGET_ID = "<target_id>".getBytes
 
+    private val TARGET = "<target_id>".getBytes
     private val CONTENT: Array[Byte] = "<content>".getBytes
     private val END: Array[Byte] = "<end>".getBytes
 
@@ -26,8 +26,8 @@ object Protocol {
 
     val INIT_ID: Int = -1
     val ERROR_ID: Int = -2
+    val ABORT_TASK: String = "ABORT_TASK"
 
-    val ABORT_TASK_PACKET: DataPacket = new DataPacket(ERROR_ID, "ABORT_TASK")
 
     /**
      * build a [[ByteBuffer]] containing the bytes of a packet from the parameters:
@@ -37,7 +37,9 @@ object Protocol {
     def toBytes(packet: DataPacket): Array[Byte] = {
         val idBytes = String.valueOf(packet.taskID).getBytes
         val headerBytes = packet.header.getBytes
+        val targetIdBytes = packet.targetIdentifier.getBytes
         val bytes = DATA_PACKET_TYPE ++ idBytes ++
+                TARGET ++ targetIdBytes ++
                 DP_HEADER ++ headerBytes ++
                 CONTENT ++ packet.content ++ END
         val bytesLength = bytes.length
@@ -52,9 +54,9 @@ object Protocol {
     def toBytes(packet: TaskInitPacket): Array[Byte] = {
         val taskIDBytes = String.valueOf(packet.taskID).getBytes
         val typeBytes = packet.taskType.getBytes
-        val targetIdBytes = packet.targetId.getBytes
+        val targetIdBytes = packet.targetIdentifier.getBytes
         val bytes = TASK_INIT_PACKET_TYPE ++ taskIDBytes ++
-                TIP_TARGET_ID ++ targetIdBytes ++
+                TARGET ++ targetIdBytes ++
                 TIP_TASK_TYPE ++ typeBytes ++
                 CONTENT ++ packet.content ++ END
         val bytesLength = bytes.length
@@ -76,8 +78,8 @@ object Protocol {
     }
 
     private def toTIP(bytes: Array[Byte]): TaskInitPacket = {
-        val taskID = cutString(bytes, TASK_INIT_PACKET_TYPE, TIP_TARGET_ID).toInt
-        val targetID = cutString(bytes, TIP_TARGET_ID, TIP_TASK_TYPE)
+        val taskID = cutString(bytes, TASK_INIT_PACKET_TYPE, TARGET).toInt
+        val targetID = cutString(bytes, TARGET, TIP_TASK_TYPE)
         val taskType = cutString(bytes, TIP_TASK_TYPE, CONTENT)
         val content = cut(bytes, CONTENT, END)
         TaskInitPacket(taskID, targetID, taskType, content)
@@ -85,10 +87,11 @@ object Protocol {
 
 
     private def toDP(bytes: Array[Byte]): DataPacket = {
-        val taskID = cutString(bytes, DATA_PACKET_TYPE, DP_HEADER).toInt
+        val taskID = cutString(bytes, DATA_PACKET_TYPE, TARGET).toInt
+        val targetID = cutString(bytes, TARGET, DP_HEADER)
         val header = cutString(bytes, DP_HEADER, CONTENT)
         val content = cut(bytes, CONTENT, END)
-        new DataPacket(taskID, header, content)
+        new DataPacket(taskID, header, targetID, content)
     }
 
 

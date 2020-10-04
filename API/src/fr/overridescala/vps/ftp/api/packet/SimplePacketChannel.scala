@@ -20,6 +20,7 @@ import scala.util.control.NonFatal
  * @see [[PacketChannelManager]]
  * */
 class SimplePacketChannel(private val socket: Socket,
+                          private val targetID: String,
                           override val taskID: Int)
         extends PacketChannel with PacketChannelManager {
 
@@ -39,7 +40,7 @@ class SimplePacketChannel(private val socket: Socket,
      * @param content the packet content
      * */
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
-        val bytes = new DataPacket(taskID, header, content).toBytes
+        val bytes = new DataPacket(taskID, header, targetID, content).toBytes
         out.write(bytes)
         out.flush()
     }

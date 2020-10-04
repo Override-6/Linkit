@@ -12,9 +12,10 @@ import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskInitPacket}
 trait TaskExecutor {
 
     /**
-     * This method is invoked straight before [[execute]] but is only invoked if this task was created by the local Relay
+     * This method value is used straight before task [[execute]] and only if a task where enqueued by the local Relay
+     * It determines the way to instantiate a completer for this executor.
      *
-     * @return a TaskInitInfo that describe how the completer will be instantiated
+     * @return a [[TaskInitInfo]] that describe how the completer will be instantiated
      * @see [[TaskInitPacket]]
      * */
     def initInfo: TaskInitInfo = null

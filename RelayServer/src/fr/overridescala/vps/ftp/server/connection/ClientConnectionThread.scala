@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.io.Closeable
+import java.io.{BufferedOutputStream, Closeable}
 import java.net.{Socket, SocketException}
 
 import fr.overridescala.vps.ftp.api.Relay
@@ -14,7 +14,9 @@ class ClientConnectionThread(socket: Socket,
                              server: Relay,
                              manager: ConnectionsManager) extends Thread with Closeable {
 
+
     private val packetReader: PacketReader = new PacketReader(socket)
+    private val writer = new BufferedOutputStream(socket.getOutputStream)
 
     val tasksHandler: TasksHandler = initialiseConnection()
     val identifier: String = tasksHandler.identifier //shortcut
@@ -40,13 +42,22 @@ class ClientConnectionThread(socket: Socket,
         open = false
     }
 
-    private def update(onPacketReceived: Packet => Unit): Unit =
-        onPacketReceived(packetReader.readPacket())
+    def sendDeflectedPacket(packet: Packet): Unit = {
+        writer.write(packet)
+    }
+
+    private def update(onPacketReceived: Packet => Unit): Unit = {
+        val packet = packetReader.readPacket()
+        if (!packet.targetIdentifier.equals(server.identifier)) {
+            manager.deflectPacket(packet)
+        }
+        onPacketReceived(packet)
+    }
 
 
     private def initialiseConnection(): TasksHandler = {
         setName(s"RP Connection (unknownId)")
-        val channel = new SimplePacketChannel(socket, Protocol.INIT_ID)
+        val channel = new SimplePacketChannel(socket, "nowhere", Protocol.INIT_ID)
         channel.sendInitPacket(TaskInitInfo.of("GID", "nowhere"))
 
         deflectInChannel(channel)

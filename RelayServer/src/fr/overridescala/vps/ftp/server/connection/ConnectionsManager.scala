@@ -4,6 +4,7 @@ import java.io.Closeable
 import java.net.{Socket, SocketAddress}
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
+import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.collection.mutable
@@ -72,6 +73,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
         null
     }
 
+
     /**
      * determines if the address is not registered
      *
@@ -92,6 +94,14 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
                 return true
         false
     }
+
+    private[connection] def deflectPacket(packet: Packet): Unit = {
+        println("DEFLECTING " + packet)
+        val target: String = packet.targetIdentifier
+        getConnectionFromIdentifier(target)
+                .sendDeflectedPacket(packet)
+    }
+
 
     private def checkAddress(address: SocketAddress): Unit = {
         if (connections.contains(address))

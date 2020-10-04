@@ -55,5 +55,5 @@ trait TasksHandler extends Closeable {
      * @param taskIdentifier the task identifier
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
-    def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean): Unit
+    def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit
 }

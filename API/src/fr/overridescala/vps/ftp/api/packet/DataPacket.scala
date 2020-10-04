@@ -1,5 +1,4 @@
 package fr.overridescala.vps.ftp.api.packet
-import java.nio.ByteBuffer
 
 /**
  * this class is used to represent a packet to send or to receive.
@@ -11,9 +10,10 @@ import java.nio.ByteBuffer
  * @param header the header of the packet, or the type of this data. Headers allows to classify packets / data to send or receive
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
-class DataPacket private[packet](override val taskID: Int,
-                                      val header: String,
-                                      override val content: Array[Byte] = Array()) extends Packet {
+class DataPacket(override val taskID: Int,
+                 val header: String,
+                 override val targetIdentifier: String,
+                 override val content: Array[Byte] = Array()) extends Packet {
 
     /**
      * Represents this packet as a String

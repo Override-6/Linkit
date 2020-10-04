@@ -34,7 +34,7 @@ class ClientTaskCompleterHandler(private val relay: Relay)
             case _ => null
         }
         if (task != null) {
-            tasksHandler.registerTask(task, taskID, false)
+            tasksHandler.registerTask(task, taskID, ownerID, false)
             return
         }
 

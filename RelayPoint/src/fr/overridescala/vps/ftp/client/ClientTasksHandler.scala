@@ -21,13 +21,13 @@ class ClientTasksHandler(private val socket: Socket,
     override val tasksCompleterHandler = new ClientTaskCompleterHandler(relay)
     override val identifier: String = relay.identifier
 
-    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean): Unit = {
-        val ticket = new TaskTicket(executor, taskIdentifier, ownFreeWill)
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit = {
+        val ticket = new TaskTicket(executor, taskIdentifier, targetID, ownFreeWill)
         queue.offer(ticket)
     }
 
     override def handlePacket(packet: Packet): Unit = {
-        if (packet.equals(Protocol.ABORT_TASK_PACKET)) {
+        if (isAbortPacket(packet)) {
             //Restarting the thread causes the current task to be skipped
             //And wait / execute the other task
             close()
@@ -41,7 +41,7 @@ class ClientTasksHandler(private val socket: Socket,
             }
         } catch {
             case e: TaskException =>
-                out.write(Protocol.ABORT_TASK_PACKET.toBytes)
+                out.write(new DataPacket(Protocol.ERROR_ID, Protocol.ABORT_TASK, identifier).toBytes)
                 throw e
         }
     }
@@ -63,12 +63,20 @@ class ClientTasksHandler(private val socket: Socket,
         interrupt()
     }
 
+    private def isAbortPacket(packet: Packet): Boolean = {
+        if (!packet.isInstanceOf[DataPacket])
+            return false
+        val dataPacket = packet.asInstanceOf[DataPacket]
+        dataPacket.taskID == Protocol.ERROR_ID && dataPacket.header.equals(Protocol.ABORT_TASK)
+    }
+
     private class TaskTicket(private val executor: TaskExecutor,
                              private val taskID: Int,
+                             private val targetID: String,
                              private val ownFreeWill: Boolean) {
 
         val taskName: String = executor.getClass.getSimpleName
-        private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, taskID)
+        private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, taskID)
 
         def start(): Unit = {
             try {
@@ -87,5 +95,6 @@ class ClientTasksHandler(private val socket: Socket,
                 s" freeWill = $ownFreeWill)"
 
     }
+
 
 }

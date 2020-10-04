@@ -7,7 +7,7 @@ import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, Task
 class PingTask(private val targetId: String) extends Task[Long](targetId) {
 
     override val initInfo: TaskInitInfo =
-        TaskInitInfo.of(TYPE, targetID)
+        TaskInitInfo.of(TYPE, targetId)
 
     override def execute(channel: PacketChannel): Unit = {
         val t0 = System.currentTimeMillis()
@@ -26,6 +26,7 @@ object PingTask {
     class PingCompleter extends TaskExecutor {
         override def execute(channel: PacketChannel): Unit =
             channel.sendPacket(PONG)
+
     }
 
     def apply(targetID: String): PingTask =

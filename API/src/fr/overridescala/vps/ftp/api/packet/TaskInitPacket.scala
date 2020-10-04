@@ -1,7 +1,5 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.nio.ByteBuffer
-
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 //TODO doc parameters
@@ -11,9 +9,10 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * @see [[Packet]]
  * */
 case class TaskInitPacket private(override val taskID: Int,
-                          targetId: String,
-                          taskType: String,
-                          override val content: Array[Byte] = Array()) extends Packet {
+                                  override val targetIdentifier: String,
+                                  senderIdentifier: String,
+                                  taskType: String,
+                                  override val content: Array[Byte] = Array()) extends Packet {
 
     /**
      * the packet represented to bytes sequence.
@@ -24,14 +23,16 @@ case class TaskInitPacket private(override val taskID: Int,
      * Represents this packet as a String
      * */
     override def toString: String =
-        s"TaskInitPacket{taskID: $taskID, taskType: $taskType, targetId: $targetId, additionalContent: ${new String(content)}}"
+        s"TaskInitPacket{taskID: $taskID, taskType: $taskType, target: $targetIdentifier, additionalContent: ${new String(content)}}"
 
     override def equals(obj: Any): Boolean = {
         if (!obj.isInstanceOf[TaskInitPacket])
             return false
         val packet = obj.asInstanceOf[TaskInitPacket]
-        lazy val contentEquals = content.sameElements(packet.content)
-        taskID.equals(packet.taskID) && targetId.equals(targetId) && taskType.equals(taskType) && contentEquals
+        taskID == packet.taskID &&
+                targetIdentifier.equals(targetIdentifier) &&
+                taskType.equals(taskType) &&
+                content.sameElements(packet.content)
     }
 }
 
