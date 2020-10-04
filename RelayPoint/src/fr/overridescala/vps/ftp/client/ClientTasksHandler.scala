@@ -1,22 +1,24 @@
 package fr.overridescala.vps.ftp.client
 
-import java.io.Closeable
-import java.nio.channels.SocketChannel
+import java.net.Socket
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, PacketChannelManager, Protocol, SimplePacketChannel, TaskInitPacket}
-import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.packet._
+import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
 
-class ClientTasksHandler(private val socket: SocketChannel,
+class ClientTasksHandler(private val socket: Socket,
                          private val relay: RelayPoint) extends Thread with TasksHandler {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
-    override val tasksCompleterHandler = new ClientTaskCompleterHandler(relay)
-    override val identifier: String = relay.identifier
+    private val out = socket.getOutputStream
+
 
     private var currentChannelManager: PacketChannelManager = _
-    @volatile private var open = false;
+    @volatile private var open = false
+
+    override val tasksCompleterHandler = new ClientTaskCompleterHandler(relay)
+    override val identifier: String = relay.identifier
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, ownFreeWill: Boolean): Unit = {
         val ticket = new TaskTicket(executor, taskIdentifier, ownFreeWill)
@@ -38,7 +40,7 @@ class ClientTasksHandler(private val socket: SocketChannel,
             }
         } catch {
             case e: TaskException =>
-                socket.write(Protocol.ABORT_TASK_PACKET.toBytes)
+                out.write(Protocol.ABORT_TASK_PACKET.toBytes)
                 throw e
         }
     }

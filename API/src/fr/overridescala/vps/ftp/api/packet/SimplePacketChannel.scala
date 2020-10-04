@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
+import java.net.Socket
 import java.nio.channels.{ByteChannel, WritableByteChannel}
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
@@ -15,9 +16,11 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
-class SimplePacketChannel(private val socket: WritableByteChannel,
+class SimplePacketChannel(private val socket: Socket,
                           override val taskID: Int)
         extends PacketChannel with PacketChannelManager {
+
+    private val out = socket.getOutputStream
 
     /**
      * this blocking queue stores the received packets until they are requested
@@ -33,14 +36,14 @@ class SimplePacketChannel(private val socket: WritableByteChannel,
      * */
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
         val bytes = new DataPacket(taskID, header, content).toBytes
-        socket.write(bytes)
+        socket.getOutputStream.write(bytes)
     }
     //TODO doc
     override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
         val packet = TaskInitPacket.of(taskID, initInfo)
         //println("SENDING : " + packet.toBytes.array().mkString("Array(", ", ", ")"))
         //println("SENDING (asString): " + new String(packet.toBytes.array()))
-        socket.write(packet.toBytes)
+        out.write(packet.toBytes)
     }
 
     /**

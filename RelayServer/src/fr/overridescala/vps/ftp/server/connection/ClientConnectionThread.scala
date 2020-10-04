@@ -6,14 +6,13 @@ import java.net.Socket
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
-import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.task.ClientTasksHandler
 
 class ClientConnectionThread(socket: Socket,
-                             server: Relay) extends Thread with Closeable {
+                             server: Relay,
+                             manager: ConnectionsManager) extends Thread with Closeable {
 
-    private val out = socket.getInputStream
-    private val packetLoader: PacketLoader = new PacketLoader
+    private val packetReader: PacketReader = new PacketReader(socket)
 
     val tasksHandler: TasksHandler = initialiseConnection()
 
@@ -25,36 +24,31 @@ class ClientConnectionThread(socket: Socket,
     }
 
     def update(onPacketReceived: Packet => Unit): Unit = {
-        //TODO predict packet length
-        val bytes = out.readNBytes(Constants.MAX_PACKET_LENGTH)
-        packetLoader.add(bytes)
-        var packet: Packet = null
-        packet = packetLoader.nextPacket
-        while (packet != null) {
-            onPacketReceived(packet)
-            packet = packetLoader.nextPacket
-        }
+        onPacketReceived(packetReader.readPacket())
     }
 
     def close(): Unit = {
         tasksHandler.close()
-        out.close()
+        socket.close()
         open = false
     }
 
 
     def initialiseConnection(): TasksHandler = {
         setName(s"RP Connection (unknownId)")
-        val writer = SocketWriter.wrap(socket)
-        val channel = new SimplePacketChannel(writer, Protocol.INIT_ID)
+        val channel = new SimplePacketChannel(socket, Protocol.INIT_ID)
         channel.sendInitPacket(TaskInitInfo.of("GID", "nowhere"))
 
         deflectInChannel(channel)
         val identifier = channel.nextPacket().header
+        val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
+        channel.sendPacket(response)
 
-        channel.sendPacket("OK")
+        if (response.equals("ERROR"))
+            return null
+        println(s"Relay Point connected with identifier '$identifier'")
         setName(s"RP Connection ($identifier)")
-        new ClientTasksHandler(identifier, server, writer)
+        new ClientTasksHandler(identifier, server, socket)
     }
 
 

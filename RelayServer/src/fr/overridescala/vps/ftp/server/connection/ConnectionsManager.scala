@@ -16,6 +16,7 @@ import scala.collection.mutable
  * */
 class ConnectionsManager(server: RelayServer) extends Closeable {
 
+
     /**
      * java map containing all RelayPointConnection instances
      * */
@@ -35,7 +36,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
     def register(socket: Socket): Unit = {
         val address = socket.getRemoteSocketAddress
         checkAddress(address)
-        val connection = new ClientConnectionThread(socket, server)
+        val connection = new ClientConnectionThread(socket, server, this)
         connection.start()
         connections.put(address, connection)
     }
@@ -81,6 +82,17 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * */
     def isNotRegistered(address: SocketAddress): Boolean = {
         !connections.contains(address)
+    }
+
+    /**
+     * @param identifier the identifier to test
+     * @return true if any connected Relay have the specified identifier
+     * */
+    def containsIdentifier(identifier: String): Boolean = {
+        for (connection <- connections.values)
+            if (connection.tasksHandler.identifier.equals(identifier))
+                return true
+        false
     }
 
     private def checkAddress(address: SocketAddress): Unit = {

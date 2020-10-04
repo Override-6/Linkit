@@ -1,5 +1,7 @@
 package fr.overridescala.vps.ftp.server.task
 
+import java.net.Socket
+
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet._
@@ -9,15 +11,17 @@ import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
  * handle tasks between a RelayPoint.
  * @param identifier the connected RelayPoint identifier.
  * @param server the server instance
- * @param socketWriter the writer in which tasks will write packets
+ * @param socket the writer in which tasks will write packets
  * */
 class ClientTasksHandler(override val identifier: String,
                          private val server: Relay,
-                         private val socketWriter: SocketWriter) extends TasksHandler {
+                         private val socket: Socket) extends TasksHandler {
 
 
+    private val out = socket.getOutputStream
     private val tasksThread = new ClientTasksThread(identifier)
     tasksThread.start()
+
     override val tasksCompleterHandler = new ServerTaskCompleterHandler(server)
 
     /**
@@ -41,7 +45,7 @@ class ClientTasksHandler(override val identifier: String,
             }
         } catch {
             case e: TaskException =>
-                socketWriter.write(Protocol.ABORT_TASK_PACKET.toBytes)
+                out.write(Protocol.ABORT_TASK_PACKET.toBytes)
                 throw e
         }
     }
@@ -55,7 +59,7 @@ class ClientTasksHandler(override val identifier: String,
     override def registerTask(executor: TaskExecutor,
                               taskIdentifier: Int,
                               ownFreeWill: Boolean): Unit =
-        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, socketWriter, ownFreeWill))
+        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, socket, ownFreeWill))
 
     def clearTasks(): Unit =
         tasksThread.close()

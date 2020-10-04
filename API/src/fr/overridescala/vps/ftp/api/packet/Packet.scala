@@ -22,6 +22,6 @@ trait Packet {
     /**
      * the packet represented to bytes sequence.
      * */
-    def toBytes: ByteBuffer
+    def toBytes: Array[Byte]
 
 }
