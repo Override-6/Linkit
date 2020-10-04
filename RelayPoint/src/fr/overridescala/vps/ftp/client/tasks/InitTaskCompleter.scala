@@ -15,6 +15,7 @@ class InitTaskCompleter(private val relay: Relay) extends TaskExecutor {
             relay.close()
             throw RelayInitialisationException(s"another relay point with id '$identifier' is currently connected on the targeted network")
         }
+        println("successfully connected to the server !")
     }
 }
 

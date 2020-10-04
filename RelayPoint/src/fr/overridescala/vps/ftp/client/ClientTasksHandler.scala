@@ -72,13 +72,11 @@ class ClientTasksHandler(private val socket: Socket,
 
         def start(): Unit = {
             try {
-                println(s"executing $taskName...")
                 if (ownFreeWill) {
                     val initInfo = executor.initInfo
                     channel.sendInitPacket(initInfo)
                 }
                 executor.execute(channel)
-                //println(s"$taskName completed !")
             } catch {
                 case e: Throwable => e.printStackTrace()
             }

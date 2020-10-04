@@ -26,23 +26,21 @@ class UploadTask(private val desc: TransferDescription)
 
     override def execute(channel: PacketChannel): Unit = {
         this.channel = channel
-        val path = Path.of(desc.source.path)
+        val source = Path.of(desc.source.path)
         val destination = Path.of(desc.destination)
 
-        if (Files.isDirectory(path)) {
-            if (Files.notExists(destination))
-                Files.createDirectories(destination)
-            else if (!Files.isDirectory(destination)) {
+        if (Files.isDirectory(source)) {
+            if (!Files.isDirectory(destination)) {
                 val msg = "download root path have to be a folder path when downloading other folders"
                 channel.sendPacket(ABORT, msg)
                 error(msg)
                 return
             }
-            uploadDirectory(path)
+            uploadDirectory(source)
 
-        } else uploadFile(path)
+        } else uploadFile(source)
         channel.sendPacket(END_OF_TRANSFER)
-        success(path)
+        success(source)
     }
 
     private def uploadDirectory(path: Path): Unit = {
@@ -71,7 +69,7 @@ class UploadTask(private val desc: TransferDescription)
                 bytes = util.Arrays.copyOf(bytes, read)
                 count += 1
                 totalBytesSent += read
-                makeDataTransfer(bytes, count)
+                channel.sendPacket("", bytes)
 
                 if (channel.haveMorePackets) {
                     handleUnexpectedPacket(channel.nextPacket())
@@ -85,38 +83,12 @@ class UploadTask(private val desc: TransferDescription)
                     if (msg == null)
                         msg = "an error has occurred while performing file upload task"
                     channel.sendPacket(ABORT, s"($path) " + msg)
+                    print("\r")
                     return
             }
         }
+        print("\r")
         stream.close()
-    }
-
-    /**
-     * makes one data transfer.
-     *
-     * @return true if the transfer need to be aborted, false instead
-     * */
-    private def makeDataTransfer(bytes: Array[Byte], id: Int): Unit = {
-        channel.sendPacket(s"$id", bytes)
-        val packet = channel.nextPacket()
-        if (packet.header.equals(ABORT)) {
-            val errorMsg = new String(packet.content)
-            error(errorMsg)
-            throw new TaskException(errorMsg)
-        }
-        try {
-            val packetId = Integer.parseInt(packet.header)
-            if (packetId != id) {
-                val errorMsg = new String(s"packet id was unexpected (id: $packetId, expected: $id)")
-                channel.sendPacket(ABORT, errorMsg)
-                error(errorMsg)
-                throw new TaskException(errorMsg)
-            }
-        } catch {
-            case e: NumberFormatException =>
-                channel.sendPacket(ABORT, e.getMessage)
-                error(e.getMessage)
-        }
     }
 
     private def handleUnexpectedPacket(packet: DataPacket): Unit = {

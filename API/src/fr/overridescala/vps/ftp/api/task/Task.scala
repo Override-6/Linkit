@@ -28,7 +28,6 @@ import org.jetbrains.annotations.Nullable
  *      [[TaskExecutor]] is a Trait used by [[TasksHandler]] which will invoke TaskExecutor#execute nor TaskExecutor#sendTaskInfo if this task instance
  *      was created by the program (!TaskCompleters)
  * </p>
- * @param handler the TasksHandler
  * @param targetID the targeted / concerned Relay identifier
  * @tparam T the return type of this Task when successfully executed
  *

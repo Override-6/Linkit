@@ -129,16 +129,6 @@ object Protocol {
         else throw new IllegalArgumentException("this byte array do not have any packet type field")
     }
 
-    private def indexOfBegin(src: Array[Byte]): Int = {
-        val index1 = src.indexOfSlice(DATA_PACKET_TYPE)
-        val index2 = src.indexOfSlice(TASK_INIT_PACKET_TYPE)
-        if (index1 != -1 && index2 != -1)
-            if (index1 < index2) index1
-            else index2
-        else if (index1 != -1) index1
-        else index2
-    }
-
 
     private class PacketType private()
 

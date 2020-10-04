@@ -28,6 +28,8 @@ class DownloadTask private(private val desc: TransferDescription)
 
     override def execute(channel: PacketChannel): Unit = {
         this.channel = channel
+        channel.putListener(ABORT, packet => error(packet.header))
+
         val response = channel.nextPacket()
         if (response.header.equals(UploadTask.END_OF_TRANSFER)) {
             success()
@@ -37,7 +39,7 @@ class DownloadTask private(private val desc: TransferDescription)
         try {
             downloadFile(downloadPath)
         } catch {
-            case e: Throwable => {
+            case e: Throwable =>
                 e.printStackTrace()
                 val typeName = e.getClass.getCanonicalName
                 var msg = s"$typeName : ${e.getMessage}"
@@ -45,28 +47,29 @@ class DownloadTask private(private val desc: TransferDescription)
                     msg = s"got an error of type : $typeName"
                 channel.sendPacket(ABORT, msg)
                 error(msg)
-            }
         }
     }
 
 
     private def downloadFile(downloadPath: Path): Unit = {
-        println(s"DOWNLOAD START $downloadPath\n")
+        println(s"DOWNLOAD START $downloadPath")
         if (checkPath(downloadPath))
             return
         val stream = Files.newOutputStream(downloadPath)
         var count = 0
-
         var packet: DataPacket = channel.nextPacket()
-        while (stillForTransfer(packet)) {
+
+        def downloading: Boolean = packet.header != UploadTask.UPLOAD_FILE
+
+        while (downloading) {
             totalBytesWritten += packet.content.length
             stream.write(packet.content)
             count += 1
-            channel.sendPacket(s"$count")
             packet = channel.nextPacket()
             val percentage = totalBytesWritten / totalBytes * 100
             print(s"\rreceived = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets exchange = $count")
         }
+        print("\r")
         stream.close()
         handleLastTransferResponse(packet)
     }
@@ -92,22 +95,6 @@ class DownloadTask private(private val desc: TransferDescription)
             val downloadPath = findDownloadPath(packet)
             downloadFile(downloadPath)
         }
-    }
-
-
-    /**
-     * checks if this packet does not contains ERROR, EOFT or EOT header
-     *
-     * @return true if the transfer still continue, false instead
-     * */
-    private def stillForTransfer(packet: DataPacket): Boolean = {
-        val header = packet.header
-        if (header.equals(ABORT)) {
-            val msg = new String(packet.content)
-            error(msg)
-            throw new TaskException(msg)
-        }
-        header.matches("[0-9]+")
     }
 
     /**

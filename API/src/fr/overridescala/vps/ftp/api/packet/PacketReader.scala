@@ -6,6 +6,8 @@ import java.net.Socket
 import fr.overridescala.vps.ftp.api.packet.PacketReader.FLAG_SIZE
 import fr.overridescala.vps.ftp.api.utils.Constants
 
+import scala.collection.mutable.ListBuffer
+
 object PacketReader {
     private val FLAG_SIZE = {
         val protocolFlagLength = Protocol.PACKET_SIZE_FLAG.length
@@ -38,6 +40,5 @@ class PacketReader(socket: Socket) {
         //println("found packet : " + new String(packetBytes))
         Protocol.toPacket(packetBytes)
     }
-
 
 }

@@ -42,9 +42,7 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
         val content = packet.content
         val contentString = new String(content)
         val task = taskType match {
-            case FileInfoTask.TYPE =>
-                val pair: (String, _) = Utils.deserialize(content)
-                new FileInfoTask.FileInfoCompleter(pair._1)
+            case FileInfoTask.TYPE => new FileInfoTask.FileInfoCompleter(contentString)
             case CreateFileTask.TYPE => new CreateFileTask.CreateFileCompleter(contentString.slice(1, content.length), content(0) == 1)
             case PingTask.TYPE => new PingTask.PingCompleter
             //reverse the boolean for completer
@@ -71,39 +69,45 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
     private def handleUpload(uploadDesc: TransferDescription, ownerID: String, taskID: Int, handler: TasksHandler): Unit = {
         println(uploadDesc)
         val desc = uploadDesc.reversed(ownerID)
-        if (!uploadDesc.targetID.equals(server.identifier)) {
-            val redirectedTransferDesc = new TransferDescriptionBuilder {
-                targetID = uploadDesc.targetID
-                destination = TempFolder
-                source = uploadDesc.source
-            }
-                    .build()
-            DownloadTask(desc).init(handler).queue(_ => {
-                UploadTask(redirectedTransferDesc)
-                        .init(handler)
-                        .queue()
-            }, _, taskID)
+        if (uploadDesc.targetID.equals(server.identifier)) {
+            handler.registerTask(DownloadTask(desc), taskID, false)
             return
         }
 
-        DownloadTask(desc).init(handler).queue(_, _, taskID)
+        val redirectedTransferDesc = new TransferDescriptionBuilder {
+            targetID = uploadDesc.targetID
+            destination = TempFolder
+            source = uploadDesc.source
+        }
+
+        /* To perform a upload between two Relay points
+        * (let's say RP A want to upload a folder t RP B)
+        * the server firsts download the folder from A
+        * then upload the downloaded file to B
+        * */
+        handler.registerTask(DownloadTask(desc), taskID, false)
+        handler.registerTask(UploadTask(redirectedTransferDesc), taskID, false)
     }
 
     private def handleDownload(downloadDesc: TransferDescription, ownerID: String, taskID: Int, handler: TasksHandler): Unit = {
         val desc = downloadDesc.reversed(ownerID)
-        if (!downloadDesc.targetID.equals(server.identifier)) {
-            val redirectedTransferDesc = new TransferDescriptionBuilder {
-                targetID = downloadDesc.targetID
-                destination = TempFolder
-                source = downloadDesc.source
-            }
-            DownloadTask(redirectedTransferDesc).init(handler).queue(_ => {
-                new UploadTask(desc).init(handler).queue(_, _, taskID)
-            }, _, taskID)
+        if (downloadDesc.targetID.equals(server.identifier)) {
+            handler.registerTask(UploadTask(desc), taskID, false)
             return
         }
-        DownloadTask(desc).init(handler).queue(_, _, taskID)
 
+        val redirectedTransferDesc = new TransferDescriptionBuilder {
+            targetID = downloadDesc.targetID
+            destination = TempFolder
+            source = downloadDesc.source
+        }
+        /* To perform a download between two Relay points
+        * (let's say RP A want to download a folder from RP B)
+        * the server firsts download the folder from B
+        * then upload the downloaded file to A
+        * */
+        handler.registerTask(DownloadTask(desc), taskID, false)
+        handler.registerTask(UploadTask(redirectedTransferDesc), taskID, false)
     }
 
 }

@@ -1,12 +1,14 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.io.{BufferedOutputStream, DataOutputStream}
+import java.io.BufferedOutputStream
 import java.net.Socket
-import java.nio.channels.{ByteChannel, WritableByteChannel}
-import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
+import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
+
+import scala.collection.mutable
+import scala.util.control.NonFatal
 
 /**
  * this class is the implementation of [[PacketChannel]] and [[PacketChannelManager]]
@@ -26,7 +28,8 @@ class SimplePacketChannel(private val socket: Socket,
     /**
      * this blocking queue stores the received packets until they are requested
      * */
-    private val queue: BlockingQueue[DataPacket] = new ArrayBlockingQueue[DataPacket](200)
+    private val queue: BlockingDeque[DataPacket] = new LinkedBlockingDeque(200)
+    private val listeners: mutable.Map[String, PacketEventTicket] = mutable.Map.empty
 
     /**
      * Builds a [[DataPacket]] from a header string and a content byte array,
@@ -40,6 +43,7 @@ class SimplePacketChannel(private val socket: Socket,
         out.write(bytes)
         out.flush()
     }
+
     //TODO doc
     override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
         val packet = TaskInitPacket.of(taskID, initInfo)
@@ -55,8 +59,9 @@ class SimplePacketChannel(private val socket: Socket,
      * @return the received packet
      * @see [[DataPacket]]
      * */
-    override def nextPacket(): DataPacket =
-        queue.take()
+    override def nextPacket(): DataPacket = {
+        queue.takeLast()
+    }
 
     /**
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
@@ -73,7 +78,44 @@ class SimplePacketChannel(private val socket: Socket,
     override def addPacket(packet: DataPacket): Unit = {
         if (packet.taskID != taskID)
             throw UnexpectedPacketException("packet sessions differs ! ")
-        queue.add(packet)
+        if (handleListener(packet))
+            queue.addFirst(packet)
     }
+
+    /**
+     * Targets a event when a specified packet with the targeted header is received.
+     * @param uses the number of time the event can be fired
+     * @param header the header to target.
+     * @param onReceived the event to call
+     * */
+    override def putListener(header: String, onReceived: DataPacket => Unit, uses: Int, enqueuePacket: Boolean): Unit =
+        listeners.put(header, PacketEventTicket(uses, enqueuePacket, onReceived))
+
+
+    override def removeListener(header: String): Unit =
+        listeners.remove(header)
+
+    /**
+     * @return true if the packet have to be enqueued
+     * */
+    private def handleListener(packet: DataPacket): Boolean = {
+        val header = packet.header
+        if (!listeners.contains(header))
+            return true
+        val ticket = listeners(header)
+        if (ticket.uses == 0) {
+            listeners.remove(header)
+            return true
+        }
+        ticket.uses -= 0
+        try {
+            ticket.onReceived(packet)
+        } catch {
+            case NonFatal(ex) => ex.printStackTrace()
+        }
+        ticket.enqueuePacket
+    }
+
+    private case class PacketEventTicket(var uses: Int, enqueuePacket: Boolean, onReceived: DataPacket => Unit)
 
 }

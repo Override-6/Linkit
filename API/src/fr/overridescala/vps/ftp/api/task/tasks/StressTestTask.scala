@@ -46,12 +46,13 @@ object StressTestTask {
     private def upload(channel: PacketChannel, totalDataLength: Long): Unit = {
         println("UPLOAD")
         var totalSent: Float = 0
-        val capacity = Constants.MAX_PACKET_LENGTH - 128
+        val capacity = Constants.MAX_PACKET_LENGTH - 512
         var bytes = new Array[Byte](capacity)
+        java.util.Arrays.fill(bytes, 45.asInstanceOf[Byte])
         var maxBPS = 0F
         while (totalSent < totalDataLength) {
             if (totalDataLength - totalSent < capacity)
-                bytes = new Array[Byte]((totalDataLength - totalSent).asInstanceOf[Int])
+                bytes = new Array[Byte]((totalDataLength - totalSent).toInt)
 
             val t0 = System.currentTimeMillis()
 
@@ -67,7 +68,7 @@ object StressTestTask {
             if (bps == Float.PositiveInfinity)
                 bps = 0
             maxBPS = Math.max(bps, maxBPS)
-            println(s"just sent ${capacity} in $time ms ${bps} bytes/s (${totalSent} / $totalDataLength $percentage%) (max b/s = ($maxBPS)")
+            print(s"\rjust sent ${capacity} in $time ms ${bps} bytes/s (${totalSent} / $totalDataLength $percentage%) (max b/s = ($maxBPS)")
         }
         channel.sendPacket(END)
         println()
@@ -92,7 +93,7 @@ object StressTestTask {
             if (bps == Float.PositiveInfinity)
                 bps = 0
             maxBPS = Math.max(bps, maxBPS)
-            println(s"just received ${dataLength} in $time ms ${bps}  bytes/s (${dataLength} / $totalDataLength $percentage%) (max b/s = ($maxBPS)")
+            print(s"\rjust received ${dataLength} in $time ms ${bps}  bytes/s (${dataLength} / $totalDataLength $percentage%) (max b/s = ($maxBPS)")
         }
     }
 

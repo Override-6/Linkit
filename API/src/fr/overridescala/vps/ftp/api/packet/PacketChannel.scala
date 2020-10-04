@@ -45,6 +45,20 @@ trait PacketChannel {
     def nextPacket(): DataPacket
 
     /**
+     * Targets a event when a specified packet with the targeted header is received.
+     * @param uses the number of time the event can be fired
+     * @param header the header to target.
+     * @param onReceived the event to call
+     * */
+    def putListener(header: String, onReceived: DataPacket => Unit, uses: Int = 1, enqueuePacket: Boolean = false): Unit
+
+    /**
+     * de-register a event
+     * @param header the packet header to stop listening.
+     * */
+    def removeListener(header: String)
+
+    /**
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
      * */
     def haveMorePackets: Boolean
