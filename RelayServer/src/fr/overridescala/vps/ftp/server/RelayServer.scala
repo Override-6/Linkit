@@ -18,7 +18,7 @@ class RelayServer()
     private val completerHandler = new ServerTaskCompleterHandler(this)
     private val connectionsManager = new ConnectionsManager(this)
 
-    private var open = true
+    private var open = false
 
     override val identifier: String = Constants.SERVER_ID
 
@@ -37,6 +37,7 @@ class RelayServer()
         println("current encoding is " + Charset.defaultCharset().name())
         println("listening on port " + Constants.PORT)
 
+        open = true
         while (open) awaitClientConnection()
     }
 

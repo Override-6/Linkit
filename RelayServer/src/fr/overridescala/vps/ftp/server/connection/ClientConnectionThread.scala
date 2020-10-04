@@ -4,8 +4,7 @@ import java.io.Closeable
 import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, Packet, PacketChannelManager, PacketLoader, Protocol, SimplePacketChannel, SocketWriter}
+import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.task.ClientTasksHandler
@@ -26,6 +25,7 @@ class ClientConnectionThread(socket: Socket,
     }
 
     def update(onPacketReceived: Packet => Unit): Unit = {
+        //TODO predict packet length
         val bytes = out.readNBytes(Constants.MAX_PACKET_LENGTH)
         packetLoader.add(bytes)
         var packet: Packet = null
@@ -53,6 +53,7 @@ class ClientConnectionThread(socket: Socket,
         val identifier = channel.nextPacket().header
 
         channel.sendPacket("OK")
+        setName(s"RP Connection ($identifier)")
         new ClientTasksHandler(identifier, server, writer)
     }
 

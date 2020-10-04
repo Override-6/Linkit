@@ -36,6 +36,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
         val address = socket.getRemoteSocketAddress
         checkAddress(address)
         val connection = new ClientConnectionThread(socket, server)
+        connection.start()
         connections.put(address, connection)
     }
 

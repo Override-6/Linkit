@@ -17,6 +17,7 @@ class ClientTasksHandler(override val identifier: String,
 
 
     private val tasksThread = new ClientTasksThread(identifier)
+    tasksThread.start()
     override val tasksCompleterHandler = new ServerTaskCompleterHandler(server)
 
     /**
