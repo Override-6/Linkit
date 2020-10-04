@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.io.BufferedInputStream
+import java.io.{BufferedInputStream, Closeable}
 import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.packet.PacketReader.FLAG_SIZE
@@ -17,7 +17,7 @@ object PacketReader {
     }
 }
 
-class PacketReader(socket: Socket) {
+class PacketReader(socket: Socket) extends Closeable {
 
 
     private val input = new BufferedInputStream(socket.getInputStream)
@@ -40,5 +40,8 @@ class PacketReader(socket: Socket) {
         //println("found packet : " + new String(packetBytes))
         Protocol.toPacket(packetBytes)
     }
+
+    override def close(): Unit = input.close()
+
 
 }

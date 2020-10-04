@@ -42,14 +42,12 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
     }
 
     /**
-     * disconnects a Relay point
+     * unregisters a Relay point
      *
      * @param address the address to disconnect
      * */
-    def disconnect(address: SocketAddress): Unit = {
-        connections(address).close()
+    def unregister(address: SocketAddress): Unit =
         connections.remove(address)
-    }
 
     /**
      * get a relay from

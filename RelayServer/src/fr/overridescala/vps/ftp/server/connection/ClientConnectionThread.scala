@@ -1,12 +1,14 @@
 package fr.overridescala.vps.ftp.server.connection
 
 import java.io.Closeable
-import java.net.Socket
+import java.net.{Socket, SocketException}
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.server.task.ClientTasksHandler
+
+import scala.util.control.NonFatal
 
 class ClientConnectionThread(socket: Socket,
                              server: Relay,
@@ -20,19 +22,26 @@ class ClientConnectionThread(socket: Socket,
 
     override def run(): Unit = {
         open = true
-        while (open)
-            update(tasksHandler.handlePacket)
+        try {
+            while (open)
+                update(tasksHandler.handlePacket)
+        } catch {
+            case e: SocketException if e.getMessage == "Connection reset" => Console.err.println(s"client '$identifier' disconnected.")
+            case NonFatal(e) => e.printStackTrace()
+        }
+        close()
     }
 
     override def close(): Unit = {
         tasksHandler.close()
         socket.close()
+        packetReader.close()
+        manager.unregister(socket.getRemoteSocketAddress)
         open = false
     }
 
-    private def update(onPacketReceived: Packet => Unit): Unit = {
+    private def update(onPacketReceived: Packet => Unit): Unit =
         onPacketReceived(packetReader.readPacket())
-    }
 
 
     private def initialiseConnection(): TasksHandler = {

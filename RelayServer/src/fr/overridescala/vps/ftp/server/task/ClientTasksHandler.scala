@@ -70,5 +70,6 @@ class ClientTasksHandler(override val identifier: String,
      * */
     override def close(): Unit = {
         tasksThread.close()
+        out.close()
     }
 }

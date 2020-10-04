@@ -12,7 +12,7 @@ object Main {
 
     private val SERVER_ADDRESS = new InetSocketAddress("161.97.104.230", Constants.PORT)
 
-    print("say 'y' to connect to chose localhost : ")
+    print("say 'y' to connect to localhost : ")
     private val scanner = new Scanner(System.in)
     private val isLocalhost = scanner.nextLine().startsWith("y")
     print("choose a identifier : ")
