@@ -17,6 +17,11 @@ trait Packet {
     val targetIdentifier: String
 
     /**
+     * this packet sender identifier
+     * */
+    val senderIdentifier: String
+
+    /**
      * @return true if this packet contains content, false instead
      * */
     lazy val haveContent: Boolean = !content.isEmpty

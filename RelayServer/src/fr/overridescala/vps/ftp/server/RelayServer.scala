@@ -1,7 +1,6 @@
 package fr.overridescala.vps.ftp.server
 
 import java.net.ServerSocket
-import java.nio.ByteBuffer
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
@@ -20,14 +19,17 @@ class RelayServer()
 
     private var open = false
 
+    /**
+     * For safety, prefer Relay#identfier instead of Constants.SERVER_ID
+     * */
     override val identifier: String = Constants.SERVER_ID
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
         val targetIdentifier = task.targetID
         val tasksHandler = connectionsManager.getConnectionFromIdentifier(targetIdentifier).tasksHandler
-        task.init(tasksHandler)
-        RelayTaskAction[R](task)
+        task.init(tasksHandler, identifier)
+        RelayTaskAction(task)
     }
 
     override def getTaskCompleterHandler: TaskCompleterHandler = completerHandler
@@ -41,19 +43,19 @@ class RelayServer()
         while (open) awaitClientConnection()
     }
 
-    def awaitClientConnection(): Unit = {
-        val clientSocket = serverSocket.accept()
-        val address = clientSocket.getRemoteSocketAddress
-        println(s"new connection : $address")
-        connectionsManager.register(clientSocket)
-    }
-
     override def close(): Unit = {
         println("closing server...")
         connectionsManager.close()
         serverSocket.close()
         open = false
         println("server disconnected !")
+    }
+
+    private def awaitClientConnection(): Unit = {
+        val clientSocket = serverSocket.accept()
+        val address = clientSocket.getRemoteSocketAddress
+        println(s"new connection : $address")
+        connectionsManager.register(clientSocket)
     }
 
     private def ensureOpen(): Unit = {

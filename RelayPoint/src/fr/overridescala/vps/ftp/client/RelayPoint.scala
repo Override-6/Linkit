@@ -22,7 +22,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
-        task.init(tasksHandler)
+        task.init(tasksHandler, identifier)
         RelayTaskAction(task)
     }
 

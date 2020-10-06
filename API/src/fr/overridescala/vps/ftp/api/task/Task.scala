@@ -39,6 +39,7 @@ import org.jetbrains.annotations.Nullable
 abstract class Task[T](val targetID: String)
         extends TaskAction[T] with TaskExecutor {
     @volatile private var handler: TasksHandler = _
+    @volatile private var relayIdentifier: String = _
 
     /**
      * Invoked when the task execution was successful.
@@ -54,8 +55,13 @@ abstract class Task[T](val targetID: String)
     @volatile
     @Nullable private var onError: String => Unit = Console.err.println
 
-    final def init(tasksHandler: TasksHandler): Task[T] = {
+    /**
+     * initialises this task.
+     * a task can't be executed if it was not initialised
+     * */
+    final def init(tasksHandler: TasksHandler, relayIdentifier: String): Task[T] = {
         handler = tasksHandler
+        this.relayIdentifier = relayIdentifier
         this
     }
 
@@ -66,9 +72,10 @@ abstract class Task[T](val targetID: String)
      * @param identifier specifies the task identifier used for packet channels.
      * */
     final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError, identifier: Int): Unit = {
+        checkInit()
         this.onSuccess = onSuccess
         this.onError = onError
-        handler.registerTask(this, identifier, targetID, true)
+        handler.registerTask(this, identifier, targetID, relayIdentifier, true)
     }
 
     /**
@@ -80,7 +87,8 @@ abstract class Task[T](val targetID: String)
      * @return the task result
      * */
     final override def complete(identifier: Int): T = {
-        handler.registerTask(this, identifier, targetID, true)
+        checkInit()
+        handler.registerTask(this, identifier, targetID, relayIdentifier, true)
         val atomicResult = new AtomicReference[T]()
         val onSuccess: T => Unit = result => synchronized {
             notify()
@@ -97,6 +105,10 @@ abstract class Task[T](val targetID: String)
         }
         atomicResult.get()
     }
+
+    private[task] def checkInit(): Unit =
+        if (relayIdentifier == null || handler == null)
+            throw new TaskException("please init this task before schedule")
 
     /**
      * Invoked by TaskExecutors to signal that this task was unsuccessful

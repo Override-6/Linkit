@@ -9,10 +9,11 @@ import fr.overridescala.vps.ftp.api.task.TaskExecutor
 class TaskTicket(private val executor: TaskExecutor,
                  private val taskID: Int,
                  private val targetID: String,
+                 private val senderIdentifier: String,
                  private val socket: Socket,
                  private val ownFreeWill: Boolean) {
 
-    var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, taskID)
+    var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, taskID)
     val taskName: String = executor.getClass.getSimpleName
 
     def start(): Unit = {

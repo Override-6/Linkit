@@ -30,12 +30,13 @@ class UploadTask(private val desc: TransferDescription)
         val destination = Path.of(desc.destination)
 
         if (Files.isDirectory(source)) {
-            if (!Files.isDirectory(destination)) {
+            //FIXME add a working folder to folder check.
+            /*if (!Files.isDirectory(destination)) {
                 val msg = "download root path have to be a folder path when downloading other folders"
                 channel.sendPacket(ABORT, msg)
                 error(msg)
                 return
-            }
+            }*/
             uploadDirectory(source)
 
         } else uploadFile(source)

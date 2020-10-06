@@ -27,17 +27,15 @@ class PacketReader(socket: Socket) extends Closeable {
         val packetSizeBytes = new Array[Byte](FLAG_SIZE)
         var i = 0
 
-        def flagNotFound: Boolean =
+        def sizeFlagNotFound: Boolean =
             !packetSizeBytes.containsSlice(")") || !packetSizeBytes.containsSlice(Protocol.PACKET_SIZE_FLAG)
 
         do {
             input.read(buff)
             packetSizeBytes(i) = buff(0)
             i += 1
-        } while (flagNotFound)
-
+        } while (sizeFlagNotFound)
         val packetBytes = input.readNBytes(Protocol.getFirstPacketLength(packetSizeBytes))
-        //println("found packet : " + new String(packetBytes))
         Protocol.toPacket(packetBytes)
     }
 

@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server.connection
 import java.io.Closeable
 import java.net.{Socket, SocketAddress}
 
-import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
+import fr.overridescala.vps.ftp.api.exceptions.{RelayException, RelayInitialisationException}
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.server.RelayServer
 
@@ -95,11 +95,18 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
         false
     }
 
+    /**
+     * Deflects a packet to his associated [[ClientConnectionThread]]
+     *
+     * @throws RelayException if no connection where found for this packet.
+     * @param packet the packet to deflect
+     * */
     private[connection] def deflectPacket(packet: Packet): Unit = {
-        println("DEFLECTING " + packet)
         val target: String = packet.targetIdentifier
-        getConnectionFromIdentifier(target)
-                .sendDeflectedPacket(packet)
+        val connection = getConnectionFromIdentifier(target)
+        if (connection == null)
+            throw new RelayException("unknown ID '" + target + "' to deflect packet")
+        connection.sendDeflectedPacket(packet)
     }
 
 

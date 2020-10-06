@@ -24,6 +24,7 @@ import fr.overridescala.vps.ftp.api.packet.Packet
  * */
 trait TasksHandler extends Closeable {
 
+
     /**
      * The relay identifier
      * */
@@ -55,5 +56,10 @@ trait TasksHandler extends Closeable {
      * @param taskIdentifier the task identifier
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
-    def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit
+    def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit
+
+    /**
+     * Suddenly stop a task execution and execute his predecessor.
+     * */
+    def skipCurrent(): Unit
 }

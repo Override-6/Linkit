@@ -4,7 +4,7 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
-import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferDescriptionBuilder}
 import fr.overridescala.vps.ftp.api.utils.Utils
 import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler.TempFolder
@@ -13,12 +13,14 @@ import scala.collection.mutable
 
 class ServerTaskCompleterHandler(private val server: Relay) extends TaskCompleterHandler {
 
-    private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler, String) => Unit]
-    = new mutable.HashMap[String, (TaskInitPacket, TasksHandler, String) => Unit]()
+    private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler) => Unit] = new mutable.HashMap()
 
-    override def handleCompleter(initPacket: TaskInitPacket, senderId: String, handler: TasksHandler): Unit =
+    override def handleCompleter(initPacket: TaskInitPacket,  handler: TasksHandler): Unit = {
+        println("FINDING COMPLETER FOR " + initPacket)
+        val senderId = initPacket.senderIdentifier
         if (testTransfer(initPacket, senderId, handler) && testOther(initPacket, handler))
             testMap(initPacket, senderId, handler)
+    }
 
     private def testTransfer(packet: TaskInitPacket, senderId: String, handler: TasksHandler): Boolean = {
         val taskType = packet.taskType
@@ -52,7 +54,7 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
 
             case _ => return true
         }
-        handler.registerTask(task, packet.taskID, targetID, false)
+        handler.registerTask(task, packet.taskID, targetID, server.identifier, false)
         false
     }
 
@@ -61,17 +63,17 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
         if (!completers.contains(taskType))
             throw new TaskException(s"no completer found for task type '$taskType'")
         val supplier = completers(initPacket.taskType)
-        supplier(initPacket, handler, senderId)
+        supplier(initPacket, handler)
     }
 
-    override def putCompleter(taskType: String, supplier: (TaskInitPacket, TasksHandler, String) => Unit): Unit =
+    override def putCompleter(taskType: String, supplier: (TaskInitPacket, TasksHandler) => Unit): Unit =
         completers.put(taskType, supplier)
 
     private def handleUpload(uploadDesc: TransferDescription, ownerID: String, taskID: Int, handler: TasksHandler): Unit = {
         println(uploadDesc)
         val desc = uploadDesc.reversed(ownerID)
         if (uploadDesc.targetID.equals(server.identifier)) {
-            handler.registerTask(DownloadTask(desc), taskID, ownerID, false)
+            handler.registerTask(DownloadTask(desc), taskID, ownerID, server.identifier, false)
             return
         }
 
@@ -86,14 +88,14 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
         * the server firsts download the folder from A
         * then upload the downloaded file to B
         * */
-        handler.registerTask(DownloadTask(desc), taskID, ownerID, false)
-        handler.registerTask(UploadTask(redirectedTransferDesc), taskID, desc.targetID, false)
+        registerTask(handler, DownloadTask(desc), taskID, ownerID)
+        registerTask(handler, UploadTask(redirectedTransferDesc), taskID, desc.targetID)
     }
 
     private def handleDownload(downloadDesc: TransferDescription, ownerID: String, taskID: Int, handler: TasksHandler): Unit = {
         val desc = downloadDesc.reversed(ownerID)
         if (downloadDesc.targetID.equals(server.identifier)) {
-            handler.registerTask(UploadTask(desc), taskID, ownerID, false)
+            registerTask(handler, UploadTask(desc), taskID, ownerID)
             return
         }
 
@@ -107,9 +109,13 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
         * the server firsts download the folder from B
         * then upload the downloaded file to A
         * */
-        handler.registerTask(DownloadTask(desc), taskID, desc.targetID, false)
-        handler.registerTask(UploadTask(redirectedTransferDesc), taskID, ownerID, false)
+        registerTask(handler, DownloadTask(desc), taskID, desc.targetID)
+        registerTask(handler, UploadTask(redirectedTransferDesc), taskID, ownerID)
     }
+
+    private def registerTask(handler: TasksHandler, task: Task[_], taskID: Int, targetID: String): Unit =
+        handler.registerTask(task, taskID, targetID, server.identifier, false)
+
 
 }
 

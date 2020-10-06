@@ -10,7 +10,7 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * */
 case class TaskInitPacket private(override val taskID: Int,
                                   override val targetIdentifier: String,
-                                  senderIdentifier: String,
+                                  override val senderIdentifier: String,
                                   taskType: String,
                                   override val content: Array[Byte] = Array()) extends Packet {
 
@@ -23,20 +23,10 @@ case class TaskInitPacket private(override val taskID: Int,
      * Represents this packet as a String
      * */
     override def toString: String =
-        s"TaskInitPacket{taskID: $taskID, taskType: $taskType, target: $targetIdentifier, additionalContent: ${new String(content)}}"
-
-    override def equals(obj: Any): Boolean = {
-        if (!obj.isInstanceOf[TaskInitPacket])
-            return false
-        val packet = obj.asInstanceOf[TaskInitPacket]
-        taskID == packet.taskID &&
-                targetIdentifier.equals(targetIdentifier) &&
-                taskType.equals(taskType) &&
-                content.sameElements(packet.content)
-    }
+        s"TaskInitPacket{taskID: $taskID, taskType: $taskType, target: $targetIdentifier, sender: $senderIdentifier, additionalContent: ${new String(content)}}"
 }
 
 object TaskInitPacket {
-    def of(taskId: Int, info: TaskInitInfo): TaskInitPacket =
-        TaskInitPacket(taskId, info.targetID, info.taskType, info.content)
+    def of(senderID: String, taskId: Int, info: TaskInitInfo): TaskInitPacket =
+        TaskInitPacket(taskId, info.targetID, senderID, info.taskType, info.content)
 }

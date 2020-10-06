@@ -8,7 +8,7 @@ import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
 
-class ClientTasksHandler(private val socket: Socket,
+ protected class ClientTasksHandler(private val socket: Socket,
                          private val relay: RelayPoint) extends Thread with TasksHandler {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
@@ -21,27 +21,24 @@ class ClientTasksHandler(private val socket: Socket,
     override val tasksCompleterHandler = new ClientTaskCompleterHandler(relay)
     override val identifier: String = relay.identifier
 
-    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit = {
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
         val ticket = new TaskTicket(executor, taskIdentifier, targetID, ownFreeWill)
         queue.offer(ticket)
     }
 
     override def handlePacket(packet: Packet): Unit = {
         if (isAbortPacket(packet)) {
-            //Restarting the thread causes the current task to be skipped
-            //And wait / execute the other task
-            close()
-            start()
+            skipCurrent()
             return
         }
         try {
             packet match {
-                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, identifier, this)
+                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, this)
                 case data: DataPacket if currentChannelManager != null => currentChannelManager.addPacket(data)
             }
         } catch {
             case e: TaskException =>
-                out.write(new DataPacket(Protocol.ERROR_ID, Protocol.ABORT_TASK, identifier).toBytes)
+                out.write(DataPacket(Protocol.ERROR_ID, Protocol.ABORT_TASK, relay.identifier, identifier))
                 throw e
         }
     }
@@ -54,7 +51,6 @@ class ClientTasksHandler(private val socket: Socket,
             currentChannelManager = ticket.channel
             ticket.start()
         }
-        setName("Client Tasks")
     }
 
 
@@ -70,16 +66,26 @@ class ClientTasksHandler(private val socket: Socket,
         dataPacket.taskID == Protocol.ERROR_ID && dataPacket.header.equals(Protocol.ABORT_TASK)
     }
 
+     override def skipCurrent(): Unit = {
+         //Restarting the thread causes the current task to be skipped
+         //And wait or execute the task that come after it
+         println("skipping task...")
+         close()
+         start()
+         println("task skipped !")
+     }
+
     private class TaskTicket(private val executor: TaskExecutor,
                              private val taskID: Int,
                              private val targetID: String,
                              private val ownFreeWill: Boolean) {
 
         val taskName: String = executor.getClass.getSimpleName
-        private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, taskID)
+        private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, relay.identifier, taskID)
 
         def start(): Unit = {
             try {
+                //println(s"executing $taskName...")
                 if (ownFreeWill) {
                     val initInfo = executor.initInfo
                     channel.sendInitPacket(initInfo)
@@ -95,6 +101,5 @@ class ClientTasksHandler(private val socket: Socket,
                 s" freeWill = $ownFreeWill)"
 
     }
-
-
-}
+     setName("Client Tasks scheduler")
+ }

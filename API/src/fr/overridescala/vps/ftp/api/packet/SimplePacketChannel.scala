@@ -15,12 +15,15 @@ import scala.util.control.NonFatal
  *
  * @param socket the socket where packets will be sent
  * @param taskID the taskID attributed to this PacketChannel
+ * @param connectedRelayIdentifier the identifier of connected relay
+ * @param ownerIdentifier the relay identifier of this channel owner
  *
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
 class SimplePacketChannel(private val socket: Socket,
-                          private val targetID: String,
+                          private val connectedRelayIdentifier: String,
+                          private val ownerIdentifier: String,
                           override val taskID: Int)
         extends PacketChannel with PacketChannelManager {
 
@@ -40,17 +43,15 @@ class SimplePacketChannel(private val socket: Socket,
      * @param content the packet content
      * */
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
-        val bytes = new DataPacket(taskID, header, targetID, content).toBytes
-        out.write(bytes)
+        val packet = DataPacket(taskID, header, connectedRelayIdentifier, ownerIdentifier, content)
+        out.write(packet)
         out.flush()
     }
 
     //TODO doc
     override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
-        val packet = TaskInitPacket.of(taskID, initInfo)
-        //println("SENDING : " + packet.toBytes.array().mkString("Array(", ", ", ")"))
-        //println("SENDING (asString): " + new String(packet.toBytes.array()))
-        out.write(packet.toBytes)
+        val packet = TaskInitPacket.of(ownerIdentifier, taskID, initInfo)
+        out.write(packet)
         out.flush()
     }
 
@@ -78,7 +79,7 @@ class SimplePacketChannel(private val socket: Socket,
      * */
     override def addPacket(packet: DataPacket): Unit = {
         if (packet.taskID != taskID)
-            throw UnexpectedPacketException("packet sessions differs ! ")
+            throw UnexpectedPacketException(s"packet sessions differs ! ($packet)")
         if (handleListener(packet))
             queue.addFirst(packet)
     }

@@ -32,16 +32,9 @@ class ClientTasksHandler(override val identifier: String,
      * @throws TaskException if the handling went wrong
      * */
     override def handlePacket(packet: Packet): Unit = {
-        if (isAbortPacket(packet)) {
-            //Restarting the thread causes the current task to be skipped
-            //And wait / execute the other task
-            tasksThread.close()
-            tasksThread.start()
-            return
-        }
         try {
             packet match {
-                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, identifier, this)
+                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, this)
                 case data: DataPacket => tasksThread.injectPacket(data)
             }
         } catch {
@@ -57,8 +50,8 @@ class ClientTasksHandler(override val identifier: String,
      * @param taskIdentifier the task identifier
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
-    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit =
-        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, identifier, socket, ownFreeWill))
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit =
+        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, identifier, senderID, socket, ownFreeWill))
 
     /**
      * closes the current client tasks thread
@@ -68,10 +61,13 @@ class ClientTasksHandler(override val identifier: String,
         out.close()
     }
 
-    private def isAbortPacket(packet: Packet): Boolean = {
-        if (!packet.isInstanceOf[DataPacket])
-            return false
-        val dataPacket = packet.asInstanceOf[DataPacket]
-        dataPacket.taskID == Protocol.ERROR_ID && dataPacket.header.equals(Protocol.ABORT_TASK)
+    /**
+     * Suddenly stop a task execution and execute his predecessor.
+     * */
+    override def skipCurrent(): Unit = {
+        //Restarting the thread causes the current task to be skipped
+        //And wait or execute the task that come after it
+        tasksThread.close()
+        tasksThread.start()
     }
 }

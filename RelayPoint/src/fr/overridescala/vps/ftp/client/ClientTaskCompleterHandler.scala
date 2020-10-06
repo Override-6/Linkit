@@ -13,14 +13,14 @@ import scala.collection.mutable
 class ClientTaskCompleterHandler(private val relay: Relay)
         extends TaskCompleterHandler {
 
-    private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler, String) => Unit] =
-        new mutable.HashMap[String, (TaskInitPacket, TasksHandler, String) => Unit]()
+    private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler) => Unit] = new mutable.HashMap()
 
-    override def handleCompleter(initPacket: TaskInitPacket, ownerID: String, tasksHandler: TasksHandler): Unit = {
+    override def handleCompleter(initPacket: TaskInitPacket, tasksHandler: TasksHandler): Unit = {
         val taskType = initPacket.taskType
         val content = initPacket.content
         val taskID = initPacket.taskID
         val contentString = new String(content)
+        val senderID = initPacket.senderIdentifier
         val task = taskType match {
             case UploadTask.TYPE => DownloadTask(Utils.deserialize(content))
             case DownloadTask.TYPE => UploadTask(Utils.deserialize(content))
@@ -34,17 +34,17 @@ class ClientTaskCompleterHandler(private val relay: Relay)
             case _ => null
         }
         if (task != null) {
-            tasksHandler.registerTask(task, taskID, ownerID, false)
+            tasksHandler.registerTask(task, taskID, senderID, relay.identifier, false)
             return
         }
-
+        println(initPacket)
         val completerSupplier = completers(taskType)
         if (completerSupplier == null)
             throw new TaskException("could not find completer for task " + taskType)
-        completerSupplier(initPacket, tasksHandler, ownerID)
+        completerSupplier(initPacket, tasksHandler)
     }
 
-    override def putCompleter(taskType: String, supplier: (TaskInitPacket, TasksHandler, String) => Unit): Unit =
+    override def putCompleter(taskType: String, supplier: (TaskInitPacket, TasksHandler) => Unit): Unit =
         completers.put(taskType, supplier)
 
 }
