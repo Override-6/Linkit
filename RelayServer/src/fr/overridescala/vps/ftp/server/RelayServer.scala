@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.server
 
-import java.net.ServerSocket
+import java.net.{ServerSocket, SocketException}
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
@@ -62,6 +62,9 @@ class RelayServer()
             connectionsManager.register(clientSocket)
         } catch {
             case e: RelayException => Console.err.println(e.getMessage)
+            case e: SocketException if e.getMessage == "Socket closed" =>
+                Console.err.println(e.getMessage)
+                close()
             case NonFatal(e) => e.printStackTrace()
         }
     }

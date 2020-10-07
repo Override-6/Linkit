@@ -65,8 +65,8 @@ class ClientTasksThread(ownerID: String) extends Thread with Closeable with Clon
 
     private def executeNextTicket(): Unit = {
         val ticket = queue.take()
-        val channel = currentTicket.channel
         currentTicket = ticket
+        val channel = ticket.channel
         val taskID = channel.taskID
         if (lostPackets.contains(taskID)) {
             val queue = lostPackets(taskID)

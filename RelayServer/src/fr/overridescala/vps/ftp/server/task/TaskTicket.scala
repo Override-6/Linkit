@@ -16,7 +16,10 @@ class TaskTicket(private val executor: TaskExecutor,
     var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, taskID)
     val taskName: String = executor.getClass.getSimpleName
 
-    def notifyExecutor(): Unit = executor.notifyAll()
+    def notifyExecutor(): Unit = executor.synchronized {
+        executor.notifyAll()
+    }
+
 
     def start(): Unit = {
         try {

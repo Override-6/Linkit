@@ -74,6 +74,8 @@ protected class ClientTasksHandler(private val socket: Socket,
             currentTicket = ticket
             ticket.start()
         } catch {
+            //Do not considerate InterruptedException
+            case _: InterruptedException =>
             case NonFatal(e) => e.printStackTrace()
         }
     }
@@ -99,8 +101,7 @@ protected class ClientTasksHandler(private val socket: Socket,
         val taskName: String = executor.getClass.getSimpleName
         private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, relay.identifier, taskID)
 
-        def notifyExecutor(): Unit = synchronized(executor) = {
-            //FIXME current thread is not owner
+        def notifyExecutor(): Unit = executor.synchronized {
             executor.notifyAll()
         }
 
