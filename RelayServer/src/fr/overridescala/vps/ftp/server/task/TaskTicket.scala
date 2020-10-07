@@ -16,6 +16,8 @@ class TaskTicket(private val executor: TaskExecutor,
     var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, taskID)
     val taskName: String = executor.getClass.getSimpleName
 
+    def notifyExecutor(): Unit = executor.notifyAll()
+
     def start(): Unit = {
         try {
             println(s"executing $taskName...")
@@ -23,12 +25,13 @@ class TaskTicket(private val executor: TaskExecutor,
                 channel.sendInitPacket(executor.initInfo)
             }
             executor.execute(channel)
+            notifyExecutor()
             println(s"$taskName completed !")
         } catch {
             // Do not prints those exceptions : they are normal errors
             // lifted when a task is brutally aborted via Thread.stop
-            case e: IllegalMonitorStateException =>
-            case e: InterruptedException =>
+            case _: IllegalMonitorStateException =>
+            case _: InterruptedException =>
             case e: IOException if e.getMessage != null && e.getMessage.equalsIgnoreCase("Broken pipe") =>
 
             case e: Throwable => e.printStackTrace()

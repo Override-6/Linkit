@@ -39,7 +39,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             open = true
             while (open) {
                 try {
-                    tasksHandler.handlePacket(packetReader.readPacket())
+                    packetReader
+                            .readPacket()
+                            .ifPresent(p => tasksHandler.handlePacket(p))
                 } catch {
                     case _: AsynchronousCloseException =>
                         Console.err.println("asynchronous close.")

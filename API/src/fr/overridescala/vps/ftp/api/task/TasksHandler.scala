@@ -59,7 +59,7 @@ trait TasksHandler extends Closeable {
     def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit
 
     /**
-     * Suddenly stop a task execution and execute his predecessor.
+     * Suddenly stop a task execution and execute his successor.
      * */
     def skipCurrent(): Unit
 }

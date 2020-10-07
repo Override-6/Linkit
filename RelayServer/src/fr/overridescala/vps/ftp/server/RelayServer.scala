@@ -4,10 +4,13 @@ import java.net.ServerSocket
 import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
 import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler
+
+import scala.util.control.NonFatal
 
 class RelayServer()
         extends Relay {
@@ -52,10 +55,15 @@ class RelayServer()
     }
 
     private def awaitClientConnection(): Unit = {
-        val clientSocket = serverSocket.accept()
-        val address = clientSocket.getRemoteSocketAddress
-        println(s"new connection : $address")
-        connectionsManager.register(clientSocket)
+        try {
+            val clientSocket = serverSocket.accept()
+            val address = clientSocket.getRemoteSocketAddress
+            println(s"new connection : $address")
+            connectionsManager.register(clientSocket)
+        } catch {
+            case e: RelayException => Console.err.println(e.getMessage)
+            case NonFatal(e) => e.printStackTrace()
+        }
     }
 
     private def ensureOpen(): Unit = {

@@ -67,7 +67,8 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * */
     def getConnectionFromIdentifier(identifier: String): ClientConnectionThread = {
         for ((_, connection) <- connections) {
-            if (connection.identifier.equals(identifier))
+            val connectionIdentifier = connection.tasksHandler.identifier
+            if (connectionIdentifier.equals(identifier))
                 return connection
         }
         null
@@ -89,9 +90,11 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * @return true if any connected Relay have the specified identifier
      * */
     def containsIdentifier(identifier: String): Boolean = {
-        for (connection <- connections.values)
-            if (connection.identifier.equals(identifier))
+        for (connection <- connections.values) {
+            val connectionIdentifier = connection.tasksHandler.identifier
+            if (connectionIdentifier.equals(identifier))
                 return true
+        }
         false
     }
 
@@ -105,7 +108,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
         val target: String = packet.targetIdentifier
         val connection = getConnectionFromIdentifier(target)
         if (connection == null)
-            throw new RelayException("unknown ID '" + target + "' to deflect packet")
+            throw new RelayException(s"unknown ID '$target' to deflect packet")
         connection.sendDeflectedPacket(packet)
     }
 

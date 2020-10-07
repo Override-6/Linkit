@@ -26,6 +26,7 @@ class ClientConnectionThread(socket: Socket,
     override def run(): Unit = {
         open = true
         val identifier = tasksHandler.identifier
+        println(s"Thread '$getName' was started")
         try {
             while (open)
                 update(handlePacket)
@@ -80,11 +81,9 @@ class ClientConnectionThread(socket: Socket,
 
     private def update(onPacketReceived: Packet => Unit): Unit = {
         try {
-            val packet = packetReader.readPacket()
-            if (!packet.targetIdentifier.equals(server.identifier)) {
-                manager.deflectPacket(packet)
-            }
-            onPacketReceived(packet)
+            packetReader
+                    .readPacket()
+                    .ifPresent(p => onPacketReceived(p))
         } catch {
             case e: RelayException => executeError(e)
         }
@@ -101,20 +100,19 @@ class ClientConnectionThread(socket: Socket,
         val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
         channel.sendPacket(response)
 
-        if (response.equals("ERROR")) {
-            println("a Relay point connection have been rejected.")
-            return null
-        }
+        if (response.equals("ERROR"))
+            throw new RelayException("a Relay point connection have been rejected.")
+
         println(s"Relay Point connected with identifier '$identifier'")
         setName(s"RP Connection ($identifier)")
         new ClientTasksHandler(identifier, server, socket)
     }
 
 
-    private def deflectInChannel(channel: PacketChannelManager): Unit = {
+    private def deflectInChannel(channel: PacketChannelManager): Unit =
         update {
             case data: DataPacket => channel.addPacket(data)
+            case init: TaskInitPacket => handlePacket(init)
         }
-    }
 
 }

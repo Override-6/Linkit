@@ -20,8 +20,9 @@ class ClientTasksHandler(override val identifier: String,
 
 
     private val out = new BufferedOutputStream(socket.getOutputStream)
-    private val tasksThread = new ClientTasksThread(identifier)
+    private var tasksThread = new ClientTasksThread(identifier)
     tasksThread.start()
+
 
     override val tasksCompleterHandler: TaskCompleterHandler = server.getTaskCompleterHandler
 
@@ -62,12 +63,15 @@ class ClientTasksHandler(override val identifier: String,
     }
 
     /**
-     * Suddenly stop a task execution and execute his predecessor.
+     * Suddenly stop a task execution and execute his successor.
      * */
     override def skipCurrent(): Unit = {
         //Restarting the thread causes the current task to be skipped
         //And wait or execute the task that come after it
-        tasksThread.close()
+        val lastThread = tasksThread
+        tasksThread = tasksThread.clone()
+        lastThread.close()
         tasksThread.start()
     }
+
 }

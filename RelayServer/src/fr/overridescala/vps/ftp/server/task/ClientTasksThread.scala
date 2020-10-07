@@ -7,45 +7,42 @@ import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannelManager}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
-class ClientTasksThread(ownerID: String) extends Thread with Closeable {
+class ClientTasksThread(ownerID: String) extends Thread with Closeable with Cloneable {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private val lostPackets: mutable.Map[Int, ListBuffer[DataPacket]] = mutable.Map.empty
+
     @volatile private var open = false
-    @volatile private var currentChannelManager: PacketChannelManager = _
+    @volatile private var currentTicket: TaskTicket = _
 
     override def run(): Unit = {
         open = true
         while (open) {
             try {
-                val ticket = queue.take()
-                currentChannelManager = ticket.channel
-                val taskID = currentChannelManager.taskID
-                if (lostPackets.contains(taskID)) {
-                    val queue = lostPackets(taskID)
-                    queue.foreach(currentChannelManager.addPacket)
-                    queue.clear()
-                    lostPackets.remove(taskID)
-                }
-                ticket.start()
+                executeNextTicket()
             } catch {
                 //normal exception thrown when the thread was suddenly stopped
                 case e: InterruptedException =>
+                case NonFatal(e) => e.printStackTrace()
             }
         }
     }
 
     override def close(): Unit = {
-        open = false
+        if (currentTicket != null)
+            currentTicket.notifyExecutor()
         queue.clear()
         lostPackets.clear()
+        open = false
         interrupt()
     }
 
-    def injectPacket(packet: DataPacket): Unit = {
+    private[task] def injectPacket(packet: DataPacket): Unit = {
         if (canInject(packet)) {
-            currentChannelManager.addPacket(packet)
+            val channel = currentTicket.channel
+            channel.addPacket(packet)
             return
         }
         val packetTaskID = packet.taskID
@@ -59,12 +56,31 @@ class ClientTasksThread(ownerID: String) extends Thread with Closeable {
         lostPackets.put(packetTaskID, lost)
     }
 
-    def addTicket(ticket: TaskTicket): Unit = {
+    private[task] def addTicket(ticket: TaskTicket): Unit = {
         queue.add(ticket)
     }
 
-    private def canInject(packet: DataPacket): Boolean =
-        currentChannelManager != null && currentChannelManager.taskID == packet.taskID
+    override def clone(): ClientTasksThread =
+        super.clone().asInstanceOf[ClientTasksThread]
+
+    private def executeNextTicket(): Unit = {
+        val ticket = queue.take()
+        val channel = currentTicket.channel
+        currentTicket = ticket
+        val taskID = channel.taskID
+        if (lostPackets.contains(taskID)) {
+            val queue = lostPackets(taskID)
+            queue.foreach(channel.addPacket)
+            queue.clear()
+            lostPackets.remove(taskID)
+        }
+        ticket.start()
+    }
+
+    private def canInject(packet: DataPacket): Boolean = {
+        val channel = currentTicket.channel
+        currentTicket != null && channel.taskID == packet.taskID
+    }
 
     setName(s"RP Task Execution ($ownerID)")
 

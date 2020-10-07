@@ -8,21 +8,23 @@ import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
 
- protected class ClientTasksHandler(private val socket: Socket,
-                         private val relay: RelayPoint) extends Thread with TasksHandler {
+import scala.util.control.NonFatal
+
+protected class ClientTasksHandler(private val socket: Socket,
+                                   private val relay: RelayPoint) extends TasksHandler {
 
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private val out = new BufferedOutputStream(socket.getOutputStream)
+    private var tasksThread: Thread = _
 
-
-    private var currentChannelManager: PacketChannelManager = _
+    private var currentTicket: TaskTicket = _
     @volatile private var open = false
 
     override val tasksCompleterHandler = new ClientTaskCompleterHandler(relay)
     override val identifier: String = relay.identifier
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
-        val ticket = new TaskTicket(executor, taskIdentifier, targetID, ownFreeWill)
+        val ticket = TaskTicket(executor, taskIdentifier, targetID, ownFreeWill)
         queue.offer(ticket)
     }
 
@@ -34,7 +36,7 @@ import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
         try {
             packet match {
                 case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, this)
-                case data: DataPacket if currentChannelManager != null => currentChannelManager.addPacket(data)
+                case data: DataPacket if currentTicket != null => currentTicket.channel.addPacket(data)
             }
         } catch {
             case e: TaskException =>
@@ -43,20 +45,37 @@ import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
         }
     }
 
-    override def run(): Unit = {
+
+    override def close(): Unit = {
+        if (currentTicket != null)
+            currentTicket.notifyExecutor()
+        open = false
+        tasksThread.interrupt()
+    }
+
+    override def skipCurrent(): Unit = {
+        //Restarting the thread causes the current task to be skipped
+        //And wait or execute the task that come after it
+        close()
+        start()
+    }
+
+    private def listen(): Unit = {
         open = true
-        while (open) {
-            val ticket = queue.take()
-            if (!open) return
-            currentChannelManager = ticket.channel
-            ticket.start()
-        }
+        while (open)
+            executeNextTask()
     }
 
 
-    override def close(): Unit = {
-        open = false
-        interrupt()
+    private def executeNextTask(): Unit = {
+        try {
+            val ticket = queue.take()
+            if (!open) return
+            currentTicket = ticket
+            ticket.start()
+        } catch {
+            case NonFatal(e) => e.printStackTrace()
+        }
     }
 
     private def isAbortPacket(packet: Packet): Boolean = {
@@ -66,40 +85,39 @@ import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
         dataPacket.taskID == Protocol.ERROR_ID && dataPacket.header.equals(Protocol.ABORT_TASK)
     }
 
-     override def skipCurrent(): Unit = {
-         //Restarting the thread causes the current task to be skipped
-         //And wait or execute the task that come after it
-         println("skipping task...")
-         close()
-         start()
-         println("task skipped !")
-     }
+    def start(): Unit = {
+        tasksThread = new Thread(() => listen())
+        tasksThread.setName("Client Tasks scheduler")
+        tasksThread.start()
+    }
 
-    private class TaskTicket(private val executor: TaskExecutor,
-                             private val taskID: Int,
-                             private val targetID: String,
-                             private val ownFreeWill: Boolean) {
+    private case class TaskTicket(private val executor: TaskExecutor,
+                                  private val taskID: Int,
+                                  private val targetID: String,
+                                  private val ownFreeWill: Boolean) {
 
         val taskName: String = executor.getClass.getSimpleName
         private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, relay.identifier, taskID)
 
+        def notifyExecutor(): Unit = synchronized(executor) = {
+            //FIXME current thread is not owner
+            executor.notifyAll()
+        }
+
         def start(): Unit = {
             try {
-                //println(s"executing $taskName...")
                 if (ownFreeWill) {
                     val initInfo = executor.initInfo
                     channel.sendInitPacket(initInfo)
                 }
                 executor.execute(channel)
+                notifyExecutor()
             } catch {
-                case e: Throwable => e.printStackTrace()
+                case _: InterruptedException => Console.err.println(s"$taskName execution suddenly ended")
+                case NonFatal(e) => e.printStackTrace()
             }
         }
 
-        override def toString: String = s"Ticket(taskName = $taskName," +
-                s" id = $taskID," +
-                s" freeWill = $ownFreeWill)"
-
     }
-     setName("Client Tasks scheduler")
- }
+
+}
