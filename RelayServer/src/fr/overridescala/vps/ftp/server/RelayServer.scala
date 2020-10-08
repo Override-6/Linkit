@@ -5,6 +5,7 @@ import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
+import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
@@ -12,13 +13,13 @@ import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler
 
 import scala.util.control.NonFatal
 
-class RelayServer()
-        extends Relay {
+class RelayServer extends Relay {
 
 
     private val serverSocket = new ServerSocket(Constants.PORT)
     private val completerHandler = new ServerTaskCompleterHandler(this)
     private val connectionsManager = new ConnectionsManager(this)
+    private val packetManager = new PacketManager()
 
     private var open = false
 
@@ -77,4 +78,6 @@ class RelayServer()
     // default tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
 
+
+    override def getPacketManager: PacketManager = ???
 }

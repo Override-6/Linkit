@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.api.task
 
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.PacketChannel
 
 /**
  * The usable side for a [[TasksHandler]] to handle this task.
@@ -25,7 +26,7 @@ trait TaskExecutor {
      * @param channel the channel where the packet will be send and received
      *
      * @see [[PacketChannel]]
-     * @see [[fr.overridescala.vps.ftp.api.packet.DataPacket]]
+     * @see [[DataPacket]]
      * */
     def execute(channel: PacketChannel): Unit
 

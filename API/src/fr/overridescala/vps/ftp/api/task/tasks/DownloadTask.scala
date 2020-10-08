@@ -4,7 +4,8 @@ import java.io.File
 import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
+import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, TYPE}
 import fr.overridescala.vps.ftp.api.task._
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription

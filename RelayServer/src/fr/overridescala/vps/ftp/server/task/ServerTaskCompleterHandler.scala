@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.server.task
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.task.tasks._
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.{TransferDescription, TransferDescriptionBuilder}

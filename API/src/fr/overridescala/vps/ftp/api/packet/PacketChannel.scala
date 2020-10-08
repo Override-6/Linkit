@@ -1,5 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet
 
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
+
 /**
  * this class link two Relay between them. As a Channel, it can send packet, or wait until a packet was received
  *

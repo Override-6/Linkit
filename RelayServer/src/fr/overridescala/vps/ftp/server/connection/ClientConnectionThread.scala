@@ -6,6 +6,7 @@ import java.net.{Socket, SocketException}
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, UnexpectedPacketException}
 import fr.overridescala.vps.ftp.api.packet._
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.server.task.ClientTasksHandler
 

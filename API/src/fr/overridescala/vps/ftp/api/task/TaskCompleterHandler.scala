@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.task
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.TaskInitPacket
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
 
 /**
  * handles TaskCompleters from

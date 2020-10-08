@@ -1,8 +1,7 @@
 package fr.overridescala.vps.ftp.api.utils;
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException;
-import fr.overridescala.vps.ftp.api.packet.DataPacket;
-import scala.Array;
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket;
 import scala.collection.Seq;
 
 import java.io.*;
@@ -10,8 +9,6 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
 
 public class Utils {
 

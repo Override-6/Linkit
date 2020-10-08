@@ -4,7 +4,8 @@ import java.nio.file.{Files, Path}
 import java.util
 
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, UnexpectedPacketException}
-import fr.overridescala.vps.ftp.api.packet.{DataPacket, PacketChannel}
+import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, TYPE, UPLOAD_FILE}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription

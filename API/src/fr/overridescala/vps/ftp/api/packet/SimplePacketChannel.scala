@@ -5,6 +5,7 @@ import java.net.Socket
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 import scala.collection.mutable

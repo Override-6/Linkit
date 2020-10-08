@@ -26,15 +26,4 @@ trait Packet {
      * */
     lazy val haveContent: Boolean = !content.isEmpty
 
-    /**
-     * the packet represented to bytes sequence.
-     * */
-    implicit def toBytes: Array[Byte]
-
-
-}
-
-object Packet {
-    implicit def autoBytes(packet: Packet): Array[Byte] =
-        packet.toBytes
 }
