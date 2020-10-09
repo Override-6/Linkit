@@ -6,6 +6,7 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet._
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
 
 import scala.util.control.NonFatal
@@ -13,6 +14,7 @@ import scala.util.control.NonFatal
 protected class ClientTasksHandler(private val socket: Socket,
                                    private val relay: RelayPoint) extends TasksHandler {
 
+    private val packetManager = relay.getPacketManager
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private val out = new BufferedOutputStream(socket.getOutputStream)
     private var tasksThread: Thread = _
@@ -40,7 +42,8 @@ protected class ClientTasksHandler(private val socket: Socket,
             }
         } catch {
             case e: TaskException =>
-                out.write(DataPacket(Protocol.ERROR_ID, Protocol.ABORT_TASK, relay.identifier, identifier))
+                val packet = ErrorPacket(ErrorPacket.ABORT_TASK, e.getMessage, identifier)
+                out.write(packetManager.toBytes(packet))
                 throw e
         }
     }
@@ -81,10 +84,9 @@ protected class ClientTasksHandler(private val socket: Socket,
     }
 
     private def isAbortPacket(packet: Packet): Boolean = {
-        if (!packet.isInstanceOf[DataPacket])
+        if (!packet.isInstanceOf[ErrorPacket])
             return false
-        val dataPacket = packet.asInstanceOf[DataPacket]
-        dataPacket.taskID == Protocol.ERROR_ID && dataPacket.header.equals(Protocol.ABORT_TASK)
+        packet.asInstanceOf[ErrorPacket].errorType == ErrorPacket.ABORT_TASK
     }
 
     def start(): Unit = {
@@ -99,7 +101,8 @@ protected class ClientTasksHandler(private val socket: Socket,
                                   private val ownFreeWill: Boolean) {
 
         val taskName: String = executor.getClass.getSimpleName
-        private[ClientTasksHandler] val channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, relay.identifier, taskID)
+        private[ClientTasksHandler] val channel: SimplePacketChannel =
+            new SimplePacketChannel(socket, targetID, relay.identifier, packetManager, taskID)
 
         def notifyExecutor(): Unit = executor.synchronized {
             executor.notifyAll()

@@ -11,13 +11,14 @@ import fr.overridescala.vps.ftp.client.cli.commands.{CreateFileCommand, PingComm
 object Main {
 
     private val SERVER_ADDRESS = new InetSocketAddress("161.97.104.230", Constants.PORT)
+    private val LOCALHOST = new InetSocketAddress("localhost", Constants.PORT)
 
     print("say 'y' to connect to localhost : ")
     private val scanner = new Scanner(System.in)
     private val isLocalhost = scanner.nextLine().startsWith("y")
     print("choose a identifier : ")
     private val identifier = scanner.nextLine()
-    private val address = if (isLocalhost) Constants.LOCALHOST else SERVER_ADDRESS
+    private val address = if (isLocalhost) LOCALHOST else SERVER_ADDRESS
     private val relayPoint: Relay = new RelayPoint(address, identifier)
     private val commandsManager = new CommandManager(scanner)
 

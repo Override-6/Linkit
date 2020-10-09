@@ -16,7 +16,6 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
     private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler) => Unit] = new mutable.HashMap()
 
     override def handleCompleter(initPacket: TaskInitPacket,  handler: TasksHandler): Unit = {
-        println("FINDING COMPLETER FOR " + initPacket)
         val senderId = initPacket.senderIdentifier
         if (testTransfer(initPacket, senderId, handler) && testOther(initPacket, handler))
             testMap(initPacket, senderId, handler)

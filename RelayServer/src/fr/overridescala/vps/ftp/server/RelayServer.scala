@@ -79,5 +79,5 @@ class RelayServer extends Relay {
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
 
 
-    override def getPacketManager: PacketManager = ???
+    override def getPacketManager: PacketManager = packetManager
 }

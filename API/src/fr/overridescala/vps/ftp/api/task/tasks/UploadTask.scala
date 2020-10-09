@@ -4,8 +4,8 @@ import java.nio.file.{Files, Path}
 import java.util
 
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, UnexpectedPacketException}
-import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, TYPE, UPLOAD_FILE}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
@@ -93,14 +93,18 @@ class UploadTask(private val desc: TransferDescription)
         stream.close()
     }
 
-    private def handleUnexpectedPacket(packet: DataPacket): Unit = {
-        val header = packet.header
-        val content = packet.content
-        if (header.equals(ABORT)) {
-            error(new String(content))
-            return
+    private def handleUnexpectedPacket(packet: Packet): Unit = {
+        packet match {
+            case errorPacket: ErrorPacket =>
+                errorPacket.printError()
+                error(errorPacket.errorMsg)
+            case dataPacket: DataPacket =>
+                val header = dataPacket.header
+                val errorMsg = s"unexpected packet with header $header was received."
+                error(errorMsg)
+                throw UnexpectedPacketException(errorMsg)
+            case _ => throw UnexpectedPacketException(s"Received unexpected packet of type ${packet.className}")
         }
-        throw UnexpectedPacketException(s"unexpected packet with header $header was received.")
     }
 
     private def checkPath(path: Path): Boolean = {

@@ -4,7 +4,7 @@ import java.io.Closeable
 import java.net.{Socket, SocketAddress}
 
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, RelayInitialisationException}
-import fr.overridescala.vps.ftp.api.packet.Packet
+import fr.overridescala.vps.ftp.api.packet.{IdentifiablePacket, Packet}
 import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.collection.mutable
@@ -104,7 +104,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * @throws RelayException if no connection where found for this packet.
      * @param packet the packet to deflect
      * */
-    private[connection] def deflectPacket(packet: Packet): Unit = {
+    private[connection] def deflectPacket(packet: IdentifiablePacket): Unit = {
         val target: String = packet.targetIdentifier
         val connection = getConnectionFromIdentifier(target)
         if (connection == null)

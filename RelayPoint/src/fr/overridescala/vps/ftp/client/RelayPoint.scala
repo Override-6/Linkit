@@ -6,6 +6,7 @@ import java.nio.charset.Charset
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.PacketReader
+import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
@@ -13,9 +14,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
     private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
-    socket.setPerformancePreferences(0, 0, Integer.MAX_VALUE)
+    private val packetManager = new PacketManager()
     private val tasksHandler = new ClientTasksHandler(socket, this)
-    private val packetReader = new PacketReader(socket)
+    private val packetReader = new PacketReader(socket, packetManager)
 
 
     @volatile private var open = false
@@ -56,6 +57,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         thread.setName("RelayPoint Packet handling")
         thread.start()
     }
+
+
+    override def getPacketManager: PacketManager = packetManager
 
     override def close(): Unit = {
         open = false

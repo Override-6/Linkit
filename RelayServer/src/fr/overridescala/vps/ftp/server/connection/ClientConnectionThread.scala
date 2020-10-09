@@ -4,9 +4,9 @@ import java.io.{BufferedOutputStream, Closeable}
 import java.net.{Socket, SocketException}
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.exceptions.{RelayException, UnexpectedPacketException}
+import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.server.task.ClientTasksHandler
 
@@ -16,8 +16,8 @@ class ClientConnectionThread(socket: Socket,
                              server: Relay,
                              manager: ConnectionsManager) extends Thread with Closeable {
 
-
-    private val packetReader: PacketReader = new PacketReader(socket)
+    private val packetManager = server.getPacketManager
+    private val packetReader: PacketReader = new PacketReader(socket, server.getPacketManager)
     private val writer = new BufferedOutputStream(socket.getOutputStream)
 
     val tasksHandler: TasksHandler = initialiseConnection()
@@ -50,35 +50,32 @@ class ClientConnectionThread(socket: Socket,
     }
 
     private[connection] def sendDeflectedPacket(packet: Packet): Unit = {
-        writer.write(packet)
+        writer.write(packetManager.toBytes(packet))
         writer.flush()
     }
 
     private def handlePacket(packet: Packet): Unit = {
-        if (packet.taskID != Protocol.ERROR_ID) {
-            if (packet.targetIdentifier != server.identifier)
-                manager.deflectPacket(packet)
-            else
-                tasksHandler.handlePacket(packet)
-            return
+        packet match {
+            case identifiablePacket: IdentifiablePacket =>
+                if (identifiablePacket.targetIdentifier != server.identifier)
+                    manager.deflectPacket(identifiablePacket)
+                else tasksHandler.handlePacket(packet)
+            case errorPacket: ErrorPacket =>
+                errorPacket.errorType match {
+                    case ErrorPacket.ABORT_TASK =>
+                        printErrorPacket(errorPacket)
+                        tasksHandler.skipCurrent()
+                    case _ => tasksHandler.handlePacket(packet)
+                }
         }
-        if (!packet.isInstanceOf[DataPacket])
-            throw UnexpectedPacketException("received unexpected packet type in error report channel")
-        val data = packet.asInstanceOf[DataPacket]
-        val identifier = tasksHandler.identifier
-        Console.err.println(s"received error from relay '$identifier' of type '${data.header}'")
-        Console.err.println(new String(data.header))
-        if (data.header == Protocol.ABORT_TASK)
-            tasksHandler.skipCurrent()
     }
 
-    private def executeError(e: RelayException): Unit = {
+    private def printErrorPacket(packet: ErrorPacket): Unit = {
         val identifier = tasksHandler.identifier
-        Console.err.println(e.getMessage)
-        writer.write(DataPacket(Protocol.ERROR_ID, Protocol.ABORT_TASK, identifier, server.identifier))
-        writer.flush()
+        val errorType = packet.errorType
+        Console.err.println(s"received error from relay '$identifier' of type '$errorType'")
+        packet.printError()
     }
-
 
     private def update(onPacketReceived: Packet => Unit): Unit = {
         try {
@@ -91,9 +88,18 @@ class ClientConnectionThread(socket: Socket,
     }
 
 
+    private def executeError(e: RelayException): Unit = {
+        Console.err.println(e.getMessage)
+        val cause = if (e.getCause != null) e.getCause.getMessage else ""
+        val packet = ErrorPacket(ErrorPacket.ABORT_TASK, e.getMessage, cause)
+        writer.write(packetManager.toBytes(packet))
+        writer.flush()
+    }
+
+
     private def initialiseConnection(): TasksHandler = {
         setName(s"RP Connection (unknownId)")
-        val channel = new SimplePacketChannel(socket, "unknownId", server.identifier, Protocol.INIT_ID)
+        val channel = new SimplePacketChannel(socket, "unknownId", server.identifier, packetManager, -2)
         channel.sendInitPacket(TaskInitInfo.of("GID", "unknownId"))
 
         deflectInChannel(channel)
