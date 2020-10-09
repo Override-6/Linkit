@@ -4,6 +4,7 @@ import java.io.IOException
 import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
+import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.TaskExecutor
 
 class TaskTicket(private val executor: TaskExecutor,
@@ -11,9 +12,10 @@ class TaskTicket(private val executor: TaskExecutor,
                  private val targetID: String,
                  private val senderIdentifier: String,
                  private val socket: Socket,
+                 private val packetManager: PacketManager,
                  private val ownFreeWill: Boolean) {
 
-    var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, taskID)
+    var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, packetManager, taskID)
     val taskName: String = executor.getClass.getSimpleName
 
     def notifyExecutor(): Unit = executor.synchronized {

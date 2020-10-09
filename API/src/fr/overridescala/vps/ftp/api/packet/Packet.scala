@@ -3,27 +3,15 @@ package fr.overridescala.vps.ftp.api.packet
 trait Packet {
 
     /**
-     * the task identifier that determine where the packet have to go / from what kind of task he comes from
-     * */
-    val taskID: Int
-    /**
      * the data content
      * */
     val content: Array[Byte] = Array()
 
     /**
-     * the targeted Relay identifier that will receive the packet
-     * */
-    val targetIdentifier: String
-
-    /**
-     * this packet sender identifier
-     * */
-    val senderIdentifier: String
-
-    /**
      * @return true if this packet contains content, false instead
      * */
     lazy val haveContent: Boolean = !content.isEmpty
+
+    lazy val className: String = getClass.getSimpleName
 
 }

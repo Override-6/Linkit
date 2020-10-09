@@ -3,9 +3,9 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.nio.file.Files
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.task.tasks.FileInfoTask.{ERROR, TYPE}
-import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.StressTestCompleter
-import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
+import fr.overridescala.vps.ftp.api.task.tasks.FileInfoTask.TYPE
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.transfer.FileDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -17,20 +17,19 @@ import fr.overridescala.vps.ftp.api.utils.Utils
  * */
 class FileInfoTask(private val ownerID: String,
                    private val filePath: String)
-        extends Task[FileDescription](ownerID)
-                with TaskExecutor {
+        extends Task[FileDescription](ownerID) {
 
     override val initInfo: TaskInitInfo =
         TaskInitInfo.of(TYPE, ownerID, filePath.getBytes)
 
     override def execute(channel: PacketChannel): Unit = {
         val response = channel.nextPacket()
-        val content = response.content
-        if (response.header.equals(ERROR)) {
-            error(new String(content))
-            return
+        response match {
+            case errorPacket: ErrorPacket =>
+                errorPacket.printError()
+                error(errorPacket.errorMsg)
+            case data: DataPacket => success(Utils.deserialize(data.content))
         }
-        success(Utils.deserialize(content))
     }
 
 }
@@ -38,7 +37,6 @@ class FileInfoTask(private val ownerID: String,
 object FileInfoTask {
 
     val TYPE = "FINFO"
-    private val ERROR = "ERROR"
     private val OK = "OK"
 
     class FileInfoCompleter(filePath: String) extends TaskExecutor {
@@ -46,11 +44,11 @@ object FileInfoTask {
         override def execute(channel: PacketChannel): Unit = {
             val path = Utils.formatPath(filePath)
             if (Files.notExists(path)) {
-                channel.sendPacket(ERROR, s"($path) The file does not exists.")
+                channel.sendPacket(ErrorPacket("File not found", s"file not found for path '$path"))
                 return
             }
             if (!Files.isWritable(path) || !Files.isReadable(path)) {
-                channel.sendPacket(ERROR, s"($path) Can't access to the file")
+                channel.sendPacket(ErrorPacket("NoSuchPermissions", s"can't access to file/folder '$path'", "Unable to write or read"))
                 return
             }
             val fileInfo = FileDescription.fromLocal(filePath)

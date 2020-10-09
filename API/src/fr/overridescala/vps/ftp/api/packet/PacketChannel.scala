@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
+import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 
 /**
@@ -39,12 +40,20 @@ trait PacketChannel {
         sendPacket(header, "")
 
     /**
+     * send any packet to the connected Relay
+     *
+     * @param packet the packet to send
+     * @throws UnexpectedPacketException if the packet is an instance of [[TaskInitPacket]]
+     * */
+    def sendPacket[P <: Packet](packet: P): Unit
+
+    /**
      * Waits until a data packet is received and concerned about this task.
      *
      * @return the received packet
-     * @see [[DataPacket]]
+     * @see [[Packet]]
      * */
-    def nextPacket(): DataPacket
+    def nextPacket(): Packet
 
     /**
      * Targets a event when a specified packet with the targeted header is received.

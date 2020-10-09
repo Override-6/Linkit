@@ -5,7 +5,8 @@ import java.net.Socket
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
+import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 import scala.collection.mutable
@@ -25,6 +26,7 @@ import scala.util.control.NonFatal
 class SimplePacketChannel(private val socket: Socket,
                           private val connectedRelayIdentifier: String,
                           private val ownerIdentifier: String,
+                          private val packetManager: PacketManager,
                           override val taskID: Int)
         extends PacketChannel with PacketChannelManager {
 
@@ -45,14 +47,17 @@ class SimplePacketChannel(private val socket: Socket,
      * */
     override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
         val packet = DataPacket(taskID, header, connectedRelayIdentifier, ownerIdentifier, content)
-        out.write(packet)
-        out.flush()
+        sendPacket(packet)
     }
 
     //TODO doc
     override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
         val packet = TaskInitPacket.of(ownerIdentifier, taskID, initInfo)
-        out.write(packet)
+        sendPacket(packet)
+    }
+
+    override def sendPacket[P <: Packet](packet: P): Unit = {
+        out.write(packetManager.toBytes(packet))
         out.flush()
     }
 

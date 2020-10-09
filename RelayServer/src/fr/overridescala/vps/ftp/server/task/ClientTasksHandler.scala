@@ -6,7 +6,7 @@ import java.net.Socket
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 
 /**
@@ -19,7 +19,7 @@ class ClientTasksHandler(override val identifier: String,
                          private val server: Relay,
                          private val socket: Socket) extends TasksHandler {
 
-
+    private val packetManager = server.getPacketManager
     private val out = new BufferedOutputStream(socket.getOutputStream)
     private var tasksThread = new ClientTasksThread(identifier)
     tasksThread.start()
@@ -41,8 +41,9 @@ class ClientTasksHandler(override val identifier: String,
             }
         } catch {
             case e: TaskException =>
-                out.write(Protocol.ABORT_TASK.getBytes)
-                e.printStackTrace()
+                val packet = ErrorPacket(ErrorPacket.ABORT_TASK, e.getMessage, identifier)
+                out.write(packetManager.toBytes(packet))
+                throw e
         }
     }
 
@@ -53,7 +54,7 @@ class ClientTasksHandler(override val identifier: String,
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit =
-        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, identifier, senderID, socket, ownFreeWill))
+        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, identifier, senderID, socket, packetManager, ownFreeWill))
 
     /**
      * closes the current client tasks thread

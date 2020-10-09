@@ -31,7 +31,7 @@ class DownloadTask private(private val desc: TransferDescription)
         this.channel = channel
         channel.putListener(ABORT, packet => error(packet.header))
 
-        val response = channel.nextPacket()
+        val response = channel.nextPacket().asInstanceOf[DataPacket]
         if (response.header.equals(UploadTask.END_OF_TRANSFER)) {
             success()
             return
@@ -58,7 +58,7 @@ class DownloadTask private(private val desc: TransferDescription)
             return
         val stream = Files.newOutputStream(downloadPath)
         var count = 0
-        var packet: DataPacket = channel.nextPacket()
+        var packet: DataPacket = channel.nextPacket().asInstanceOf[DataPacket]
 
         def downloading: Boolean = packet.header != UploadTask.UPLOAD_FILE
 
@@ -66,7 +66,7 @@ class DownloadTask private(private val desc: TransferDescription)
             totalBytesWritten += packet.content.length
             stream.write(packet.content)
             count += 1
-            packet = channel.nextPacket()
+            packet = channel.nextPacket().asInstanceOf[DataPacket]
             val percentage = totalBytesWritten / totalBytes * 100
             print(s"\rreceived = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets exchange = $count")
         }

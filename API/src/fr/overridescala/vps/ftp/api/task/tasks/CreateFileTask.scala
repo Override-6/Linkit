@@ -4,7 +4,8 @@ import java.io.IOException
 import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask.{TYPE, ERROR}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
+import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask.{ERROR, TYPE}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
@@ -22,12 +23,11 @@ class CreateFileTask private(private val ownerID: String,
     }
 
     override def execute(channel: PacketChannel): Unit = {
-        val packet = channel.nextPacket()
-        val header = packet.header
-        val content = packet.content
-        if (header.equals(ERROR)) {
-            error(new String(content))
-            return
+        channel.nextPacket() match {
+            case errorPacket: ErrorPacket =>
+                errorPacket.printError();
+                error(errorPacket.errorMsg)
+            case _: DataPacket => success()
         }
         success()
     }
@@ -56,7 +56,7 @@ object CreateFileTask {
         def createFile(path: Path): Unit =
             try {
                 if (Files.exists(path)) {
-                    channel.sendPacket(ERROR, "$path already exists !")
+                    channel.sendPacket(ErrorPacket("File already exists", s"the file set to peth '$path' already exists"))
                     return
                 }
                 if (!isDirectory)

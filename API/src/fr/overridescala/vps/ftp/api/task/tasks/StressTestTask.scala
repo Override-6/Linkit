@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.task._
 import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.{TYPE, download, upload}
 import fr.overridescala.vps.ftp.api.utils.Constants
@@ -76,12 +77,12 @@ object StressTestTask {
 
     private def download(channel: PacketChannel, totalDataLength: Long): Unit = {
         println("DOWNLOAD")
-        var packet = channel.nextPacket()
+        var packet = channel.nextPacket().asInstanceOf[DataPacket]
         var totalReceived: Float = 0
         var maxBPS = 0F
         while (!packet.header.equals(END)) {
             val t0 = System.currentTimeMillis()
-            packet = channel.nextPacket()
+            packet = channel.nextPacket().asInstanceOf[DataPacket]
             val dataLength = packet.content.length
             val t1 = System.currentTimeMillis()
             val time: Float = t1 - t0
