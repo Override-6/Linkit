@@ -9,50 +9,33 @@ import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
-import scala.collection.mutable
-import scala.util.control.NonFatal
-
 /**
  * this class is the implementation of [[PacketChannel]] and [[PacketChannelManager]]
  *
  * @param socket the socket where packets will be sent
- * @param taskID the taskID attributed to this PacketChannel
- * @param connectedRelayIdentifier the identifier of connected relay
+ * @param channelID the identifier attributed to this PacketChannel
  * @param ownerIdentifier the relay identifier of this channel owner
  *
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
 class SimplePacketChannel(private val socket: Socket,
-                          private val connectedRelayIdentifier: String,
-                          private val ownerIdentifier: String,
-                          private val packetManager: PacketManager,
-                          override val taskID: Int)
-        extends PacketChannel with PacketChannelManager {
+                          override val connectedIdentifier: String,
+                          override val ownerIdentifier: String,
+                          override val channelID: Int,
+                          private val packetManager: PacketManager) extends PacketChannel with PacketChannelManager {
 
     private val out = new BufferedOutputStream(socket.getOutputStream)
 
     /**
      * this blocking queue stores the received packets until they are requested
      * */
-    private val queue: BlockingDeque[DataPacket] = new LinkedBlockingDeque(200)
-    private val listeners: mutable.Map[String, PacketEventTicket] = mutable.Map.empty
+    private val queue: BlockingDeque[Packet] = new LinkedBlockingDeque(200)
 
-    /**
-     * Builds a [[DataPacket]] from a header string and a content byte array,
-     * then send it to the targeted Relay that complete the task
-     *
-     * @param header the packet header
-     * @param content the packet content
-     * */
-    override def sendPacket(header: String, content: Array[Byte] = Array()): Unit = {
-        val packet = DataPacket(taskID, header, connectedRelayIdentifier, ownerIdentifier, content)
-        sendPacket(packet)
-    }
 
     //TODO doc
     override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
-        val packet = TaskInitPacket.of(ownerIdentifier, taskID, initInfo)
+        val packet = TaskInitPacket.of(ownerIdentifier, channelID, initInfo)
         sendPacket(packet)
     }
 
@@ -67,7 +50,7 @@ class SimplePacketChannel(private val socket: Socket,
      * @return the received packet
      * @see [[DataPacket]]
      * */
-    override def nextPacket(): DataPacket = {
+    override def nextPacket(): Packet = {
         queue.takeLast()
     }
 
@@ -83,47 +66,8 @@ class SimplePacketChannel(private val socket: Socket,
      * @param packet the packet to add
      * @throws UnexpectedPacketException if the packet id not equals the channel task ID
      * */
-    override def addPacket(packet: DataPacket): Unit = {
-        if (packet.taskID != taskID)
-            throw UnexpectedPacketException(s"packet sessions differs ! ($packet)")
-        if (handleListener(packet))
-            queue.addFirst(packet)
+    override def addPacket(packet: Packet): Unit = {
+        queue.addFirst(packet)
     }
-
-    /**
-     * Targets a event when a specified packet with the targeted header is received.
-     * @param uses the number of time the event can be fired
-     * @param header the header to target.
-     * @param onReceived the event to call
-     * */
-    override def putListener(header: String, onReceived: DataPacket => Unit, uses: Int, enqueuePacket: Boolean): Unit =
-        listeners.put(header, PacketEventTicket(uses, enqueuePacket, onReceived))
-
-
-    override def removeListener(header: String): Unit =
-        listeners.remove(header)
-
-    /**
-     * @return true if the packet have to be enqueued
-     * */
-    private def handleListener(packet: DataPacket): Boolean = {
-        val header = packet.header
-        if (!listeners.contains(header))
-            return true
-        val ticket = listeners(header)
-        if (ticket.uses == 0) {
-            listeners.remove(header)
-            return true
-        }
-        ticket.uses -= 0
-        try {
-            ticket.onReceived(packet)
-        } catch {
-            case NonFatal(ex) => ex.printStackTrace()
-        }
-        ticket.enqueuePacket
-    }
-
-    private case class PacketEventTicket(var uses: Int, enqueuePacket: Boolean, onReceived: DataPacket => Unit)
 
 }

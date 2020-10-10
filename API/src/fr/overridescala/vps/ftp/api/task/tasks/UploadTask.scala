@@ -18,14 +18,12 @@ import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
  * @see [[TransferDescription]]
  * */
 class UploadTask(private val desc: TransferDescription)
-        extends Task[Unit](desc.targetID) with TaskExecutor {
-
-    private var channel: PacketChannel = _
+        extends Task[Unit](desc.targetID) {
 
     override val initInfo: TaskInitInfo =
         TaskInitInfo.of(TYPE, desc.targetID, Utils.serialize(desc))
 
-    override def execute(channel: PacketChannel): Unit = {
+    override def execute(): Unit = {
         this.channel = channel
         val source = Path.of(desc.source.path)
         val destination = Path.of(desc.destination)
@@ -41,7 +39,7 @@ class UploadTask(private val desc: TransferDescription)
             uploadDirectory(source)
 
         } else uploadFile(source)
-        channel.sendPacket(END_OF_TRANSFER)
+        channel.sendPacket(DataPacket(END_OF_TRANSFER))
         success(source)
     }
 
@@ -61,7 +59,7 @@ class UploadTask(private val desc: TransferDescription)
         var totalBytesSent: Long = 0
         val totalBytes: Float = Files.size(path)
         var count = 0
-        channel.sendPacket(UPLOAD_FILE, path.toString)
+        channel.sendPacket(DataPacket(UPLOAD_FILE, path.toString))
         println("\rUPLOADING " + path)
 
         while (totalBytesSent < totalBytes) {
@@ -71,7 +69,7 @@ class UploadTask(private val desc: TransferDescription)
                 bytes = util.Arrays.copyOf(bytes, read)
                 count += 1
                 totalBytesSent += read
-                channel.sendPacket("", bytes)
+                channel.sendPacket(DataPacket("", bytes))
 
                 if (channel.haveMorePackets) {
                     handleUnexpectedPacket(channel.nextPacket())
@@ -84,7 +82,7 @@ class UploadTask(private val desc: TransferDescription)
                     var msg = e.getMessage
                     if (msg == null)
                         msg = "an error has occurred while performing file upload task"
-                    channel.sendPacket(ABORT, s"($path) " + msg)
+                    channel.sendPacket(ErrorPacket(e.getClass.getName, s"($path) " + msg))
                     print("\r")
                     return
             }
@@ -110,7 +108,7 @@ class UploadTask(private val desc: TransferDescription)
     private def checkPath(path: Path): Boolean = {
         if (Files.notExists(path)) {
             val errorMsg = s"($path) could not upload invalid file path : this file does not exists"
-            channel.sendPacket(ABORT, errorMsg)
+            channel.sendPacket(ErrorPacket("file not exists", errorMsg))
             error(errorMsg)
             return true
         }

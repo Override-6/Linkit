@@ -1,13 +1,14 @@
 package fr.overridescala.vps.ftp.api.task
 
-import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.atomic.AtomicReference
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
+import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask
 import org.jetbrains.annotations.Nullable
 
+
+//TODO reedit the DOC
 /**
  * <p>
  *     Task is a abstract task, all Tasks (excepted Completers) have to extends this class to be considered as a
@@ -37,7 +38,7 @@ import org.jetbrains.annotations.Nullable
  * @see [[TaskExecutor]]
  * */
 abstract class Task[T](val targetID: String)
-        extends TaskAction[T] with TaskExecutor {
+        extends TaskExecutor with TaskAction[T] {
     @volatile private var handler: TasksHandler = _
     @volatile private var relayIdentifier: String = _
 
@@ -59,8 +60,8 @@ abstract class Task[T](val targetID: String)
      * initialises this task.
      * a task can't be executed if it was not initialised
      * */
-    final def init(tasksHandler: TasksHandler, relayIdentifier: String): Task[T] = {
-        handler = tasksHandler
+    final def preInit(tasksHandler: TasksHandler, relayIdentifier: String): Task[T] = {
+        this.handler = tasksHandler
         this.relayIdentifier = relayIdentifier
         this
     }

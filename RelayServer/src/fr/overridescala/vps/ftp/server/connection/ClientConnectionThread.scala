@@ -8,6 +8,7 @@ import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
+
 import fr.overridescala.vps.ftp.server.task.ClientTasksHandler
 
 import scala.util.control.NonFatal
@@ -56,17 +57,16 @@ class ClientConnectionThread(socket: Socket,
 
     private def handlePacket(packet: Packet): Unit = {
         packet match {
-            case identifiablePacket: IdentifiablePacket =>
-                if (identifiablePacket.targetIdentifier != server.identifier)
-                    manager.deflectPacket(identifiablePacket)
-                else tasksHandler.handlePacket(packet)
             case errorPacket: ErrorPacket =>
-                errorPacket.errorType match {
-                    case ErrorPacket.ABORT_TASK =>
-                        printErrorPacket(errorPacket)
-                        tasksHandler.skipCurrent()
-                    case _ => tasksHandler.handlePacket(packet)
-                }
+                if (errorPacket.errorType == ErrorPacket.ABORT_TASK) {
+                    printErrorPacket(errorPacket)
+                    tasksHandler.skipCurrent()
+                } else tasksHandler.handlePacket(packet)
+            case _: Packet =>
+                if (packet.targetIdentifier != server.identifier)
+                    manager.deflectPacket(packet)
+                else tasksHandler.handlePacket(packet)
+                tasksHandler.handlePacket(packet)
         }
     }
 
@@ -91,7 +91,12 @@ class ClientConnectionThread(socket: Socket,
     private def executeError(e: RelayException): Unit = {
         Console.err.println(e.getMessage)
         val cause = if (e.getCause != null) e.getCause.getMessage else ""
-        val packet = ErrorPacket(ErrorPacket.ABORT_TASK, e.getMessage, cause)
+        val packet = new ErrorPacket(-1,
+            server.identifier,
+            tasksHandler.identifier,
+            ErrorPacket.ABORT_TASK,
+            e.getMessage,
+            cause)
         writer.write(packetManager.toBytes(packet))
         writer.flush()
     }
@@ -99,13 +104,15 @@ class ClientConnectionThread(socket: Socket,
 
     private def initialiseConnection(): TasksHandler = {
         setName(s"RP Connection (unknownId)")
-        val channel = new SimplePacketChannel(socket, "unknownId", server.identifier, packetManager, -2)
+        implicit val channel: SimplePacketChannel =
+            new SimplePacketChannel(socket, "unknownId", server.identifier, -1, packetManager)
         channel.sendInitPacket(TaskInitInfo.of("GID", "unknownId"))
 
         deflectInChannel(channel)
-        val identifier = channel.nextPacket().header
+        val clientResponse: DataPacket = channel.nextPacketAsP()
+        val identifier = clientResponse.header
         val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
-        channel.sendPacket(response)
+        channel.sendPacket(DataPacket(response))
 
         if (response.equals("ERROR"))
             throw new RelayException("a Relay point connection have been rejected.")

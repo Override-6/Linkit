@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet.ext.fundamental
 
-import fr.overridescala.vps.ftp.api.packet.{IdentifiablePacket, Packet}
+import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
@@ -10,17 +10,17 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * The type of packets ([[TaskInitPacket]] & [[DataPacket]]) is determined by [[Protocol]]
  * @see [[Packet]]
  * */
-case class TaskInitPacket private(override val taskID: Int,
+case class TaskInitPacket private(override val channelID: Int,
                                   override val targetIdentifier: String,
                                   override val senderIdentifier: String,
                                   taskType: String,
-                                  override val content: Array[Byte] = Array()) extends IdentifiablePacket {
+                                  override val content: Array[Byte] = Array()) extends Packet {
 
     /**
      * Represents this packet as a String
      * */
     override def toString: String =
-        s"TaskInitPacket{taskID: $taskID, taskType: $taskType, target: $targetIdentifier, sender: $senderIdentifier, additionalContent: ${new String(content)}}"
+        s"TaskInitPacket{taskID: $channelID, taskType: $taskType, target: $targetIdentifier, sender: $senderIdentifier, additionalContent: ${new String(content)}}"
 
 
 }
@@ -32,19 +32,12 @@ object TaskInitPacket {
     object Factory extends PacketFactory[TaskInitPacket] {
 
         private val TYPE = "[task_init]".getBytes
-        private val TARGET = "<target>".getBytes
-        private val SENDER = "<sender_id>".getBytes
         private val TASK_TYPE = "<task_type>".getBytes
         private val CONTENT = "<content>".getBytes
 
         override def toBytes(implicit packet: TaskInitPacket): Array[Byte] = {
-            val taskIDBytes = String.valueOf(packet.taskID).getBytes
             val typeBytes = packet.taskType.getBytes
-            val targetIdBytes = packet.targetIdentifier.getBytes
-            val senderIdBytes = packet.senderIdentifier.getBytes
-            TYPE ++ taskIDBytes ++
-                    TARGET ++ targetIdBytes ++
-                    SENDER ++ senderIdBytes ++
+            TYPE ++ EmptyPacket.Factory.toBytesUnsigned(packet)
                     TASK_TYPE ++ typeBytes ++
                     CONTENT ++ packet.content
         }
@@ -53,12 +46,10 @@ object TaskInitPacket {
             bytes.startsWith(TYPE)
 
         override def toPacket(implicit bytes: Array[Byte]): TaskInitPacket = {
-            val taskID = cutString(TYPE, TARGET).toInt
-            val targetID = cutString(TARGET, SENDER)
-            val senderID = cutString(SENDER, TASK_TYPE)
+            val base = EmptyPacket.Factory.toPacket(bytes)
             val taskType = cutString(TASK_TYPE, CONTENT)
             val content = cutEnd(CONTENT)
-            TaskInitPacket(taskID, targetID, senderID, taskType, content)
+            TaskInitPacket(base.channelID, base.targetIdentifier, base.senderIdentifier, taskType, content)
         }
 
     }

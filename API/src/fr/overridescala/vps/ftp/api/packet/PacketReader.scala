@@ -34,6 +34,7 @@ class PacketReader(socket: Socket, packetHandler: PacketManager) extends Closeab
         do {
             input.read(buff)
             packetSizeBytes(i) = buff(0)
+            println(new String(packetSizeBytes))
             i += 1
         } while (new String(buff) != ":")
         new String(packetSizeBytes.slice(0, i - 1)).toInt

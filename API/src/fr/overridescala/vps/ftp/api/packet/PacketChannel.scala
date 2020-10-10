@@ -11,33 +11,9 @@ import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
  * */
 trait PacketChannel {
 
-    /**
-     * Builds a [[DataPacket]] from a header string and a content byte array,
-     * then send it to the targeted Relay that complete the task
-     *
-     * @param header the packet header
-     * @param content the packet content
-     * */
-    def sendPacket(header: String, content: Array[Byte]): Unit
-
-    /**
-     * Builds a [[DataPacket]] from a header string and a content string,
-     * then send it to the targeted Relay that complete the task
-     *
-     * @param header the packet header
-     * @param content the packet content
-     * */
-    def sendPacket(header: String, content: String): Unit =
-        sendPacket(header, content.getBytes)
-
-    /**
-     * Builds a [[DataPacket]] from a header string and no content (content is empty),
-     * then send it to the targeted Relay that complete the task
-     *
-     * @param header the packet header
-     * */
-    def sendPacket(header: String): Unit =
-        sendPacket(header, "")
+    val ownerIdentifier: String
+    val connectedIdentifier: String
+    val channelID: Int
 
     /**
      * send any packet to the connected Relay
@@ -53,21 +29,13 @@ trait PacketChannel {
      * @return the received packet
      * @see [[Packet]]
      * */
+
     def nextPacket(): Packet
 
-    /**
-     * Targets a event when a specified packet with the targeted header is received.
-     * @param uses the number of time the event can be fired
-     * @param header the header to target.
-     * @param onReceived the event to call
-     * */
-    def putListener(header: String, onReceived: DataPacket => Unit, uses: Int = 1, enqueuePacket: Boolean = false): Unit
+    def nextPacketAsP[P <: Packet](): P = {
+        nextPacket().asInstanceOf[P]
+    }
 
-    /**
-     * de-register a event
-     * @param header the packet header to stop listening.
-     * */
-    def removeListener(header: String)
 
     /**
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait

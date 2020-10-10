@@ -16,16 +16,15 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
     private lazy val completers: mutable.Map[String, (TaskInitPacket, TasksHandler) => Unit] = new mutable.HashMap()
 
     override def handleCompleter(initPacket: TaskInitPacket,  handler: TasksHandler): Unit = {
-        val senderId = initPacket.senderIdentifier
-        if (testTransfer(initPacket, senderId, handler) && testOther(initPacket, handler))
-            testMap(initPacket, senderId, handler)
+        if (testTransfer(initPacket, handler) && testOther(initPacket, handler))
+            testMap(initPacket, handler)
     }
 
-    private def testTransfer(packet: TaskInitPacket, senderId: String, handler: TasksHandler): Boolean = {
+    private def testTransfer(packet: TaskInitPacket, handler: TasksHandler): Boolean = {
         val taskType = packet.taskType
-        val taskID = packet.taskID
+        val taskID = packet.channelID
         val content = packet.content
-        //println("bytesArray = " + content.mkString("Array(", ", ", ")"))
+        val senderId = packet.senderIdentifier
         taskType match {
             case UploadTask.TYPE =>
                 handleUpload(Utils.deserialize(content), senderId, taskID, handler)
@@ -48,16 +47,16 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
             case CreateFileTask.TYPE => new CreateFileTask.CreateFileCompleter(contentString.slice(1, content.length), content(0) == 1)
             case PingTask.TYPE => new PingTask.PingCompleter
             //reverse the boolean for completer
-            //(down <-> up & up <-> down)
+            //(down <- up & up -> down)
             case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(new String(content.slice(1, content.length)).toLong, content(0) != 1)
 
             case _ => return true
         }
-        handler.registerTask(task, packet.taskID, targetID, server.identifier, false)
+        handler.registerTask(task, packet.channelID, targetID, server.identifier, false)
         false
     }
 
-    private def testMap(initPacket: TaskInitPacket, senderId: String, handler: TasksHandler): Unit = {
+    private def testMap(initPacket: TaskInitPacket, handler: TasksHandler): Unit = {
         val taskType = initPacket.taskType
         if (!completers.contains(taskType))
             throw new TaskException(s"no completer found for task type '$taskType'")

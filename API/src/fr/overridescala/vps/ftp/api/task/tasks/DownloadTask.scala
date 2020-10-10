@@ -5,7 +5,7 @@ import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, TYPE}
 import fr.overridescala.vps.ftp.api.task._
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
@@ -20,16 +20,13 @@ import fr.overridescala.vps.ftp.api.utils.Utils
 class DownloadTask private(private val desc: TransferDescription)
         extends Task[Unit](desc.targetID) {
 
-    private var channel: PacketChannel = _
     private val totalBytes: Float = desc.transferSize
     private var totalBytesWritten = 0
 
     override val initInfo: TaskInitInfo =
         TaskInitInfo.of(TYPE, desc.targetID, Utils.serialize(desc))
 
-    override def execute(channel: PacketChannel): Unit = {
-        this.channel = channel
-        channel.putListener(ABORT, packet => error(packet.header))
+    override def execute(): Unit = {
 
         val response = channel.nextPacket().asInstanceOf[DataPacket]
         if (response.header.equals(UploadTask.END_OF_TRANSFER)) {
@@ -46,7 +43,7 @@ class DownloadTask private(private val desc: TransferDescription)
                 var msg = s"$typeName : ${e.getMessage}"
                 if (msg == null)
                     msg = s"got an error of type : $typeName"
-                channel.sendPacket(ABORT, msg)
+                channel.sendPacket(ErrorPacket(ABORT, msg))
                 error(msg)
         }
     }
@@ -111,7 +108,7 @@ class DownloadTask private(private val desc: TransferDescription)
         }
         if (!Files.isWritable(path) || !Files.isReadable(path)) {
             val errorMsg = "Can't access to the file"
-            channel.sendPacket(ABORT, errorMsg.getBytes())
+            channel.sendPacket(ErrorPacket(ABORT, errorMsg))
             error(errorMsg)
             return true
         }

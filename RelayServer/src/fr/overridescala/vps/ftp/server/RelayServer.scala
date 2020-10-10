@@ -32,7 +32,7 @@ class RelayServer extends Relay {
         ensureOpen()
         val targetIdentifier = task.targetID
         val tasksHandler = connectionsManager.getConnectionFromIdentifier(targetIdentifier).tasksHandler
-        task.init(tasksHandler, identifier)
+        task.preInit(tasksHandler, identifier)
         RelayTaskAction(task)
     }
 

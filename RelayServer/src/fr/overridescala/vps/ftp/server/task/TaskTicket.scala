@@ -15,7 +15,7 @@ class TaskTicket(private val executor: TaskExecutor,
                  private val packetManager: PacketManager,
                  private val ownFreeWill: Boolean) {
 
-    var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, packetManager, taskID)
+    var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, taskID, packetManager)
     val taskName: String = executor.getClass.getSimpleName
 
     def notifyExecutor(): Unit = executor.synchronized {
@@ -26,10 +26,11 @@ class TaskTicket(private val executor: TaskExecutor,
     def start(): Unit = {
         try {
             println(s"executing $taskName...")
+            executor.init(packetManager, channel)
             if (ownFreeWill) {
                 channel.sendInitPacket(executor.initInfo)
             }
-            executor.execute(channel)
+            executor.execute()
             notifyExecutor()
             println(s"$taskName completed !")
         } catch {

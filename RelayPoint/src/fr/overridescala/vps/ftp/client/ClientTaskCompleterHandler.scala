@@ -18,7 +18,7 @@ class ClientTaskCompleterHandler(private val relay: Relay)
     override def handleCompleter(initPacket: TaskInitPacket, tasksHandler: TasksHandler): Unit = {
         val taskType = initPacket.taskType
         val content = initPacket.content
-        val taskID = initPacket.taskID
+        val taskID = initPacket.channelID
         val contentString = new String(content)
         val senderID = initPacket.senderIdentifier
         val task = taskType match {

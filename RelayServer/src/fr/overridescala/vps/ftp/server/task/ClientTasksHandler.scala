@@ -41,7 +41,11 @@ class ClientTasksHandler(override val identifier: String,
             }
         } catch {
             case e: TaskException =>
-                val packet = ErrorPacket(ErrorPacket.ABORT_TASK, e.getMessage, identifier)
+                val packet = new ErrorPacket(-1,
+                    server.identifier,
+                    identifier,
+                    ErrorPacket.ABORT_TASK,
+                    e.getMessage)
                 out.write(packetManager.toBytes(packet))
                 throw e
         }

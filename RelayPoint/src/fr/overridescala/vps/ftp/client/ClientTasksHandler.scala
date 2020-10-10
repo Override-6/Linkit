@@ -38,11 +38,15 @@ protected class ClientTasksHandler(private val socket: Socket,
         try {
             packet match {
                 case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, this)
-                case data: DataPacket if currentTicket != null => currentTicket.channel.addPacket(data)
+                case other: Packet if currentTicket != null => currentTicket.channel.addPacket(other)
             }
         } catch {
             case e: TaskException =>
-                val packet = ErrorPacket(ErrorPacket.ABORT_TASK, e.getMessage, identifier)
+                val packet = new ErrorPacket(-1,
+                    relay.identifier,
+                    identifier,
+                    ErrorPacket.ABORT_TASK,
+                    e.getMessage)
                 out.write(packetManager.toBytes(packet))
                 throw e
         }
@@ -102,7 +106,7 @@ protected class ClientTasksHandler(private val socket: Socket,
 
         val taskName: String = executor.getClass.getSimpleName
         private[ClientTasksHandler] val channel: SimplePacketChannel =
-            new SimplePacketChannel(socket, targetID, relay.identifier, packetManager, taskID)
+            new SimplePacketChannel(socket, targetID, relay.identifier, taskID, packetManager)
 
         def notifyExecutor(): Unit = executor.synchronized {
             executor.notifyAll()
@@ -114,7 +118,7 @@ protected class ClientTasksHandler(private val socket: Socket,
                     val initInfo = executor.initInfo
                     channel.sendInitPacket(initInfo)
                 }
-                executor.execute(channel)
+                executor.execute()
                 notifyExecutor()
             } catch {
                 case _: InterruptedException => Console.err.println(s"$taskName execution suddenly ended")

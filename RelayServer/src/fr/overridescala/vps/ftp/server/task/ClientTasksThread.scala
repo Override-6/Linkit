@@ -46,7 +46,7 @@ class ClientTasksThread(ownerID: String) extends Thread with Closeable with Clon
             channel.addPacket(packet)
             return
         }
-        val packetTaskID = packet.taskID
+        val packetTaskID = packet.channelID
         if (lostPackets.contains(packetTaskID)) {
             lostPackets(packetTaskID).addOne(packet)
             return
@@ -68,7 +68,7 @@ class ClientTasksThread(ownerID: String) extends Thread with Closeable with Clon
         val ticket = queue.take()
         currentTicket = ticket
         val channel = ticket.channel
-        val taskID = channel.taskID
+        val taskID = channel.channelID
         if (lostPackets.contains(taskID)) {
             val queue = lostPackets(taskID)
             queue.foreach(channel.addPacket)
@@ -80,7 +80,7 @@ class ClientTasksThread(ownerID: String) extends Thread with Closeable with Clon
 
     private def canInject(packet: DataPacket): Boolean = {
         val channel = currentTicket.channel
-        currentTicket != null && channel.taskID == packet.taskID
+        currentTicket != null && channel.channelID == packet.channelID
     }
 
     setName(s"RP Task Execution ($ownerID)")

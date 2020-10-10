@@ -19,7 +19,7 @@ class StressTestTask(private val totalDataLength: Long,
         TaskInitInfo.of(TYPE, Constants.SERVER_ID, Array(downloadBit) ++ s"$totalDataLength".getBytes())
     }
 
-    override def execute(channel: PacketChannel): Unit = {
+    override def execute(): Unit = {
         if (isDownload)
             download(channel, totalDataLength)
         else upload(channel, totalDataLength)
@@ -37,14 +37,14 @@ object StressTestTask {
 
 
     class StressTestCompleter(private val totalDataLength: Long, isDownload: Boolean) extends TaskExecutor {
-        override def execute(channel: PacketChannel): Unit = {
+        override def execute(): Unit = {
             if (isDownload)
                 download(channel, totalDataLength)
             else upload(channel, totalDataLength)
         }
     }
 
-    private def upload(channel: PacketChannel, totalDataLength: Long): Unit = {
+    private def upload(implicit channel: PacketChannel, totalDataLength: Long): Unit = {
         println("UPLOAD")
         var totalSent: Float = 0
         val capacity = Constants.MAX_PACKET_LENGTH - 512
@@ -57,7 +57,7 @@ object StressTestTask {
 
             val t0 = System.currentTimeMillis()
 
-            channel.sendPacket(CONTINUE, bytes)
+            channel.sendPacket(DataPacket(CONTINUE, bytes))
 
             val t1 = System.currentTimeMillis()
             val time: Float = t1 - t0
@@ -71,7 +71,7 @@ object StressTestTask {
             maxBPS = Math.max(bps, maxBPS)
             print(s"\rjust sent ${capacity} in $time ms ${bps} bytes/s (${totalSent} / $totalDataLength $percentage%) (max b/s = ($maxBPS)")
         }
-        channel.sendPacket(END)
+        channel.sendPacket(DataPacket(END))
         println()
     }
 

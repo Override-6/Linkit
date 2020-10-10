@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.io.IOException
 import java.nio.file.{Files, Path}
 
-import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask.{ERROR, TYPE}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
@@ -22,10 +22,10 @@ class CreateFileTask private(private val ownerID: String,
         TaskInitInfo.of(TYPE, ownerID, Array(bit) ++ path.getBytes)
     }
 
-    override def execute(channel: PacketChannel): Unit = {
+    override def execute(): Unit = {
         channel.nextPacket() match {
             case errorPacket: ErrorPacket =>
-                errorPacket.printError();
+                errorPacket.printError()
                 error(errorPacket.errorMsg)
             case _: DataPacket => success()
         }
@@ -45,9 +45,7 @@ object CreateFileTask {
     class CreateFileCompleter(private val pathString: String,
                               private val isDirectory: Boolean) extends TaskExecutor {
 
-        private var channel: PacketChannel = _
-
-        override def execute(channel: PacketChannel): Unit = {
+        override def execute(): Unit = {
             this.channel = channel
             val path = Utils.formatPath(pathString)
             createFile(path)
@@ -56,17 +54,18 @@ object CreateFileTask {
         def createFile(path: Path): Unit =
             try {
                 if (Files.exists(path)) {
+
                     channel.sendPacket(ErrorPacket("File already exists", s"the file set to peth '$path' already exists"))
                     return
                 }
                 if (!isDirectory)
                     Files.createFile(path)
                 else Files.createDirectories(path)
-                channel.sendPacket(OK)
+                channel.sendPacket(DataPacket(OK))
             } catch {
                 case e: IOException =>
                     e.printStackTrace()
-                    channel.sendPacket(ERROR, e.getMessage)
+                    channel.sendPacket(DataPacket(ERROR, e.getMessage))
             }
     }
 

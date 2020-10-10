@@ -22,7 +22,7 @@ class FileInfoTask(private val ownerID: String,
     override val initInfo: TaskInitInfo =
         TaskInitInfo.of(TYPE, ownerID, filePath.getBytes)
 
-    override def execute(channel: PacketChannel): Unit = {
+    override def execute(): Unit = {
         val response = channel.nextPacket()
         response match {
             case errorPacket: ErrorPacket =>
@@ -41,7 +41,7 @@ object FileInfoTask {
 
     class FileInfoCompleter(filePath: String) extends TaskExecutor {
 
-        override def execute(channel: PacketChannel): Unit = {
+        override def execute(): Unit = {
             val path = Utils.formatPath(filePath)
             if (Files.notExists(path)) {
                 channel.sendPacket(ErrorPacket("File not found", s"file not found for path '$path"))
@@ -53,7 +53,7 @@ object FileInfoTask {
             }
             val fileInfo = FileDescription.fromLocal(filePath)
             val content = Utils.serialize(fileInfo)
-            channel.sendPacket(OK, content)
+            channel.sendPacket(DataPacket(OK, content))
         }
     }
 
