@@ -28,10 +28,7 @@ object DeleteFileTask {
 
     class Completer(pathString: String) extends TaskExecutor {
 
-        println("instancied !")
-
         override def execute(): Unit = {
-            println("COMPLETING")
             val path = Path.of(pathString)
             println(s"path = ${path}")
             if (Files.notExists(path)) {
@@ -43,7 +40,6 @@ object DeleteFileTask {
             }
             try {
                 Files.delete(path)
-                println("DELETED")
             } catch {
                 case e: IOException =>
                     channel.sendPacket(ErrorPacket(

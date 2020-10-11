@@ -3,10 +3,12 @@ package fr.overridescala.vps.ftp.client
 import java.net.{InetSocketAddress, Socket}
 import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
+import java.nio.file.Path
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.PacketReader
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 
@@ -17,6 +19,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val packetManager = new PacketManager()
     private val tasksHandler = new ClientTasksHandler(socket, this)
     private val packetReader = new PacketReader(socket, packetManager)
+    private val taskLoader = new TaskLoader(this, Path.of(Constants.JAR_LOCATION).resolve("Tasks"))
 
 
     @volatile private var open = false
@@ -36,6 +39,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             println("listening on port " + Constants.PORT)
             //enable the task management
             tasksHandler.start()
+            taskLoader.loadTasks()
 
             open = true
             while (open) {

@@ -43,7 +43,6 @@ class AutoUploader(relay: Relay, path: Path, targetRelay: String, localPath: Str
         val affectedString = affected.toString
         val relativePath = affectedString.substring(localPath.length, affectedString.length)
         val targetFile = targetPath + relativePath
-        println("SENDING REQUEST TO DELETE " + targetFile)
         relay.scheduleTask(DeleteFileTask(targetRelay, targetFile))
                 .queue(null, Console.err.println)
     }
@@ -54,7 +53,6 @@ class AutoUploader(relay: Relay, path: Path, targetRelay: String, localPath: Str
             destination = targetPath
             targetID = targetRelay
         }
-        println("SENGING REQUEST TO UPLOAD " + affected)
         relay.scheduleTask(UploadTask(transfer)).queue(null, msg => cancel())
     }
 
