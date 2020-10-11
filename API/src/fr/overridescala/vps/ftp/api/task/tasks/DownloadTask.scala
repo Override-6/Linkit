@@ -1,10 +1,12 @@
 package fr.overridescala.vps.ftp.api.task.tasks
 
 import java.io.File
+import java.nio.file.attribute.FileTime
 import java.nio.file.{Files, Path}
+import java.time.Instant
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, TYPE}
 import fr.overridescala.vps.ftp.api.task._
@@ -28,8 +30,9 @@ class DownloadTask private(private val desc: TransferDescription)
 
     override def execute(): Unit = {
 
-        val response = channel.nextPacket().asInstanceOf[DataPacket]
-        if (response.header.equals(UploadTask.END_OF_TRANSFER)) {
+        val response = nextPacket():DataPacket
+        //empty upload
+        if (response.header == UploadTask.END_OF_TRANSFER) {
             success()
             return
         }
@@ -46,6 +49,7 @@ class DownloadTask private(private val desc: TransferDescription)
                 channel.sendPacket(ErrorPacket(ABORT, msg))
                 error(msg)
         }
+        println("download end")
     }
 
 
@@ -55,32 +59,36 @@ class DownloadTask private(private val desc: TransferDescription)
             return
         val stream = Files.newOutputStream(downloadPath)
         var count = 0
-        var packet: DataPacket = channel.nextPacket().asInstanceOf[DataPacket]
+        var packet = nextPacket(): DataPacket
 
-        def downloading: Boolean = packet.header != UploadTask.UPLOAD_FILE
+        def downloading: Boolean = packet.header != UploadTask.UPLOAD_FILE && packet.header != UploadTask.END_OF_TRANSFER
 
         while (downloading) {
             totalBytesWritten += packet.content.length
             stream.write(packet.content)
             count += 1
-            packet = channel.nextPacket().asInstanceOf[DataPacket]
+            packet = nextPacket(): DataPacket
             val percentage = totalBytesWritten / totalBytes * 100
             print(s"\rreceived = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets exchange = $count")
         }
+        //TODO remove this line
+        Files.setLastModifiedTime(downloadPath, FileTime.from(Instant.now))
         print("\r")
         stream.close()
         handleLastTransferResponse(packet)
     }
 
+
     private def findDownloadPath(packet: DataPacket): Path = {
-        Utils.checkPacketHeader(packet, Array(UploadTask.UPLOAD_FILE))
+        Utils.checkPacketHeader(packet, Array("UPF"))
         val root = Utils.formatPath(desc.source.rootPath)
+        val rootNameCount = root.toString.count(char => char == File.separatorChar)
+
         val uploadedFile = Utils.formatPath(new String(packet.content))
         val destination = Utils.formatPath(new String(desc.destination))
-        val rootNameCount = root.toString.count(char => char == File.separatorChar)
+
         val relativePath = Utils.subPathOfUnknownFile(uploadedFile, rootNameCount)
-        val path = Utils.formatPath(destination.toString + relativePath)
-        path
+        Utils.formatPath(destination.toString + relativePath)
     }
 
 
@@ -113,6 +121,15 @@ class DownloadTask private(private val desc: TransferDescription)
             return true
         }
         false
+    }
+
+    private def nextPacket[P <: Packet](): P = {
+        val packet = channel.nextPacket()
+        packet match {
+            case error: ErrorPacket =>
+                throw new TaskException(error.errorMsg)
+            case _ => packet.asInstanceOf[P]
+        }
     }
 
 

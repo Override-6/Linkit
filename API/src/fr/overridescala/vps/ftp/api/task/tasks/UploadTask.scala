@@ -3,13 +3,15 @@ package fr.overridescala.vps.ftp.api.task.tasks
 import java.nio.file.{Files, Path}
 import java.util
 
-import fr.overridescala.vps.ftp.api.exceptions.{TaskException, UnexpectedPacketException}
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
+import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
+import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
-import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{ABORT, END_OF_TRANSFER, TYPE, UPLOAD_FILE}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{END_OF_TRANSFER, TYPE, UPLOAD_FILE}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
+
+import scala.util.control.NonFatal
 
 /**
  * Uploads a File or Folder to a targeted Relay
@@ -78,13 +80,13 @@ class UploadTask(private val desc: TransferDescription)
                 val percentage = totalBytesSent / totalBytes * 100
                 print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
             } catch {
-                case e: Throwable =>
+                case NonFatal(e) =>
                     var msg = e.getMessage
                     if (msg == null)
                         msg = "an error has occurred while performing file upload task"
                     channel.sendPacket(ErrorPacket(e.getClass.getName, s"($path) " + msg))
                     print("\r")
-                    return
+                    throw e
             }
         }
         print("\r")
@@ -115,14 +117,12 @@ class UploadTask(private val desc: TransferDescription)
         false
     }
 
-
 }
 
 object UploadTask {
     protected[tasks] val END_OF_TRANSFER: String = "EOT"
     protected[tasks] val UPLOAD_FILE: String = "UPF"
     val TYPE: String = "UP"
-    private val ABORT: String = "ERROR"
 
     def apply(transferDescription: TransferDescription): UploadTask =
         new UploadTask(transferDescription)

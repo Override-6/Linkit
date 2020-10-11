@@ -43,9 +43,10 @@ class ServerTaskCompleterHandler(private val server: Relay) extends TaskComplete
         val targetID = packet.targetIdentifier
         val contentString = new String(content)
         val task = taskType match {
-            case FileInfoTask.TYPE => new FileInfoTask.FileInfoCompleter(contentString)
-            case CreateFileTask.TYPE => new CreateFileTask.CreateFileCompleter(contentString.slice(1, content.length), content(0) == 1)
-            case PingTask.TYPE => new PingTask.PingCompleter
+            case FileInfoTask.TYPE => new FileInfoTask.Completer(contentString)
+            case CreateFileTask.TYPE => new CreateFileTask.Completer(contentString.slice(1, content.length), content(0) == 1)
+            case DeleteFileTask.TYPE => new DeleteFileTask.Completer(contentString)
+            case PingTask.TYPE => new PingTask.Completer
             //reverse the boolean for completer
             //(down <- up & up -> down)
             case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(new String(content.slice(1, content.length)).toLong, content(0) != 1)

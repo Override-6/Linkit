@@ -20,7 +20,7 @@ class FileInfoTask(private val ownerID: String,
         extends Task[FileDescription](ownerID) {
 
     override val initInfo: TaskInitInfo =
-        TaskInitInfo.of(TYPE, ownerID, filePath.getBytes)
+        TaskInitInfo.of(TYPE, ownerID, filePath)
 
     override def execute(): Unit = {
         val response = channel.nextPacket()
@@ -39,7 +39,7 @@ object FileInfoTask {
     val TYPE = "FINFO"
     private val OK = "OK"
 
-    class FileInfoCompleter(filePath: String) extends TaskExecutor {
+    class Completer(filePath: String) extends TaskExecutor {
 
         override def execute(): Unit = {
             val path = Utils.formatPath(filePath)

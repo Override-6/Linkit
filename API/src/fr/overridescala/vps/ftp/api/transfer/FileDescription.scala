@@ -19,12 +19,10 @@ case class FileDescription(path: String,
                       isDirectory: Boolean,
                       rootPath: String,
                       size: Long) extends Serializable {
-
+    val serialVersionUID = 151
 }
 
-object FileDescription extends Serializable {
-
-    val serialVersionUID = 151
+object FileDescription {
 
     /**
      * @return a Description of a local path
@@ -40,6 +38,10 @@ object FileDescription extends Serializable {
             isDirectory = Files.isDirectory(realPath)
             ownerAddress = Constants.PUBLIC_ADDRESS
         }.build()
+    }
+
+    def fromLocal(path: Path): FileDescription = {
+        fromLocal(path.toString)
     }
 
     private def getSize(path: Path): Long = {

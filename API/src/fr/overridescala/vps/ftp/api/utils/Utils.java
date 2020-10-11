@@ -49,7 +49,7 @@ public class Utils {
 
     public static Path subPathOfUnknownFile(Path unknownFile, int from) {
         String path = unknownFile.toString();
-        var currentNameCount = 0;
+        var currentNameCount = -1;
         var subPathBuilder = new StringBuilder();
         for (char c : path.toCharArray()) {
             if (c == '/' || c == '\\')

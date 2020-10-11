@@ -21,7 +21,7 @@ class PingTask(private val targetId: String) extends Task[Long](targetId) {
 object PingTask {
     val TYPE: String = "PING"
 
-    class PingCompleter extends TaskExecutor {
+    class Completer extends TaskExecutor {
         override def execute(): Unit = {
             channel.sendPacket(EmptyPacket())
         }

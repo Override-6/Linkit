@@ -15,7 +15,11 @@ class PacketReader(socket: Socket, packetHandler: PacketManager) extends Closeab
     private val input = new BufferedInputStream(socket.getInputStream)
 
     def readPacket(): Optional[Packet] = {
-        val bytes = input.readNBytes(nextPacketLength())
+        val nextLength = nextPacketLength()
+        if (nextLength == -1)
+            return Optional.empty()
+
+        val bytes = input.readNBytes(nextLength)
         try {
             return Optional.of(packetHandler.toPacket(bytes))
         } catch {
@@ -29,14 +33,19 @@ class PacketReader(socket: Socket, packetHandler: PacketManager) extends Closeab
 
     private def nextPacketLength(): Int = {
         val buff = new Array[Byte](1)
-        val packetSizeBytes = new Array[Byte](Constants.MAX_PACKET_LENGTH.toString.length)
+        val packetSizeBytes = new Array[Byte](Constants.MAX_PACKET_LENGTH.toString.length + 1)
         var i = 0
-        do {
-            input.read(buff)
+        while (new String(buff) != ":") {
+            val count = input.read(buff)
+            if (count < 1)
+                return -1
             packetSizeBytes(i) = buff(0)
             i += 1
-        } while (new String(buff) != ":")
-        new String(packetSizeBytes.slice(0, i - 1)).toInt
+        }
+        val sizeString = new String(packetSizeBytes.slice(0, i - 1))
+        if (sizeString.isBlank)
+            return -1
+        sizeString.toInt
     }
 
 

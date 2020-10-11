@@ -14,27 +14,31 @@ class CommandManager(input: Scanner) {
 
 
     def start(): Unit = {
-        while (true)
-            handleNextInput()
+        val thread = new Thread(() => {
+            while (true)
+                injectLine(input.nextLine())
+        })
+        thread.setName("Command listener Thread")
+        thread.start()
     }
 
-    def handleNextInput(): Unit = {
-        val line = input.nextLine()
+    def injectLine(line: String): Unit = {
         val args = parseLine(line.strip())
         val cmd = line.takeWhile(c => !Character.isWhitespace(c)).toLowerCase
-        if (commands.contains(cmd)) {
-            try {
-                commands(cmd).execute(args)
-            } catch {
-                case e: CommandException => Console.err.println(e.getMessage)
-                case e: Throwable => e.printStackTrace()
-            }
+        if (!commands.contains(cmd)) {
+            Console.err.println(s"cmd '$cmd' not found.")
             return
         }
-        Console.err.println(s"cmd '$cmd' not found.")
+
+        try {
+            commands(cmd).execute(args)
+        } catch {
+            case e: CommandException => Console.err.println(e.getMessage)
+            case e: Throwable => e.printStackTrace()
+        }
     }
 
-    def parseLine(line: String): Array[String] = {
+    private def parseLine(line: String): Array[String] = {
         val argBuilder = new StringBuilder
         val args = ListBuffer.empty[String]
 

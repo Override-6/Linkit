@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.client.cli
 
 object CommandUtils {
 
-    def checkArgsContains(args: Array[String], expected: String*): Unit = {
+    def checkArgsContains(expected: String*)(implicit args: Array[String]): Unit = {
         val success = expected.forall(args.contains)
         if (success)
             return
@@ -12,7 +12,7 @@ object CommandUtils {
     }
 
 
-    def argAfter(args: Array[String], ref: String): String =
+    def argAfter(ref: String)(implicit args: Array[String]): String =
         args(args.indexOf(ref) + 1)
 
 }

@@ -42,8 +42,8 @@ object CreateFileTask {
      * Creates a File / Folder to the desired path
      * @param pathString the file / folder path to be created
      * */
-    class CreateFileCompleter(private val pathString: String,
-                              private val isDirectory: Boolean) extends TaskExecutor {
+    class Completer(private val pathString: String,
+                    private val isDirectory: Boolean) extends TaskExecutor {
 
         override def execute(): Unit = {
             this.channel = channel

@@ -13,18 +13,18 @@ import fr.overridescala.vps.ftp.client.cli.CommandUtils._
 class CreateFileCommand(relay: Relay) extends CommandExecutor {
 
 
-    override def execute(args: Array[String]): Unit = {
+    override def execute(implicit args: Array[String]): Unit = {
         checkArgs(args)
         val path = args(0)
         val isDirectory = args.contains("-D")
-        val target = argAfter(args, "-t")
+        val target = argAfter("-t")
         relay.scheduleTask(CreateFileTask(target, path, isDirectory))
                 .complete()
     }
 
-    def checkArgs(args: Array[String]): Unit = {
+    def checkArgs(implicit args: Array[String]): Unit = {
         if (args.length != 3 && args.length != 4)
             throw new CommandException("args length expected is 3 or 4")
-        checkArgsContains(args, "-t")
+        checkArgsContains( "-t")
     }
 }

@@ -8,7 +8,7 @@ import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor}
 class ExecuteUnknownTaskCommand(relay: Relay) extends CommandExecutor {
 
 
-    override def execute(args: Array[String]): Unit = {
+    override def execute(implicit args: Array[String]): Unit = {
         if (args.length != 2)
             throw new CommandException("use : exec <task_name> <target>")
         val taskName = args(0)

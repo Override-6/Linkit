@@ -7,7 +7,7 @@ import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor}
 class StressTestCommand(relay: Relay) extends CommandExecutor {
 
 
-    override def execute(args: Array[String]): Unit = {
+    override def execute(implicit args: Array[String]): Unit = {
         checkArgs(args)
         val dataLength = args(0).toInt
         val isDownload = args(1).equalsIgnoreCase("-D")

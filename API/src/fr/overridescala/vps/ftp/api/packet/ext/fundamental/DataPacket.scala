@@ -13,11 +13,11 @@ import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
  * @param header  the header of the packet, or the type of this data. Headers allows to classify packets / data to send or receive
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
-case class DataPacket private(override val channelID: Int,
-                              override val targetIdentifier: String,
-                              override val senderIdentifier: String,
-                              header: String,
-                              override val content: Array[Byte]) extends Packet {
+case class DataPacket(override val channelID: Int,
+                      override val targetIdentifier: String,
+                      override val senderIdentifier: String,
+                      header: String,
+                      override val content: Array[Byte]) extends Packet {
 
     /**
      * Represents this packet as a String
@@ -31,7 +31,7 @@ case class DataPacket private(override val channelID: Int,
 object DataPacket {
 
     def apply(header: String, content: Array[Byte] = Array())(implicit channel: PacketChannel): DataPacket =
-        DataPacket(channel.channelID, channel.ownerIdentifier, channel.connectedIdentifier, header, content)
+        DataPacket(channel.channelID, channel.connectedIdentifier, channel.ownerIdentifier, header, content)
 
     def apply(header: String, content: String)(implicit channel: PacketChannel): DataPacket =
         apply(header, content.getBytes)

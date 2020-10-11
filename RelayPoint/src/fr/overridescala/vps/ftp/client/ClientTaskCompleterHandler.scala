@@ -4,7 +4,7 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental._
 import fr.overridescala.vps.ftp.api.task.tasks._
-import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TasksHandler, tasks}
 import fr.overridescala.vps.ftp.api.utils.Utils
 import fr.overridescala.vps.ftp.client.tasks.InitTaskCompleter
 
@@ -24,10 +24,11 @@ class ClientTaskCompleterHandler(private val relay: Relay)
         val task = taskType match {
             case UploadTask.TYPE => DownloadTask(Utils.deserialize(content))
             case DownloadTask.TYPE => UploadTask(Utils.deserialize(content))
-            case FileInfoTask.TYPE => new FileInfoTask.FileInfoCompleter(contentString)
-            case CreateFileTask.TYPE => new CreateFileTask.CreateFileCompleter(new String(content.slice(1, content.length)), content(0) == 1)
+            case FileInfoTask.TYPE => new FileInfoTask.Completer(contentString)
+            case CreateFileTask.TYPE => new CreateFileTask.Completer(new String(content.slice(1, content.length)), content(0) == 1)
+            case DeleteFileTask.TYPE => new DeleteFileTask.Completer(contentString)
             case InitTaskCompleter.TYPE => new InitTaskCompleter(relay)
-            case PingTask.TYPE => new PingTask.PingCompleter()
+            case PingTask.TYPE => new PingTask.Completer()
             //reverse the boolean for completer
             //(down <-> up & up <-> down)
             case StressTestTask.TYPE => new StressTestTask.StressTestCompleter(new String(content.slice(1, content.length)).toLong, content(0) != 1)
