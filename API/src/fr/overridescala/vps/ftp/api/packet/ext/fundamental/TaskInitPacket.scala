@@ -7,7 +7,6 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 //TODO doc parameters
 /**
  * this type of packet is sent when a relay ask to server to schedule a task between him, the server, and the target
- * The type of packets ([[TaskInitPacket]] & [[DataPacket]]) is determined by [[Protocol]]
  * @see [[Packet]]
  * */
 case class TaskInitPacket private(override val channelID: Int,
@@ -32,12 +31,19 @@ object TaskInitPacket {
     object Factory extends PacketFactory[TaskInitPacket] {
 
         private val TYPE = "[task_init]".getBytes
+        private val SENDER = "<sender>".getBytes
+        private val TARGET = "<target>".getBytes
         private val TASK_TYPE = "<task_type>".getBytes
         private val CONTENT = "<content>".getBytes
 
         override def toBytes(implicit packet: TaskInitPacket): Array[Byte] = {
+            val channelID = packet.channelID.toString.getBytes
+            val sender = packet.senderIdentifier.getBytes
+            val target = packet.targetIdentifier.getBytes
             val typeBytes = packet.taskType.getBytes
-            TYPE ++ EmptyPacket.Factory.toBytesUnsigned(packet)
+            TYPE ++ channelID ++
+                    SENDER ++ sender ++
+                    TARGET ++ target ++
                     TASK_TYPE ++ typeBytes ++
                     CONTENT ++ packet.content
         }
@@ -46,11 +52,14 @@ object TaskInitPacket {
             bytes.startsWith(TYPE)
 
         override def toPacket(implicit bytes: Array[Byte]): TaskInitPacket = {
-            val base = EmptyPacket.Factory.toPacket(bytes)
+            val channelID = cutString(TYPE, SENDER).toInt
+            val sender = cutString(SENDER, TARGET)
+            val target = cutString(TARGET, TASK_TYPE)
             val taskType = cutString(TASK_TYPE, CONTENT)
             val content = cutEnd(CONTENT)
-            TaskInitPacket(base.channelID, base.targetIdentifier, base.senderIdentifier, taskType, content)
+            TaskInitPacket(channelID, target, sender, taskType, content)
         }
 
     }
+
 }

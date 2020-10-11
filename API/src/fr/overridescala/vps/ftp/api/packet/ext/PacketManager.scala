@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.packet.ext
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager.SIZE_SEPARATOR
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket, TaskInitPacket}
 
 import scala.collection.mutable
 
@@ -25,6 +25,7 @@ class PacketManager {
             factories.put(clazz.asInstanceOf[Class[PT]], fact.asInstanceOf[PacketFactory[PT]])
 
         put(classOf[DataPacket], DataPacket.Factory)
+        put(classOf[EmptyPacket], EmptyPacket.Factory)
         put(classOf[TaskInitPacket], TaskInitPacket.Factory)
         put(classOf[ErrorPacket], ErrorPacket.Factory)
         factories

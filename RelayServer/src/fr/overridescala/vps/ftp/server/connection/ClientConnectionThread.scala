@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
 
-import fr.overridescala.vps.ftp.server.task.ClientTasksHandler
+import fr.overridescala.vps.ftp.server.task.ConnectionTasksHandler
 
 import scala.util.control.NonFatal
 
@@ -56,17 +56,15 @@ class ClientConnectionThread(socket: Socket,
     }
 
     private def handlePacket(packet: Packet): Unit = {
+        if (packet.targetIdentifier != server.identifier) {
+            manager.deflectPacket(packet)
+            return
+        }
         packet match {
-            case errorPacket: ErrorPacket =>
-                if (errorPacket.errorType == ErrorPacket.ABORT_TASK) {
-                    printErrorPacket(errorPacket)
-                    tasksHandler.skipCurrent()
-                } else tasksHandler.handlePacket(packet)
-            case _: Packet =>
-                if (packet.targetIdentifier != server.identifier)
-                    manager.deflectPacket(packet)
-                else tasksHandler.handlePacket(packet)
-                tasksHandler.handlePacket(packet)
+            case errorPacket: ErrorPacket if errorPacket.errorType == ErrorPacket.ABORT_TASK =>
+                printErrorPacket(errorPacket)
+                tasksHandler.skipCurrent()
+            case _: Packet => tasksHandler.handlePacket(packet)
         }
     }
 
@@ -109,24 +107,24 @@ class ClientConnectionThread(socket: Socket,
         channel.sendInitPacket(TaskInitInfo.of("GID", "unknownId"))
 
         deflectInChannel(channel)
-        val clientResponse: DataPacket = channel.nextPacketAsP()
+        val clientResponse = channel.nextPacketAsP(): DataPacket
         val identifier = clientResponse.header
         val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
         channel.sendPacket(DataPacket(response))
 
-        if (response.equals("ERROR"))
+        if (response == "ERROR")
             throw new RelayException("a Relay point connection have been rejected.")
 
         println(s"Relay Point connected with identifier '$identifier'")
         setName(s"RP Connection ($identifier)")
-        new ClientTasksHandler(identifier, server, socket)
+        new ConnectionTasksHandler(identifier, server, socket)
     }
 
 
     private def deflectInChannel(channel: PacketChannelManager): Unit =
         update {
-            case data: DataPacket => channel.addPacket(data)
             case init: TaskInitPacket => handlePacket(init)
+            case other: Packet => channel.addPacket(other)
         }
 
 }

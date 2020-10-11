@@ -1,25 +1,39 @@
 package fr.overridescala.vps.ftp.server.task
 
 import java.io.IOException
+import java.lang.reflect.InvocationTargetException
 import java.net.Socket
 
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
-import fr.overridescala.vps.ftp.api.task.TaskExecutor
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor}
 
-class TaskTicket(private val executor: TaskExecutor,
-                 private val taskID: Int,
-                 private val targetID: String,
-                 private val senderIdentifier: String,
-                 private val socket: Socket,
-                 private val packetManager: PacketManager,
-                 private val ownFreeWill: Boolean) {
-
+case class TaskTicket(private val executor: TaskExecutor,
+                      private val taskID: Int,
+                      private val targetID: String,
+                      private val senderIdentifier: String,
+                      private val socket: Socket,
+                      private val packetManager: PacketManager,
+                      private val ownFreeWill: Boolean) {
     var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, taskID, packetManager)
+
+
     val taskName: String = executor.getClass.getSimpleName
 
-    def notifyExecutor(): Unit = executor.synchronized {
-        executor.notifyAll()
+    def abort(): Unit = {
+        notifyExecutor()
+        executor match {
+            case task: Task[_] =>
+                val errorMethod = task.getClass.getMethod("error", classOf[String])
+                errorMethod.setAccessible(true)
+                try {
+                    errorMethod.invoke(task, "Task aborted from an external handler")
+                } catch {
+                    case e: InvocationTargetException if e.getCause.getClass == classOf[TaskException] =>
+                }
+            case _ =>
+        }
     }
 
 
@@ -44,9 +58,8 @@ class TaskTicket(private val executor: TaskExecutor,
         }
     }
 
-    override def toString: String =
-        s"Ticket(taskName = $taskName," +
-                s" taskID = $taskID," +
-                s" freeWill = $ownFreeWill)"
+    private def notifyExecutor(): Unit = executor.synchronized {
+        executor.notifyAll()
+    }
 
 }

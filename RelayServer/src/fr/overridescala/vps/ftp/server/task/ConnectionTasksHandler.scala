@@ -15,13 +15,13 @@ import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, Ta
  * @param server the server instance
  * @param socket the writer in which tasks will write packets
  * */
-class ClientTasksHandler(override val identifier: String,
-                         private val server: Relay,
-                         private val socket: Socket) extends TasksHandler {
+class ConnectionTasksHandler(override val identifier: String,
+                             private val server: Relay,
+                             private val socket: Socket) extends TasksHandler {
 
     private val packetManager = server.getPacketManager
     private val out = new BufferedOutputStream(socket.getOutputStream)
-    private var tasksThread = new ClientTasksThread(identifier)
+    private var tasksThread = new ConnectionTasksThread(identifier)
     tasksThread.start()
 
 
@@ -37,7 +37,7 @@ class ClientTasksHandler(override val identifier: String,
         try {
             packet match {
                 case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, this)
-                case data: DataPacket => tasksThread.injectPacket(data)
+                case _: Packet => tasksThread.injectPacket(packet)
             }
         } catch {
             case e: TaskException =>
@@ -47,7 +47,7 @@ class ClientTasksHandler(override val identifier: String,
                     ErrorPacket.ABORT_TASK,
                     e.getMessage)
                 out.write(packetManager.toBytes(packet))
-                throw e
+                out.flush()
         }
     }
 
@@ -58,7 +58,7 @@ class ClientTasksHandler(override val identifier: String,
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit =
-        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, identifier, senderID, socket, packetManager, ownFreeWill))
+        tasksThread.addTicket(TaskTicket(executor, taskIdentifier, identifier, senderID, socket, packetManager, ownFreeWill))
 
     /**
      * closes the current client tasks thread
@@ -75,7 +75,7 @@ class ClientTasksHandler(override val identifier: String,
         //Restarting the thread causes the current task to be skipped
         //And wait or execute the task that come after it
         val lastThread = tasksThread
-        tasksThread = tasksThread.clone()
+        tasksThread = tasksThread.copy()
         lastThread.close()
         tasksThread.start()
     }

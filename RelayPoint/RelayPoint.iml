@@ -9,6 +9,5 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="scala-library-2.13.3.jar" level="project" />
     <orderEntry type="module" module-name="API" exported="" />
-    <orderEntry type="library" name="scala-sdk-2.13.3" level="project" />
   </component>
 </module>

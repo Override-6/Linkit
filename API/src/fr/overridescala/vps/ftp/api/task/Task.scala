@@ -3,7 +3,6 @@ package fr.overridescala.vps.ftp.api.task
 import java.util.concurrent.atomic.AtomicReference
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask
 import org.jetbrains.annotations.Nullable
 

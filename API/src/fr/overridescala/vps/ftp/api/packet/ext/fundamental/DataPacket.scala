@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet.ext.fundamental
 
 import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket.Factory.TYPE
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
 //TODO Doc
@@ -41,13 +42,20 @@ object DataPacket {
     object Factory extends PacketFactory[DataPacket] {
 
         private val TYPE = "[data]".getBytes
+        private val SENDER = "<sender>".getBytes
+        private val TARGET = "<target>".getBytes
         private val HEADER = "<header>".getBytes
         private val CONTENT = "<content>".getBytes
 
         override def toBytes(implicit packet: DataPacket): Array[Byte] = {
-            val headerBytes = packet.header.getBytes
-            TYPE ++ EmptyPacket.Factory.toBytesUnsigned(packet)
-            HEADER ++ headerBytes ++
+            val channelID = packet.channelID.toString.getBytes
+            val sender = packet.senderIdentifier.getBytes
+            val target = packet.targetIdentifier.getBytes
+            val header = packet.header.getBytes
+            TYPE ++ channelID ++
+                    SENDER ++ sender ++
+                    TARGET ++ target ++
+                    HEADER ++ header ++
                     CONTENT ++ packet.content
         }
 
@@ -55,10 +63,12 @@ object DataPacket {
             bytes.startsWith(TYPE)
 
         override def toPacket(implicit bytes: Array[Byte]): DataPacket = {
-            val base = EmptyPacket.Factory.toPacket(bytes)
+            val channelID = cutString(TYPE, SENDER).toInt
+            val sender = cutString(SENDER, TARGET)
+            val target = cutString(TARGET, HEADER)
             val header = cutString(HEADER, CONTENT)
             val content = cutEnd(CONTENT)
-            DataPacket(base.channelID, header, base.targetIdentifier, base.senderIdentifier, content)
+            new DataPacket(channelID, target, sender, header, content)
         }
 
     }

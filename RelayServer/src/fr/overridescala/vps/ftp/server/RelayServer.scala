@@ -59,7 +59,6 @@ class RelayServer extends Relay {
         try {
             val clientSocket = serverSocket.accept()
             val address = clientSocket.getRemoteSocketAddress
-            println(s"new connection : $address")
             connectionsManager.register(clientSocket)
         } catch {
             case e: RelayException => Console.err.println(e.getMessage)

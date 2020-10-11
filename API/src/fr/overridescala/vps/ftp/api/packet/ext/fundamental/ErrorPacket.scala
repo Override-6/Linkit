@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet.ext.fundamental
 
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
 case class ErrorPacket(override val channelID: Int,
                        override val senderIdentifier: String,
@@ -32,15 +32,22 @@ object ErrorPacket {
     object Factory extends PacketFactory[ErrorPacket] {
 
         private val TYPE = "[err]".getBytes
+        private val SENDER = "<sender>".getBytes
+        private val TARGET = "<target>".getBytes
         private val ERROR_TYPE = "<type>".getBytes
         private val MSG = "<msg>".getBytes
         private val CAUSE = "<cause>".getBytes
 
         override def toBytes(implicit packet: ErrorPacket): Array[Byte] = {
+            val channelID = packet.channelID.toString.getBytes
+            val sender = packet.senderIdentifier.getBytes
+            val target = packet.targetIdentifier.getBytes
             val errorType = packet.errorType.getBytes
-            val errorMsg = packet.errorType.getBytes
-            val cause = packet.errorType.getBytes
-            TYPE ++ EmptyPacket.Factory.toBytesUnsigned(packet) ++
+            val errorMsg = packet.errorMsg.getBytes
+            val cause = packet.cause.getBytes
+            TYPE ++ channelID ++
+                    SENDER ++ sender ++
+                    TARGET ++ target ++
                     ERROR_TYPE ++ errorType ++
                     MSG ++ errorMsg ++
                     CAUSE ++ cause
@@ -50,11 +57,13 @@ object ErrorPacket {
             bytes.startsWith(TYPE)
 
         override def toPacket(implicit bytes: Array[Byte]): ErrorPacket = {
-            val base = EmptyPacket.Factory.toPacket(bytes)
+            val channelID = cutString(TYPE, SENDER).toInt
+            val sender = cutString(SENDER, TARGET)
+            val target = cutString(TARGET, ERROR_TYPE)
             val errorType = cutString(ERROR_TYPE, MSG)
             val msg = cutString(MSG, CAUSE)
             val cause = new String(cutEnd(CAUSE))
-            ErrorPacket(base.channelID, base.senderIdentifier, base.targetIdentifier, errorType, msg, cause)
+            ErrorPacket(channelID, sender, target, errorType, msg, cause)
         }
 
     }

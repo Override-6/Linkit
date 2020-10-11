@@ -18,7 +18,5 @@
       </library>
     </orderEntry>
     <orderEntry type="library" name="scala-reflect-2.12.8.jar" level="project" />
-    <orderEntry type="library" name="scala-sdk-2.13.3" level="project" />
-    <orderEntry type="library" name="scala-sdk-2.13.3" level="application" />
   </component>
 </module>

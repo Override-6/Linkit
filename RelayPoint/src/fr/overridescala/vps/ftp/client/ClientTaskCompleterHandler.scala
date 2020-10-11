@@ -37,10 +37,9 @@ class ClientTaskCompleterHandler(private val relay: Relay)
             tasksHandler.registerTask(task, taskID, senderID, relay.identifier, false)
             return
         }
-        println(initPacket)
-        val completerSupplier = completers(taskType)
+        val completerSupplier = completers.getOrElse(taskType, null)
         if (completerSupplier == null)
-            throw new TaskException("could not find completer for task " + taskType)
+            throw new TaskException("Couldn't find completer for task " + taskType)
         completerSupplier(initPacket, tasksHandler)
     }
 

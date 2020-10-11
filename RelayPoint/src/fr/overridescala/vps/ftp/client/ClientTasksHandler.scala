@@ -1,13 +1,14 @@
 package fr.overridescala.vps.ftp.client
 
 import java.io.BufferedOutputStream
+import java.lang.reflect.InvocationTargetException
 import java.net.Socket
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
-import fr.overridescala.vps.ftp.api.task.{TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
 
 import scala.util.control.NonFatal
 
@@ -19,7 +20,7 @@ protected class ClientTasksHandler(private val socket: Socket,
     private val out = new BufferedOutputStream(socket.getOutputStream)
     private var tasksThread: Thread = _
 
-    private var currentTicket: TaskTicket = _
+    @volatile private var currentTicket: TaskTicket = _
     @volatile private var open = false
 
     override val tasksCompleterHandler = new ClientTaskCompleterHandler(relay)
@@ -39,23 +40,26 @@ protected class ClientTasksHandler(private val socket: Socket,
             packet match {
                 case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, this)
                 case other: Packet if currentTicket != null => currentTicket.channel.addPacket(other)
+                case _: Packet => Console.err.println("could not handle packet " + packet)
             }
         } catch {
             case e: TaskException =>
-                val packet = new ErrorPacket(-1,
+                val errorPacket = new ErrorPacket(-1,
                     relay.identifier,
-                    identifier,
+                    packet.senderIdentifier,
                     ErrorPacket.ABORT_TASK,
                     e.getMessage)
-                out.write(packetManager.toBytes(packet))
-                throw e
+                out.write(packetManager.toBytes(errorPacket))
+                out.flush()
         }
     }
 
 
     override def close(): Unit = {
-        if (currentTicket != null)
-            currentTicket.notifyExecutor()
+        if (currentTicket != null) {
+            currentTicket.abort()
+            currentTicket = null
+        }
         open = false
         tasksThread.interrupt()
     }
@@ -108,8 +112,19 @@ protected class ClientTasksHandler(private val socket: Socket,
         private[ClientTasksHandler] val channel: SimplePacketChannel =
             new SimplePacketChannel(socket, targetID, relay.identifier, taskID, packetManager)
 
-        def notifyExecutor(): Unit = executor.synchronized {
-            executor.notifyAll()
+        def abort(): Unit = {
+            notifyExecutor()
+            executor match {
+                case task: Task[_] =>
+                    val errorMethod = task.getClass.getMethod("error", classOf[String])
+                    errorMethod.setAccessible(true)
+                    try {
+                        errorMethod.invoke(task, "Task aborted from an external handler")
+                    } catch {
+                        case e: InvocationTargetException if e.getCause.getClass == classOf[TaskException] =>
+                    }
+                case _ =>
+            }
         }
 
         def start(): Unit = {
@@ -118,12 +133,17 @@ protected class ClientTasksHandler(private val socket: Socket,
                     val initInfo = executor.initInfo
                     channel.sendInitPacket(initInfo)
                 }
+                executor.init(packetManager, channel)
                 executor.execute()
                 notifyExecutor()
             } catch {
                 case _: InterruptedException => Console.err.println(s"$taskName execution suddenly ended")
                 case NonFatal(e) => e.printStackTrace()
             }
+        }
+
+        private def notifyExecutor(): Unit = executor.synchronized {
+            executor.notifyAll()
         }
 
     }

@@ -6,7 +6,6 @@ import java.net.{Socket, SocketAddress}
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, RelayInitialisationException}
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.server.RelayServer
-import fr.overridescala.vps.ftp.server.connection.ClientConnectionThread
 
 import scala.collection.mutable
 
