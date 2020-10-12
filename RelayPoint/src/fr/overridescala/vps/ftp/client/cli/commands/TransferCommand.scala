@@ -2,10 +2,10 @@ package fr.overridescala.vps.ftp.client.cli.commands
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.task.Task
-import fr.overridescala.vps.ftp.api.task.tasks.{DownloadTask, FileInfoTask, UploadTask}
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescriptionBuilder}
 import fr.overridescala.vps.ftp.client.cli.CommandUtils._
 import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor}
+import fr.overridescala.vps.ftp.tasks.fundamental.{DownloadTask, FileInfoTask, UploadTask}
 
 /**
  * syntax : <p>

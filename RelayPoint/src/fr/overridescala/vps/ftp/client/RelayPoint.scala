@@ -19,7 +19,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val packetManager = new PacketManager()
     private val tasksHandler = new ClientTasksHandler(socket, this)
     private val packetReader = new PacketReader(socket, packetManager)
-    private val taskLoader = new TaskLoader(this, Path.of(Constants.JAR_LOCATION).resolve("Tasks"))
+    private val taskLoader = new TaskLoader(this, Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks"))
 
 
     @volatile private var open = false

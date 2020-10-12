@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.task.ext
 
-import fr.overridescala.vps.ftp.api.task.TasksHandler
+import fr.overridescala.vps.ftp.api.Relay
 
-abstract class TaskExtension(protected val tasksHandler: TasksHandler) {
+abstract class TaskExtension(protected val relay: Relay) {
     def main(): Unit
 }

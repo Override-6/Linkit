@@ -1,9 +1,9 @@
 package fr.overridescala.vps.ftp.client.cli.commands
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.task.tasks.CreateFileTask
 import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor}
 import fr.overridescala.vps.ftp.client.cli.CommandUtils._
+import fr.overridescala.vps.ftp.tasks.fundamental.CreateFileTask
 
 /**
  * syntax : <p>

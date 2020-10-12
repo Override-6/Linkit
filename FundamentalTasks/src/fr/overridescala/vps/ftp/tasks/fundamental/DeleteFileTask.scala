@@ -1,12 +1,11 @@
-package fr.overridescala.vps.ftp.api.task.tasks
+package fr.overridescala.vps.ftp.tasks.fundamental
 
 import java.io.{FileNotFoundException, IOException}
 import java.nio.file.{Files, Path}
 
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{EmptyPacket, ErrorPacket}
-import fr.overridescala.vps.ftp.api.task.tasks.DeleteFileTask.TYPE
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
-
+import fr.overridescala.vps.ftp.tasks.fundamental.DeleteFileTask.TYPE
 
 case class DeleteFileTask(targetId: String, targetPath: String) extends Task[Unit](targetId) {
 

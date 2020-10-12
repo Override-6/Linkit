@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.api.task.tasks
+package fr.overridescala.vps.ftp.tasks.fundamental
 
 import java.nio.file.{Files, Path}
 import java.util
@@ -6,10 +6,10 @@ import java.util
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
-import fr.overridescala.vps.ftp.api.task.tasks.UploadTask.{END_OF_TRANSFER, TYPE, UPLOAD_FILE}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
+import fr.overridescala.vps.ftp.tasks.fundamental.UploadTask._
 
 import scala.util.control.NonFatal
 
@@ -28,7 +28,7 @@ class UploadTask(private val desc: TransferDescription)
     override def execute(): Unit = {
         this.channel = channel
         val source = Path.of(desc.source.path)
-        val destination = Path.of(desc.destination)
+       // val destination = Path.of(desc.destination)
 
         if (Files.isDirectory(source)) {
             //FIXME add a working folder to folder check.

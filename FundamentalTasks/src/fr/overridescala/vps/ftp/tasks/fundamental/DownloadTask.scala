@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.api.task.tasks
+package fr.overridescala.vps.ftp.tasks.fundamental
 
 import java.io.File
 import java.nio.file.attribute.FileTime
@@ -6,12 +6,12 @@ import java.nio.file.{Files, Path}
 import java.time.Instant
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
+import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
-import fr.overridescala.vps.ftp.api.task.tasks.DownloadTask.{ABORT, TYPE}
-import fr.overridescala.vps.ftp.api.task._
+import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
+import fr.overridescala.vps.ftp.tasks.fundamental.DownloadTask.TYPE
 
 /**
  * Downloads a File or folder from a targeted Relay
@@ -43,10 +43,11 @@ class DownloadTask private(private val desc: TransferDescription)
             case e: Throwable =>
                 e.printStackTrace()
                 val typeName = e.getClass.getCanonicalName
-                var msg = s"$typeName : ${e.getMessage}"
-                if (msg == null)
+                val errMsg = e.getMessage
+                var msg = s"$typeName : $errMsg"
+                if (errMsg == null)
                     msg = s"got an error of type : $typeName"
-                channel.sendPacket(ErrorPacket(ABORT, msg))
+                channel.sendPacket(ErrorPacket(typeName, msg))
                 error(msg)
         }
         println("download end")
@@ -116,7 +117,7 @@ class DownloadTask private(private val desc: TransferDescription)
         }
         if (!Files.isWritable(path) || !Files.isReadable(path)) {
             val errorMsg = "Can't access to the file"
-            channel.sendPacket(ErrorPacket(ABORT, errorMsg))
+            channel.sendPacket(ErrorPacket("NoSuchPermissions", errorMsg))
             error(errorMsg)
             return true
         }
@@ -137,7 +138,6 @@ class DownloadTask private(private val desc: TransferDescription)
 
 object DownloadTask {
     val TYPE: String = "DWN"
-    private val ABORT: String = "ERROR"
 
     def apply(transferDescription: TransferDescription): DownloadTask =
         new DownloadTask(transferDescription)

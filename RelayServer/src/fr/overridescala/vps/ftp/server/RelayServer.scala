@@ -2,14 +2,15 @@ package fr.overridescala.vps.ftp.server
 
 import java.net.{ServerSocket, SocketException}
 import java.nio.charset.Charset
+import java.nio.file.Path
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
-import fr.overridescala.vps.ftp.server.task.ServerTaskCompleterHandler
 
 import scala.util.control.NonFatal
 
@@ -17,9 +18,10 @@ class RelayServer extends Relay {
 
 
     private val serverSocket = new ServerSocket(Constants.PORT)
-    private val completerHandler = new ServerTaskCompleterHandler(this)
+    private val completerHandler = new TaskCompleterHandler()
     private val connectionsManager = new ConnectionsManager(this)
     private val packetManager = new PacketManager()
+    private val taskLoader = new TaskLoader(this, Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks"))
 
     private var open = false
 
@@ -43,9 +45,14 @@ class RelayServer extends Relay {
         println("current encoding is " + Charset.defaultCharset().name())
         println("listening on port " + Constants.PORT)
 
+        taskLoader.loadTasks()
+
         open = true
         while (open) awaitClientConnection()
     }
+
+    override def getPacketManager: PacketManager = packetManager
+
 
     override def close(): Unit = {
         println("closing server...")
@@ -58,7 +65,6 @@ class RelayServer extends Relay {
     private def awaitClientConnection(): Unit = {
         try {
             val clientSocket = serverSocket.accept()
-            val address = clientSocket.getRemoteSocketAddress
             connectionsManager.register(clientSocket)
         } catch {
             case e: RelayException => Console.err.println(e.getMessage)
@@ -78,5 +84,4 @@ class RelayServer extends Relay {
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
 
 
-    override def getPacketManager: PacketManager = packetManager
 }

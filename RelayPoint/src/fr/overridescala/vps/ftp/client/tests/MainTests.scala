@@ -4,7 +4,6 @@ import java.io.File
 import java.nio.file.Path
 
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
-import fr.overridescala.vps.ftp.api.task.tasks.UploadTask
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescription, TransferDescriptionBuilder}
 import fr.overridescala.vps.ftp.api.utils.Utils
 

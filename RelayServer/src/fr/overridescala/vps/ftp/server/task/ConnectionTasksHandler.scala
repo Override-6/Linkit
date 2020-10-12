@@ -24,7 +24,6 @@ class ConnectionTasksHandler(override val identifier: String,
     private var tasksThread = new ConnectionTasksThread(identifier)
     tasksThread.start()
 
-
     override val tasksCompleterHandler: TaskCompleterHandler = server.getTaskCompleterHandler
 
     /**

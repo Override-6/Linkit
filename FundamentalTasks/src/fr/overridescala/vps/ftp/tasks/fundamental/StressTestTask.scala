@@ -1,10 +1,10 @@
-package fr.overridescala.vps.ftp.api.task.tasks
+package fr.overridescala.vps.ftp.tasks.fundamental
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
-import fr.overridescala.vps.ftp.api.task._
-import fr.overridescala.vps.ftp.api.task.tasks.StressTestTask.{TYPE, download, upload}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.tasks.fundamental.StressTestTask.{TYPE, download, upload}
 
 /**
  * This is a Test task, will not be documented.

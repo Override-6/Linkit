@@ -8,7 +8,8 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.client.tasks.InitTaskCompleter
 
 import scala.util.control.NonFatal
 
@@ -23,7 +24,9 @@ protected class ClientTasksHandler(private val socket: Socket,
     @volatile private var currentTicket: TaskTicket = _
     @volatile private var open = false
 
-    override val tasksCompleterHandler = new ClientTaskCompleterHandler(relay)
+    override val tasksCompleterHandler = new TaskCompleterHandler()
+    tasksCompleterHandler.putCompleter(InitTaskCompleter.TYPE, _ => new InitTaskCompleter(relay))
+
     override val identifier: String = relay.identifier
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {

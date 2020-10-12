@@ -107,17 +107,24 @@ class ClientConnectionThread(socket: Socket,
         channel.sendInitPacket(TaskInitInfo.of("GID", "unknownId"))
 
         deflectInChannel(channel)
-        val clientResponse = channel.nextPacketAsP(): DataPacket
-        val identifier = clientResponse.header
-        val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
-        channel.sendPacket(DataPacket(response))
+        val clientResponse = channel.nextPacket()
+        clientResponse match {
+            case errorPacket: ErrorPacket =>
+                errorPacket.printError()
+                throw new RelayException("a Relay point connection have been aborted by the client.")
+            case dataPacket: DataPacket =>
+                val identifier = dataPacket.header
+                val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
+                channel.sendPacket(DataPacket(response))
 
-        if (response == "ERROR")
-            throw new RelayException("a Relay point connection have been rejected.")
+                if (response == "ERROR")
+                    throw new RelayException("a Relay point connection have been rejected.")
 
-        println(s"Relay Point connected with identifier '$identifier'")
-        setName(s"RP Connection ($identifier)")
-        new ConnectionTasksHandler(identifier, server, socket)
+                println(s"Relay Point connected with identifier '$identifier'")
+                setName(s"RP Connection ($identifier)")
+                new ConnectionTasksHandler(identifier, server, socket)
+        }
+
     }
 
 
