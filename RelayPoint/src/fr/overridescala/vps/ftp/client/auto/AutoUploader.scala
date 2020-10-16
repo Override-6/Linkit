@@ -3,9 +3,9 @@ package fr.overridescala.vps.ftp.client.auto
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{FileSystems, Files, Path, WatchService}
 
+import fr.overridescala.vps.ftp.`extension`.fundamental.{DeleteFileTask, UploadTask}
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescriptionBuilder}
-import fr.overridescala.vps.ftp.tasks.fundamental.{DeleteFileTask, UploadTask}
 
 class AutoUploader(relay: Relay, path: Path, targetRelay: String, localPath: String, targetPath: String) extends Automation {
 
