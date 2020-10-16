@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.tasks.fundamental
+package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import java.io.File
 import java.nio.file.attribute.FileTime
@@ -11,7 +11,7 @@ import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPac
 import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
-import fr.overridescala.vps.ftp.tasks.fundamental.DownloadTask.TYPE
+import DownloadTask.TYPE
 
 /**
  * Downloads a File or folder from a targeted Relay

@@ -14,8 +14,8 @@ import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
 case class DataPacket(override val channelID: Int,
-                      override val targetIdentifier: String,
-                      override val senderIdentifier: String,
+                      override val targetID: String,
+                      override val senderID: String,
                       header: String,
                       override val content: Array[Byte]) extends Packet {
 
@@ -23,7 +23,7 @@ case class DataPacket(override val channelID: Int,
      * Represents this packet as a String
      * */
     override def toString: String =
-        s"DataPacket{id: $channelID, header: $header, target: $targetIdentifier, sender: $senderIdentifier, content: ${new String(content)}}"
+        s"DataPacket{id: $channelID, header: $header, target: $targetID, sender: $senderID, content: ${new String(content)}}"
 
 
 }
@@ -39,6 +39,9 @@ object DataPacket {
     def apply(header: String)(implicit channel: PacketChannel): DataPacket =
         apply(header, "")
 
+    def apply(content: Array[Byte])(implicit channel: PacketChannel): DataPacket =
+        apply("", content)
+
     object Factory extends PacketFactory[DataPacket] {
 
         private val TYPE = "[data]".getBytes
@@ -47,10 +50,10 @@ object DataPacket {
         private val HEADER = "<header>".getBytes
         private val CONTENT = "<content>".getBytes
 
-        override def toBytes(implicit packet: DataPacket): Array[Byte] = {
+        override def decompose(implicit packet: DataPacket): Array[Byte] = {
             val channelID = packet.channelID.toString.getBytes
-            val sender = packet.senderIdentifier.getBytes
-            val target = packet.targetIdentifier.getBytes
+            val sender = packet.senderID.getBytes
+            val target = packet.targetID.getBytes
             val header = packet.header.getBytes
             TYPE ++ channelID ++
                     SENDER ++ sender ++
@@ -62,7 +65,7 @@ object DataPacket {
         override def canTransform(implicit bytes: Array[Byte]): Boolean =
             bytes.startsWith(TYPE)
 
-        override def toPacket(implicit bytes: Array[Byte]): DataPacket = {
+        override def build(implicit bytes: Array[Byte]): DataPacket = {
             val channelID = cutString(TYPE, SENDER).toInt
             val sender = cutString(SENDER, TARGET)
             val target = cutString(TARGET, HEADER)

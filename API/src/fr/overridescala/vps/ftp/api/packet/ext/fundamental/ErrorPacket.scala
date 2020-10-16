@@ -4,8 +4,8 @@ import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
 case class ErrorPacket(override val channelID: Int,
-                       override val senderIdentifier: String,
-                       override val targetIdentifier: String,
+                       override val senderID: String,
+                       override val targetID: String,
                        errorType: String,
                        errorMsg: String,
                        cause: String = "") extends Packet {
@@ -38,10 +38,10 @@ object ErrorPacket {
         private val MSG = "<msg>".getBytes
         private val CAUSE = "<cause>".getBytes
 
-        override def toBytes(implicit packet: ErrorPacket): Array[Byte] = {
+        override def decompose(implicit packet: ErrorPacket): Array[Byte] = {
             val channelID = packet.channelID.toString.getBytes
-            val sender = packet.senderIdentifier.getBytes
-            val target = packet.targetIdentifier.getBytes
+            val sender = packet.senderID.getBytes
+            val target = packet.targetID.getBytes
             val errorType = packet.errorType.getBytes
             val errorMsg = packet.errorMsg.getBytes
             val cause = packet.cause.getBytes
@@ -56,7 +56,7 @@ object ErrorPacket {
         override def canTransform(implicit bytes: Array[Byte]): Boolean =
             bytes.startsWith(TYPE)
 
-        override def toPacket(implicit bytes: Array[Byte]): ErrorPacket = {
+        override def build(implicit bytes: Array[Byte]): ErrorPacket = {
             val channelID = cutString(TYPE, SENDER).toInt
             val sender = cutString(SENDER, TARGET)
             val target = cutString(TARGET, ERROR_TYPE)

@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.tasks.fundamental
+package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import java.io.IOException
 import java.nio.file.{Files, Path}
@@ -6,7 +6,7 @@ import java.nio.file.{Files, Path}
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.utils.Utils
-import fr.overridescala.vps.ftp.tasks.fundamental.CreateFileTask.TYPE
+import CreateFileTask.TYPE
 
 /**
  * Ask to create a File / folder to the targeted ownerID

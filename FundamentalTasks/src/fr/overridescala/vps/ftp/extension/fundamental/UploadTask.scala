@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.tasks.fundamental
+package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import java.nio.file.{Files, Path}
 import java.util
@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPac
 import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
-import fr.overridescala.vps.ftp.tasks.fundamental.UploadTask._
+import UploadTask._
 
 import scala.util.control.NonFatal
 
@@ -120,8 +120,8 @@ class UploadTask(private val desc: TransferDescription)
 }
 
 object UploadTask {
-    protected[tasks] val END_OF_TRANSFER: String = "EOT"
-    protected[tasks] val UPLOAD_FILE: String = "UPF"
+    private[fundamental] val END_OF_TRANSFER: String = "EOT"
+    private[fundamental] val UPLOAD_FILE: String = "UPF"
     val TYPE: String = "UP"
 
     def apply(transferDescription: TransferDescription): UploadTask =

@@ -41,7 +41,7 @@ class PacketManager {
     def toPacket(bytes: Array[Byte]): Packet = {
         for (factory <- factories.values) {
             if (factory.canTransform(bytes))
-                return factory.toPacket(bytes)
+                return factory.build(bytes)
         }
         throw UnexpectedPacketException(s"could not find packet factory for ${new String(bytes)}")
     }
@@ -49,7 +49,7 @@ class PacketManager {
     def toBytes[D <: Packet](classOfP: Class[D], packet: D): Array[Byte] = {
         val bytes = factories(classOfP.asInstanceOf[Class[PT]])
                 .asInstanceOf[PacketFactory[D]]
-                .toBytes(packet)
+                .decompose(packet)
         s"${bytes.length}".getBytes ++ SIZE_SEPARATOR ++ bytes
     }
 

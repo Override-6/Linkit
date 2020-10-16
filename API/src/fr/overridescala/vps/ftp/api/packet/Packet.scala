@@ -24,11 +24,11 @@ trait Packet {
     /**
      * the targeted Relay identifier that will receive the packet
      * */
-    val targetIdentifier: String
+    val targetID: String
 
     /**
      * this packet sender identifier
      * */
-    val senderIdentifier: String
+    val senderID: String
 
 }

@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.tasks.fundamental
+package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import java.nio.file.Files
 
@@ -6,7 +6,7 @@ import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPac
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.transfer.FileDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
-import fr.overridescala.vps.ftp.tasks.fundamental.PingTask.TYPE
+import PingTask.TYPE
 
 /**
  * Retrieves the information about a file / folder such as his size
