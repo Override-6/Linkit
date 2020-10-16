@@ -19,12 +19,12 @@ class ConnectionTasksHandler(override val identifier: String,
                              private val server: Relay,
                              private val socket: Socket) extends TasksHandler {
 
-    private val packetManager = server.getPacketManager
+    private val packetManager = server.packetManager
     private val out = new BufferedOutputStream(socket.getOutputStream)
     private var tasksThread = new ConnectionTasksThread(identifier)
     tasksThread.start()
 
-    override val tasksCompleterHandler: TaskCompleterHandler = server.getTaskCompleterHandler
+    override val tasksCompleterHandler: TaskCompleterHandler = server.taskCompleterHandler
 
     /**
      * Handles the packet.

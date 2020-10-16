@@ -105,7 +105,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * @param packet the packet to deflect
      * */
     private[connection] def deflectPacket(packet: Packet): Unit = {
-        val target: String = packet.targetIdentifier
+        val target: String = packet.targetID
         val connection = getConnectionFromIdentifier(target)
         if (connection == null)
             throw new RelayException(s"unknown ID '$target' to deflect packet")

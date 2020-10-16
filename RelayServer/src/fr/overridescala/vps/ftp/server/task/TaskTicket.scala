@@ -1,13 +1,13 @@
 package fr.overridescala.vps.ftp.server.task
 
 import java.io.IOException
-import java.lang.reflect.InvocationTargetException
 import java.net.Socket
 
-import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor}
+
+import scala.util.control.NonFatal
 
 case class TaskTicket(private val executor: TaskExecutor,
                       private val taskID: Int,
@@ -16,9 +16,8 @@ case class TaskTicket(private val executor: TaskExecutor,
                       private val socket: Socket,
                       private val packetManager: PacketManager,
                       private val ownFreeWill: Boolean) {
+
     var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, taskID, packetManager)
-
-
     val taskName: String = executor.getClass.getSimpleName
 
     def abort(): Unit = {
@@ -30,7 +29,7 @@ case class TaskTicket(private val executor: TaskExecutor,
                 try {
                     errorMethod.invoke(task, "Task aborted from an external handler")
                 } catch {
-                    case e: InvocationTargetException if e.getCause.getClass == classOf[TaskException] =>
+                    case NonFatal(e) => e.printStackTrace()
                 }
             case _ =>
         }
@@ -54,7 +53,7 @@ case class TaskTicket(private val executor: TaskExecutor,
             case _: InterruptedException =>
             case e: IOException if e.getMessage != null && e.getMessage.equalsIgnoreCase("Broken pipe") =>
 
-            case e: Throwable => e.printStackTrace()
+            case NonFatal(e) => e.printStackTrace()
         }
     }
 

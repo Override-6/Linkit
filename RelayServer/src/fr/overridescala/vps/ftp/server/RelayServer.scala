@@ -18,17 +18,20 @@ class RelayServer extends Relay {
 
 
     private val serverSocket = new ServerSocket(Constants.PORT)
-    private val completerHandler = new TaskCompleterHandler()
     private val connectionsManager = new ConnectionsManager(this)
-    private val packetManager = new PacketManager()
-    private val taskLoader = new TaskLoader(this, Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks"))
-
-    private var open = false
+    //awful thing, only for debugging, and easily switching from localhost to vps.
+    private val taskFolderPath =
+        if (System.getenv().get("COMPUTERNAME") == "Linux") Path.of("/home/override/VPS/Tasks")
+        else Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks")
+    @volatile private var open = false
 
     /**
      * For safety, prefer Relay#identfier instead of Constants.SERVER_ID
      * */
     override val identifier: String = Constants.SERVER_ID
+    override val packetManager = new PacketManager()
+    override val taskLoader = new TaskLoader(this, taskFolderPath)
+    override val taskCompleterHandler = new TaskCompleterHandler()
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -38,20 +41,18 @@ class RelayServer extends Relay {
         RelayTaskAction(task)
     }
 
-    override def getTaskCompleterHandler: TaskCompleterHandler = completerHandler
 
     override def start(): Unit = {
-        println("ready !")
-        println("current encoding is " + Charset.defaultCharset().name())
-        println("listening on port " + Constants.PORT)
+        println("Ready !")
+        println("Current encoding is " + Charset.defaultCharset().name())
+        println("Listening on port " + Constants.PORT)
+        println("computer name is " + System.getenv().get("COMPUTERNAME"))
 
-        taskLoader.loadTasks()
+        taskLoader.refreshTasks()
 
         open = true
         while (open) awaitClientConnection()
     }
-
-    override def getPacketManager: PacketManager = packetManager
 
 
     override def close(): Unit = {

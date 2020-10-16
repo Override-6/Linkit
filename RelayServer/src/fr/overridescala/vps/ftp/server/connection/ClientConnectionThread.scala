@@ -17,8 +17,8 @@ class ClientConnectionThread(socket: Socket,
                              server: Relay,
                              manager: ConnectionsManager) extends Thread with Closeable {
 
-    private val packetManager = server.getPacketManager
-    private val packetReader: PacketReader = new PacketReader(socket, server.getPacketManager)
+    private val packetManager = server.packetManager
+    private val packetReader: PacketReader = new PacketReader(socket, server.packetManager)
     private val writer = new BufferedOutputStream(socket.getOutputStream)
 
     val tasksHandler: TasksHandler = initialiseConnection()
@@ -56,7 +56,7 @@ class ClientConnectionThread(socket: Socket,
     }
 
     private def handlePacket(packet: Packet): Unit = {
-        if (packet.targetIdentifier != server.identifier) {
+        if (packet.targetID != server.identifier) {
             manager.deflectPacket(packet)
             return
         }
