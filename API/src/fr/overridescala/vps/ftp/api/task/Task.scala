@@ -16,7 +16,7 @@ import org.jetbrains.annotations.Nullable
  *     TasksCompleters does not have specific Class or Trait to extends, they just have to extend the TaskExecutor.
  *     TasksCompleters are created by the [[TaskCompleterHandler]], and are normally not instantiable from other classes.
  *     TasksCompleters, are the tasks which completes the self-executable tasks.
- *     @example
+ *      @example
  *          in [[CreateFileTask]], the self-executable (the class that directly extends from [[Task]]) will ask to the targeted Relay
  *          if he could creates a file located on the specified path.
  *          The targeted Relay will instantiate / execute the Completer of [[CreateFileTask]], in which the file will be created.
@@ -94,8 +94,8 @@ abstract class Task[T](val targetID: String)
             atomicResult.set(result)
         }
         val onError: String => Unit = msg => synchronized {
-            throw new TaskException(msg + "\n")
             notify()
+            Console.err.println(msg)
         }
         this.onSuccess = onSuccess
         this.onError = onError
@@ -115,6 +115,7 @@ abstract class Task[T](val targetID: String)
     protected def error(msg: String): Unit = {
         if (onError != null)
             onError(msg)
+        throw new TaskException(msg)
     }
 
     /**

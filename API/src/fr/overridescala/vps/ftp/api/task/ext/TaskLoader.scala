@@ -10,25 +10,33 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.TaskExtensionLoadException
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader.{MainClassField, PropertyName}
 
+import scala.collection.mutable.ListBuffer
 
-class TaskLoader(relay: Relay, tasksFolder: Path) {
+
+class TaskLoader(relay: Relay, val tasksFolder: Path) {
+
+    type TaskExtensionClass = Class[_ <: TaskExtension]
 
     private var classLoader: URLClassLoader = null
+    private val extensions = ListBuffer.empty[TaskExtensionClass]
 
-    def loadTasks(): Unit = {
+    def getLoadedExtensions: Array[TaskExtensionClass] = {
+        extensions.toArray
+    }
+
+    def refreshTasks(): Unit = {
         Files.createDirectories(tasksFolder)
         val content = Files.list(tasksFolder)
         val paths = content
-                .filter(p => p.toString.endsWith(".jar") || p.toString.endsWith(".class"))
+                .filter(p => p.toString.endsWith(".jar"))
                 .collect(Collectors.toList[Path])
         val urls = paths
                 .stream()
                 .map(_.toUri.toURL)
                 .toArray[URL](new Array[URL](_))
         classLoader = new URLClassLoader(urls, getClass.getClassLoader)
-        paths.forEach(loadPath(_))
+        paths.forEach(loadJar)
     }
-
 
     private def loadJar(path: Path): Unit = {
         val jarFile = new ZipFile(path.toFile)
@@ -44,7 +52,7 @@ class TaskLoader(relay: Relay, tasksFolder: Path) {
         if (className == null)
             throw TaskExtensionLoadException(s"jar file $path properties' must contains a field named '$MainClassField'")
 
-        //Loading main
+        //Loading extension's main
         val clazz = Class.forName(className, false, classLoader)
         loadClass(clazz)
     }
@@ -54,25 +62,17 @@ class TaskLoader(relay: Relay, tasksFolder: Path) {
             clazz.getDeclaredClasses.foreach(loadClass)
             return
         }
-        loadExtension(clazz.asInstanceOf[Class[_ <: TaskExtension]])
+        loadExtension(clazz.asInstanceOf[TaskExtensionClass])
     }
 
-    private def loadExtension(clazz: Class[_ <: TaskExtension]): Unit = {
+    private def loadExtension(clazz: TaskExtensionClass): Unit = {
         val className = clazz.getName
         try {
             val constructor = clazz.getDeclaredConstructor(classOf[Relay])
             constructor.setAccessible(true)
             constructor.newInstance(relay).main()
         } catch {
-            case _: NoSuchMethodException => Console.err.println(s"Could not load Task extension $className")
-        }
-    }
-
-    private def loadPath(path: Path): Unit = {
-        val extension = path.toString.split('.').last
-        extension match {
-            case "jar" => loadJar(path)
-            case "class" => loadClass(Class.forName(path.toFile.getName, false, classLoader))
+            case _: NoSuchMethodException => Console.err.println(s"Could not load Task extension $className, missing Constructor(Relay)")
         }
     }
 

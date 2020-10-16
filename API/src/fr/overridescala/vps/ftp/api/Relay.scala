@@ -4,6 +4,7 @@ import java.io.Closeable
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler, TaskExecutor}
 
 //TODO reedit doc about all changes
@@ -27,34 +28,17 @@ import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler
  * @see [[Closeable]]
  * @see [[Task]]
  * */
-trait Relay extends Closeable {
+trait Relay extends Closeable with TaskScheduler {
 
-    /**
-     * The identifiers are required far task execution; they will be performed between you and the targeted Relay's identifier
-     * two Relay can't have the same identifier in the network.
-     * */
     val identifier: String
-
-    /**
-     * schedules a TaskExecutor.
-     *
-     * @param task the task to schedule
-     * @return a [[RelayTaskAction]] instance, this object allows you to enqueue or complete the task later.
-     * @see [[RelayTaskAction]]
-     * */
-    def scheduleTask[R](task: Task[R]): RelayTaskAction[R]
-
-    /**
-     * @return the [[TaskCompleterHandler]] used by this Relay.
-     * @see [[TaskCompleterHandler]]
-     * */
-    def getTaskCompleterHandler: TaskCompleterHandler
 
     /**
      * @return the [[PacketManager]] used by this relay.
      * @see [[PacketManager]]
      */
-    def getPacketManager: PacketManager
+    val packetManager: PacketManager
+
+    val taskLoader: TaskLoader
 
     /**
      * <b>Starts the Relay.</b>
@@ -63,25 +47,6 @@ trait Relay extends Closeable {
      * @throws RelayInitialisationException for any init error
      * */
     def start(): Unit
-
-    /**
-     * RelayTaskAction is a wraps a [[TaskAction]] object.
-     * this class avoid the user to specify the task identifier
-     * @see [[TaskAction]]
-     * */
-    case class RelayTaskAction[T] (taskAction: TaskAction[T]) {
-        def queue(onSuccess: T => Unit = null, onError: String => Unit = Console.err.println): Unit =
-            taskAction.queue(onSuccess, onError)
-
-        def complete(): T =
-            taskAction.complete()
-
-    }
-
-    protected object RelayTaskAction {
-        def of[T](taskAction: TaskAction[T]): RelayTaskAction[T] =
-            new RelayTaskAction[T](taskAction)
-    }
 
 
 }

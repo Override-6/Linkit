@@ -39,7 +39,6 @@ abstract class TaskExecutor {
 
     /**
      * Executes this task.
-     * @param channel the channel where the packet will be send and received
      *
      * @see [[PacketChannel]]
      * @see [[DataPacket]]
