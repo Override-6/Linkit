@@ -11,18 +11,18 @@ import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.client.tasks.ClientExtension
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
     private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
-    private val packetManager = new PacketManager()
     private val tasksHandler = new ClientTasksHandler(socket, this)
-    private val packetReader = new PacketReader(socket, packetManager)
-    private val taskLoader = new TaskLoader(this, Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks"))
-
-
     @volatile private var open = false
+
+    override val taskLoader = new TaskLoader(this, Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks"))
+    override val packetManager = new PacketManager()
+    private val packetReader = new PacketReader(socket, packetManager)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -30,16 +30,18 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         RelayTaskAction(task)
     }
 
-    override def getTaskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
+    override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
 
     override def start(): Unit = {
         val thread = new Thread(() => {
             println("ready !")
             println("current encoding is " + Charset.defaultCharset().name())
             println("listening on port " + Constants.PORT)
+            println("computer name is " + System.getenv().get("COMPUTERNAME"))
+
             //enable the task management
             tasksHandler.start()
-            taskLoader.loadTasks()
+            taskLoader.refreshTasks()
 
             open = true
             while (open) {
@@ -63,8 +65,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
 
-    override def getPacketManager: PacketManager = packetManager
-
     override def close(): Unit = {
         open = false
         socket.close()
@@ -77,5 +77,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
+    new ClientExtension(this).main() //manually adds local / private Task extension
 
 }

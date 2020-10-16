@@ -9,14 +9,13 @@ import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler, TaskExecutor, TasksHandler}
-import fr.overridescala.vps.ftp.client.tasks.InitTaskCompleter
 
 import scala.util.control.NonFatal
 
 protected class ClientTasksHandler(private val socket: Socket,
                                    private val relay: RelayPoint) extends TasksHandler {
 
-    private val packetManager = relay.getPacketManager
+    private val packetManager = relay.packetManager
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private val out = new BufferedOutputStream(socket.getOutputStream)
     private var tasksThread: Thread = _
@@ -25,8 +24,6 @@ protected class ClientTasksHandler(private val socket: Socket,
     @volatile private var open = false
 
     override val tasksCompleterHandler = new TaskCompleterHandler()
-    tasksCompleterHandler.putCompleter(InitTaskCompleter.TYPE, _ => new InitTaskCompleter(relay))
-
     override val identifier: String = relay.identifier
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
@@ -49,7 +46,7 @@ protected class ClientTasksHandler(private val socket: Socket,
             case e: TaskException =>
                 val errorPacket = new ErrorPacket(-1,
                     relay.identifier,
-                    packet.senderIdentifier,
+                    packet.senderID,
                     ErrorPacket.ABORT_TASK,
                     e.getMessage)
                 out.write(packetManager.toBytes(errorPacket))
