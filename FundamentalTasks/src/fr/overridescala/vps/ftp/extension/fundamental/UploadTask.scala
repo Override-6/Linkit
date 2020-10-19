@@ -71,7 +71,7 @@ class UploadTask(private val desc: TransferDescription)
                 bytes = util.Arrays.copyOf(bytes, read)
                 count += 1
                 totalBytesSent += read
-                channel.sendPacket(DataPacket("", bytes))
+                channel.sendPacket(DataPacket(s"$count & $path", bytes))
 
                 if (channel.haveMorePackets) {
                     handleUnexpectedPacket(channel.nextPacket())

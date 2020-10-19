@@ -72,9 +72,6 @@ class DownloadTask private(private val desc: TransferDescription)
             val percentage = totalBytesWritten / totalBytes * 100
             print(s"\rreceived = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets exchange = $count")
         }
-        //TODO remove this line
-        Files.setLastModifiedTime(downloadPath, FileTime.from(Instant.now))
-        print("\r")
         stream.close()
         handleLastTransferResponse(packet)
     }
@@ -83,7 +80,7 @@ class DownloadTask private(private val desc: TransferDescription)
     private def findDownloadPath(packet: DataPacket): Path = {
         Utils.checkPacketHeader(packet, Array("UPF"))
         val root = Utils.formatPath(desc.source.rootPath)
-        val rootNameCount = root.toString.count(char => char == File.separatorChar)
+        val rootNameCount = root.toString.count(_ == File.separatorChar)
 
         val uploadedFile = Utils.formatPath(new String(packet.content))
         val destination = Utils.formatPath(new String(desc.destination))

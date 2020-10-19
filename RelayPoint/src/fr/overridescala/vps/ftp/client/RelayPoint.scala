@@ -5,7 +5,7 @@ import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
 import java.nio.file.Path
 
-import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.api.packet.PacketReader
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
@@ -16,13 +16,17 @@ import fr.overridescala.vps.ftp.client.tasks.ClientExtension
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
-    private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
-    private val tasksHandler = new ClientTasksHandler(socket, this)
     @volatile private var open = false
+    private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
 
     override val taskLoader = new TaskLoader(this, Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks"))
     override val packetManager = new PacketManager()
+    private val tasksHandler = new ClientTasksHandler(socket, this)
+
+    override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
     private val packetReader = new PacketReader(socket, packetManager)
+
+    override val properties: RelayProperties = new RelayProperties
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -30,14 +34,13 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         RelayTaskAction(task)
     }
 
-    override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
 
     override def start(): Unit = {
         val thread = new Thread(() => {
-            println("ready !")
-            println("current encoding is " + Charset.defaultCharset().name())
-            println("listening on port " + Constants.PORT)
-            println("computer name is " + System.getenv().get("COMPUTERNAME"))
+            println("Ready !")
+            println("Current encoding is " + Charset.defaultCharset().name())
+            println("Listening on port " + Constants.PORT)
+            println("Computer name is " + System.getenv().get("COMPUTERNAME"))
 
             //enable the task management
             tasksHandler.start()

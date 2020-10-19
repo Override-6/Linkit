@@ -70,7 +70,9 @@ class TaskLoader(relay: Relay, val tasksFolder: Path) {
         try {
             val constructor = clazz.getDeclaredConstructor(classOf[Relay])
             constructor.setAccessible(true)
-            constructor.newInstance(relay).main()
+            val extension = constructor.newInstance(relay)
+            extension.main()
+            extensions.addOne(extension.getClass)
         } catch {
             case _: NoSuchMethodException => Console.err.println(s"Could not load Task extension $className, missing Constructor(Relay)")
         }

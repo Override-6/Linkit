@@ -40,6 +40,8 @@ trait Relay extends Closeable with TaskScheduler {
 
     val taskLoader: TaskLoader
 
+    val properties: RelayProperties
+
     /**
      * <b>Starts the Relay.</b>
      * <p>
@@ -47,6 +49,5 @@ trait Relay extends Closeable with TaskScheduler {
      * @throws RelayInitialisationException for any init error
      * */
     def start(): Unit
-
 
 }
