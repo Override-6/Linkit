@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet.ext.fundamental
 
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
 class EmptyPacket private(override val channelID: Int,
                           override val senderID: String,

@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet.ext.fundamental
 
+import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket.Factory.TYPE
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
 //TODO Doc
@@ -17,7 +17,7 @@ case class DataPacket(override val channelID: Int,
                       override val targetID: String,
                       override val senderID: String,
                       header: String,
-                      override val content: Array[Byte]) extends Packet {
+                      override val content: Array[Byte]) extends Packet{
 
     /**
      * Represents this packet as a String
@@ -41,6 +41,9 @@ object DataPacket {
 
     def apply(content: Array[Byte])(implicit channel: PacketChannel): DataPacket =
         apply("", content)
+
+    def apply(targetID: String, header: String, content: Array[Byte])(implicit relay: Relay): DataPacket =
+        DataPacket(-1, targetID, relay.identifier, header, content)
 
     object Factory extends PacketFactory[DataPacket] {
 

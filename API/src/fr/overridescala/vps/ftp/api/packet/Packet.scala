@@ -20,6 +20,8 @@ trait Packet {
 
     lazy val className: String = getClass.getSimpleName
 
+    lazy val isFree: Boolean = channelID == -1
+
 
     /**
      * the targeted Relay identifier that will receive the packet

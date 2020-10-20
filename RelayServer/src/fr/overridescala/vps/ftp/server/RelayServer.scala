@@ -6,6 +6,7 @@ import java.nio.file.Path
 
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
+import fr.overridescala.vps.ftp.api.packet.PacketInterpreter
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
@@ -19,10 +20,10 @@ class RelayServer extends Relay {
 
     private val serverSocket = new ServerSocket(Constants.PORT)
     private val connectionsManager = new ConnectionsManager(this)
-    //Awful thing, only for debugging, and easily switching from localhost to vps.
+    //Awful thing, only for debugging, and easily switch from localhost to vps.
     private val taskFolderPath =
         if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\Tasks")
-        else Path.of("/home/override/VPS/Tasks")
+        else Path.of("Tasks/")
     @volatile private var open = false
 
     /**
@@ -33,6 +34,7 @@ class RelayServer extends Relay {
     override val taskLoader = new TaskLoader(this, taskFolderPath)
     override val taskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
+    override val packetInterpreter: PacketInterpreter = connectionsManager.packetInterpreter
 
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {

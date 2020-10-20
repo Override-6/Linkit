@@ -3,9 +3,10 @@ package fr.overridescala.vps.ftp.api
 import java.io.Closeable
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
+import fr.overridescala.vps.ftp.api.packet.PacketInterpreter
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler, TaskExecutor}
+import fr.overridescala.vps.ftp.api.task.{Task, TaskAction}
 
 //TODO reedit doc about all changes
 
@@ -41,6 +42,8 @@ trait Relay extends Closeable with TaskScheduler {
     val taskLoader: TaskLoader
 
     val properties: RelayProperties
+
+    val packetInterpreter: PacketInterpreter
 
     /**
      * <b>Starts the Relay.</b>

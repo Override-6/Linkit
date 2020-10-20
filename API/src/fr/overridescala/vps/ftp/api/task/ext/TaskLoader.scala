@@ -20,22 +20,22 @@ class TaskLoader(relay: Relay, val tasksFolder: Path) {
     private var classLoader: URLClassLoader = null
     private val extensions = ListBuffer.empty[TaskExtensionClass]
 
-    def getLoadedExtensions: Array[TaskExtensionClass] = {
-        extensions.toArray
-    }
-
     def refreshTasks(): Unit = {
         Files.createDirectories(tasksFolder)
         val content = Files.list(tasksFolder)
         val paths = content
-                .filter(p => p.toString.endsWith(".jar"))
+                .filter(_.toString.endsWith(".jar"))
                 .collect(Collectors.toList[Path])
         val urls = paths
                 .stream()
                 .map(_.toUri.toURL)
                 .toArray[URL](new Array[URL](_))
-        classLoader = new URLClassLoader(urls, getClass.getClassLoader)
+        classLoader = new URLClassLoader(urls, if (classLoader == null) getClass.getClassLoader else classLoader)
         paths.forEach(loadJar)
+    }
+
+    def getLoadedExtensions: Array[TaskExtensionClass] = {
+        extensions.toArray
     }
 
     private def loadJar(path: Path): Unit = {
@@ -53,7 +53,7 @@ class TaskLoader(relay: Relay, val tasksFolder: Path) {
             throw TaskExtensionLoadException(s"jar file $path properties' must contains a field named '$MainClassField'")
 
         //Loading extension's main
-        val clazz = Class.forName(className, false, classLoader)
+        val clazz = classLoader.loadClass(className)
         loadClass(clazz)
     }
 
@@ -67,12 +67,14 @@ class TaskLoader(relay: Relay, val tasksFolder: Path) {
 
     private def loadExtension(clazz: TaskExtensionClass): Unit = {
         val className = clazz.getName
+        val classSimpleName = clazz.getSimpleName
         try {
             val constructor = clazz.getDeclaredConstructor(classOf[Relay])
             constructor.setAccessible(true)
             val extension = constructor.newInstance(relay)
             extension.main()
-            extensions.addOne(extension.getClass)
+            extensions += extension.getClass
+            println(s"extension '$classSimpleName' loaded.")
         } catch {
             case _: NoSuchMethodException => Console.err.println(s"Could not load Task extension $className, missing Constructor(Relay)")
         }

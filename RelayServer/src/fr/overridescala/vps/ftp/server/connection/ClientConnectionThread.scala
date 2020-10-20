@@ -60,6 +60,7 @@ class ClientConnectionThread(socket: Socket,
             manager.deflectPacket(packet)
             return
         }
+        manager.packetInterpreter.interpret(packet)
         packet match {
             case errorPacket: ErrorPacket if errorPacket.errorType == ErrorPacket.ABORT_TASK =>
                 printErrorPacket(errorPacket)

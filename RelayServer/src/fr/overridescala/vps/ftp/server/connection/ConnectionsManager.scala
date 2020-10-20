@@ -4,7 +4,7 @@ import java.io.Closeable
 import java.net.{Socket, SocketAddress}
 
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, RelayInitialisationException}
-import fr.overridescala.vps.ftp.api.packet.Packet
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketInterpreter}
 import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.collection.mutable
@@ -16,12 +16,12 @@ import scala.collection.mutable
  * @see [[ClientConnectionThread]]
  * */
 class ConnectionsManager(server: RelayServer) extends Closeable {
-
-
     /**
      * java map containing all RelayPointConnection instances
      * */
     private val connections: mutable.Map[SocketAddress, ClientConnectionThread] = mutable.Map.empty
+
+    val packetInterpreter = new PacketInterpreter
 
     override def close(): Unit = {
         for ((_, connection) <- connections)
@@ -59,6 +59,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
         connections(address)
     }
 
+
     /**
      * retrieves a RelayPointConnection based on the address
      *
@@ -73,7 +74,6 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
         }
         null
     }
-
 
     /**
      * determines if the address is not registered
@@ -98,6 +98,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
         identifier == server.identifier //blacklists server identifier
     }
 
+
     /**
      * Deflects a packet to his associated [[ClientConnectionThread]]
      *
@@ -111,7 +112,6 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
             throw new RelayException(s"unknown ID '$target' to deflect packet")
         connection.sendDeflectedPacket(packet)
     }
-
 
     private def checkAddress(address: SocketAddress): Unit = {
         if (connections.contains(address))
