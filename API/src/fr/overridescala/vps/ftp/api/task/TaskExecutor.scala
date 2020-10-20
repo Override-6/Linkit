@@ -26,6 +26,11 @@ abstract class TaskExecutor {
      * */
     def initInfo: TaskInitInfo = null
 
+    /**
+     * Executes this task.
+     * */
+    def execute(): Unit
+
     final def init(packetManager: PacketManager, packetChannel: PacketChannel): Unit = {
         if (packetManager == null || packetChannel == null)
             throw new NullPointerException
@@ -36,14 +41,6 @@ abstract class TaskExecutor {
     final protected def registerPacketFactory[P <: Packet](packetClass: Class[P], factory: PacketFactory[P]): Unit = {
         packetManager.registerIfAbsent(packetClass, factory)
     }
-
-    /**
-     * Executes this task.
-     *
-     * @see [[PacketChannel]]
-     * @see [[DataPacket]]
-     * */
-    def execute(): Unit
 
 
 

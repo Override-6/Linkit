@@ -6,7 +6,7 @@ import java.nio.file.Path
 
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
-import fr.overridescala.vps.ftp.api.packet.PacketInterpreter
+import fr.overridescala.vps.ftp.api.packet.{PacketChannel, PacketChannelManagerCache, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
@@ -34,13 +34,16 @@ class RelayServer extends Relay {
     override val taskLoader = new TaskLoader(this, taskFolderPath)
     override val taskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
-    override val packetInterpreter: PacketInterpreter = connectionsManager.packetInterpreter
 
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
         val targetIdentifier = task.targetID
-        val tasksHandler = connectionsManager.getConnectionFromIdentifier(targetIdentifier).tasksHandler
+        val connection = connectionsManager.getConnectionFromIdentifier(targetIdentifier)
+        if (connection == null)
+            throw new NoSuchElementException(s"Unknown or unregistered relay with identifier '$targetIdentifier'")
+
+        val tasksHandler = connection.tasksHandler
         task.preInit(tasksHandler, identifier)
         RelayTaskAction(task)
     }
@@ -59,12 +62,20 @@ class RelayServer extends Relay {
     }
 
 
+    override def createChannel(linkedRelayID: String, id: Int): PacketChannel =
+        createChannelAndManager(linkedRelayID, id)
+
     override def close(): Unit = {
         println("closing server...")
         connectionsManager.close()
         serverSocket.close()
         open = false
-        println("server disconnected !")
+        println("server closed !")
+    }
+
+    def createChannelAndManager(linkedRelayID: String, id: Int): SimplePacketChannel = {
+        val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
+        targetConnection.createChannel(id)
     }
 
     private def awaitClientConnection(): Unit = {
@@ -87,6 +98,5 @@ class RelayServer extends Relay {
 
     // default tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
-
 
 }

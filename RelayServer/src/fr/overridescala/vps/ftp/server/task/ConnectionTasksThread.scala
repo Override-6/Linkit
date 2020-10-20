@@ -47,23 +47,6 @@ class ConnectionTasksThread private(ownerID: String,
     def copy(): ConnectionTasksThread =
         new ConnectionTasksThread(ownerID, ticketQueue, lostPackets)
 
-    private[task] def injectPacket(packet: Packet): Unit = {
-        if (canInject(packet)) {
-            val channel = currentTicket.channel
-            channel.addPacket(packet)
-            return
-        }
-        val packetTaskID = packet.channelID
-        if (lostPackets.contains(packetTaskID)) {
-            lostPackets(packetTaskID).addOne(packet)
-            return
-        }
-
-        val lost = ListBuffer.empty[Packet]
-        lost += packet
-        lostPackets.put(packetTaskID, lost)
-    }
-
     private[task] def addTicket(ticket: TaskTicket): Unit = {
         ticketQueue.add(ticket)
     }
@@ -82,9 +65,6 @@ class ConnectionTasksThread private(ownerID: String,
         }
         ticket.start()
     }
-
-    private def canInject(packet: Packet): Boolean =
-        currentTicket != null && currentTicket.channel.channelID == packet.channelID
 
     setName(s"RP Task Execution ($ownerID)")
 

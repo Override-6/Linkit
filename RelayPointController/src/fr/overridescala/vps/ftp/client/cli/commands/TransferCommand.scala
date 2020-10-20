@@ -1,11 +1,11 @@
 package fr.overridescala.vps.ftp.client.cli.commands
 
-import fr.overridescala.vps.ftp.`extension`.fundamental.{DownloadTask, FileInfoTask, UploadTask}
+import fr.overridescala.vps.ftp.`extension`.fundamental.{DownloadTask, UploadTask}
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.task.Task
-import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescriptionBuilder}
-import fr.overridescala.vps.ftp.client.cli.CommandUtils.{argAfter, checkArgsContains}
-import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor}
+import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.{TransferDescriptionBuilder}
+import fr.overridescala.vps.ftp.client.cli.CommandUtils.argAfter
+import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor, CommandUtils}
 
 /**
  * syntax : <p>
@@ -20,15 +20,9 @@ class TransferCommand private(private val relay: Relay,
         val target = argAfter("-t")
         val sourcePath = argAfter("-s")
         val dest = argAfter("-d")
-        val sourceP =
-            if (isDownload) relay.scheduleTask(FileInfoTask(target, sourcePath)).complete()
-            else FileDescription.fromLocal(sourcePath)
-        //abort execution if sourceP could not be found.
-        if (sourceP == null)
-            return
 
         val desc = new TransferDescriptionBuilder {
-            source = sourceP
+            source = sourcePath
             targetID = target
             destination = dest
         }
@@ -40,7 +34,8 @@ class TransferCommand private(private val relay: Relay,
     def checkArgs(implicit args: Array[String]): Unit = {
         if (args.length != 6)
             throw CommandException("use: upload|download -t <target> -s <source_path> -d <target_destination>")
-        checkArgsContains("-t", "-s", "-d")
+        CommandUtils.checkArgsContains("-t", "-s", "-d")
+        println("coucou")
     }
 
 }

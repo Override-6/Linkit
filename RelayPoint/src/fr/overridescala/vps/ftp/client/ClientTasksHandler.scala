@@ -31,17 +31,9 @@ protected class ClientTasksHandler(private val socket: Socket,
         queue.offer(ticket)
     }
 
-    override def handlePacket(packet: Packet): Unit = {
-        if (isAbortPacket(packet)) {
-            skipCurrent()
-            return
-        }
+    override def handlePacket(packet: TaskInitPacket): Unit = {
         try {
-            packet match {
-                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, this)
-                case other: Packet if currentTicket != null => currentTicket.channel.addPacket(other)
-                case _: Packet => Console.err.println("could not handle packet " + packet)
-            }
+            tasksCompleterHandler.handleCompleter(packet, this)
         } catch {
             case e: TaskException =>
                 val errorPacket = new ErrorPacket(-1,
@@ -110,7 +102,7 @@ protected class ClientTasksHandler(private val socket: Socket,
 
         val taskName: String = executor.getClass.getSimpleName
         private[ClientTasksHandler] val channel: SimplePacketChannel =
-            new SimplePacketChannel(socket, targetID, relay.identifier, taskID, packetManager)
+            relay.createChannelAndManager(targetID, taskID)
 
         def abort(): Unit = {
             notifyExecutor()
@@ -135,10 +127,12 @@ protected class ClientTasksHandler(private val socket: Socket,
                 }
                 executor.init(packetManager, channel)
                 executor.execute()
-                notifyExecutor()
             } catch {
                 case _: InterruptedException => Console.err.println(s"$taskName execution suddenly ended")
                 case NonFatal(e) => e.printStackTrace()
+            } finally {
+                notifyExecutor()
+                channel.close()
             }
         }
 

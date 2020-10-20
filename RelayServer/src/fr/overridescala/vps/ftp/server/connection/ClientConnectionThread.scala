@@ -2,26 +2,30 @@ package fr.overridescala.vps.ftp.server.connection
 
 import java.io.{BufferedOutputStream, Closeable}
 import java.net.{Socket, SocketException}
+import java.util.concurrent.ThreadLocalRandom
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
-
+import fr.overridescala.vps.ftp.server.RelayServer
 import fr.overridescala.vps.ftp.server.task.ConnectionTasksHandler
 
 import scala.util.control.NonFatal
 
 class ClientConnectionThread(socket: Socket,
-                             server: Relay,
+                             server: RelayServer,
                              manager: ConnectionsManager) extends Thread with Closeable {
+
 
     private val packetManager = server.packetManager
     private val packetReader: PacketReader = new PacketReader(socket, server.packetManager)
     private val writer = new BufferedOutputStream(socket.getOutputStream)
+    private val channelCache = new PacketChannelManagerCache
 
     val tasksHandler: TasksHandler = initialiseConnection()
+    val identifier: String = tasksHandler.identifier //shortcut
 
     @volatile private var open = false
 
@@ -50,6 +54,9 @@ class ClientConnectionThread(socket: Socket,
         println(s"closed '$identifier' thread.")
     }
 
+    private[server] def createChannel(id: Int): SimplePacketChannel =
+        new SimplePacketChannel(socket, identifier, server.identifier, id, channelCache, packetManager)
+
     private[connection] def sendDeflectedPacket(packet: Packet): Unit = {
         writer.write(packetManager.toBytes(packet))
         writer.flush()
@@ -60,12 +67,12 @@ class ClientConnectionThread(socket: Socket,
             manager.deflectPacket(packet)
             return
         }
-        manager.packetInterpreter.interpret(packet)
         packet match {
             case errorPacket: ErrorPacket if errorPacket.errorType == ErrorPacket.ABORT_TASK =>
                 printErrorPacket(errorPacket)
                 tasksHandler.skipCurrent()
-            case _: Packet => tasksHandler.handlePacket(packet)
+            case init: TaskInitPacket => tasksHandler.handlePacket(init)
+            case _: Packet => channelCache.injectPacket(packet)
         }
     }
 
@@ -104,7 +111,7 @@ class ClientConnectionThread(socket: Socket,
     private def initialiseConnection(): TasksHandler = {
         setName(s"RP Connection (unknownId)")
         implicit val channel: SimplePacketChannel =
-            new SimplePacketChannel(socket, "unknownId", server.identifier, -1, packetManager)
+            new SimplePacketChannel(socket, "unknown", server.identifier, -6, channelCache, packetManager)
         channel.sendInitPacket(TaskInitInfo.of("GID", "unknownId"))
 
         deflectInChannel(channel)

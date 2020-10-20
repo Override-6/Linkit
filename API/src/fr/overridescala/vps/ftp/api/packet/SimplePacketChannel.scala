@@ -23,7 +23,10 @@ class SimplePacketChannel(private val socket: Socket,
                           override val connectedIdentifier: String,
                           override val ownerIdentifier: String,
                           override val channelID: Int,
+                          private val cache: PacketChannelManagerCache,
                           private val packetManager: PacketManager) extends PacketChannel with PacketChannelManager {
+
+    cache.registerPacketChannel(this)
 
     private val out = new BufferedOutputStream(socket.getOutputStream)
 
@@ -70,4 +73,8 @@ class SimplePacketChannel(private val socket: Socket,
         queue.addFirst(packet)
     }
 
+    override def close(): Unit = {
+        queue.clear()
+        cache.unregisterPaketChannel(channelID)
+    }
 }

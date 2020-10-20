@@ -7,6 +7,7 @@ import fr.overridescala.vps.ftp.api.task.ext.TaskExtension
 import fr.overridescala.vps.ftp.client.auto.AutomationManager
 import fr.overridescala.vps.ftp.client.cli.CommandManager
 import fr.overridescala.vps.ftp.client.cli.commands._
+import fr.overridescala.vps.ftp.client.tasks.SyncFoldersTask
 
 class ControllerExtension(relay: Relay) extends TaskExtension(relay) {
 
@@ -21,10 +22,12 @@ class ControllerExtension(relay: Relay) extends TaskExtension(relay) {
         commandsManager.register("stress", new StressTestCommand(relay))
         commandsManager.register("exec", new ExecuteUnknownTaskCommand(relay))
         commandsManager.register("delete", new DeleteFileCommand(relay))
-        commandsManager.register("listen", new ListenDirCommand(relay, automationManager))
+        commandsManager.register("listen", new ListenDirCommand(relay))
         commandsManager.start()
         automationManager.start()
 
+        val completerHandler = relay.taskCompleterHandler
+        completerHandler.putCompleter(SyncFoldersTask.TYPE, new SyncFoldersTask.Completer(relay, _))
         val properties = relay.properties
         properties.putProperty("automation_manager", automationManager)
     }

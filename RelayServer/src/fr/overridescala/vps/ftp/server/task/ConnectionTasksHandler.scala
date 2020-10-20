@@ -5,9 +5,9 @@ import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.server.RelayServer
 
 /**
  * handle tasks between a RelayPoint.
@@ -16,7 +16,7 @@ import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, Ta
  * @param socket the writer in which tasks will write packets
  * */
 class ConnectionTasksHandler(override val identifier: String,
-                             private val server: Relay,
+                             private val server: RelayServer,
                              private val socket: Socket) extends TasksHandler {
 
     private val packetManager = server.packetManager
@@ -32,12 +32,9 @@ class ConnectionTasksHandler(override val identifier: String,
      *
      * @throws TaskException if the handling went wrong
      * */
-    override def handlePacket(packet: Packet): Unit = {
+    override def handlePacket(packet: TaskInitPacket): Unit = {
         try {
-            packet match {
-                case init: TaskInitPacket => tasksCompleterHandler.handleCompleter(init, this)
-                case _: Packet => tasksThread.injectPacket(packet)
-            }
+            tasksCompleterHandler.handleCompleter(packet, this)
         } catch {
             case e: TaskException =>
                 val packet = new ErrorPacket(-1,
@@ -57,7 +54,7 @@ class ConnectionTasksHandler(override val identifier: String,
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit =
-        tasksThread.addTicket(TaskTicket(executor, taskIdentifier, identifier, senderID, socket, packetManager, ownFreeWill))
+        tasksThread.addTicket(TaskTicket(executor, taskIdentifier, identifier, senderID, socket, server, ownFreeWill))
 
     /**
      * closes the current client tasks thread

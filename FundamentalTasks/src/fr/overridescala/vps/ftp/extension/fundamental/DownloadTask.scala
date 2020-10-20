@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
-import fr.overridescala.vps.ftp.api.transfer.TransferDescription
+import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
 import DownloadTask.TYPE
 
@@ -22,7 +22,6 @@ import DownloadTask.TYPE
 class DownloadTask private(private val desc: TransferDescription)
         extends Task[Unit](desc.targetID) {
 
-    private val totalBytes: Float = desc.transferSize
     private var totalBytesWritten = 0
 
     override val initInfo: TaskInitInfo =
@@ -30,7 +29,7 @@ class DownloadTask private(private val desc: TransferDescription)
 
     override def execute(): Unit = {
 
-        val response = nextPacket():DataPacket
+        val response = nextPacket(): DataPacket
         //empty upload
         if (response.header == UploadTask.END_OF_TRANSFER) {
             success()
@@ -69,17 +68,17 @@ class DownloadTask private(private val desc: TransferDescription)
             stream.write(packet.content)
             count += 1
             packet = nextPacket(): DataPacket
-            val percentage = totalBytesWritten / totalBytes * 100
-            print(s"\rreceived = $totalBytesWritten, total = $totalBytes, percentage = $percentage, packets exchange = $count")
+            println(s"received = $totalBytesWritten, packets exchange = $count")
         }
+        println()
         stream.close()
         handleLastTransferResponse(packet)
     }
 
-
     private def findDownloadPath(packet: DataPacket): Path = {
         Utils.checkPacketHeader(packet, Array("UPF"))
-        val root = Utils.formatPath(desc.source.rootPath)
+        val source = Utils.formatPath(desc.source).toString
+        val root = Utils.formatPath(source.substring(0, source.lastIndexOf(File.separatorChar)))
         val rootNameCount = root.toString.count(_ == File.separatorChar)
 
         val uploadedFile = Utils.formatPath(new String(packet.content))
@@ -126,7 +125,7 @@ class DownloadTask private(private val desc: TransferDescription)
         packet match {
             case error: ErrorPacket =>
                 throw new TaskException(error.errorMsg)
-            case _ => packet.asInstanceOf[P]
+            case desired: P => desired
         }
     }
 

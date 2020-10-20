@@ -1,10 +1,11 @@
 package fr.overridescala.vps.ftp.client.cli.commands
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.client.auto.{AutoUploader, AutomationManager}
+import fr.overridescala.vps.ftp.client.auto.{FolderSync, AutomationManager}
 import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor, CommandUtils}
+import fr.overridescala.vps.ftp.client.tasks.SyncFoldersTask
 
-class ListenDirCommand(relay: Relay, automationManager: AutomationManager) extends CommandExecutor {
+class ListenDirCommand(relay: Relay) extends CommandExecutor {
 
 
     override def execute(implicit args: Array[String]): Unit = {
@@ -12,7 +13,8 @@ class ListenDirCommand(relay: Relay, automationManager: AutomationManager) exten
         val target = CommandUtils.argAfter("-t")
         val targetedFolder = CommandUtils.argAfter("-tf")
         val currentFolder = CommandUtils.argAfter("-cf")
-        automationManager.register(new AutoUploader(relay, target, currentFolder, targetedFolder))
+        relay.scheduleTask(new SyncFoldersTask(relay, target, targetedFolder, currentFolder))
+                .queue()
     }
 
 

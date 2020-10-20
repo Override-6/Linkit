@@ -4,28 +4,30 @@ import java.nio.file.StandardWatchEventKinds._
 import java.nio.file.{FileSystems, Files, Path, WatchService}
 
 import fr.overridescala.vps.ftp.`extension`.fundamental.{DeleteFileTask, UploadTask}
+import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.TransferDescriptionBuilder
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescriptionBuilder}
 
-class AutoUploader(relay: Relay, targetRelay: String, localPath: String, targetPath: String) extends Automation {
+import scala.collection.mutable.ListBuffer
 
+class FolderSync(relay: Relay, targetRelay: String, localPath: String, tempFolder: String, targetPath: String) extends Automation {
 
-    def registerFolder(service: WatchService, path: Path): Unit = {
-        path.register(service, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
-        println(s"registered folder $path")
-        Files.list(path).forEach(subPath => {
-            if (!Files.isDirectory(subPath))
-                return
-            registerFolder(service, subPath)
-        })
-    }
+    override def start(): Unit = ???
+
+    //TODO
+    /*
+    private val transferredPaths = ListBuffer.empty[String]
 
     override def start(): Unit = {
-        val service = FileSystems.getDefault.newWatchService()
-        registerFolder(service, Path.of(localPath))
+        listenLocalFolder()
+    }
 
-        var key = service.take()
-        while (key != null) {
+    def listenLocalFolder(): Unit = {
+        val watcher = FileSystems.getDefault.newWatchService()
+        registerFolder(watcher, Path.of(localPath))
+
+
+        var key = watcher.take()
+        while (key != null)  {
             key.pollEvents().forEach(event => {
                 val dir = key.watchable().asInstanceOf[Path]
                 val path = dir.resolve(event.context().asInstanceOf[Path])
@@ -35,8 +37,17 @@ class AutoUploader(relay: Relay, targetRelay: String, localPath: String, targetP
                 }
             })
             key.reset()
-            key = service.take()
+            key = watcher.take()
         }
+    }
+
+    def registerFolder(service: WatchService, path: Path): Unit = {
+        path.register(service, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
+        println(s"registered folder $path")
+        Files.list(path).forEach(subPath => {
+            if (Files.isDirectory(subPath))
+                registerFolder(service, subPath)
+        })
     }
 
     def onDelete(affected: Path): Unit = {
@@ -49,12 +60,16 @@ class AutoUploader(relay: Relay, targetRelay: String, localPath: String, targetP
 
     def onUpdate(affected: Path): Unit = {
         val transfer = new TransferDescriptionBuilder {
-            source = FileDescription.fromLocal(affected)
+            source = affected.toString
             destination = targetPath
             targetID = targetRelay
         }
         relay.scheduleTask(UploadTask(transfer)).queue(null, msg => cancel())
     }
 
+ */
+}
+
+object FolderSync {
 
 }

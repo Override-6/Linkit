@@ -3,6 +3,7 @@ package fr.overridescala.vps.ftp.client
 import java.net.InetSocketAddress
 import java.util.Scanner
 
+import fr.overridescala.vps.ftp.`extension`.fundamental.main.FundamentalExtension
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 object Main {
@@ -21,6 +22,9 @@ object Main {
 
     def main(args: Array[String]): Unit = {
         relayPoint.start()
+        //FIXME remove direct dependence to TaskExtensions
+        new ControllerExtension(relayPoint).main()
+        new FundamentalExtension(relayPoint).main()
     }
 
 }

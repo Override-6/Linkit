@@ -4,6 +4,7 @@ import java.io.Closeable
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.Packet
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
 
 /**
  * This class is the hearth of this program.
@@ -47,7 +48,7 @@ trait TasksHandler extends Closeable {
      *
      * @throws TaskException if the handling went wrong
      * */
-    def handlePacket(packet: Packet): Unit
+    def handlePacket(packet: TaskInitPacket): Unit
 
 
     /**

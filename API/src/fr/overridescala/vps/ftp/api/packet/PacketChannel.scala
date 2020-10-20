@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
  * @see [[PacketChannelManager]]
  * @see [[DataPacket]]
  * */
-trait PacketChannel {
+trait PacketChannel extends AutoCloseable {
 
     val ownerIdentifier: String
     val connectedIdentifier: String

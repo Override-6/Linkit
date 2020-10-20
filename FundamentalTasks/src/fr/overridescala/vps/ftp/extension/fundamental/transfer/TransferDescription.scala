@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.api.transfer
+package fr.overridescala.vps.ftp.`extension`.fundamental.transfer
 
 /**
  * Description of a Download / Upload transfer.
@@ -7,7 +7,7 @@ package fr.overridescala.vps.ftp.api.transfer
  * @param destination where the file / folder will be stored
  * @param targetID the identifier of the Relay to perform the transfer
  * */
-case class TransferDescription(source: FileDescription,
+case class TransferDescription(source: String,
                                destination: String,
                                targetID: String) extends Serializable {
 

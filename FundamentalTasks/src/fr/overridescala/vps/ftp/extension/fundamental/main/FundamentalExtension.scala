@@ -10,7 +10,6 @@ class FundamentalExtension(relay: Relay) extends TaskExtension(relay) {
         val completerHandler = relay.taskCompleterHandler
         completerHandler.putCompleter(UploadTask.TYPE, init => DownloadTask(Utils.deserialize(init.content)))
         completerHandler.putCompleter(DownloadTask.TYPE, init => UploadTask(Utils.deserialize(init.content)))
-        completerHandler.putCompleter(FileInfoTask.TYPE, init => new FileInfoTask.Completer(new String(init.content)))
         completerHandler.putCompleter(DeleteFileTask.TYPE, init => new DeleteFileTask.Completer(new String(init.content)))
         completerHandler.putCompleter(PingTask.TYPE, _ => new PingTask.Completer())
         completerHandler.putCompleter(StressTestTask.TYPE, init => {

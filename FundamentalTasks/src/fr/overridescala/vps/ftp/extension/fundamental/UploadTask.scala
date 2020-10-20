@@ -7,7 +7,7 @@ import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
-import fr.overridescala.vps.ftp.api.transfer.TransferDescription
+import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 import UploadTask._
 
@@ -27,17 +27,10 @@ class UploadTask(private val desc: TransferDescription)
 
     override def execute(): Unit = {
         this.channel = channel
-        val source = Path.of(desc.source.path)
-       // val destination = Path.of(desc.destination)
+        val source = Path.of(desc.source)
 
         if (Files.isDirectory(source)) {
             //FIXME add a working folder to folder check.
-            /*if (!Files.isDirectory(destination)) {
-                val msg = "download root path have to be a folder path when downloading other folders"
-                channel.sendPacket(ABORT, msg)
-                error(msg)
-                return
-            }*/
             uploadDirectory(source)
 
         } else uploadFile(source)
@@ -78,13 +71,13 @@ class UploadTask(private val desc: TransferDescription)
                 }
 
                 val percentage = totalBytesSent / totalBytes * 100
-                print(s"\rsent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
+                println(s"sent = $totalBytesSent, total = $totalBytes, percentage = $percentage, packets sent = $count")
             } catch {
                 case NonFatal(e) =>
                     var msg = e.getMessage
                     if (msg == null)
                         msg = "an error has occurred while performing file upload task"
-                    channel.sendPacket(ErrorPacket(e.getClass.getName, s"($path) " + msg))
+                    channel.sendPacket(ErrorPacket(e.getClass.getName, s"($path) $msg"))
                     print("\r")
                     throw e
             }

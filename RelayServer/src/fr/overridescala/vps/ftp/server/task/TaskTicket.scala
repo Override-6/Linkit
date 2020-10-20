@@ -3,9 +3,11 @@ package fr.overridescala.vps.ftp.server.task
 import java.io.IOException
 import java.net.Socket
 
-import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
+import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.packet.{PacketChannelManagerCache, SimplePacketChannel}
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor}
+import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.util.control.NonFatal
 
@@ -14,10 +16,10 @@ case class TaskTicket(private val executor: TaskExecutor,
                       private val targetID: String,
                       private val senderIdentifier: String,
                       private val socket: Socket,
-                      private val packetManager: PacketManager,
+                      private val relay: RelayServer,
                       private val ownFreeWill: Boolean) {
 
-    var channel: SimplePacketChannel = new SimplePacketChannel(socket, targetID, senderIdentifier, taskID, packetManager)
+    var channel: SimplePacketChannel = relay.createChannelAndManager(targetID, taskID)
     val taskName: String = executor.getClass.getSimpleName
 
     def abort(): Unit = {
@@ -39,7 +41,7 @@ case class TaskTicket(private val executor: TaskExecutor,
     def start(): Unit = {
         try {
             println(s"executing $taskName...")
-            executor.init(packetManager, channel)
+            executor.init(relay.packetManager, channel)
             if (ownFreeWill) {
                 channel.sendInitPacket(executor.initInfo)
             }
