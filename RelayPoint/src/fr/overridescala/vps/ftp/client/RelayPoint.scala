@@ -5,8 +5,9 @@ import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
 import java.nio.file.Path
 
+import fr.overridescala.vps.ftp.`extension`.fundamental.main.FundamentalExtension
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
-import fr.overridescala.vps.ftp.api.packet.PacketReader
+import fr.overridescala.vps.ftp.api.packet.{PacketInterpreter, PacketReader}
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
@@ -19,7 +20,11 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     @volatile private var open = false
     private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
 
-    override val taskLoader = new TaskLoader(this, Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks"))
+    private val taskFolderPath =
+        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks")
+        else Path.of("Tasks").toRealPath()
+    println(s"taskFolderPath = ${taskFolderPath}")
+    override val taskLoader = new TaskLoader(this, taskFolderPath)
     override val packetManager = new PacketManager()
     private val tasksHandler = new ClientTasksHandler(socket, this)
 
@@ -27,6 +32,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val packetReader = new PacketReader(socket, packetManager)
 
     override val properties: RelayProperties = new RelayProperties
+    override val packetInterpreter: PacketInterpreter = new PacketInterpreter
+
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -51,7 +58,10 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                 try {
                     packetReader
                             .readPacket()
-                            .ifPresent(p => tasksHandler.handlePacket(p))
+                            .ifPresent(p => {
+                                packetInterpreter.interpret(p)
+                                tasksHandler.handlePacket(p)
+                            })
                 } catch {
                     case _: AsynchronousCloseException =>
                         Console.err.println("asynchronous close.")

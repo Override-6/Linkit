@@ -7,7 +7,7 @@ import fr.overridescala.vps.ftp.`extension`.fundamental.{DeleteFileTask, UploadT
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescriptionBuilder}
 
-class AutoUploader(relay: Relay, path: Path, targetRelay: String, localPath: String, targetPath: String) extends Automation {
+class AutoUploader(relay: Relay, targetRelay: String, localPath: String, targetPath: String) extends Automation {
 
 
     def registerFolder(service: WatchService, path: Path): Unit = {
@@ -22,7 +22,7 @@ class AutoUploader(relay: Relay, path: Path, targetRelay: String, localPath: Str
 
     override def start(): Unit = {
         val service = FileSystems.getDefault.newWatchService()
-        registerFolder(service, path)
+        registerFolder(service, Path.of(localPath))
 
         var key = service.take()
         while (key != null) {

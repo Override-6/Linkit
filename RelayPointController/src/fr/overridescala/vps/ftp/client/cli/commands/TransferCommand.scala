@@ -4,7 +4,7 @@ import fr.overridescala.vps.ftp.`extension`.fundamental.{DownloadTask, FileInfoT
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.task.Task
 import fr.overridescala.vps.ftp.api.transfer.{FileDescription, TransferDescriptionBuilder}
-import fr.overridescala.vps.ftp.client.cli.CommandUtils._
+import fr.overridescala.vps.ftp.client.cli.CommandUtils.{argAfter, checkArgsContains}
 import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor}
 
 /**
@@ -12,7 +12,7 @@ import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor}
  * upload | download -s "sourceP path" -t "target identifier" -d "destination path"
  * */
 class TransferCommand private(private val relay: Relay,
-                      private val isDownload: Boolean) extends CommandExecutor {
+                              private val isDownload: Boolean) extends CommandExecutor {
 
 
     override def execute(implicit args: Array[String]): Unit = {
@@ -39,17 +39,16 @@ class TransferCommand private(private val relay: Relay,
 
     def checkArgs(implicit args: Array[String]): Unit = {
         if (args.length != 6)
-            throw new CommandException("argument length must be 6")
+            throw CommandException("use: upload|download -t <target> -s <source_path> -d <target_destination>")
         checkArgsContains("-t", "-s", "-d")
     }
-
-
 
 }
 
 object TransferCommand {
-    def download(relay: Relay): TransferCommand =
+    def download(relay: Relay): TransferCommand = {
         new TransferCommand(relay, true)
+    }
 
     def upload(relay: Relay): TransferCommand =
         new TransferCommand(relay, false)
