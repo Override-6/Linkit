@@ -33,9 +33,9 @@ class PacketManager {
 
     def registerIfAbsent[P <: Packet](packetClass: Class[P], packetFactory: PacketFactory[P]): Unit = {
         val factory = packetFactory.asInstanceOf[PacketFactory[PT]]
-        val pcktClass = packetClass.asInstanceOf[Class[PT]]
-        if (!factories.contains(pcktClass))
-            factories.put(pcktClass, factory) 
+        val ptClass = packetClass.asInstanceOf[Class[PT]]
+        if (!factories.contains(ptClass))
+            factories.put(ptClass, factory)
     }
 
     def toPacket(bytes: Array[Byte]): Packet = {

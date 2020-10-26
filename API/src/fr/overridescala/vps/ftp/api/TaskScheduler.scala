@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.api
 
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler}
 
 trait TaskScheduler {
@@ -26,9 +27,12 @@ trait TaskScheduler {
      * this class avoid the user to specify the task identifier
      * @see [[TaskAction]]
      * */
-    case class RelayTaskAction[T] (taskAction: TaskAction[T]) {
-        def queue(onSuccess: T => Unit = null, onError: String => Unit = Console.err.println): Unit =
+    case class RelayTaskAction[T](taskAction: TaskAction[T]) {
+        def queue(onSuccess: T => Unit = null, onError: String => Unit = Console.err.println): Unit = try {
             taskAction.queue(onSuccess, onError)
+        } catch {
+            case e: TaskException => Console.err.println(e.getMessage)
+        }
 
         def complete(): T =
             taskAction.complete()

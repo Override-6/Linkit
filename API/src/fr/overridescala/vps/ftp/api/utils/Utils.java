@@ -48,7 +48,10 @@ public class Utils {
     }
 
     public static Path subPathOfUnknownFile(Path unknownFile, int from) {
-        String path = unknownFile.toString();
+        return subPathOfUnknownFile(unknownFile.toString(), from);
+    }
+
+    public static Path subPathOfUnknownFile(String path, int from) {
         var currentNameCount = -1;
         var subPathBuilder = new StringBuilder();
         for (char c : path.toCharArray()) {

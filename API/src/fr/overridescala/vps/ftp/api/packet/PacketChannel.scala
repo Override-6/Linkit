@@ -32,13 +32,19 @@ trait PacketChannel extends AutoCloseable {
 
     def nextPacket(): Packet
 
-    def nextPacketAsP[P <: Packet](): P = {
+    def nextPacketAsP[P <: Packet](): P =
         nextPacket().asInstanceOf[P]
-    }
 
 
     /**
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
      * */
     def haveMorePackets: Boolean
+
+    //TODO create two kind of PacketChannels, ConcurrentPacketChannel, and AsyncPacketChannel.
+    /**
+     * @param event returns true if the packet must be enqueued,
+     * */
+    def setOnPacketAdded(event: Packet => Boolean): Unit
+
 }

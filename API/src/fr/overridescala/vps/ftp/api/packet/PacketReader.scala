@@ -33,7 +33,7 @@ class PacketReader(socket: Socket, packetHandler: PacketManager) extends Closeab
 
     private def nextPacketLength(): Int = {
         val buff = new Array[Byte](1)
-        val packetSizeBytes = new Array[Byte](Constants.MAX_PACKET_LENGTH.toString.length + 1)
+        val packetSizeBytes = new Array[Byte](20)
         var i = 0
         while (new String(buff) != ":") {
             val count = input.read(buff)

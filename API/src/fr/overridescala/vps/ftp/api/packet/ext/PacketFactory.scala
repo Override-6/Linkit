@@ -13,7 +13,7 @@ trait PacketFactory[T <: Packet] {
   def build(implicit bytes: Array[Byte]): T
 
 
-  // util methods
+  // utility methods
   protected def cut(a: Array[Byte], b: Array[Byte])(implicit src: Array[Byte]): Array[Byte] =
     util.Arrays.copyOfRange(src, src.indexOfSlice(a) + a.length, src.indexOfSlice(b))
 

@@ -29,6 +29,7 @@ class SimplePacketChannel(private val socket: Socket,
     cache.registerPacketChannel(this)
 
     private val out = new BufferedOutputStream(socket.getOutputStream)
+    @volatile private var packetEvent: Packet => Boolean = _
 
     /**
      * this blocking queue stores the received packets until they are requested
@@ -54,7 +55,8 @@ class SimplePacketChannel(private val socket: Socket,
      * @see [[DataPacket]]
      * */
     override def nextPacket(): Packet = {
-        queue.takeLast()
+        val packet = queue.takeLast()
+        packet
     }
 
     /**
@@ -70,11 +72,15 @@ class SimplePacketChannel(private val socket: Socket,
      * @throws UnexpectedPacketException if the packet id not equals the channel task ID
      * */
     override def addPacket(packet: Packet): Unit = {
-        queue.addFirst(packet)
+        if (packetEvent == null || packetEvent(packet))
+            queue.addFirst(packet)
     }
 
     override def close(): Unit = {
         queue.clear()
         cache.unregisterPaketChannel(channelID)
     }
+
+    override def setOnPacketAdded(event: Packet => Boolean): Unit =
+        packetEvent = event
 }

@@ -7,7 +7,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" exported="" name="scala-library-2.13.3.jar" level="project" />
+    <orderEntry type="library" name="scala-library-2.13.3.jar" level="project" />
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
