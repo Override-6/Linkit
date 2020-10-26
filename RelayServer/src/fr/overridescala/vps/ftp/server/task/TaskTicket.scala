@@ -1,11 +1,11 @@
 package fr.overridescala.vps.ftp.server.task
 
 import java.io.IOException
+import java.lang.reflect.InvocationTargetException
 import java.net.Socket
 
-import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.{PacketChannelManagerCache, SimplePacketChannel}
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor}
 import fr.overridescala.vps.ftp.server.RelayServer
 
@@ -31,6 +31,8 @@ case class TaskTicket(private val executor: TaskExecutor,
                 try {
                     errorMethod.invoke(task, "Task aborted from an external handler")
                 } catch {
+                    case e: InvocationTargetException if e.getCause.isInstanceOf[TaskException] => Console.err.println(e.getMessage)
+                    case e: InvocationTargetException => e.getCause.printStackTrace()
                     case NonFatal(e) => e.printStackTrace()
                 }
             case _ =>

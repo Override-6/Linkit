@@ -14,6 +14,8 @@ import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.client.tasks.ClientExtension
 
+import scala.util.control.NonFatal
+
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String) extends Relay {
 
@@ -23,7 +25,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val taskFolderPath =
         if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks")
         else Path.of("Tasks").toRealPath()
-    println(s"taskFolderPath = $taskFolderPath")
     override val taskLoader = new TaskLoader(this, taskFolderPath)
     override val packetManager = new PacketManager()
     private val tasksHandler = new ClientTasksHandler(socket, this)
@@ -63,9 +64,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                     case _: AsynchronousCloseException =>
                         Console.err.println("asynchronous close.")
                         close()
-                    case e: Throwable =>
+                    case NonFatal(e) =>
                         e.printStackTrace()
-                        Console.err.println("suddenly disconnected from the server.")
+                        Console.err.println(s"suddenly disconnected from the server")
                         close()
                 }
             }

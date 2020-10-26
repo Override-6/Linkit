@@ -42,6 +42,7 @@ class ConnectionTasksHandler(override val identifier: String,
                     identifier,
                     ErrorPacket.ABORT_TASK,
                     e.getMessage)
+                Console.err.println(e.getMessage)
                 out.write(packetManager.toBytes(packet))
                 out.flush()
         }

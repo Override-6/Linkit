@@ -27,7 +27,11 @@ protected class ClientTasksHandler(private val socket: Socket,
     override val identifier: String = relay.identifier
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
-        val ticket = TaskTicket(executor, taskIdentifier, targetID, ownFreeWill)
+        val linkedRelay = if (ownFreeWill) targetID else senderID
+        if (linkedRelay == identifier)
+            throw new TaskException("can't start a task with oneself !")
+            
+        val ticket = TaskTicket(executor, taskIdentifier, linkedRelay, ownFreeWill)
         queue.offer(ticket)
     }
 
@@ -36,11 +40,13 @@ protected class ClientTasksHandler(private val socket: Socket,
             tasksCompleterHandler.handleCompleter(packet, this)
         } catch {
             case e: TaskException =>
+                val msg = e.getMessage
+                Console.err.println(msg)
                 val errorPacket = new ErrorPacket(-1,
                     relay.identifier,
                     packet.senderID,
                     ErrorPacket.ABORT_TASK,
-                    e.getMessage)
+                    msg)
                 out.write(packetManager.toBytes(errorPacket))
                 out.flush()
         }
@@ -82,13 +88,6 @@ protected class ClientTasksHandler(private val socket: Socket,
             case NonFatal(e) => e.printStackTrace()
         }
     }
-
-    private def isAbortPacket(packet: Packet): Boolean = {
-        if (!packet.isInstanceOf[ErrorPacket])
-            return false
-        packet.asInstanceOf[ErrorPacket].errorType == ErrorPacket.ABORT_TASK
-    }
-
     def start(): Unit = {
         tasksThread = new Thread(() => listen())
         tasksThread.setName("Client Tasks scheduler")
@@ -97,12 +96,13 @@ protected class ClientTasksHandler(private val socket: Socket,
 
     private case class TaskTicket(private val executor: TaskExecutor,
                                   private val taskID: Int,
-                                  private val targetID: String,
+                                  private val linkedRelay: String,
                                   private val ownFreeWill: Boolean) {
 
         val taskName: String = executor.getClass.getSimpleName
+
         private[ClientTasksHandler] val channel: SimplePacketChannel =
-            relay.createChannelAndManager(targetID, taskID)
+            relay.createChannelAndManager(linkedRelay, taskID)
 
         def abort(): Unit = {
             notifyExecutor()
@@ -113,7 +113,9 @@ protected class ClientTasksHandler(private val socket: Socket,
                     try {
                         errorMethod.invoke(task, "Task aborted from an external handler")
                     } catch {
-                        case e: InvocationTargetException if e.getCause.getClass == classOf[TaskException] =>
+                        case e: InvocationTargetException if e.getCause.isInstanceOf[TaskException] => Console.err.println(e.getMessage)
+                        case e: InvocationTargetException => e.getCause.printStackTrace()
+                        case NonFatal(e) => e.printStackTrace()
                     }
                 case _ =>
             }
