@@ -22,7 +22,7 @@ class ControllerExtension(relay: Relay) extends TaskExtension(relay) {
         commandsManager.register("stress", new StressTestCommand(relay))
         commandsManager.register("exec", new ExecuteUnknownTaskCommand(relay))
         commandsManager.register("delete", new DeleteFileCommand(relay))
-        commandsManager.register("listen", new ListenDirCommand(relay))
+        commandsManager.register("sync", new SyncDirCommand(relay))
         commandsManager.start()
         automationManager.start()
 

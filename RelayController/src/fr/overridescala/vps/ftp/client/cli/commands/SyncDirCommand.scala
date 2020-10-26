@@ -1,11 +1,10 @@
 package fr.overridescala.vps.ftp.client.cli.commands
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.client.auto.{FolderSync, AutomationManager}
 import fr.overridescala.vps.ftp.client.cli.{CommandException, CommandExecutor, CommandUtils}
 import fr.overridescala.vps.ftp.client.tasks.SyncFoldersTask
 
-class ListenDirCommand(relay: Relay) extends CommandExecutor {
+class SyncDirCommand(relay: Relay) extends CommandExecutor {
 
 
     override def execute(implicit args: Array[String]): Unit = {
@@ -20,7 +19,7 @@ class ListenDirCommand(relay: Relay) extends CommandExecutor {
 
     def checkArgs(implicit args: Array[String]): Unit = {
         if (args.length != 6)
-            throw CommandException("usage : listen -t <target> -tf <target_folder> -cf <current_folder>")
+            throw CommandException("usage : sync -t <target> -tf <target_folder> -cf <current_folder>")
         CommandUtils.checkArgsContains("-t", "-tf", "-cf")
     }
 

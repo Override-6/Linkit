@@ -23,8 +23,11 @@ class AutomationManager {
         })
     }
 
-    def startAutomation(automation: Automation, counter: Int): Unit = {
-        val thread = new Thread(() => automation.start())
+    private def startAutomation(automation: Automation, counter: Int): Unit = {
+        val thread = new Thread(() => {
+            automation.start()
+            automation.stop()
+        })
         thread.setName(s"Automation Thread n° $counter")
         thread.start()
     }

@@ -4,7 +4,7 @@ trait Automation {
 
     def start(): Unit
 
-    protected def cancel(): Unit = {
+    protected[auto] def stop(): Unit = {
         val thread = Thread.currentThread()
         println(s"Thread ${thread.getName} closed")
         thread.interrupt()

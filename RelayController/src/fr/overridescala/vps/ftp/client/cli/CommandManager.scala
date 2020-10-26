@@ -4,6 +4,7 @@ import java.util.Scanner
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
 class CommandManager(input: Scanner) {
 
@@ -34,7 +35,7 @@ class CommandManager(input: Scanner) {
             commands(cmd).execute(args)
         } catch {
             case e: CommandException => Console.err.println(e.getMessage)
-            case e: Throwable => e.printStackTrace()
+            case NonFatal(e) => e.printStackTrace()
         }
     }
 
