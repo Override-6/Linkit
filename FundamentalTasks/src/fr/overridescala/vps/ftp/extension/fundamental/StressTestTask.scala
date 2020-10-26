@@ -47,7 +47,7 @@ object StressTestTask {
     private def upload(implicit channel: PacketChannel, totalDataLength: Long): Unit = {
         println("UPLOAD")
         var totalSent: Float = 0
-        val capacity = Constants.MAX_PACKET_LENGTH - 512
+        val capacity = Short.MaxValue
         var bytes = new Array[Byte](capacity)
         java.util.Arrays.fill(bytes, 45.asInstanceOf[Byte])
         var maxBPS = 0F

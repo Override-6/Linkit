@@ -59,7 +59,7 @@ class UploadTask(private val desc: TransferDescription)
 
         while (totalBytesSent < totalBytes) {
             try {
-                var bytes = new Array[Byte](Constants.MAX_PACKET_LENGTH - 256)
+                var bytes = new Array[Byte](Short.MaxValue)
                 val read = stream.read(bytes)
                 bytes = util.Arrays.copyOf(bytes, read)
                 count += 1

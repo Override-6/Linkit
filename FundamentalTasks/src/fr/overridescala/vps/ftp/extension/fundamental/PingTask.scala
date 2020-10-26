@@ -23,7 +23,9 @@ object PingTask {
 
     class Completer extends TaskExecutor {
         override def execute(): Unit = {
-            channel.sendPacket(EmptyPacket())
+            channel.nextPacket() //waiting ping packet
+            val packet = EmptyPacket()
+            channel.sendPacket(packet)
         }
 
     }

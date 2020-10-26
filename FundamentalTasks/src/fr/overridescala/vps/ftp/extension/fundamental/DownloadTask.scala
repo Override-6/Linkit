@@ -1,17 +1,15 @@
 package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import java.io.File
-import java.nio.file.attribute.FileTime
 import java.nio.file.{Files, Path}
-import java.time.Instant
 
+import fr.overridescala.vps.ftp.`extension`.fundamental.DownloadTask.TYPE
+import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
-import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.utils.Utils
-import DownloadTask.TYPE
 
 /**
  * Downloads a File or folder from a targeted Relay
@@ -28,9 +26,8 @@ class DownloadTask private(private val desc: TransferDescription)
         TaskInitInfo.of(TYPE, desc.targetID, Utils.serialize(desc))
 
     override def execute(): Unit = {
-
         val response = nextPacket(): DataPacket
-        //empty upload
+        //empty upload check
         if (response.header == UploadTask.END_OF_TRANSFER) {
             success()
             return
@@ -49,7 +46,6 @@ class DownloadTask private(private val desc: TransferDescription)
                 channel.sendPacket(ErrorPacket(typeName, msg))
                 error(msg)
         }
-        println("download end")
     }
 
 
@@ -112,7 +108,7 @@ class DownloadTask private(private val desc: TransferDescription)
             Files.createFile(path)
         }
         if (!Files.isWritable(path) || !Files.isReadable(path)) {
-            val errorMsg = "Can't access to the file"
+            val errorMsg = s"($path) Can't access to the file"
             channel.sendPacket(ErrorPacket("NoSuchPermissions", errorMsg))
             error(errorMsg)
             return true

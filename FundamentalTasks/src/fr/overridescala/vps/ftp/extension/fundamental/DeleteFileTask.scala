@@ -29,7 +29,6 @@ object DeleteFileTask {
 
         override def execute(): Unit = {
             val path = Path.of(pathString)
-            println(s"path = ${path}")
             if (Files.notExists(path)) {
                 channel.sendPacket(ErrorPacket(
                     classOf[FileNotFoundException].getName,
@@ -46,7 +45,7 @@ object DeleteFileTask {
                         s"could not delete file or folder in $path",
                         e.getMessage
                     ))
-
+                    Console.err.println(e.getMessage)
             }
             channel.sendPacket(EmptyPacket())
         }
