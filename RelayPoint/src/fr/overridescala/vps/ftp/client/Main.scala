@@ -3,7 +3,10 @@ package fr.overridescala.vps.ftp.client
 import java.net.InetSocketAddress
 import java.util.Scanner
 
+import fr.overridescala.vps.ftp.`extension`.controller.ControllerExtension
+import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandUtils
 import fr.overridescala.vps.ftp.`extension`.fundamental.main.FundamentalExtension
+import fr.overridescala.vps.ftp.`extension`.ppc.PPCExtension
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 object Main {
@@ -22,9 +25,15 @@ object Main {
 
     def main(args: Array[String]): Unit = {
         relayPoint.start()
-        //FIXME remove direct dependence to TaskExtensions
-        new ControllerExtension(relayPoint).main()
-        new FundamentalExtension(relayPoint).main()
+        parseArgs(args)
+    }
+
+    def parseArgs(args: Array[String]): Unit = {
+        if (args.contains("--local-env")) {
+            new ControllerExtension(relayPoint).main()
+            new FundamentalExtension(relayPoint).main()
+            new PPCExtension(relayPoint).main()
+        }
     }
 
 }

@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException
 import java.net.Socket
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
-import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler, TaskExecutor, TasksHandler}
@@ -29,8 +29,8 @@ protected class ClientTasksHandler(private val socket: Socket,
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
         val linkedRelay = if (ownFreeWill) targetID else senderID
         if (linkedRelay == identifier)
-            throw new TaskException("can't start a task with oneself !")
-            
+            throw new TaskOperationException("can't start a task with oneself !")
+
         val ticket = TaskTicket(executor, taskIdentifier, linkedRelay, ownFreeWill)
         queue.offer(ticket)
     }
@@ -88,6 +88,7 @@ protected class ClientTasksHandler(private val socket: Socket,
             case NonFatal(e) => e.printStackTrace()
         }
     }
+
     def start(): Unit = {
         tasksThread = new Thread(() => listen())
         tasksThread.setName("Client Tasks scheduler")
@@ -130,11 +131,12 @@ protected class ClientTasksHandler(private val socket: Socket,
                 executor.init(packetManager, channel)
                 executor.execute()
             } catch {
+                case e: TaskOperationException => Console.err.println(e.getMessage)
                 case _: InterruptedException => Console.err.println(s"$taskName execution suddenly ended")
                 case NonFatal(e) => e.printStackTrace()
             } finally {
                 notifyExecutor()
-                channel.close()
+                executor.closeChannel()
             }
         }
 

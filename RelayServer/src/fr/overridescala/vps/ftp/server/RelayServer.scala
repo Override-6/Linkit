@@ -22,7 +22,7 @@ class RelayServer extends Relay {
     private val connectionsManager = new ConnectionsManager(this)
     //Awful thing, only for debugging, and easily switch from localhost to vps.
     private val taskFolderPath =
-        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\Tasks")
+        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks")
         else Path.of("Tasks/")
     @volatile private var open = false
 

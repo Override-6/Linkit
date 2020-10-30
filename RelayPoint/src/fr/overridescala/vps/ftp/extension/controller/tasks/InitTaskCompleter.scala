@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.client.tasks
+package fr.overridescala.vps.ftp.`extension`.controller.tasks
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException

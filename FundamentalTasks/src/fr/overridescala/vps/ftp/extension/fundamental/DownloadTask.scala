@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.`extension`.fundamental
 import java.io.File
 import java.nio.file.{Files, Path}
 
-import fr.overridescala.vps.ftp.`extension`.fundamental.DownloadTask.TYPE
+import DownloadTask.TYPE
 import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.Packet

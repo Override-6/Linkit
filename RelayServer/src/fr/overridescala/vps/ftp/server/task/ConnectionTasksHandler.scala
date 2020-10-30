@@ -55,7 +55,7 @@ class ConnectionTasksHandler(override val identifier: String,
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit =
-        tasksThread.addTicket(TaskTicket(executor, taskIdentifier, identifier, senderID, socket, server, ownFreeWill))
+        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, targetID, server, ownFreeWill))
 
     /**
      * closes the current client tasks thread

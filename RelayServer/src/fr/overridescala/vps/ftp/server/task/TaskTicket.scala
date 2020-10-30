@@ -11,13 +11,11 @@ import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.util.control.NonFatal
 
-case class TaskTicket(private val executor: TaskExecutor,
-                      private val taskID: Int,
-                      private val targetID: String,
-                      private val senderIdentifier: String,
-                      private val socket: Socket,
-                      private val relay: RelayServer,
-                      private val ownFreeWill: Boolean) {
+class TaskTicket(executor: TaskExecutor,
+                 taskID: Int,
+                 targetID: String,
+                 relay: RelayServer,
+                 ownFreeWill: Boolean) {
 
     var channel: SimplePacketChannel = relay.createChannelAndManager(targetID, taskID)
     val taskName: String = executor.getClass.getSimpleName
@@ -48,7 +46,6 @@ case class TaskTicket(private val executor: TaskExecutor,
                 channel.sendInitPacket(executor.initInfo)
             }
             executor.execute()
-            notifyExecutor()
             println(s"$taskName completed !")
         } catch {
             // Do not prints those exceptions : they are normal errors
@@ -58,6 +55,9 @@ case class TaskTicket(private val executor: TaskExecutor,
             case e: IOException if e.getMessage != null && e.getMessage.equalsIgnoreCase("Broken pipe") =>
 
             case NonFatal(e) => e.printStackTrace()
+        } finally {
+            notifyExecutor()
+            executor.closeChannel()
         }
     }
 

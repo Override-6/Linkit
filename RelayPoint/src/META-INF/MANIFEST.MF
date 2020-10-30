@@ -1,3 +1,12 @@
 Manifest-Version: 1.0
 Main-Class: fr.overridescala.vps.ftp.client.Main
-Class-Path: Dependencies/scala-reflect.jar, Dependencies/scala-library.jar
+Class-Path: Dependencies/scala-reflect.jar,
+ Dependencies/scala-library.jar,
+ Dependencies/ofx/lib/javafx.base.jar,
+ Dependencies/ofx/lib/javafx.controls.jar,
+ Dependencies/ofx/lib/javafx.fxml.jar,
+ Dependencies/ofx/lib/javafx.media.jar,
+ Dependencies/ofx/lib/javafx.graphics.jar,
+ Dependencies/ofx/lib/javafx.swing.jar,
+ Dependencies/ofx/lib/javafx.web.jar,
+ Dependencies/ofx/lib/javafx-swt.jar
