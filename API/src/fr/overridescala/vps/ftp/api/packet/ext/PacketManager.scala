@@ -19,19 +19,6 @@ class PacketManager {
 
     private val factories = withFundamentals()
 
-    def withFundamentals(): mutable.Map[Class[PT], PacketFactory[PT]] = {
-        val factories = mutable.Map.empty[Class[PT], PacketFactory[PT]]
-
-        def put[D <: Packet](clazz: Class[D], fact: PacketFactory[D]): Unit =
-            factories.put(clazz.asInstanceOf[Class[PT]], fact.asInstanceOf[PacketFactory[PT]])
-
-        put(classOf[DataPacket], DataPacket.Factory)
-        put(classOf[EmptyPacket], EmptyPacket.Factory)
-        put(classOf[TaskInitPacket], TaskInitPacket.Factory)
-        put(classOf[ErrorPacket], ErrorPacket.Factory)
-        factories
-    }
-
     def registerIfAbsent[P <: Packet](packetClass: Class[P], packetFactory: PacketFactory[P]): Unit = {
         val factory = packetFactory.asInstanceOf[PacketFactory[PT]]
         val ptClass = packetClass.asInstanceOf[Class[PT]]
@@ -57,6 +44,19 @@ class PacketManager {
     def toBytes[D <: Packet](packet: D): Array[Byte] = {
         val packetClass = packet.getClass.asInstanceOf[Class[D]]
         toBytes(packetClass, packet)
+    }
+
+    private def withFundamentals(): mutable.Map[Class[PT], PacketFactory[PT]] = {
+        val factories = mutable.LinkedHashMap.empty[Class[PT], PacketFactory[PT]]
+
+        def put[D <: Packet](clazz: Class[D], fact: PacketFactory[D]): Unit =
+            factories.put(clazz.asInstanceOf[Class[PT]], fact.asInstanceOf[PacketFactory[PT]])
+
+        put(classOf[DataPacket], DataPacket.Factory)
+        put(classOf[EmptyPacket], EmptyPacket.Factory)
+        put(classOf[TaskInitPacket], TaskInitPacket.Factory)
+        put(classOf[ErrorPacket], ErrorPacket.Factory)
+        factories
     }
 
 }
