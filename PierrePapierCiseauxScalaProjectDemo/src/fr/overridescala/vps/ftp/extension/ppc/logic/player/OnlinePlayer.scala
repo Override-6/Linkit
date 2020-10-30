@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.`extension`.ppc.logic.player
 
-import fr.overridescala.vps.ftp.`extension`.ppc.logic.MoveType
+import fr.overridescala.vps.ftp.`extension`.ppc.logic.{MovePacket, MoveType}
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 
@@ -11,8 +11,8 @@ class OnlinePlayer(name: String, channel: PacketChannel) extends Player {
 
     override def play(): MoveType = {
         println(getName + " joue...")
-        val response = channel.nextPacketAsP(): DataPacket
-        return MoveType.valueOf(response.header)
+        val response = channel.nextPacketAsP(): MovePacket
+        return response.move
     }
 
 }
@@ -34,7 +34,7 @@ object OnlinePlayer {
 
         override def play(): MoveType = {
             val moveType = player.play()
-            channel.sendPacket(DataPacket(moveType.toString))
+            channel.sendPacket(MovePacket(moveType))
             return moveType
         }
 
