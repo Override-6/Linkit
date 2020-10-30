@@ -27,9 +27,9 @@ class Game(player1: Player, player2: Player) {
 
     private def playOnce(): Unit = {
         val firstPlayerMove = player1.play()
-        println(player1.getName + s" a joué $firstPlayerMove")
+        println(player1.getName + s" a joué ${firstPlayerMove.getTranslate}")
         val secondPlayerMove = player2.play()
-        println(player2.getName + s" a joué $secondPlayerMove")
+        println(player2.getName + s" a joué ${secondPlayerMove.getTranslate}")
 
         if (firstPlayerMove.winAgainst(secondPlayerMove))
             firstPlayerScore += 1

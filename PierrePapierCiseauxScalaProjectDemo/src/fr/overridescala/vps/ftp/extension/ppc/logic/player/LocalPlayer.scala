@@ -21,7 +21,6 @@ class LocalPlayer(val name: String) extends Player {
     override def play(): MoveType = {
         val msg = s"veuillez choisir un nom entre $CHOICES_DISPLAY: "
         val chosenMoveName: String = InputConsole.ask(msg, CHOICES: _*)
-
-        MoveType.valueOf(chosenMoveName.toUpperCase)
+        MoveType.valueOfFrench(chosenMoveName.toUpperCase)
     }
 }
