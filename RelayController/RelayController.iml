@@ -10,6 +10,6 @@
     <orderEntry type="library" name="scala-library-2.13.3.jar" level="project" />
     <orderEntry type="module" module-name="API" />
     <orderEntry type="module" module-name="FundamentalTasks" />
-    <orderEntry type="library" name="jna-4.5.0.jar" level="project" />
+    <orderEntry type="module" module-name="PierrePapierCiseauxScalaProjectDemo" />
   </component>
 </module>
