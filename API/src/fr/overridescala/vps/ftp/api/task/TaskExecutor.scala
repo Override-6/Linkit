@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.task
 
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.packet.ext.{PacketFactory, PacketManager}
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
@@ -14,6 +14,7 @@ import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 abstract class TaskExecutor {
 
     private var packetManager: PacketManager = _
+    private var canCloseChannel: Boolean = true
     implicit protected var channel: PacketChannel = _
 
 
@@ -38,10 +39,20 @@ abstract class TaskExecutor {
         this.channel = packetChannel
     }
 
+    def closeChannel(): Unit = {
+        if (canCloseChannel)
+            channel.close()
+    }
+
+    protected def setDoNotCloseChannel(): Unit =
+        canCloseChannel = false
+
+    protected def setCloseChannel(): Unit =
+        canCloseChannel = true
+
     final protected def registerPacketFactory[P <: Packet](packetClass: Class[P], factory: PacketFactory[P]): Unit = {
         packetManager.registerIfAbsent(packetClass, factory)
     }
-
 
 
 }

@@ -19,6 +19,8 @@ case class DataPacket(override val channelID: Int,
                       header: String,
                       override val content: Array[Byte]) extends Packet{
 
+    val contentAsString: String = new String(content)
+
     /**
      * Represents this packet as a String
      * */

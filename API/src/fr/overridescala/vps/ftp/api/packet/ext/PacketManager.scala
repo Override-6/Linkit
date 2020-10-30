@@ -6,6 +6,7 @@ import fr.overridescala.vps.ftp.api.packet.ext.PacketManager.SIZE_SEPARATOR
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket, TaskInitPacket}
 
 import scala.collection.mutable
+import scala.util.control.NonFatal
 
 
 object PacketManager {
@@ -54,10 +55,8 @@ class PacketManager {
     }
 
     def toBytes[D <: Packet](packet: D): Array[Byte] = {
-        try {
-            val packetClass = packet.getClass.asInstanceOf[Class[D]]
-            toBytes(packetClass, packet)
-        }
+        val packetClass = packet.getClass.asInstanceOf[Class[D]]
+        toBytes(packetClass, packet)
     }
 
 }

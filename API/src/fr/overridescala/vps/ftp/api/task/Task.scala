@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.api.task
 
 import java.util.concurrent.atomic.AtomicReference
 
-import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
 import org.jetbrains.annotations.Nullable
 
 
@@ -113,10 +113,10 @@ abstract class Task[T](val targetID: String)
     /**
      * Invoked by TaskExecutors to signal that this task was unsuccessful
      * */
-    protected def error(msg: String): Unit = {
+    protected def error[R](msg: String): R = {
         if (onError != null)
             onError(msg)
-        throw new TaskException(msg)
+        throw new TaskOperationException(msg)
     }
 
     /**
