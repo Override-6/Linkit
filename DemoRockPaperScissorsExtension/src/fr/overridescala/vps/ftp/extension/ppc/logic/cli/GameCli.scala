@@ -2,6 +2,9 @@ package fr.overridescala.vps.ftp.`extension`.ppc.logic.cli
 
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.{Game, Player}
 
+/**
+ * Implémentation de la classe abstraite Game, adapte le jeux pour que les informations soient perçu via la console.
+ * */
 class GameCli(player1: Player, player2: Player) extends Game(player1, player2) {
 
     override def startGame(): Unit = {

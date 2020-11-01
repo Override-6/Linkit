@@ -31,7 +31,7 @@ object GameView {
 
         private val arrowImage = new ImageView(GameResource.ArrowOff)
         private val playedMoveImage = new ImageView(GameResource.NothingIcon)
-        @volatile private var currentMove: MoveType = null
+        @volatile private var currentMove: MoveType = _
 
         def setMove(move: MoveType): Unit = synchronized {
             if (move == null) {

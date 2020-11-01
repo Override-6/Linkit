@@ -12,19 +12,32 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
+/**
+ * Implémentation de la classe abstraite Game, adapte le jeux pour que les informations soient perçus graphiquement.
+ * les joueurs demmandés ne sont plus des Player mais des FxPlayer, car la surcouche graphique demmande certaines
+ * options en plus de la part des joueurs.
+ * */
 class GameInterface(player1: FxPlayer, player2: FxPlayer) extends Game(player1, player2) {
 
     private val stage = new Stage()
-    private var player1View: MoveView = null //Les valeures seront attribuées plus tard...
-    private var player2View: MoveView = null
+    private var player1View: MoveView = _ //Les valeures seront attribuées plus tard...
+    private var player2View: MoveView = _
 
     override def startGame(): Unit = {
         Platform.runLater(() => {
-            startGameInFxThread()
+            displayInterface()
         })
+        try {
+            super.startGame()
+        } catch {
+            case NonFatal(e) => e.printStackTrace()
+        }
     }
 
-    private def startGameInFxThread(): Unit = {
+    /**
+     *
+     * */
+    private def displayInterface(): Unit = {
         stage.setTitle(player1.getName + " VS " + player2.getName)
         stage.getIcons.add(GameResource.VersusIcon)
 
@@ -40,13 +53,6 @@ class GameInterface(player1: FxPlayer, player2: FxPlayer) extends Game(player1, 
         box.setAlignment(Pos.CENTER)
         stage.setScene(new Scene(box))
         stage.show()
-        Future {
-            try {
-                super.startGame()
-            } catch {
-                case NonFatal(e) => e.printStackTrace()
-            }
-        }
     }
 
     override def onEnd(winner: Player, loser: Player): Unit = {
@@ -55,14 +61,18 @@ class GameInterface(player1: FxPlayer, player2: FxPlayer) extends Game(player1, 
 
     override def afterRound(roundState: Int): Unit = {
         Platform.runLater(() => {
+            /* Affiche un "Gagné !!!" sous le nom du joueur gagnant de la manche.
+             */
             roundState match {
                 case -1 => player2View.onRoundWin()
                 case 1 => player1View.onRoundWin()
                 case 0 => //on ne fait rien.
             }
         })
+        //arrêt de l'execution pendant 3000 ms (3 secondes)
         Thread.sleep(3000)
         Platform.runLater(() => {
+            //Retour à la normal
             player1View.nextRound()
             player2View.nextRound()
         })

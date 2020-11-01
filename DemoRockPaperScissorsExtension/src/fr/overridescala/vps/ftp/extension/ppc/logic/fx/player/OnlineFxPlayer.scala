@@ -6,9 +6,12 @@ import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.GameView.MoveContainer
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.MoveView
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 
+/**
+ * même comportement que [[OnlinePlayer]] mais avec la surcouche graphique
+ * */
 class OnlineFxPlayer(name: String, channel: PacketChannel) extends OnlinePlayer(name, channel) with FxPlayer {
 
-    private var container: MoveContainer = null
+    private var container: MoveContainer = _
 
     override def play(): MoveType = {
         val moveType = super.play()
@@ -18,7 +21,7 @@ class OnlineFxPlayer(name: String, channel: PacketChannel) extends OnlinePlayer(
 
     override def setMoveContainer(moveContainer: MoveContainer): Unit = container = moveContainer
 
-    override def getMoveView(): MoveView = MoveView.remote(this, container)
+    override def getMoveView: MoveView = MoveView.remote(this, container)
 }
 
 object OnlineFxPlayer {
@@ -26,6 +29,9 @@ object OnlineFxPlayer {
         new WrappedFxPlayer(localFxPlayer, channel)
     }
 
+    /**
+     * même comportement que [[OnlinePlayer.WrappedPlayer]] mais avec la surcouche graphique
+     * */
     //noinspection RemoveRedundantReturn
     class WrappedFxPlayer private[OnlineFxPlayer](player: LocalFxPlayer,
                                                 implicit val packetChannel: PacketChannel) extends OnlinePlayer.WrappedPlayer(player, packetChannel) with FxPlayer {
@@ -41,7 +47,7 @@ object OnlineFxPlayer {
         override def setMoveContainer(moveContainer: MoveContainer): Unit =
             player.setMoveContainer(moveContainer)
 
-        override def getMoveView(): MoveView = player.getMoveView()
+        override def getMoveView: MoveView = player.getMoveView()
     }
 
 }

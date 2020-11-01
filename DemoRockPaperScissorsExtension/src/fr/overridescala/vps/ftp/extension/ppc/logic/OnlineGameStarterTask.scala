@@ -10,9 +10,15 @@ import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 import javafx.application.Platform
 
+/**
+ * Tâche, qui va permettre au client ciblé d'accêpter ou non l'invitation, et de lancer le jeux entre les deux joueurs.
+ * @param targetID l'id du client ciblé
+ * @param displayInterface, n'est utilisé que localement, et détermine si le joueur qui a envoyé l'invitation joue avec une interface ou non.
+ * */
 class OnlineGameStarterTask(targetID: String, displayInterface: Boolean) extends Task[Game](targetID) {
 
     setDoNotCloseChannel()
+
 
     override def initInfo: TaskInitInfo =
         TaskInitInfo.of("PPC", targetID)
@@ -32,6 +38,9 @@ class OnlineGameStarterTask(targetID: String, displayInterface: Boolean) extends
         conclude(playerName, remotePlayerName)
     }
 
+    /**
+     * Lance le jeux pour le premier joueur.
+     * */
     def conclude(localPlayerName: String, remotePlayerName: String): Unit = {
         if (displayInterface) {
             val remotePlayer = new OnlineFxPlayer(remotePlayerName, channel)
@@ -76,6 +85,9 @@ object OnlineGameStarterTask {
             startGame(displayWindow, localPlayerName, remotePlayerName)
         }
 
+        /**
+         * Lance le jeux pour le second joueur.
+         * */
         def startGame(displayWindow: Boolean, localPlayerName: String, remotePlayerName: String): Unit = {
             if (displayWindow) {
                 val remotePlayer = new OnlineFxPlayer(remotePlayerName, channel)

@@ -6,6 +6,10 @@ import javafx.scene.image.ImageView;
 
 import java.util.NoSuchElementException;
 
+/**
+ * énumération qui représente le type de coup (pierre, papier ciseaux)
+ * contient : sa traduction en Français, et son icone pour sa représentation graphique.
+ * */
 public enum MoveType {
 
     ROCK("PIERRE", GameResource.RockIcon()),
@@ -15,13 +19,13 @@ public enum MoveType {
     private final String translate;
     private final Image icon;
 
+    /**
+     * @param translate la traduction en français
+     * @param icon représentation graphique
+     * */
     MoveType(String translate, Image icon) {
         this.translate = translate;
         this.icon = icon;
-    }
-
-    public String getTranslate() {
-        return translate;
     }
 
     public ImageView getTexture() {
@@ -32,6 +36,9 @@ public enum MoveType {
         return icon;
     }
 
+    /**
+     * retourne le type de coup par apport à sa traduction.
+     * */
     public static MoveType valueOfFrenchName(String frenchName) {
         frenchName = frenchName.toUpperCase();
         for (MoveType value : values()) {

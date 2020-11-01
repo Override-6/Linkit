@@ -9,8 +9,14 @@ class ComputerPlayer extends Player {
 
     private val randomizer = ThreadLocalRandom.current();
 
+    /**
+     * @return "ordinateur", nom déja défini
+     * */
     override def getName: String = s"ordinateur"
 
+    /**
+     * Tire un coup aléatoire
+     * */
     override def play(): MoveType = {
         val plays = MoveType.values()
         val moveTypeIndex = randomizer.nextInt(plays.length)

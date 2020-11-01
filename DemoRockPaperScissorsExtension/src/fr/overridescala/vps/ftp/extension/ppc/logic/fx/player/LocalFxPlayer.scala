@@ -5,13 +5,16 @@ import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.GameView.MoveContainer
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.{Controller, MoveView}
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.{MoveType, Player}
 
+/**
+ * même comportement que [[fr.overridescala.vps.ftp.`extension`.ppc.logic.cli.player.LocalPlayer]] mais avec la surcouche graphique
+ * */
 class LocalFxPlayer(name: String) extends FxPlayer {
 
     def this() = this(InputConsole.ask("Choisissez un pseudo"))
 
     override def getName: String = name
 
-    private var moveContainer: MoveContainer = null
+    private var moveContainer: MoveContainer = _
 
     override def play(): MoveType = {
         println(s"$name is playing...")
@@ -26,5 +29,5 @@ class LocalFxPlayer(name: String) extends FxPlayer {
         this.moveContainer = moveContainer
     }
 
-    override def getMoveView(): MoveView = MoveView.controllable(this, new Controller(moveContainer))
+    override def getMoveView: MoveView = MoveView.controllable(this, new Controller(moveContainer))
 }

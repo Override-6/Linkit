@@ -7,6 +7,11 @@ import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.GameView.MoveContainer
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.player.LocalFxPlayer
 import fr.overridescala.vps.ftp.api.Relay
 
+/**
+ * Configuration du jeux,
+ *      Si le joueur souhaite jouer dans la console, il peux joueur soit contre un adversaire, soit contre un ordinnateur.
+ *      Si le joueur souhaite jouer dans une interface, il ne peux que jouer contre un adversaire.
+ * */
 //noinspection RemoveRedundantReturn
 class GameConfig(relay: Relay) {
 
@@ -46,7 +51,9 @@ class GameConfig(relay: Relay) {
         }
     }
 
-
+    /**
+     * Construit une instance de [[Player]] en fonction de la réponse du joueur.
+     * */
     private def askPlayerInstance(): Player = {
         val question = "Choisissez un type de joueur (Local ou ordi)"
         val playerType = InputConsole.ask(question, "humain", "ordi")

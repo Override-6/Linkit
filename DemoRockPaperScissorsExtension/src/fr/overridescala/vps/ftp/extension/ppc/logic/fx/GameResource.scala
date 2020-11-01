@@ -5,17 +5,20 @@ import javafx.scene.image.Image
 
 object GameResource {
 
+
     /**
      * Texture constants
      * */
-    val NothingIcon = new Image("rien.png")
-    val RockIcon = new Image("pierre.png")
-    val ScissorsIcon = new Image("ciseaux.png")
-    val PaperIcon = new Image("papier.png")
-    val VersusIcon = new Image("versus.png")
-    val Validate = new Image("validate.png")
-    val ArrowOff = new Image("arrow_off.png")
-    val ArrowOn = new Image("arrow_on.png")
-    val UnknownIcon = new Image("unknown.png")
+    val NothingIcon: Image = img("/rien.png")
+    val RockIcon: Image = img("/pierre.png")
+    val ScissorsIcon: Image = img("/ciseaux.png")
+    val PaperIcon: Image = img("/papier.png")
+    val VersusIcon: Image = img("/versus.png")
+    val Validate: Image = img("/validate.png")
+    val ArrowOff: Image = img("/arrow_off.png")
+    val ArrowOn: Image = img("/arrow_on.png")
+    val UnknownIcon: Image = img("/unknown.png")
+
+    private def img(name: String): Image = new Image(getClass.getResourceAsStream(name))
 
 }

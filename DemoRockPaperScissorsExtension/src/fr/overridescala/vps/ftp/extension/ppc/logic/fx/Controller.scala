@@ -60,7 +60,7 @@ class Controller(moveContainer: MoveContainer) extends VBox(50) {
     }
 
     class MoveSelector extends ImageView {
-        @volatile private var moveType: MoveType = null
+        @volatile private var moveType: MoveType = _
 
         def selectedMove: MoveType = moveType
 
