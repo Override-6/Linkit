@@ -4,7 +4,7 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.nio.file.{Files, LinkOption, Path}
 
 import FolderWatcher._
-import org.jetbrains.annotations.Nullable
+import com.sun.istack.internal.Nullable
 
 import scala.collection.mutable.ListBuffer
 

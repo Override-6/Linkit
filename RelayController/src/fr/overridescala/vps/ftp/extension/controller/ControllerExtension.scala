@@ -20,7 +20,6 @@ class ControllerExtension(relay: Relay) extends TaskExtension(relay) {
         commandManager.register("exec", new ExecuteUnknownTaskCommand(relay))
         commandManager.register("delete", new DeleteFileCommand(relay))
         commandManager.register("sync", new SyncDirCommand(relay))
-        commandManager.register("rps", new StartRPSGameCommand(relay))
         commandManager.start()
         automationManager.start()
 
@@ -28,5 +27,6 @@ class ControllerExtension(relay: Relay) extends TaskExtension(relay) {
         completerHandler.putCompleter(SyncFoldersTask.TYPE, new SyncFoldersTask.Completer(relay, _))
         val properties = relay.properties
         properties.putProperty("automation_manager", automationManager)
+        properties.putProperty("command_manager", commandManager)
     }
 }

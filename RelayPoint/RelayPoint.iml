@@ -7,10 +7,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scala-library-2.13.3.jar" level="project" />
-    <orderEntry type="module" module-name="API" exported="" />
-    <orderEntry type="module" module-name="FundamentalTasks" exported="" />
-    <orderEntry type="module" module-name="RelayController" exported="" />
-    <orderEntry type="module" module-name="PierrePapierCiseauxScalaProjectDemo" exported="" />
+    <orderEntry type="library" name="scala-sdk-2.13.3" level="application" />
+    <orderEntry type="module" module-name="API" />
+    <orderEntry type="module" module-name="DemoRockPaperScissorsExtension" />
+    <orderEntry type="module" module-name="FundamentalTasks" />
+    <orderEntry type="module" module-name="RelayController" />
   </component>
 </module>

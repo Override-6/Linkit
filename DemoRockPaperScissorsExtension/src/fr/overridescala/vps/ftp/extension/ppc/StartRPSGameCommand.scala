@@ -1,8 +1,8 @@
-package fr.overridescala.vps.ftp.`extension`.controller.cli.commands
+package fr.overridescala.vps.ftp.`extension`.ppc
 
+import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandExecutor
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.GameConfig
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandExecutor
 
 class StartRPSGameCommand(relay: Relay) extends CommandExecutor {
 

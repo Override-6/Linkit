@@ -28,7 +28,7 @@ object Main {
     }
 
     def parseArgs(args: Array[String]): Unit = {
-        if (args.contains("--local-env")) {
+        if (args.contains("--local-run")) {
             new ControllerExtension(relayPoint).main()
             new FundamentalExtension(relayPoint).main()
             new PPCExtension(relayPoint).main()

@@ -1,7 +1,6 @@
 package fr.overridescala.vps.ftp.`extension`.ppc
 
-import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.GameInterface
-import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.player.LocalFxPlayer
+import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandManager
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.{MovePacket, OnlineGameStarterTask}
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.task.ext.TaskExtension
@@ -18,6 +17,10 @@ class PPCExtension(client: Relay) extends TaskExtension(client) {
         val completerHandler = client.taskCompleterHandler
         completerHandler.putCompleter("PPC", initPacket => new OnlineGameStarterTask.Completer)
         client.packetManager.registerIfAbsent(classOf[MovePacket], MovePacket.Factory)
+
+        val commandManager: CommandManager = client.properties.getProperty("command_manager")
+        commandManager.register("rps", new StartRPSGameCommand(client))
+
         Future {
             Application.launch(classOf[PPCExtension.App])
         }
