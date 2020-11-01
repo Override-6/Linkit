@@ -17,7 +17,7 @@ case class DataPacket(override val channelID: Int,
                       override val targetID: String,
                       override val senderID: String,
                       header: String,
-                      override val content: Array[Byte]) extends Packet{
+                      override val content: Array[Byte]) extends Packet {
 
     val contentAsString: String = new String(content)
 
@@ -49,34 +49,28 @@ object DataPacket {
 
     object Factory extends PacketFactory[DataPacket] {
 
+        import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils._
+
         private val TYPE = "[data]".getBytes
-        private val SENDER = "<sender>".getBytes
-        private val TARGET = "<target>".getBytes
         private val HEADER = "<header>".getBytes
         private val CONTENT = "<content>".getBytes
 
         override def decompose(implicit packet: DataPacket): Array[Byte] = {
             val channelID = packet.channelID.toString.getBytes
-            val sender = packet.senderID.getBytes
-            val target = packet.targetID.getBytes
             val header = packet.header.getBytes
             TYPE ++ channelID ++
-                    SENDER ++ sender ++
-                    TARGET ++ target ++
                     HEADER ++ header ++
                     CONTENT ++ packet.content
         }
 
         override def canTransform(implicit bytes: Array[Byte]): Boolean =
-            bytes.startsWith(TYPE)
+            bytes.containsSlice(TYPE)
 
-        override def build(implicit bytes: Array[Byte]): DataPacket = {
-            val channelID = cutString(TYPE, SENDER).toInt
-            val sender = cutString(SENDER, TARGET)
-            val target = cutString(TARGET, HEADER)
+        override def build(senderID: String, targetId: String)(implicit bytes: Array[Byte]): DataPacket = {
+            val channelID = cutString(TYPE, HEADER).toInt
             val header = cutString(HEADER, CONTENT)
             val content = cutEnd(CONTENT)
-            new DataPacket(channelID, target, sender, header, content)
+            new DataPacket(channelID, targetId, senderID, header, content)
         }
 
     }

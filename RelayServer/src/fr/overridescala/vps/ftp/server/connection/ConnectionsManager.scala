@@ -103,12 +103,11 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * @throws RelayException if no connection where found for this packet.
      * @param packet the packet to deflect
      * */
-    private[connection] def deflectPacket(packet: Packet): Unit = {
-        val target: String = packet.targetID
+    private[connection] def deflectTo(bytes: Array[Byte], target: String): Unit = {
         val connection = getConnectionFromIdentifier(target)
         if (connection == null)
             throw new RelayException(s"unknown ID '$target' to deflect packet")
-        connection.sendDeflectedPacket(packet)
+        connection.sendDeflectedBytes(bytes)
     }
 
     private def checkAddress(address: SocketAddress): Unit = {

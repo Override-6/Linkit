@@ -2,18 +2,20 @@ package fr.overridescala.vps.ftp.api.packet.ext
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager.SIZE_SEPARATOR
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket, TaskInitPacket}
 
 import scala.collection.mutable
-import scala.util.control.NonFatal
 
 
 object PacketManager {
-    private val SIZE_SEPARATOR = ":".getBytes
+    val SizeSeparator: Array[Byte] = ":".getBytes
+    val TargetSeparator: Array[Byte] = "<target>".getBytes
+    val SenderSeparator: Array[Byte] = "<sender>".getBytes
 }
 
 class PacketManager {
+
+    import PacketManager._
 
     type PT <: Packet
 
@@ -26,19 +28,23 @@ class PacketManager {
             factories.put(ptClass, factory)
     }
 
-    def toPacket(bytes: Array[Byte]): Packet = {
+    def toPacket(implicit bytes: Array[Byte]): Packet = {
+        val sepIndex = bytes.indexOfSlice(SenderSeparator)
+        val senderID = new String(bytes.slice(0, sepIndex))
+        val targetID = new String(bytes.slice(sepIndex + SenderSeparator.length, bytes.indexOfSlice(TargetSeparator)))
         for (factory <- factories.values) {
             if (factory.canTransform(bytes))
-                return factory.build(bytes)
+                return factory.build(senderID, targetID)(bytes)
         }
         throw UnexpectedPacketException(s"could not find packet factory for ${new String(bytes)}")
     }
 
     def toBytes[D <: Packet](classOfP: Class[D], packet: D): Array[Byte] = {
-        val bytes = factories(classOfP.asInstanceOf[Class[PT]])
+        val packetBytes = factories(classOfP.asInstanceOf[Class[PT]])
                 .asInstanceOf[PacketFactory[D]]
                 .decompose(packet)
-        s"${bytes.length}".getBytes ++ SIZE_SEPARATOR ++ bytes
+        val bytes = PacketUtils.redundantBytesOf(packet) ++ packetBytes
+        bytes.length.toString.getBytes ++ SizeSeparator ++ bytes
     }
 
     def toBytes[D <: Packet](packet: D): Array[Byte] = {
@@ -58,5 +64,6 @@ class PacketManager {
         put(classOf[ErrorPacket], ErrorPacket.Factory)
         factories
     }
+
 
 }

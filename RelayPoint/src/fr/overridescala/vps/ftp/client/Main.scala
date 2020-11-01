@@ -6,6 +6,7 @@ import java.util.Scanner
 import fr.overridescala.vps.ftp.`extension`.controller.ControllerExtension
 import fr.overridescala.vps.ftp.`extension`.fundamental.main.FundamentalExtension
 import fr.overridescala.vps.ftp.`extension`.ppc.PPCExtension
+import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 object Main {
@@ -19,16 +20,15 @@ object Main {
     print("choose a identifier : ")
     private val identifier = scanner.nextLine()
     private val address = if (isLocalhost) LOCALHOST else SERVER_ADDRESS
-    private val relayPoint = new RelayPoint(address, identifier)
 
-
+    /**
+     * @param args "--local-run", used to determine if the application is run into IntelliJ or from an external context
+     * */
     def main(args: Array[String]): Unit = {
+        val localRun = args.contains("--local-run")
+        val relayPoint = new RelayPoint(address, identifier, localRun)
         relayPoint.start()
-        parseArgs(args)
-    }
-
-    def parseArgs(args: Array[String]): Unit = {
-        if (args.contains("--local-run")) {
+        if (localRun) {
             new ControllerExtension(relayPoint).main()
             new FundamentalExtension(relayPoint).main()
             new PPCExtension(relayPoint).main()

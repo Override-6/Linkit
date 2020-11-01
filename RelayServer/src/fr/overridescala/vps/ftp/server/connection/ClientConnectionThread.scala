@@ -6,6 +6,7 @@ import java.net.{Socket, SocketException}
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.{PacketManager, PacketUtils}
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.server.RelayServer
 import fr.overridescala.vps.ftp.server.task.ConnectionTasksHandler
@@ -18,7 +19,7 @@ class ClientConnectionThread(socket: Socket,
 
 
     private val packetManager = server.packetManager
-    private val packetReader: PacketReader = new PacketReader(socket, server.packetManager)
+    private val packetReader: PacketReader = new PacketReader(socket)
     private val writer = new BufferedOutputStream(socket.getOutputStream)
     private val channelCache = new PacketChannelManagerCache
 
@@ -55,16 +56,12 @@ class ClientConnectionThread(socket: Socket,
     private[server] def createChannel(id: Int): SimplePacketChannel =
         new SimplePacketChannel(socket, identifier, server.identifier, id, channelCache, packetManager)
 
-    private[connection] def sendDeflectedPacket(packet: Packet): Unit = {
-        writer.write(packetManager.toBytes(packet))
+    private[connection] def sendDeflectedBytes(bytes: Array[Byte]): Unit = {
+        writer.write(bytes.length.toString.getBytes ++ PacketManager.SizeSeparator ++ bytes)
         writer.flush()
     }
 
     private def handlePacket(packet: Packet): Unit = {
-        if (packet.targetID != server.identifier) {
-            manager.deflectPacket(packet)
-            return
-        }
         packet match {
             case errorPacket: ErrorPacket if errorPacket.errorType == ErrorPacket.ABORT_TASK =>
                 printErrorPacket(errorPacket)
@@ -83,9 +80,16 @@ class ClientConnectionThread(socket: Socket,
 
     private def update(onPacketReceived: Packet => Unit): Unit = {
         try {
-            packetReader
-                    .readPacket()
-                    .ifPresent(p => onPacketReceived(p))
+            val bytes = packetReader.readNextPacketBytes()
+            if (bytes == null)
+                return
+
+            val target = getTargetID(bytes)
+            if (target == server.identifier) {
+                onPacketReceived(packetManager.toPacket(bytes))
+                return
+            }
+            manager.deflectTo(bytes, target)
         } catch {
             case e: RelayException => executeError(e)
         }
@@ -139,5 +143,9 @@ class ClientConnectionThread(socket: Socket,
             case init: TaskInitPacket => handlePacket(init)
             case other: Packet => channel.addPacket(other)
         }
+
+    def getTargetID(bytes: Array[Byte]): String = {
+        PacketUtils.cutString(PacketManager.SenderSeparator, PacketManager.TargetSeparator)(bytes)
+    }
 
 }

@@ -30,34 +30,28 @@ object TaskInitPacket {
 
     object Factory extends PacketFactory[TaskInitPacket] {
 
+        import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils._
+
         private val TYPE = "[task_init]".getBytes
-        private val SENDER = "<sender>".getBytes
-        private val TARGET = "<target>".getBytes
         private val TASK_TYPE = "<task_type>".getBytes
         private val CONTENT = "<content>".getBytes
 
         override def decompose(implicit packet: TaskInitPacket): Array[Byte] = {
             val channelID = packet.channelID.toString.getBytes
-            val sender = packet.senderID.getBytes
-            val target = packet.targetID.getBytes
             val typeBytes = packet.taskType.getBytes
             TYPE ++ channelID ++
-                    SENDER ++ sender ++
-                    TARGET ++ target ++
                     TASK_TYPE ++ typeBytes ++
                     CONTENT ++ packet.content
         }
 
         override def canTransform(implicit bytes: Array[Byte]): Boolean =
-            bytes.startsWith(TYPE)
+            bytes.containsSlice(TYPE)
 
-        override def build(implicit bytes: Array[Byte]): TaskInitPacket = {
-            val channelID = cutString(TYPE, SENDER).toInt
-            val sender = cutString(SENDER, TARGET)
-            val target = cutString(TARGET, TASK_TYPE)
+        override def build(senderID: String, targetId: String)(implicit bytes: Array[Byte]): TaskInitPacket = {
+            val channelID = cutString(TYPE, TASK_TYPE).toInt
             val taskType = cutString(TASK_TYPE, CONTENT)
             val content = cutEnd(CONTENT)
-            TaskInitPacket(channelID, target, sender, taskType, content)
+            TaskInitPacket(channelID, targetId, senderID, taskType, content)
         }
 
     }

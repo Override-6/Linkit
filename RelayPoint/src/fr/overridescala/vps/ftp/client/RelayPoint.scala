@@ -17,20 +17,22 @@ import fr.overridescala.vps.ftp.client.tasks.ClientExtension
 import scala.util.control.NonFatal
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
-                 override val identifier: String) extends Relay {
+                 override val identifier: String,
+                 localRun: Boolean) extends Relay {
 
     @volatile private var open = false
     private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
 
     private val taskFolderPath =
-        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\Tasks")
+        if (localRun) Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\Tasks")
         else Paths.get("Tasks").toRealPath()
+
     override val taskLoader = new TaskLoader(this, taskFolderPath)
     override val packetManager = new PacketManager()
     private val tasksHandler = new ClientTasksHandler(socket, this)
 
     override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
-    private val packetReader = new PacketReader(socket, packetManager)
+    private val packetReader = new PacketReader(socket)
 
     override val properties = new RelayProperties
     private val channelCache = new PacketChannelManagerCache
@@ -52,14 +54,16 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
             //enable the task management
             tasksHandler.start()
-            //taskLoader.refreshTasks()
+            taskLoader.refreshTasks()
 
             open = true
             while (open) {
                 try {
-                    packetReader
-                            .readPacket()
-                            .ifPresent(handlePacket)
+                    val bytes = packetReader.readNextPacketBytes()
+                    if (bytes == null)
+                        return
+                    val packet = packetManager.toPacket(bytes)
+                    handlePacket(packet)
                 } catch {
                     case _: AsynchronousCloseException =>
                         Console.err.println("asynchronous close.")

@@ -17,7 +17,7 @@ class TaskLoader(relay: Relay, val tasksFolder: Path) {
 
     type TaskExtensionClass = Class[_ <: TaskExtension]
 
-    private var classLoader: URLClassLoader = null
+    private var classLoader: URLClassLoader = _
     private val extensions = ListBuffer.empty[TaskExtensionClass]
 
     def refreshTasks(): Unit = {

@@ -31,35 +31,29 @@ object ErrorPacket {
 
     object Factory extends PacketFactory[ErrorPacket] {
 
+        import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils._
+
         private val TYPE = "[err]".getBytes
-        private val SENDER = "<sender>".getBytes
-        private val TARGET = "<target>".getBytes
         private val ERROR_TYPE = "<type>".getBytes
         private val MSG = "<msg>".getBytes
         private val CAUSE = "<cause>".getBytes
 
         override def decompose(implicit packet: ErrorPacket): Array[Byte] = {
             val channelID = packet.channelID.toString.getBytes
-            val sender = packet.senderID.getBytes
-            val target = packet.targetID.getBytes
             val errorType = packet.errorType.getBytes
             val errorMsg = packet.errorMsg.getBytes
             val cause = packet.cause.getBytes
             TYPE ++ channelID ++
-                    SENDER ++ sender ++
-                    TARGET ++ target ++
                     ERROR_TYPE ++ errorType ++
                     MSG ++ errorMsg ++
                     CAUSE ++ cause
         }
 
         override def canTransform(implicit bytes: Array[Byte]): Boolean =
-            bytes.startsWith(TYPE)
+            bytes.containsSlice(TYPE)
 
-        override def build(implicit bytes: Array[Byte]): ErrorPacket = {
-            val channelID = cutString(TYPE, SENDER).toInt
-            val sender = cutString(SENDER, TARGET)
-            val target = cutString(TARGET, ERROR_TYPE)
+        override def build(sender: String, target: String)(implicit bytes: Array[Byte]): ErrorPacket = {
+            val channelID = cutString(TYPE, ERROR_TYPE).toInt
             val errorType = cutString(ERROR_TYPE, MSG)
             val msg = cutString(MSG, CAUSE)
             val cause = new String(cutEnd(CAUSE))
