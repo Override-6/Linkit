@@ -1,8 +1,8 @@
-package fr.overridescala.vps.ftp.`extension`.ppc.logic.player
+package fr.overridescala.vps.ftp.`extension`.ppc.logic.cli.player
 
 import java.util.concurrent.ThreadLocalRandom
 
-import fr.overridescala.vps.ftp.`extension`.ppc.logic.MoveType
+import fr.overridescala.vps.ftp.`extension`.ppc.logic.{MoveType, Player}
 
 //noinspection RemoveRedundantReturn
 class ComputerPlayer extends Player {

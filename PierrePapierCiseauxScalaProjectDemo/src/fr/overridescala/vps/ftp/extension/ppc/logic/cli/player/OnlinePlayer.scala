@@ -1,8 +1,7 @@
-package fr.overridescala.vps.ftp.`extension`.ppc.logic.player
+package fr.overridescala.vps.ftp.`extension`.ppc.logic.cli.player
 
-import fr.overridescala.vps.ftp.`extension`.ppc.logic.{MovePacket, MoveType}
+import fr.overridescala.vps.ftp.`extension`.ppc.logic.{MovePacket, MoveType, Player}
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 
 //noinspection RemoveRedundantReturn
 class OnlinePlayer(name: String, channel: PacketChannel) extends Player {
@@ -12,6 +11,7 @@ class OnlinePlayer(name: String, channel: PacketChannel) extends Player {
     override def play(): MoveType = {
         println(getName + " joue...")
         val response = channel.nextPacketAsP(): MovePacket
+        println(getName + s" a joué ${response.move} !")
         return response.move
     }
 
@@ -27,7 +27,7 @@ object OnlinePlayer {
     }
 
     //noinspection RemoveRedundantReturn
-    class WrappedPlayer private[OnlinePlayer](player: Player,
+    class WrappedPlayer protected[OnlinePlayer](player: Player,
                                               implicit val channel: PacketChannel) extends Player {
 
         override def getName: String = player.getName

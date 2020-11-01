@@ -1,47 +1,40 @@
 package fr.overridescala.vps.ftp.`extension`.ppc.logic
 
-import fr.overridescala.vps.ftp.`extension`.ppc.logic.player.Player
+abstract class Game(val player1: Player, val player2: Player) {
 
-class Game(player1: Player, player2: Player) {
-
-    private var firstPlayerScore = 0
-    private var secondPlayerScore = 0
+    @volatile protected var player1Score = 0
+    @volatile protected var player2Score = 0
 
     private val SCORE_BOUND = 3
 
 
     def startGame(): Unit = {
-        println("Début du jeux !")
-        println(s"------- ${player1.getName} VS ${player2.getName} -------")
-        while (firstPlayerScore < SCORE_BOUND && secondPlayerScore < SCORE_BOUND) {
-            playOnce()
-            displayScores()
+        while (player1Score < SCORE_BOUND && player2Score < SCORE_BOUND) {
+            val firstPlayerMove = player1.play()
+            val secondPlayerMove = player2.play()
+
+            var state = 0
+
+            if (firstPlayerMove.winAgainst(secondPlayerMove)) {
+                player1Score += 1
+                state = 1
+            }
+            if (secondPlayerMove.winAgainst(firstPlayerMove)) {
+                player2Score += 1
+                state = -1
+            }
+
+            afterRound(state)
         }
         val playerTuple =
-            if (firstPlayerScore > secondPlayerScore) (player1, player2)
+            if (player1Score > player2Score) (player1, player2)
             else (player2, player1)
-        val winner = playerTuple._1
-        val loser = playerTuple._2
-        println(s"${winner.getName} a gagné contre ${loser.getName} !")
+        onEnd(playerTuple._1, playerTuple._2)
     }
 
-    private def playOnce(): Unit = {
-        val firstPlayerMove = player1.play()
-        println(player1.getName + s" a joué ${firstPlayerMove.getTranslate}")
-        val secondPlayerMove = player2.play()
-        println(player2.getName + s" a joué ${secondPlayerMove.getTranslate}")
+    def onEnd(winner: Player, loser: Player): Unit
 
-        if (firstPlayerMove.winAgainst(secondPlayerMove))
-            firstPlayerScore += 1
-        if (secondPlayerMove.winAgainst(firstPlayerMove))
-            secondPlayerScore += 1
-    }
-
-    private def displayScores(): Unit = {
-        val firstPlayerName = player1.getName
-        val secondPlayerName = player2.getName
-        println(s"Scores : $firstPlayerName : $firstPlayerScore - $secondPlayerName : $secondPlayerScore")
-    }
+    def afterRound(roundState: Int): Unit
 
 
 }

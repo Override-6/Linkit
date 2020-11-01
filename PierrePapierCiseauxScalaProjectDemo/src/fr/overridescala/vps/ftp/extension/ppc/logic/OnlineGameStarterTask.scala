@@ -1,11 +1,16 @@
 package fr.overridescala.vps.ftp.`extension`.ppc.logic
 
 import fr.overridescala.vps.ftp.`extension`.controller.cli.InputConsole
-import fr.overridescala.vps.ftp.`extension`.ppc.logic.player.{LocalPlayer, OnlinePlayer}
+import fr.overridescala.vps.ftp.`extension`.ppc.logic.cli.GameCli
+import fr.overridescala.vps.ftp.`extension`.ppc.logic.cli.player.{LocalPlayer, OnlinePlayer}
+import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.GameInterface
+import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.player.{LocalFxPlayer, OnlineFxPlayer}
+import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.util.FxPlatform
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
+import javafx.application.Platform
 
-class OnlineGameStarterTask(targetID: String) extends Task[Game](targetID) {
+class OnlineGameStarterTask(targetID: String, displayInterface: Boolean) extends Task[Game](targetID) {
 
     setDoNotCloseChannel()
 
@@ -20,15 +25,26 @@ class OnlineGameStarterTask(targetID: String) extends Task[Game](targetID) {
         println(s"Envoi de la requette à $targetID...")
         println("En attente de sa réponse...")
         val response = channel.nextPacketAsP(): DataPacket
-        val remotePlayer = response.header match {
-            case "oui" => new OnlinePlayer(response.contentAsString, channel)
-            case "non" =>
-                error(s"Le joueur distant n'a pas voulu jouer avec toi :c")
+        val remotePlayerName = response.header match {
+            case "oui" => response.contentAsString
+            case "non" => error(s"Le joueur distant n'a pas voulu jouer avec toi :c")
         }
-        val localPlayer = OnlinePlayer.wrap(new LocalPlayer(playerName), channel)
-        success(new Game(localPlayer, remotePlayer))
+        conclude(playerName, remotePlayerName)
     }
 
+    def conclude(localPlayerName: String, remotePlayerName: String): Unit = {
+        if (displayInterface) {
+            val remotePlayer = new OnlineFxPlayer(remotePlayerName, channel)
+            val localPlayer = OnlineFxPlayer.wrap(new LocalFxPlayer(localPlayerName), channel)
+            FxPlatform.runOnThread(_ => {
+                success(new GameInterface(localPlayer, remotePlayer))
+            })
+            return
+        }
+        val remotePlayer = new OnlinePlayer(remotePlayerName, channel)
+        val localPlayer = OnlinePlayer.wrap(new LocalPlayer(localPlayerName), channel)
+        success(new GameCli(localPlayer, remotePlayer))
+    }
 
 }
 
@@ -37,6 +53,7 @@ object OnlineGameStarterTask {
     class Completer() extends TaskExecutor {
 
         setDoNotCloseChannel()
+
 
         override def execute(): Unit = {
             val namePacket: DataPacket = channel.nextPacketAsP()
@@ -52,14 +69,27 @@ object OnlineGameStarterTask {
                 return
             }
 
+            val displayWindow = InputConsole.ask("Voulez-vous ouvrir une interface ?", "oui", "non") == "oui"
+
             val localPlayerName = InputConsole.ask("Choisissez votre pseudo : ")
             channel.sendPacket(DataPacket(choice, localPlayerName))
-
-            val remotePlayer = OnlinePlayer.wrap(new LocalPlayer(localPlayerName), channel)
-            val localPlayer = new OnlinePlayer(remotePlayerName, channel)
-
-            new Game(localPlayer, remotePlayer).startGame()
+            startGame(displayWindow, localPlayerName, remotePlayerName)
         }
+
+        def startGame(displayWindow: Boolean, localPlayerName: String, remotePlayerName: String): Unit = {
+            if (displayWindow) {
+                val remotePlayer = new OnlineFxPlayer(remotePlayerName, channel)
+                val localPlayer = OnlineFxPlayer.wrap(new LocalFxPlayer(localPlayerName), channel)
+                Platform.runLater(() => {
+                    new GameInterface(localPlayer, remotePlayer).startGame()
+                })
+                return
+            }
+            val remotePlayer = new OnlinePlayer(remotePlayerName, channel)
+            val localPlayer = OnlinePlayer.wrap(new LocalPlayer(localPlayerName), channel)
+            new GameCli(localPlayer, remotePlayer).startGame()
+        }
+
     }
 
 }
