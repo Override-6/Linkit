@@ -9,8 +9,8 @@
     <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="library" name="scala-library-2.13.3.jar" level="project" />
     <orderEntry type="module" module-name="API" exported="" />
-    <orderEntry type="module" module-name="FundamentalTasks" scope="PROVIDED" />
-    <orderEntry type="module" module-name="RelayController" />
-    <orderEntry type="module" module-name="PierrePapierCiseauxScalaProjectDemo" />
+    <orderEntry type="module" module-name="FundamentalTasks" exported="" />
+    <orderEntry type="module" module-name="RelayController" exported="" />
+    <orderEntry type="module" module-name="PierrePapierCiseauxScalaProjectDemo" exported="" />
   </component>
 </module>

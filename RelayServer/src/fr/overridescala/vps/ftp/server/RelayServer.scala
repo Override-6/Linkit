@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.server
 
 import java.net.{ServerSocket, SocketException}
 import java.nio.charset.Charset
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
@@ -17,13 +17,14 @@ import scala.util.control.NonFatal
 
 class RelayServer extends Relay {
 
+    Map.empty
 
     private val serverSocket = new ServerSocket(Constants.PORT)
     private val connectionsManager = new ConnectionsManager(this)
     //Awful thing, only for debugging, and easily switch from localhost to vps.
     private val taskFolderPath =
-        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks")
-        else Path.of("Tasks/")
+        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks")
+        else Paths.get("Tasks/")
     @volatile private var open = false
 
     /**

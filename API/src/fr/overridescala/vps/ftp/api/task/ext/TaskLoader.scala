@@ -46,7 +46,7 @@ class TaskLoader(relay: Relay, val tasksFolder: Path) {
             throw TaskExtensionLoadException(s"jar file $path must have a file called '$PropertyName' in his root")
 
         //Checking property content
-        val property = new Properties(0)
+        val property = new Properties()
         property.load(jarFile.getInputStream(propertyFile))
         val className = property.getProperty(MainClassField)
         if (className == null)

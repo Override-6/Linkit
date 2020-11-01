@@ -2,7 +2,6 @@ package fr.overridescala.vps.ftp.`extension`.controller.cli
 
 import java.util.concurrent.PriorityBlockingQueue
 
-import scala.annotation.tailrec
 import scala.io.StdIn
 
 object InputConsole {
@@ -10,7 +9,7 @@ object InputConsole {
     private val ticketQueue = new PriorityBlockingQueue[InputRequestTicket]()
 
     def requestNextInput(priority: Int = 0): String = {
-        val requestTicket = new InputRequestTicket(priority)
+        val requestTicket = new InputRequestTicket(defNextPriority(priority))
         ticketQueue.add(requestTicket)
         requestTicket.getLine
     }
@@ -29,7 +28,20 @@ object InputConsole {
         }
     }
 
-    start()
+    private def defNextPriority(priority: Int): Int = {
+        var queuePriority = priority
+        ticketQueue.forEach(incPriority)
+
+        def incPriority(ticket: InputRequestTicket): Unit = {
+            if (ticket.priority < priority)
+                return
+            if (ticket.priority == queuePriority)
+                queuePriority += 1
+        }
+
+        queuePriority
+    }
+
 
     private def start(): Unit = {
         val consoleThread = new Thread(() => {
@@ -42,7 +54,9 @@ object InputConsole {
         consoleThread.start()
     }
 
-    class InputRequestTicket(private val priority: Int) extends Comparable[InputRequestTicket] {
+    start()
+
+    class InputRequestTicket(val priority: Int) extends Comparable[InputRequestTicket] {
         @volatile private var line: String = _
         private val threadOwner = Thread.currentThread()
 

@@ -9,6 +9,7 @@ import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
 import java.net.URL;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class Utils {
 
@@ -44,7 +45,7 @@ public class Utils {
         String formatted = path
                 .replace('\\', File.separatorChar)
                 .replace('/', File.separatorChar);
-        return Path.of(formatted);
+        return Paths.get(formatted);
     }
 
     public static Path subPathOfUnknownFile(Path unknownFile, int from) {
@@ -52,8 +53,8 @@ public class Utils {
     }
 
     public static Path subPathOfUnknownFile(String path, int from) {
-        var currentNameCount = -1;
-        var subPathBuilder = new StringBuilder();
+        int currentNameCount = -1;
+        StringBuilder subPathBuilder = new StringBuilder();
         for (char c : path.toCharArray()) {
             if (c == '/' || c == '\\')
                 currentNameCount += 1;
@@ -61,13 +62,13 @@ public class Utils {
                 subPathBuilder.append(c);
             }
         }
-        return Path.of(subPathBuilder.toString().replace('\\', '/'));
+        return Paths.get(subPathBuilder.toString().replace('\\', '/'));
     }
 
     public static void checkPacketHeader(DataPacket packet, Seq<String> expectedHeaders) throws UnexpectedPacketException {
         if (expectedHeaders.contains(packet.header()))
             return;
-        var msg = expectedHeaders.mkString("or") + " expected, received : " + packet.header();
+        String msg = expectedHeaders.mkString("or") + " expected, received : " + packet.header();
         throw new UnexpectedPacketException(msg);
     }
 

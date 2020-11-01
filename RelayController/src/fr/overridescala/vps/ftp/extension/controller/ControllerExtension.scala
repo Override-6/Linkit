@@ -1,7 +1,5 @@
 package fr.overridescala.vps.ftp.`extension`.controller
 
-import java.util.Scanner
-
 import fr.overridescala.vps.ftp.`extension`.controller.auto.AutomationManager
 import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandManager
 import fr.overridescala.vps.ftp.`extension`.controller.cli.commands._

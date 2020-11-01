@@ -85,14 +85,14 @@ private object FolderWatcher {
             val builder = new StringBuilder
             for (dir <- subDirectories) {
                 val length = dir.files.length + dir.subDirectories.length
-                builder.append(" ".repeat(identLevel))
+                builder.append(" " * identLevel)
                         .append("-|")
                         .append(dir.path)
                         .append(" [").append(length).append(" items]\n")
                         .append(dir.toString0(identLevel + 1))
             }
             for (file <- files) {
-                builder.append(" ".repeat(identLevel))
+                builder.append(" " * identLevel)
                         .append('|')
                         .append(file)
                         .append('\n')

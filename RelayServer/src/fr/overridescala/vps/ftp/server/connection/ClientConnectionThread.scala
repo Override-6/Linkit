@@ -2,9 +2,7 @@ package fr.overridescala.vps.ftp.server.connection
 
 import java.io.{BufferedOutputStream, Closeable}
 import java.net.{Socket, SocketException}
-import java.util.concurrent.ThreadLocalRandom
 
-import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}

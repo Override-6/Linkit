@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import java.io.{FileNotFoundException, IOException}
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{EmptyPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
@@ -28,7 +28,7 @@ object DeleteFileTask {
     class Completer(pathString: String) extends TaskExecutor {
 
         override def execute(): Unit = {
-            val path = Path.of(pathString)
+            val path = Paths.get(pathString)
             if (Files.notExists(path)) {
                 channel.sendPacket(ErrorPacket(
                     classOf[FileNotFoundException].getName,

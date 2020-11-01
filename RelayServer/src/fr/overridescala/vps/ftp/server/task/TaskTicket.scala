@@ -4,7 +4,7 @@ import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 import java.net.Socket
 
-import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
 import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor}
 import fr.overridescala.vps.ftp.server.RelayServer
@@ -31,6 +31,7 @@ class TaskTicket(executor: TaskExecutor,
                 } catch {
                     case e: InvocationTargetException if e.getCause.isInstanceOf[TaskException] => Console.err.println(e.getMessage)
                     case e: InvocationTargetException => e.getCause.printStackTrace()
+                    case e: TaskOperationException => Console.err.println(e.getMessage)
                     case NonFatal(e) => e.printStackTrace()
                 }
             case _ =>

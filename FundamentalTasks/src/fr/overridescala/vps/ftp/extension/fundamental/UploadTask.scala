@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.`extension`.fundamental
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 import java.util
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
@@ -27,7 +27,7 @@ class UploadTask(private val desc: TransferDescription)
 
     override def execute(): Unit = {
         this.channel = channel
-        val source = Path.of(desc.source)
+        val source = Paths.get(desc.source)
 
         if (Files.isDirectory(source)) {
             //FIXME add a working folder to folder check.

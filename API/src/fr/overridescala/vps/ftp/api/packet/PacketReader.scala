@@ -19,9 +19,10 @@ class PacketReader(socket: Socket, packetHandler: PacketManager) extends Closeab
         if (nextLength == -1)
             return Optional.empty()
 
-        val bytes = input.readNBytes(nextLength)
+        val buff = new Array[Byte](nextLength)
+        input.read(buff)
         try {
-            return Optional.of(packetHandler.toPacket(bytes))
+            return Optional.of(packetHandler.toPacket(buff))
         } catch {
             case e: UnexpectedPacketException => e.printStackTrace()
         }
@@ -43,7 +44,7 @@ class PacketReader(socket: Socket, packetHandler: PacketManager) extends Closeab
             i += 1
         }
         val sizeString = new String(packetSizeBytes.slice(0, i - 1))
-        if (sizeString.isBlank)
+        if (sizeString.trim.isEmpty)
             return -1
         sizeString.toInt
     }

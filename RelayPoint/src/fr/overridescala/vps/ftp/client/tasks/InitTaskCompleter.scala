@@ -1,9 +1,8 @@
-package fr.overridescala.vps.ftp.`extension`.controller.tasks
+package fr.overridescala.vps.ftp.client.tasks
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.task.TaskExecutor
 
 class InitTaskCompleter(private val relay: Relay) extends TaskExecutor {

@@ -14,7 +14,7 @@ case class ErrorPacket(override val channelID: Int,
         def println(x: Any): Unit = Console.err.println(x)
 
         println(s"$errorType: $errorMsg")
-        if (!cause.isBlank)
+        if (!cause.isEmpty)
             println(s"caused by: $cause")
     }
 }

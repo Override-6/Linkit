@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.client
 import java.net.{InetSocketAddress, Socket}
 import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
-import java.nio.file.Path
+import java.nio.file.{Path, Paths}
 
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
@@ -12,7 +12,7 @@ import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
-import fr.overridescala.vps.ftp.`extension`.controller.tasks.ClientExtension
+import fr.overridescala.vps.ftp.client.tasks.ClientExtension
 
 import scala.util.control.NonFatal
 
@@ -23,8 +23,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val socket = new Socket(serverAddress.getAddress, serverAddress.getPort)
 
     private val taskFolderPath =
-        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Path.of("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\Tasks")
-        else Path.of("Tasks").toRealPath()
+        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\Tasks")
+        else Paths.get("Tasks").toRealPath()
     override val taskLoader = new TaskLoader(this, taskFolderPath)
     override val packetManager = new PacketManager()
     private val tasksHandler = new ClientTasksHandler(socket, this)

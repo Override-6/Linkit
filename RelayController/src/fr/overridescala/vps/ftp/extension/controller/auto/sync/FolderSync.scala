@@ -21,7 +21,7 @@ class FolderSync(relay: Relay,
     implicit private val channel: PacketChannel = relay.createChannel(targetRelay, channelID)
     private val ignoredPaths = ListBuffer.empty[String]
     private val random = ThreadLocalRandom.current()
-    private val folderWatcher = new FolderWatcher(Path.of(localPath))
+    private val folderWatcher = new FolderWatcher(Paths.get(localPath))
     folderWatcher.register(this)
 
     channel.setOnPacketAdded(p => {
@@ -49,7 +49,10 @@ class FolderSync(relay: Relay,
             return
         }
         val in = Files.newInputStream(affected)
-        channel.sendPacket(DataPacket(s"SUPLOAD:$affected", in.readAllBytes()))
+        val buff = new Array[Byte](Integer.MAX_VALUE)
+        val read = in.read(buff)
+        val bytes = buff.slice(0, read)
+        channel.sendPacket(DataPacket(s"SUPLOAD:$affected", bytes))
         in.close()
     }
 

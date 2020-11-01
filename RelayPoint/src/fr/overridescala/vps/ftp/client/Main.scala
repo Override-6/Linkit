@@ -4,7 +4,6 @@ import java.net.InetSocketAddress
 import java.util.Scanner
 
 import fr.overridescala.vps.ftp.`extension`.controller.ControllerExtension
-import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandUtils
 import fr.overridescala.vps.ftp.`extension`.fundamental.main.FundamentalExtension
 import fr.overridescala.vps.ftp.`extension`.ppc.PPCExtension
 import fr.overridescala.vps.ftp.api.utils.Constants

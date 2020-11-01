@@ -4,7 +4,7 @@ import java.io.BufferedOutputStream
 import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.server.RelayServer
@@ -54,8 +54,12 @@ class ConnectionTasksHandler(override val identifier: String,
      * @param taskIdentifier the task identifier
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
-    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit =
-        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, targetID, server, ownFreeWill))
+    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
+        val linkedRelayID = if (ownFreeWill) targetID else senderID
+        if (linkedRelayID == server.identifier)
+            throw new TaskOperationException("can't start a task from server to server !")
+        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, linkedRelayID, server, ownFreeWill))
+    }
 
     /**
      * closes the current client tasks thread

@@ -14,7 +14,7 @@ class CommandManager {
         commands.put(command.toLowerCase, executor)
 
     def perform(command: String): Unit = {
-        val args = parseLine(command.strip())
+        val args = parseLine(command.trim())
         val cmd = command.takeWhile(c => !Character.isWhitespace(c)).toLowerCase
         if (!commands.contains(cmd)) {
             Console.err.println(s"cmd '$cmd' not found.")
@@ -48,7 +48,7 @@ class CommandManager {
         val indexOfFirstBlankLine = line.indexWhere(Character.isWhitespace)
         if (indexOfFirstBlankLine == -1)
             return Array()
-        val rawArgs = line.substring(indexOfFirstBlankLine).strip()
+        val rawArgs = line.substring(indexOfFirstBlankLine).trim()
 
         var insideString = false
         var last = '\u0000'
