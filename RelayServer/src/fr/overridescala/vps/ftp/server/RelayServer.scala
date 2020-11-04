@@ -6,7 +6,7 @@ import java.nio.file.{Path, Paths}
 
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
-import fr.overridescala.vps.ftp.api.packet.{PacketChannel, PacketChannelManagerCache, SimplePacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, SyncPacketChannel, PacketChannel, PacketChannelManagerCache}
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
@@ -51,20 +51,24 @@ class RelayServer extends Relay {
 
 
     override def start(): Unit = {
-        println("Ready !")
         println("Current encoding is " + Charset.defaultCharset().name())
         println("Listening on port " + Constants.PORT)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
 
+        AsyncPacketChannel.launchThreadIfNot(packetManager)
         taskLoader.refreshTasks()
 
+        println("Ready !")
         open = true
         while (open) awaitClientConnection()
     }
 
 
-    override def createChannel(linkedRelayID: String, id: Int): PacketChannel =
-        createChannelAndManager(linkedRelayID, id)
+    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync =
+        createSync(linkedRelayID, id)
+
+    override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async =
+        createAsync(linkedRelayID, id)
 
     override def close(): Unit = {
         println("closing server...")
@@ -74,9 +78,14 @@ class RelayServer extends Relay {
         println("server closed !")
     }
 
-    def createChannelAndManager(linkedRelayID: String, id: Int): SimplePacketChannel = {
+    private[server] def createSync(linkedRelayID: String, id: Int): SyncPacketChannel = {
         val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
-        targetConnection.createChannel(id)
+        targetConnection.createSync(id)
+    }
+
+    private[server] def createAsync(linkedRelayID: String, id: Int): AsyncPacketChannel = {
+        val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
+        targetConnection.createAsync(id)
     }
 
     private def awaitClientConnection(): Unit = {

@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException
 import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
-import fr.overridescala.vps.ftp.api.packet.SimplePacketChannel
+import fr.overridescala.vps.ftp.api.packet.SyncPacketChannel
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor}
 import fr.overridescala.vps.ftp.server.RelayServer
 
@@ -17,7 +17,7 @@ class TaskTicket(executor: TaskExecutor,
                  relay: RelayServer,
                  ownFreeWill: Boolean) {
 
-    var channel: SimplePacketChannel = relay.createChannelAndManager(targetID, taskID)
+    var channel: SyncPacketChannel = relay.createSync(targetID, taskID)
     val taskName: String = executor.getClass.getSimpleName
 
     def abort(): Unit = {

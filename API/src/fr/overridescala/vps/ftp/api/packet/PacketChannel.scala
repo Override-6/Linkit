@@ -3,6 +3,7 @@ package fr.overridescala.vps.ftp.api.packet
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 
+//TODO Doc
 /**
  * this class link two Relay between them. As a Channel, it can send packet, or wait until a packet was received
  *
@@ -23,28 +24,29 @@ trait PacketChannel extends AutoCloseable {
      * */
     def sendPacket[P <: Packet](packet: P): Unit
 
-    /**
-     * Waits until a data packet is received and concerned about this task.
-     *
-     * @return the received packet
-     * @see [[Packet]]
-     * */
+}
 
-    def nextPacket(): Packet
+object PacketChannel {
 
-    def nextPacketAsP[P <: Packet](): P =
-        nextPacket().asInstanceOf[P]
+    trait Async extends PacketChannel {
+        def setOnPacketReceived(event: Packet => Unit): Unit
+    }
 
+    trait Sync extends PacketChannel {
+        /**
+         * Waits until a data packet is received and concerned about this task.
+         *
+         * @return the received packet
+         * @see [[DataPacket]]
+         * */
+        def nextPacket(): Packet
 
-    /**
-     * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
-     * */
-    def haveMorePackets: Boolean
+        def nextPacketAsP[P <: Packet](): P
 
-    //TODO create two kind of PacketChannels, ConcurrentPacketChannel, and AsyncPacketChannel.
-    /**
-     * @param event returns true if the packet must be enqueued,
-     * */
-    def setOnPacketAdded(event: Packet => Boolean): Unit
+        /**
+         * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
+         * */
+        def haveMorePackets: Boolean
+    }
 
 }

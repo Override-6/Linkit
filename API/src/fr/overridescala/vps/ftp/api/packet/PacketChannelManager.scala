@@ -9,6 +9,9 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * to add packets into a PacketChannel, or send special packet such as [[TaskInitPacket]]
  * */
 trait PacketChannelManager {
+    val channelID: Int
+
+    //TODO doc
 
     /**
      * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet
@@ -17,16 +20,10 @@ trait PacketChannelManager {
      * @throws UnexpectedPacketException if the packet id not equals the channel task ID
      * */
     def addPacket(packet: Packet): Unit
-    //TODO doc
 
     /**
      * Send a packet that will be used to determine the correct Task completer used by the targeted relay
      * */
     def sendInitPacket(initInfo: TaskInitInfo): Unit
-
-    /**
-     * the identifier of this task
-     * */
-    val channelID: Int
-
+    
 }

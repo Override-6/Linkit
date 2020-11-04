@@ -19,17 +19,16 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
-class SimplePacketChannel(private val socket: Socket,
-                          override val connectedIdentifier: String,
-                          override val ownerIdentifier: String,
-                          override val channelID: Int,
-                          private val cache: PacketChannelManagerCache,
-                          private val packetManager: PacketManager) extends PacketChannel with PacketChannelManager {
+class SyncPacketChannel(private val socket: Socket,
+                        override val connectedIdentifier: String,
+                        override val ownerIdentifier: String,
+                        override val channelID: Int,
+                        private val cache: PacketChannelManagerCache,
+                        private val packetManager: PacketManager) extends PacketChannel.Sync with PacketChannelManager {
 
     cache.registerPacketChannel(this)
 
     private val out = new BufferedOutputStream(socket.getOutputStream)
-    @volatile private var packetEvent: Packet => Boolean = _
 
     /**
      * this blocking queue stores the received packets until they are requested
@@ -49,31 +48,13 @@ class SimplePacketChannel(private val socket: Socket,
     }
 
     /**
-     * Waits until a data packet is received and concerned about this task.
-     *
-     * @return the received packet
-     * @see [[DataPacket]]
-     * */
-    override def nextPacket(): Packet = {
-        val packet = queue.takeLast()
-        packet
-    }
-
-    /**
-     * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
-     * */
-    override def haveMorePackets: Boolean =
-        !queue.isEmpty
-
-    /**
      * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet
      *
      * @param packet the packet to add
      * @throws UnexpectedPacketException if the packet id not equals the channel task ID
      * */
     override def addPacket(packet: Packet): Unit = {
-        if (packetEvent == null || packetEvent(packet))
-            queue.addFirst(packet)
+        queue.addFirst(packet)
     }
 
     override def close(): Unit = {
@@ -81,6 +62,22 @@ class SimplePacketChannel(private val socket: Socket,
         cache.unregisterPaketChannel(channelID)
     }
 
-    override def setOnPacketAdded(event: Packet => Boolean): Unit =
-        packetEvent = event
+    /**
+     * Waits until a data packet is received and concerned about this task.
+     *
+     * @return the received packet
+     * @see [[DataPacket]]
+     * */
+    override def nextPacket(): Packet =
+        queue.takeLast()
+
+
+    override def nextPacketAsP[P <: Packet](): P =
+        nextPacket().asInstanceOf[P]
+
+    /**
+     * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
+     * */
+    override def haveMorePackets: Boolean =
+        !queue.isEmpty
 }

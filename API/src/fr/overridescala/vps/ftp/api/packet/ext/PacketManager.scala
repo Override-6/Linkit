@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet.ext
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
-import fr.overridescala.vps.ftp.api.packet.Packet
+import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, Packet}
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket, TaskInitPacket}
 
 import scala.collection.mutable
@@ -20,6 +20,8 @@ class PacketManager {
     type PT <: Packet
 
     private val factories = withFundamentals()
+
+
 
     def registerIfAbsent[P <: Packet](packetClass: Class[P], packetFactory: PacketFactory[P]): Unit = {
         val factory = packetFactory.asInstanceOf[PacketFactory[PT]]

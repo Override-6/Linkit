@@ -2,11 +2,13 @@ package fr.overridescala.vps.ftp.api.task
 
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.packet.ext.{PacketFactory, PacketManager}
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{SyncPacketChannel, Packet}
 
 /**
- * The usable side for a [[TasksHandler]] to handle this task.
- * this trait can only execute (or pre-execute) tasks
+ * The class that will execute the Task.
+ * When the task is ready to be executed, the method [[execute()]] will be called.
+ * If the task was initialised by the local Relay, the getter [[initInfo]] will be used first.
+ * The used channels kind are forced to be [[SyncPacketChannel]] because the Tasks are meant to be used concurrently
  *
  * @see [[Task]]
  * @see [[TaskAction]]
@@ -15,7 +17,7 @@ abstract class TaskExecutor {
 
     private var packetManager: PacketManager = _
     private var canCloseChannel: Boolean = true
-    implicit protected var channel: PacketChannel = _
+    implicit protected var channel: SyncPacketChannel = _
 
 
     /**
@@ -32,7 +34,7 @@ abstract class TaskExecutor {
      * */
     def execute(): Unit
 
-    final def init(packetManager: PacketManager, packetChannel: PacketChannel): Unit = {
+    final def init(packetManager: PacketManager, packetChannel: SyncPacketChannel): Unit = {
         if (packetManager == null || packetChannel == null)
             throw new NullPointerException
         this.packetManager = packetManager

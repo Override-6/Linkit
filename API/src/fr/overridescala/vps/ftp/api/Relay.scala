@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api
 import java.io.Closeable
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, SyncPacketChannel, PacketChannel}
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskAction}
@@ -51,6 +51,9 @@ trait Relay extends Closeable with TaskScheduler {
      * */
     def start(): Unit
 
-    def createChannel(linkedRelayID: String, id: Int): PacketChannel
+    def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync
+
+    def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async
+
 
 }

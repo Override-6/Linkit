@@ -53,8 +53,11 @@ class ClientConnectionThread(socket: Socket,
         println(s"closed '$identifier' thread.")
     }
 
-    private[server] def createChannel(id: Int): SimplePacketChannel =
-        new SimplePacketChannel(socket, identifier, server.identifier, id, channelCache, packetManager)
+    private[server] def createSync(id: Int): SyncPacketChannel =
+        new SyncPacketChannel(socket, identifier, server.identifier, id, channelCache, packetManager)
+
+    private[server] def createAsync(id: Int): AsyncPacketChannel =
+        new AsyncPacketChannel(identifier, server.identifier, id, channelCache, socket)
 
     private[connection] def sendDeflectedBytes(bytes: Array[Byte]): Unit = {
         writer.write(bytes.length.toString.getBytes ++ PacketManager.SizeSeparator ++ bytes)
@@ -112,8 +115,8 @@ class ClientConnectionThread(socket: Socket,
 
     private def initialiseConnection(): TasksHandler = {
         setName(s"RP Connection (unknownId)")
-        implicit val channel: SimplePacketChannel =
-            new SimplePacketChannel(socket, "unknown", server.identifier, -6, channelCache, packetManager)
+        implicit val channel: SyncPacketChannel =
+            new SyncPacketChannel(socket, "unknown", server.identifier, -6, channelCache, packetManager)
         channel.sendInitPacket(TaskInitInfo.of("GID", "unknownId"))
 
         deflectInChannel(channel)

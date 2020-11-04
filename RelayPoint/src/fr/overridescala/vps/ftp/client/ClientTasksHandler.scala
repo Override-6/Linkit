@@ -102,8 +102,8 @@ protected class ClientTasksHandler(private val socket: Socket,
 
         val taskName: String = executor.getClass.getSimpleName
 
-        private[ClientTasksHandler] val channel: SimplePacketChannel =
-            relay.createChannelAndManager(linkedRelay, taskID)
+        private[ClientTasksHandler] val channel: SyncPacketChannel =
+            relay.createSyncChannel(linkedRelay, taskID)
 
         def abort(): Unit = {
             notifyExecutor()

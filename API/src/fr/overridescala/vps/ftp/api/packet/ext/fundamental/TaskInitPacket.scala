@@ -25,7 +25,7 @@ case class TaskInitPacket private(override val channelID: Int,
 }
 
 object TaskInitPacket {
-    def of(senderID: String, taskId: Int, info: TaskInitInfo): TaskInitPacket =
+    private[api] def of(senderID: String, taskId: Int, info: TaskInitInfo): TaskInitPacket =
         TaskInitPacket(taskId, info.targetID, senderID, info.taskType, info.content)
 
     object Factory extends PacketFactory[TaskInitPacket] {

@@ -93,12 +93,20 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         packetReader.close()
     }
 
-    override def createChannel(linkedRelayID: String, id: Int): PacketChannel = {
-        createChannelAndManager(linkedRelayID, id)
+    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
+        createSyncChannel(linkedRelayID, id)
     }
 
-    def createChannelAndManager(linkedRelayID: String, id: Int): SimplePacketChannel = {
-        new SimplePacketChannel(socket, linkedRelayID, identifier, id, channelCache, packetManager)
+    override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
+        createAsync(linkedRelayID, id)
+    }
+
+    private[client] def createSyncChannel(linkedRelayID: String, id: Int): SyncPacketChannel = {
+        new SyncPacketChannel(socket, linkedRelayID, identifier, id, channelCache, packetManager)
+    }
+
+    private[client] def createAsync(linkedRelayID: String, id: Int): AsyncPacketChannel = {
+        new AsyncPacketChannel(identifier, linkedRelayID, id, channelCache, socket)
     }
 
     private def ensureOpen(): Unit = {
