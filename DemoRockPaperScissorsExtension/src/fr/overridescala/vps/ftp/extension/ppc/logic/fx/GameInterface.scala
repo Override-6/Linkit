@@ -46,8 +46,8 @@ class GameInterface(player1: FxPlayer, player2: FxPlayer) extends Game(player1, 
         player1.setMoveContainer(gameView.container1)
         player2.setMoveContainer(gameView.container2)
 
-        player1View = player1.getMoveView()
-        player2View = player2.getMoveView()
+        player1View = player1.getMoveView
+        player2View = player2.getMoveView
 
         val box = new HBox(player1View, gameView, player2View)
         box.setAlignment(Pos.CENTER)

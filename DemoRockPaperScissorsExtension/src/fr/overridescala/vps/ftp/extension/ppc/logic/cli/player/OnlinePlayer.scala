@@ -7,7 +7,7 @@ import fr.overridescala.vps.ftp.api.packet.PacketChannel
  * Cette classe nécéssite un [[PacketChannel]], et qui se chargera de recevoir les packets.
  * */
 //noinspection RemoveRedundantReturn
-class OnlinePlayer(name: String, channel: PacketChannel) extends Player {
+class OnlinePlayer(name: String, channel: PacketChannel.Sync) extends Player {
 
     override def getName: String = name
 

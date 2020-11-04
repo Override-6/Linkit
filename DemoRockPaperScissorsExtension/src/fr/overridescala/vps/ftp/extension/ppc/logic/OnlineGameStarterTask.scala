@@ -30,7 +30,7 @@ class OnlineGameStarterTask(targetID: String, displayInterface: Boolean) extends
 
         println(s"Envoi de la requette à $targetID...")
         println("En attente de sa réponse...")
-        val response = channel.nextPacketAsP(): DataPacket
+        val response: DataPacket = channel.nextPacketAsP()
         val remotePlayerName = response.header match {
             case "oui" => response.contentAsString
             case "non" => error(s"Le joueur distant n'a pas voulu jouer avec toi :c")

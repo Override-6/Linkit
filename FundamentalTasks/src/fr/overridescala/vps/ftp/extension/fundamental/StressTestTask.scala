@@ -75,7 +75,7 @@ object StressTestTask {
         println()
     }
 
-    private def download(channel: PacketChannel, totalDataLength: Long): Unit = {
+    private def download(channel: PacketChannel.Sync, totalDataLength: Long): Unit = {
         println("DOWNLOAD")
         var packet = channel.nextPacket().asInstanceOf[DataPacket]
         var totalReceived: Float = 0

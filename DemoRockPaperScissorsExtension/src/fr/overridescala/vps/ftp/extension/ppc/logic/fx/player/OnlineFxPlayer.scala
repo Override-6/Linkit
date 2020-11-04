@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.packet.PacketChannel
 /**
  * même comportement que [[OnlinePlayer]] mais avec la surcouche graphique
  * */
-class OnlineFxPlayer(name: String, channel: PacketChannel) extends OnlinePlayer(name, channel) with FxPlayer {
+class OnlineFxPlayer(name: String, channel: PacketChannel.Sync) extends OnlinePlayer(name, channel) with FxPlayer {
 
     private var container: MoveContainer = _
 
@@ -47,7 +47,7 @@ object OnlineFxPlayer {
         override def setMoveContainer(moveContainer: MoveContainer): Unit =
             player.setMoveContainer(moveContainer)
 
-        override def getMoveView: MoveView = player.getMoveView()
+        override def getMoveView: MoveView = player.getMoveView
     }
 
 }

@@ -18,15 +18,14 @@ class FolderSync(relay: Relay,
                  targetPath: String,
                  channelID: Int) extends Automation with PathEventListener {
 
-    implicit private val channel: PacketChannel = relay.createChannel(targetRelay, channelID)
+    implicit private val channel: PacketChannel.Async = relay.createAsyncChannel(targetRelay, channelID)
     private val ignoredPaths = ListBuffer.empty[String]
     private val random = ThreadLocalRandom.current()
     private val folderWatcher = new FolderWatcher(Paths.get(localPath))
     folderWatcher.register(this)
 
-    channel.setOnPacketAdded(p => {
+    channel.setOnPacketReceived(p => {
         handlePacket(p)
-        false
     })
 
     override def start(): Unit = folderWatcher.start(1500)
