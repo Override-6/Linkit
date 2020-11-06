@@ -1,8 +1,9 @@
 package fr.overridescala.vps.ftp.`extension`.fundamental
 
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.EmptyPacket
+import fr.overridescala.vps.ftp.`extension`.fundamental.PingTask.TYPE
+import fr.overridescala.vps.ftp.api.packet.Packet
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket, SystemPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
-import PingTask.TYPE
 
 class PingTask(private val targetId: String) extends Task[Long](targetId) {
 
@@ -10,12 +11,23 @@ class PingTask(private val targetId: String) extends Task[Long](targetId) {
         TaskInitInfo.of(TYPE, targetId)
 
     override def execute(): Unit = {
+        val p1 = testPacket(EmptyPacket())
+        val p2 = testPacket(DataPacket(""))
+        val p3 = testPacket(ErrorPacket("", ""))
+        val p4 = testPacket(SystemPacket(""))
+        success((p1 + p2 + p3 + p4) / 4)
+    }
+
+    def testPacket(packet: Packet): Long = {
         val t0 = System.currentTimeMillis()
-        channel.sendPacket(EmptyPacket())
+        channel.sendPacket(packet)
         channel.nextPacket()
         val t1 = System.currentTimeMillis()
-        success(t1 - t0)
+        val time = t1 - t0
+        println(packet.getClass.getSimpleName + s" sent and received in $time ms")
+        time
     }
+
 }
 
 object PingTask {
@@ -23,9 +35,8 @@ object PingTask {
 
     class Completer extends TaskExecutor {
         override def execute(): Unit = {
-            channel.nextPacket() //waiting ping packet
-            val packet = EmptyPacket()
-            channel.sendPacket(packet)
+            for (_ <- 1 to 4)
+                channel.sendPacket(channel.nextPacket())
         }
 
     }
