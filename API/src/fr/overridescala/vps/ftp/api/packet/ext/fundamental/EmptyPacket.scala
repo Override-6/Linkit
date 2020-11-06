@@ -10,26 +10,19 @@ case class EmptyPacket private(override val channelID: Int,
 }
 
 object EmptyPacket {
-    private val TYPE = "[empty]".getBytes
 
     def apply()(implicit channel: PacketChannel): EmptyPacket =
-        new EmptyPacket(channel.channelID, channel.ownerIdentifier, channel.connectedIdentifier)
+        new EmptyPacket(channel.channelID, channel.ownerID, channel.connectedID)
 
     object Factory extends PacketFactory[EmptyPacket] {
 
-        import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils._
+        override def decompose(implicit packet: EmptyPacket): Array[Byte] =
+            new Array[Byte](0)
 
-        override def decompose(implicit packet: EmptyPacket): Array[Byte] = {
-            val channelID = s"${packet.channelID}".getBytes
-            TYPE ++ channelID
-        }
+        override def canTransform(implicit bytes: Array[Byte]): Boolean = bytes.isEmpty
 
-        override def canTransform(implicit bytes: Array[Byte]): Boolean = bytes.containsSlice(TYPE)
-
-        override def build(senderID: String, targetId: String)(implicit bytes: Array[Byte]): EmptyPacket = {
-            val channelID = new String(cutEnd(TYPE)).toInt
+        override def build(channelID: Int, senderID: String, targetId: String)(implicit bytes: Array[Byte]): EmptyPacket =
             new EmptyPacket(channelID, senderID, targetId)
-        }
 
     }
 

@@ -55,5 +55,4 @@ trait Relay extends Closeable with TaskScheduler {
 
     def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async
 
-
 }

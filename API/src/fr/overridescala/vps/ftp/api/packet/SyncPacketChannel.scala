@@ -14,14 +14,14 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  *
  * @param socket the socket where packets will be sent
  * @param channelID the identifier attributed to this PacketChannel
- * @param ownerIdentifier the relay identifier of this channel owner
+ * @param ownerID the relay identifier of this channel owner
  *
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
 class SyncPacketChannel(private val socket: Socket,
-                        override val connectedIdentifier: String,
-                        override val ownerIdentifier: String,
+                        override val connectedID: String,
+                        override val ownerID: String,
                         override val channelID: Int,
                         private val cache: PacketChannelManagerCache,
                         private val packetManager: PacketManager) extends PacketChannel.Sync with PacketChannelManager {
@@ -38,7 +38,7 @@ class SyncPacketChannel(private val socket: Socket,
 
     //TODO doc
     override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
-        val packet = TaskInitPacket.of(ownerIdentifier, channelID, initInfo)
+        val packet = TaskInitPacket.of(ownerID, channelID, initInfo)
         sendPacket(packet)
     }
 

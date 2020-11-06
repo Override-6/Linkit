@@ -3,11 +3,11 @@ package fr.overridescala.vps.ftp.client
 import java.net.{InetSocketAddress, Socket}
 import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
-import java.nio.file.{Path, Paths}
+import java.nio.file.Paths
 
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.packet._
+import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, SystemPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
@@ -37,6 +37,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override val properties = new RelayProperties
     private val channelCache = new PacketChannelManagerCache
 
+    private implicit val systemChannel: PacketChannel.Async = createAsyncChannel(Constants.SERVER_ID, -2)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -55,6 +56,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             //enable the task management
             tasksHandler.start()
             taskLoader.refreshTasks()
+            AsyncPacketChannel.launchThreadIfNot(packetManager)
 
             open = true
             while (open) {
@@ -88,25 +90,22 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     override def close(): Unit = {
         open = false
+        systemChannel.sendPacket(SystemPacket("DISCONNECT"))
         socket.close()
         tasksHandler.close()
         packetReader.close()
     }
 
     override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
-        createSyncChannel(linkedRelayID, id)
+        createSyncChannel0(linkedRelayID, id)
     }
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
-        createAsync(linkedRelayID, id)
-    }
-
-    private[client] def createSyncChannel(linkedRelayID: String, id: Int): SyncPacketChannel = {
-        new SyncPacketChannel(socket, linkedRelayID, identifier, id, channelCache, packetManager)
-    }
-
-    private[client] def createAsync(linkedRelayID: String, id: Int): AsyncPacketChannel = {
         new AsyncPacketChannel(identifier, linkedRelayID, id, channelCache, socket)
+    }
+
+    private[client] def createSyncChannel0(linkedRelayID: String, id: Int): SyncPacketChannel = {
+        new SyncPacketChannel(socket, linkedRelayID, identifier, id, channelCache, packetManager)
     }
 
     private def ensureOpen(): Unit = {

@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.api.task
 
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.packet.ext.{PacketFactory, PacketManager}
-import fr.overridescala.vps.ftp.api.packet.{SyncPacketChannel, Packet}
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel, SyncPacketChannel}
 
 /**
  * The class that will execute the Task.
@@ -17,7 +17,7 @@ abstract class TaskExecutor {
 
     private var packetManager: PacketManager = _
     private var canCloseChannel: Boolean = true
-    implicit protected var channel: SyncPacketChannel = _
+    implicit protected var channel: PacketChannel.Sync = _
 
 
     /**

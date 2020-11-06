@@ -16,9 +16,12 @@ object PacketUtils {
         new String(cut(a, b))
 
     def redundantBytesOf(packet: Packet): Array[Byte] = {
+        val channelID = packet.channelID.toString.getBytes
         val targetID = packet.targetID.getBytes
         val senderID = packet.senderID.getBytes
-        senderID ++ PacketManager.SenderSeparator ++ targetID ++ PacketManager.TargetSeparator
+        channelID ++ PacketManager.ChannelIDSeparator ++
+                senderID ++ PacketManager.SenderSeparator ++
+                targetID ++ PacketManager.TargetSeparator
     }
 
 }

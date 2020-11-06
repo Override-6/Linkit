@@ -66,8 +66,8 @@ private object FolderWatcher {
             files.foreach(_.compareWithCurrent(onAnomaly))
 
             //handling file creation :
-            val currentSubPaths = retrieveFiles(path)
-            val filesPath = files.map(_.getPath)
+            val currentSubPaths = Files.list(path).toArray[Path](l => new Array[Path](l))
+            val filesPath = files.map(_.getPath) ++ subDirectories.map(_.path)
             val renamedPaths = files.filter(_.lastEventKind == RENAME).map(_.getPath)
 
             for (path <- currentSubPaths) {

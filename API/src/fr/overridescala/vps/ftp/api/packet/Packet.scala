@@ -8,19 +8,7 @@ trait Packet {
      * */
     val channelID: Int
 
-    /**
-     * the data content
-     * */
-    val content: Array[Byte] = Array()
-
-    /**
-     * @return true if this packet contains content, false instead
-     * */
-    lazy val haveContent: Boolean = !content.isEmpty
-
     lazy val className: String = getClass.getSimpleName
-
-    lazy val isFree: Boolean = channelID == -1
 
 
     /**

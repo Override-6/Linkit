@@ -30,7 +30,13 @@ class FolderSync(relay: Relay,
 
     override def start(): Unit = folderWatcher.start(1500)
 
-    override def onCreate(affected: Path): Unit = onModify(affected)
+    override def onCreate(affected: Path): Unit = {
+        if (Files.isDirectory(affected)) {
+            channel.sendPacket(DataPacket("mkdirs", affected.toString))
+            return
+        }
+        onModify(affected)
+    }
 
     override def onDelete(affected: Path): Unit = {
         val affectedPath = affected.toString
@@ -48,7 +54,7 @@ class FolderSync(relay: Relay,
             return
         }
         val in = Files.newInputStream(affected)
-        val buff = new Array[Byte](Integer.MAX_VALUE)
+        val buff = new Array[Byte](Files.size(affected).toInt)
         val read = in.read(buff)
         val bytes = buff.slice(0, read)
         channel.sendPacket(DataPacket(s"SUPLOAD:$affected", bytes))
@@ -56,12 +62,13 @@ class FolderSync(relay: Relay,
     }
 
     override def onRename(affected: Path, newName: String): Unit = {
+        println(s"RENAME : $newName")
         val affectedPath = affected.toString
         if (ignoredPaths.contains(affectedPath)) {
             ignoredPaths -= affectedPath
             return
         }
-        channel.sendPacket(DataPacket(s"rename to $newName", affected.toString))
+        channel.sendPacket(DataPacket(s"rename>$newName", affected.toString))
     }
 
     private def deletePath(path: Path): Unit = {
@@ -76,7 +83,6 @@ class FolderSync(relay: Relay,
                 Files.delete(path)
             } else {
                 Files.list(path).forEach(deleteRecursively)
-                Files.move(path, path.resolveSibling(path.getFileName + s"(added to remove list) #${random.nextInt(0, Short.MaxValue)}"))
             }
         }
     }
@@ -90,12 +96,11 @@ class FolderSync(relay: Relay,
         }
         val path = toLocal(new String(data.content))
 
-        if (order.startsWith("rename to") && Files.exists(path)) {
-            val newName = order.split(" ").last
+        if (order.startsWith("rename>") && Files.exists(path)) {
+            val newName = order.split(">").last
             val renamed = path.resolveSibling(newName)
-            println(s"renamed = ${renamed}")
             ignoredPaths += renamed.toString
-            Files.move(path, renamed, StandardCopyOption.REPLACE_EXISTING)
+            Files.move(path, renamed, StandardCopyOption.ATOMIC_MOVE)
             return
         }
 

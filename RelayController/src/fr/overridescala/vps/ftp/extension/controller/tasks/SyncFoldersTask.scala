@@ -35,9 +35,10 @@ object SyncFoldersTask {
         private val senderFolder = contentString.substring(folderPathLength + LOCAL_PATH_SEPARATOR.length, contentString.length)
 
         override def execute(): Unit = {
-            val channelID = new String(channel.nextPacket().content).toInt
+            val response = channel.nextPacketAsP(): DataPacket
+            val channelID = new String(response.content).toInt
             val automationManager: AutomationManager = relay.properties.getProperty("automation_manager")
-            val automation = new FolderSync(relay, channel.connectedIdentifier, folder, senderFolder, channelID)
+            val automation = new FolderSync(relay, channel.connectedID, folder, senderFolder, channelID)
             automationManager.register(automation)
         }
     }

@@ -14,8 +14,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class AsyncPacketChannel(override val ownerIdentifier: String,
-                         override val connectedIdentifier: String,
+class AsyncPacketChannel(override val ownerID: String,
+                         override val connectedID: String,
                          override val channelID: Int,
                          val cache: PacketChannelManagerCache,
                          socket: Socket) extends PacketChannel.Async with PacketChannelManager {
@@ -42,7 +42,7 @@ class AsyncPacketChannel(override val ownerIdentifier: String,
     }
 
     override def sendInitPacket(initInfo: TaskInitInfo): Unit =
-        sendPacket(TaskInitPacket.of(ownerIdentifier, channelID, initInfo))
+        throw new UnsupportedOperationException()
 
     override def close(): Unit =
         cache.unregisterPaketChannel(channelID)
@@ -61,16 +61,17 @@ object AsyncPacketChannel {
     def launchThreadIfNot(packetManager: PacketManager): Unit = {
         if (uploader == null)
             uploader = new UploadThread(packetManager)
+        uploader.start()
     }
 
     class UploadThread(packetManager: PacketManager) extends Thread {
         val queue: BlockingDeque[PacketTicket] = new LinkedBlockingDeque()
 
         override def run(): Unit = {
-            println(getClass.getCanonicalName + " started !")
+            println("Async Upload Thread started !")
             while (true) {
                 try {
-                    queue.pollLast().send(packetManager)
+                    queue.takeLast().send(packetManager)
                 } catch {
                     case NonFatal(e) => e.printStackTrace()
                 }
@@ -82,6 +83,7 @@ object AsyncPacketChannel {
     private[AsyncPacketChannel] class PacketTicket(packet: Packet, out: BufferedOutputStream) {
         def send(packetManager: PacketManager): Unit = {
             out.write(packetManager.toBytes(packet))
+            out.flush()
         }
     }
 

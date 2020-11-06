@@ -13,11 +13,11 @@ import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
  * @param header  the header of the packet, or the type of this data. Headers allows to classify packets / data to send or receive
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
-case class DataPacket(override val channelID: Int,
-                      override val targetID: String,
-                      override val senderID: String,
-                      header: String,
-                      override val content: Array[Byte]) extends Packet {
+class DataPacket(override val channelID: Int,
+                 override val targetID: String,
+                 override val senderID: String,
+                 val header: String,
+                 val content: Array[Byte]) extends Packet {
 
     val contentAsString: String = new String(content)
 
@@ -27,13 +27,17 @@ case class DataPacket(override val channelID: Int,
     override def toString: String =
         s"DataPacket{id: $channelID, header: $header, target: $targetID, sender: $senderID, content: ${new String(content)}}"
 
+    /**
+     * @return true if this packet contains content, false instead
+     * */
+    lazy val haveContent: Boolean = !content.isEmpty
 
 }
 
 object DataPacket {
 
     def apply(header: String, content: Array[Byte] = Array())(implicit channel: PacketChannel): DataPacket =
-        DataPacket(channel.channelID, channel.connectedIdentifier, channel.ownerIdentifier, header, content)
+        new DataPacket(channel.channelID, channel.connectedID, channel.ownerID, header, content)
 
     def apply(header: String, content: String)(implicit channel: PacketChannel): DataPacket =
         apply(header, content.getBytes)
@@ -45,30 +49,26 @@ object DataPacket {
         apply("", content)
 
     def apply(targetID: String, header: String, content: Array[Byte])(implicit relay: Relay): DataPacket =
-        DataPacket(-1, targetID, relay.identifier, header, content)
+        new DataPacket(-1, targetID, relay.identifier, header, content)
 
     object Factory extends PacketFactory[DataPacket] {
 
         import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils._
 
         private val TYPE = "[data]".getBytes
-        private val HEADER = "<header>".getBytes
         private val CONTENT = "<content>".getBytes
 
         override def decompose(implicit packet: DataPacket): Array[Byte] = {
-            val channelID = packet.channelID.toString.getBytes
             val header = packet.header.getBytes
-            TYPE ++ channelID ++
-                    HEADER ++ header ++
+            TYPE ++ header ++
                     CONTENT ++ packet.content
         }
 
         override def canTransform(implicit bytes: Array[Byte]): Boolean =
             bytes.containsSlice(TYPE)
 
-        override def build(senderID: String, targetId: String)(implicit bytes: Array[Byte]): DataPacket = {
-            val channelID = cutString(TYPE, HEADER).toInt
-            val header = cutString(HEADER, CONTENT)
+        override def build(channelID: Int, senderID: String, targetId: String)(implicit bytes: Array[Byte]): DataPacket = {
+            val header = cutString(TYPE, CONTENT)
             val content = cutEnd(CONTENT)
             new DataPacket(channelID, targetId, senderID, header, content)
         }

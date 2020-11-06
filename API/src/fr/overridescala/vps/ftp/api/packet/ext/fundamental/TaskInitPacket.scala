@@ -13,7 +13,7 @@ case class TaskInitPacket private(override val channelID: Int,
                                   override val targetID: String,
                                   override val senderID: String,
                                   taskType: String,
-                                  override val content: Array[Byte] = Array()) extends Packet {
+                                  content: Array[Byte] = Array()) extends Packet {
 
     /**
      * Represents this packet as a String
@@ -21,7 +21,10 @@ case class TaskInitPacket private(override val channelID: Int,
     override def toString: String =
         s"TaskInitPacket{taskID: $channelID, taskType: $taskType, target: $targetID, sender: $senderID, additionalContent: ${new String(content)}}"
 
-
+    /**
+     * @return true if this packet contains content, false instead
+     * */
+    lazy val haveContent: Boolean = !content.isEmpty
 }
 
 object TaskInitPacket {
@@ -33,23 +36,19 @@ object TaskInitPacket {
         import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils._
 
         private val TYPE = "[task_init]".getBytes
-        private val TASK_TYPE = "<task_type>".getBytes
         private val CONTENT = "<content>".getBytes
 
         override def decompose(implicit packet: TaskInitPacket): Array[Byte] = {
-            val channelID = packet.channelID.toString.getBytes
             val typeBytes = packet.taskType.getBytes
-            TYPE ++ channelID ++
-                    TASK_TYPE ++ typeBytes ++
+            TYPE ++ typeBytes ++
                     CONTENT ++ packet.content
         }
 
         override def canTransform(implicit bytes: Array[Byte]): Boolean =
-            bytes.containsSlice(TYPE)
+            bytes.startsWith(TYPE)
 
-        override def build(senderID: String, targetId: String)(implicit bytes: Array[Byte]): TaskInitPacket = {
-            val channelID = cutString(TYPE, TASK_TYPE).toInt
-            val taskType = cutString(TASK_TYPE, CONTENT)
+        override def build(channelID: Int, senderID: String, targetId: String)(implicit bytes: Array[Byte]): TaskInitPacket = {
+            val taskType = cutString(TYPE, CONTENT)
             val content = cutEnd(CONTENT)
             TaskInitPacket(channelID, targetId, senderID, taskType, content)
         }
