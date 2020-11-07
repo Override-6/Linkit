@@ -14,8 +14,7 @@ class PingTask(private val targetId: String) extends Task[Long](targetId) {
         val p1 = testPacket(EmptyPacket())
         val p2 = testPacket(DataPacket(""))
         val p3 = testPacket(ErrorPacket("", ""))
-        val p4 = testPacket(SystemPacket(""))
-        success((p1 + p2 + p3 + p4) / 4)
+        success((p1 + p2 + p3) / 4)
     }
 
     def testPacket(packet: Packet): Long = {
@@ -35,7 +34,7 @@ object PingTask {
 
     class Completer extends TaskExecutor {
         override def execute(): Unit = {
-            for (_ <- 1 to 4)
+            for (_ <- 1 to 3)
                 channel.sendPacket(channel.nextPacket())
         }
 
