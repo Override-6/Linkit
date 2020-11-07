@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.packet.ext.fundamental
 import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
-case class ErrorPacket(override val channelID: Int,
+case class ErrorPacket (override val channelID: Int,
                        override val senderID: String,
                        override val targetID: String,
                        errorType: String,

@@ -2,7 +2,6 @@ package fr.overridescala.vps.ftp.client
 
 import java.io.BufferedOutputStream
 import java.lang.reflect.InvocationTargetException
-import java.net.Socket
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
@@ -12,12 +11,11 @@ import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler, TaskExecut
 
 import scala.util.control.NonFatal
 
-protected class ClientTasksHandler(private val socket: Socket,
+protected class ClientTasksHandler(private val socket: DynamicSocket,
                                    private val relay: RelayPoint) extends TasksHandler {
 
     private val packetManager = relay.packetManager
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
-    private val out = new BufferedOutputStream(socket.getOutputStream)
     private var tasksThread: Thread = _
 
     @volatile private var currentTicket: TaskTicket = _
@@ -47,8 +45,7 @@ protected class ClientTasksHandler(private val socket: Socket,
                     packet.senderID,
                     ErrorPacket.ABORT_TASK,
                     msg)
-                out.write(packetManager.toBytes(errorPacket))
-                out.flush()
+                socket.write(packetManager.toBytes(errorPacket))
         }
     }
 

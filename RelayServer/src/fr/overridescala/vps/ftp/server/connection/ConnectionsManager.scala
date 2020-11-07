@@ -4,7 +4,7 @@ import java.io.Closeable
 import java.net.{Socket, SocketAddress}
 
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, RelayInitialisationException}
-import fr.overridescala.vps.ftp.api.packet.Packet
+import fr.overridescala.vps.ftp.api.packet.{DynamicSocket, Packet}
 import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.collection.mutable
@@ -32,8 +32,8 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * @param socket the socket to start the connection
      * @throws RelayInitialisationException when a id is already set for this address, or another connection is known under this id.
      * */
-    def register(socket: Socket): Unit = {
-        val address = socket.getRemoteSocketAddress
+    def register(socket: SocketContainer): Unit = {
+        val address = socket.remoteSocketAddress()
         checkAddress(address)
         val connection = new ClientConnectionThread(socket, server, this)
         connection.start()
@@ -101,7 +101,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * Deflects a packet to his associated [[ClientConnectionThread]]
      *
      * @throws RelayException if no connection where found for this packet.
-     * @param packet the packet to deflect
+     * @param bytes the packet bytes to deflect
      * */
     private[connection] def deflectTo(bytes: Array[Byte], target: String): Unit = {
         val connection = getConnectionFromIdentifier(target)

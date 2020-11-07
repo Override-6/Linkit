@@ -19,7 +19,7 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
-class SyncPacketChannel(private val socket: Socket,
+class SyncPacketChannel(private val socket: DynamicSocket,
                         override val connectedID: String,
                         override val ownerID: String,
                         override val channelID: Int,
@@ -27,8 +27,6 @@ class SyncPacketChannel(private val socket: Socket,
                         private val packetManager: PacketManager) extends PacketChannel.Sync with PacketChannelManager {
 
     cache.registerPacketChannel(this)
-
-    private val out = new BufferedOutputStream(socket.getOutputStream)
 
     /**
      * this blocking queue stores the received packets until they are requested
@@ -43,8 +41,7 @@ class SyncPacketChannel(private val socket: Socket,
     }
 
     override def sendPacket[P <: Packet](packet: P): Unit = {
-        out.write(packetManager.toBytes(packet))
-        out.flush()
+        socket.write(packetManager.toBytes(packet))
     }
 
     /**

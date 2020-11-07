@@ -1,7 +1,5 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.io.BufferedOutputStream
-import java.net.Socket
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
@@ -18,17 +16,16 @@ class AsyncPacketChannel(override val ownerID: String,
                          override val connectedID: String,
                          override val channelID: Int,
                          val cache: PacketChannelManagerCache,
-                         socket: Socket) extends PacketChannel.Async with PacketChannelManager {
+                         socket: DynamicSocket) extends PacketChannel.Async with PacketChannelManager {
 
     cache.registerPacketChannel(this)
 
     private var onPacketReceived: Packet => Unit = _
-    private val out = new BufferedOutputStream(socket.getOutputStream)
 
     override def sendPacket[P <: Packet](packet: P): Unit = {
         if (packet.isInstanceOf[TaskInitPacket])
             throw UnexpectedPacketException("can not send a TaskInitPacket.")
-        send(packet, out)
+        send(packet, socket)
     }
 
     override def addPacket(packet: Packet): Unit = {
@@ -80,15 +77,14 @@ object AsyncPacketChannel {
 
     }
 
-    private[AsyncPacketChannel] class PacketTicket(packet: Packet, out: BufferedOutputStream) {
+    private[AsyncPacketChannel] class PacketTicket(packet: Packet, socket: DynamicSocket) {
         def send(packetManager: PacketManager): Unit = {
-            out.write(packetManager.toBytes(packet))
-            out.flush()
+            socket.write(packetManager.toBytes(packet))
         }
     }
 
-    private def send(packet: Packet, owner: BufferedOutputStream): Unit = {
-        uploader.queue.addFirst(new PacketTicket(packet, owner))
+    private def send(packet: Packet, socket: DynamicSocket): Unit = {
+        uploader.queue.addFirst(new PacketTicket(packet, socket))
     }
 
 }

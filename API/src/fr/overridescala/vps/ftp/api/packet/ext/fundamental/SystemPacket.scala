@@ -6,12 +6,12 @@ import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 class SystemPacket private(override val channelID: Int,
                            override val senderID: String,
                            override val targetID: String,
-                           val order: String) extends Packet {
-
-
-}
+                           val order: String) extends Packet
 
 object SystemPacket {
+
+    val ClientClose = "CLIENT_CLOSE"
+    val ServerClose = "SERVER_CLOSE"
 
     def apply(order: String)(implicit systemChannel: PacketChannel) =
         new SystemPacket(systemChannel.channelID, systemChannel.ownerID, systemChannel.connectedID, order)

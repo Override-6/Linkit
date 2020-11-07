@@ -4,14 +4,15 @@ import java.net.{ServerSocket, SocketException}
 import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
+import com.sun.deploy.ClientContainer
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
-import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, SyncPacketChannel, PacketChannel, PacketChannelManagerCache}
+import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, PacketChannelManagerCache, SyncPacketChannel}
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
-import fr.overridescala.vps.ftp.server.connection.ConnectionsManager
+import fr.overridescala.vps.ftp.server.connection.{ConnectionsManager, SocketContainer}
 
 import scala.util.control.NonFatal
 
@@ -91,7 +92,17 @@ class RelayServer extends Relay {
     private def awaitClientConnection(): Unit = {
         try {
             val clientSocket = serverSocket.accept()
-            connectionsManager.register(clientSocket)
+            val address = clientSocket.getRemoteSocketAddress
+            val connection = connectionsManager.getConnectionFromAddress(address)
+            if (connection == null) {
+                val socketContainer = new SocketContainer()
+                socketContainer.set(clientSocket)
+                connectionsManager.register(socketContainer)
+                return
+            }
+
+            connection.updateSocket(clientSocket)
+
         } catch {
             case e: RelayException => Console.err.println(e.getMessage)
             case e: SocketException if e.getMessage == "Socket closed" =>

@@ -5,7 +5,7 @@ import java.net.{Socket, SocketException}
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, SystemPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.packet.ext.{PacketManager, PacketUtils}
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.server.RelayServer
@@ -13,14 +13,13 @@ import fr.overridescala.vps.ftp.server.task.ConnectionTasksHandler
 
 import scala.util.control.NonFatal
 
-class ClientConnectionThread(socket: Socket,
+class ClientConnectionThread(socket: SocketContainer,
                              server: RelayServer,
                              manager: ConnectionsManager) extends Thread with Closeable {
 
 
     private val packetManager = server.packetManager
     private val packetReader: PacketReader = new PacketReader(socket)
-    private val writer = new BufferedOutputStream(socket.getOutputStream)
     private val channelCache = new PacketChannelManagerCache
 
     val tasksHandler: TasksHandler = initialiseConnection()
@@ -36,19 +35,22 @@ class ClientConnectionThread(socket: Socket,
             while (open)
                 update(handlePacket)
         } catch {
-            case e: SocketException if e.getMessage == "Connection reset" => Console.err.println(s"client '$identifier' disconnected.")
             case NonFatal(e) => e.printStackTrace()
         }
         close()
     }
 
     override def close(): Unit = {
-        val identifier = tasksHandler.identifier
         println(s"closing '$identifier' thread")
+
+        implicit val channel: SyncPacketChannel = server.createSync(identifier, -6)
+        channel.sendPacket(SystemPacket(SystemPacket.ServerClose))
+        channel.close()
+
         tasksHandler.close()
         socket.close()
-        packetReader.close()
-        manager.unregister(socket.getRemoteSocketAddress)
+        manager.unregister(socket.remoteSocketAddress())
+
         open = false
         println(s"closed '$identifier' thread.")
     }
@@ -59,9 +61,11 @@ class ClientConnectionThread(socket: Socket,
     private[server] def createAsync(id: Int): AsyncPacketChannel =
         new AsyncPacketChannel(identifier, server.identifier, id, channelCache, socket)
 
+    private[server] def updateSocket(socket: Socket): Unit =
+        this.socket.set(socket)
+
     private[connection] def sendDeflectedBytes(bytes: Array[Byte]): Unit = {
-        writer.write(bytes.length.toString.getBytes ++ PacketManager.SizeSeparator ++ bytes)
-        writer.flush()
+        socket.write(bytes.length.toString.getBytes ++ PacketManager.SizeSeparator ++ bytes)
     }
 
     private def handlePacket(packet: Packet): Unit = {
@@ -83,33 +87,53 @@ class ClientConnectionThread(socket: Socket,
 
     private def update(onPacketReceived: Packet => Unit): Unit = {
         try {
-            val bytes = packetReader.readNextPacketBytes()
-            if (bytes == null)
-                return
-
-            val target = getTargetID(bytes)
-            if (target == server.identifier) {
-                onPacketReceived(packetManager.toPacket(bytes))
-                return
-            }
-            manager.deflectTo(bytes, target)
+            listenNextConcernedPacket(onPacketReceived)
         } catch {
             case e: RelayException => executeError(e)
+            case e: SocketException if e.getMessage == "Connection reset" =>
+                Console.err.println(s"client '$identifier' disconnected.")
+                println("Starting reconnection in 5 seconds...")
+                Thread.sleep(5000)
+
         }
     }
 
+    private def listenNextConcernedPacket(event: Packet => Unit): Unit = {
+        val bytes = packetReader.readNextPacketBytes()
+        if (bytes == null)
+            return
+
+        val target = getTargetID(bytes)
+        if (target == server.identifier) {
+            val packet = packetManager.toPacket(bytes)
+            packet match {
+                case orderPacket: SystemPacket => handleSystemOrder(orderPacket.order)
+                case _: Packet => event(packet)
+            }
+            return
+        }
+        manager.deflectTo(bytes, target)
+    }
+
+    private def handleSystemOrder(order: String): Unit = {
+        println(s"order $order had been requested by '$identifier'")
+        order match {
+            case SystemPacket.ClientClose => close()
+            case SystemPacket.ServerClose => server.close()
+            case _ => Console.err.println(s"Could not find action for order '$order'")
+        }
+    }
 
     private def executeError(e: RelayException): Unit = {
         Console.err.println(e.getMessage)
         val cause = if (e.getCause != null) e.getCause.getMessage else ""
-        val packet = new ErrorPacket(-1,
+        val packet = ErrorPacket(-1,
             server.identifier,
             tasksHandler.identifier,
             ErrorPacket.ABORT_TASK,
             e.getMessage,
             cause)
-        writer.write(packetManager.toBytes(packet))
-        writer.flush()
+        socket.write(packetManager.toBytes(packet))
     }
 
 

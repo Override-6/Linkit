@@ -1,17 +1,9 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.io.{BufferedInputStream, Closeable}
-import java.net.Socket
-import java.util.Optional
-
-import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
-import fr.overridescala.vps.ftp.api.utils.Constants
 
 
-class PacketReader(socket: Socket) extends Closeable {
-
-    private val input = new BufferedInputStream(socket.getInputStream)
+class PacketReader(socket: DynamicSocket){
 
     def readNextPacketBytes(): Array[Byte] = {
         val nextLength = nextPacketLength()
@@ -19,18 +11,16 @@ class PacketReader(socket: Socket) extends Closeable {
             return null
 
         val buff = new Array[Byte](nextLength)
-        input.read(buff)
+        socket.read(buff)
         buff
     }
-
-    override def close(): Unit = input.close()
 
     private def nextPacketLength(): Int = {
         val buff = new Array[Byte](1)
         val packetSizeBytes = new Array[Byte](20)
         var i = 0
         while (!(buff sameElements PacketManager.SizeSeparator)) {
-            val count = input.read(buff)
+            val count = socket.read(buff)
             if (count < 0)
                 return -1
             packetSizeBytes(i) = buff(0)

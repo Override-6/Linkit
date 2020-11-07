@@ -5,6 +5,7 @@ import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
+import fr.overridescala.vps.ftp.api.packet.DynamicSocket
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.server.RelayServer
@@ -17,10 +18,9 @@ import fr.overridescala.vps.ftp.server.RelayServer
  * */
 class ConnectionTasksHandler(override val identifier: String,
                              private val server: RelayServer,
-                             private val socket: Socket) extends TasksHandler {
+                             private val socket: DynamicSocket) extends TasksHandler {
 
     private val packetManager = server.packetManager
-    private val out = new BufferedOutputStream(socket.getOutputStream)
     private var tasksThread = new ConnectionTasksThread(identifier)
     tasksThread.start()
 
@@ -43,8 +43,7 @@ class ConnectionTasksHandler(override val identifier: String,
                     ErrorPacket.ABORT_TASK,
                     e.getMessage)
                 Console.err.println(e.getMessage)
-                out.write(packetManager.toBytes(packet))
-                out.flush()
+                socket.write(packetManager.toBytes(packet))
         }
     }
 
@@ -66,7 +65,6 @@ class ConnectionTasksHandler(override val identifier: String,
      * */
     override def close(): Unit = {
         tasksThread.close()
-        out.close()
     }
 
     /**
