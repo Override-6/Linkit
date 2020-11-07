@@ -10,9 +10,7 @@ class PacketChannelManagerCache {
         val id = packetChannel.channelID
         if (openedPacketChannels.contains(id))
             throw new IllegalArgumentException(s"A packet channel with id '$id' is already registered to this channel list !")
-        //FIXME
         openedPacketChannels.put(id, packetChannel)
-
     }
 
     def injectPacket(packet: Packet): Unit = {

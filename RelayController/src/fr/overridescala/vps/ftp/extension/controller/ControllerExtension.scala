@@ -20,6 +20,7 @@ class ControllerExtension(relay: Relay) extends TaskExtension(relay) {
         commandManager.register("exec", new ExecuteUnknownTaskCommand(relay))
         commandManager.register("delete", new DeleteFileCommand(relay))
         commandManager.register("sync", new SyncDirCommand(relay))
+        commandManager.register("stop", new ShutdownCommand())
         commandManager.start()
         automationManager.start()
 

@@ -31,7 +31,7 @@ class SyncPacketChannel(private val socket: DynamicSocket,
     /**
      * this blocking queue stores the received packets until they are requested
      * */
-    private val queue: BlockingDeque[Packet] = new LinkedBlockingDeque(200)
+    private val queue: BlockingDeque[Packet] = new LinkedBlockingDeque()
 
 
     //TODO doc
@@ -41,7 +41,8 @@ class SyncPacketChannel(private val socket: DynamicSocket,
     }
 
     override def sendPacket[P <: Packet](packet: P): Unit = {
-        socket.write(packetManager.toBytes(packet))
+        val bytes = packetManager.toBytes(packet)
+        socket.write(bytes)
     }
 
     /**

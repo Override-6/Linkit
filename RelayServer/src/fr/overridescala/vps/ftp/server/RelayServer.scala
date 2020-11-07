@@ -1,17 +1,16 @@
 package fr.overridescala.vps.ftp.server
 
-import java.net.{ServerSocket, SocketException}
+import java.net.{InetSocketAddress, ServerSocket, SocketException}
 import java.nio.charset.Charset
-import java.nio.file.{Path, Paths}
+import java.nio.file.Paths
 
-import com.sun.deploy.ClientContainer
-import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
-import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, PacketChannelManagerCache, SyncPacketChannel}
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
+import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.server.connection.{ConnectionsManager, SocketContainer}
 
 import scala.util.control.NonFatal
@@ -62,6 +61,7 @@ class RelayServer extends Relay {
         println("Ready !")
         open = true
         while (open) awaitClientConnection()
+        close()
     }
 
 
@@ -92,8 +92,8 @@ class RelayServer extends Relay {
     private def awaitClientConnection(): Unit = {
         try {
             val clientSocket = serverSocket.accept()
-            val address = clientSocket.getRemoteSocketAddress
-            val connection = connectionsManager.getConnectionFromAddress(address)
+            val address = clientSocket.getRemoteSocketAddress.asInstanceOf[InetSocketAddress]
+            val connection = connectionsManager.getConnectionFromAddress(address.getAddress.getHostName)
             if (connection == null) {
                 val socketContainer = new SocketContainer()
                 socketContainer.set(clientSocket)

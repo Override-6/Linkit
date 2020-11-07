@@ -41,7 +41,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     override def start(): Unit = {
         val thread = new Thread(() => {
-            println("Ready !")
             println("Current encoding is " + Charset.defaultCharset().name())
             println("Listening on port " + Constants.PORT)
             println("Computer name is " + System.getenv().get("COMPUTERNAME"))
@@ -51,27 +50,32 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             taskLoader.refreshTasks()
             AsyncPacketChannel.launchThreadIfNot(packetManager)
 
+            println("Ready !")
             open = true
             while (open) {
                 try {
                     val bytes = packetReader.readNextPacketBytes()
                     if (bytes == null)
                         return
+
                     val packet = packetManager.toPacket(bytes)
                     handlePacket(packet)
                 } catch {
                     case _: AsynchronousCloseException =>
-                        Console.err.println("asynchronous close.")
+                        Console.err.println("Asynchronous close.")
                         close()
                     case NonFatal(e) =>
                         e.printStackTrace()
-                        Console.err.println(s"suddenly disconnected from the server")
+                        Console.err.println(s"Suddenly disconnected from the server")
                         close()
                 }
             }
         })
         thread.setName("RelayPoint Packet handling")
         thread.start()
+        Console.err.println("A Connection loss will be simulated by closing socket in 5 seconds...")
+        Thread.sleep(5000)
+        socket.close()
     }
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -82,6 +86,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     override def close(): Unit = {
         open = false
+        println("CLOSING....")
         systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
         socket.close()
         tasksHandler.close()

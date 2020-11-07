@@ -1,11 +1,11 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.io.{BufferedOutputStream, Closeable}
+import java.io.Closeable
 import java.net.{Socket, SocketException}
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket, SystemPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket, SystemPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.packet.ext.{PacketManager, PacketUtils}
 import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
 import fr.overridescala.vps.ftp.server.RelayServer
@@ -24,15 +24,16 @@ class ClientConnectionThread(socket: SocketContainer,
 
     val tasksHandler: TasksHandler = initialiseConnection()
     val identifier: String = tasksHandler.identifier //shortcut
+    private implicit val systemChannel: PacketChannel.Sync = createSync(-6)
 
-    @volatile private var open = false
+    @volatile private var closed = false
 
     override def run(): Unit = {
-        open = true
-        val identifier = tasksHandler.identifier
+        if (closed)
+            throw new RelayException("This Connection was already used and is now definitely closed")
         println(s"Thread '$getName' was started")
         try {
-            while (open)
+            while (!closed)
                 update(handlePacket)
         } catch {
             case NonFatal(e) => e.printStackTrace()
@@ -41,17 +42,17 @@ class ClientConnectionThread(socket: SocketContainer,
     }
 
     override def close(): Unit = {
-        println(s"closing '$identifier' thread")
+        println(s"closing '$identifier' thread...")
 
-        implicit val channel: SyncPacketChannel = server.createSync(identifier, -6)
-        channel.sendPacket(SystemPacket(SystemPacket.ServerClose))
-        channel.close()
+        systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
+        systemChannel.nextPacket() //wait a response packet (EmptyPacket) before closing the connection.
+        systemChannel.close()
 
         tasksHandler.close()
         socket.close()
         manager.unregister(socket.remoteSocketAddress())
 
-        open = false
+        closed = true
         println(s"closed '$identifier' thread.")
     }
 
@@ -120,8 +121,11 @@ class ClientConnectionThread(socket: SocketContainer,
         order match {
             case SystemPacket.ClientClose => close()
             case SystemPacket.ServerClose => server.close()
-            case _ => Console.err.println(s"Could not find action for order '$order'")
+            case _ =>
+                Console.err.println(s"Could not find action for order '$order'")
+                return
         }
+        systemChannel.sendPacket(EmptyPacket())
     }
 
     private def executeError(e: RelayException): Unit = {
@@ -148,11 +152,13 @@ class ClientConnectionThread(socket: SocketContainer,
         clientResponse match {
             case errorPacket: ErrorPacket =>
                 errorPacket.printError()
+                channel.close()
                 throw new RelayException("a Relay point connection have been aborted by the client.")
             case dataPacket: DataPacket =>
                 val identifier = dataPacket.header
                 val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
                 channel.sendPacket(DataPacket(response))
+                channel.close()
 
                 if (response == "ERROR")
                     throw new RelayException("a Relay point connection have been rejected.")
@@ -161,7 +167,6 @@ class ClientConnectionThread(socket: SocketContainer,
                 setName(s"RP Connection ($identifier)")
                 new ConnectionTasksHandler(identifier, server, socket)
         }
-
     }
 
 
@@ -171,8 +176,7 @@ class ClientConnectionThread(socket: SocketContainer,
             case other: Packet => channel.addPacket(other)
         }
 
-    def getTargetID(bytes: Array[Byte]): String = {
+    private def getTargetID(bytes: Array[Byte]): String =
         PacketUtils.cutString(PacketManager.SenderSeparator, PacketManager.TargetSeparator)(bytes)
-    }
 
 }

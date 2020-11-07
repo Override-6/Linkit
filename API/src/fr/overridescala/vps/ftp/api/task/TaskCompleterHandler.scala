@@ -31,6 +31,7 @@ class TaskCompleterHandler {
         val supplierOpt = completers.get(taskType)
         if (supplierOpt.isEmpty)
             throw new TaskException(s"Could not find completer of type '$taskType'")
+
         val completer = supplierOpt.get.apply(initPacket)
         tasksHandler.registerTask(completer, taskID, targetID, senderID, false)
     }

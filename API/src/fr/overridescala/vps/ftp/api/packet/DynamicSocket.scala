@@ -1,11 +1,11 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import java.io._
-import java.net.SocketAddress
+import java.net.InetSocketAddress
 
 trait DynamicSocket extends Closeable {
 
-    def remoteSocketAddress(): SocketAddress
+    def remoteSocketAddress(): InetSocketAddress
 
     def read(buff: Array[Byte]): Int
 

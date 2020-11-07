@@ -17,10 +17,15 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket
         newSocket()
     })
 
-    override def remoteSocketAddress(): SocketAddress =
-        currentSocket.getRemoteSocketAddress
+    override def remoteSocketAddress(): InetSocketAddress = {
+        val inet = currentSocket.getInetAddress
+        val port = currentSocket.getPort
+        new InetSocketAddress(inet, port)
+    }
 
     override def close(): Unit = {
+        if (currentSocket == null || currentSocket.isClosed)
+            return
         currentSocket.close()
         currentOutputStream.close()
         currentInputStream.close()
@@ -36,6 +41,7 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket
     })
 
     private def newSocket(): Unit = {
+        close()
         currentSocket = new Socket(boundAddress.getAddress, boundAddress.getPort)
         currentOutputStream = new BufferedOutputStream(currentSocket.getOutputStream)
         currentInputStream = new BufferedInputStream(currentSocket.getInputStream)
@@ -46,15 +52,14 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket
         try {
             action()
         } catch {
-            case e: IOException => make(() => {
+            case _: IOException =>
                 println(s"Socket disconnected from ${boundAddress.getHostString}")
                 println("Starting reconnection in 5 seconds...")
                 Thread.sleep(5000)
                 println("Reconnecting...")
                 newSocket()
                 println("Reconnected !")
-                action()
-            })
+                make(action)
         }
     }
 }
