@@ -1,13 +1,13 @@
 package fr.overridescala.vps.ftp.client
 
-import java.net.{InetSocketAddress, Socket}
+import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
 import java.nio.file.Paths
 
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, SystemPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{EmptyPacket, ErrorPacket, SystemPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
@@ -73,9 +73,13 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         })
         thread.setName("RelayPoint Packet handling")
         thread.start()
-        Console.err.println("A Connection loss will be simulated by closing socket in 5 seconds...")
-        Thread.sleep(5000)
-        socket.close()
+        //FIXME delete
+        new Thread(() => {
+            Console.err.println("A Connection loss will be simulated by closing socket in 10 seconds...")
+            Thread.sleep(10000)
+            socket.close()
+        }).start()
+
     }
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -84,13 +88,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         RelayTaskAction(task)
     }
 
-    override def close(): Unit = {
-        open = false
-        println("CLOSING....")
-        systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
-        socket.close()
-        tasksHandler.close()
-    }
+    override def close(): Unit =
+        closeConnection(true)
+
 
     override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
         ensureOpen()
@@ -118,7 +118,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         val order = system.order
         println(s"Received system order $order from ${system.senderID}")
         order match {
-            case SystemPacket.ClientClose => close()
+            case SystemPacket.ClientClose => closeConnection(false)
             case SystemPacket.ServerClose =>
                 systemChannel.sendPacket(createSystemErrorPacket(order, "Received forbidden order."))
             case _ =>
@@ -130,6 +130,17 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         ErrorPacket("SystemError",
             s"System packet order '$order' couldn't be handled by this RelayPoint.",
             cause)
+
+    private def closeConnection(requestIsLocal: Boolean): Unit = {
+        if (requestIsLocal) {
+            systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
+            systemChannel.nextPacket() //wait an empty packet from server in order to sync the disconnection
+        } else systemChannel.sendPacket(EmptyPacket()) //Notifies the server in order to sync the disconnection
+
+        socket.close()
+        tasksHandler.close()
+        open = false
+    }
 
     private def ensureOpen(): Unit = {
         if (!open)

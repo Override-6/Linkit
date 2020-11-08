@@ -24,13 +24,18 @@ class ClientConnectionThread(socket: SocketContainer,
 
     val tasksHandler: TasksHandler = initialiseConnection()
     val identifier: String = tasksHandler.identifier //shortcut
-    private implicit val systemChannel: PacketChannel.Sync = createSync(-6)
+    private implicit val systemChannel: PacketChannel.Sync = createSync(-2)
 
     @volatile private var closed = false
+    @volatile private var connected = true
 
     override def run(): Unit = {
         if (closed)
             throw new RelayException("This Connection was already used and is now definitely closed")
+        socket.onDisconnected {
+            connected = false
+        }
+
         println(s"Thread '$getName' was started")
         try {
             while (!closed)
@@ -38,23 +43,10 @@ class ClientConnectionThread(socket: SocketContainer,
         } catch {
             case NonFatal(e) => e.printStackTrace()
         }
-        close()
+        print(s"End of Thread execution '$getName'")
     }
 
-    override def close(): Unit = {
-        println(s"closing '$identifier' thread...")
-
-        systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
-        systemChannel.nextPacket() //wait a response packet (EmptyPacket) before closing the connection.
-        systemChannel.close()
-
-        tasksHandler.close()
-        socket.close()
-        manager.unregister(socket.remoteSocketAddress())
-
-        closed = true
-        println(s"closed '$identifier' thread.")
-    }
+    override def close(): Unit = closeConnection(true)
 
     private[server] def createSync(id: Int): SyncPacketChannel =
         new SyncPacketChannel(socket, identifier, server.identifier, id, channelCache, packetManager)
@@ -67,6 +59,24 @@ class ClientConnectionThread(socket: SocketContainer,
 
     private[connection] def sendDeflectedBytes(bytes: Array[Byte]): Unit = {
         socket.write(bytes.length.toString.getBytes ++ PacketManager.SizeSeparator ++ bytes)
+    }
+
+    private def closeConnection(requestIsLocal: Boolean): Unit = {
+        println(s"closing thread '$getName'")
+        if (connected && socket.isConnected) {
+            if (requestIsLocal) {
+                systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
+                systemChannel.nextPacket() //Wait a response packet (EmptyPacket) before closing the connection.
+            } else systemChannel.sendPacket(EmptyPacket())
+            systemChannel.close()
+        }
+
+        tasksHandler.close()
+        socket.close()
+        manager.unregister(socket.remoteSocketAddress())
+
+        closed = true
+        println(s"thread '$getName' closed")
     }
 
     private def handlePacket(packet: Packet): Unit = {
@@ -119,13 +129,12 @@ class ClientConnectionThread(socket: SocketContainer,
     private def handleSystemOrder(order: String): Unit = {
         println(s"order $order had been requested by '$identifier'")
         order match {
-            case SystemPacket.ClientClose => close()
+            case SystemPacket.ClientClose => closeConnection(false)
             case SystemPacket.ServerClose => server.close()
             case _ =>
                 Console.err.println(s"Could not find action for order '$order'")
                 return
         }
-        systemChannel.sendPacket(EmptyPacket())
     }
 
     private def executeError(e: RelayException): Unit = {

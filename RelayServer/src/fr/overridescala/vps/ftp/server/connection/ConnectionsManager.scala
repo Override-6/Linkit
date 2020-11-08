@@ -47,7 +47,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * @param address the address to disconnect
      * */
     def unregister(address: InetSocketAddress): Unit =
-        connections.remove(address.getAddress.getHostName)
+        connections.remove(address.getAddress.getHostAddress)
 
     /**
      * get a relay from
@@ -81,7 +81,7 @@ class ConnectionsManager(server: RelayServer) extends Closeable {
      * @return true if the address is not registered, false instead
      * */
     def isNotRegistered(address: InetSocketAddress): Boolean = {
-        val ip = address.getAddress.getHostName
+        val ip = address.getAddress.getHostAddress
         !connections.contains(ip)
     }
 

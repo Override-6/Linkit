@@ -1,11 +1,9 @@
 package fr.overridescala.vps.ftp.client
 
 import java.io._
-import java.net.{InetSocketAddress, Socket, SocketAddress}
+import java.net.{ConnectException, InetSocketAddress, Socket}
 
 import fr.overridescala.vps.ftp.api.packet.DynamicSocket
-
-import scala.annotation.tailrec
 
 class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket {
 
@@ -13,9 +11,15 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket
     private var currentOutputStream: OutputStream = _
     private var currentInputStream: InputStream = _
 
-    make(() => {
+    private val AttemptSleepTime = 5000
+
+    make {
         newSocket()
-    })
+        while (currentSocket == null) {
+            newSocket()
+            Thread.sleep(AttemptSleepTime)
+        }
+    }
 
     override def remoteSocketAddress(): InetSocketAddress = {
         val inet = currentSocket.getInetAddress
@@ -31,14 +35,14 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket
         currentInputStream.close()
     }
 
-    override def read(buff: Array[Byte]): Int = make(() => {
+    override def read(buff: Array[Byte]): Int = make {
         currentInputStream.read(buff)
-    })
+    }
 
-    override def write(buff: Array[Byte]): Unit = make(() => {
+    override def write(buff: Array[Byte]): Unit = make {
         currentOutputStream.write(buff)
         currentOutputStream.flush()
-    })
+    }
 
     private def newSocket(): Unit = {
         close()
@@ -47,19 +51,20 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket
         currentInputStream = new BufferedInputStream(currentSocket.getInputStream)
     }
 
-    @tailrec
-    private def make[T](action: () => T): T = {
+    private def make[T](action: => T): T = {
         try {
-            action()
+            action
         } catch {
-            case _: IOException =>
-                println(s"Socket disconnected from ${boundAddress.getHostString}")
-                println("Starting reconnection in 5 seconds...")
-                Thread.sleep(5000)
-                println("Reconnecting...")
-                newSocket()
-                println("Reconnected !")
-                make(action)
+            case _: IOException | _: ConnectException =>
+                println(s"Socket disconnected from ${boundAddress.getAddress.getHostAddress} or unable to connect")
+                println(s"Reconnecting in $AttemptSleepTime ms...")
+                Thread.sleep(AttemptSleepTime)
+                make {
+                    println("Reconnecting...")
+                    newSocket()
+                    println("Reconnected !")
+                    action
+                }
         }
     }
 }

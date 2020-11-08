@@ -93,7 +93,7 @@ class RelayServer extends Relay {
         try {
             val clientSocket = serverSocket.accept()
             val address = clientSocket.getRemoteSocketAddress.asInstanceOf[InetSocketAddress]
-            val connection = connectionsManager.getConnectionFromAddress(address.getAddress.getHostName)
+            val connection = connectionsManager.getConnectionFromAddress(address.getAddress.getHostAddress)
             if (connection == null) {
                 val socketContainer = new SocketContainer()
                 socketContainer.set(clientSocket)
