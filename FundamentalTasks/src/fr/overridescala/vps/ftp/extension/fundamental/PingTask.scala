@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import fr.overridescala.vps.ftp.`extension`.fundamental.PingTask.TYPE
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket, SystemPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 
 class PingTask(private val targetId: String) extends Task[Long](targetId) {
@@ -34,8 +34,11 @@ object PingTask {
 
     class Completer extends TaskExecutor {
         override def execute(): Unit = {
-            for (_ <- 1 to 3)
-                channel.sendPacket(channel.nextPacket())
+            val pong = EmptyPacket()
+            for (_ <- 1 to 3) {
+                channel.nextPacket()
+                channel.sendPacket(pong)
+            }
         }
 
     }
