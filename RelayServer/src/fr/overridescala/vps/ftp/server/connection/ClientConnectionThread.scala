@@ -32,9 +32,6 @@ class ClientConnectionThread(socket: SocketContainer,
     override def run(): Unit = {
         if (closed)
             throw new RelayException("This Connection was already used and is now definitely closed")
-        socket.onDisconnected {
-            connected = false
-        }
 
         println(s"Thread '$getName' was started")
         try {
@@ -43,7 +40,7 @@ class ClientConnectionThread(socket: SocketContainer,
         } catch {
             case NonFatal(e) => e.printStackTrace()
         }
-        print(s"End of Thread execution '$getName'")
+        println(s"End of Thread execution '$getName'")
     }
 
     override def close(): Unit = closeConnection(true)

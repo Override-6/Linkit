@@ -1,70 +1,42 @@
 package fr.overridescala.vps.ftp.client
 
 import java.io._
-import java.net.{ConnectException, InetSocketAddress, Socket}
+import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
 
 import fr.overridescala.vps.ftp.api.packet.DynamicSocket
+import fr.overridescala.vps.ftp.client.ClientDynamicSocket.AttemptSleepTime
 
 class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket {
 
-    private var currentSocket: Socket = _
-    private var currentOutputStream: OutputStream = _
-    private var currentInputStream: InputStream = _
 
-    private val AttemptSleepTime = 5000
-
-    make {
-        newSocket()
-        while (currentSocket == null) {
-            newSocket()
-            Thread.sleep(AttemptSleepTime)
-        }
-    }
-
-    override def remoteSocketAddress(): InetSocketAddress = {
-        val inet = currentSocket.getInetAddress
-        val port = currentSocket.getPort
-        new InetSocketAddress(inet, port)
-    }
-
-    override def close(): Unit = {
-        if (currentSocket == null || currentSocket.isClosed)
-            return
-        currentSocket.close()
-        currentOutputStream.close()
-        currentInputStream.close()
-    }
-
-    override def read(buff: Array[Byte]): Int = make {
-        currentInputStream.read(buff)
-    }
-
-    override def write(buff: Array[Byte]): Unit = make {
-        currentOutputStream.write(buff)
-        currentOutputStream.flush()
-    }
+    handleReconnection() //automatically connect
 
     private def newSocket(): Unit = {
-        close()
+        closeCurrentStreams()
         currentSocket = new Socket(boundAddress.getAddress, boundAddress.getPort)
         currentOutputStream = new BufferedOutputStream(currentSocket.getOutputStream)
         currentInputStream = new BufferedInputStream(currentSocket.getInputStream)
     }
 
-    private def make[T](action: => T): T = {
+    override protected def handleReconnection(): Unit = {
         try {
-            action
+            //FIXME added 5s cooldown for test only
+            println(s"Waiting for $AttemptSleepTime ms before another try...")
+            Thread.sleep(AttemptSleepTime)
+            println("Reconnecting...")
+            newSocket()
+            println("Reconnected !")
         } catch {
-            case _: IOException | _: ConnectException =>
-                println(s"Socket disconnected from ${boundAddress.getAddress.getHostAddress} or unable to connect")
-                println(s"Reconnecting in $AttemptSleepTime ms...")
+            case _@(_: SocketException | _: ConnectException) => {
+                println("Unable to connect to server.")
+                println(s"Waiting for $AttemptSleepTime ms before another try...")
                 Thread.sleep(AttemptSleepTime)
-                make {
-                    println("Reconnecting...")
-                    newSocket()
-                    println("Reconnected !")
-                    action
-                }
+                handleReconnection()
+            }
         }
     }
+}
+
+object ClientDynamicSocket {
+    private val AttemptSleepTime = 5000
 }
