@@ -5,15 +5,18 @@ import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
 import java.nio.file.Paths
 
+import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{EmptyPacket, ErrorPacket, SystemPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental._
 import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
-import fr.overridescala.vps.ftp.client.tasks.ClientExtension
+import javafx.application.Platform
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
@@ -37,7 +40,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override val properties = new RelayProperties
     private val channelCache = new PacketChannelManagerCache
 
-    private implicit val systemChannel: PacketChannel.Sync = createSyncChannel0(Constants.SERVER_ID, -2)
+    private implicit val systemChannel: PacketChannel.Sync = createSyncChannel0(Constants.SERVER_ID, -6)
 
     override def start(): Unit = {
         val thread = new Thread(() => {
@@ -52,33 +55,18 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
             println("Ready !")
             open = true
-            while (open) {
-                try {
-                    val bytes = packetReader.readNextPacketBytes()
-                    if (bytes == null)
-                        return
-
-                    val packet = packetManager.toPacket(bytes)
-                    handlePacket(packet)
-                } catch {
-                    case _: AsynchronousCloseException =>
-                        Console.err.println("Asynchronous close.")
-                        close()
-                    case NonFatal(e) =>
-                        e.printStackTrace()
-                        Console.err.println(s"Suddenly disconnected from the server")
-                        close()
-                }
-            }
+            while (open)
+                listen()
         })
         thread.setName("RelayPoint Packet handling")
         thread.start()
-        //FIXME delete
+        /*//FIX ME delete
         new Thread(() => {
             Console.err.println("A Connection loss will be simulated by closing socket in 10 seconds...")
-            Thread.sleep(10000)
+            Thread.sleep(100000)
+            println("Closing socket...")
             socket.close()
-        }).start()
+        }).start()*/
 
     }
 
@@ -106,6 +94,26 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         new SyncPacketChannel(socket, linkedRelayID, identifier, id, channelCache, packetManager)
     }
 
+
+    private def listen(): Unit = {
+        try {
+            val bytes = packetReader.readNextPacketBytes()
+            if (bytes == null)
+                return
+            val packet = packetManager.toPacket(bytes)
+            handlePacket(packet)
+        }
+        catch {
+            case _: AsynchronousCloseException =>
+                Console.err.println("Asynchronous close.")
+                close()
+            case NonFatal(e) =>
+                e.printStackTrace()
+                Console.err.println(s"Suddenly disconnected from the server")
+                close()
+        }
+    }
+
     private def handlePacket(packet: Packet): Unit = packet match {
         case init: TaskInitPacket => tasksHandler.handlePacket(init)
         case error: ErrorPacket if error.errorType == ErrorPacket.ABORT_TASK => tasksHandler.skipCurrent()
@@ -119,8 +127,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         println(s"Received system order $order from ${system.senderID}")
         order match {
             case SystemPacket.ClientClose => closeConnection(false)
-            case SystemPacket.ServerClose =>
-                systemChannel.sendPacket(createSystemErrorPacket(order, "Received forbidden order."))
+            case SystemPacket.ServerClose => systemChannel.sendPacket(createSystemErrorPacket(order, "Received forbidden order."))
+            case SystemPacket.ClientInitialisation => Future(initToServer())
             case _ =>
                 systemChannel.sendPacket(createSystemErrorPacket(order, "Unknown order."))
         }
@@ -147,7 +155,16 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             throw new UnsupportedOperationException("Relay Point have to be started !")
     }
 
+    private def initToServer(): Unit = {
+        systemChannel.sendPacket(DataPacket(identifier))
+        val response: DataPacket = systemChannel.nextPacketAsP()
+
+        if (response.header == "ERROR")
+            throw RelayInitialisationException(s"Another relay point with id '$identifier' is currently connected on the targeted network")
+
+        println("Successfully connected to the server !")
+    }
+
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
-    new ClientExtension(this).main() //manually adds local / private Task extension
 }

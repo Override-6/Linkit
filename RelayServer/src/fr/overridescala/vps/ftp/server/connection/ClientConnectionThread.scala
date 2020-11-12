@@ -3,14 +3,15 @@ package fr.overridescala.vps.ftp.server.connection
 import java.io.Closeable
 import java.net.{Socket, SocketException}
 
-import fr.overridescala.vps.ftp.api.exceptions.RelayException
+import fr.overridescala.vps.ftp.api.exceptions.{RelayException, UnexpectedPacketException}
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket, SystemPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.ext.fundamental._
 import fr.overridescala.vps.ftp.api.packet.ext.{PacketManager, PacketUtils}
-import fr.overridescala.vps.ftp.api.task.{TaskInitInfo, TasksHandler}
+import fr.overridescala.vps.ftp.api.task.TasksHandler
 import fr.overridescala.vps.ftp.server.RelayServer
 import fr.overridescala.vps.ftp.server.task.ConnectionTasksHandler
 
+import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 class ClientConnectionThread(socket: SocketContainer,
@@ -21,19 +22,27 @@ class ClientConnectionThread(socket: SocketContainer,
     private val packetManager = server.packetManager
     private val packetReader: PacketReader = new PacketReader(socket)
     private val channelCache = new PacketChannelManagerCache
+    /**
+     * This array is only used and updated while the connection is not initialised.
+     * */
+    private val unhandledPackets = ListBuffer.empty[Packet]
 
     val tasksHandler: TasksHandler = initialiseConnection()
     val identifier: String = tasksHandler.identifier //shortcut
-    private implicit val systemChannel: PacketChannel.Sync = createSync(-2)
+
+    private implicit val systemChannel: PacketChannel.Sync = createSync(-6)
 
     @volatile private var closed = false
-    @volatile private var connected = true
 
     override def run(): Unit = {
         if (closed)
             throw new RelayException("This Connection was already used and is now definitely closed")
 
         println(s"Thread '$getName' was started")
+
+        unhandledPackets.foreach(handlePacket)
+        unhandledPackets.clear()
+
         try {
             while (!closed)
                 update(handlePacket)
@@ -60,7 +69,7 @@ class ClientConnectionThread(socket: SocketContainer,
 
     private def closeConnection(requestIsLocal: Boolean): Unit = {
         println(s"closing thread '$getName'")
-        if (connected && socket.isConnected) {
+        if (socket.isConnected && socket.isConnected) {
             if (requestIsLocal) {
                 systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
                 systemChannel.nextPacket() //Wait a response packet (EmptyPacket) before closing the connection.
@@ -77,6 +86,10 @@ class ClientConnectionThread(socket: SocketContainer,
     }
 
     private def handlePacket(packet: Packet): Unit = {
+        if (isNotInitialised) {
+            unhandledPackets += packet
+            return
+        }
         packet match {
             case errorPacket: ErrorPacket if errorPacket.errorType == ErrorPacket.ABORT_TASK =>
                 printErrorPacket(errorPacket)
@@ -89,7 +102,7 @@ class ClientConnectionThread(socket: SocketContainer,
     private def printErrorPacket(packet: ErrorPacket): Unit = {
         val identifier = tasksHandler.identifier
         val errorType = packet.errorType
-        Console.err.println(s"received error from relay '$identifier' of type '$errorType'")
+        Console.err.println(s"Received error from relay '$identifier' of type '$errorType'")
         packet.printError()
     }
 
@@ -100,9 +113,6 @@ class ClientConnectionThread(socket: SocketContainer,
             case e: RelayException => executeError(e)
             case e: SocketException if e.getMessage == "Connection reset" =>
                 Console.err.println(s"client '$identifier' disconnected.")
-                println("Starting reconnection in 5 seconds...")
-                Thread.sleep(5000)
-
         }
     }
 
@@ -112,7 +122,7 @@ class ClientConnectionThread(socket: SocketContainer,
             return
 
         val target = getTargetID(bytes)
-        if (target == server.identifier) {
+        if (target == server.identifier) { //check if packet concerns server
             val packet = packetManager.toPacket(bytes)
             packet match {
                 case orderPacket: SystemPacket => handleSystemOrder(orderPacket.order)
@@ -128,9 +138,7 @@ class ClientConnectionThread(socket: SocketContainer,
         order match {
             case SystemPacket.ClientClose => closeConnection(false)
             case SystemPacket.ServerClose => server.close()
-            case _ =>
-                Console.err.println(s"Could not find action for order '$order'")
-                return
+            case _ => Console.err.println(s"Could not find action for order '$order'")
         }
     }
 
@@ -151,15 +159,14 @@ class ClientConnectionThread(socket: SocketContainer,
         setName(s"RP Connection (unknownId)")
         implicit val channel: SyncPacketChannel =
             new SyncPacketChannel(socket, "unknown", server.identifier, -6, channelCache, packetManager)
-        channel.sendInitPacket(TaskInitInfo.of("GID", "unknownId"))
-
+        channel.sendPacket(SystemPacket(SystemPacket.ClientInitialisation))
         deflectInChannel(channel)
-        val clientResponse = channel.nextPacket()
-        clientResponse match {
-            case errorPacket: ErrorPacket =>
-                errorPacket.printError()
-                channel.close()
-                throw new RelayException("a Relay point connection have been aborted by the client.")
+
+        new ConnectionTasksHandler(handleClientResponse(channel), server, socket)
+    }
+
+    private def handleClientResponse(implicit channel: SyncPacketChannel): String = {
+        channel.nextPacket() match {
             case dataPacket: DataPacket =>
                 val identifier = dataPacket.header
                 val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
@@ -171,16 +178,22 @@ class ClientConnectionThread(socket: SocketContainer,
 
                 println(s"Relay Point connected with identifier '$identifier'")
                 setName(s"RP Connection ($identifier)")
-                new ConnectionTasksHandler(identifier, server, socket)
+                identifier
+            case other =>
+                val name = other.getClass.getSimpleName
+                throw UnexpectedPacketException(s"Unexpected packet type $name received while initialising client connection.")
         }
     }
 
 
-    private def deflectInChannel(channel: PacketChannelManager): Unit =
-        update {
-            case init: TaskInitPacket => handlePacket(init)
-            case other: Packet => channel.addPacket(other)
-        }
+    private def deflectInChannel(channel: PacketChannelManager): Unit = update {
+        case concerned: Packet if concerned.channelID == channel.channelID => channel.addPacket(concerned)
+        case other: Packet =>
+            handlePacket(other)
+            deflectInChannel(channel)
+    }
+
+    private def isNotInitialised: Boolean = identifier == null
 
     private def getTargetID(bytes: Array[Byte]): String =
         PacketUtils.cutString(PacketManager.SenderSeparator, PacketManager.TargetSeparator)(bytes)

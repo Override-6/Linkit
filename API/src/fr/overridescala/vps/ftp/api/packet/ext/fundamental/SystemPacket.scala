@@ -12,6 +12,7 @@ object SystemPacket {
 
     val ClientClose = "CLIENT_CLOSE"
     val ServerClose = "SERVER_CLOSE"
+    val ClientInitialisation = "INIT_TO_SERVER"
 
     def apply(order: String)(implicit systemChannel: PacketChannel) =
         new SystemPacket(systemChannel.channelID, systemChannel.ownerID, systemChannel.connectedID, order)

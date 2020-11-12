@@ -39,6 +39,7 @@ abstract class DynamicSocket extends Closeable {
             locker.markAsConnected()
             read(buff)
         }
+
         -1
     }
 
@@ -56,7 +57,7 @@ abstract class DynamicSocket extends Closeable {
         } catch {
             case _@(_: ConnectException | _: IOException) =>
                 if (closed)
-                    return Option.empty
+                    return
                 locker.markDisconnected()
                 handleReconnection()
                 locker.markAsConnected()
@@ -67,12 +68,11 @@ abstract class DynamicSocket extends Closeable {
     def isConnected: Boolean = !locker.isDisconnected
 
     override def close(): Unit = {
-        //FIXME removed closed flag for debug only
         if (currentSocket.isClosed) {
-            //closed = true
+            closed = true
             return
         }
-        //closed = true
+        closed = true
         closeCurrentStreams()
     }
 

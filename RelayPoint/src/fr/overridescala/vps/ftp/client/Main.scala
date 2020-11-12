@@ -27,12 +27,12 @@ object Main {
     def main(args: Array[String]): Unit = {
         val localRun = args.contains("--local-run")
         val relayPoint = new RelayPoint(address, identifier, localRun)
-        relayPoint.start()
         if (localRun) {
             new ControllerExtension(relayPoint).main()
             new FundamentalExtension(relayPoint).main()
             new PPCExtension(relayPoint).main()
         }
+        relayPoint.start()
     }
 
 }

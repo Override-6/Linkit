@@ -20,9 +20,6 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket
 
     override protected def handleReconnection(): Unit = {
         try {
-            //FIXME added 5s cooldown for test only
-            println(s"Waiting for $AttemptSleepTime ms before another try...")
-            Thread.sleep(AttemptSleepTime)
             println("Reconnecting...")
             newSocket()
             println("Reconnected !")
