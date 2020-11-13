@@ -7,7 +7,7 @@ class PacketReader(socket: DynamicSocket){
 
     def readNextPacketBytes(): Array[Byte] = {
         val nextLength = nextPacketLength()
-        if (nextLength == -1)
+        if (nextLength == -1 || !socket.isOpen)
             return null
 
         val buff = new Array[Byte](nextLength)
@@ -20,6 +20,8 @@ class PacketReader(socket: DynamicSocket){
         val packetSizeBytes = new Array[Byte](20)
         var i = 0
         while (!(buff sameElements PacketManager.SizeSeparator)) {
+            if (!socket.isConnected)
+                return -1
             val count = socket.read(buff)
             if (count < 0)
                 return -1

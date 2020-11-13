@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.api.packet
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
+import fr.overridescala.vps.ftp.api.exceptions.{PacketException, UnexpectedPacketException}
 import fr.overridescala.vps.ftp.api.packet.AsyncPacketChannel.send
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
@@ -24,7 +24,7 @@ class AsyncPacketChannel(override val ownerID: String,
 
     override def sendPacket[P <: Packet](packet: P): Unit = {
         if (packet.isInstanceOf[TaskInitPacket])
-            throw UnexpectedPacketException("can not send a TaskInitPacket.")
+            throw PacketException("can not send a TaskInitPacket.")
         send(packet, socket)
     }
 
@@ -55,7 +55,7 @@ object AsyncPacketChannel {
 
     private var uploader: UploadThread = _
 
-    def launchThreadIfNot(packetManager: PacketManager): Unit = {
+    def launch(packetManager: PacketManager): Unit = {
         if (uploader == null)
             uploader = new UploadThread(packetManager)
         uploader.start()

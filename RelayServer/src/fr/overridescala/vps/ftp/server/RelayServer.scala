@@ -55,7 +55,7 @@ class RelayServer extends Relay {
         println("Listening on port " + Constants.PORT)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
 
-        AsyncPacketChannel.launchThreadIfNot(packetManager)
+        AsyncPacketChannel.launch(packetManager)
         taskLoader.refreshTasks()
 
         println("Ready !")
@@ -100,7 +100,6 @@ class RelayServer extends Relay {
                 connectionsManager.register(socketContainer)
                 return
             }
-
             connection.updateSocket(clientSocket)
 
         } catch {

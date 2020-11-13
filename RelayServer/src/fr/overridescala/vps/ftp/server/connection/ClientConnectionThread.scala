@@ -72,8 +72,10 @@ class ClientConnectionThread(socket: SocketContainer,
         if (socket.isConnected && socket.isConnected) {
             if (requestIsLocal) {
                 systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
+            } else {
+                systemChannel.sendPacket(EmptyPacket())
                 systemChannel.nextPacket() //Wait a response packet (EmptyPacket) before closing the connection.
-            } else systemChannel.sendPacket(EmptyPacket())
+            }
             systemChannel.close()
         }
 
@@ -82,7 +84,7 @@ class ClientConnectionThread(socket: SocketContainer,
         manager.unregister(socket.remoteSocketAddress())
 
         closed = true
-        println(s"thread '$getName' closed")
+        println(s"thread '$getName' closed.")
     }
 
     private def handlePacket(packet: Packet): Unit = {
@@ -181,7 +183,7 @@ class ClientConnectionThread(socket: SocketContainer,
                 identifier
             case other =>
                 val name = other.getClass.getSimpleName
-                throw UnexpectedPacketException(s"Unexpected packet type $name received while initialising client connection.")
+                throw new UnexpectedPacketException(s"Unexpected packet type $name received while initialising client connection.")
         }
     }
 

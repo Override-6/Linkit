@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.`extension`.fundamental.main
+package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import fr.overridescala.vps.ftp.`extension`.fundamental._
 import fr.overridescala.vps.ftp.api.Relay

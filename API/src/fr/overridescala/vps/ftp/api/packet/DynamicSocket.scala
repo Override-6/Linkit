@@ -29,14 +29,19 @@ abstract class DynamicSocket extends Closeable {
                 return onDisconnect()
             return result
         } catch {
-            case _@(_: ConnectException | _: IOException) =>
+            case e@(_: ConnectException | _: IOException) =>
+                System.err.println(e.getMessage)
                 return onDisconnect()
         }
 
         def onDisconnect(): Int = {
             locker.markDisconnected()
+            if (closed)
+                return -1
             handleReconnection()
             locker.markAsConnected()
+            if (closed)
+                return -1
             read(buff)
         }
 
@@ -48,24 +53,25 @@ abstract class DynamicSocket extends Closeable {
         ensureOpen()
         try {
             locker.markAsWriting()
-            try {
-                currentOutputStream.write(buff)
-                currentOutputStream.flush()
-            } finally {
-                locker.unMarkAsWriting()
-            }
+            currentOutputStream.write(buff)
+            currentOutputStream.flush()
         } catch {
-            case _@(_: ConnectException | _: IOException) =>
+            case e@(_: ConnectException | _: IOException) =>
+                System.err.println(e.getMessage)
                 if (closed)
                     return
                 locker.markDisconnected()
                 handleReconnection()
                 locker.markAsConnected()
                 write(buff)
+        } finally {
+            locker.unMarkAsWriting()
         }
     }
 
     def isConnected: Boolean = !locker.isDisconnected
+
+    def isOpen: Boolean = !closed
 
     override def close(): Unit = {
         if (currentSocket.isClosed) {
@@ -85,6 +91,9 @@ abstract class DynamicSocket extends Closeable {
         currentSocket.close()
     }
 
+    protected def markAsConnected(connected: Boolean): Unit =
+        if (connected) locker.markAsConnected() else locker.markDisconnected()
+
     private def ensureOpen(): Unit = {
         if (closed)
             throw new UnsupportedOperationException("Socket closed.")
@@ -92,7 +101,7 @@ abstract class DynamicSocket extends Closeable {
 
     private class SocketLocker {
         @volatile var isWriting = false
-        @volatile var isDisconnected = false
+        @volatile var isDisconnected = true
         private val writeLock = new Object
         private val disconnectLock = new Object
 

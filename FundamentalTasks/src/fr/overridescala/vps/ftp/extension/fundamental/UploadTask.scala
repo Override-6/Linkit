@@ -95,8 +95,8 @@ class UploadTask(private val desc: TransferDescription)
                 val header = dataPacket.header
                 val errorMsg = s"unexpected packet with header $header was received."
                 error(errorMsg)
-                throw UnexpectedPacketException(errorMsg)
-            case _ => throw UnexpectedPacketException(s"Received unexpected packet of type ${packet.className}")
+                throw new UnexpectedPacketException(errorMsg)
+            case _ => throw new UnexpectedPacketException(s"Received unexpected packet of type ${packet.className}")
         }
     }
 

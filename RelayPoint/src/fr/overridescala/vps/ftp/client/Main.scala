@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 import java.util.Scanner
 
 import fr.overridescala.vps.ftp.`extension`.controller.ControllerExtension
-import fr.overridescala.vps.ftp.`extension`.fundamental.main.FundamentalExtension
+import fr.overridescala.vps.ftp.`extension`.fundamental.FundamentalExtension
 import fr.overridescala.vps.ftp.`extension`.ppc.PPCExtension
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.utils.Constants
@@ -26,7 +26,8 @@ object Main {
      * */
     def main(args: Array[String]): Unit = {
         val localRun = args.contains("--local-run")
-        val relayPoint = new RelayPoint(address, identifier, localRun)
+        val loadTasks = !args.contains("--no-tasks")
+        val relayPoint = new RelayPoint(address, identifier, localRun, loadTasks)
         if (localRun) {
             new ControllerExtension(relayPoint).main()
             new FundamentalExtension(relayPoint).main()

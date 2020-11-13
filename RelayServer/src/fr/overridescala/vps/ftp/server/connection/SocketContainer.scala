@@ -15,9 +15,11 @@ class SocketContainer extends DynamicSocket {
         currentOutputStream = new BufferedOutputStream(currentSocket.getOutputStream)
         currentInputStream = new BufferedInputStream(currentSocket.getInputStream)
         notifyAll()
+        markAsConnected(true)
     }
 
     override protected def handleReconnection(): Unit = {
+        new Exception().printStackTrace(System.out)
         println(s"Socket disconnected from ${remoteSocketAddress().getAddress.getHostAddress}")
         println("Reconnecting...")
         synchronized {

@@ -9,8 +9,6 @@ import fr.overridescala.vps.ftp.client.ClientDynamicSocket.AttemptSleepTime
 class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket {
 
 
-    handleReconnection() //automatically connect
-
     private def newSocket(): Unit = {
         closeCurrentStreams()
         currentSocket = new Socket(boundAddress.getAddress, boundAddress.getPort)
@@ -20,17 +18,27 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress) extends DynamicSocket
 
     override protected def handleReconnection(): Unit = {
         try {
+            new Exception().printStackTrace(System.out)
             println("Reconnecting...")
             newSocket()
             println("Reconnected !")
         } catch {
-            case _@(_: SocketException | _: ConnectException) => {
+            case _@(_: SocketException | _: ConnectException) =>
                 println("Unable to connect to server.")
                 println(s"Waiting for $AttemptSleepTime ms before another try...")
                 Thread.sleep(AttemptSleepTime)
                 handleReconnection()
-            }
         }
+    }
+
+    def start(): Unit = {
+        try {
+            newSocket()
+        } catch {
+            case _@(_: SocketException | _: ConnectException) =>
+            handleReconnection()
+        }
+        markAsConnected(true)
     }
 }
 

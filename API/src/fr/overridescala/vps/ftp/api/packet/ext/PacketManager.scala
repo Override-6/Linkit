@@ -44,7 +44,7 @@ class PacketManager {
             if (factory.canTransform(customPacketBytes))
                 return factory.build(channelID, senderID, targetID)(customPacketBytes)
         }
-        throw UnexpectedPacketException(s"could not find packet factory for ${new String(bytes)}")
+        throw new UnexpectedPacketException(s"could not find packet factory for ${new String(bytes)}")
     }
 
     def toBytes[D <: Packet](classOfP: Class[D], packet: D): Array[Byte] = {

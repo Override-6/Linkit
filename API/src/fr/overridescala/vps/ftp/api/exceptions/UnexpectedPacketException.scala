@@ -5,4 +5,4 @@ package fr.overridescala.vps.ftp.api.exceptions
  *
  * @see [[Packet]]
  * */
-case class UnexpectedPacketException(msg: String) extends RelayException(msg)
+class UnexpectedPacketException(message: String) extends PacketException(message)
