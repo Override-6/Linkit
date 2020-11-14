@@ -2,10 +2,11 @@ package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import fr.overridescala.vps.ftp.`extension`.fundamental._
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.task.ext.TaskExtension
+import fr.overridescala.vps.ftp.api.`extension`.{RelayExtension, RelayExtensionInfo}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
-class FundamentalExtension(relay: Relay) extends TaskExtension(relay) {
+@RelayExtensionInfo(name = "FundamentalExtension")
+class FundamentalExtension(relay: Relay) extends RelayExtension(relay) {
     override def main(): Unit = {
         val completerHandler = relay.taskCompleterHandler
         completerHandler.putCompleter(UploadTask.TYPE, init => DownloadTask(Utils.deserialize(init.content)))

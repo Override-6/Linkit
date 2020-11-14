@@ -1,8 +1,10 @@
 package fr.overridescala.vps.ftp.api.task
 
+import java.lang.annotation.{ElementType, Target}
+
+import fr.overridescala.vps.ftp.api.`extension`.RelayExtension
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
-import fr.overridescala.vps.ftp.api.task.ext.TaskExtension
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -14,7 +16,7 @@ import scala.collection.mutable.ListBuffer
 class TaskCompleterHandler {
 
     private val completers: mutable.Map[String, TaskInitPacket => TaskExecutor] = new mutable.HashMap()
-    private val families: mutable.Map[Class[_ <: TaskExtension], ListBuffer[String]] = new mutable.HashMap()
+    private val families: mutable.Map[Class[_ <: RelayExtension], ListBuffer[String]] = new mutable.HashMap()
 
     /**
      * @param initPacket the initialization packet for completer.
@@ -42,13 +44,13 @@ class TaskCompleterHandler {
      * @param supplier this lambda takes a [[TaskInitPacket]] the Tasks Handler and the init packet sender identifier
      *                 and the task owner identifier
      * */
-    def putCompleter(taskType: String, supplier: TaskInitPacket => TaskExecutor)(implicit extension: TaskExtension): Unit = {
+    def putCompleter(taskType: String, supplier: TaskInitPacket => TaskExecutor)(implicit extension: RelayExtension): Unit = {
         completers.put(taskType, supplier)
         families.getOrElseUpdate(extension.getClass, ListBuffer.empty)
                 .addOne(taskType)
     }
 
-    def getLoadedTasks(extension: Class[_ <: TaskExtension]): Array[String] =
+    def getLoadedTasks(extension: Class[_ <: RelayExtension]): Array[String] =
         families.getOrElseUpdate(extension, ListBuffer.empty)
                 .toArray
 

@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.exceptions.{PacketException, RelayInitialisa
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental._
-import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
+import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
@@ -26,10 +26,10 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val socket = new ClientDynamicSocket(serverAddress)
 
     private val taskFolderPath =
-        if (localRun) Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\Tasks")
-        else Paths.get("Tasks")
+        if (localRun) Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\RelayExtensions")
+        else Paths.get("RelayExtensions")
 
-    override val taskLoader = new TaskLoader(this, taskFolderPath)
+    override val extensionLoader = new RelayExtensionLoader(this, taskFolderPath)
     override val packetManager = new PacketManager()
     private val tasksHandler = new ClientTasksHandler(socket, this)
 
@@ -53,7 +53,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             tasksHandler.start()
             if (loadTasks) {
                 println("Loading Relay extensions from folder " + taskFolderPath)
-                taskLoader.refreshTasks()
+                extensionLoader.loadExtensions()
             }
             AsyncPacketChannel.launch(packetManager)
             println(s"Connecting to server with identifier '$identifier'...")

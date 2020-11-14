@@ -1,10 +1,9 @@
 package fr.overridescala.vps.ftp.`extension`.ppc
 
 import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandManager
-import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.GameResource
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.{MovePacket, OnlineGameStarterTask}
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.task.ext.TaskExtension
+import fr.overridescala.vps.ftp.api.`extension`.{RelayExtension, RelayExtensionInfo}
 import javafx.application.Application
 import javafx.stage.Stage
 
@@ -16,7 +15,8 @@ import scala.concurrent.Future
  * Cette extension est le jeux du Pierre papier Ciseaux.
  * @param client le client sur le quel ce programme est installé.
  * */
-class PPCExtension(client: Relay) extends TaskExtension(client) {
+@RelayExtensionInfo(name = "RockPaperScissorsDemoGame", dependencies = Array("RelayControllerCli"))
+class PPCExtension(client: Relay) extends RelayExtension(client) {
 
 
     /**

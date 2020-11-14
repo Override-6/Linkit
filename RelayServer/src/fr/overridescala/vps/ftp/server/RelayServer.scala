@@ -7,7 +7,7 @@ import java.nio.file.Paths
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
-import fr.overridescala.vps.ftp.api.task.ext.TaskLoader
+import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
@@ -23,8 +23,8 @@ class RelayServer extends Relay {
     private val connectionsManager = new ConnectionsManager(this)
     //Awful thing, only for debugging, and easily switch from localhost to vps.
     private val taskFolderPath =
-        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\Tasks")
-        else Paths.get("Tasks/")
+        if (System.getenv().get("COMPUTERNAME") == "PC_MATERIEL_NET") Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\RelayExtensions")
+        else Paths.get("RelayExtensions/")
     @volatile private var open = false
 
     /**
@@ -32,7 +32,7 @@ class RelayServer extends Relay {
      * */
     override val identifier: String = Constants.SERVER_ID
     override val packetManager = new PacketManager
-    override val taskLoader = new TaskLoader(this, taskFolderPath)
+    override val extensionLoader = new RelayExtensionLoader(this, taskFolderPath)
     override val taskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
 
@@ -56,7 +56,7 @@ class RelayServer extends Relay {
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
 
         AsyncPacketChannel.launch(packetManager)
-        taskLoader.refreshTasks()
+        extensionLoader.loadExtensions()
 
         println("Ready !")
         open = true
