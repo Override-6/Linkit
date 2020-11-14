@@ -4,20 +4,19 @@ import java.net.{InetSocketAddress, ServerSocket, SocketException}
 import java.nio.charset.Charset
 import java.nio.file.Paths
 
+import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
+import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
-import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
-import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
+import fr.overridescala.vps.ftp.api.{Reason, Relay, RelayProperties}
 import fr.overridescala.vps.ftp.server.connection.{ConnectionsManager, SocketContainer}
 
 import scala.util.control.NonFatal
 
 class RelayServer extends Relay {
-
-    Map.empty
 
     private val serverSocket = new ServerSocket(Constants.PORT)
     private val connectionsManager = new ConnectionsManager(this)
@@ -31,11 +30,13 @@ class RelayServer extends Relay {
      * For safety, prefer Relay#identfier instead of Constants.SERVER_ID
      * */
     override val identifier: String = Constants.SERVER_ID
-    override val packetManager = new PacketManager
+
+    override val eventDispatcher: EventDispatcher = new EventDispatcher
     override val extensionLoader = new RelayExtensionLoader(this, taskFolderPath)
     override val taskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
-
+    override val packetManager = new PacketManager(eventDispatcher.notifier)
+    private val notifier = eventDispatcher.notifier
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -46,6 +47,7 @@ class RelayServer extends Relay {
 
         val tasksHandler = connection.tasksHandler
         task.preInit(tasksHandler, identifier)
+        notifier.onTaskScheduled(task)
         RelayTaskAction(task)
     }
 
@@ -59,9 +61,11 @@ class RelayServer extends Relay {
         extensionLoader.loadExtensions()
 
         println("Ready !")
+        notifier.onReady()
         open = true
         while (open) awaitClientConnection()
-        close()
+
+        close(Reason.LOCAL_REQUEST)
     }
 
 
@@ -71,13 +75,8 @@ class RelayServer extends Relay {
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async =
         createAsync(linkedRelayID, id)
 
-    override def close(): Unit = {
-        println("closing server...")
-        connectionsManager.close()
-        serverSocket.close()
-        open = false
-        println("server closed !")
-    }
+    override def close(reason: Reason): Unit =
+        close(identifier, reason)
 
     private[server] def createSync(linkedRelayID: String, id: Int): SyncPacketChannel = {
         val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
@@ -89,13 +88,22 @@ class RelayServer extends Relay {
         targetConnection.createAsync(id)
     }
 
+    def close(relayId: String, reason: Reason): Unit = {
+        println("closing server...")
+        connectionsManager.close(reason)
+        serverSocket.close()
+        open = false
+        notifier.onClosed(relayId, reason)
+        println("server closed !")
+    }
+
     private def awaitClientConnection(): Unit = {
         try {
             val clientSocket = serverSocket.accept()
             val address = clientSocket.getRemoteSocketAddress.asInstanceOf[InetSocketAddress]
             val connection = connectionsManager.getConnectionFromAddress(address.getAddress.getHostAddress)
             if (connection == null) {
-                val socketContainer = new SocketContainer()
+                val socketContainer = new SocketContainer(notifier)
                 socketContainer.set(clientSocket)
                 connectionsManager.register(socketContainer)
                 return
@@ -103,10 +111,12 @@ class RelayServer extends Relay {
             connection.updateSocket(clientSocket)
 
         } catch {
-            case e: RelayException => Console.err.println(e.getMessage)
+            case e: RelayException =>
+                Console.err.println(e.getMessage)
+                notifier.onSystemError(e)
             case e: SocketException if e.getMessage == "Socket closed" =>
                 Console.err.println(e.getMessage)
-                close()
+                close(Reason.ERROR_OCCURRED)
             case NonFatal(e) => e.printStackTrace()
         }
     }
@@ -117,6 +127,6 @@ class RelayServer extends Relay {
     }
 
     // default tasks
-    Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
+    Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.LOCAL_REQUEST)))
 
 }

@@ -3,7 +3,10 @@ package fr.overridescala.vps.ftp.api.packet
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
-abstract class DynamicSocket extends Closeable {
+import fr.overridescala.vps.ftp.api.{Reason, RelayCloseable}
+import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
+
+abstract class DynamicSocket(notifier: EventNotifier) extends RelayCloseable {
 
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
@@ -73,7 +76,7 @@ abstract class DynamicSocket extends Closeable {
 
     def isOpen: Boolean = !closed
 
-    override def close(): Unit = {
+    override def close(reason: Reason): Unit = {
         if (currentSocket.isClosed) {
             closed = true
             return
@@ -121,11 +124,13 @@ abstract class DynamicSocket extends Closeable {
 
         def markDisconnected(): Unit = {
             isDisconnected = true
+            notifier.onDisconnected()
         }
 
         def markAsConnected(): Unit = disconnectLock.synchronized {
             isDisconnected = false
             disconnectLock.notifyAll()
+            notifier.onConnected()
         }
 
         def awaitConnected(): Unit = disconnectLock.synchronized {

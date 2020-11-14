@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
+import fr.overridescala.vps.ftp.api.RelayCloseable
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
 
 //TODO Doc
@@ -10,18 +10,12 @@ import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
  * @see [[PacketChannelManager]]
  * @see [[DataPacket]]
  * */
-trait PacketChannel extends AutoCloseable {
+trait PacketChannel extends RelayCloseable {
 
     val ownerID: String
     val connectedID: String
     val channelID: Int
 
-    /**
-     * send any packet to the connected Relay
-     *
-     * @param packet the packet to send
-     * @throws UnexpectedPacketException if the packet is an instance of [[TaskInitPacket]]
-     * */
     def sendPacket[P <: Packet](packet: P): Unit
 
 }

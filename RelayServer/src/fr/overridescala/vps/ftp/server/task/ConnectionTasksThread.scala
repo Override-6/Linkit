@@ -1,9 +1,9 @@
 package fr.overridescala.vps.ftp.server.task
 
-import java.io.Closeable
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.packet.Packet
+import fr.overridescala.vps.ftp.api.{Reason, RelayCloseable}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -11,7 +11,7 @@ import scala.util.control.NonFatal
 
 class ConnectionTasksThread private(ownerID: String,
                                     ticketQueue: BlockingQueue[TaskTicket],
-                                    lostPackets: mutable.Map[Int, ListBuffer[Packet]]) extends Thread with Closeable {
+                                    lostPackets: mutable.Map[Int, ListBuffer[Packet]]) extends Thread with RelayCloseable {
 
     @volatile private var open = false
     @volatile private var currentTicket: TaskTicket = _
@@ -33,9 +33,9 @@ class ConnectionTasksThread private(ownerID: String,
         }
     }
 
-    override def close(): Unit = {
+    override def close(reason: Reason): Unit = {
         if (currentTicket != null) {
-            currentTicket.abort()
+            currentTicket.abort(reason)
             currentTicket = null
         }
         ticketQueue.clear()

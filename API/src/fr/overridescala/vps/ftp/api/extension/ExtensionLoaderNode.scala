@@ -23,8 +23,10 @@ case class ExtensionLoaderNode(extensionInfo: ExtensionInfo, implementorExtensio
         try {
             val constructor = extensionInfo.extensionClass.getConstructor(classOf[Relay])
             constructor.setAccessible(true)
-            constructor.newInstance(relay).main()
+            val extension = constructor.newInstance(relay)
             println(s"Relay extension ${extensionInfo.name} loaded successfully !")
+            extension.main()
+            relay.eventDispatcher.notifier.onExtensionLoaded(extension)
         } catch {
             case _: NoSuchMethodException =>
                 throw new RelayException(s"Could not load '${extensionInfo.name} : Constructor(Relay) is missing !")

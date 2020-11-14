@@ -1,9 +1,9 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.io.Closeable
 import java.net.InetSocketAddress
 
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, RelayInitialisationException}
+import fr.overridescala.vps.ftp.api.{Reason, RelayCloseable}
 import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.collection.mutable
@@ -14,15 +14,15 @@ import scala.collection.mutable
  * @see [[RelayServer]]
  * @see [[ClientConnectionThread]]
  * */
-class ConnectionsManager(server: RelayServer) extends Closeable {
+class ConnectionsManager(server: RelayServer) extends RelayCloseable {
     /**
      * java map containing all RelayPointConnection instances
      * */
     private val connections: mutable.Map[String, ClientConnectionThread] = mutable.Map.empty
 
-    override def close(): Unit = {
+    override def close(reason: Reason): Unit = {
         for ((_, connection) <- connections)
-            connection.close()
+            connection.close(reason)
     }
 
     /**

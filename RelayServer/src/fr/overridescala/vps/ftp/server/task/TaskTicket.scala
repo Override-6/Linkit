@@ -2,8 +2,8 @@ package fr.overridescala.vps.ftp.server.task
 
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
-import java.net.Socket
 
+import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
 import fr.overridescala.vps.ftp.api.packet.SyncPacketChannel
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor}
@@ -14,18 +14,20 @@ import scala.util.control.NonFatal
 class TaskTicket(executor: TaskExecutor,
                  taskID: Int,
                  targetID: String,
-                 relay: RelayServer,
+                 server: RelayServer,
                  ownFreeWill: Boolean) {
 
-    var channel: SyncPacketChannel = relay.createSync(targetID, taskID)
-    val taskName: String = executor.getClass.getSimpleName
+    var channel: SyncPacketChannel = server.createSync(targetID, taskID)
+    private val taskName: String = executor.getClass.getSimpleName
+    private val notifier = server.eventDispatcher.notifier
 
-    def abort(): Unit = {
+    def abort(reason: Reason): Unit = {
         notifyExecutor()
         executor match {
             case task: Task[_] =>
                 val errorMethod = task.getClass.getMethod("error", classOf[String])
                 errorMethod.setAccessible(true)
+                server.eventDispatcher.notifier.onTaskSkipped(task, reason)
                 try {
                     errorMethod.invoke(task, "Task aborted from an external handler")
                 } catch {
@@ -33,6 +35,8 @@ class TaskTicket(executor: TaskExecutor,
                     case e: InvocationTargetException => e.getCause.printStackTrace()
                     case e: TaskOperationException => Console.err.println(e.getMessage)
                     case NonFatal(e) => e.printStackTrace()
+                } finally {
+                    notifier.onTaskSkipped(task, reason)
                 }
             case _ =>
         }
@@ -40,13 +44,15 @@ class TaskTicket(executor: TaskExecutor,
 
 
     def start(): Unit = {
+        var reason = Reason.ERROR_OCCURRED
         try {
             println(s"executing $taskName...")
-            executor.init(relay.packetManager, channel)
+            executor.init(server.packetManager, channel)
             if (ownFreeWill) {
                 channel.sendInitPacket(executor.initInfo)
             }
             executor.execute()
+            reason = Reason.LOCAL_REQUEST
             println(s"$taskName completed !")
         } catch {
             // Do not prints those exceptions : they are normal errors
@@ -58,7 +64,11 @@ class TaskTicket(executor: TaskExecutor,
             case NonFatal(e) => e.printStackTrace()
         } finally {
             notifyExecutor()
-            executor.closeChannel()
+            executor.closeChannel(reason)
+            executor match {
+                case task: Task[_] => notifier.onTaskEnd(task, reason)
+                case _ =>
+            }
         }
     }
 

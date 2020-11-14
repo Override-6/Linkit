@@ -17,6 +17,7 @@ class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) {
 
     type A = Class[_ <: RelayExtension]
 
+    private val notifier = relay.eventDispatcher.notifier
     private var classLoader: URLClassLoader = _
 
     def loadExtensions(): Unit = {
@@ -37,9 +38,26 @@ class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) {
                 extensions += loadJar(path)
             } catch {
                 case e: RelayException => e.printStackTrace()
+                    notifier.onSystemError(e)
             }
         }
         ExtensionLoaderNode.loadGraph(relay, extensions.toSeq)
+    }
+
+    def loadExtension[T <: RelayExtension](clazz: Class[T]): T = {
+        val name = retrieveInfo(clazz).name
+        try {
+            val constructor = clazz.getConstructor(classOf[Relay])
+            constructor.setAccessible(true)
+            val extension = constructor.newInstance(relay)
+            notifier.onExtensionLoaded(extension)
+            println(s"Relay extension $name loaded successfully !")
+            extension.main()
+            extension
+        } catch {
+            case _: NoSuchMethodException =>
+                throw new RelayException(s"Could not load '$name : Constructor(Relay) is missing !")
+        }
     }
 
     private def loadJar(path: Path): ExtensionInfo = {

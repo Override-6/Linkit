@@ -2,7 +2,8 @@ package fr.overridescala.vps.ftp.api.packet
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import fr.overridescala.vps.ftp.api.exceptions.{PacketException, UnexpectedPacketException}
+import fr.overridescala.vps.ftp.api.Reason
+import fr.overridescala.vps.ftp.api.exceptions.PacketException
 import fr.overridescala.vps.ftp.api.packet.AsyncPacketChannel.send
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
@@ -32,6 +33,7 @@ class AsyncPacketChannel(override val ownerID: String,
         Future {
             try {
                 onPacketReceived(packet)
+                cache.notifier.onPacketUsed(packet)
             } catch {
                 case NonFatal(e) => e.printStackTrace()
             }
@@ -41,8 +43,8 @@ class AsyncPacketChannel(override val ownerID: String,
     override def sendInitPacket(initInfo: TaskInitInfo): Unit =
         throw new UnsupportedOperationException()
 
-    override def close(): Unit =
-        cache.unregisterPaketChannel(channelID)
+    override def close(reason: Reason): Unit =
+        cache.unregisterPaketChannel(channelID, reason)
 
     def setOnPacketReceived(event: Packet => Unit): Unit = {
         onPacketReceived = event
@@ -80,6 +82,7 @@ object AsyncPacketChannel {
     private[AsyncPacketChannel] class PacketTicket(packet: Packet, socket: DynamicSocket) {
         def send(packetManager: PacketManager): Unit = {
             socket.write(packetManager.toBytes(packet))
+            packetManager.notifier.onPacketSent(packet)
         }
     }
 

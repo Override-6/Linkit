@@ -1,12 +1,10 @@
 package fr.overridescala.vps.ftp.api
 
-import java.io.Closeable
-
-import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
-import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, SyncPacketChannel, PacketChannel}
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAction}
+import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher
+import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
+import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 
 //TODO reedit doc about all changes
 
@@ -21,7 +19,7 @@ import fr.overridescala.vps.ftp.api.task.{Task, TaskAction}
  * his connection will be refused. <br>
  * the RelayServer's identifier is forced to be "server". So, a client can't own this id
  * */
-trait Relay extends Closeable with TaskScheduler {
+trait Relay extends RelayCloseable with TaskScheduler {
 
     /**
      * The unique identifier used to recognize a Relay in the network.<br>
@@ -49,6 +47,13 @@ trait Relay extends Closeable with TaskScheduler {
      *         through [[RelayProperties]], object instances, parameters, etc can be share between extensions.
      * */
     val properties: RelayProperties
+
+    /**
+     * @return the [[EventDispatcher]] used by this relay.
+     *         EventDispatcher is based on an Observer pattern, which carries all possible events that a relay can encounter
+     *         excepted for packet events.
+     * */
+    val eventDispatcher: EventDispatcher
 
     /**
      * <b>Starts the Relay.</b>

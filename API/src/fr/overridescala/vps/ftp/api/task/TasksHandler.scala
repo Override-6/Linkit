@@ -1,10 +1,8 @@
 package fr.overridescala.vps.ftp.api.task
 
-import java.io.Closeable
-
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
+import fr.overridescala.vps.ftp.api.{Reason, RelayCloseable}
 
 /**
  * This class is the hearth of this program.
@@ -23,7 +21,7 @@ import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
  *
  * @see PacketChannel
  * */
-trait TasksHandler extends Closeable {
+trait TasksHandler extends RelayCloseable {
 
 
     /**
@@ -40,7 +38,7 @@ trait TasksHandler extends Closeable {
     /**
      * closes the current client tasks thread
      * */
-    override def close(): Unit
+    override def close(reason: Reason): Unit
 
     /**
      * Handles the packet.
@@ -62,5 +60,5 @@ trait TasksHandler extends Closeable {
     /**
      * Suddenly stop a task execution and execute his successor.
      * */
-    def skipCurrent(): Unit
+    def skipCurrent(reason: Reason): Unit
 }

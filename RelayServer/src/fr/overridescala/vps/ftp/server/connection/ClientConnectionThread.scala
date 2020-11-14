@@ -1,6 +1,5 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.io.Closeable
 import java.net.{Socket, SocketException}
 
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, UnexpectedPacketException}
@@ -8,6 +7,7 @@ import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental._
 import fr.overridescala.vps.ftp.api.packet.ext.{PacketManager, PacketUtils}
 import fr.overridescala.vps.ftp.api.task.TasksHandler
+import fr.overridescala.vps.ftp.api.{Reason, RelayCloseable}
 import fr.overridescala.vps.ftp.server.RelayServer
 import fr.overridescala.vps.ftp.server.task.ConnectionTasksHandler
 
@@ -16,12 +16,11 @@ import scala.util.control.NonFatal
 
 class ClientConnectionThread(socket: SocketContainer,
                              server: RelayServer,
-                             manager: ConnectionsManager) extends Thread with Closeable {
-
-
-    private val packetManager = server.packetManager
+                             manager: ConnectionsManager) extends Thread with RelayCloseable {
+     private val packetManager = server.packetManager
     private val packetReader: PacketReader = new PacketReader(socket)
-    private val channelCache = new PacketChannelManagerCache
+    private val notifier = server.eventDispatcher.notifier
+    private val channelCache = new PacketChannelManagerCache(notifier)
     /**
      * This array is only used and updated while the connection is not initialised.
      * */
@@ -47,18 +46,40 @@ class ClientConnectionThread(socket: SocketContainer,
             while (!closed)
                 update(handlePacket)
         } catch {
+            case e: RelayException =>
+                e.printStackTrace()
+                notifier.onSystemError(e)
             case NonFatal(e) => e.printStackTrace()
         }
         println(s"End of Thread execution '$getName'")
     }
 
-    override def close(): Unit = closeConnection(true)
+    override def close(reason: Reason): Unit = {
+        println(s"closing thread '$getName'")
+        if (socket.isConnected) {
+            if (reason != Reason.EXTERNAL_REQUEST) {
+                systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
+            } else {
+                systemChannel.sendPacket(EmptyPacket())
+                systemChannel.nextPacket() //Wait a response packet (EmptyPacket) before closing the connection.
+            }
+            systemChannel.close(reason)
+        }
+
+        tasksHandler.close(reason)
+        socket.close(reason)
+        manager.unregister(socket.remoteSocketAddress())
+
+        closed = true
+        println(s"thread '$getName' closed.")
+    }
 
     private[server] def createSync(id: Int): SyncPacketChannel =
         new SyncPacketChannel(socket, identifier, server.identifier, id, channelCache, packetManager)
 
-    private[server] def createAsync(id: Int): AsyncPacketChannel =
+    private[server] def createAsync(id: Int): AsyncPacketChannel = {
         new AsyncPacketChannel(identifier, server.identifier, id, channelCache, socket)
+    }
 
     private[server] def updateSocket(socket: Socket): Unit =
         this.socket.set(socket)
@@ -67,35 +88,16 @@ class ClientConnectionThread(socket: SocketContainer,
         socket.write(bytes.length.toString.getBytes ++ PacketManager.SizeSeparator ++ bytes)
     }
 
-    private def closeConnection(requestIsLocal: Boolean): Unit = {
-        println(s"closing thread '$getName'")
-        if (socket.isConnected && socket.isConnected) {
-            if (requestIsLocal) {
-                systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
-            } else {
-                systemChannel.sendPacket(EmptyPacket())
-                systemChannel.nextPacket() //Wait a response packet (EmptyPacket) before closing the connection.
-            }
-            systemChannel.close()
-        }
-
-        tasksHandler.close()
-        socket.close()
-        manager.unregister(socket.remoteSocketAddress())
-
-        closed = true
-        println(s"thread '$getName' closed.")
-    }
-
     private def handlePacket(packet: Packet): Unit = {
         if (isNotInitialised) {
             unhandledPackets += packet
             return
         }
+        notifier.onPacketReceived(packet)
         packet match {
             case errorPacket: ErrorPacket if errorPacket.errorType == ErrorPacket.ABORT_TASK =>
                 printErrorPacket(errorPacket)
-                tasksHandler.skipCurrent()
+                tasksHandler.skipCurrent(Reason.ERROR_OCCURRED)
             case init: TaskInitPacket => tasksHandler.handlePacket(init)
             case _: Packet => channelCache.injectPacket(packet)
         }
@@ -106,6 +108,7 @@ class ClientConnectionThread(socket: SocketContainer,
         val errorType = packet.errorType
         Console.err.println(s"Received error from relay '$identifier' of type '$errorType'")
         packet.printError()
+        notifier.onSystemError(packet)
     }
 
     private def update(onPacketReceived: Packet => Unit): Unit = {
@@ -138,8 +141,8 @@ class ClientConnectionThread(socket: SocketContainer,
     private def handleSystemOrder(order: String): Unit = {
         println(s"order $order had been requested by '$identifier'")
         order match {
-            case SystemPacket.ClientClose => closeConnection(false)
-            case SystemPacket.ServerClose => server.close()
+            case SystemPacket.ClientClose => close(Reason.EXTERNAL_REQUEST)
+            case SystemPacket.ServerClose => server.close(identifier, Reason.EXTERNAL_REQUEST)
             case _ => Console.err.println(s"Could not find action for order '$order'")
         }
     }
@@ -154,6 +157,7 @@ class ClientConnectionThread(socket: SocketContainer,
             e.getMessage,
             cause)
         socket.write(packetManager.toBytes(packet))
+        notifier.onSystemError(e)
     }
 
 
@@ -173,7 +177,7 @@ class ClientConnectionThread(socket: SocketContainer,
                 val identifier = dataPacket.header
                 val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
                 channel.sendPacket(DataPacket(response))
-                channel.close()
+                channel.close(Reason.LOCAL_REQUEST)
 
                 if (response == "ERROR")
                     throw new RelayException("a Relay point connection have been rejected.")

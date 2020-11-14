@@ -1,9 +1,8 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.io.BufferedOutputStream
-import java.net.Socket
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
+import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
@@ -19,13 +18,14 @@ import fr.overridescala.vps.ftp.api.task.TaskInitInfo
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
-class SyncPacketChannel(private val socket: DynamicSocket,
+class SyncPacketChannel(socket: DynamicSocket,
                         override val connectedID: String,
                         override val ownerID: String,
                         override val channelID: Int,
-                        private val cache: PacketChannelManagerCache,
-                        private val packetManager: PacketManager) extends PacketChannel.Sync with PacketChannelManager {
+                        cache: PacketChannelManagerCache,
+                        packetManager: PacketManager) extends PacketChannel.Sync with PacketChannelManager {
 
+    private val notifier = cache.notifier
     cache.registerPacketChannel(this)
 
     /**
@@ -43,6 +43,7 @@ class SyncPacketChannel(private val socket: DynamicSocket,
     override def sendPacket[P <: Packet](packet: P): Unit = {
         val bytes = packetManager.toBytes(packet)
         socket.write(bytes)
+        notifier.onPacketSent(packet)
     }
 
     /**
@@ -55,9 +56,9 @@ class SyncPacketChannel(private val socket: DynamicSocket,
         queue.addFirst(packet)
     }
 
-    override def close(): Unit = {
+    override def close(reason: Reason): Unit = {
         queue.clear()
-        cache.unregisterPaketChannel(channelID)
+        cache.unregisterPaketChannel(channelID, reason)
     }
 
     /**
@@ -66,8 +67,11 @@ class SyncPacketChannel(private val socket: DynamicSocket,
      * @return the received packet
      * @see [[DataPacket]]
      * */
-    override def nextPacket(): Packet =
-        queue.takeLast()
+    override def nextPacket(): Packet = {
+        val packet = queue.takeLast()
+        notifier.onPacketUsed(packet)
+        packet
+    }
 
 
     override def nextPacketAsP[P <: Packet](): P =

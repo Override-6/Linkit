@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.api.task
 
+import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.packet.ext.{PacketFactory, PacketManager}
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel, SyncPacketChannel}
@@ -41,9 +42,9 @@ abstract class TaskExecutor {
         this.channel = packetChannel
     }
 
-    def closeChannel(): Unit = {
+    def closeChannel(reason: Reason): Unit = {
         if (canCloseChannel)
-            channel.close()
+            channel.close(reason)
     }
 
     protected def setDoNotCloseChannel(): Unit =

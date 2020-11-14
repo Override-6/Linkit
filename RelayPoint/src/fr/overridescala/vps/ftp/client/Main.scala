@@ -6,7 +6,6 @@ import java.util.Scanner
 import fr.overridescala.vps.ftp.`extension`.controller.ControllerExtension
 import fr.overridescala.vps.ftp.`extension`.fundamental.FundamentalExtension
 import fr.overridescala.vps.ftp.`extension`.ppc.PPCExtension
-import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 object Main {
@@ -23,17 +22,20 @@ object Main {
 
     /**
      * @param args "--local-run", used to determine if the application is run into IntelliJ or from an external context
+     *             "--no-tasks", used to decide if the relay should not load any tasks from his RelayExtensions.
      * */
     def main(args: Array[String]): Unit = {
         val localRun = args.contains("--local-run")
         val loadTasks = !args.contains("--no-tasks")
         val relayPoint = new RelayPoint(address, identifier, localRun, loadTasks)
-        if (localRun) {
-            new ControllerExtension(relayPoint).main()
-            new FundamentalExtension(relayPoint).main()
-            new PPCExtension(relayPoint).main()
-        }
         relayPoint.start()
+        relayPoint.awaitStart()
+        if (localRun) {
+            val loader = relayPoint.extensionLoader
+            loader.loadExtension(classOf[ControllerExtension])
+            loader.loadExtension(classOf[FundamentalExtension])
+            loader.loadExtension(classOf[PPCExtension])
+        }
     }
 
 }

@@ -58,7 +58,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             AsyncPacketChannel.launch(packetManager)
             println(s"Connecting to server with identifier '$identifier'...")
             socket.start()
-
+            println("Connected !")
             println("Ready !")
             lock.synchronized {
                 lock.notifyAll()

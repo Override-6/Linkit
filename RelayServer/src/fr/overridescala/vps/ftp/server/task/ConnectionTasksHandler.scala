@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server.task
 import java.io.BufferedOutputStream
 import java.net.Socket
 
-import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.{Reason, Relay}
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
 import fr.overridescala.vps.ftp.api.packet.DynamicSocket
 import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
@@ -24,6 +24,7 @@ class ConnectionTasksHandler(override val identifier: String,
     private var tasksThread = new ConnectionTasksThread(identifier)
     tasksThread.start()
 
+    private val notifier = server.eventDispatcher.notifier
     override val tasksCompleterHandler: TaskCompleterHandler = server.taskCompleterHandler
 
     /**
@@ -43,6 +44,7 @@ class ConnectionTasksHandler(override val identifier: String,
                     ErrorPacket.ABORT_TASK,
                     e.getMessage)
                 Console.err.println(e.getMessage)
+                notifier.onSystemError(e)
                 socket.write(packetManager.toBytes(packet))
         }
     }
@@ -63,19 +65,19 @@ class ConnectionTasksHandler(override val identifier: String,
     /**
      * closes the current client tasks thread
      * */
-    override def close(): Unit = {
-        tasksThread.close()
+    override def close(reason: Reason): Unit = {
+        tasksThread.close(reason)
     }
 
     /**
      * Suddenly stop a task execution and execute his successor.
      * */
-    override def skipCurrent(): Unit = {
+    override def skipCurrent(reason: Reason): Unit = {
         //Restarting the thread causes the current task to be skipped
         //And wait or execute the task that come after it
         val lastThread = tasksThread
         tasksThread = tasksThread.copy()
-        lastThread.close()
+        lastThread.close(reason)
         tasksThread.start()
     }
 
