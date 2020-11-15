@@ -7,13 +7,14 @@ import java.nio.file.Paths
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.exceptions.{PacketException, RelayInitialisationException}
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.packet.fundamental._
+import fr.overridescala.vps.ftp.api.system.{Reason, SystemPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
-import fr.overridescala.vps.ftp.api.{Reason, Relay, RelayProperties}
+import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -41,7 +42,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val packetReader = new PacketReader(socket)
 
     override val properties = new RelayProperties
-    private val channelCache = new PacketChannelManagerCache(notifier)
+    private val channelCache = new PacketChannelsHandler(notifier)
 
     private implicit val systemChannel: PacketChannel.Sync = createSyncChannel0(Constants.SERVER_ID, -6)
     private val lock: Object = new Object
@@ -94,20 +95,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     override def close(reason: Reason): Unit = {
-        if (reason != Reason.EXTERNAL_REQUEST) {
-            systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
-        } else {
-            systemChannel.sendPacket(EmptyPacket())
-            systemChannel.nextPacket() //wait an empty packet from server in order to sync the disconnection
-        } //Notifies the server in order to sync the disconnection
-
-        println("closing socket...")
-        socket.close(reason)
-        println("socket closed !")
-        tasksHandler.close()
-        open = false
-        notifier.onClosed()//TODO
-        println("closed !")
+        close(identifier, reason)
     }
 
 
@@ -130,6 +118,23 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     private[client] def createSyncChannel0(linkedRelayID: String, id: Int): SyncPacketChannel = {
         new SyncPacketChannel(socket, linkedRelayID, identifier, id, channelCache, packetManager)
+    }
+
+    private def close(relayId: String, reason: Reason): Unit = {
+        if (reason != Reason.EXTERNAL_REQUEST) {
+            systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
+        } else {
+            systemChannel.sendPacket(EmptyPacket())
+            systemChannel.nextPacket() //wait an empty packet from server in order to sync the disconnection
+        } //Notifies the server in order to sync the disconnection
+
+        println("closing socket...")
+        socket.close(reason)
+        println("socket closed !")
+        tasksHandler.close(reason)
+        open = false
+        notifier.onClosed(relayId, reason)
+        println("closed !")
     }
 
 
@@ -158,14 +163,14 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     private def handlePacket(packet: Packet): Unit = packet match {
         case init: TaskInitPacket => tasksHandler.handlePacket(init)
-        case error: ErrorPacket if error.errorType == ErrorPacket.ABORT_TASK => tasksHandler.skipCurrent()
+        case error: ErrorPacket if error.errorType == ErrorPacket.ABORT_TASK => tasksHandler.skipCurrent(Reason.EXTERNAL_REQUEST)
         case system: SystemPacket => handleSystemPacket(system)
         case _: Packet => channelCache.injectPacket(packet)
     }
 
 
     private def handleSystemPacket(system: SystemPacket): Unit = {
-        val order = system.order
+        val order = system.infoKind
         println(s"Received system order $order from ${system.senderID}")
         order match {
             case SystemPacket.ClientClose => close(Reason.EXTERNAL_REQUEST)

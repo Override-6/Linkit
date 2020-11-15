@@ -1,12 +1,11 @@
 package fr.overridescala.vps.ftp.api.`extension`.event
 
-import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtension
 import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
-import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
-import fr.overridescala.vps.ftp.api.packet.fundamental.ErrorPacket
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannelManager}
+import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder}
+import fr.overridescala.vps.ftp.api.system.SystemInfo.{SystemError, SystemOrder}
 import fr.overridescala.vps.ftp.api.task.Task
 
 import scala.collection.mutable.ListBuffer
@@ -55,9 +54,9 @@ object EventDispatcher {
 
         def onPacketUsed(packet: Packet): Unit = dispatch(_.onPacketUsed(packet))
 
-        def onSystemError(exception: RelayException): Unit = dispatch(_.onSystemError(exception))
-        
-        def onSystemError(packet: ErrorPacket): Unit = dispatch(_.onSystemError(packet))
+        def onSystemOrderReceived(orderType: SystemOrder): Unit = dispatch(_.onSystemOrderReceived(orderType))
+
+        def onSystemOrderSent(orderType: SystemOrder): Unit = dispatch(_.onSystemOrderSent(orderType))
 
         private def dispatch(f: EventListener => Unit): Unit = listeners.foreach(f)
     }

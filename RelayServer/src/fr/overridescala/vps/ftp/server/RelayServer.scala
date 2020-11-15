@@ -6,12 +6,13 @@ import java.nio.file.Paths
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher
-import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
+import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
+import fr.overridescala.vps.ftp.api.system.Reason
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
-import fr.overridescala.vps.ftp.api.{Reason, Relay, RelayProperties}
+import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.server.connection.{ConnectionsManager, SocketContainer}
 
 import scala.util.control.NonFatal
@@ -57,7 +58,7 @@ class RelayServer extends Relay {
         println("Listening on port " + Constants.PORT)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
 
-        AsyncPacketChannel.launch(packetManager)
+        AsyncPacketChannel.UploadThread.start()
         extensionLoader.loadExtensions()
 
         println("Ready !")
@@ -65,7 +66,7 @@ class RelayServer extends Relay {
         open = true
         while (open) awaitClientConnection()
 
-        close(Reason.LOCAL_REQUEST)
+        close(Reason.LOCAL)
     }
 
 
@@ -113,10 +114,10 @@ class RelayServer extends Relay {
         } catch {
             case e: RelayException =>
                 Console.err.println(e.getMessage)
-                notifier.onSystemError(e)
+                //notifier.onSystemError(e.getType, Reason.LOCAL_ERROR)
             case e: SocketException if e.getMessage == "Socket closed" =>
                 Console.err.println(e.getMessage)
-                close(Reason.ERROR_OCCURRED)
+                close(Reason.LOCAL_ERROR)
             case NonFatal(e) => e.printStackTrace()
         }
     }
@@ -127,6 +128,6 @@ class RelayServer extends Relay {
     }
 
     // default tasks
-    Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.LOCAL_REQUEST)))
+    Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.LOCAL)))
 
 }

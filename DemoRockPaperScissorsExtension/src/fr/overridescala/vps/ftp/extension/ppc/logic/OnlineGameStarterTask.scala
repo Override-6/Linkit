@@ -33,7 +33,7 @@ class OnlineGameStarterTask(targetID: String, displayInterface: Boolean) extends
         val response: DataPacket = channel.nextPacketAsP()
         val remotePlayerName = response.header match {
             case "oui" => response.contentAsString
-            case "non" => error(s"Le joueur distant n'a pas voulu jouer avec toi :c")
+            case "non" => fail(s"Le joueur distant n'a pas voulu jouer avec toi :c")
         }
         conclude(playerName, remotePlayerName)
     }

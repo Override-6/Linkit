@@ -3,7 +3,8 @@ package fr.overridescala.vps.ftp.server.task
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.{Reason, RelayCloseable}
+import fr.overridescala.vps.ftp.api.system.{Reason, RelayCloseable}
+import fr.overridescala.vps.ftp.api.task.TaskTicket
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

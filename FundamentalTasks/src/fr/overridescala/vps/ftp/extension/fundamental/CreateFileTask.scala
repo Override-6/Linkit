@@ -25,7 +25,7 @@ class CreateFileTask private(private val ownerID: String,
         channel.nextPacket() match {
             case errorPacket: ErrorPacket =>
                 errorPacket.printError()
-                error(errorPacket.errorMsg)
+                fail(errorPacket.errorMsg)
             case _: DataPacket => success()
         }
         success()

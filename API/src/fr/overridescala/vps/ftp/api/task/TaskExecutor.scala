@@ -1,9 +1,9 @@
 package fr.overridescala.vps.ftp.api.task
 
-import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.`extension`.packet.{PacketFactory, PacketManager}
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel, SyncPacketChannel}
+import fr.overridescala.vps.ftp.api.system.Reason
 
 /**
  * The class that will execute the Task.

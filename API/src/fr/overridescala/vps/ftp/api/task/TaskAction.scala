@@ -21,10 +21,10 @@ trait TaskAction[T] {
      * Enqueue / register this task.
      * The task will be executed after all task before are ended.
      * @param onSuccess the action to perform when the task was successful
-     * @param onError the action to perform when the task was unsuccessful
+     * @param onFail the action to perform when the task was unsuccessful
      * @param identifier specifies the task identifier used for packet channels.
      * */
-    def queue(onSuccess: T => Unit = () => _, onError: String => Unit = () => _, identifier: Int = identifier): Unit
+    def queue(onSuccess: T => Unit = () => _, onFail: String => Unit = () => _, identifier: Int = identifier): Unit
 
     /**
      * Completes the task. That does not mean that this task is not enqueued.

@@ -1,15 +1,13 @@
 package fr.overridescala.vps.ftp.client
 
-import java.io.BufferedOutputStream
-import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
-import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
-import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
+import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationFailException}
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.fundamental.{ErrorPacket, TaskInitPacket}
-import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.system.Reason
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
 
 import scala.util.control.NonFatal
 
@@ -31,9 +29,10 @@ protected class ClientTasksHandler(private val socket: DynamicSocket,
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
         val linkedRelay = if (ownFreeWill) targetID else senderID
         if (linkedRelay == identifier)
-            throw new TaskOperationException("can't start a task with oneself !")
+            throw new TaskOperationFailException("can't start a task with oneself !")
 
-        val ticket = TaskTicket(executor, taskIdentifier, linkedRelay, ownFreeWill)
+        val channel = relay.createSyncChannel0(linkedRelay, taskIdentifier)
+        val ticket = new TaskTicket(executor, channel, packetManager, ownFreeWill)
         queue.offer(ticket)
     }
 
@@ -95,70 +94,6 @@ protected class ClientTasksHandler(private val socket: DynamicSocket,
         tasksThread = new Thread(() => listen())
         tasksThread.setName("Client Tasks scheduler")
         tasksThread.start()
-    }
-
-    private case class TaskTicket(private val executor: TaskExecutor,
-                                  private val taskID: Int,
-                                  private val linkedRelay: String,
-                                  private val ownFreeWill: Boolean) {
-
-        val taskName: String = executor.getClass.getSimpleName
-
-        private[ClientTasksHandler] val channel: SyncPacketChannel =
-            relay.createSyncChannel0(linkedRelay, taskID)
-
-        def abort(reason: Reason): Unit = {
-            notifyExecutor()
-            executor match {
-                case task: Task[_] =>
-                    val errorMethod = task.getClass.getMethod("error", classOf[String])
-                    errorMethod.setAccessible(true)
-                    notifier.onTaskSkipped(task, reason)
-                    try {
-                        errorMethod.invoke(task, "Task aborted from an external handler")
-                    } catch {
-                        case e: InvocationTargetException if e.getCause.isInstanceOf[TaskException] => Console.err.println(e.getMessage)
-                        case e: InvocationTargetException => e.getCause.printStackTrace()
-                        case NonFatal(e) => e.printStackTrace()
-                    }
-                case _ =>
-            }
-        }
-
-        def start(): Unit = {
-            var reason = Reason.ERROR_OCCURRED
-            try {
-                executor match {
-                    case task: Task[_] => notifier.onTaskStartExecuting(task)
-                    case _ =>
-                }
-
-                if (ownFreeWill) {
-                    val initInfo = executor.initInfo
-                    channel.sendInitPacket(initInfo)
-                }
-                executor.init(packetManager, channel)
-                executor.execute()
-                reason = Reason.LOCAL_REQUEST
-
-            } catch {
-                case e: TaskOperationException => Console.err.println(e.getMessage)
-                case _: InterruptedException => Console.err.println(s"$taskName execution suddenly ended")
-                case NonFatal(e) => e.printStackTrace()
-            } finally {
-                notifyExecutor()
-                executor match {
-                    case task: Task[_] => notifier.onTaskEnd(task, reason)
-                    case _ =>
-                }
-                executor.closeChannel(reason)
-            }
-        }
-
-        private def notifyExecutor(): Unit = executor.synchronized {
-            executor.notifyAll()
-        }
-
     }
 
 }

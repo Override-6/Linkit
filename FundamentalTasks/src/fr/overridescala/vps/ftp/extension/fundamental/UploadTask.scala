@@ -90,11 +90,11 @@ class UploadTask(private val desc: TransferDescription)
         packet match {
             case errorPacket: ErrorPacket =>
                 errorPacket.printError()
-                error(errorPacket.errorMsg)
+                fail(errorPacket.errorMsg)
             case dataPacket: DataPacket =>
                 val header = dataPacket.header
                 val errorMsg = s"unexpected packet with header $header was received."
-                error(errorMsg)
+                fail(errorMsg)
                 throw new UnexpectedPacketException(errorMsg)
             case _ => throw new UnexpectedPacketException(s"Received unexpected packet of type ${packet.className}")
         }
@@ -104,7 +104,7 @@ class UploadTask(private val desc: TransferDescription)
         if (Files.notExists(path)) {
             val errorMsg = s"($path) could not upload invalid file path : this file does not exists"
             channel.sendPacket(ErrorPacket("file not exists", errorMsg))
-            error(errorMsg)
+            fail(errorMsg)
             return true
         }
         false

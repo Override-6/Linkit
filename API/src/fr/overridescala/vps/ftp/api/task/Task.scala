@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.task
 import java.util.concurrent.atomic.AtomicReference
 
 import com.sun.istack.internal.Nullable
-import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 
 
 //TODO reedit the DOC
@@ -53,7 +53,7 @@ abstract class Task[T](val targetID: String)
      *  Prints the error by default.
      * */
     @volatile
-    @Nullable private var onError: String => Unit = Console.err.println
+    @Nullable private var onFail: String => Unit = Console.err.println
 
     /**
      * initialises this task.
@@ -68,13 +68,13 @@ abstract class Task[T](val targetID: String)
     /**
      * Enqueue / register this task to the [[TasksHandler]]
      * @param onSuccess the action to perform when the task was successful
-     * @param onError the action to perform when the task was unsuccessful
+     * @param onFail the action to perform when the task was unsuccessful
      * @param identifier specifies the task identifier used for packet channels.
      * */
-    final override def queue(onSuccess: T => Unit = _ => onSuccess, onError: String => Unit = onError, identifier: Int): Unit = {
+    final override def queue(onSuccess: T => Unit = _ => onSuccess, onFail: String => Unit = onFail, identifier: Int): Unit = {
         checkInit()
         this.onSuccess = onSuccess
-        this.onError = onError
+        this.onFail = onFail
         handler.registerTask(this, identifier, targetID, relayIdentifier, true)
     }
 
@@ -88,18 +88,20 @@ abstract class Task[T](val targetID: String)
      * */
     final override def complete(identifier: Int): T = {
         checkInit()
+
         handler.registerTask(this, identifier, targetID, relayIdentifier, true)
         val atomicResult = new AtomicReference[T]()
-        val onSuccess: T => Unit = result => synchronized {
-            notify()
+
+        onSuccess  = result => synchronized {
             atomicResult.set(result)
+            notifyAll()
         }
-        val onError: String => Unit = msg => synchronized {
-            notify()
+
+        onFail = msg => synchronized {
             Console.err.println(msg)
+            notifyAll()
         }
-        this.onSuccess = onSuccess
-        this.onError = onError
+
         synchronized {
             wait()
         }
@@ -108,15 +110,14 @@ abstract class Task[T](val targetID: String)
 
     private[task] def checkInit(): Unit =
         if (relayIdentifier == null || handler == null)
-            throw new TaskException("please init this task before schedule")
+            throw new TaskException("Please init this task before schedule it")
 
     /**
      * Invoked by TaskExecutors to signal that this task was unsuccessful
      * */
-    protected def error[R](msg: String): R = {
-        if (onError != null)
-            onError(msg)
-        throw new TaskOperationException(msg)
+    protected def fail(msg: String): Unit = {
+        if (onFail != null)
+            onFail(msg)
     }
 
     /**

@@ -1,11 +1,10 @@
 package fr.overridescala.vps.ftp.api.`extension`.event
 
-import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtension
-import fr.overridescala.vps.ftp.api.exceptions.RelayException
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
-import fr.overridescala.vps.ftp.api.packet.fundamental.ErrorPacket
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannelManager}
+import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder}
+import fr.overridescala.vps.ftp.api.system.SystemInfo.{SystemError, SystemOrder}
 import fr.overridescala.vps.ftp.api.task.Task
 
 abstract class EventListener {
@@ -40,8 +39,8 @@ abstract class EventListener {
 
     def onPacketUsed(packet: Packet): Unit = ()
 
-    def onSystemError(relayException: RelayException): Unit = ()
+    def onSystemOrderReceived(orderType: SystemOrder): Unit = ()
 
-    def onSystemError(packet: ErrorPacket): Unit = ()
+    def onSystemOrderSent(orderType: SystemOrder): Unit = ()
 
 }

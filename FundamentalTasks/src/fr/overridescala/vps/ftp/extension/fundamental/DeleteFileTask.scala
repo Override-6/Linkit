@@ -16,7 +16,7 @@ case class DeleteFileTask(targetId: String, targetPath: String) extends Task[Uni
         channel.nextPacket() match {
             case errorPacket: ErrorPacket =>
                 errorPacket.printError()
-                error(errorPacket.errorMsg)
+                fail(errorPacket.errorMsg)
             case _: EmptyPacket => success()
         }
     }

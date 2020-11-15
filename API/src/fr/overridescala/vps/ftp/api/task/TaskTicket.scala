@@ -1,25 +1,22 @@
-package fr.overridescala.vps.ftp.server.task
+package fr.overridescala.vps.ftp.api.task
 
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 
-import fr.overridescala.vps.ftp.api.Reason
-import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
+import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationFailException}
 import fr.overridescala.vps.ftp.api.packet.SyncPacketChannel
-import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor}
-import fr.overridescala.vps.ftp.server.RelayServer
+import fr.overridescala.vps.ftp.api.system.Reason
 
 import scala.util.control.NonFatal
 
 class TaskTicket(executor: TaskExecutor,
-                 taskID: Int,
-                 targetID: String,
-                 server: RelayServer,
+                 val channel: SyncPacketChannel,
+                 val packetManager: PacketManager,
                  ownFreeWill: Boolean) {
 
-    var channel: SyncPacketChannel = server.createSync(targetID, taskID)
     private val taskName: String = executor.getClass.getSimpleName
-    private val notifier = server.eventDispatcher.notifier
+    private val notifier = packetManager.notifier
 
     def abort(reason: Reason): Unit = {
         notifyExecutor()
@@ -27,13 +24,13 @@ class TaskTicket(executor: TaskExecutor,
             case task: Task[_] =>
                 val errorMethod = task.getClass.getMethod("error", classOf[String])
                 errorMethod.setAccessible(true)
-                server.eventDispatcher.notifier.onTaskSkipped(task, reason)
+                notifier.onTaskSkipped(task, reason)
                 try {
                     errorMethod.invoke(task, "Task aborted from an external handler")
                 } catch {
                     case e: InvocationTargetException if e.getCause.isInstanceOf[TaskException] => Console.err.println(e.getMessage)
                     case e: InvocationTargetException => e.getCause.printStackTrace()
-                    case e: TaskOperationException => Console.err.println(e.getMessage)
+                    case e: TaskOperationFailException => Console.err.println(e.getMessage)
                     case NonFatal(e) => e.printStackTrace()
                 } finally {
                     notifier.onTaskSkipped(task, reason)
@@ -47,7 +44,7 @@ class TaskTicket(executor: TaskExecutor,
         var reason = Reason.ERROR_OCCURRED
         try {
             println(s"executing $taskName...")
-            executor.init(server.packetManager, channel)
+            executor.init(packetManager, channel)
 
             executor match {
                 case task: Task[_] => notifier.onTaskStartExecuting(task)
@@ -55,10 +52,10 @@ class TaskTicket(executor: TaskExecutor,
             }
 
             if (ownFreeWill) {
-                channel.sendInitPacket(executor.initInfo)
+                channel.sendPacket(executor.initInfo)
             }
             executor.execute()
-            reason = Reason.LOCAL_REQUEST
+            reason = Reason.LOCAL
             println(s"$taskName completed !")
         } catch {
             // Do not prints those exceptions : they are normal errors

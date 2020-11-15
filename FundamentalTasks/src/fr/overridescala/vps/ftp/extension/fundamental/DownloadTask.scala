@@ -44,7 +44,7 @@ class DownloadTask private(private val desc: TransferDescription)
                 if (errMsg == null)
                     msg = s"got an error of type : $typeName"
                 channel.sendPacket(ErrorPacket(typeName, msg))
-                error(msg)
+                fail(msg)
         }
     }
 
@@ -110,7 +110,7 @@ class DownloadTask private(private val desc: TransferDescription)
         if (!Files.isWritable(path) || !Files.isReadable(path)) {
             val errorMsg = s"($path) Can't access to the file"
             channel.sendPacket(ErrorPacket("NoSuchPermissions", errorMsg))
-            error(errorMsg)
+            fail(errorMsg)
             return true
         }
         false

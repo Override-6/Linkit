@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.`extension`.controller.cli
 
-import fr.overridescala.vps.ftp.api.exceptions.TaskOperationException
+import fr.overridescala.vps.ftp.api.exceptions.TaskOperationFailException
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -25,7 +25,7 @@ class CommandManager {
             commands(cmd).execute(args)
         } catch {
             case e: CommandException => Console.err.println(e.getMessage)
-            case e: TaskOperationException => Console.err.println(e.getMessage)
+            case e: TaskOperationFailException => Console.err.println(e.getMessage)
             case NonFatal(e) => e.printStackTrace()
         }
     }

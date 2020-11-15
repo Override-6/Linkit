@@ -1,13 +1,10 @@
 package fr.overridescala.vps.ftp.server.task
 
-import java.io.BufferedOutputStream
-import java.net.Socket
-
-import fr.overridescala.vps.ftp.api.{Reason, Relay}
-import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
+import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationFailException}
 import fr.overridescala.vps.ftp.api.packet.DynamicSocket
-import fr.overridescala.vps.ftp.api.packet.fundamental.{ErrorPacket, TaskInitPacket}
-import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
+import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
+import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder, SystemPacketChannel}
+import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
 import fr.overridescala.vps.ftp.server.RelayServer
 
 /**
@@ -17,8 +14,9 @@ import fr.overridescala.vps.ftp.server.RelayServer
  * @param socket the writer in which tasks will write packets
  * */
 class ConnectionTasksHandler(override val identifier: String,
-                             private val server: RelayServer,
-                             private val socket: DynamicSocket) extends TasksHandler {
+                             server: RelayServer,
+                             socket: DynamicSocket,
+                             systemChannel: SystemPacketChannel) extends TasksHandler {
 
     private val packetManager = server.packetManager
     private var tasksThread = new ConnectionTasksThread(identifier)
@@ -38,14 +36,9 @@ class ConnectionTasksHandler(override val identifier: String,
             tasksCompleterHandler.handleCompleter(packet, this)
         } catch {
             case e: TaskException =>
-                val packet = new ErrorPacket(-1,
-                    server.identifier,
-                    identifier,
-                    ErrorPacket.ABORT_TASK,
-                    e.getMessage)
                 Console.err.println(e.getMessage)
-                notifier.onSystemError(e)
-                socket.write(packetManager.toBytes(packet))
+                //notifier.onTaskNotFound(e) //TODO completer not found event
+                systemChannel.sendOrder(SystemOrder.ABORT_TASK)
         }
     }
 
@@ -58,8 +51,9 @@ class ConnectionTasksHandler(override val identifier: String,
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
         val linkedRelayID = if (ownFreeWill) targetID else senderID
         if (linkedRelayID == server.identifier)
-            throw new TaskOperationException("can't start a task from server to server !")
-        tasksThread.addTicket(new TaskTicket(executor, taskIdentifier, linkedRelayID, server, ownFreeWill))
+            throw new TaskOperationFailException("can't start a task from server to server !")
+        val channel = server.createSync(linkedRelayID, taskIdentifier)
+        tasksThread.addTicket(new TaskTicket(executor, channel, packetManager, ownFreeWill))
     }
 
     /**

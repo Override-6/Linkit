@@ -2,7 +2,8 @@ package fr.overridescala.vps.ftp.api.task
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.vps.ftp.api.{Reason, RelayCloseable}
+import fr.overridescala.vps.ftp.api.RelayCloseable
+import fr.overridescala.vps.ftp.api.system.{Reason, RelayCloseable}
 
 /**
  * This class is the hearth of this program.

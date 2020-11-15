@@ -4,6 +4,7 @@ import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotif
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.fundamental._
+import fr.overridescala.vps.ftp.api.system.SystemPacket
 
 import scala.collection.mutable
 
@@ -15,7 +16,7 @@ object PacketManager {
     val TargetSeparator: Array[Byte] = "<target>".getBytes
 }
 
-class PacketManager(private[packet] val notifier: EventNotifier) { //Notifier is accessible from api.packet to reduce parameter number in (A)SyncPacketChannel
+class PacketManager(private[api] val notifier: EventNotifier) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
     import PacketManager._
 
