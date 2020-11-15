@@ -1,7 +1,8 @@
-package fr.overridescala.vps.ftp.api.packet.ext.fundamental
+package fr.overridescala.vps.ftp.api.packet.fundamental
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketMacros.packet
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
 //TODO Doc
@@ -13,6 +14,7 @@ import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
  * @param header  the header of the packet, or the type of this data. Headers allows to classify packets / data to send or receive
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
+@packet
 class DataPacket(override val channelID: Int,
                  override val targetID: String,
                  override val senderID: String,
@@ -34,6 +36,7 @@ class DataPacket(override val channelID: Int,
 
 }
 
+@packet
 object DataPacket {
 
     def apply(header: String, content: Array[Byte] = Array())(implicit channel: PacketChannel): DataPacket =
@@ -53,7 +56,7 @@ object DataPacket {
 
     object Factory extends PacketFactory[DataPacket] {
 
-        import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils._
+        import fr.overridescala.vps.ftp.api.`extension`.packet.PacketUtils._
 
         private val TYPE = "[data]".getBytes
         private val CONTENT = "<content>".getBytes
@@ -74,6 +77,7 @@ object DataPacket {
         }
 
     }
+
 
 }
 

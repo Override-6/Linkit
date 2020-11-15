@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 
 
 class PacketReader(socket: DynamicSocket){

@@ -6,7 +6,7 @@ import fr.overridescala.vps.ftp.`extension`.ppc.logic.cli.player.{LocalPlayer, O
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.GameInterface
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.player.{LocalFxPlayer, OnlineFxPlayer}
 import fr.overridescala.vps.ftp.`extension`.ppc.logic.fx.util.FxPlatform
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
+import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 import javafx.application.Platform
 

@@ -4,8 +4,8 @@ import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
+import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 /**

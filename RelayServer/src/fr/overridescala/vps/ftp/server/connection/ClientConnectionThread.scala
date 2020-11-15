@@ -4,8 +4,8 @@ import java.net.{Socket, SocketException}
 
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, UnexpectedPacketException}
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental._
-import fr.overridescala.vps.ftp.api.packet.ext.{PacketManager, PacketUtils}
+import fr.overridescala.vps.ftp.api.packet.fundamental._
+import fr.overridescala.vps.ftp.api.`extension`.packet.{PacketManager, PacketUtils}
 import fr.overridescala.vps.ftp.api.task.TasksHandler
 import fr.overridescala.vps.ftp.api.{Reason, RelayCloseable}
 import fr.overridescala.vps.ftp.server.RelayServer

@@ -4,7 +4,7 @@ import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.exceptions.RelayInitialisationException
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 
 //TODO reedit doc about all changes
 

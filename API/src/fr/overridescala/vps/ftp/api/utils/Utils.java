@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.utils;
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException;
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket;
+import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket;
 import scala.collection.Seq;
 
 import java.io.*;

@@ -48,6 +48,12 @@ class TaskTicket(executor: TaskExecutor,
         try {
             println(s"executing $taskName...")
             executor.init(server.packetManager, channel)
+
+            executor match {
+                case task: Task[_] => notifier.onTaskStartExecuting(task)
+                case _ =>
+            }
+
             if (ownFreeWill) {
                 channel.sendInitPacket(executor.initInfo)
             }
@@ -56,7 +62,7 @@ class TaskTicket(executor: TaskExecutor,
             println(s"$taskName completed !")
         } catch {
             // Do not prints those exceptions : they are normal errors
-            // lifted when a task is brutally aborted via Thread.stop
+            // lifted when a task is brutally aborted via Thread.interrupt
             case _: IllegalMonitorStateException =>
             case _: InterruptedException =>
             case e: IOException if e.getMessage != null && e.getMessage.equalsIgnoreCase("Broken pipe") =>
@@ -64,11 +70,11 @@ class TaskTicket(executor: TaskExecutor,
             case NonFatal(e) => e.printStackTrace()
         } finally {
             notifyExecutor()
-            executor.closeChannel(reason)
             executor match {
                 case task: Task[_] => notifier.onTaskEnd(task, reason)
                 case _ =>
             }
+            executor.closeChannel(reason)
         }
     }
 

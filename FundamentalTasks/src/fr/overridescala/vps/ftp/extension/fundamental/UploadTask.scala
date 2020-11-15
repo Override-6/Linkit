@@ -5,7 +5,7 @@ import java.util
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, ErrorPacket}
+import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
 import UploadTask._

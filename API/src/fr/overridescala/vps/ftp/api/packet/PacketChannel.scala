@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import fr.overridescala.vps.ftp.api.RelayCloseable
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
+import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 
 //TODO Doc
 /**

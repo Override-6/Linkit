@@ -5,14 +5,15 @@ import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
 import java.nio.file.Paths
 
+import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
+import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.exceptions.{PacketException, RelayInitialisationException}
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental._
-import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
+import fr.overridescala.vps.ftp.api.packet.fundamental._
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
-import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
+import fr.overridescala.vps.ftp.api.{Reason, Relay, RelayProperties}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -23,21 +24,24 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                  localRun: Boolean, loadTasks: Boolean) extends Relay {
 
     @volatile private var open = false
-    private val socket = new ClientDynamicSocket(serverAddress)
+
+    override val eventDispatcher: EventDispatcher = new EventDispatcher
+    private val notifier = eventDispatcher.notifier
+    private val socket = new ClientDynamicSocket(serverAddress, notifier)
 
     private val taskFolderPath =
         if (localRun) Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\RelayExtensions")
         else Paths.get("RelayExtensions")
 
     override val extensionLoader = new RelayExtensionLoader(this, taskFolderPath)
-    override val packetManager = new PacketManager()
+    override val packetManager = new PacketManager(notifier)
     private val tasksHandler = new ClientTasksHandler(socket, this)
 
     override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
     private val packetReader = new PacketReader(socket)
 
     override val properties = new RelayProperties
-    private val channelCache = new PacketChannelManagerCache
+    private val channelCache = new PacketChannelManagerCache(notifier)
 
     private implicit val systemChannel: PacketChannel.Sync = createSyncChannel0(Constants.SERVER_ID, -6)
     private val lock: Object = new Object
@@ -59,7 +63,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             println(s"Connecting to server with identifier '$identifier'...")
             socket.start()
             println("Connected !")
+
             println("Ready !")
+            notifier.onReady()
             lock.synchronized {
                 lock.notifyAll()
             }
@@ -83,11 +89,26 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
         task.preInit(tasksHandler, identifier)
+        notifier.onTaskScheduled(task)
         RelayTaskAction(task)
     }
 
-    override def close(): Unit =
-        closeConnection(true)
+    override def close(reason: Reason): Unit = {
+        if (reason != Reason.EXTERNAL_REQUEST) {
+            systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
+        } else {
+            systemChannel.sendPacket(EmptyPacket())
+            systemChannel.nextPacket() //wait an empty packet from server in order to sync the disconnection
+        } //Notifies the server in order to sync the disconnection
+
+        println("closing socket...")
+        socket.close(reason)
+        println("socket closed !")
+        tasksHandler.close()
+        open = false
+        notifier.onClosed()//TODO
+        println("closed !")
+    }
 
 
     override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
@@ -123,14 +144,15 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         catch {
             case _: AsynchronousCloseException =>
                 Console.err.println("Asynchronous close.")
-                close()
+                close(Reason.ERROR_OCCURRED)
             case e: PacketException =>
                 Console.err.println(e.getMessage)
-                close()
+                notifier.onSystemError(e)
+                close(Reason.ERROR_OCCURRED)
             case NonFatal(e) =>
                 e.printStackTrace()
                 Console.err.println(s"Suddenly disconnected from the server")
-                close()
+                close(Reason.ERROR_OCCURRED)
         }
     }
 
@@ -146,7 +168,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         val order = system.order
         println(s"Received system order $order from ${system.senderID}")
         order match {
-            case SystemPacket.ClientClose => closeConnection(false)
+            case SystemPacket.ClientClose => close(Reason.EXTERNAL_REQUEST)
             case SystemPacket.ServerClose => systemChannel.sendPacket(createSystemErrorPacket(order, "Received forbidden order."))
             case SystemPacket.ClientInitialisation => Future(initToServer())
             case _ => systemChannel.sendPacket(createSystemErrorPacket(order, "Unknown order."))
@@ -156,22 +178,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             ErrorPacket("SystemError",
                 s"System packet order '$order' couldn't be handled by this RelayPoint.",
                 cause)
-    }
-
-    private def closeConnection(requestIsLocal: Boolean): Unit = {
-        if (requestIsLocal) {
-            systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
-        } else {
-            systemChannel.sendPacket(EmptyPacket())
-            systemChannel.nextPacket() //wait an empty packet from server in order to sync the disconnection
-        } //Notifies the server in order to sync the disconnection
-
-        println("closing socket...")
-        socket.close()
-        println("socket closed !")
-        tasksHandler.close()
-        open = false
-        println("closed !")
     }
 
     private def ensureOpen(): Unit = {
@@ -190,5 +196,5 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     //initial tasks
-    Runtime.getRuntime.addShutdownHook(new Thread(() => close()))
+    Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.LOCAL_REQUEST)))
 }

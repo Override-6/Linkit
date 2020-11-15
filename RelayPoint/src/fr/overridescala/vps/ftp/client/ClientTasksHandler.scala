@@ -4,9 +4,11 @@ import java.io.BufferedOutputStream
 import java.lang.reflect.InvocationTargetException
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
+import fr.overridescala.vps.ftp.api.Reason
+import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
 import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.fundamental.{ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler, TaskExecutor, TasksHandler}
 
 import scala.util.control.NonFatal
@@ -17,12 +19,14 @@ protected class ClientTasksHandler(private val socket: DynamicSocket,
     private val packetManager = relay.packetManager
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private var tasksThread: Thread = _
+    private val notifier: EventNotifier = relay.eventDispatcher.notifier
 
     @volatile private var currentTicket: TaskTicket = _
     @volatile private var open = false
 
     override val tasksCompleterHandler = new TaskCompleterHandler()
     override val identifier: String = relay.identifier
+
 
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
         val linkedRelay = if (ownFreeWill) targetID else senderID
@@ -46,23 +50,24 @@ protected class ClientTasksHandler(private val socket: DynamicSocket,
                     ErrorPacket.ABORT_TASK,
                     msg)
                 socket.write(packetManager.toBytes(errorPacket))
+                notifier.onSystemError(e)
         }
     }
 
 
-    override def close(): Unit = {
+    override def close(reason: Reason): Unit = {
         if (currentTicket != null) {
-            currentTicket.abort()
+            currentTicket.abort(reason)
             currentTicket = null
         }
         open = false
         tasksThread.interrupt()
     }
 
-    override def skipCurrent(): Unit = {
+    override def skipCurrent(reason: Reason): Unit = {
         //Restarting the thread causes the current task to be skipped
         //And wait or execute the task that come after it
-        close()
+        close(reason)
         start()
     }
 
@@ -102,12 +107,13 @@ protected class ClientTasksHandler(private val socket: DynamicSocket,
         private[ClientTasksHandler] val channel: SyncPacketChannel =
             relay.createSyncChannel0(linkedRelay, taskID)
 
-        def abort(): Unit = {
+        def abort(reason: Reason): Unit = {
             notifyExecutor()
             executor match {
                 case task: Task[_] =>
                     val errorMethod = task.getClass.getMethod("error", classOf[String])
                     errorMethod.setAccessible(true)
+                    notifier.onTaskSkipped(task, reason)
                     try {
                         errorMethod.invoke(task, "Task aborted from an external handler")
                     } catch {
@@ -120,20 +126,32 @@ protected class ClientTasksHandler(private val socket: DynamicSocket,
         }
 
         def start(): Unit = {
+            var reason = Reason.ERROR_OCCURRED
             try {
+                executor match {
+                    case task: Task[_] => notifier.onTaskStartExecuting(task)
+                    case _ =>
+                }
+
                 if (ownFreeWill) {
                     val initInfo = executor.initInfo
                     channel.sendInitPacket(initInfo)
                 }
                 executor.init(packetManager, channel)
                 executor.execute()
+                reason = Reason.LOCAL_REQUEST
+
             } catch {
                 case e: TaskOperationException => Console.err.println(e.getMessage)
                 case _: InterruptedException => Console.err.println(s"$taskName execution suddenly ended")
                 case NonFatal(e) => e.printStackTrace()
             } finally {
                 notifyExecutor()
-                executor.closeChannel()
+                executor match {
+                    case task: Task[_] => notifier.onTaskEnd(task, reason)
+                    case _ =>
+                }
+                executor.closeChannel(reason)
             }
         }
 

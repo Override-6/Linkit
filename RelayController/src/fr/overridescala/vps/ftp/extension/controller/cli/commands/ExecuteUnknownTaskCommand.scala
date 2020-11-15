@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.`extension`.controller.cli.commands
 
 import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandException
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.EmptyPacket
+import fr.overridescala.vps.ftp.api.packet.fundamental.EmptyPacket
 import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
 import fr.overridescala.vps.ftp.`extension`.controller.cli.{CommandException, CommandExecutor}
 

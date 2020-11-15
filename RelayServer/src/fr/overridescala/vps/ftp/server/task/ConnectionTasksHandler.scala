@@ -6,7 +6,7 @@ import java.net.Socket
 import fr.overridescala.vps.ftp.api.{Reason, Relay}
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationException}
 import fr.overridescala.vps.ftp.api.packet.DynamicSocket
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{ErrorPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.fundamental.{ErrorPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TasksHandler}
 import fr.overridescala.vps.ftp.server.RelayServer
 

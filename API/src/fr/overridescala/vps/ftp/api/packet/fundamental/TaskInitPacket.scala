@@ -1,7 +1,7 @@
-package fr.overridescala.vps.ftp.api.packet.ext.fundamental
+package fr.overridescala.vps.ftp.api.packet.fundamental
 
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 //TODO doc parameters
@@ -33,7 +33,7 @@ object TaskInitPacket {
 
     object Factory extends PacketFactory[TaskInitPacket] {
 
-        import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils._
+        import fr.overridescala.vps.ftp.api.`extension`.packet.PacketUtils._
 
         private val TYPE = "[task_init]".getBytes
         private val CONTENT = "<content>".getBytes

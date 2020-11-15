@@ -1,6 +1,6 @@
-package fr.overridescala.vps.ftp.api.packet.ext.fundamental
+package fr.overridescala.vps.ftp.api.packet.fundamental
 
-import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
 case class ErrorPacket (override val channelID: Int,
@@ -21,6 +21,7 @@ case class ErrorPacket (override val channelID: Int,
 
 
 object ErrorPacket {
+
     val ABORT_TASK: String = "ABORT_TASK"
 
     def apply(errorType: String, msg: String, cause: String)(implicit channel: PacketChannel): ErrorPacket =
@@ -31,7 +32,7 @@ object ErrorPacket {
 
     object Factory extends PacketFactory[ErrorPacket] {
 
-        import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils._
+        import fr.overridescala.vps.ftp.api.`extension`.packet.PacketUtils._
 
         private val TYPE = "[err]".getBytes
         private val MSG = "<msg>".getBytes

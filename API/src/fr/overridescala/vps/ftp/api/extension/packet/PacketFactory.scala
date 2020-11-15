@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.api.packet.ext
+package fr.overridescala.vps.ftp.api.`extension`.packet
 
 import fr.overridescala.vps.ftp.api.packet.Packet
 

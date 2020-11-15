@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.`extension`.ppc.logic
 
-import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
-import fr.overridescala.vps.ftp.api.packet.ext.PacketUtils.{cutEnd, cutString}
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketUtils.{cutEnd, cutString}
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
 case class MovePacket private(override val senderID: String,

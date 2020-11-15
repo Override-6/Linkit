@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.`extension`.fundamental
 import java.io.{FileNotFoundException, IOException}
 import java.nio.file.{Files, Path, Paths}
 
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{EmptyPacket, ErrorPacket}
+import fr.overridescala.vps.ftp.api.packet.fundamental.{EmptyPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 import DeleteFileTask.TYPE
 

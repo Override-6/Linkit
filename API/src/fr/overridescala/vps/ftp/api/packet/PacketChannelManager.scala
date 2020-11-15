@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
+import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 /**

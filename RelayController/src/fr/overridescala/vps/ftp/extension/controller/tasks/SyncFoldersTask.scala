@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.`extension`.controller.tasks
 import java.util.concurrent.ThreadLocalRandom
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, TaskInitPacket}
+import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 import SyncFoldersTask.{LOCAL_PATH_SEPARATOR, TYPE}
 import fr.overridescala.vps.ftp.`extension`.controller.auto.AutomationManager

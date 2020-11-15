@@ -1,9 +1,9 @@
-package fr.overridescala.vps.ftp.api.packet.ext
+package fr.overridescala.vps.ftp.api.`extension`.packet
 
 import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental._
+import fr.overridescala.vps.ftp.api.packet.fundamental._
 
 import scala.collection.mutable
 

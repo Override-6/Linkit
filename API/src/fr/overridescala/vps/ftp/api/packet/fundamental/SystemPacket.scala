@@ -1,6 +1,6 @@
-package fr.overridescala.vps.ftp.api.packet.ext.fundamental
+package fr.overridescala.vps.ftp.api.packet.fundamental
 
-import fr.overridescala.vps.ftp.api.packet.ext.PacketFactory
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
 class SystemPacket private(override val channelID: Int,

@@ -5,8 +5,8 @@ import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.exceptions.PacketException
 import fr.overridescala.vps.ftp.api.packet.AsyncPacketChannel.send
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.TaskInitPacket
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
+import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 import scala.concurrent.ExecutionContext.Implicits.global

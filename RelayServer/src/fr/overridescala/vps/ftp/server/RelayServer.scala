@@ -7,7 +7,7 @@ import java.nio.file.Paths
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
-import fr.overridescala.vps.ftp.api.packet.ext.PacketManager
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants

@@ -5,7 +5,7 @@ import java.nio.file._
 import java.util.concurrent.ThreadLocalRandom
 
 import fr.overridescala.vps.ftp.api.Relay
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.DataPacket
+import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.utils.Utils
 import fr.overridescala.vps.ftp.`extension`.controller.auto.Automation

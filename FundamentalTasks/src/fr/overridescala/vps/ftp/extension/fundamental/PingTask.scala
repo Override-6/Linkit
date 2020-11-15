@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.`extension`.fundamental
 
 import fr.overridescala.vps.ftp.`extension`.fundamental.PingTask.TYPE
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.packet.ext.fundamental.{DataPacket, EmptyPacket, ErrorPacket}
+import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, EmptyPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 
 class PingTask(private val targetId: String) extends Task[Long](targetId) {
