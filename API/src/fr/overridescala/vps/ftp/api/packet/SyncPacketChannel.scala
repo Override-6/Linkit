@@ -2,49 +2,31 @@ package fr.overridescala.vps.ftp.api.packet
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import fr.overridescala.vps.ftp.api.Reason
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
-import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
-import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, TaskInitPacket}
-import fr.overridescala.vps.ftp.api.task.TaskInitInfo
+import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
+import fr.overridescala.vps.ftp.api.system.Reason
 
+//TODO doc
 /**
  * this class is the implementation of [[PacketChannel]] and [[PacketChannelManager]]
  *
- * @param socket the socket where packets will be sent
  * @param channelID the identifier attributed to this PacketChannel
  * @param ownerID the relay identifier of this channel owner
  *
  * @see [[PacketChannel]]
  * @see [[PacketChannelManager]]
  * */
-class SyncPacketChannel(socket: DynamicSocket,
-                        override val connectedID: String,
+class SyncPacketChannel(override val connectedID: String,
                         override val ownerID: String,
                         override val channelID: Int,
-                        cache: PacketChannelManagerCache,
-                        packetManager: PacketManager) extends PacketChannel.Sync with PacketChannelManager {
+                        handler: PacketChannelsHandler) extends PacketChannel.Sync(handler) with PacketChannelManager {
 
-    private val notifier = cache.notifier
-    cache.registerPacketChannel(this)
+    handler.registerManager(this)
 
     /**
      * this blocking queue stores the received packets until they are requested
      * */
     private val queue: BlockingDeque[Packet] = new LinkedBlockingDeque()
-
-
-    //TODO doc
-    override def sendInitPacket(initInfo: TaskInitInfo): Unit = {
-        val packet = TaskInitPacket.of(ownerID, channelID, initInfo)
-        sendPacket(packet)
-    }
-
-    override def sendPacket[P <: Packet](packet: P): Unit = {
-        val bytes = packetManager.toBytes(packet)
-        socket.write(bytes)
-        notifier.onPacketSent(packet)
-    }
 
     /**
      * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet
@@ -57,8 +39,8 @@ class SyncPacketChannel(socket: DynamicSocket,
     }
 
     override def close(reason: Reason): Unit = {
+        super.close(reason)
         queue.clear()
-        cache.unregisterPaketChannel(channelID, reason)
     }
 
     /**
@@ -69,7 +51,7 @@ class SyncPacketChannel(socket: DynamicSocket,
      * */
     override def nextPacket(): Packet = {
         val packet = queue.takeLast()
-        notifier.onPacketUsed(packet)
+        handler.notifyPacketUsed(packet)
         packet
     }
 

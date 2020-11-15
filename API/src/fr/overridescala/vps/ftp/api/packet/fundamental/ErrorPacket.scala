@@ -17,12 +17,15 @@ case class ErrorPacket (override val channelID: Int,
         if (!cause.isEmpty)
             println(s"caused by: $cause")
     }
+
 }
 
 
 object ErrorPacket {
 
-    val ABORT_TASK: String = "ABORT_TASK"
+    val NoSuchTask: String = "NO_SUCH_TASK"
+    val NoSuchPacketChannel: String = "NO_SUCH_CHANNEL"
+    val NoSuchPacket: String = "NO_SUCH_PACKET"
 
     def apply(errorType: String, msg: String, cause: String)(implicit channel: PacketChannel): ErrorPacket =
         ErrorPacket(channel.channelID, channel.ownerID, channel.connectedID, errorType, msg, cause)

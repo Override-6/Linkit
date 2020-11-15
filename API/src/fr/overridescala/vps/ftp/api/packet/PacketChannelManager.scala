@@ -2,16 +2,14 @@ package fr.overridescala.vps.ftp.api.packet
 
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 /**
  * this class is used by [[fr.overridescala.vps.ftp.api.Relay]] and [[fr.overridescala.vps.ftp.api.task.TasksHandler]]
  * to add packets into a PacketChannel, or send special packet such as [[TaskInitPacket]]
  * */
 trait PacketChannelManager {
-    val channelID: Int
 
-    //TODO doc
+    val channelID: Int
 
     /**
      * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet
@@ -21,9 +19,4 @@ trait PacketChannelManager {
      * */
     def addPacket(packet: Packet): Unit
 
-    /**
-     * Send a packet that will be used to determine the correct Task completer used by the targeted relay
-     * */
-    def sendInitPacket(initInfo: TaskInitInfo): Unit
-    
 }
