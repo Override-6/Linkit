@@ -2,8 +2,7 @@ package fr.overridescala.vps.ftp.api.task
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.vps.ftp.api.RelayCloseable
-import fr.overridescala.vps.ftp.api.system.{Reason, RelayCloseable}
+import fr.overridescala.vps.ftp.api.system.{JustifiedCloseable, Reason}
 
 /**
  * This class is the hearth of this program.
@@ -22,7 +21,7 @@ import fr.overridescala.vps.ftp.api.system.{Reason, RelayCloseable}
  *
  * @see PacketChannel
  * */
-trait TasksHandler extends RelayCloseable {
+trait TasksHandler extends JustifiedCloseable {
 
 
     /**

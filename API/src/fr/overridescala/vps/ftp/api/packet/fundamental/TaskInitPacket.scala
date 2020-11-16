@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet.fundamental
 
-import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 //TODO doc parameters
@@ -28,8 +28,9 @@ case class TaskInitPacket private(override val channelID: Int,
 }
 
 object TaskInitPacket {
-    private[api] def of(senderID: String, taskId: Int, info: TaskInitInfo): TaskInitPacket =
-        TaskInitPacket(taskId, info.targetID, senderID, info.taskType, info.content)
+    private[api] def of(info: TaskInitInfo)(implicit channel: PacketChannel): TaskInitPacket = {
+        TaskInitPacket(channel.channelID, info.targetID, channel.ownerID, info.taskType, info.content)
+    }
 
     object Factory extends PacketFactory[TaskInitPacket] {
 

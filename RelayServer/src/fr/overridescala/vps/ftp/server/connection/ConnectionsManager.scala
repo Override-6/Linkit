@@ -3,8 +3,7 @@ package fr.overridescala.vps.ftp.server.connection
 import java.net.InetSocketAddress
 
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, RelayInitialisationException}
-import fr.overridescala.vps.ftp.api.RelayCloseable
-import fr.overridescala.vps.ftp.api.system.{Reason, RelayCloseable}
+import fr.overridescala.vps.ftp.api.system.{JustifiedCloseable, Reason}
 import fr.overridescala.vps.ftp.server.RelayServer
 
 import scala.collection.mutable
@@ -15,7 +14,7 @@ import scala.collection.mutable
  * @see [[RelayServer]]
  * @see [[ClientConnectionThread]]
  * */
-class ConnectionsManager(server: RelayServer) extends RelayCloseable {
+class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
     /**
      * java map containing all RelayPointConnection instances
      * */
@@ -37,8 +36,7 @@ class ConnectionsManager(server: RelayServer) extends RelayCloseable {
         if (connections.contains(address))
             throw RelayInitialisationException("this address is already registered !")
 
-        val connection = new ClientConnectionThread(socket, server, this)
-        connection.start()
+        val connection = ClientConnectionThread.open(socket, server)
         connections.put(address, connection)
     }
 

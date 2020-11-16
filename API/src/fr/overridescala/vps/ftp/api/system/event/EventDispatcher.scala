@@ -1,11 +1,10 @@
-package fr.overridescala.vps.ftp.api.`extension`.event
+package fr.overridescala.vps.ftp.api.system.event
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtension
-import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannelManager}
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder}
-import fr.overridescala.vps.ftp.api.system.SystemInfo.{SystemError, SystemOrder}
 import fr.overridescala.vps.ftp.api.task.Task
 
 import scala.collection.mutable.ListBuffer
@@ -15,8 +14,6 @@ class EventDispatcher {
     val notifier = new EventNotifier
 
     def register(listener: EventListener): Unit = notifier.listeners += listener
-
-
 
 }
 

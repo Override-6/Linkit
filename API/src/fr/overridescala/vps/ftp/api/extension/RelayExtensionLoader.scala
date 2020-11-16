@@ -38,7 +38,6 @@ class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) {
                 extensions += loadJar(path)
             } catch {
                 case e: RelayException => e.printStackTrace()
-                    notifier.onSystemError(e)
             }
         }
         ExtensionLoaderNode.loadGraph(relay, extensions.toSeq)
@@ -102,4 +101,3 @@ object RelayExtensionLoader {
     private val PropertyName = "extension.properties"
     private val MainClassField = "main"
 }
-

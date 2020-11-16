@@ -5,7 +5,6 @@ import java.util.Scanner
 
 import fr.overridescala.vps.ftp.`extension`.controller.ControllerExtension
 import fr.overridescala.vps.ftp.`extension`.fundamental.FundamentalExtension
-import fr.overridescala.vps.ftp.`extension`.ppc.PPCExtension
 import fr.overridescala.vps.ftp.api.utils.Constants
 
 object Main {
@@ -34,7 +33,7 @@ object Main {
             val loader = relayPoint.extensionLoader
             loader.loadExtension(classOf[ControllerExtension])
             loader.loadExtension(classOf[FundamentalExtension])
-            loader.loadExtension(classOf[PPCExtension])
+            //loader.loadExtension(classOf[PPCExtension])
         }
     }
 

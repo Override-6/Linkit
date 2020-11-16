@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server.connection
 import java.io._
 import java.net.Socket
 
-import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.packet.DynamicSocket
 
 class SocketContainer(notifier: EventNotifier) extends DynamicSocket(notifier) {

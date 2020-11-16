@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.client
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
 
-import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.packet.DynamicSocket
 import fr.overridescala.vps.ftp.client.ClientDynamicSocket.AttemptSleepTime
 

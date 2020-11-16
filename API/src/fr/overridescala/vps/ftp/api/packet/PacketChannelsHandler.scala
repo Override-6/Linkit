@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.system.Reason
 

@@ -72,21 +72,4 @@ public class Utils {
         throw new UnexpectedPacketException(msg);
     }
 
-
-    public static InetSocketAddress getPublicAddress() {
-        try {
-            URL url = new URL("http://ipv4bot.whatismyipaddress.com");
-            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-            connection.setRequestMethod("GET");
-            BufferedReader reader = new BufferedReader(
-                    new InputStreamReader(connection.getInputStream())
-            );
-            return new InetSocketAddress(reader.readLine(), Constants.PORT());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        System.exit(-1);
-        return null;
-    }
-
 }

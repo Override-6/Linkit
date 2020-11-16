@@ -6,6 +6,7 @@ import java.lang.reflect.InvocationTargetException
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationFailException}
 import fr.overridescala.vps.ftp.api.packet.SyncPacketChannel
+import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.system.Reason
 
 import scala.util.control.NonFatal
@@ -41,7 +42,7 @@ class TaskTicket(executor: TaskExecutor,
 
 
     def start(): Unit = {
-        var reason = Reason.ERROR_OCCURRED
+        var reason = Reason.INTERNAL_ERROR
         try {
             println(s"executing $taskName...")
             executor.init(packetManager, channel)
@@ -52,10 +53,11 @@ class TaskTicket(executor: TaskExecutor,
             }
 
             if (ownFreeWill) {
-                channel.sendPacket(executor.initInfo)
+                channel.sendPacket(TaskInitPacket.of(executor.initInfo)(channel))
             }
+
             executor.execute()
-            reason = Reason.LOCAL
+            reason = Reason.INTERNAL
             println(s"$taskName completed !")
         } catch {
             // Do not prints those exceptions : they are normal errors
@@ -64,6 +66,7 @@ class TaskTicket(executor: TaskExecutor,
             case _: InterruptedException =>
             case e: IOException if e.getMessage != null && e.getMessage.equalsIgnoreCase("Broken pipe") =>
 
+            case e: TaskOperationFailException => Console.err.println(e.getMessage)
             case NonFatal(e) => e.printStackTrace()
         } finally {
             notifyExecutor()

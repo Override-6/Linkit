@@ -9,8 +9,8 @@ class SystemPacketChannel(connectedID: String,
 
     private val notifier = handler.notifier
 
-    def sendOrder(systemOrder: SystemOrder): Unit = {
-        handler.sendPacket(SystemPacket(systemOrder)(this))
+    def sendOrder(systemOrder: SystemOrder, reason: Reason): Unit = {
+        handler.sendPacket(SystemPacket(systemOrder, reason)(this))
         notifier.onSystemOrderSent(systemOrder)
     }
 

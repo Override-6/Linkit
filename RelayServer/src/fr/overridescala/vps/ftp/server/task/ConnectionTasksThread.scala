@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server.task
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.system.{Reason, RelayCloseable}
+import fr.overridescala.vps.ftp.api.system.{Reason, JustifiedCloseable}
 import fr.overridescala.vps.ftp.api.task.TaskTicket
 
 import scala.collection.mutable
@@ -12,7 +12,7 @@ import scala.util.control.NonFatal
 
 class ConnectionTasksThread private(ownerID: String,
                                     ticketQueue: BlockingQueue[TaskTicket],
-                                    lostPackets: mutable.Map[Int, ListBuffer[Packet]]) extends Thread with RelayCloseable {
+                                    lostPackets: mutable.Map[Int, ListBuffer[Packet]]) extends Thread with JustifiedCloseable {
 
     @volatile private var open = false
     @volatile private var currentTicket: TaskTicket = _

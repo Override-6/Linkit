@@ -3,10 +3,10 @@ package fr.overridescala.vps.ftp.api.packet
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
-import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
-import fr.overridescala.vps.ftp.api.system.{Reason, RelayCloseable}
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
+import fr.overridescala.vps.ftp.api.system.{Reason, JustifiedCloseable}
 
-abstract class DynamicSocket(notifier: EventNotifier) extends RelayCloseable {
+abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable {
 
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _

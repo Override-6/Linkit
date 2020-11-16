@@ -1,8 +1,8 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.net.{Socket, SocketException}
+import java.net.Socket
 
-import fr.overridescala.vps.ftp.api.`extension`.packet.{PacketManager, PacketUtils}
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, UnexpectedPacketException}
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.fundamental._
@@ -14,23 +14,25 @@ import fr.overridescala.vps.ftp.server.task.ConnectionTasksHandler
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class ClientConnectionThread(socket: SocketContainer,
-                             server: RelayServer,
-                             manager: ConnectionsManager) extends Thread with RelayCloseable {
+class ClientConnectionThread private(socket: SocketContainer,
+                                     server: RelayServer,
+                                     val identifier: String) extends Thread with JustifiedCloseable {
+
+
     private val packetManager = server.packetManager
-    private val packetReader: PacketReader = new PacketReader(socket)
+    private val packetReader = new ServerPacketReader(socket, server, identifier)
     private val notifier = server.eventDispatcher.notifier
     private val channelsHandler = new PacketChannelsHandler(notifier, socket, packetManager)
+    private implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(identifier, server.identifier, channelsHandler)
+
 
     /**
      * This array is only used and updated while the connection is not initialised.
      * */
     private val unhandledPackets = ListBuffer.empty[Packet]
+    private val manager: ConnectionsManager = server.connectionsManager
+    val tasksHandler: TasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel)
 
-    val tasksHandler: TasksHandler = initialiseConnection()
-    val identifier: String = tasksHandler.identifier //shortcut
-
-    private implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(identifier, server.identifier, channelsHandler)
 
     @volatile private var closed = false
 
@@ -45,7 +47,7 @@ class ClientConnectionThread(socket: SocketContainer,
 
         try {
             while (!closed)
-                update(handlePacket)
+                packetReader.nextPacket(handlePacket)
         } catch {
             case e: RelayException =>
                 e.printStackTrace()
@@ -57,8 +59,8 @@ class ClientConnectionThread(socket: SocketContainer,
     override def close(reason: Reason): Unit = {
         println(s"closing thread '$getName'")
         if (socket.isConnected) {
-            if (reason.isLocal) {
-                systemChannel.sendOrder(SystemOrder.CLIENT_INITIALISATION)
+            if (reason.isInternal) {
+                systemChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
             } else {
                 systemChannel.sendPacket(EmptyPacket())
                 systemChannel.nextPacket() //Wait a response packet (EmptyPacket) before closing the connection.
@@ -96,89 +98,77 @@ class ClientConnectionThread(socket: SocketContainer,
         notifier.onPacketReceived(packet)
         packet match {
             case systemError: ErrorPacket if packet.channelID == systemChannel.channelID => systemError.printError()
-            case systemPacket: SystemPacket => handleSystemOrder(systemPacket.order)
+            case systemPacket: SystemPacket => handleSystemOrder(systemPacket.order, systemPacket.reason.reversed())
             case init: TaskInitPacket => tasksHandler.handlePacket(init)
             case _: Packet => channelsHandler.injectPacket(packet)
         }
     }
 
-    private def update(onPacketReceived: Packet => Unit): Unit = {
-        try {
-            listenNextConcernedPacket(onPacketReceived)
-        } catch {
-            case e: RelayException => e.printStackTrace();
-            case e: SocketException if e.getMessage == "Connection reset" =>
-                Console.err.println(s"client '$identifier' disconnected.")
-        }
-    }
 
-    private def listenNextConcernedPacket(event: Packet => Unit): Unit = {
-        val bytes = packetReader.readNextPacketBytes()
-        if (bytes == null)
-            return
-
-        val target = getTargetID(bytes)
-        if (target == server.identifier) { //check if packet concerns server
-            val packet = packetManager.toPacket(bytes)
-            event(packet)
-            return
-        }
-        manager.deflectTo(bytes, target)
-    }
-
-
-    def handleSystemOrder(orderType: SystemOrder): Unit = {
+    def handleSystemOrder(orderType: SystemOrder, reason: Reason): Unit = {
         println(s"order $orderType had been requested by '$identifier'")
         orderType match {
-            case SystemOrder.CLIENT_CLOSE => close(Reason)
-            case SystemOrder.SERVER_CLOSE => server.close(identifier, Reason.EXTERNAL)
-            case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(Reason.EXTERNAL)
+            case SystemOrder.CLIENT_CLOSE => close(reason)
+            case SystemOrder.SERVER_CLOSE => server.close(identifier, reason)
+            case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(reason)
             case _ => systemChannel.sendPacket(ErrorPacket("forbidden order", s"could not complete order '$orderType', can't be handled by a server or unknown order"))
         }
     }
 
-
-    private def initialiseConnection(): TasksHandler = {
-        setName(s"RP Connection (unknownId)")
-        implicit val channel: SyncPacketChannel =
-            new SyncPacketChannel("unknown", server.identifier, -6, channelsHandler)
-        channel.sendPacket(SystemPacket(SystemOrder.CLIENT_INITIALISATION))
-        deflectInChannel(channel)
-
-        new ConnectionTasksHandler(handleClientResponse(channel), server, socket)
-    }
-
-    private def handleClientResponse(implicit channel: SyncPacketChannel): String = {
-        channel.nextPacket() match {
-            case dataPacket: DataPacket =>
-                val identifier = dataPacket.header
-                val response = if (manager.containsIdentifier(identifier)) "ERROR" else "OK"
-                channel.sendPacket(DataPacket(response))
-                channel.close(Reason.LOCAL)
-
-                if (response == "ERROR")
-                    throw new RelayException("a Relay point connection have been rejected.")
-
-                println(s"Relay Point connected with identifier '$identifier'")
-                setName(s"RP Connection ($identifier)")
-                identifier
-            case other =>
-                val name = other.getClass.getSimpleName
-                throw new UnexpectedPacketException(s"Unexpected packet type $name received while initialising client connection.")
-        }
-    }
-
-
-    private def deflectInChannel(channel: PacketChannelManager): Unit = update {
-        case concerned: Packet if concerned.channelID == channel.channelID => channel.addPacket(concerned)
-        case other: Packet =>
-            handlePacket(other)
-            deflectInChannel(channel)
-    }
-
     private def isNotInitialised: Boolean = identifier == null
 
-    private def getTargetID(bytes: Array[Byte]): String =
-        PacketUtils.cutString(PacketManager.SenderSeparator, PacketManager.TargetSeparator)(bytes)
+    setName(s"RP Connection ($identifier)")
+
+}
+
+object ClientConnectionThread {
+
+    def open(socket: SocketContainer,
+             server: RelayServer): ClientConnectionThread = {
+        val packetReader = new ServerPacketReader(socket, server, null)
+        val unhandledPackets = ListBuffer.empty[Packet]
+        val tempChannelsHandler = new PacketChannelsHandler(server.notifier, socket, server.packetManager)
+        val connectionsManager = server.connectionsManager
+
+        def deflectInChannel(channel: PacketChannelManager): Unit = packetReader.nextPacket {
+            case concerned: Packet if concerned.channelID == channel.channelID => channel.addPacket(concerned)
+            case other: Packet =>
+                unhandledPackets += other
+                deflectInChannel(channel)
+        }
+
+        def handleClientResponse(implicit channel: SyncPacketChannel): String = {
+            channel.nextPacket() match {
+                case dataPacket: DataPacket =>
+                    val identifier = dataPacket.header
+                    val response = if (connectionsManager.containsIdentifier(identifier)) "ERROR" else "OK"
+                    channel.sendPacket(DataPacket(response))
+
+                    if (response == "ERROR")
+                        throw new RelayException("a Relay point connection have been rejected.")
+
+                    println(s"Relay Point connected with identifier '$identifier'")
+                    identifier
+                case other =>
+                    val name = other.getClass.getSimpleName
+                    throw new UnexpectedPacketException(s"Unexpected packet type $name received while initialising client connection.")
+            }
+        }
+
+        implicit val channel: SyncPacketChannel =
+            new SyncPacketChannel("unknown", server.identifier, 6, tempChannelsHandler)
+
+        channel.sendPacket(SystemPacket(SystemOrder.CLIENT_INITIALISATION, Reason.INTERNAL))
+        deflectInChannel(channel)
+
+        val identifier = handleClientResponse(channel)
+        channel.close(Reason.INTERNAL)
+        val connection = new ClientConnectionThread(socket, server, identifier)
+
+        unhandledPackets.foreach(connection.handlePacket)
+        connection.start()
+
+        connection
+    }
 
 }

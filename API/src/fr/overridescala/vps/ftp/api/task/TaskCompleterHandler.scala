@@ -1,7 +1,5 @@
 package fr.overridescala.vps.ftp.api.task
 
-import java.lang.annotation.{ElementType, Target}
-
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtension
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket

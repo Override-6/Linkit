@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.`extension`.packet
 
-import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.fundamental._
@@ -48,7 +48,6 @@ class PacketManager(private[api] val notifier: EventNotifier) { //Notifier is ac
                 return factory.build(channelID, senderID, targetID)(customPacketBytes)
         }
         val e = new UnexpectedPacketException(s"could not find packet factory for ${new String(bytes)}")
-        notifier.onSystemError(e)
         throw e
     }
 
@@ -69,14 +68,14 @@ class PacketManager(private[api] val notifier: EventNotifier) { //Notifier is ac
     private def withFundamentals(): mutable.Map[Class[PT], PacketFactory[PT]] = {
         val factories = mutable.LinkedHashMap.empty[Class[PT], PacketFactory[PT]]
 
-        def reg[D <: Packet](clazz: Class[D], fact: PacketFactory[D]): Unit =
+        def register[D <: Packet](clazz: Class[D], fact: PacketFactory[D]): Unit =
             factories.put(clazz.asInstanceOf[Class[PT]], fact.asInstanceOf[PacketFactory[PT]])
 
-        reg(classOf[DataPacket], DataPacket.Factory)
-        reg(classOf[EmptyPacket], EmptyPacket.Factory)
-        reg(classOf[TaskInitPacket], TaskInitPacket.Factory)
-        reg(classOf[ErrorPacket], ErrorPacket.Factory)
-        reg(classOf[SystemPacket], SystemPacket.Factory)
+        register(classOf[DataPacket], DataPacket.Factory)
+        register(classOf[EmptyPacket], EmptyPacket.Factory)
+        register(classOf[TaskInitPacket], TaskInitPacket.Factory)
+        register(classOf[ErrorPacket], ErrorPacket.Factory)
+        register(classOf[SystemPacket], SystemPacket.Factory)
         factories
     }
 

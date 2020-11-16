@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
-import fr.overridescala.vps.ftp.api.system.RelayCloseable
+import fr.overridescala.vps.ftp.api.system.JustifiedCloseable
 import fr.overridescala.vps.ftp.api.system.Reason
 
 //TODO Doc
@@ -11,7 +11,7 @@ import fr.overridescala.vps.ftp.api.system.Reason
  * @see [[PacketChannelManager]]
  * @see [[DataPacket]]
  * */
-abstract class PacketChannel(handler: PacketChannelsHandler) extends RelayCloseable {
+abstract class PacketChannel(handler: PacketChannelsHandler) extends JustifiedCloseable {
 
     val ownerID: String
     val connectedID: String
@@ -19,19 +19,16 @@ abstract class PacketChannel(handler: PacketChannelsHandler) extends RelayClosea
 
 
     override def close(reason: Reason): Unit = handler.unregisterManager(channelID, reason)
-
+    def sendPacket[P <: Packet](packet: P): Unit = handler.sendPacket(packet)
 }
 
 object PacketChannel {
 
     abstract class Async(handler: PacketChannelsHandler) extends PacketChannel(handler) {
-        def sendPacket[P <: Packet](packet: P): Unit = handler.sendPacket(packet)
-
         def setOnPacketReceived(event: Packet => Unit): Unit
     }
 
     abstract class Sync(handler: PacketChannelsHandler) extends PacketChannel(handler) {
-        def sendPacket[P <: Packet](packet: P): Unit = handler.sendPacket(packet)
 
         /**
          * Waits until a data packet is received and concerned about this task.

@@ -2,16 +2,15 @@ package fr.overridescala.vps.ftp.client
 
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
-import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher.EventNotifier
-import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationFailException}
-import fr.overridescala.vps.ftp.api.packet._
-import fr.overridescala.vps.ftp.api.packet.fundamental.{ErrorPacket, TaskInitPacket}
-import fr.overridescala.vps.ftp.api.system.Reason
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
+import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder, SystemPacketChannel}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
 
 import scala.util.control.NonFatal
 
-protected class ClientTasksHandler(private val socket: DynamicSocket,
+protected class ClientTasksHandler(private val systemChannel: SystemPacketChannel,
                                    private val relay: RelayPoint) extends TasksHandler {
 
     private val packetManager = relay.packetManager
@@ -29,7 +28,7 @@ protected class ClientTasksHandler(private val socket: DynamicSocket,
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
         val linkedRelay = if (ownFreeWill) targetID else senderID
         if (linkedRelay == identifier)
-            throw new TaskOperationFailException("can't start a task with oneself !")
+            throw new TaskException("can't start a task with oneself !")
 
         val channel = relay.createSyncChannel0(linkedRelay, taskIdentifier)
         val ticket = new TaskTicket(executor, channel, packetManager, ownFreeWill)
@@ -41,15 +40,8 @@ protected class ClientTasksHandler(private val socket: DynamicSocket,
             tasksCompleterHandler.handleCompleter(packet, this)
         } catch {
             case e: TaskException =>
-                val msg = e.getMessage
-                Console.err.println(msg)
-                val errorPacket = new ErrorPacket(-1,
-                    relay.identifier,
-                    packet.senderID,
-                    ErrorPacket.ABORT_TASK,
-                    msg)
-                socket.write(packetManager.toBytes(errorPacket))
-                notifier.onSystemError(e)
+                Console.err.println(e.getMessage)
+                systemChannel.sendOrder(SystemOrder.ABORT_TASK, Reason.INTERNAL_ERROR)
         }
     }
 

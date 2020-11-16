@@ -27,7 +27,7 @@ trait TaskScheduler {
      * this class avoid the user to specify the task identifier
      * @see [[TaskAction]]
      * */
-    case class RelayTaskAction[T](taskAction: TaskAction[T]) {
+    class RelayTaskAction[T](taskAction: TaskAction[T]) {
         def queue(onSuccess: T => Unit = null, onError: String => Unit = Console.err.println): Unit = try {
             taskAction.queue(onSuccess, onError)
         } catch {

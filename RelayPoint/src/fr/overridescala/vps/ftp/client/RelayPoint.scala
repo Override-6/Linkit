@@ -6,12 +6,12 @@ import java.nio.charset.Charset
 import java.nio.file.Paths
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
-import fr.overridescala.vps.ftp.api.`extension`.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.exceptions.{PacketException, RelayInitialisationException}
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.fundamental._
-import fr.overridescala.vps.ftp.api.system.{Reason, SystemPacket}
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
+import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder, SystemPacket, SystemPacketChannel}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
@@ -30,22 +30,23 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val notifier = eventDispatcher.notifier
     private val socket = new ClientDynamicSocket(serverAddress, notifier)
 
+
     private val taskFolderPath =
         if (localRun) Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\RelayExtensions")
         else Paths.get("RelayExtensions")
 
     override val extensionLoader = new RelayExtensionLoader(this, taskFolderPath)
     override val packetManager = new PacketManager(notifier)
-    private val tasksHandler = new ClientTasksHandler(socket, this)
-
-    override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
     private val packetReader = new PacketReader(socket)
 
     override val properties = new RelayProperties
-    private val channelCache = new PacketChannelsHandler(notifier)
 
-    private implicit val systemChannel: PacketChannel.Sync = createSyncChannel0(Constants.SERVER_ID, -6)
+    private val channelsHandler = new PacketChannelsHandler(notifier, socket, packetManager)
+    private implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(Constants.SERVER_ID, identifier, channelsHandler)
+    private val tasksHandler = new ClientTasksHandler(systemChannel, this)
+    override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
     private val lock: Object = new Object
+
 
     override def start(): Unit = {
         val thread = new Thread(() => {
@@ -60,7 +61,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                 println("Loading Relay extensions from folder " + taskFolderPath)
                 extensionLoader.loadExtensions()
             }
-            AsyncPacketChannel.launch(packetManager)
+            AsyncPacketChannel.UploadThread.start()
             println(s"Connecting to server with identifier '$identifier'...")
             socket.start()
             println("Connected !")
@@ -91,7 +92,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         ensureOpen()
         task.preInit(tasksHandler, identifier)
         notifier.onTaskScheduled(task)
-        RelayTaskAction(task)
+        RelayTaskAction.of(task)
     }
 
     override def close(reason: Reason): Unit = {
@@ -106,7 +107,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
         ensureOpen()
-        new AsyncPacketChannel(identifier, linkedRelayID, id, channelCache, socket)
+        new AsyncPacketChannel(identifier, linkedRelayID, id, channelsHandler)
     }
 
     def isConnected: Boolean = socket.isConnected
@@ -117,12 +118,12 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     private[client] def createSyncChannel0(linkedRelayID: String, id: Int): SyncPacketChannel = {
-        new SyncPacketChannel(socket, linkedRelayID, identifier, id, channelCache, packetManager)
+        new SyncPacketChannel(linkedRelayID, identifier, id, channelsHandler)
     }
 
     private def close(relayId: String, reason: Reason): Unit = {
-        if (reason != Reason.EXTERNAL_REQUEST) {
-            systemChannel.sendPacket(SystemPacket(SystemPacket.ClientClose))
+        if (reason.isInternal) {
+            systemChannel.sendPacket(SystemPacket(SystemOrder.CLIENT_CLOSE, reason))
         } else {
             systemChannel.sendPacket(EmptyPacket())
             systemChannel.nextPacket() //wait an empty packet from server in order to sync the disconnection
@@ -149,40 +150,42 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         catch {
             case _: AsynchronousCloseException =>
                 Console.err.println("Asynchronous close.")
-                close(Reason.ERROR_OCCURRED)
+                close(Reason.INTERNAL_ERROR)
             case e: PacketException =>
                 Console.err.println(e.getMessage)
-                notifier.onSystemError(e)
-                close(Reason.ERROR_OCCURRED)
+                close(Reason.INTERNAL_ERROR)
             case NonFatal(e) =>
                 e.printStackTrace()
                 Console.err.println(s"Suddenly disconnected from the server")
-                close(Reason.ERROR_OCCURRED)
+                close(Reason.INTERNAL_ERROR)
         }
     }
 
     private def handlePacket(packet: Packet): Unit = packet match {
         case init: TaskInitPacket => tasksHandler.handlePacket(init)
-        case error: ErrorPacket if error.errorType == ErrorPacket.ABORT_TASK => tasksHandler.skipCurrent(Reason.EXTERNAL_REQUEST)
         case system: SystemPacket => handleSystemPacket(system)
-        case _: Packet => channelCache.injectPacket(packet)
+        case _: Packet => channelsHandler.injectPacket(packet)
     }
 
 
     private def handleSystemPacket(system: SystemPacket): Unit = {
-        val order = system.infoKind
+        val order = system.order
+        val reason = system.reason.reversed()
         println(s"Received system order $order from ${system.senderID}")
         order match {
-            case SystemPacket.ClientClose => close(Reason.EXTERNAL_REQUEST)
-            case SystemPacket.ServerClose => systemChannel.sendPacket(createSystemErrorPacket(order, "Received forbidden order."))
-            case SystemPacket.ClientInitialisation => Future(initToServer())
-            case _ => systemChannel.sendPacket(createSystemErrorPacket(order, "Unknown order."))
+            case SystemOrder.CLIENT_CLOSE => close(reason)
+            case SystemOrder.SERVER_CLOSE => sendErrorPacket(order, "Received forbidden order.")
+            case SystemOrder.CLIENT_INITIALISATION => Future(initToServer())
+            case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(reason)
+            case _ => sendErrorPacket(order, "Unknown order.")
         }
-
-        def createSystemErrorPacket(order: String, cause: String) =
-            ErrorPacket("SystemError",
+        def sendErrorPacket(order: SystemOrder, cause: String): Unit = {
+            val error = ErrorPacket("SystemError",
                 s"System packet order '$order' couldn't be handled by this RelayPoint.",
                 cause)
+            systemChannel.sendPacket(error)
+            error.printError()
+        }
     }
 
     private def ensureOpen(): Unit = {
@@ -201,5 +204,5 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     //initial tasks
-    Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.LOCAL_REQUEST)))
+    Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.INTERNAL)))
 }
