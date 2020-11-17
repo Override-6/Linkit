@@ -3,37 +3,32 @@ package fr.overridescala.vps.ftp.client
 import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
-import java.nio.file.Paths
+import java.nio.file.{Path, Paths}
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
-import fr.overridescala.vps.ftp.api.exceptions.{PacketException, RelayInitialisationException}
+import fr.overridescala.vps.ftp.api.exceptions.{PacketException, RelayClosedException, RelayException, RelayInitialisationException}
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.fundamental._
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder, SystemPacket, SystemPacketChannel}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
-import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
+import fr.overridescala.vps.ftp.client.RelayPoint.{Port, ServerID}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
-                 override val identifier: String,
-                 localRun: Boolean, loadTasks: Boolean) extends Relay {
+                 override val identifier: String, loadTasks: Boolean) extends Relay {
 
     @volatile private var open = false
 
     override val eventDispatcher: EventDispatcher = new EventDispatcher
     private val notifier = eventDispatcher.notifier
     private val socket = new ClientDynamicSocket(serverAddress, notifier)
-
-
-    private val taskFolderPath =
-        if (localRun) Paths.get("C:\\Users\\maxim\\Desktop\\Dev\\VPS\\modules\\RelayExtensions")
-        else Paths.get("RelayExtensions")
+    private val taskFolderPath = getTasksFolderPath
 
     override val extensionLoader = new RelayExtensionLoader(this, taskFolderPath)
     override val packetManager = new PacketManager(notifier)
@@ -42,7 +37,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override val properties = new RelayProperties
 
     private val channelsHandler = new PacketChannelsHandler(notifier, socket, packetManager)
-    private implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(Constants.SERVER_ID, identifier, channelsHandler)
+    private implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(ServerID, identifier, channelsHandler)
     private val tasksHandler = new ClientTasksHandler(systemChannel, this)
     override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
     private val lock: Object = new Object
@@ -51,7 +46,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override def start(): Unit = {
         val thread = new Thread(() => {
             println("Current encoding is " + Charset.defaultCharset().name())
-            println("Listening on port " + Constants.PORT)
+            println("Listening on port " + Port)
             println("Computer name is " + System.getenv().get("COMPUTERNAME"))
 
             //enable the task management
@@ -90,6 +85,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
+        ensureTargetExists(task.targetID)
+
         task.preInit(tasksHandler, identifier)
         notifier.onTaskScheduled(task)
         RelayTaskAction.of(task)
@@ -145,6 +142,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             if (bytes == null)
                 return
             val packet = packetManager.toPacket(bytes)
+            notifier.onPacketReceived(packet)
             handlePacket(packet)
         }
         catch {
@@ -171,12 +169,14 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private def handleSystemPacket(system: SystemPacket): Unit = {
         val order = system.order
         val reason = system.reason.reversed()
+
         println(s"Received system order $order from ${system.senderID}")
+        notifier.onSystemOrderReceived(order, reason)
         order match {
             case SystemOrder.CLIENT_CLOSE => close(reason)
-            case SystemOrder.SERVER_CLOSE => sendErrorPacket(order, "Received forbidden order.")
             case SystemOrder.CLIENT_INITIALISATION => Future(initToServer())
             case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(reason)
+            case _@(SystemOrder.SERVER_CLOSE | SystemOrder.CHECK_ID) => sendErrorPacket(order, "Received forbidden order.")
             case _ => sendErrorPacket(order, "Unknown order.")
         }
         def sendErrorPacket(order: SystemOrder, cause: String): Unit = {
@@ -186,11 +186,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             systemChannel.sendPacket(error)
             error.printError()
         }
-    }
-
-    private def ensureOpen(): Unit = {
-        if (!open)
-            throw new UnsupportedOperationException("Relay Point have to be started !")
     }
 
     private def initToServer(): Unit = {
@@ -203,6 +198,32 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         println("Successfully connected to the server !")
     }
 
+    private def getTasksFolderPath: Path = {
+        val path = System.getenv().get("COMPUTERNAME") match {
+            case "PC_MATERIEL_NET" => "C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\RelayExtensions"
+            case _ => "RelayExtensions/"
+        }
+        Paths.get(path)
+    }
+
+    private def ensureOpen(): Unit = {
+        if (!open)
+            throw new RelayClosedException("Relay Point have to be started !")
+    }
+
+
+    private def ensureTargetExists(targetID: String) : Unit = {
+        systemChannel.sendOrder(SystemOrder.CHECK_ID, Reason.INTERNAL, targetID.getBytes)
+        val response = (systemChannel.nextPacketAsP():DataPacket).header
+        if (response == "ERROR")
+            throw new RelayException(s"Target '$targetID' does not exists !")
+    }
+
     //initial tasks
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.INTERNAL)))
+}
+
+object RelayPoint {
+    val ServerID = "server"
+    val Port = 48484
 }

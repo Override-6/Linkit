@@ -36,8 +36,8 @@ import fr.overridescala.vps.ftp.api.exceptions.TaskException
  * @see [[TaskExecutor]]
  * */
 
-abstract class Task[T](val targetID: String)
-        extends TaskExecutor with TaskAction[T] {
+abstract class Task[T](val targetID: String) extends TaskExecutor with TaskAction[T] {
+
     @volatile private var handler: TasksHandler = _
     @volatile private var relayIdentifier: String = _
 

@@ -25,8 +25,8 @@ object Main {
      * */
     def main(args: Array[String]): Unit = {
         val localRun = args.contains("--local-run")
-        val loadTasks = !args.contains("--no-tasks")
-        val relayPoint = new RelayPoint(address, identifier, localRun, loadTasks)
+        val loadExtensions = !(args.contains("--no-ext") || localRun)
+        val relayPoint = new RelayPoint(address, identifier, loadExtensions)
         relayPoint.start()
         relayPoint.awaitStart()
         if (localRun) {

@@ -1,7 +1,9 @@
 package fr.overridescala.vps.ftp.api.system
 
+import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.packet.{PacketChannelsHandler, SyncPacketChannel}
 import fr.overridescala.vps.ftp.api.system.SystemPacketChannel.SystemChannelID
+import fr.overridescala.vps.ftp.api.task.TaskInitInfo
 
 class SystemPacketChannel(connectedID: String,
                           ownerID: String,
@@ -9,9 +11,13 @@ class SystemPacketChannel(connectedID: String,
 
     private val notifier = handler.notifier
 
-    def sendOrder(systemOrder: SystemOrder, reason: Reason): Unit = {
-        handler.sendPacket(SystemPacket(systemOrder, reason)(this))
+    def sendOrder(systemOrder: SystemOrder, reason: Reason, content: Array[Byte] = Array()): Unit = {
+        sendPacket(SystemPacket(systemOrder, reason, content)(this))
         notifier.onSystemOrderSent(systemOrder)
+    }
+
+    def sendInitPacket(taskInitInfo: TaskInitInfo): Unit = {
+        sendPacket(TaskInitPacket(taskInitInfo)(this))
     }
 
 }

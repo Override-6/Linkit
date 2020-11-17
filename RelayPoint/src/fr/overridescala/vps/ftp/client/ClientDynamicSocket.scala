@@ -19,7 +19,6 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress, notifier: EventNotifi
 
     override protected def handleReconnection(): Unit = {
         try {
-            new Exception().printStackTrace(System.out)
             println("Reconnecting...")
             newSocket()
             println("Reconnected !")

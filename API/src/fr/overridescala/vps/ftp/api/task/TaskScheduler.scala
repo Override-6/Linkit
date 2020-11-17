@@ -1,7 +1,6 @@
-package fr.overridescala.vps.ftp.api
+package fr.overridescala.vps.ftp.api.task
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
-import fr.overridescala.vps.ftp.api.task.{Task, TaskAction, TaskCompleterHandler}
 
 trait TaskScheduler {
 

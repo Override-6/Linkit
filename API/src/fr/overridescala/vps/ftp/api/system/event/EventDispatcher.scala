@@ -51,7 +51,7 @@ object EventDispatcher {
 
         def onPacketUsed(packet: Packet): Unit = dispatch(_.onPacketUsed(packet))
 
-        def onSystemOrderReceived(orderType: SystemOrder): Unit = dispatch(_.onSystemOrderReceived(orderType))
+        def onSystemOrderReceived(orderType: SystemOrder, reason: Reason): Unit = dispatch(_.onSystemOrderReceived(orderType, reason))
 
         def onSystemOrderSent(orderType: SystemOrder): Unit = dispatch(_.onSystemOrderSent(orderType))
 

@@ -11,21 +11,16 @@ case class ErrorPacket (override val channelID: Int,
                        cause: String = "") extends Packet {
 
     def printError(): Unit = {
-        def println(x: Any): Unit = Console.err.println(x)
-
-        println(s"$errorType: $errorMsg")
+        Console.err.println(s"$errorType: $errorMsg")
         if (!cause.isEmpty)
-            println(s"caused by: $cause")
+            Console.err.print(s"caused by: $cause ")
+        Console.err.println(s"from relay $senderID")
     }
 
 }
 
 
 object ErrorPacket {
-
-    val NoSuchTask: String = "NO_SUCH_TASK"
-    val NoSuchPacketChannel: String = "NO_SUCH_CHANNEL"
-    val NoSuchPacket: String = "NO_SUCH_PACKET"
 
     def apply(errorType: String, msg: String, cause: String)(implicit channel: PacketChannel): ErrorPacket =
         ErrorPacket(channel.channelID, channel.ownerID, channel.connectedID, errorType, msg, cause)

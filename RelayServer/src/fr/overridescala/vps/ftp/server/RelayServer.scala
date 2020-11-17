@@ -6,9 +6,10 @@ import java.nio.file.{Path, Paths}
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
-import fr.overridescala.vps.ftp.api.exceptions.RelayException
+import fr.overridescala.vps.ftp.api.exceptions.{RelayClosedException, RelayException}
+import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
-import fr.overridescala.vps.ftp.api.system.Reason
+import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder}
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.utils.Constants
@@ -135,7 +136,7 @@ class RelayServer extends Relay {
 
     private def ensureOpen(): Unit = {
         if (!open)
-            throw new UnsupportedOperationException("Relay Point have to be started !")
+            throw new RelayClosedException("Relay Server have to be started !")
     }
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.INTERNAL)))

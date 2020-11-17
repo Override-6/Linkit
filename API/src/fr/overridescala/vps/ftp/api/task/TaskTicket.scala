@@ -7,7 +7,7 @@ import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationFailException}
 import fr.overridescala.vps.ftp.api.packet.SyncPacketChannel
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.vps.ftp.api.system.Reason
+import fr.overridescala.vps.ftp.api.system.{Reason, SystemPacketChannel}
 
 import scala.util.control.NonFatal
 
@@ -16,24 +16,27 @@ class TaskTicket(executor: TaskExecutor,
                  val packetManager: PacketManager,
                  ownFreeWill: Boolean) {
 
-    private val taskName: String = executor.getClass.getSimpleName
     private val notifier = packetManager.notifier
 
     def abort(reason: Reason): Unit = {
         notifyExecutor()
         executor match {
             case task: Task[_] =>
+
                 val errorMethod = task.getClass.getMethod("error", classOf[String])
                 errorMethod.setAccessible(true)
                 notifier.onTaskSkipped(task, reason)
+
                 try {
                     errorMethod.invoke(task, "Task aborted from an external handler")
                 } catch {
                     case e: InvocationTargetException if e.getCause.isInstanceOf[TaskException] => Console.err.println(e.getMessage)
                     case e: InvocationTargetException => e.getCause.printStackTrace()
                     case e: TaskOperationFailException => Console.err.println(e.getMessage)
+
                     case NonFatal(e) => e.printStackTrace()
                 } finally {
+
                     notifier.onTaskSkipped(task, reason)
                 }
             case _ =>
@@ -44,8 +47,7 @@ class TaskTicket(executor: TaskExecutor,
     def start(): Unit = {
         var reason = Reason.INTERNAL_ERROR
         try {
-            println(s"executing $taskName...")
-            executor.init(packetManager, channel)
+            executor.init(channel)
 
             executor match {
                 case task: Task[_] => notifier.onTaskStartExecuting(task)
@@ -53,12 +55,11 @@ class TaskTicket(executor: TaskExecutor,
             }
 
             if (ownFreeWill) {
-                channel.sendPacket(TaskInitPacket.of(executor.initInfo)(channel))
+                channel.sendPacket(executor.initInfo)
             }
 
             executor.execute()
             reason = Reason.INTERNAL
-            println(s"$taskName completed !")
         } catch {
             // Do not prints those exceptions : they are normal errors
             // lifted when a task is brutally aborted via Thread.interrupt

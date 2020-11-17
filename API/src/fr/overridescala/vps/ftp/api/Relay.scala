@@ -5,6 +5,7 @@ import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.system.JustifiedCloseable
+import fr.overridescala.vps.ftp.api.task.TaskScheduler
 
 //TODO reedit doc about all changes
 trait Relay extends JustifiedCloseable with TaskScheduler {

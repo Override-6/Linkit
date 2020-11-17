@@ -98,21 +98,34 @@ class ClientConnectionThread private(socket: SocketContainer,
         notifier.onPacketReceived(packet)
         packet match {
             case systemError: ErrorPacket if packet.channelID == systemChannel.channelID => systemError.printError()
-            case systemPacket: SystemPacket => handleSystemOrder(systemPacket.order, systemPacket.reason.reversed())
+            case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
             case init: TaskInitPacket => tasksHandler.handlePacket(init)
             case _: Packet => channelsHandler.injectPacket(packet)
         }
     }
 
 
-    def handleSystemOrder(orderType: SystemOrder, reason: Reason): Unit = {
-        println(s"order $orderType had been requested by '$identifier'")
+
+    private def handleSystemOrder(packet: SystemPacket): Unit = {
+        val orderType = packet.order
+        val reason = packet.reason
+        val content = packet.content
+
+        println(s"Order $orderType had been requested by '$identifier'")
+        notifier.onSystemOrderReceived(orderType, reason)
         orderType match {
             case SystemOrder.CLIENT_CLOSE => close(reason)
             case SystemOrder.SERVER_CLOSE => server.close(identifier, reason)
             case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(reason)
+            case SystemOrder.CHECK_ID => checkIDRegistered(new String(content))
+
             case _ => systemChannel.sendPacket(ErrorPacket("forbidden order", s"could not complete order '$orderType', can't be handled by a server or unknown order"))
         }
+    }
+
+    private def checkIDRegistered(target: String): Unit = {
+        val response = if (manager.containsIdentifier(target)) "OK" else "ERROR"
+        systemChannel.sendPacket(DataPacket(response))
     }
 
     private def isNotInitialised: Boolean = identifier == null
@@ -145,9 +158,8 @@ object ClientConnectionThread {
                     channel.sendPacket(DataPacket(response))
 
                     if (response == "ERROR")
-                        throw new RelayException("a Relay point connection have been rejected.")
+                        throw new RelayException("a Relay Point connection have been rejected.")
 
-                    println(s"Relay Point connected with identifier '$identifier'")
                     identifier
                 case other =>
                     val name = other.getClass.getSimpleName

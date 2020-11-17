@@ -37,6 +37,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
             throw RelayInitialisationException("this address is already registered !")
 
         val connection = ClientConnectionThread.open(socket, server)
+        println(s"Relay Point connected with identifier '${connection.identifier}'")
         connections.put(address, connection)
     }
 

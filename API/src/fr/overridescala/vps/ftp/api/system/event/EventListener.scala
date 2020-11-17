@@ -38,7 +38,7 @@ abstract class EventListener {
 
     def onPacketUsed(packet: Packet): Unit = ()
 
-    def onSystemOrderReceived(orderType: SystemOrder): Unit = ()
+    def onSystemOrderReceived(orderType: SystemOrder, reason: Reason): Unit = ()
 
     def onSystemOrderSent(orderType: SystemOrder): Unit = ()
 

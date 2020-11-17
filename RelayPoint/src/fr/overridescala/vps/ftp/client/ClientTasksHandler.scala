@@ -31,7 +31,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
             throw new TaskException("can't start a task with oneself !")
 
         val channel = relay.createSyncChannel0(linkedRelay, taskIdentifier)
-        val ticket = new TaskTicket(executor, channel, packetManager, ownFreeWill)
+        val ticket = new TaskTicket(executor, channel, systemChannel, packetManager, ownFreeWill)
         queue.offer(ticket)
     }
 

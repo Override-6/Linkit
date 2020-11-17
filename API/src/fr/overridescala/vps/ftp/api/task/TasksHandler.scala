@@ -22,7 +22,8 @@ import fr.overridescala.vps.ftp.api.system.{JustifiedCloseable, Reason}
  * @see PacketChannel
  * */
 trait TasksHandler extends JustifiedCloseable {
-
+    //TODO handle a task which want to complete with an unknown relay identifier
+    //TODO use systemPacketChannels to
 
     /**
      * The relay identifier
