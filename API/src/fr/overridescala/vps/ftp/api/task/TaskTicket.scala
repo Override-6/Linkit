@@ -23,7 +23,7 @@ class TaskTicket(executor: TaskExecutor,
         executor match {
             case task: Task[_] =>
 
-                val errorMethod = task.getClass.getMethod("error", classOf[String])
+                val errorMethod = task.getClass.getMethod("fail", classOf[String])
                 errorMethod.setAccessible(true)
                 notifier.onTaskSkipped(task, reason)
 
@@ -55,7 +55,7 @@ class TaskTicket(executor: TaskExecutor,
             }
 
             if (ownFreeWill) {
-                channel.sendPacket(executor.initInfo)
+                channel.sendPacket(TaskInitPacket(executor.initInfo)(channel))
             }
 
             executor.execute()

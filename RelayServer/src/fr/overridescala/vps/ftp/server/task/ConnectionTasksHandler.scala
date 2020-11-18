@@ -50,7 +50,7 @@ class ConnectionTasksHandler(override val identifier: String,
         if (linkedRelayID == server.identifier)
             throw new TaskException("can't start a task from server to server !")
         val channel = server.createSync(linkedRelayID, taskIdentifier)
-        tasksThread.addTicket(new TaskTicket(executor, channel, systemChannel, packetManager, ownFreeWill))
+        tasksThread.addTicket(new TaskTicket(executor, channel, packetManager, ownFreeWill))
     }
 
     /**

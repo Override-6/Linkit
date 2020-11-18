@@ -16,7 +16,7 @@ class SocketContainer(notifier: EventNotifier) extends DynamicSocket(notifier) {
         currentOutputStream = new BufferedOutputStream(currentSocket.getOutputStream)
         currentInputStream = new BufferedInputStream(currentSocket.getInputStream)
         notifyAll()
-        markAsConnected(true)
+        markAsConnected()
     }
 
     override protected def handleReconnection(): Unit = {

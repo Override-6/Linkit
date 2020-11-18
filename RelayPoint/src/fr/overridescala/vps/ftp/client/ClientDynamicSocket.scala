@@ -38,7 +38,7 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress, notifier: EventNotifi
             case _@(_: SocketException | _: ConnectException) =>
             handleReconnection()
         }
-        markAsConnected(true)
+        markAsConnected()
     }
 }
 

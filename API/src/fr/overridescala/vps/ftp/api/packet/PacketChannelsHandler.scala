@@ -1,14 +1,14 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
-import fr.overridescala.vps.ftp.api.system.Reason
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
+import fr.overridescala.vps.ftp.api.system.{JustifiedCloseable, Reason}
 
 import scala.collection.mutable
 
 class PacketChannelsHandler(val notifier: EventNotifier,
                             socket: DynamicSocket,
-                            packetManager: PacketManager) {
+                            packetManager: PacketManager) extends JustifiedCloseable {
 
     private val openedPacketChannels = mutable.Map.empty[Int, PacketChannelManager]
 
@@ -41,4 +41,9 @@ class PacketChannelsHandler(val notifier: EventNotifier,
 
     def notifyPacketUsed(packet: Packet): Unit = notifier.onPacketUsed(packet)
 
+    override def close(reason: Reason): Unit = {
+        for ((_, channel) <- openedPacketChannels) {
+            channel.close(reason)
+        }
+    }
 }

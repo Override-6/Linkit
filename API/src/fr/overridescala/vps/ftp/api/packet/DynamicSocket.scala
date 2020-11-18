@@ -3,8 +3,9 @@ package fr.overridescala.vps.ftp.api.packet
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
+import fr.overridescala.vps.ftp.api.exceptions.RelayClosedException
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
-import fr.overridescala.vps.ftp.api.system.{Reason, JustifiedCloseable}
+import fr.overridescala.vps.ftp.api.system.{JustifiedCloseable, Reason}
 
 abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable {
 
@@ -94,12 +95,12 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
         currentSocket.close()
     }
 
-    protected def markAsConnected(connected: Boolean): Unit =
-        if (connected) locker.markAsConnected() else locker.markDisconnected()
+    protected def markAsConnected(): Unit =
+        locker.markAsConnected()
 
     private def ensureOpen(): Unit = {
         if (closed)
-            throw new UnsupportedOperationException("Socket closed.")
+            throw new RelayClosedException("Socket closed.")
     }
 
     private class SocketLocker {

@@ -119,17 +119,17 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     private def close(relayId: String, reason: Reason): Unit = {
-        if (reason.isInternal) {
+        if (!open)
+            return //already closed.
+        if (socket.isConnected && reason.isInternal) {
             systemChannel.sendPacket(SystemPacket(SystemOrder.CLIENT_CLOSE, reason))
-        } else {
-            systemChannel.sendPacket(EmptyPacket())
-            systemChannel.nextPacket() //wait an empty packet from server in order to sync the disconnection
-        } //Notifies the server in order to sync the disconnection
+        }
 
-        println("closing socket...")
+        systemChannel.close(reason)
         socket.close(reason)
-        println("socket closed !")
         tasksHandler.close(reason)
+        channelsHandler.close(reason)
+
         open = false
         notifier.onClosed(relayId, reason)
         println("closed !")
@@ -169,16 +169,18 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private def handleSystemPacket(system: SystemPacket): Unit = {
         val order = system.order
         val reason = system.reason.reversed()
+        val origin = system.senderID
 
-        println(s"Received system order $order from ${system.senderID}")
+        println(s"Received system order $order from ${origin}")
         notifier.onSystemOrderReceived(order, reason)
         order match {
-            case SystemOrder.CLIENT_CLOSE => close(reason)
+            case SystemOrder.CLIENT_CLOSE => close(origin, reason)
             case SystemOrder.CLIENT_INITIALISATION => Future(initToServer())
             case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(reason)
             case _@(SystemOrder.SERVER_CLOSE | SystemOrder.CHECK_ID) => sendErrorPacket(order, "Received forbidden order.")
             case _ => sendErrorPacket(order, "Unknown order.")
         }
+
         def sendErrorPacket(order: SystemOrder, cause: String): Unit = {
             val error = ErrorPacket("SystemError",
                 s"System packet order '$order' couldn't be handled by this RelayPoint.",
@@ -212,9 +214,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
 
-    private def ensureTargetExists(targetID: String) : Unit = {
+    private def ensureTargetExists(targetID: String): Unit = {
         systemChannel.sendOrder(SystemOrder.CHECK_ID, Reason.INTERNAL, targetID.getBytes)
-        val response = (systemChannel.nextPacketAsP():DataPacket).header
+        val response = (systemChannel.nextPacketAsP(): DataPacket).header
         if (response == "ERROR")
             throw new RelayException(s"Target '$targetID' does not exists !")
     }

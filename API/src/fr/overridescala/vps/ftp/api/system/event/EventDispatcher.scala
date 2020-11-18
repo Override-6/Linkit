@@ -6,6 +6,7 @@ import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannelManager}
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder}
 import fr.overridescala.vps.ftp.api.task.Task
+import javax.management.InstanceAlreadyExistsException
 
 import scala.collection.mutable.ListBuffer
 
@@ -13,7 +14,13 @@ class EventDispatcher {
 
     val notifier = new EventNotifier
 
-    def register(listener: EventListener): Unit = notifier.listeners += listener
+    def register(listener: EventListener): Unit = {
+        if (listener == null)
+            throw new NullPointerException("Listener is null !")
+        if (notifier.listeners.contains(listener))
+            throw new InstanceAlreadyExistsException("listener is already registered !")
+        notifier.listeners += listener
+    }
 
 }
 
@@ -55,6 +62,8 @@ object EventDispatcher {
 
         def onSystemOrderSent(orderType: SystemOrder): Unit = dispatch(_.onSystemOrderSent(orderType))
 
-        private def dispatch(f: EventListener => Unit): Unit = listeners.foreach(f)
+        private def dispatch(f: EventListener => Unit): Unit = {
+            listeners.foreach(f)
+        }
     }
 }

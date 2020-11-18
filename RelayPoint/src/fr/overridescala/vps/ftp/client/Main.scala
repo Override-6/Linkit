@@ -5,12 +5,12 @@ import java.util.Scanner
 
 import fr.overridescala.vps.ftp.`extension`.controller.ControllerExtension
 import fr.overridescala.vps.ftp.`extension`.fundamental.FundamentalExtension
-import fr.overridescala.vps.ftp.api.utils.Constants
 
 object Main {
 
-    private val SERVER_ADDRESS = new InetSocketAddress("161.97.104.230", Constants.PORT)
-    private val LOCALHOST = new InetSocketAddress("localhost", Constants.PORT)
+    private val PORT = 48484
+    private val SERVER_ADDRESS = new InetSocketAddress("161.97.104.230", PORT)
+    private val LOCALHOST = new InetSocketAddress("localhost", PORT)
 
     print("say 'y' to connect to localhost : ")
     private val scanner = new Scanner(System.in)

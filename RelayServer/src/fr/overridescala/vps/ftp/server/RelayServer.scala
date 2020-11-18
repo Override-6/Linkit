@@ -69,7 +69,6 @@ class RelayServer extends Relay {
         open = true
         while (open) awaitClientConnection()
 
-        close(Reason.INTERNAL)
     }
 
 
@@ -97,6 +96,7 @@ class RelayServer extends Relay {
         println("closing server...")
         connectionsManager.close(reason)
         serverSocket.close()
+
         open = false
         notifier.onClosed(relayId, reason)
         println("server closed !")
@@ -116,12 +116,9 @@ class RelayServer extends Relay {
             connection.updateSocket(clientSocket)
 
         } catch {
-            case e: RelayException =>
+            case e@(_:RelayException | _:SocketException) =>
                 Console.err.println(e.getMessage)
-            //notifier.onSystemError(e.getType, Reason.LOCAL_ERROR)
-            case e: SocketException if e.getMessage == "Socket closed" =>
-                Console.err.println(e.getMessage)
-                close(Reason.INTERNAL_ERROR)
+                open = false
             case NonFatal(e) => e.printStackTrace()
         }
     }

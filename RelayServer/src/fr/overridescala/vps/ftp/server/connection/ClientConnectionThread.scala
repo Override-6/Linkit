@@ -57,23 +57,18 @@ class ClientConnectionThread private(socket: SocketContainer,
     }
 
     override def close(reason: Reason): Unit = {
-        println(s"closing thread '$getName'")
-        if (socket.isConnected) {
-            if (reason.isInternal) {
-                systemChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
-            } else {
-                systemChannel.sendPacket(EmptyPacket())
-                systemChannel.nextPacket() //Wait a response packet (EmptyPacket) before closing the connection.
-            }
-            systemChannel.close(reason)
+        println(s"Closing thread '$getName'")
+        if (socket.isConnected && reason.isInternal) {
+            systemChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
         }
 
         tasksHandler.close(reason)
         socket.close(reason)
+        channelsHandler.close(reason)
         manager.unregister(socket.remoteSocketAddress())
 
         closed = true
-        println(s"thread '$getName' closed.")
+        println(s"Thread '$getName' closed.")
     }
 
     private[server] def createSync(id: Int): SyncPacketChannel =
@@ -103,7 +98,6 @@ class ClientConnectionThread private(socket: SocketContainer,
             case _: Packet => channelsHandler.injectPacket(packet)
         }
     }
-
 
 
     private def handleSystemOrder(packet: SystemPacket): Unit = {
