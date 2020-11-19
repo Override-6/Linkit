@@ -7,7 +7,7 @@ import java.lang.annotation.Target;
 
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RelayExtensionInfo {
+public @interface relayExtensionInfo {
 
     String name() default "";
 

@@ -86,8 +86,8 @@ class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) {
     }
 
     private def retrieveInfo(extClass: A): ExtensionInfo = {
-        if (extClass.isAnnotationPresent(classOf[RelayExtensionInfo])) {
-            val annotation = extClass.getAnnotation(classOf[RelayExtensionInfo])
+        if (extClass.isAnnotationPresent(classOf[relayExtensionInfo])) {
+            val annotation = extClass.getAnnotation(classOf[relayExtensionInfo])
             var name = annotation.name()
             if (name.isEmpty) name = extClass.getSimpleName
             return ExtensionInfo(annotation.dependencies, name, extClass)
