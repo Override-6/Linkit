@@ -7,7 +7,7 @@ import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.system.Reason
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 
-class SyncFoldersTask(relay: Relay, targetId: String, targetFolder: String, localFolder: String) extends Task(targetId) {
+class SyncFoldersTask(relay: Relay, targetId: String, targetFolder: String, localFolder: String) extends Task[Unit](targetId) {
 
     override def initInfo: TaskInitInfo =
         TaskInitInfo.of(TYPE, targetId, targetFolder ++ LOCAL_PATH_SEPARATOR ++ localFolder)

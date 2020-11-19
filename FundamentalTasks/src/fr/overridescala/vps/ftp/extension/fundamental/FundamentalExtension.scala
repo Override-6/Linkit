@@ -9,10 +9,9 @@ import fr.overridescala.vps.ftp.api.utils.Utils
 class FundamentalExtension(relay: Relay) extends RelayExtension(relay) {
     override def main(): Unit = {
         val completerHandler = relay.taskCompleterHandler
-        completerHandler.putCompleter(UploadTask.TYPE, init => DownloadTask(Utils.deserialize(init.content)))
-        completerHandler.putCompleter(DownloadTask.TYPE, init => UploadTask(Utils.deserialize(init.content)))
         completerHandler.putCompleter(DeleteFileTask.TYPE, init => new DeleteFileTask.Completer(new String(init.content)))
         completerHandler.putCompleter(PingTask.TYPE, _ => new PingTask.Completer())
+
         completerHandler.putCompleter(StressTestTask.TYPE, init => {
             val content = init.content
             new StressTestTask.StressTestCompleter(new String(content.slice(1, content.length)).toLong, content(0) != 1)

@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.`extension`.controller.cli
 
-import fr.overridescala.vps.ftp.api.exceptions.TaskOperationFailException
+import fr.overridescala.vps.ftp.api.exceptions.{RelayException, TaskOperationFailException}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -24,8 +24,7 @@ class CommandManager {
         try {
             commands(cmd).execute(args)
         } catch {
-            case e: CommandException => Console.err.println(e.getMessage)
-            case e: TaskOperationFailException => Console.err.println(e.getMessage)
+            case e@(_:CommandException | _: RelayException) => Console.err.println(e.getMessage)
             case NonFatal(e) => e.printStackTrace()
         }
     }

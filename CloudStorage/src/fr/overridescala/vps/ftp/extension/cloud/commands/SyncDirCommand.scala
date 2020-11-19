@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.`extension`.cloud.commands
 
+import fr.overridescala.vps.ftp.`extension`.cloud.tasks.SyncFoldersTask
 import fr.overridescala.vps.ftp.`extension`.controller.cli.{CommandException, CommandExecutor, CommandUtils}
 import fr.overridescala.vps.ftp.api.Relay
 

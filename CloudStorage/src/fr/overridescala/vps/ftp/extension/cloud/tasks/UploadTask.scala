@@ -113,8 +113,8 @@ class UploadTask(private val desc: TransferDescription)
 }
 
 object UploadTask {
-    private[fundamental] val END_OF_TRANSFER: String = "EOT"
-    private[fundamental] val UPLOAD_FILE: String = "UPF"
+    val END_OF_TRANSFER: String = "EOT"
+    val UPLOAD_FILE: String = "UPF"
     val TYPE: String = "UP"
 
     def apply(transferDescription: TransferDescription): UploadTask =

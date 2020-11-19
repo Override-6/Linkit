@@ -9,6 +9,7 @@ import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
+import scala.collection.convert.ImplicitConversions.`collection AsScalaIterable`
 import scala.collection.mutable.ListBuffer
 
 class FolderSync(localPath: String,
@@ -27,7 +28,7 @@ class FolderSync(localPath: String,
             registerToWS(Paths.get(localPath))
             var key = watchService.poll()
             while (key != null) {
-                  val events = key.pollEvents().toArray[WatchEvent[Path]](Array())
+                  val events = key.pollEvents().toArray(Array[WatchEvent[Path]]())
                   println(s"events = ${events.mkString("Array(", ", ", ")")}")
                   for (event <- events) {
                         val affected = event.context()
