@@ -1,10 +1,10 @@
-package fr.overridescala.vps.ftp.`extension`.fundamental
+package fr.overridescala.vps.ftp.`extension`.cloud.tasks
 
 import java.io.File
 import java.nio.file.{Files, Path}
 
-import DownloadTask.TYPE
-import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.TransferDescription
+import fr.overridescala.vps.ftp.`extension`.cloud.tasks.DownloadTask.TYPE
+import fr.overridescala.vps.ftp.`extension`.cloud.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, ErrorPacket}

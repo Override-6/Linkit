@@ -1,15 +1,15 @@
-package fr.overridescala.vps.ftp.`extension`.fundamental
+package fr.overridescala.vps.ftp.`extension`.cloud.tasks
 
 import java.nio.file.{Files, Path, Paths}
 import java.util
 
+import fr.overridescala.vps.ftp.`extension`.cloud.tasks.UploadTask._
+import fr.overridescala.vps.ftp.`extension`.cloud.transfer.TransferDescription
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskInitInfo}
-import fr.overridescala.vps.ftp.api.utils.{Constants, Utils}
-import UploadTask._
-import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.TransferDescription
+import fr.overridescala.vps.ftp.api.utils.Utils
 
 import scala.util.control.NonFatal
 

@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.`extension`.fundamental.transfer
+package fr.overridescala.vps.ftp.`extension`.cloud.transfer
 
 /**
  * Description of a Download / Upload transfer.
@@ -10,8 +10,6 @@ package fr.overridescala.vps.ftp.`extension`.fundamental.transfer
 case class TransferDescription(source: String,
                                destination: String,
                                targetID: String) extends Serializable {
-
-    val transferSize: Long = source.size
 
     /**
      * reverse the description.

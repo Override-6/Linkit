@@ -1,9 +1,7 @@
-package fr.overridescala.vps.ftp.`extension`.controller.cli.commands
+package fr.overridescala.vps.ftp.`extension`.cloud.commands
 
-import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandException
-import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.`extension`.controller.cli.{CommandException, CommandExecutor, CommandUtils}
-import fr.overridescala.vps.ftp.`extension`.controller.tasks.SyncFoldersTask
+import fr.overridescala.vps.ftp.api.Relay
 
 class SyncDirCommand(relay: Relay) extends CommandExecutor {
 

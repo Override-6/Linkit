@@ -1,10 +1,10 @@
-package fr.overridescala.vps.ftp.`extension`.fundamental.transfer
+package fr.overridescala.vps.ftp.`extension`.cloud.transfer
 
 class TransferDescriptionBuilder {
 
-    var source: String = null
-    var destination: String = null
-    var targetID: String = null
+    var source: String = _
+    var destination: String = _
+    var targetID: String = _
 
     implicit def build(): TransferDescription =
         TransferDescription(source, destination, targetID)

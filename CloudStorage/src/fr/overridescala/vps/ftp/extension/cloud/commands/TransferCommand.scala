@@ -1,12 +1,11 @@
-package fr.overridescala.vps.ftp.`extension`.controller.cli.commands
+package fr.overridescala.vps.ftp.`extension`.cloud.commands
 
+import fr.overridescala.vps.ftp.`extension`.cloud.tasks.{DownloadTask, UploadTask}
+import fr.overridescala.vps.ftp.`extension`.cloud.transfer.TransferDescriptionBuilder
 import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandUtils.argAfter
-import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandException
-import fr.overridescala.vps.ftp.`extension`.fundamental.transfer.TransferDescriptionBuilder
-import fr.overridescala.vps.ftp.`extension`.fundamental.{DownloadTask, UploadTask}
+import fr.overridescala.vps.ftp.`extension`.controller.cli.{CommandException, CommandExecutor, CommandUtils}
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.task.Task
-import fr.overridescala.vps.ftp.`extension`.controller.cli.{CommandException, CommandExecutor, CommandUtils}
 
 /**
  * syntax : <p>
