@@ -65,11 +65,13 @@ class ClientConnectionThread private(socket: SocketContainer,
         tasksHandler.close(reason)
         socket.close(reason)
         channelsHandler.close(reason)
-        manager.unregister(socket.remoteSocketAddress())
+        manager.unregister(identifier)
 
         closed = true
         println(s"Thread '$getName' closed.")
     }
+
+    def isConnected: Boolean = socket.isConnected
 
     private[server] def createSync(id: Int): SyncPacketChannel =
         new SyncPacketChannel(identifier, server.identifier, id, channelsHandler)
@@ -130,51 +132,39 @@ class ClientConnectionThread private(socket: SocketContainer,
 
 object ClientConnectionThread {
 
-    def open(socket: SocketContainer,
-             server: RelayServer): ClientConnectionThread = {
+    def open(socket: SocketContainer, server: RelayServer, identifier: String = null): ClientConnectionThread = {
+        val relayIdentifier = if (identifier == null) retrieveIdentifier(socket, server) else identifier
+        val connection = new ClientConnectionThread(socket, server, relayIdentifier)
+        connection.start()
+        connection
+    }
+
+    def retrieveIdentifier(socket: SocketContainer, server: RelayServer): String = {
         val packetReader = new ServerPacketReader(socket, server, null)
-        val unhandledPackets = ListBuffer.empty[Packet]
         val tempChannelsHandler = new PacketChannelsHandler(server.notifier, socket, server.packetManager)
-        val connectionsManager = server.connectionsManager
 
-        def deflectInChannel(channel: PacketChannelManager): Unit = packetReader.nextPacket {
-            case concerned: Packet if concerned.channelID == channel.channelID => channel.addPacket(concerned)
-            case other: Packet =>
-                unhandledPackets += other
-                deflectInChannel(channel)
-        }
-
-        def handleClientResponse(implicit channel: SyncPacketChannel): String = {
-            channel.nextPacket() match {
-                case dataPacket: DataPacket =>
-                    val identifier = dataPacket.header
-                    val response = if (connectionsManager.containsIdentifier(identifier)) "ERROR" else "OK"
-                    channel.sendPacket(DataPacket(response))
-
-                    if (response == "ERROR")
-                        throw new RelayException("a Relay Point connection have been rejected.")
-
-                    identifier
-                case other =>
-                    val name = other.getClass.getSimpleName
-                    throw new UnexpectedPacketException(s"Unexpected packet type $name received while initialising client connection.")
-            }
-        }
-
-        implicit val channel: SyncPacketChannel =
+        val channel: SyncPacketChannel =
             new SyncPacketChannel("unknown", server.identifier, 6, tempChannelsHandler)
 
-        channel.sendPacket(SystemPacket(SystemOrder.CLIENT_INITIALISATION, Reason.INTERNAL))
-        deflectInChannel(channel)
+        def deflect(): Unit = packetReader.nextPacket {
+            case concerned: Packet if concerned.channelID == channel.channelID => channel.addPacket(concerned)
+            case _: Packet => deflect()
+        }
 
-        val identifier = handleClientResponse(channel)
+        def handleClientResponse(): String = channel.nextPacket() match {
+            case dataPacket: DataPacket => dataPacket.header
+            case other =>
+                val name = other.getClass.getSimpleName
+                throw new UnexpectedPacketException(s"Unexpected packet type $name received while getting RelayPoint identifier.")
+        }
+
+        channel.sendPacket(SystemPacket(SystemOrder.GET_IDENTIFIER, Reason.INTERNAL)(channel))
+        deflect()
+
+        val identifier = handleClientResponse()
         channel.close(Reason.INTERNAL)
-        val connection = new ClientConnectionThread(socket, server, identifier)
 
-        unhandledPackets.foreach(connection.handlePacket)
-        connection.start()
-
-        connection
+        identifier
     }
 
 }

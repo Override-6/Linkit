@@ -2,8 +2,8 @@ package fr.overridescala.vps.ftp.api.task
 
 import java.util.concurrent.atomic.AtomicReference
 
-import com.sun.istack.internal.Nullable
-import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import org.jetbrains.annotations.Nullable
+import fr.overridescala.vps.ftp.api.exceptions.{RelayException, TaskException}
 
 
 //TODO reedit the DOC

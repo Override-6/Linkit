@@ -9,13 +9,12 @@ import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.exceptions.{RelayClosedException, RelayException}
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
-import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder}
+import fr.overridescala.vps.ftp.api.system.Reason
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
-import fr.overridescala.vps.ftp.api.utils.Constants
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.server.RelayServer.Identifier
-import fr.overridescala.vps.ftp.server.connection.{ConnectionsManager, SocketContainer}
+import fr.overridescala.vps.ftp.server.connection.{ClientConnectionThread, ConnectionsManager, SocketContainer}
 
 import scala.util.control.NonFatal
 
@@ -25,7 +24,7 @@ object RelayServer {
 
 class RelayServer extends Relay {
 
-    private val serverSocket = new ServerSocket(Constants.PORT)
+    private val serverSocket = new ServerSocket(48484)
     private val taskFolderPath = getTasksFolderPath
 
 
@@ -58,7 +57,7 @@ class RelayServer extends Relay {
 
     override def start(): Unit = {
         println("Current encoding is " + Charset.defaultCharset().name())
-        println("Listening on port " + Constants.PORT)
+        println("Listening on port " + serverSocket.getLocalPort)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
 
         AsyncPacketChannel.UploadThread.start()
@@ -67,7 +66,7 @@ class RelayServer extends Relay {
         println("Ready !")
         notifier.onReady()
         open = true
-        while (open) awaitClientConnection()
+        while (open) awaitSocketConnection()
 
     }
 
@@ -102,24 +101,50 @@ class RelayServer extends Relay {
         println("server closed !")
     }
 
-    private def awaitClientConnection(): Unit = {
+    private val tempSocket = new SocketContainer(notifier, false)
+    def handleRelayPointConnection(identifier: String) : Unit = {
+
+        if (connectionsManager.isNotRegistered(identifier)) {
+            val socketContainer = new SocketContainer(notifier, true)
+            socketContainer.set(tempSocket.get)
+            connectionsManager.register(socketContainer, identifier)
+            sendResponse("OK")
+            return
+        }
+
+        val connection = connectionsManager.getConnectionFromIdentifier(identifier)
+        if (connection.isConnected) {
+            Console.err.println("Rejected connection of a client because he gave an already registered relay identifier.")
+            sendResponse("ERROR")
+            return
+        }
+
+        connection.updateSocket(tempSocket.get)
+        sendResponse("OK")
+    }
+
+
+    private def awaitSocketConnection(): Unit = {
         try {
             val clientSocket = serverSocket.accept()
-            val address = clientSocket.getRemoteSocketAddress.asInstanceOf[InetSocketAddress]
-            val connection = connectionsManager.getConnectionFromAddress(address.getAddress.getHostAddress)
-            if (connection == null) {
-                val socketContainer = new SocketContainer(notifier)
-                socketContainer.set(clientSocket)
-                connectionsManager.register(socketContainer)
-                return
-            }
-            connection.updateSocket(clientSocket)
+            tempSocket.set(clientSocket)
 
+            val identifier = ClientConnectionThread.retrieveIdentifier(tempSocket, this)
+
+            handleRelayPointConnection(identifier)
         } catch {
-            case e@(_:RelayException | _:SocketException) =>
+            case e@(_: RelayException | _: SocketException) =>
                 Console.err.println(e.getMessage)
-                open = false
-            case NonFatal(e) => e.printStackTrace()
+                onException()
+
+            case NonFatal(e) =>
+                e.printStackTrace()
+                onException()
+        }
+
+        def onException(): Unit = {
+            sendResponse("ERROR")
+            close(Reason.INTERNAL_ERROR)
         }
     }
 
@@ -134,6 +159,11 @@ class RelayServer extends Relay {
     private def ensureOpen(): Unit = {
         if (!open)
             throw new RelayClosedException("Relay Server have to be started !")
+    }
+
+    private def sendResponse(response: String): Unit = {
+        val responsePacket = new DataPacket(6, identifier, this.identifier, response)
+        tempSocket.write(packetManager.toBytes(responsePacket))
     }
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.INTERNAL)))

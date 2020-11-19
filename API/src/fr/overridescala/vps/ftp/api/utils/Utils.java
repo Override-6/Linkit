@@ -5,9 +5,6 @@ import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket;
 import scala.collection.Seq;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.InetSocketAddress;
-import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 

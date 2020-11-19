@@ -23,64 +23,68 @@ import scala.util.control.NonFatal
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String, loadTasks: Boolean) extends Relay {
 
-    @volatile private var open = false
-
     override val eventDispatcher: EventDispatcher = new EventDispatcher
     private val notifier = eventDispatcher.notifier
-    private val socket = new ClientDynamicSocket(serverAddress, notifier)
-    private val taskFolderPath = getTasksFolderPath
 
-    override val extensionLoader = new RelayExtensionLoader(this, taskFolderPath)
+    @volatile private var open = false
+    private val socket = new ClientDynamicSocket(serverAddress, notifier)
+
+    private val extensionFolderPath = getExtensionFolderPath
+    override val extensionLoader = new RelayExtensionLoader(this, extensionFolderPath)
+    override val properties = new RelayProperties
+
     override val packetManager = new PacketManager(notifier)
     private val packetReader = new PacketReader(socket)
 
-    override val properties = new RelayProperties
-
     private val channelsHandler = new PacketChannelsHandler(notifier, socket, packetManager)
     private implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(ServerID, identifier, channelsHandler)
+
     private val tasksHandler = new ClientTasksHandler(systemChannel, this)
     override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
-    private val lock: Object = new Object
 
 
     override def start(): Unit = {
+        println("Current encoding is " + Charset.defaultCharset().name())
+        println("Listening on port " + Port)
+        println("Computer name is " + System.getenv().get("COMPUTERNAME"))
+
+        loadLocal()
+        startPacketThreadListener()
+        loadRemote()
+
+        println("Ready !")
+        notifier.onReady()
+    }
+
+    private def startPacketThreadListener(): Unit = {
         val thread = new Thread(() => {
-            println("Current encoding is " + Charset.defaultCharset().name())
-            println("Listening on port " + Port)
-            println("Computer name is " + System.getenv().get("COMPUTERNAME"))
-
-            //enable the task management
-            println("Starting tasks handler...")
-            tasksHandler.start()
-            if (loadTasks) {
-                println("Loading Relay extensions from folder " + taskFolderPath)
-                extensionLoader.loadExtensions()
-            }
-            AsyncPacketChannel.UploadThread.start()
-            println(s"Connecting to server with identifier '$identifier'...")
-            socket.start()
-            println("Connected !")
-
-            println("Ready !")
-            notifier.onReady()
-            lock.synchronized {
-                lock.notifyAll()
-            }
-
             open = true
             while (open && socket.isOpen)
                 listen()
         })
         thread.setName("RelayPoint Packet handling")
         thread.start()
-        /*//FIX ME delete
-        new Thread(() => {
-            Console.err.println("A Connection loss will be simulated by closing socket in 10 seconds...")
-            Thread.sleep(100000)
-            println("Closing socket...")
-            socket.close()
-        }).start()*/
+    }
 
+    private def loadRemote(): Unit = {
+        println(s"Connecting to server with identifier '$identifier'...")
+        socket.start()
+        val response = systemChannel.nextPacketAsP(): DataPacket
+        if (response.header == "ERROR")
+            throw RelayInitialisationException(s"Another relay point with id '$identifier' is currently connected on the targeted network.")
+
+        println("Connected !")
+    }
+
+    private def loadLocal() : Unit = {
+        println("Loading tasks handler...")
+        tasksHandler.start()
+        if (loadTasks) {
+            println("Loading Relay extensions from folder " + extensionFolderPath)
+            extensionLoader.loadExtensions()
+        }
+        AsyncPacketChannel.UploadThread.start()
+        println("Async Upload Thread started !")
     }
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -108,11 +112,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     def isConnected: Boolean = socket.isConnected
-
-    def awaitStart(): Unit = lock.synchronized {
-        if (!isConnected)
-            lock.wait()
-    }
 
     private[client] def createSyncChannel0(linkedRelayID: String, id: Int): SyncPacketChannel = {
         new SyncPacketChannel(linkedRelayID, identifier, id, channelsHandler)
@@ -175,7 +174,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         notifier.onSystemOrderReceived(order, reason)
         order match {
             case SystemOrder.CLIENT_CLOSE => close(origin, reason)
-            case SystemOrder.CLIENT_INITIALISATION => Future(initToServer())
+            case SystemOrder.GET_IDENTIFIER => systemChannel.sendPacket(DataPacket(identifier))
             case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(reason)
             case _@(SystemOrder.SERVER_CLOSE | SystemOrder.CHECK_ID) => sendErrorPacket(order, "Received forbidden order.")
             case _ => sendErrorPacket(order, "Unknown order.")
@@ -190,17 +189,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         }
     }
 
-    private def initToServer(): Unit = {
-        systemChannel.sendPacket(DataPacket(identifier))
-        val response: DataPacket = systemChannel.nextPacketAsP()
-
-        if (response.header == "ERROR")
-            throw RelayInitialisationException(s"Another relay point with id '$identifier' is currently connected on the targeted network")
-
-        println("Successfully connected to the server !")
-    }
-
-    private def getTasksFolderPath: Path = {
+    private def getExtensionFolderPath: Path = {
         val path = System.getenv().get("COMPUTERNAME") match {
             case "PC_MATERIEL_NET" => "C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\RelayExtensions"
             case _ => "RelayExtensions/"

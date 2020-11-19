@@ -31,32 +31,22 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @param socket the socket to start the connection
      * @throws RelayInitialisationException when a id is already set for this address, or another connection is known under this id.
      * */
-    def register(socket: SocketContainer): Unit = {
-        val address = socket.remoteSocketAddress().getAddress.getHostAddress
-        if (connections.contains(address))
-            throw RelayInitialisationException("this address is already registered !")
+    def register(socket: SocketContainer, identifier: String): Unit = {
+        if (connections.contains(identifier))
+            throw RelayInitialisationException(s"This relay id is already registered ! ('$identifier')")
 
-        val connection = ClientConnectionThread.open(socket, server)
+        val connection = ClientConnectionThread.open(socket, server, identifier)
         println(s"Relay Point connected with identifier '${connection.identifier}'")
-        connections.put(address, connection)
+        connections.put(identifier, connection)
     }
 
     /**
      * unregisters a Relay point
      *
-     * @param address the address to disconnect
+     * @param identifier the identifier to disconnect
      * */
-    def unregister(address: InetSocketAddress): Unit =
-        connections.remove(address.getAddress.getHostAddress)
-
-    /**
-     * get a relay from
-     * */
-    def getConnectionFromAddress(address: String): ClientConnectionThread = {
-        if (!connections.contains(address))
-            return null
-        connections(address)
-    }
+    def unregister(identifier: String): Unit =
+        connections.remove(identifier)
 
 
     /**
@@ -77,12 +67,11 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
     /**
      * determines if the address is not registered
      *
-     * @param address the address to test
+     * @param identifier the identifier to test
      * @return true if the address is not registered, false instead
      * */
-    def isNotRegistered(address: InetSocketAddress): Boolean = {
-        val ip = address.getAddress.getHostAddress
-        !connections.contains(ip)
+    def isNotRegistered(identifier: String): Boolean = {
+        !connections.contains(identifier)
     }
 
     /**

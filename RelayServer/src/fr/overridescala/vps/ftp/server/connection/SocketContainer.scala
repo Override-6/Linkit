@@ -6,10 +6,10 @@ import java.net.Socket
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.packet.DynamicSocket
 
-class SocketContainer(notifier: EventNotifier) extends DynamicSocket(notifier) {
+class SocketContainer(notifier: EventNotifier, closeStreamsOnRefresh: Boolean) extends DynamicSocket(notifier) {
 
     def set(socket: Socket): Unit = synchronized {
-        if (currentSocket != null)
+        if (currentSocket != null && closeStreamsOnRefresh)
             closeCurrentStreams()
 
         currentSocket = socket
@@ -19,8 +19,11 @@ class SocketContainer(notifier: EventNotifier) extends DynamicSocket(notifier) {
         markAsConnected()
     }
 
+    def get: Socket = currentSocket
+
     override protected def handleReconnection(): Unit = {
-        println(s"Socket disconnected from ${remoteSocketAddress().getAddress.getHostAddress}")
+        val address = remoteSocketAddress().getAddress.getHostAddress
+        println(s"Socket disconnected from $address")
         println("Reconnecting...")
         synchronized {
             wait()

@@ -19,7 +19,7 @@ class DataPacket(override val channelID: Int,
                  override val targetID: String,
                  override val senderID: String,
                  val header: String,
-                 val content: Array[Byte]) extends Packet {
+                 val content: Array[Byte] = Array()) extends Packet {
 
     val contentAsString: String = new String(content)
 

@@ -3,6 +3,7 @@ package fr.overridescala.vps.ftp.client
 import java.net.InetSocketAddress
 import java.util.Scanner
 
+import fr.overridescala.vps.ftp.`extension`.cloud.CloudStorageExtension
 import fr.overridescala.vps.ftp.`extension`.controller.ControllerExtension
 import fr.overridescala.vps.ftp.`extension`.fundamental.FundamentalExtension
 
@@ -26,13 +27,15 @@ object Main {
     def main(args: Array[String]): Unit = {
         val localRun = args.contains("--local-run")
         val loadExtensions = !(args.contains("--no-ext") || localRun)
+
         val relayPoint = new RelayPoint(address, identifier, loadExtensions)
         relayPoint.start()
-        relayPoint.awaitStart()
+
         if (localRun) {
             val loader = relayPoint.extensionLoader
             loader.loadExtension(classOf[ControllerExtension])
             loader.loadExtension(classOf[FundamentalExtension])
+            loader.loadExtension(classOf[CloudStorageExtension])
             //loader.loadExtension(classOf[PPCExtension])
         }
     }

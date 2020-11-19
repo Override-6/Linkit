@@ -47,10 +47,11 @@ object AsyncPacketChannel {
 
 
     object UploadThread extends Thread {
+
         private[AsyncPacketChannel] val queue: BlockingDeque[PacketTicket] = new LinkedBlockingDeque()
 
         override def run(): Unit = {
-            println("Async Upload Thread started !")
+
             while (true) {
                 try {
                     queue.takeLast().send()
