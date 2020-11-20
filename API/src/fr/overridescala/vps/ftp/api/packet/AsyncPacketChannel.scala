@@ -36,7 +36,7 @@ class AsyncPacketChannel(override val ownerID: String,
         }
     }
 
-    def setOnPacketReceived(event: Packet => Unit): Unit = {
+    def onPacketReceived(event: Packet => Unit): Unit = {
         onPacketReceived = event
     }
 

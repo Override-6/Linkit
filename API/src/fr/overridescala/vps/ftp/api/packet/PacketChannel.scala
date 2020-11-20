@@ -25,7 +25,7 @@ abstract class PacketChannel(handler: PacketChannelsHandler) extends JustifiedCl
 object PacketChannel {
 
     abstract class Async(handler: PacketChannelsHandler) extends PacketChannel(handler) {
-        def setOnPacketReceived(event: Packet => Unit): Unit
+        def onPacketReceived(event: Packet => Unit): Unit
     }
 
     abstract class Sync(handler: PacketChannelsHandler) extends PacketChannel(handler) {
