@@ -4,11 +4,12 @@ import java.io.File
 import java.nio.file.StandardWatchEventKinds._
 import java.nio.file._
 
-import com.sun.nio.file.ExtendedWatchEventModifier
+import com.sun.nio.file.{ExtendedWatchEventModifier, SensitivityWatchEventModifier}
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.utils.Utils
 
+import scala.annotation.tailrec
 import scala.collection.mutable.ListBuffer
 
 class FolderSync(localPath: String,
@@ -23,6 +24,19 @@ class FolderSync(localPath: String,
         startWatchService()
     }).start()
 
+    private def startWatchService(): Unit = {
+        val events = Array(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY): Array[WatchEvent.Kind[_]]
+        Paths.get(localPath).register(watchService, events, ExtendedWatchEventModifier.FILE_TREE, SensitivityWatchEventModifier.HIGH)
+
+        var key = watchService.take()
+        while (key != null) {
+            dispatchEvents(key)
+            key.reset()
+            key = watchService.take()
+        }
+    }
+
+
     def dispatchEvents(key: WatchKey): Unit = {
         val events = key
                 .pollEvents()
@@ -36,30 +50,22 @@ class FolderSync(localPath: String,
             dispatchEvent(event)
 
         def dispatchEvent(event: WatchEvent[Path]): Unit = {
-            val affected = dir.resolve(event.context())
-            println(s"DETECTED EVENT ${event.kind()} FOR $affected")
+            val context = event.context()
+            if (context == null)
+                return
+            val affected = dir.resolve(context)
 
             if (ignoredPaths.contains(affected)) {
                 ignoredPaths -= affected
                 return
             }
+            println(s"DETECTED EVENT ${event.kind()} FOR $affected")
 
             event.kind() match {
                 case ENTRY_CREATE => onCreate(affected)
                 case ENTRY_DELETE => onDelete(affected)
                 case ENTRY_MODIFY => onModify(affected)
             }
-        }
-    }
-
-
-    private def startWatchService(): Unit = {
-        registerToWS(Paths.get(localPath))
-        var key = watchService.take()
-        while (key != null) {
-            dispatchEvents(key)
-            key.reset()
-            key = watchService.take()
         }
     }
 
@@ -86,34 +92,30 @@ class FolderSync(localPath: String,
 
     }
 
-    private def registerToWS(folder: Path): Unit = {
-        val events = Array(ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY): Array[WatchEvent.Kind[_]]
-        folder.register(watchService, events, ExtendedWatchEventModifier.FILE_TREE)
-        println(s"registered $folder")
-        Files.list(folder)
-                .filter(Files.isDirectory(_))
-                .forEach(registerToWS)
-    }
-
     private def onCreate(affected: Path): Unit = {
         if (Files.isDirectory(affected)) {
             channel.sendPacket(DataPacket("mkdirs", affected.toString))
-            registerToWS(affected)
             return
         }
         onModify(affected)
     }
 
+    @tailrec
     private def onModify(affected: Path): Unit = {
         if (Files.isDirectory(affected) || Files.notExists(affected))
             return
-
-        val in = Files.newInputStream(affected)
-        val buff = new Array[Byte](Files.size(affected).toInt)
-        val read = in.read(buff)
-        val bytes = buff.slice(0, read)
-        channel.sendPacket(DataPacket(s"SUPLOAD:$affected", bytes))
-        in.close()
+        try {
+            val in = Files.newInputStream(affected)
+            val buff = new Array[Byte](Files.size(affected).toInt)
+            val read = in.read(buff)
+            val bytes = buff.slice(0, read)
+            channel.sendPacket(DataPacket(s"SUPLOAD:$affected", bytes))
+            in.close()
+        } catch {
+            case e: FileSystemException =>
+                Console.err.println(e.getMessage)
+                onModify(affected)
+        }
     }
 
     private def onDelete(affected: Path): Unit = {
@@ -129,12 +131,14 @@ class FolderSync(localPath: String,
         deleteRecursively(path)
 
         def deleteRecursively(path: Path): Unit = {
-            if (Files.notExists(path))
-                return
             if (Files.isDirectory(path)) {
                 Files.list(path).forEach(deleteRecursively)
             }
-            Files.delete(path)
+            try
+                Files.deleteIfExists(path)
+            catch {
+                case e: FileSystemException => e.printStackTrace()
+            }
         }
     }
 
@@ -142,16 +146,11 @@ class FolderSync(localPath: String,
         val data = packet.asInstanceOf[DataPacket]
         val order = data.header
 
-        println(s"packet = ${
-            packet
-        }")
-
         if (order.contains(':')) {
             handleComplexOrder(data)
             return
         }
         val path = toLocal(new String(data.content))
-
         if (order.startsWith("rename>") && Files.exists(path)) {
             val newName = order.split(">").last
             val renamed = path.resolveSibling(newName)
@@ -175,7 +174,7 @@ class FolderSync(localPath: String,
         ignoredPaths += path
 
         if (order.startsWith("SUPLOAD")) {
-            val out = Files.newOutputStream(path, StandardOpenOption.CREATE)
+            val out = Files.newOutputStream(path, StandardOpenOption.CREATE_NEW)
             out.write(data.content)
             out.flush()
             out.close()

@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.`extension`.cloud.filesync
 
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
@@ -8,12 +8,12 @@ import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 class RemoteDirectory(private var path: String)(implicit channel: PacketChannel) {
 
     def setName(name: String): Unit = {
-        val path = Path.of(this.path).resolveSibling(name).toString
+        val path = Paths.get(this.path).resolveSibling(name).toString
         sendOrder("rename", path)
     }
 
     def delete(): Unit = {
-        delete(Path.of(path))
+        delete(Paths.get(path))
     }
 
     def sendFile(path: Path): Unit = {

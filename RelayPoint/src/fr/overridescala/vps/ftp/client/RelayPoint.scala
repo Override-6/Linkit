@@ -6,9 +6,8 @@ import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
-import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.exceptions.{PacketException, RelayClosedException, RelayException, RelayInitialisationException}
-import fr.overridescala.vps.ftp.api.packet._
+import fr.overridescala.vps.ftp.api.packet.{PacketManager, _}
 import fr.overridescala.vps.ftp.api.packet.fundamental._
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder, SystemPacket, SystemPacketChannel}

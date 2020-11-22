@@ -56,7 +56,7 @@ object DataPacket {
 
     object Factory extends PacketFactory[DataPacket] {
 
-        import fr.overridescala.vps.ftp.api.`extension`.packet.PacketUtils._
+        import fr.overridescala.vps.ftp.api.packet.PacketUtils._
 
         private val TYPE = "[data]".getBytes
         private val CONTENT = "<content>".getBytes

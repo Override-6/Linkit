@@ -1,16 +1,16 @@
-package fr.overridescala.vps.ftp.api.`extension`.packet
+package fr.overridescala.vps.ftp.api.packet
 
-import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
-import fr.overridescala.vps.ftp.api.packet.Packet
+import fr.overridescala.vps.ftp.api.packet.PacketUtils.wrap
 import fr.overridescala.vps.ftp.api.packet.fundamental._
 import fr.overridescala.vps.ftp.api.system.SystemPacket
+import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 
 import scala.collection.mutable
 
 
 object PacketManager {
-    val SizeSeparator: Array[Byte] = ":".getBytes
     val ChannelIDSeparator: Array[Byte] = "<channel>".getBytes
     val SenderSeparator: Array[Byte] = "<sender>".getBytes
     val TargetSeparator: Array[Byte] = "<target>".getBytes
@@ -47,8 +47,7 @@ class PacketManager(private[api] val notifier: EventNotifier) { //Notifier is ac
             if (factory.canTransform(customPacketBytes))
                 return factory.build(channelID, senderID, targetID)(customPacketBytes)
         }
-        val e = new UnexpectedPacketException(s"could not find packet factory for ${new String(bytes)}")
-        throw e
+        throw new UnexpectedPacketException(s"Could not find packet factory for ${new String(bytes)}")
     }
 
     def toBytes[D <: Packet](classOfP: Class[D], packet: D): Array[Byte] = {
@@ -56,8 +55,7 @@ class PacketManager(private[api] val notifier: EventNotifier) { //Notifier is ac
                 .asInstanceOf[PacketFactory[D]]
                 .decompose(packet)
         val bytes = PacketUtils.redundantBytesOf(packet) ++ packetBytes
-        val lengthBytes = bytes.length.toString.getBytes
-        lengthBytes ++ SizeSeparator ++ bytes
+        wrap(bytes)
     }
 
     def toBytes[D <: Packet](packet: D): Array[Byte] = {

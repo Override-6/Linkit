@@ -3,9 +3,8 @@ package fr.overridescala.vps.ftp.api.task
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 
-import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationFailException}
-import fr.overridescala.vps.ftp.api.packet.SyncPacketChannel
+import fr.overridescala.vps.ftp.api.packet.{PacketManager, SyncPacketChannel}
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemPacketChannel}
 

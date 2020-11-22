@@ -2,9 +2,8 @@ package fr.overridescala.vps.ftp.server.connection
 
 import java.net.Socket
 
-import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, UnexpectedPacketException}
-import fr.overridescala.vps.ftp.api.packet._
+import fr.overridescala.vps.ftp.api.packet.{PacketManager, _}
 import fr.overridescala.vps.ftp.api.packet.fundamental._
 import fr.overridescala.vps.ftp.api.system._
 import fr.overridescala.vps.ftp.api.task.TasksHandler
@@ -84,7 +83,7 @@ class ClientConnectionThread private(socket: SocketContainer,
         this.socket.set(socket)
 
     private[connection] def sendDeflectedBytes(bytes: Array[Byte]): Unit = {
-        socket.write(bytes.length.toString.getBytes ++ PacketManager.SizeSeparator ++ bytes)
+        socket.write(PacketUtils.wrap(bytes))
     }
 
     private def handlePacket(packet: Packet): Unit = {

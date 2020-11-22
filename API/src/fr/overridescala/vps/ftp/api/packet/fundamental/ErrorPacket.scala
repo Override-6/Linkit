@@ -30,7 +30,7 @@ object ErrorPacket {
 
     object Factory extends PacketFactory[ErrorPacket] {
 
-        import fr.overridescala.vps.ftp.api.`extension`.packet.PacketUtils._
+        import fr.overridescala.vps.ftp.api.packet.PacketUtils._
 
         private val TYPE = "[err]".getBytes
         private val MSG = "<msg>".getBytes

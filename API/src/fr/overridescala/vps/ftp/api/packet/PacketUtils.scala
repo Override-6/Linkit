@@ -1,8 +1,6 @@
-package fr.overridescala.vps.ftp.api.`extension`.packet
+package fr.overridescala.vps.ftp.api.packet
 
 import java.util
-
-import fr.overridescala.vps.ftp.api.packet.Packet
 
 object PacketUtils {
 
@@ -25,6 +23,18 @@ object PacketUtils {
         channelID ++ PacketManager.ChannelIDSeparator ++
                 senderID ++ PacketManager.SenderSeparator ++
                 targetID ++ PacketManager.TargetSeparator
+    }
+
+    def wrap(bytes: Array[Byte]): Array[Byte] = {
+        val lengthBytes = bytes.length.toString.getBytes
+        val flagLength = lengthBytes.length
+
+        if (flagLength > 16)
+            throw new UnsupportedOperationException("flagLength > 16")
+
+        val packetLengthBytesLength = Integer.toHexString(flagLength).getBytes
+        val result = packetLengthBytesLength ++ lengthBytes ++ bytes
+        result
     }
 
 }

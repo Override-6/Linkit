@@ -1,7 +1,7 @@
 package fr.overridescala.vps.ftp.api.system
 
-import fr.overridescala.vps.ftp.api.`extension`.packet.{PacketFactory, PacketUtils}
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
+import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel, PacketUtils}
 
 class SystemPacket private(override val channelID: Int,
                            override val senderID: String,
@@ -30,6 +30,7 @@ object SystemPacket {
         override def canTransform(implicit bytes: Array[Byte]): Boolean = bytes.containsSlice(TYPE)
 
         override def build(channelID: Int, senderID: String, targetID: String)(implicit bytes: Array[Byte]): SystemPacket = {
+            println(new String(bytes))
             val orderName = PacketUtils.cutString(TYPE, REASON)
             val reasonName = PacketUtils.cutString(REASON, CONTENT)
             val content = PacketUtils.cutEnd(CONTENT)

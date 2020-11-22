@@ -1,37 +1,30 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
+import scala.util.control.NonFatal
 
 
-class PacketReader(socket: DynamicSocket){
+class PacketReader(socket: DynamicSocket) {
 
-    def readNextPacketBytes(): Array[Byte] = {
+    def readNextPacketBytes(): Array[Byte] = synchronized {
         val nextLength = nextPacketLength()
         if (nextLength == -1 || !socket.isOpen)
             return null
 
-        val buff = new Array[Byte](nextLength)
-        socket.read(buff)
-        buff
+        val bytes = socket.read(nextLength)
+        bytes
     }
 
     private def nextPacketLength(): Int = {
-        val buff = new Array[Byte](1)
-        val packetSizeBytes = new Array[Byte](20)
-        var i = 0
-        while (!(buff sameElements PacketManager.SizeSeparator)) {
-            if (!socket.isConnected)
-                return -1
-            val count = socket.read(buff)
-            if (count < 0)
-                return -1
-            packetSizeBytes(i) = buff(0)
-            i += 1
+        try {
+            val int = new String(socket.read(1))
+            val packetLengthFlagLength = Integer.parseInt(int, 16)
+            Integer.parseInt(new String(socket.read(packetLengthFlagLength)))
+        } catch {
+            case NonFatal(e) =>
+                Console.err.println(e.getMessage)
+                System.exit(0)
+                -1
         }
-        val sizeString = new String(packetSizeBytes.slice(0, i - 1))
-        if (sizeString.trim.isEmpty)
-            return -1
-        sizeString.toInt
     }
 
 

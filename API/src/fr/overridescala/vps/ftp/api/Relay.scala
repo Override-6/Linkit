@@ -2,8 +2,7 @@ package fr.overridescala.vps.ftp.api
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
-import fr.overridescala.vps.ftp.api.`extension`.packet.PacketManager
-import fr.overridescala.vps.ftp.api.packet.PacketChannel
+import fr.overridescala.vps.ftp.api.packet.{PacketChannel, PacketManager}
 import fr.overridescala.vps.ftp.api.system.JustifiedCloseable
 import fr.overridescala.vps.ftp.api.task.TaskScheduler
 

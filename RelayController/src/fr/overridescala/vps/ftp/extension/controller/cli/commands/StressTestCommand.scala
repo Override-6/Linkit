@@ -19,9 +19,9 @@ class StressTestCommand(relay: Relay) extends CommandExecutor {
     def checkArgs(args: Array[String]): Unit = {
         val argsLength = args.length
         if (argsLength != 2 && argsLength != 3)
-            throw new CommandException(s"args length must be 2 or 3 ($argsLength)")
+            throw CommandException(s"args length must be 2 or 3 ($argsLength)")
         if (!args(1).equals("-U") && !args(1).equals("-D"))
-            throw new CommandException("args[1] must be -U or -D to spec upload or download test")
+            throw CommandException("args[1] must be -U or -D to spec upload or download test")
     }
 
 }

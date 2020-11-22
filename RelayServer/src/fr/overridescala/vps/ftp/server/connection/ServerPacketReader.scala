@@ -2,9 +2,8 @@ package fr.overridescala.vps.ftp.server.connection
 
 import java.net.SocketException
 
-import fr.overridescala.vps.ftp.api.`extension`.packet.{PacketManager, PacketUtils}
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
-import fr.overridescala.vps.ftp.api.packet.{DynamicSocket, Packet, PacketReader}
+import fr.overridescala.vps.ftp.api.packet.{DynamicSocket, Packet, PacketManager, PacketReader, PacketUtils}
 import fr.overridescala.vps.ftp.server.RelayServer
 import org.jetbrains.annotations.Nullable
 

@@ -24,11 +24,13 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
     }
 
 
-    def read(buff: Array[Byte]): Int = {
+    def read(buff: Array[Byte]): Int = read(buff, 0)
+
+    def read(buff: Array[Byte], pos: Int): Int = {
         locker.awaitConnected()
         ensureOpen()
         try {
-            val result = currentInputStream.read(buff)
+            val result = currentInputStream.read(buff, pos, buff.length - pos)
             if (result < 0)
                 return onDisconnect()
             return result
@@ -52,11 +54,21 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
         -1
     }
 
+    def read(length: Int): Array[Byte] = {
+        val buff = new Array[Byte](length)
+        var totalRead = 0
+        while (totalRead != length) {
+            val bytesRead = read(buff, totalRead )
+            totalRead += bytesRead
+        }
+        buff
+    }
+
     def write(buff: Array[Byte]): Unit = {
         locker.awaitConnected()
         ensureOpen()
+        locker.markAsWriting()
         try {
-            locker.markAsWriting()
             currentOutputStream.write(buff)
             currentOutputStream.flush()
         } catch {

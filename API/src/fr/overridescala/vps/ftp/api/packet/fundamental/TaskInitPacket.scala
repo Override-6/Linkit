@@ -34,7 +34,7 @@ object TaskInitPacket {
 
     object Factory extends PacketFactory[TaskInitPacket] {
 
-        import fr.overridescala.vps.ftp.api.`extension`.packet.PacketUtils._
+        import fr.overridescala.vps.ftp.api.packet.PacketUtils._
 
         private val TYPE = "[task_init]".getBytes
         private val CONTENT = "<content>".getBytes
