@@ -1,8 +1,9 @@
-package fr.overridescala.vps.ftp.`extension`.controller.cli.commands
+package fr.overridescala.vps.ftp.`extension`.debug.commands
 
 import fr.overridescala.vps.ftp.`extension`.controller.cli.{CommandException, CommandExecutor}
-import fr.overridescala.vps.ftp.`extension`.fundamental.PingTask
+import fr.overridescala.vps.ftp.`extension`.debug.PingTask
 import fr.overridescala.vps.ftp.api.Relay
+
 
 class PingCommand(relay: Relay) extends CommandExecutor {
     override def execute(implicit args: Array[String]): Unit = {

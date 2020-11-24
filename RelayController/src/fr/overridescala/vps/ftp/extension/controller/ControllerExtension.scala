@@ -8,18 +8,15 @@ import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.`extension`.{RelayExtension, relayExtensionInfo}
 
 
-@relayExtensionInfo(dependencies = Array("FundamentalExtension"), name = "RelayControllerCli")
+@relayExtensionInfo(name = "RelayControllerCli")
 class ControllerExtension(relay: Relay) extends RelayExtension(relay) {
 
     private val automationManager = new AutomationManager()
     private val commandManager = new CommandManager()
 
     override def main(): Unit = {
-        commandManager.register("crtf", new CreateFileCommand(relay))
-        commandManager.register("ping", new PingCommand(relay))
-        commandManager.register("stress", new StressTestCommand(relay))
+
         commandManager.register("exec", new ExecuteUnknownTaskCommand(relay))
-        commandManager.register("delete", new DeleteFileCommand(relay))
         commandManager.register("stop", new ShutdownCommand())
         commandManager.start()
         automationManager.start()

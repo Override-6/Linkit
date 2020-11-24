@@ -10,5 +10,6 @@
     <orderEntry type="module" module-name="API" />
     <orderEntry type="library" name="scala-sdk-2.13.3" level="application" />
     <orderEntry type="library" name="annotations-16.0.1" level="project" />
+    <orderEntry type="module" module-name="RelayController" />
   </component>
 </module>
