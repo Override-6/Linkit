@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.`extension`.cloud.tasks
 
-import fr.overridescala.vps.ftp.`extension`.cloud.filesync.FolderSync
+import fr.overridescala.vps.ftp.`extension`.cloud.sync.FolderSync
 import fr.overridescala.vps.ftp.`extension`.cloud.tasks.SyncFoldersTask.{LOCAL_PATH_SEPARATOR, TYPE}
 import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
@@ -16,7 +16,7 @@ class SyncFoldersTask(relay: Relay, targetId: String, targetFolder: String, loca
     override def execute(): Unit = {
         channel.close(Reason.INTERNAL)
         val asyncChannel = relay.createAsyncChannel(targetId, channel.channelID)
-        new FolderSync(localFolder, targetFolder)(asyncChannel)
+        new FolderSync(localFolder, targetFolder)(asyncChannel).start()
     }
 }
 
@@ -35,7 +35,7 @@ object SyncFoldersTask {
         override def execute(): Unit = {
             channel.close(Reason.INTERNAL)
             val asyncChannel = relay.createAsyncChannel(initPacket.senderID, channel.channelID)
-            new FolderSync(localFolder, remoteFolder)(asyncChannel)
+            new FolderSync(localFolder, remoteFolder)(asyncChannel).start()
         }
     }
 
