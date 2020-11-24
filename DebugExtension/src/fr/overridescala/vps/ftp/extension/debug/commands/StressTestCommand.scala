@@ -1,9 +1,8 @@
-package fr.overridescala.vps.ftp.`extension`.controller.cli.commands
+package fr.overridescala.vps.ftp.`extension`.debug.commands
 
-import fr.overridescala.vps.ftp.`extension`.controller.cli.CommandException
-import fr.overridescala.vps.ftp.`extension`.fundamental.StressTestTask
-import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.`extension`.controller.cli.{CommandException, CommandExecutor}
+import fr.overridescala.vps.ftp.`extension`.debug.StressTestTask
+import fr.overridescala.vps.ftp.api.Relay
 
 class StressTestCommand(relay: Relay) extends CommandExecutor {
 

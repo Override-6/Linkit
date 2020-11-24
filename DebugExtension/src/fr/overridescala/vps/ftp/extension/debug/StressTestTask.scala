@@ -1,7 +1,7 @@
-package fr.overridescala.vps.ftp.`extension`.fundamental
+package fr.overridescala.vps.ftp.`extension`.debug
 
 import fr.overridescala.vps.ftp.api.packet.PacketChannel
-import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
+import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, TaskInitPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 import fr.overridescala.vps.ftp.api.utils.Constants
 import StressTestTask.{TYPE, download, upload}
@@ -36,7 +36,12 @@ object StressTestTask {
     val TYPE = "STRSS"
 
 
-    class StressTestCompleter(private val totalDataLength: Long, isDownload: Boolean) extends TaskExecutor {
+    case class Completer(initPacket: TaskInitPacket) extends TaskExecutor {
+
+        private val content = initPacket.content
+        private val isDownload: Boolean = content(0) != 1
+        private val totalDataLength: Long = new String(content.slice(1, content.length)).toLong
+
         override def execute(): Unit = {
             if (isDownload)
                 download(channel, totalDataLength)

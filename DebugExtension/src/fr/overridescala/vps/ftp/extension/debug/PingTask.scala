@@ -1,6 +1,6 @@
-package fr.overridescala.vps.ftp.`extension`.fundamental
+package fr.overridescala.vps.ftp.`extension`.debug
 
-import fr.overridescala.vps.ftp.`extension`.fundamental.PingTask.TYPE
+import fr.overridescala.vps.ftp.`extension`.debug.PingTask.TYPE
 import fr.overridescala.vps.ftp.api.packet.Packet
 import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, EmptyPacket, ErrorPacket}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
