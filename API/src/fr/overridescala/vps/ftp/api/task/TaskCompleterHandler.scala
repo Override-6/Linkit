@@ -2,6 +2,7 @@ package fr.overridescala.vps.ftp.api.task
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtension
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.packet.PacketCoordinates
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 
 import scala.collection.mutable
@@ -23,11 +24,11 @@ class TaskCompleterHandler {
      *
      * @see [[TaskInitPacket]]
      * */
-    def handleCompleter(initPacket: TaskInitPacket, tasksHandler: TasksHandler): Unit = {
+    def handleCompleter(initPacket: TaskInitPacket, coords: PacketCoordinates, tasksHandler: TasksHandler): Unit = {
         val taskType = initPacket.taskType
-        val taskID = initPacket.channelID
-        val targetID = initPacket.targetID
-        val senderID = initPacket.senderID
+        val taskID = coords.channelID
+        val targetID = coords.targetID
+        val senderID = coords.senderID
         val completerOpt = completers.get(taskType)
         if (completerOpt.isEmpty)
             throw new TaskException(s"Could not find completer of type '$taskType'")
@@ -54,7 +55,6 @@ class TaskCompleterHandler {
 
     def isRegistered(taskType: String): Boolean =
         completers.contains(taskType)
-
 
 
 }

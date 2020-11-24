@@ -1,9 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet.fundamental
 
-import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
-import fr.overridescala.vps.ftp.api.`extension`.packet.PacketMacros.packet
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
+import fr.overridescala.vps.ftp.api.packet.Packet
 
 //TODO Doc
 /**
@@ -14,11 +12,7 @@ import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
  * @param header  the header of the packet, or the type of this data. Headers allows to classify packets / data to send or receive
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
-@packet
-class DataPacket(override val channelID: Int,
-                 override val targetID: String,
-                 override val senderID: String,
-                 val header: String,
+class DataPacket(val header: String,
                  val content: Array[Byte] = Array()) extends Packet {
 
     val contentAsString: String = new String(content)
@@ -27,7 +21,7 @@ class DataPacket(override val channelID: Int,
      * Represents this packet as a String
      * */
     override def toString: String =
-        s"DataPacket{id: $channelID, header: $header, target: $targetID, sender: $senderID, content: ${new String(content)}}"
+        s"DataPacket{header: $header, content: ${new String(content)}}"
 
     /**
      * @return true if this packet contains content, false instead
@@ -36,49 +30,41 @@ class DataPacket(override val channelID: Int,
 
 }
 
-@packet
-object DataPacket {
+object DataPacket extends PacketFactory[DataPacket] {
 
-    def apply(header: String, content: Array[Byte] = Array())(implicit channel: PacketChannel): DataPacket =
-        new DataPacket(channel.channelID, channel.connectedID, channel.ownerID, header, content)
+    def apply(header: String, content: Array[Byte] = Array()): DataPacket =
+        new DataPacket(header, content)
 
-    def apply(header: String, content: String)(implicit channel: PacketChannel): DataPacket =
+    def apply(header: String, content: String): DataPacket =
         apply(header, content.getBytes)
 
-    def apply(header: String)(implicit channel: PacketChannel): DataPacket =
+    def apply(header: String): DataPacket =
         apply(header, "")
 
-    def apply(content: Array[Byte])(implicit channel: PacketChannel): DataPacket =
+    def apply(content: Array[Byte]): DataPacket =
         apply("", content)
 
-    def apply(targetID: String, header: String, content: Array[Byte])(implicit relay: Relay): DataPacket =
-        new DataPacket(-1, targetID, relay.identifier, header, content)
+    import fr.overridescala.vps.ftp.api.packet.PacketUtils._
 
-    object Factory extends PacketFactory[DataPacket] {
+    private val TYPE = "[data]".getBytes
+    private val CONTENT = "<content>".getBytes
 
-        import fr.overridescala.vps.ftp.api.packet.PacketUtils._
-
-        private val TYPE = "[data]".getBytes
-        private val CONTENT = "<content>".getBytes
-
-        override def decompose(implicit packet: DataPacket): Array[Byte] = {
-            val header = packet.header.getBytes
-            TYPE ++ header ++
-                    CONTENT ++ packet.content
-        }
-
-        override def canTransform(implicit bytes: Array[Byte]): Boolean =
-            bytes.containsSlice(TYPE)
-
-        override def build(channelID: Int, senderID: String, targetId: String)(implicit bytes: Array[Byte]): DataPacket = {
-            val header = cutString(TYPE, CONTENT)
-            val content = cutEnd(CONTENT)
-            new DataPacket(channelID, targetId, senderID, header, content)
-        }
-
+    override def decompose(implicit packet: DataPacket): Array[Byte] = {
+        val header = packet.header.getBytes
+        TYPE ++ header ++
+                CONTENT ++ packet.content
     }
 
+    override def canTransform(implicit bytes: Array[Byte]): Boolean =
+        bytes.containsSlice(TYPE)
 
+    override def build(implicit bytes: Array[Byte]): DataPacket = {
+        val header = cutString(TYPE, CONTENT)
+        val content = cutEnd(CONTENT)
+        new DataPacket(header, content)
+    }
+
+    override val packetClass: Class[DataPacket] = classOf[DataPacket]
 }
 
 

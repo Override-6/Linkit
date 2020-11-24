@@ -7,8 +7,8 @@ import java.nio.file.{Path, Paths}
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.exceptions.{RelayClosedException, RelayException}
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
-import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, PacketManager, SyncPacketChannel}
-import fr.overridescala.vps.ftp.api.system.Reason
+import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, PacketCoordinates, PacketManager, SyncPacketChannel}
+import fr.overridescala.vps.ftp.api.system.{Reason, SystemPacketChannel}
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
@@ -161,8 +161,9 @@ class RelayServer extends Relay {
     }
 
     private def sendResponse(response: String): Unit = {
-        val responsePacket = new DataPacket(6, identifier, this.identifier, response)
-        tempSocket.write(packetManager.toBytes(responsePacket))
+        val responsePacket = DataPacket(response)
+        val coordinates = PacketCoordinates(SystemPacketChannel.SystemChannelID, "unknown", identifier)
+        tempSocket.write(packetManager.toBytes(responsePacket, coordinates))
     }
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.INTERNAL)))

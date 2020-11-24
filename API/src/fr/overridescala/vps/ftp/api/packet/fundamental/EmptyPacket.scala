@@ -1,30 +1,26 @@
 package fr.overridescala.vps.ftp.api.packet.fundamental
 
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
+import fr.overridescala.vps.ftp.api.packet.Packet
 
-case class EmptyPacket private(override val channelID: Int,
-                               override val senderID: String,
-                               override val targetID: String) extends Packet {
+case class EmptyPacket private() extends Packet {
 
 }
 
-object EmptyPacket {
+object EmptyPacket extends PacketFactory[EmptyPacket] {
 
-    def apply()(implicit channel: PacketChannel): EmptyPacket =
-        new EmptyPacket(channel.channelID, channel.ownerID, channel.connectedID)
+    private val Empty = new EmptyPacket
 
-    object Factory extends PacketFactory[EmptyPacket] {
+    def apply(): EmptyPacket = Empty
 
-        override def decompose(implicit packet: EmptyPacket): Array[Byte] =
-            new Array[Byte](0)
+    override def decompose(implicit packet: EmptyPacket): Array[Byte] =
+        new Array[Byte](0)
 
-        override def canTransform(implicit bytes: Array[Byte]): Boolean = bytes.isEmpty
+    override def canTransform(implicit bytes: Array[Byte]): Boolean = bytes.isEmpty
 
-        override def build(channelID: Int, senderID: String, targetId: String)(implicit bytes: Array[Byte]): EmptyPacket =
-            new EmptyPacket(channelID, senderID, targetId)
+    override def build(implicit bytes: Array[Byte]): EmptyPacket =
+        Empty
 
-    }
-
+    override val packetClass: Class[EmptyPacket] = classOf[EmptyPacket]
 }
 

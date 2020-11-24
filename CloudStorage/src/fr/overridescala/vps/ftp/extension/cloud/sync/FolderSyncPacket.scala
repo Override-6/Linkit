@@ -6,21 +6,14 @@ import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel, PacketUtils}
 
 
-case class FolderSyncPacket(override val channelID: Int,
-                            override val targetID: String,
-                            override val senderID: String,
-                            order: String,
+case class FolderSyncPacket(order: String,
                             affectedPath: String,
                             content: Array[Byte]) extends Packet
 
 object FolderSyncPacket extends PacketFactory[FolderSyncPacket] {
 
     def apply(order: String, affectedPath: Path, content: Array[Byte] = Array())(implicit channel: PacketChannel): FolderSyncPacket = {
-        new FolderSyncPacket(
-            channel.channelID, channel.connectedID,
-            channel.ownerID, order,
-            affectedPath.toString, content
-        )
+        new FolderSyncPacket(order, affectedPath.toString, content)
     }
 
     private val Type = "[fsync]".getBytes()
@@ -37,11 +30,13 @@ object FolderSyncPacket extends PacketFactory[FolderSyncPacket] {
         bytes.startsWith(Type)
     }
 
-    override def build(channelID: Int, senderID: String, targetID: String)(implicit bytes: Array[Byte]): FolderSyncPacket = {
+    override def build(implicit bytes: Array[Byte]): FolderSyncPacket = {
         val order = PacketUtils.cutString(Type, Affected)
         val affectedPath = PacketUtils.cutString(Affected, Content)
         val content = PacketUtils.cutEnd(Content)
 
-        new FolderSyncPacket(channelID, senderID, targetID, order, affectedPath, content)
+        new FolderSyncPacket(order, affectedPath, content)
     }
+
+    override val packetClass: Class[FolderSyncPacket] = classOf[FolderSyncPacket]
 }

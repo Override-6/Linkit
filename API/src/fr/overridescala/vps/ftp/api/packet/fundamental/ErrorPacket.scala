@@ -3,10 +3,7 @@ package fr.overridescala.vps.ftp.api.packet.fundamental
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 
-case class ErrorPacket (override val channelID: Int,
-                       override val senderID: String,
-                       override val targetID: String,
-                       errorType: String,
+case class ErrorPacket(errorType: String,
                        errorMsg: String,
                        cause: String = "") extends Packet {
 
@@ -14,21 +11,12 @@ case class ErrorPacket (override val channelID: Int,
         Console.err.println(s"$errorType: $errorMsg")
         if (!cause.isEmpty)
             Console.err.print(s"caused by: $cause ")
-        Console.err.println(s"from relay $senderID")
     }
 
 }
 
 
-object ErrorPacket {
-
-    def apply(errorType: String, msg: String, cause: String)(implicit channel: PacketChannel): ErrorPacket =
-        ErrorPacket(channel.channelID, channel.ownerID, channel.connectedID, errorType, msg, cause)
-
-    def apply(errorType: String, msg: String)(implicit channel: PacketChannel): ErrorPacket =
-        apply(errorType, msg, "")
-
-    object Factory extends PacketFactory[ErrorPacket] {
+object ErrorPacket extends PacketFactory[ErrorPacket] {
 
         import fr.overridescala.vps.ftp.api.packet.PacketUtils._
 
@@ -48,13 +36,12 @@ object ErrorPacket {
         override def canTransform(implicit bytes: Array[Byte]): Boolean =
             bytes.startsWith(TYPE)
 
-        override def build(channelID: Int, sender: String, target: String)(implicit bytes: Array[Byte]): ErrorPacket = {
+        override def build(implicit bytes: Array[Byte]): ErrorPacket = {
             val errorType = cutString(TYPE, MSG)
             val msg = cutString(MSG, CAUSE)
             val cause = new String(cutEnd(CAUSE))
-            ErrorPacket(channelID, sender, target, errorType, msg, cause)
+            ErrorPacket(errorType, msg, cause)
         }
 
-    }
-
+    override val packetClass: Class[ErrorPacket] = classOf[ErrorPacket]
 }

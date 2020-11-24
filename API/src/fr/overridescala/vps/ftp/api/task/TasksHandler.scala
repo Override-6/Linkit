@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.api.task
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.packet.PacketCoordinates
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.system.{JustifiedCloseable, Reason}
 
@@ -47,7 +48,7 @@ trait TasksHandler extends JustifiedCloseable {
      *
      * @throws TaskException if the handling went wrong
      * */
-    def handlePacket(packet: TaskInitPacket): Unit
+    def handlePacket(packet: TaskInitPacket, coordinates: PacketCoordinates): Unit
 
 
     /**

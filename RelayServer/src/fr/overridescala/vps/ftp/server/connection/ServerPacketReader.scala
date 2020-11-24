@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server.connection
 import java.net.SocketException
 
 import fr.overridescala.vps.ftp.api.exceptions.RelayException
-import fr.overridescala.vps.ftp.api.packet.{DynamicSocket, Packet, PacketManager, PacketReader, PacketUtils}
+import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
@@ -13,7 +13,7 @@ class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable i
     private val manager = server.connectionsManager
     private val packetManager = server.packetManager
 
-    def nextPacket(onPacketReceived: Packet => Unit): Unit = {
+    def nextPacket(onPacketReceived: (Packet, PacketCoordinates) => Unit): Unit = {
         try {
             listenNextConcernedPacket(onPacketReceived)
         } catch {
@@ -26,7 +26,7 @@ class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable i
         }
     }
 
-    private def listenNextConcernedPacket(event: Packet => Unit): Unit = {
+    private def listenNextConcernedPacket(event: (Packet, PacketCoordinates) => Unit): Unit = {
         val bytes = packetReader.readNextPacketBytes()
         if (bytes == null)
             return
@@ -34,8 +34,8 @@ class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable i
         val target = getTargetID(bytes)
 
         if (target == RelayServer.Identifier) { //check if packet concerns server
-            val packet = packetManager.toPacket(bytes)
-            event(packet)
+            val (packet, coordinates) = packetManager.toPacket(bytes)
+            event(packet, coordinates)
             return
         }
 

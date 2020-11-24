@@ -25,7 +25,7 @@ class CloudStorageExtension(relay: Relay) extends RelayExtension(relay) {
         commandManager.register("upload", TransferCommand.upload(relay))
 
         val packetManager = relay.packetManager
-        packetManager.registerPacket(classOf[FolderSyncPacket], FolderSyncPacket)
+        packetManager.register(FolderSyncPacket)
     }
 
 }

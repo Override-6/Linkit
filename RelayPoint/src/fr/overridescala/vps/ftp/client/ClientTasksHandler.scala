@@ -3,6 +3,7 @@ package fr.overridescala.vps.ftp.client
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.packet.PacketCoordinates
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder, SystemPacketChannel}
@@ -35,9 +36,9 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
         queue.offer(ticket)
     }
 
-    override def handlePacket(packet: TaskInitPacket): Unit = {
+    override def handlePacket(packet: TaskInitPacket, coordinates: PacketCoordinates): Unit = {
         try {
-            tasksCompleterHandler.handleCompleter(packet, this)
+            tasksCompleterHandler.handleCompleter(packet, coordinates, this)
         } catch {
             case e: TaskException =>
                 Console.err.println(e.getMessage)

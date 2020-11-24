@@ -18,63 +18,50 @@ object PacketManager {
 
 class PacketManager(private[api] val notifier: EventNotifier) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
-    import PacketManager._
+    private val factories = mutable.LinkedHashMap.empty[Class[_ <: Packet], PacketFactory[_ <: Packet]]
+    registerFundamentals()
 
-    type PT <: Packet
+    def register[P <: Packet](packetFactory: PacketFactory[P]): Unit = {
+        val factory = packetFactory.asInstanceOf[PacketFactory[P]]
+        val ptClass = packetFactory.packetClass.asInstanceOf[Class[P]]
 
-    private val factories = withFundamentals()
+        if (factories.contains(ptClass))
+            throw new IllegalArgumentException(s"Packet '$ptClass' type is already registered !")
 
-
-    def registerIfAbsent[P <: Packet](packetClass: Class[P], packetFactory: PacketFactory[P]): Unit = {
-        val factory = packetFactory.asInstanceOf[PacketFactory[PT]]
-        val ptClass = packetClass.asInstanceOf[Class[PT]]
-        if (!factories.contains(ptClass))
-            factories.put(ptClass, factory)
-        notifier.onPacketTypeRegistered(packetClass, packetFactory)
+        factories.put(ptClass, factory)
+        notifier.onPacketTypeRegistered(ptClass, packetFactory)
     }
 
-    def toPacket(implicit bytes: Array[Byte]): Packet = {
-        val channelIndex = bytes.indexOfSlice(ChannelIDSeparator)
-        val senderIndex = bytes.indexOfSlice(SenderSeparator)
-        val targetIndex = bytes.indexOfSlice(TargetSeparator)
-        val channelID = new String(bytes.slice(0, channelIndex)).toInt
-        val senderID = new String(bytes.slice(channelIndex + ChannelIDSeparator.length, senderIndex))
-        val targetID = new String(bytes.slice(senderIndex + SenderSeparator.length, targetIndex))
+    def toPacket(implicit bytes: Array[Byte]): (Packet, PacketCoordinates) = {
+        val (coordinates, coordsLength) = PacketUtils.getCoordinates(bytes)
 
-        val endIndex = targetIndex + TargetSeparator.length
-        val customPacketBytes = bytes.slice(endIndex, bytes.length)
+        val customPacketBytes = bytes.slice(coordsLength, bytes.length)
         for (factory <- factories.values) {
             if (factory.canTransform(customPacketBytes))
-                return factory.build(channelID, senderID, targetID)(customPacketBytes)
+                return (factory.build(customPacketBytes), coordinates)
         }
         throw new UnexpectedPacketException(s"Could not find packet factory for ${new String(bytes)}")
     }
 
-    def toBytes[D <: Packet](classOfP: Class[D], packet: D): Array[Byte] = {
-        val packetBytes = factories(classOfP.asInstanceOf[Class[PT]])
-                .asInstanceOf[PacketFactory[D]]
+    def toBytes[P <: Packet](classOfP: Class[P], packet: P, coordinates: PacketCoordinates): Array[Byte] = {
+        val packetBytes = factories(classOfP.asInstanceOf[Class[P]])
+                .asInstanceOf[PacketFactory[P]]
                 .decompose(packet)
-        val bytes = PacketUtils.redundantBytesOf(packet) ++ packetBytes
+        val bytes = PacketUtils.getCoordinatesBytes(coordinates) ++ packetBytes
         wrap(bytes)
     }
 
-    def toBytes[D <: Packet](packet: D): Array[Byte] = {
+    def toBytes[D <: Packet](packet: D, coordinates: PacketCoordinates): Array[Byte] = {
         val packetClass = packet.getClass.asInstanceOf[Class[D]]
-        toBytes(packetClass, packet)
+        toBytes(packetClass, packet, coordinates)
     }
 
-    private def withFundamentals(): mutable.Map[Class[PT], PacketFactory[PT]] = {
-        val factories = mutable.LinkedHashMap.empty[Class[PT], PacketFactory[PT]]
-
-        def register[D <: Packet](clazz: Class[D], fact: PacketFactory[D]): Unit =
-            factories.put(clazz.asInstanceOf[Class[PT]], fact.asInstanceOf[PacketFactory[PT]])
-
-        register(classOf[DataPacket], DataPacket.Factory)
-        register(classOf[EmptyPacket], EmptyPacket.Factory)
-        register(classOf[TaskInitPacket], TaskInitPacket.Factory)
-        register(classOf[ErrorPacket], ErrorPacket.Factory)
-        register(classOf[SystemPacket], SystemPacket.Factory)
-        factories
+    private def registerFundamentals(): Unit = {
+        register(DataPacket)
+        register(EmptyPacket)
+        register(TaskInitPacket)
+        register(ErrorPacket)
+        register(SystemPacket)
     }
 
 

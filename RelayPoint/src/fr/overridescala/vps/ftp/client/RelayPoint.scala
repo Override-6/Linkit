@@ -7,16 +7,14 @@ import java.nio.file.{Path, Paths}
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.exceptions.{PacketException, RelayClosedException, RelayException, RelayInitialisationException}
-import fr.overridescala.vps.ftp.api.packet.{PacketManager, _}
 import fr.overridescala.vps.ftp.api.packet.fundamental._
+import fr.overridescala.vps.ftp.api.packet.{PacketManager, _}
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder, SystemPacket, SystemPacketChannel}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.client.RelayPoint.{Port, ServerID}
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class RelayPoint(private val serverAddress: InetSocketAddress,
@@ -75,7 +73,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         println("Connected !")
     }
 
-    private def loadLocal() : Unit = {
+    private def loadLocal(): Unit = {
         println("Loading tasks handler...")
         tasksHandler.start()
         if (loadTasks) {
@@ -139,9 +137,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             val bytes = packetReader.readNextPacketBytes()
             if (bytes == null)
                 return
-            val packet = packetManager.toPacket(bytes)
+            val (packet, coordinates) = packetManager.toPacket(bytes)
             notifier.onPacketReceived(packet)
-            handlePacket(packet)
+            handlePacket(packet, coordinates)
         }
         catch {
             case _: AsynchronousCloseException =>
@@ -157,17 +155,17 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         }
     }
 
-    private def handlePacket(packet: Packet): Unit = packet match {
-        case init: TaskInitPacket => tasksHandler.handlePacket(init)
-        case system: SystemPacket => handleSystemPacket(system)
-        case _: Packet => channelsHandler.injectPacket(packet)
+    private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = packet match {
+        case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
+        case system: SystemPacket => handleSystemPacket(system, coordinates)
+        case _: Packet => channelsHandler.injectPacket(packet, coordinates.channelID)
     }
 
 
-    private def handleSystemPacket(system: SystemPacket): Unit = {
+    private def handleSystemPacket(system: SystemPacket, coords: PacketCoordinates): Unit = {
         val order = system.order
         val reason = system.reason.reversed()
-        val origin = system.senderID
+        val origin = coords.senderID
 
         println(s"Received system order $order from ${origin}")
         notifier.onSystemOrderReceived(order, reason)

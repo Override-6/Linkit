@@ -22,7 +22,7 @@ class AsyncPacketChannel(override val ownerID: String,
     override def sendPacket[P <: Packet](packet: P): Unit = {
         if (packet.isInstanceOf[TaskInitPacket])
             throw PacketException("can not send a TaskInitPacket.")
-        enqueue(packet, handler)
+        enqueue(packet, coordinates, handler)
     }
 
     override def addPacket(packet: Packet): Unit = {
@@ -63,12 +63,12 @@ object AsyncPacketChannel {
 
     }
 
-    class PacketTicket(packet: Packet, handler: PacketChannelsHandler) {
+    class PacketTicket(packet: Packet, coordinates: PacketCoordinates, handler: PacketChannelsHandler) {
         def send(): Unit =
-            handler.sendPacket(packet)
+            handler.sendPacket(packet, coordinates)
     }
 
-    private[AsyncPacketChannel] def enqueue(packet: Packet, handler: PacketChannelsHandler): Unit =
-        UploadThread.queue.addFirst(new PacketTicket(packet, handler))
+    private[AsyncPacketChannel] def enqueue(packet: Packet, coords: PacketCoordinates, handler: PacketChannelsHandler): Unit =
+        UploadThread.queue.addFirst(new PacketTicket(packet, coords, handler))
 
 }

@@ -1,11 +1,11 @@
 package fr.overridescala.vps.ftp.api.`extension`.packet
 
-import scala.annotation.StaticAnnotation
+import scala.annotation.{StaticAnnotation, compileTimeOnly}
 import scala.reflect.macros.whitebox
 
 object PacketMacros {
 
-    class packet extends StaticAnnotation {
+    class packetBuilder extends StaticAnnotation {
         def macroTransform(annottees: Any*): Any = macro macroTransformImpl
     }
 
@@ -23,6 +23,7 @@ object PacketMacros {
 
             q"""
                override def decompose(implicit packet: $tpname): Array[Byte] = {
+
                }
              """
         }

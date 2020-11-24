@@ -12,12 +12,12 @@ class SystemPacketChannel(connectedID: String,
     private val notifier = handler.notifier
 
     def sendOrder(systemOrder: SystemOrder, reason: Reason, content: Array[Byte] = Array()): Unit = {
-        sendPacket(SystemPacket(systemOrder, reason, content)(this))
+        sendPacket(SystemPacket(systemOrder, reason, content))
         notifier.onSystemOrderSent(systemOrder)
     }
 
     def sendInitPacket(taskInitInfo: TaskInitInfo): Unit = {
-        sendPacket(TaskInitPacket(taskInitInfo)(this))
+        sendPacket(TaskInitPacket(taskInitInfo.taskType, taskInitInfo.content))
     }
 
 }

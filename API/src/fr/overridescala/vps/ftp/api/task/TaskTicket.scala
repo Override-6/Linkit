@@ -54,7 +54,8 @@ class TaskTicket(executor: TaskExecutor,
             }
 
             if (ownFreeWill) {
-                channel.sendPacket(TaskInitPacket(executor.initInfo)(channel))
+                val initInfo = executor.initInfo
+                channel.sendPacket(TaskInitPacket(initInfo.taskType, initInfo.content))
             }
 
             executor.execute()

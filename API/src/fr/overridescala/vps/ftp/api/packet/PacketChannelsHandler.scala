@@ -21,8 +21,7 @@ class PacketChannelsHandler(val notifier: EventNotifier,
     }
 
 
-    def injectPacket(packet: Packet): Unit = {
-        val channelID = packet.channelID
+    def injectPacket(packet: Packet, channelID: Int): Unit = {
         openedPacketChannels(channelID)
                 .addPacket(packet)
     }
@@ -33,8 +32,8 @@ class PacketChannelsHandler(val notifier: EventNotifier,
             notifier.onPacketChannelUnregistered(opt.get, reason)
     }
 
-    def sendPacket(packet: Packet): Unit = {
-        socket.write(packetManager.toBytes(packet))
+    def sendPacket(packet: Packet, coords: PacketCoordinates): Unit = {
+        socket.write(packetManager.toBytes(packet, coords))
         notifier.onPacketSent(packet)
     }
 

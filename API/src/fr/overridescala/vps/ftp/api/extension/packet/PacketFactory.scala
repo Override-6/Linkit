@@ -8,7 +8,8 @@ trait PacketFactory[T <: Packet] {
 
     def canTransform(implicit bytes: Array[Byte]): Boolean
 
-    def build(channelID: Int, senderID: String, targetID: String)(implicit bytes: Array[Byte]): T
+    def build(implicit bytes: Array[Byte]): T
 
+    val packetClass: Class[T]
 
 }

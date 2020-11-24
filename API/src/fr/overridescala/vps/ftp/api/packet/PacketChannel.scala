@@ -1,8 +1,7 @@
 package fr.overridescala.vps.ftp.api.packet
 
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
-import fr.overridescala.vps.ftp.api.system.JustifiedCloseable
-import fr.overridescala.vps.ftp.api.system.Reason
+import fr.overridescala.vps.ftp.api.system.{JustifiedCloseable, Reason}
 
 //TODO Doc
 /**
@@ -17,9 +16,11 @@ abstract class PacketChannel(handler: PacketChannelsHandler) extends JustifiedCl
     val connectedID: String
     val channelID: Int
 
+    val coordinates: PacketCoordinates = PacketCoordinates(channelID, connectedID, ownerID)
 
     override def close(reason: Reason): Unit = handler.unregisterManager(channelID, reason)
-    def sendPacket[P <: Packet](packet: P): Unit = handler.sendPacket(packet)
+
+    def sendPacket[P <: Packet](packet: P): Unit = handler.sendPacket(packet, coordinates)
 }
 
 object PacketChannel {

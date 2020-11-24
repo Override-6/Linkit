@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server.connection
 import java.net.Socket
 
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, UnexpectedPacketException}
-import fr.overridescala.vps.ftp.api.packet.{PacketManager, _}
+import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.packet.fundamental._
 import fr.overridescala.vps.ftp.api.system._
 import fr.overridescala.vps.ftp.api.task.TasksHandler
@@ -28,7 +28,7 @@ class ClientConnectionThread private(socket: SocketContainer,
     /**
      * This array is only used and updated while the connection is not initialised.
      * */
-    private val unhandledPackets = ListBuffer.empty[Packet]
+    private val unhandledPackets = ListBuffer.empty[(Packet, PacketCoordinates)]
     private val manager: ConnectionsManager = server.connectionsManager
     val tasksHandler: TasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel)
 
@@ -41,7 +41,7 @@ class ClientConnectionThread private(socket: SocketContainer,
 
         println(s"Thread '$getName' was started")
 
-        unhandledPackets.foreach(handlePacket)
+        unhandledPackets.foreach((tuple) => handlePacket(tuple._1, tuple._2))
         unhandledPackets.clear()
 
         try {
@@ -86,17 +86,19 @@ class ClientConnectionThread private(socket: SocketContainer,
         socket.write(PacketUtils.wrap(bytes))
     }
 
-    private def handlePacket(packet: Packet): Unit = {
+    private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         if (isNotInitialised) {
-            unhandledPackets += packet
+            unhandledPackets addOne(packet, coordinates)
             return
         }
+        val channelID = coordinates.channelID
+
         notifier.onPacketReceived(packet)
         packet match {
-            case systemError: ErrorPacket if packet.channelID == systemChannel.channelID => systemError.printError()
+            case systemError: ErrorPacket if channelID == systemChannel.channelID => systemError.printError()
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
-            case init: TaskInitPacket => tasksHandler.handlePacket(init)
-            case _: Packet => channelsHandler.injectPacket(packet)
+            case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
+            case _: Packet => channelsHandler.injectPacket(packet, channelID)
         }
     }
 
@@ -146,8 +148,8 @@ object ClientConnectionThread {
             new SyncPacketChannel("unknown", server.identifier, 6, tempChannelsHandler)
 
         def deflect(): Unit = packetReader.nextPacket {
-            case concerned: Packet if concerned.channelID == channel.channelID => channel.addPacket(concerned)
-            case _: Packet => deflect()
+            case (concerned: Packet, coords: PacketCoordinates) if coords.channelID == channel.channelID => channel.addPacket(concerned)
+            case _ => deflect()
         }
 
         def handleClientResponse(): String = channel.nextPacket() match {
@@ -157,7 +159,7 @@ object ClientConnectionThread {
                 throw new UnexpectedPacketException(s"Unexpected packet type $name received while getting RelayPoint identifier.")
         }
 
-        channel.sendPacket(SystemPacket(SystemOrder.GET_IDENTIFIER, Reason.INTERNAL)(channel))
+        channel.sendPacket(SystemPacket(SystemOrder.GET_IDENTIFIER, Reason.INTERNAL))
         deflect()
 
         val identifier = handleClientResponse()

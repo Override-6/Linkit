@@ -1,6 +1,7 @@
 package fr.overridescala.vps.ftp.server.task
 
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
+import fr.overridescala.vps.ftp.api.packet.PacketCoordinates
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder, SystemPacketChannel}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
@@ -28,9 +29,9 @@ class ConnectionTasksHandler(override val identifier: String,
      *
      * @throws TaskException if the handling went wrong
      * */
-    override def handlePacket(packet: TaskInitPacket): Unit = {
+    override def handlePacket(packet: TaskInitPacket, coordinates: PacketCoordinates): Unit = {
         try {
-            tasksCompleterHandler.handleCompleter(packet, this)
+            tasksCompleterHandler.handleCompleter(packet, coordinates, this)
         } catch {
             case e: TaskException =>
                 Console.err.println(e.getMessage)
