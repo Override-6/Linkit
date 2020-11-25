@@ -139,7 +139,7 @@ class FolderSync(localPath: String,
             case "upload" => handleFileDownload(syncPacket)
             case "rename" => handleRenameOrder(syncPacket)
             case "delete" => deletePath(path)
-            case "mkdirs" if Files.notExists(path) => Files.createDirectories(path)
+            case "mkdirs" => Files.createDirectories(path)
         }
     }
 
