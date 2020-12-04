@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server.task
 import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.PacketCoordinates
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder, SystemPacketChannel}
+import fr.overridescala.vps.ftp.api.system.{Reason, RemoteConsole, SystemOrder, SystemPacketChannel}
 import fr.overridescala.vps.ftp.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
 import fr.overridescala.vps.ftp.server.RelayServer
 
@@ -14,13 +14,12 @@ import fr.overridescala.vps.ftp.server.RelayServer
  * */
 class ConnectionTasksHandler(override val identifier: String,
                              server: RelayServer,
-                             systemChannel: SystemPacketChannel) extends TasksHandler {
+                             systemChannel: SystemPacketChannel,
+                             errConsole: RemoteConsole.Err) extends TasksHandler {
 
-    private val packetManager = server.packetManager
     private var tasksThread = new ConnectionTasksThread(identifier)
     tasksThread.start()
 
-    private val notifier = server.eventDispatcher.notifier
     override val tasksCompleterHandler: TaskCompleterHandler = server.taskCompleterHandler
 
     /**
@@ -35,8 +34,8 @@ class ConnectionTasksHandler(override val identifier: String,
         } catch {
             case e: TaskException =>
                 Console.err.println(e.getMessage)
-                //notifier.onTaskNotFound(e) //TODO completer not found event
                 systemChannel.sendOrder(SystemOrder.ABORT_TASK, Reason.INTERNAL_ERROR)
+                errConsole.reportException(e)
         }
     }
 
@@ -50,8 +49,9 @@ class ConnectionTasksHandler(override val identifier: String,
         val linkedRelayID = if (ownFreeWill) targetID else senderID
         if (linkedRelayID == server.identifier)
             throw new TaskException("can't start a task from server to server !")
-        val channel = server.createSync(linkedRelayID, taskIdentifier)
-        tasksThread.addTicket(new TaskTicket(executor, channel, packetManager, ownFreeWill))
+
+        val ticket = new TaskTicket(executor, server, taskIdentifier, linkedRelayID, ownFreeWill)
+        tasksThread.addTicket(ticket)
     }
 
     /**

@@ -3,19 +3,24 @@ package fr.overridescala.vps.ftp.api.task
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 
+import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.exceptions.{TaskException, TaskOperationFailException}
-import fr.overridescala.vps.ftp.api.packet.{PacketManager, SyncPacketChannel}
+import fr.overridescala.vps.ftp.api.packet.{PacketChannel, PacketManager, SyncPacketChannel}
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.vps.ftp.api.system.{Reason, SystemPacketChannel}
+import fr.overridescala.vps.ftp.api.system.{Reason, RemoteConsole, SystemPacketChannel}
 
 import scala.util.control.NonFatal
 
 class TaskTicket(executor: TaskExecutor,
-                 val channel: SyncPacketChannel,
-                 val packetManager: PacketManager,
+                 relay: Relay,
+                 taskId: Int,
+                 target: String,
                  ownFreeWill: Boolean) {
 
-    private val notifier = packetManager.notifier
+    private val notifier = relay.eventDispatcher.notifier
+    private val errConsole = relay.getConsoleErr(target).get
+    val channel: PacketChannel.Sync = relay.createSyncChannel(target, taskId)
+
 
     def abort(reason: Reason): Unit = {
         notifyExecutor()
@@ -31,11 +36,13 @@ class TaskTicket(executor: TaskExecutor,
                 } catch {
                     case e: InvocationTargetException if e.getCause.isInstanceOf[TaskException] => Console.err.println(e.getMessage)
                     case e: InvocationTargetException => e.getCause.printStackTrace()
-                    case e: TaskOperationFailException => Console.err.println(e.getMessage)
+                    case e: TaskOperationFailException =>
+                        Console.err.println(e.getMessage)
+                        errConsole.reportException(e)
 
                     case NonFatal(e) => e.printStackTrace()
+                        errConsole.reportException(e)
                 } finally {
-
                     notifier.onTaskSkipped(task, reason)
                 }
             case _ =>
@@ -46,7 +53,7 @@ class TaskTicket(executor: TaskExecutor,
     def start(): Unit = {
         var reason = Reason.INTERNAL_ERROR
         try {
-            executor.init(channel)
+            executor.init(relay, channel)
 
             executor match {
                 case task: Task[_] => notifier.onTaskStartExecuting(task)
@@ -62,13 +69,19 @@ class TaskTicket(executor: TaskExecutor,
             reason = Reason.INTERNAL
         } catch {
             // Do not prints those exceptions : they are normal errors
-            // lifted when a task is brutally aborted via Thread.interrupt
+            // lifted when a task execution is brutally aborted
             case _: IllegalMonitorStateException =>
             case _: InterruptedException =>
             case e: IOException if e.getMessage != null && e.getMessage.equalsIgnoreCase("Broken pipe") =>
 
-            case e: TaskOperationFailException => Console.err.println(e.getMessage)
-            case NonFatal(e) => e.printStackTrace()
+            case e: TaskOperationFailException =>
+                Console.err.println(e.getMessage)
+                errConsole.reportException(e)
+
+            case NonFatal(e) =>
+                e.printStackTrace()
+                errConsole.reportException(e)
+
         } finally {
             notifyExecutor()
             executor match {

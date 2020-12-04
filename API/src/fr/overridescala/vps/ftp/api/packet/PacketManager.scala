@@ -58,7 +58,7 @@ class PacketManager(private[api] val notifier: EventNotifier) { //Notifier is ac
 
     private def registerFundamentals(): Unit = {
         register(DataPacket)
-        register(EmptyPacket)
+        register(EmptyPacket.Factory)
         register(TaskInitPacket)
         register(ErrorPacket)
         register(SystemPacket)

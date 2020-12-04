@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.api.system.event
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtension
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher.EventNotifier
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannelManager}
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel, PacketCoordinates}
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder}
 import fr.overridescala.vps.ftp.api.task.Task
 import javax.management.InstanceAlreadyExistsException
@@ -48,15 +48,15 @@ object EventDispatcher {
 
         def onPacketTypeRegistered[T <: Packet](packetClass: Class[T], factoryClass: PacketFactory[T]): Unit = dispatch(_.onPacketTypeRegistered(packetClass, factoryClass))
 
-        def onPacketChannelRegistered(channel: PacketChannelManager): Unit = dispatch(_.onPacketChannelRegistered(channel))
+        def onPacketChannelRegistered(channel: PacketChannel): Unit = dispatch(_.onPacketChannelRegistered(channel))
 
-        def onPacketChannelUnregistered(channel: PacketChannelManager, reason: Reason): Unit = dispatch(_.onPacketChannelUnregistered(channel, reason))
+        def onPacketChannelUnregistered(channel: PacketChannel, reason: Reason): Unit = dispatch(_.onPacketChannelUnregistered(channel, reason))
 
-        def onPacketSent(packet: Packet): Unit = dispatch(_.onPacketSent(packet))
+        def onPacketSent(packet: Packet, coordinates: PacketCoordinates): Unit = dispatch(_.onPacketSent(packet, coordinates))
 
-        def onPacketReceived(packet: Packet): Unit = dispatch(_.onPacketReceived(packet))
+        def onPacketReceived(packet: Packet, coordinates: PacketCoordinates): Unit = dispatch(_.onPacketReceived(packet, coordinates))
 
-        def onPacketUsed(packet: Packet): Unit = dispatch(_.onPacketUsed(packet))
+        def onPacketUsed(packet: Packet, coordinates: PacketCoordinates): Unit = dispatch(_.onPacketUsed(packet, coordinates))
 
         def onSystemOrderReceived(orderType: SystemOrder, reason: Reason): Unit = dispatch(_.onSystemOrderReceived(orderType, reason))
 

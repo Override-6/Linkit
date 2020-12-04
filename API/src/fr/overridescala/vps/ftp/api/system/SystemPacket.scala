@@ -22,7 +22,6 @@ object SystemPacket extends PacketFactory[SystemPacket] {
     override def canTransform(implicit bytes: Array[Byte]): Boolean = bytes.containsSlice(TYPE)
 
     override def build(implicit bytes: Array[Byte]): SystemPacket = {
-        println(new String(bytes))
         val orderName = PacketUtils.cutString(TYPE, REASON)
         val reasonName = PacketUtils.cutString(REASON, CONTENT)
         val content = PacketUtils.cutEnd(CONTENT)

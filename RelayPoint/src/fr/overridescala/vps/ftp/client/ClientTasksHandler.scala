@@ -17,7 +17,6 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
     private val packetManager = relay.packetManager
     private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
     private var tasksThread: Thread = _
-    private val notifier: EventNotifier = relay.eventDispatcher.notifier
 
     @volatile private var currentTicket: TaskTicket = _
     @volatile private var open = false
@@ -29,10 +28,9 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
     override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
         val linkedRelay = if (ownFreeWill) targetID else senderID
         if (linkedRelay == identifier)
-            throw new TaskException("can't start a task with oneself !")
+            throw new TaskException("Can't start a task with oneself !")
 
-        val channel = relay.createSyncChannel0(linkedRelay, taskIdentifier)
-        val ticket = new TaskTicket(executor, channel, packetManager, ownFreeWill)
+        val ticket = new TaskTicket(executor, relay, taskIdentifier, linkedRelay, ownFreeWill)
         queue.offer(ticket)
     }
 
@@ -43,6 +41,10 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
             case e: TaskException =>
                 Console.err.println(e.getMessage)
                 systemChannel.sendOrder(SystemOrder.ABORT_TASK, Reason.INTERNAL_ERROR)
+
+                val errConsoleOpt = relay.getConsoleErr(coordinates.senderID)
+                if (errConsoleOpt.isDefined)
+                    errConsoleOpt.get.reportException(e)
         }
     }
 

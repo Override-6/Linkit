@@ -1,15 +1,15 @@
 package fr.overridescala.vps.ftp.server
 
-import java.net.{InetSocketAddress, ServerSocket, SocketException}
+import java.net.{ServerSocket, SocketException}
 import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtensionLoader
 import fr.overridescala.vps.ftp.api.exceptions.{RelayClosedException, RelayException}
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
-import fr.overridescala.vps.ftp.api.packet.{AsyncPacketChannel, PacketChannel, PacketCoordinates, PacketManager, SyncPacketChannel}
-import fr.overridescala.vps.ftp.api.system.{Reason, SystemPacketChannel}
+import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
+import fr.overridescala.vps.ftp.api.system.{Reason, RemoteConsole, RemoteConsolesHandler, SystemPacketChannel}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.server.RelayServer.Identifier
@@ -26,7 +26,6 @@ class RelayServer extends Relay {
     private val serverSocket = new ServerSocket(48484)
     private val taskFolderPath = getTasksFolderPath
 
-
     @volatile private var open = false
     /**
      * For safety, prefer Relay#identfier instead of Constants.SERVER_ID
@@ -39,6 +38,8 @@ class RelayServer extends Relay {
     override val packetManager = new PacketManager(eventDispatcher.notifier)
 
     private[server] val notifier = eventDispatcher.notifier
+    private[server] val remoteConsoles = new RemoteConsolesHandler(this)
+
     val connectionsManager = new ConnectionsManager(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -65,7 +66,7 @@ class RelayServer extends Relay {
         println("Ready !")
         notifier.onReady()
         open = true
-        while (open) awaitSocketConnection()
+        while (open) handleSocketConnection()
 
     }
 
@@ -76,6 +77,24 @@ class RelayServer extends Relay {
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async =
         createAsync(linkedRelayID, id)
+
+    override def getConsoleOut(targetId: String): Option[RemoteConsole] = {
+        val connection = connectionsManager.getConnectionFromIdentifier(targetId)
+        if (connection == null)
+            return Option.empty
+
+        val sysChannel = connection.systemChannel
+        Option(remoteConsoles.getOut(targetId, sysChannel))
+    }
+
+    override def getConsoleErr(targetId: String): Option[RemoteConsole.Err] = {
+        val connection = connectionsManager.getConnectionFromIdentifier(targetId)
+        if (connection == null)
+            return Option.empty
+
+        val sysChannel = connection.systemChannel
+        Option(remoteConsoles.getErr(targetId, sysChannel))
+    }
 
     override def close(reason: Reason): Unit =
         close(identifier, reason)
@@ -101,7 +120,8 @@ class RelayServer extends Relay {
     }
 
     private val tempSocket = new SocketContainer(notifier, false)
-    def handleRelayPointConnection(identifier: String) : Unit = {
+
+    def handleRelayPointConnection(identifier: String): Unit = {
 
         if (connectionsManager.isNotRegistered(identifier)) {
             val socketContainer = new SocketContainer(notifier, true)
@@ -123,13 +143,13 @@ class RelayServer extends Relay {
     }
 
 
-    private def awaitSocketConnection(): Unit = {
+    private def handleSocketConnection(): Unit = {
         try {
             val clientSocket = serverSocket.accept()
             tempSocket.set(clientSocket)
 
             val identifier = ClientConnectionThread.retrieveIdentifier(tempSocket, this)
-
+            println(s"identifier = ${identifier}")
             handleRelayPointConnection(identifier)
         } catch {
             case e@(_: RelayException | _: SocketException) =>
@@ -142,7 +162,7 @@ class RelayServer extends Relay {
         }
 
         def onException(): Unit = {
-            sendResponse("ERROR")
+            sendResponse("ERROR") //send a negative response for the client initialisation handling
             close(Reason.INTERNAL_ERROR)
         }
     }

@@ -18,7 +18,7 @@ class ConnectionTasksThread private(ownerID: String,
     @volatile private var currentTicket: TaskTicket = _
 
     def this(ownerID: String) =
-        this(ownerID, new ArrayBlockingQueue[TaskTicket](200), mutable.Map.empty)
+        this(ownerID, new ArrayBlockingQueue[TaskTicket](15000), mutable.Map.empty)
 
 
     override def run(): Unit = {
@@ -60,7 +60,7 @@ class ConnectionTasksThread private(ownerID: String,
         //Adding eventual lost packets to this task
         if (lostPackets.contains(taskID)) {
             val queue = lostPackets(taskID)
-            queue.foreach(channel.addPacket)
+            queue.foreach(channel.injectPacket)
             queue.clear()
             lostPackets.remove(taskID)
         }

@@ -13,9 +13,9 @@ import scala.util.control.NonFatal
 class AsyncPacketChannel(override val ownerID: String,
                          override val connectedID: String,
                          override val channelID: Int,
-                         handler: PacketChannelsHandler) extends PacketChannel.Async(handler) with PacketChannelManager {
+                         handler: PacketChannelsHandler) extends PacketChannel.Async(handler) {
 
-    handler.registerManager(this)
+    handler.register(this)
 
     private var onPacketReceived: Packet => Unit = _
 
@@ -25,19 +25,20 @@ class AsyncPacketChannel(override val ownerID: String,
         enqueue(packet, coordinates, handler)
     }
 
-    override def addPacket(packet: Packet): Unit = {
+    override def injectPacket(packet: Packet): Unit = {
         Future {
             try {
                 onPacketReceived(packet)
-                handler.notifyPacketUsed(packet)
+                handler.notifyPacketUsed(packet, coordinates)
             } catch {
-                case NonFatal(e) => e.printStackTrace()
+                case NonFatal(e) =>
+                    e.printStackTrace()
             }
         }
     }
 
-    def onPacketReceived(event: Packet => Unit): Unit = {
-        onPacketReceived = event
+    def onPacketReceived(consumer: Packet => Unit): Unit = {
+        onPacketReceived = consumer
     }
 
 

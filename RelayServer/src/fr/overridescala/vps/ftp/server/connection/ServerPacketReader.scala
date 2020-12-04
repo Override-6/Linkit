@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable
 
 class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
 
-    private val packetReader = new PacketReader(socket)
+    private val packetReader = new PacketReader(socket, server.getConsoleErr(identifier).orNull)
     private val manager = server.connectionsManager
     private val packetManager = server.packetManager
 

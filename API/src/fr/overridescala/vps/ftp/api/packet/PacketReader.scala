@@ -1,9 +1,12 @@
 package fr.overridescala.vps.ftp.api.packet
 
+import fr.overridescala.vps.ftp.api.system.RemoteConsole
+import org.jetbrains.annotations.Nullable
+
 import scala.util.control.NonFatal
 
 
-class PacketReader(socket: DynamicSocket) {
+class PacketReader(socket: DynamicSocket, @Nullable errConsole: RemoteConsole.Err) {
 
     def readNextPacketBytes(): Array[Byte] = synchronized {
         val nextLength = nextPacketLength()
@@ -22,7 +25,8 @@ class PacketReader(socket: DynamicSocket) {
         } catch {
             case NonFatal(e) =>
                 Console.err.println(e.getMessage)
-                System.exit(0)
+                if (errConsole != null)
+                    errConsole.reportException(e)
                 -1
         }
     }

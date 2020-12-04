@@ -1,5 +1,6 @@
 package fr.overridescala.vps.ftp.api.task
 
+import fr.overridescala.vps.ftp.api.Relay
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.packet.{PacketChannel, SyncPacketChannel}
 import fr.overridescala.vps.ftp.api.system.Reason
@@ -16,6 +17,7 @@ import fr.overridescala.vps.ftp.api.system.Reason
 abstract class TaskExecutor {
 
     private var canCloseChannel: Boolean = true
+    implicit protected var relay: Relay = _
     implicit protected var channel: PacketChannel.Sync = _
 
 
@@ -33,10 +35,11 @@ abstract class TaskExecutor {
      * */
     def execute(): Unit
 
-    final def init(packetChannel: PacketChannel.Sync): Unit = {
-        if (packetChannel == null)
+    final def init(relay: Relay, packetChannel: PacketChannel.Sync): Unit = {
+        if (relay == null || packetChannel == null)
             throw new NullPointerException
         this.channel = packetChannel
+        this.relay = relay
     }
 
     def closeChannel(reason: Reason): Unit = {

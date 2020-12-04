@@ -3,24 +3,19 @@ package fr.overridescala.vps.ftp.api.packet.fundamental
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
 import fr.overridescala.vps.ftp.api.packet.Packet
 
-case class EmptyPacket private() extends Packet {
+object EmptyPacket extends Packet {
+    type EmptyPacket = EmptyPacket.type
 
-}
+    object Factory extends PacketFactory[EmptyPacket] {
+        override def decompose(implicit packet: EmptyPacket): Array[Byte] =
+            new Array[Byte](0)
 
-object EmptyPacket extends PacketFactory[EmptyPacket] {
+        override def canTransform(implicit bytes: Array[Byte]): Boolean = bytes.isEmpty
 
-    private val Empty = new EmptyPacket
+        override def build(implicit bytes: Array[Byte]): EmptyPacket = EmptyPacket
 
-    def apply(): EmptyPacket = Empty
+        override val packetClass: Class[EmptyPacket] = EmptyPacket.getClass.asInstanceOf[Class[EmptyPacket]]
+    }
 
-    override def decompose(implicit packet: EmptyPacket): Array[Byte] =
-        new Array[Byte](0)
-
-    override def canTransform(implicit bytes: Array[Byte]): Boolean = bytes.isEmpty
-
-    override def build(implicit bytes: Array[Byte]): EmptyPacket =
-        Empty
-
-    override val packetClass: Class[EmptyPacket] = classOf[EmptyPacket]
 }
 

@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.api.system.event
 
 import fr.overridescala.vps.ftp.api.`extension`.RelayExtension
 import fr.overridescala.vps.ftp.api.`extension`.packet.PacketFactory
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannelManager}
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel, PacketCoordinates}
 import fr.overridescala.vps.ftp.api.system.{Reason, SystemOrder}
 import fr.overridescala.vps.ftp.api.task.Task
 
@@ -28,15 +28,15 @@ abstract class EventListener {
 
     def onPacketTypeRegistered[T <: Packet](packetClass: Class[T], factoryClass: PacketFactory[T]): Unit = ()
 
-    def onPacketChannelRegistered(channel: PacketChannelManager): Unit = ()
+    def onPacketChannelRegistered(channel: PacketChannel): Unit = ()
 
-    def onPacketChannelUnregistered(channel: PacketChannelManager, reason: Reason): Unit = ()
+    def onPacketChannelUnregistered(channel: PacketChannel, reason: Reason): Unit = ()
 
-    def onPacketSent(packet: Packet): Unit = ()
+    def onPacketSent(packet: Packet, coordinates: PacketCoordinates): Unit = ()
 
-    def onPacketReceived(packet: Packet): Unit = ()
+    def onPacketReceived(packet: Packet, coordinates: PacketCoordinates): Unit = ()
 
-    def onPacketUsed(packet: Packet): Unit = ()
+    def onPacketUsed(packet: Packet, coordinates: PacketCoordinates): Unit = ()
 
     def onSystemOrderReceived(orderType: SystemOrder, reason: Reason): Unit = ()
 

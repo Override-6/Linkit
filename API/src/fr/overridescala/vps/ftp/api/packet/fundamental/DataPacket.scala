@@ -12,8 +12,8 @@ import fr.overridescala.vps.ftp.api.packet.Packet
  * @param header  the header of the packet, or the type of this data. Headers allows to classify packets / data to send or receive
  * @param content the content of this packet. can be an [[Object]], a [[String]] or whatever. default content is empty
  * */
-class DataPacket(val header: String,
-                 val content: Array[Byte] = Array()) extends Packet {
+case class DataPacket(header: String,
+                      content: Array[Byte] = Array()) extends Packet {
 
     val contentAsString: String = new String(content)
 
@@ -21,7 +21,7 @@ class DataPacket(val header: String,
      * Represents this packet as a String
      * */
     override def toString: String =
-        s"DataPacket{header: $header, content: ${new String(content)}}"
+        s"DataPacket(header: $header, content: ${new String(content)})"
 
     /**
      * @return true if this packet contains content, false instead

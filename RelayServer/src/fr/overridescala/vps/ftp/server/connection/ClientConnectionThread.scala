@@ -22,27 +22,28 @@ class ClientConnectionThread private(socket: SocketContainer,
     private val packetReader = new ServerPacketReader(socket, server, identifier)
     private val notifier = server.eventDispatcher.notifier
     private val channelsHandler = new PacketChannelsHandler(notifier, socket, packetManager)
-    private implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(identifier, server.identifier, channelsHandler)
 
+    val systemChannel: SystemPacketChannel = new SystemPacketChannel(identifier, server.identifier, channelsHandler)
 
-    /**
-     * This array is only used and updated while the connection is not initialised.
-     * */
-    private val unhandledPackets = ListBuffer.empty[(Packet, PacketCoordinates)]
     private val manager: ConnectionsManager = server.connectionsManager
-    val tasksHandler: TasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel)
 
-
+    @volatile var tasksHandler: TasksHandler = _
     @volatile private var closed = false
+    @volatile private var remoteConsoleErr: RemoteConsole.Err = _
+    @volatile private var remoteConsoleOut: RemoteConsole = _
+
+    def load(): Unit = {
+        remoteConsoleErr = server.getConsoleErr(identifier).orNull
+        remoteConsoleOut = server.getConsoleOut(identifier).orNull
+        tasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel, remoteConsoleErr)
+    }
 
     override def run(): Unit = {
         if (closed)
             throw new RelayException("This Connection was already used and is now definitely closed")
 
+        load()
         println(s"Thread '$getName' was started")
-
-        unhandledPackets.foreach((tuple) => handlePacket(tuple._1, tuple._2))
-        unhandledPackets.clear()
 
         try {
             while (!closed)
@@ -51,6 +52,8 @@ class ClientConnectionThread private(socket: SocketContainer,
             case e: RelayException =>
                 e.printStackTrace()
             case NonFatal(e) => e.printStackTrace()
+        } finally {
+            close(Reason.INTERNAL_ERROR)
         }
         println(s"End of Thread execution '$getName'")
     }
@@ -87,13 +90,9 @@ class ClientConnectionThread private(socket: SocketContainer,
     }
 
     private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        if (isNotInitialised) {
-            unhandledPackets addOne(packet, coordinates)
-            return
-        }
         val channelID = coordinates.channelID
 
-        notifier.onPacketReceived(packet)
+        notifier.onPacketReceived(packet, coordinates)
         packet match {
             case systemError: ErrorPacket if channelID == systemChannel.channelID => systemError.printError()
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
@@ -108,13 +107,14 @@ class ClientConnectionThread private(socket: SocketContainer,
         val reason = packet.reason
         val content = packet.content
 
-        println(s"Order $orderType had been requested by '$identifier'")
         notifier.onSystemOrderReceived(orderType, reason)
         orderType match {
             case SystemOrder.CLIENT_CLOSE => close(reason)
             case SystemOrder.SERVER_CLOSE => server.close(identifier, reason)
             case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(reason)
             case SystemOrder.CHECK_ID => checkIDRegistered(new String(content))
+            case SystemOrder.LINK_CONSOLE_OUT => server.remoteConsoles.linkOut(identifier, new String(content).toInt)
+            case SystemOrder.LINK_CONSOLE_ERR => server.remoteConsoles.linkErr(identifier, new String(content).toInt)
 
             case _ => systemChannel.sendPacket(ErrorPacket("forbidden order", s"could not complete order '$orderType', can't be handled by a server or unknown order"))
         }
@@ -124,8 +124,6 @@ class ClientConnectionThread private(socket: SocketContainer,
         val response = if (manager.containsIdentifier(target)) "OK" else "ERROR"
         systemChannel.sendPacket(DataPacket(response))
     }
-
-    private def isNotInitialised: Boolean = identifier == null
 
     setName(s"RP Connection ($identifier)")
 
@@ -148,7 +146,7 @@ object ClientConnectionThread {
             new SyncPacketChannel("unknown", server.identifier, 6, tempChannelsHandler)
 
         def deflect(): Unit = packetReader.nextPacket {
-            case (concerned: Packet, coords: PacketCoordinates) if coords.channelID == channel.channelID => channel.addPacket(concerned)
+            case (concerned: Packet, coords: PacketCoordinates) if coords.channelID == channel.channelID => channel.injectPacket(concerned)
             case _ => deflect()
         }
 

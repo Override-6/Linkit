@@ -8,25 +8,26 @@ import fr.overridescala.vps.ftp.api.system.Reason
 
 //TODO doc
 /**
- * this class is the implementation of [[PacketChannel]] and [[PacketChannelManager]]
+ * this class is the implementation of [[PacketChannel]] and [[PacketChannel]]
  *
  * @param channelID the identifier attributed to this PacketChannel
  * @param ownerID the relay identifier of this channel owner
  *
  * @see [[PacketChannel]]
- * @see [[PacketChannelManager]]
+ * @see [[PacketChannel]]
  * */
 class SyncPacketChannel(override val connectedID: String,
                         override val ownerID: String,
                         override val channelID: Int,
-                        handler: PacketChannelsHandler) extends PacketChannel.Sync(handler) with PacketChannelManager {
+                        handler: PacketChannelsHandler) extends PacketChannel.Sync(handler) {
 
-    handler.registerManager(this)
 
     /**
      * this blocking queue stores the received packets until they are requested
      * */
     private val queue: BlockingDeque[Packet] = new LinkedBlockingDeque()
+
+    handler.register(this)
 
     /**
      * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet
@@ -34,7 +35,7 @@ class SyncPacketChannel(override val connectedID: String,
      * @param packet the packet to add
      * @throws UnexpectedPacketException if the packet id not equals the channel task ID
      * */
-    override def addPacket(packet: Packet): Unit = {
+    override def injectPacket(packet: Packet): Unit = {
         queue.addFirst(packet)
     }
 
@@ -51,7 +52,7 @@ class SyncPacketChannel(override val connectedID: String,
      * */
     override def nextPacket(): Packet = {
         val packet = queue.takeLast()
-        handler.notifyPacketUsed(packet)
+        handler.notifyPacketUsed(packet, coordinates)
         packet
     }
 

@@ -57,7 +57,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * */
     def getConnectionFromIdentifier(identifier: String): ClientConnectionThread = {
         for ((_, connection) <- connections) {
-            val connectionIdentifier = connection.tasksHandler.identifier
+            val connectionIdentifier = connection.identifier
             if (connectionIdentifier.equals(identifier))
                 return connection
         }
