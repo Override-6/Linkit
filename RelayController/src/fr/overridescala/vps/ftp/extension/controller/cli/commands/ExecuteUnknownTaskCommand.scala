@@ -26,7 +26,7 @@ class ExecuteUnknownTaskCommand(relay: Relay) extends CommandExecutor {
             TaskInitInfo.of(name, target)
 
         override def execute(): Unit = {
-            channel.sendPacket(EmptyPacket())
+            channel.sendPacket(EmptyPacket)
         }
     }
 

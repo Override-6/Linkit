@@ -11,12 +11,13 @@ class PingTask(private val targetId: String) extends Task[Long](targetId) {
         TaskInitInfo.of(Type, targetId)
 
     override def execute(): Unit = {
-        channel.sendPacket(EmptyPacket())
-        val p1 = testPacket(EmptyPacket())
-        val p2 = testPacket(EmptyPacket())
-        val p3 = testPacket(EmptyPacket())
-        val p4 = testPacket(EmptyPacket())
-        val p5 = testPacket(EmptyPacket())
+        println(s"(channel id ${channel.channelID})")
+        channel.sendPacket(EmptyPacket)
+        val p1 = testPacket(EmptyPacket)
+        val p2 = testPacket(EmptyPacket)
+        val p3 = testPacket(EmptyPacket)
+        val p4 = testPacket(EmptyPacket)
+        val p5 = testPacket(EmptyPacket)
         println("5 packet were tested")
         success((p1 + p2 + p3 + p4 + p5) / 5)
     }
@@ -38,10 +39,10 @@ object PingTask {
 
     case class Completer() extends TaskExecutor {
         override def execute(): Unit = {
-            val pong = EmptyPacket()
-            for (_ <- 1 to 3) {
+            channel.nextPacket()
+            for (_ <- 1 to 5) {
                 channel.nextPacket()
-                channel.sendPacket(pong)
+                channel.sendPacket(EmptyPacket)
             }
         }
 

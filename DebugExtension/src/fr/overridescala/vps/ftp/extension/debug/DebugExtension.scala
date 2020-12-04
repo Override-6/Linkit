@@ -14,7 +14,6 @@ class DebugExtension(relay: Relay) extends RelayExtension(relay) {
 
         completerHandler.putCompleter(PingTask.Type, _ => PingTask.Completer())
         completerHandler.putCompleter(StressTestTask.Type, StressTestTask.Completer)
-        completerHandler.putCompleter(SendMessageTask.Type, SendMessageTask.Completer)
 
         val properties = relay.properties
         val commandManager = properties.getProperty(ControllerExtension.CommandManagerProp): CommandManager
@@ -22,5 +21,8 @@ class DebugExtension(relay: Relay) extends RelayExtension(relay) {
         commandManager.register("ping", new PingCommand(relay))
         commandManager.register("stress", new StressTestCommand(relay))
         commandManager.register("msg", new SendMessageCommand(relay))
+
+        val eventDispatcher = relay.eventDispatcher
+        eventDispatcher.register(new DebugEventListener)
     }
 }
