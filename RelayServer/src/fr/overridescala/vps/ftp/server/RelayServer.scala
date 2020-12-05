@@ -9,7 +9,7 @@ import fr.overridescala.vps.ftp.api.exceptions.{RelayClosedException, RelayExcep
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.packet._
 import fr.overridescala.vps.ftp.api.system.event.EventDispatcher
-import fr.overridescala.vps.ftp.api.system.{Reason, RemoteConsole, RemoteConsolesHandler, SystemPacketChannel}
+import fr.overridescala.vps.ftp.api.system.{Reason, RemoteConsole, RemoteConsolesHandler, SystemPacketChannel, Version}
 import fr.overridescala.vps.ftp.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.vps.ftp.api.{Relay, RelayProperties}
 import fr.overridescala.vps.ftp.server.RelayServer.Identifier
@@ -36,6 +36,8 @@ class RelayServer extends Relay {
     override val taskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
     override val packetManager = new PacketManager(eventDispatcher.notifier)
+
+    override val relayVersion: Version = Version("RelayServer", major = 0, minor = 1, patch = 0, stable = false)
 
     private[server] val notifier = eventDispatcher.notifier
     private[server] val remoteConsoles = new RemoteConsolesHandler(this)

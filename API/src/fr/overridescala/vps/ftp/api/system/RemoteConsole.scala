@@ -3,11 +3,11 @@ package fr.overridescala.vps.ftp.api.system
 import java.io.{PrintStream, PrintWriter, StringWriter}
 import java.security.AccessController
 
-import com.sun.corba.se.impl.orbutil.GetPropertyAction
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
 import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.utils.InactiveOutputStream
+import sun.security.action.GetPropertyAction
 
 
 class RemoteConsole private(channel: PacketChannel.Async, output: PrintStream) extends PrintStream(InactiveOutputStream, true) {

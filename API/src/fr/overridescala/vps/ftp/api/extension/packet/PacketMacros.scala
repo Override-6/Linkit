@@ -1,11 +1,12 @@
 package fr.overridescala.vps.ftp.api.`extension`.packet
 
-import scala.annotation.{StaticAnnotation, compileTimeOnly}
+import scala.annotation.StaticAnnotation
 import scala.reflect.macros.whitebox
 
 object PacketMacros {
 
     class packetBuilder extends StaticAnnotation {
+        scala.language.experimental.macros
         def macroTransform(annottees: Any*): Any = macro macroTransformImpl
     }
 

@@ -41,6 +41,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val tasksHandler = new ClientTasksHandler(systemChannel, this)
     override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
 
+    override val relayVersion: Version = Version("RelayPoint", major = 0, minor = 1, patch = 0, stable = false)
+
     override def start(): Unit = {
         println("Current encoding is " + Charset.defaultCharset().name())
         println("Listening on port " + Port)
