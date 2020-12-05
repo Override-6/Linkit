@@ -152,14 +152,14 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         catch {
             case e: AsynchronousCloseException =>
                 Console.err.println("Asynchronous close.")
-                serverErrConsole.reportException(e)
+                serverErrConsole.reportExceptionSimplified(e)
                 close(Reason.INTERNAL_ERROR)
 
             case NonFatal(e) =>
                 e.printStackTrace()
 
                 Console.err.println(s"Suddenly disconnected from the server")
-                serverErrConsole.reportException(e)
+                serverErrConsole.reportExceptionSimplified(e)
                 close(Reason.INTERNAL_ERROR)
         }
     }

@@ -9,7 +9,8 @@ import org.jetbrains.annotations.Nullable
 
 class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
 
-    private val packetReader = new PacketReader(socket, server.getConsoleErr(identifier).orNull)
+    @Nullable private val remoteConsoleErr = server.getConsoleErr(identifier).orNull
+    private val packetReader = new PacketReader(socket, remoteConsoleErr)
     private val manager = server.connectionsManager
     private val packetManager = server.packetManager
 
@@ -17,7 +18,10 @@ class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable i
         try {
             listenNextConcernedPacket(onPacketReceived)
         } catch {
-            case e: RelayException => e.printStackTrace();
+            case e: RelayException =>
+                if (remoteConsoleErr != null)
+                    remoteConsoleErr.reportExceptionSimplified(e)
+                e.printStackTrace();
             case e: SocketException if e.getMessage == "Connection reset" =>
                 val msg =
                     if (identifier == null) "socket connection reset while initialising connection."

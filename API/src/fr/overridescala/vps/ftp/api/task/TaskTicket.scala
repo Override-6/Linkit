@@ -53,7 +53,7 @@ class TaskTicket(executor: TaskExecutor,
     def start(): Unit = {
         var reason = Reason.INTERNAL_ERROR
         try {
-            executor.init(relay, channel)
+            executor.init(relay, target, channel)
 
             executor match {
                 case task: Task[_] => notifier.onTaskStartExecuting(task)

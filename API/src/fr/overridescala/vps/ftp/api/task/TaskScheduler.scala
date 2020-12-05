@@ -27,11 +27,8 @@ trait TaskScheduler {
      * @see [[TaskAction]]
      * */
     class RelayTaskAction[T](taskAction: TaskAction[T]) {
-        def queue(onSuccess: T => Unit = null, onError: String => Unit = Console.err.println): Unit = try {
+        def queue(onSuccess: T => Unit = null, onError: String => Unit = Console.err.println): Unit =
             taskAction.queue(onSuccess, onError)
-        } catch {
-            case e: TaskException => Console.err.println(e.getMessage)
-        }
 
         def complete(): T =
             taskAction.complete()

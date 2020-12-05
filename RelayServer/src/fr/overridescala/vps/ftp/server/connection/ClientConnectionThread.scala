@@ -19,7 +19,6 @@ class ClientConnectionThread private(socket: SocketContainer,
 
 
     private val packetManager = server.packetManager
-    private val packetReader = new ServerPacketReader(socket, server, identifier)
     private val notifier = server.eventDispatcher.notifier
     private val channelsHandler = new PacketChannelsHandler(notifier, socket, packetManager)
 
@@ -27,14 +26,12 @@ class ClientConnectionThread private(socket: SocketContainer,
 
     private val manager: ConnectionsManager = server.connectionsManager
 
-    @volatile var tasksHandler: TasksHandler = _
+    @volatile private var tasksHandler: TasksHandler = _
     @volatile private var closed = false
-    @volatile private var remoteConsoleErr: RemoteConsole.Err = _
-    @volatile private var remoteConsoleOut: RemoteConsole = _
+    private var remoteConsoleErr: RemoteConsole.Err = _
 
     def load(): Unit = {
         remoteConsoleErr = server.getConsoleErr(identifier).orNull
-        remoteConsoleOut = server.getConsoleOut(identifier).orNull
         tasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel, remoteConsoleErr)
     }
 
@@ -46,12 +43,13 @@ class ClientConnectionThread private(socket: SocketContainer,
         println(s"Thread '$getName' was started")
 
         try {
+            val packetReader = new ServerPacketReader(socket, server, identifier)
             while (!closed)
                 packetReader.nextPacket(handlePacket)
         } catch {
-            case e: RelayException =>
+            case NonFatal(e) =>
+                remoteConsoleErr.reportException(e)
                 e.printStackTrace()
-            case NonFatal(e) => e.printStackTrace()
         } finally {
             close(Reason.INTERNAL_ERROR)
         }
@@ -74,6 +72,8 @@ class ClientConnectionThread private(socket: SocketContainer,
     }
 
     def isConnected: Boolean = socket.isConnected
+
+    def getTasksHandler: TasksHandler = tasksHandler
 
     private[server] def createSync(id: Int): SyncPacketChannel =
         new SyncPacketChannel(identifier, server.identifier, id, channelsHandler)

@@ -1,9 +1,10 @@
 package fr.overridescala.vps.ftp.api.task
 
 import fr.overridescala.vps.ftp.api.Relay
+import fr.overridescala.vps.ftp.api.exceptions.TaskException
 import fr.overridescala.vps.ftp.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.vps.ftp.api.packet.{PacketChannel, SyncPacketChannel}
-import fr.overridescala.vps.ftp.api.system.Reason
+import fr.overridescala.vps.ftp.api.system.{Reason, RemoteConsole}
 
 /**
  * The class that will execute the Task.
@@ -19,6 +20,8 @@ abstract class TaskExecutor {
     private var canCloseChannel: Boolean = true
     implicit protected var relay: Relay = _
     implicit protected var channel: PacketChannel.Sync = _
+    protected var remoteConsoleErr: RemoteConsole.Err = _
+    protected var remoteConsoleOut: RemoteConsole = _
 
 
     /**
@@ -35,10 +38,16 @@ abstract class TaskExecutor {
      * */
     def execute(): Unit
 
-    final def init(relay: Relay, packetChannel: PacketChannel.Sync): Unit = {
+    final def init(relay: Relay, targetID: String, packetChannel: PacketChannel.Sync): Unit = {
         if (relay == null || packetChannel == null)
             throw new NullPointerException
         this.channel = packetChannel
+
+        this.remoteConsoleErr = relay.getConsoleErr(targetID).orNull
+        this.remoteConsoleOut = relay.getConsoleOut(targetID).orNull
+        if (remoteConsoleOut == null || remoteConsoleErr == null)
+            throw new TaskException(s"Could not initialise task : could not retrieve remote console of relay $targetID")
+
         this.relay = relay
     }
 

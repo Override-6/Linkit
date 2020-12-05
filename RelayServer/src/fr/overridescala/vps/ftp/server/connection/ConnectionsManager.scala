@@ -1,7 +1,5 @@
 package fr.overridescala.vps.ftp.server.connection
 
-import java.net.InetSocketAddress
-
 import fr.overridescala.vps.ftp.api.exceptions.{RelayException, RelayInitialisationException}
 import fr.overridescala.vps.ftp.api.system.{JustifiedCloseable, Reason}
 import fr.overridescala.vps.ftp.server.RelayServer
@@ -80,7 +78,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * */
     def containsIdentifier(identifier: String): Boolean = {
         for (connection <- connections.values) {
-            val connectionIdentifier = connection.tasksHandler.identifier
+            val connectionIdentifier = connection.identifier
             if (connectionIdentifier.equals(identifier))
                 return true
         }

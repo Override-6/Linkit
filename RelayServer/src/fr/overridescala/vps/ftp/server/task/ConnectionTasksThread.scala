@@ -3,7 +3,7 @@ package fr.overridescala.vps.ftp.server.task
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.system.{Reason, JustifiedCloseable}
+import fr.overridescala.vps.ftp.api.system.{JustifiedCloseable, Reason, RemoteConsole}
 import fr.overridescala.vps.ftp.api.task.TaskTicket
 
 import scala.collection.mutable
@@ -12,13 +12,14 @@ import scala.util.control.NonFatal
 
 class ConnectionTasksThread private(ownerID: String,
                                     ticketQueue: BlockingQueue[TaskTicket],
-                                    lostPackets: mutable.Map[Int, ListBuffer[Packet]]) extends Thread with JustifiedCloseable {
+                                    lostPackets: mutable.Map[Int, ListBuffer[Packet]],
+                                    remoteConsoleErr: RemoteConsole.Err) extends Thread with JustifiedCloseable {
 
     @volatile private var open = false
     @volatile private var currentTicket: TaskTicket = _
 
-    def this(ownerID: String) =
-        this(ownerID, new ArrayBlockingQueue[TaskTicket](15000), mutable.Map.empty)
+    def this(ownerID: String, remoteConsoleErr: RemoteConsole.Err) =
+        this(ownerID, new ArrayBlockingQueue[TaskTicket](15000), mutable.Map.empty, remoteConsoleErr)
 
 
     override def run(): Unit = {
@@ -29,7 +30,9 @@ class ConnectionTasksThread private(ownerID: String,
             } catch {
                 //normal exception thrown when the thread was suddenly stopped
                 case e: InterruptedException =>
-                case NonFatal(e) => e.printStackTrace()
+                case NonFatal(e) =>
+                    e.printStackTrace()
+                    remoteConsoleErr.reportExceptionSimplified(e)
             }
         }
     }
@@ -39,14 +42,16 @@ class ConnectionTasksThread private(ownerID: String,
             currentTicket.abort(reason)
             currentTicket = null
         }
+
         ticketQueue.clear()
         lostPackets.clear()
         open = false
+
         interrupt()
     }
 
     def copy(): ConnectionTasksThread =
-        new ConnectionTasksThread(ownerID, ticketQueue, lostPackets)
+        new ConnectionTasksThread(ownerID, ticketQueue, lostPackets, remoteConsoleErr)
 
     private[task] def addTicket(ticket: TaskTicket): Unit = {
         ticketQueue.add(ticket)

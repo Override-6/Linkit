@@ -28,7 +28,8 @@ class AsyncPacketChannel(override val ownerID: String,
     override def injectPacket(packet: Packet): Unit = {
         Future {
             try {
-                onPacketReceived(packet)
+                if (onPacketReceived != null)
+                    onPacketReceived(packet)
                 handler.notifyPacketUsed(packet, coordinates)
             } catch {
                 case NonFatal(e) =>

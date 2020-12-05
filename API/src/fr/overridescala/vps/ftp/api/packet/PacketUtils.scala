@@ -1,6 +1,6 @@
 package fr.overridescala.vps.ftp.api.packet
 
-import java.util
+import java.{text, util}
 
 import fr.overridescala.vps.ftp.api.packet.PacketManager.{ChannelIDSeparator, SenderSeparator, TargetSeparator}
 
@@ -17,6 +17,7 @@ object PacketUtils {
 
     def cutString(a: Array[Byte], b: Array[Byte])(implicit src: Array[Byte]) =
         new String(cut(a, b))
+
 
     def getCoordinatesBytes(coords: PacketCoordinates): Array[Byte] = {
         val channelID = coords.channelID.toString.getBytes

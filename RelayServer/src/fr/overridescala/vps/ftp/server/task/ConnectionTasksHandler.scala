@@ -17,7 +17,7 @@ class ConnectionTasksHandler(override val identifier: String,
                              systemChannel: SystemPacketChannel,
                              errConsole: RemoteConsole.Err) extends TasksHandler {
 
-    private var tasksThread = new ConnectionTasksThread(identifier)
+    private var tasksThread = new ConnectionTasksThread(identifier, errConsole)
     tasksThread.start()
 
     override val tasksCompleterHandler: TaskCompleterHandler = server.taskCompleterHandler

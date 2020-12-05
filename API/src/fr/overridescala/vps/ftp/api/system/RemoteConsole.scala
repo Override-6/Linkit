@@ -5,8 +5,8 @@ import java.security.AccessController
 
 import com.sun.corba.se.impl.orbutil.GetPropertyAction
 import fr.overridescala.vps.ftp.api.exceptions.UnexpectedPacketException
-import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.packet.fundamental.DataPacket
+import fr.overridescala.vps.ftp.api.packet.{Packet, PacketChannel}
 import fr.overridescala.vps.ftp.api.utils.InactiveOutputStream
 
 
@@ -14,13 +14,10 @@ class RemoteConsole private(channel: PacketChannel.Async, output: PrintStream) e
 
     private val connected = channel.connectedID
 
-    channel.onPacketReceived(e => {
-        println(s"e = ${e}")
-        e match {
-            case data: DataPacket => output.println(s"[$connected]: ${new String(data.content)}")
-            case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")
-        }
-    })
+    channel.onPacketReceived {
+        case data: DataPacket => output.println(s"[$connected]: ${new String(data.content)}")
+        case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")
+    }
 
     override def write(b: Array[Byte]): Unit = {
         print(new String(b))
@@ -40,7 +37,7 @@ class RemoteConsole private(channel: PacketChannel.Async, output: PrintStream) e
         if (obj.getClass.isArray)
             str = java.util.Arrays.deepToString(obj.asInstanceOf[Array[AnyRef]])
 
-        channel.sendPacket(DataPacket(str))
+        channel.sendPacket(DataPacket("", str))
     }
 
     override def print(x: Boolean): Unit = print(x: Any)
@@ -68,15 +65,38 @@ class RemoteConsole private(channel: PacketChannel.Async, output: PrintStream) e
 object RemoteConsole {
 
     class Err private[RemoteConsole](channel: PacketChannel.Async) extends RemoteConsole(channel, System.err) {
-        def reportException(exception: Throwable): Unit = {
 
+        def reportException(exception: Throwable): Unit = {
             val writer = new StringWriter()
             val stream = new PrintWriter(writer)
             exception.printStackTrace(stream)
 
-            val stackTrace = stream.toString
+            val stackTrace = writer.toString
+            var message = s"(This is a remote StackTrace (RST) from Relay '${channel.connectedID}')\n$stackTrace"
+            message = message.slice(0, message.length - 1)
 
-            print(s"(This is a remote StackTrace from Relay '${channel.connectedID}')\n$stackTrace")
+            this.print(message.replace("\n", "\nRST > "))
+        }
+
+
+        def reportExceptionSimplified(exception: Throwable): Unit = {
+            val sb = new StringBuilder
+            var cause = exception
+            while (cause != null) {
+                val name = cause.getClass.getSimpleName
+                val message = cause.getMessage
+                if (cause != exception)
+                    sb.append("     caused by ")
+                sb.append(name)
+                if (message != null) {
+                    sb.append(": ")
+                            .append(message)
+                }
+
+                cause = cause.getCause
+            }
+            val causes = sb.toString()
+            print(s"(an exception occurred in relay '${channel.connectedID}') simplified description : \n$causes")
         }
     }
 

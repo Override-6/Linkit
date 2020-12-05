@@ -49,7 +49,7 @@ class RelayServer extends Relay {
         if (connection == null)
             throw new NoSuchElementException(s"Unknown or unregistered relay with identifier '$targetIdentifier'")
 
-        val tasksHandler = connection.tasksHandler
+        val tasksHandler = connection.getTasksHandler
         task.preInit(tasksHandler, identifier)
         notifier.onTaskScheduled(task)
         RelayTaskAction.of(task)
@@ -67,7 +67,6 @@ class RelayServer extends Relay {
         notifier.onReady()
         open = true
         while (open) handleSocketConnection()
-
     }
 
 
@@ -149,7 +148,6 @@ class RelayServer extends Relay {
             tempSocket.set(clientSocket)
 
             val identifier = ClientConnectionThread.retrieveIdentifier(tempSocket, this)
-            println(s"identifier = ${identifier}")
             handleRelayPointConnection(identifier)
         } catch {
             case e@(_: RelayException | _: SocketException) =>

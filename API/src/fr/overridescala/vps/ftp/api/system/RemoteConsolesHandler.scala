@@ -12,29 +12,23 @@ class RemoteConsolesHandler(relay: Relay) {
     private val errConsoles = mutable.Map.empty[String, RemoteConsole.Err]
 
     def getOut(targetId: String, sysChannel: SystemPacketChannel): RemoteConsole = {
-        val v = find(targetId, false, outConsoles, sysChannel)
-        println(s"outConsoles GET = ${outConsoles}")
-        v
+        find(targetId, false, outConsoles, sysChannel)
     }
 
     def getErr(targetId: String, sysChannel: SystemPacketChannel): RemoteConsole.Err = {
-        val v = find(targetId, true, errConsoles, sysChannel)
-        println(s"errConsoles GET= ${errConsoles}")
-        v
+        find(targetId, true, errConsoles, sysChannel)
     }
 
     def linkErr(targetID: String, channelID: Int): Unit = {
         val channel = relay.createAsyncChannel(targetID, channelID)
         val remoteConsole = RemoteConsole.err(channel)
         errConsoles.put(targetID, remoteConsole)
-        println(s"errConsoles LINK = ${errConsoles}")
     }
 
     def linkOut(targetId: String, channelID: Int): Unit = {
         val channel = relay.createAsyncChannel(targetId, channelID)
         val remoteConsole = RemoteConsole.out(channel)
         outConsoles.put(targetId, remoteConsole)
-        println(s"outConsoles LINK= ${outConsoles}")
     }
 
     private def find[T <: RemoteConsole](targetId: String,
