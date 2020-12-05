@@ -1,4 +1,4 @@
-package fr.overridescala.vps.ftp.api
+package fr.overridescala.vps.ftp.api.`extension`
 
 import scala.collection.mutable
 
