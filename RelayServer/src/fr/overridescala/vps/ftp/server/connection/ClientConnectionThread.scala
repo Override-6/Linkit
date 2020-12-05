@@ -10,7 +10,6 @@ import fr.overridescala.vps.ftp.api.task.TasksHandler
 import fr.overridescala.vps.ftp.server.RelayServer
 import fr.overridescala.vps.ftp.server.task.ConnectionTasksHandler
 
-import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 class ClientConnectionThread private(socket: SocketContainer,
@@ -33,6 +32,9 @@ class ClientConnectionThread private(socket: SocketContainer,
     def load(): Unit = {
         remoteConsoleErr = server.getConsoleErr(identifier).orNull
         tasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel, remoteConsoleErr)
+
+        val remoteConsoleOut = server.getConsoleOut(identifier).orNull
+        //remoteConsoleOut.print(s"Connected to server ${server.version}")
     }
 
     override def run(): Unit = {
