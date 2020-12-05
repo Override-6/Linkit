@@ -2,12 +2,10 @@
 <module type="JAVA_MODULE" version="4">
   <component name="NewModuleRootManager" inherit-compiler-output="true">
     <exclude-output />
-    <content url="file://$MODULE_DIR$/../../API">
-      <sourceFolder url="file://$MODULE_DIR$/../../API/src" isTestSource="false" />
+    <content url="file://$MODULE_DIR$/../../ProgramExtensions/CloudStorage">
+      <sourceFolder url="file://$MODULE_DIR$/../../ProgramExtensions/CloudStorage/src" isTestSource="false" />
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scala-sdk-2.13.3" level="application" />
-    <orderEntry type="library" name="annotations-16.0.1" level="project" />
   </component>
 </module>
