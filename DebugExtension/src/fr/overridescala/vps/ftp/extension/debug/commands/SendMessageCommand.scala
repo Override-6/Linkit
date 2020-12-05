@@ -18,6 +18,6 @@ class SendMessageCommand(relay: Relay) extends CommandExecutor {
             return
         }
         consoleOpt.get.println(message)
-
+        println(s"${relay.identifier} -> $target: $message")
     }
 }

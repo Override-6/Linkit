@@ -32,7 +32,7 @@ class FolderListener(implicit channel: PacketChannel) {
         } catch {
             case e: FileSystemException =>
                 Console.err.println(e.getMessage)
-                Thread.sleep(10)
+                Thread.sleep(50)
                 onModify(affected)
         }
     }

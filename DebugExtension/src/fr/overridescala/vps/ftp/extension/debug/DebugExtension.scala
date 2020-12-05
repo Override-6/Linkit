@@ -23,6 +23,6 @@ class DebugExtension(relay: Relay) extends RelayExtension(relay) {
         commandManager.register("msg", new SendMessageCommand(relay))
 
         val eventDispatcher = relay.eventDispatcher
-        eventDispatcher.register(new DebugEventListener)
+        //eventDispatcher.register(new DebugEventListener)
     }
 }

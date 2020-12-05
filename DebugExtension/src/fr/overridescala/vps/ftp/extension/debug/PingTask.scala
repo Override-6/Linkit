@@ -2,7 +2,7 @@ package fr.overridescala.vps.ftp.`extension`.debug
 
 import fr.overridescala.vps.ftp.`extension`.debug.PingTask.Type
 import fr.overridescala.vps.ftp.api.packet.Packet
-import fr.overridescala.vps.ftp.api.packet.fundamental.{DataPacket, EmptyPacket, ErrorPacket}
+import fr.overridescala.vps.ftp.api.packet.fundamental.EmptyPacket
 import fr.overridescala.vps.ftp.api.task.{Task, TaskExecutor, TaskInitInfo}
 
 class PingTask(private val targetId: String) extends Task[Long](targetId) {
@@ -24,8 +24,10 @@ class PingTask(private val targetId: String) extends Task[Long](targetId) {
 
     def testPacket(packet: Packet): Long = {
         val t0 = System.currentTimeMillis()
+
         channel.sendPacket(packet)
         channel.nextPacket()
+
         val t1 = System.currentTimeMillis()
         val time = t1 - t0
         println(packet.getClass.getSimpleName + s" sent and received in $time ms")
