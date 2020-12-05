@@ -1,3 +1,0 @@
-Manifest-Version: 1.0
-Main-Class: fr.overridescala.vps.ftp.server.Main
-Class-Path: Dependencies/scala-reflect.jar, Dependencies/scala-library.jar
