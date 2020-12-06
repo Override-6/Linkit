@@ -4,6 +4,7 @@ import java.net.Socket
 
 import fr.overridescala.linkkit.api.exceptions.{RelayException, UnexpectedPacketException}
 import fr.overridescala.linkkit.api.packet._
+import fr.overridescala.linkkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.overridescala.linkkit.api.packet.fundamental._
 import fr.overridescala.linkkit.api.system._
 import fr.overridescala.linkkit.api.task.TasksHandler
@@ -19,11 +20,12 @@ class ClientConnectionThread private(socket: SocketContainer,
 
     private val packetManager = server.packetManager
     private val notifier = server.eventObserver.notifier
-    private val channelsHandler = new PacketChannelsHandler(notifier, socket, packetManager)
-
-    val systemChannel: SystemPacketChannel = new SystemPacketChannel(identifier, server.identifier, channelsHandler)
-
     private val manager: ConnectionsManager = server.connectionsManager
+
+    private val connectionTraffic = new SimpleTrafficHandler(notifier, socket, server.identifier, packetManager)
+    private val serverTraffic = server.trafficHandler
+
+    val systemChannel: SystemPacketChannel = new SystemPacketChannel(identifier, connectionTraffic)
 
     @volatile private var tasksHandler: TasksHandler = _
     @volatile private var closed = false
@@ -66,7 +68,7 @@ class ClientConnectionThread private(socket: SocketContainer,
 
         tasksHandler.close(reason)
         socket.close(reason)
-        channelsHandler.close(reason)
+        connectionTraffic.close(reason)
         manager.unregister(identifier)
 
         closed = true
@@ -78,10 +80,14 @@ class ClientConnectionThread private(socket: SocketContainer,
     def getTasksHandler: TasksHandler = tasksHandler
 
     def createSync(id: Int): PacketChannel.Sync =
-        new SyncPacketChannel(server.identifier, identifier, id, channelsHandler)
+        new SyncPacketChannel(identifier, id, connectionTraffic)
 
     def createAsync(id: Int): PacketChannel.Async = {
-        new AsyncPacketChannel(server.identifier, identifier, id, channelsHandler)
+        new AsyncPacketChannel(identifier, id, connectionTraffic)
+    }
+
+    def sendPacket(packet: Packet, channelID: Int): Unit = {
+        socket.write(packetManager.toBytes(packet, PacketCoordinates(channelID, identifier, server.identifier)))
     }
 
     private[server] def updateSocket(socket: Socket): Unit =
@@ -92,21 +98,26 @@ class ClientConnectionThread private(socket: SocketContainer,
     }
 
     private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        val channelID = coordinates.channelID
+        val identifier = coordinates.containerID
 
         notifier.onPacketReceived(packet, coordinates)
         packet match {
-            case systemError: ErrorPacket if channelID == systemChannel.channelID => systemError.printError()
+            case systemError: ErrorPacket if identifier == systemChannel.identifier => systemError.printError()
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
             case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
-            case _: Packet => channelsHandler.injectPacket(packet, channelID)
+            case _: Packet =>
+                if (serverTraffic.isTargeted(coordinates)) {
+                    serverTraffic.injectPacket(packet, coordinates)
+                    return
+                }
+                connectionTraffic.injectPacket(packet, coordinates)
         }
     }
 
 
     private def handleSystemOrder(packet: SystemPacket): Unit = {
         val orderType = packet.order
-        val reason = packet.reason
+        val reason = packet.reason.reversed()
         val content = packet.content
 
         notifier.onSystemOrderReceived(orderType, reason)
@@ -115,8 +126,6 @@ class ClientConnectionThread private(socket: SocketContainer,
             case SystemOrder.SERVER_CLOSE => server.close(identifier, reason)
             case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(reason)
             case SystemOrder.CHECK_ID => checkIDRegistered(new String(content))
-            case SystemOrder.LINK_CONSOLE_OUT => server.remoteConsoles.linkOut(identifier, new String(content).toInt)
-            case SystemOrder.LINK_CONSOLE_ERR => server.remoteConsoles.linkErr(identifier, new String(content).toInt)
 
             case _ => systemChannel.sendPacket(ErrorPacket("forbidden order", s"could not complete order '$orderType', can't be handled by a server or unknown order"))
         }
@@ -142,13 +151,14 @@ object ClientConnectionThread {
 
     def retrieveIdentifier(socket: SocketContainer, server: RelayServer): String = {
         val packetReader = new ServerPacketReader(socket, server, null)
-        val tempChannelsHandler = new PacketChannelsHandler(server.notifier, socket, server.packetManager)
+        val tempHandler = new SimpleTrafficHandler(server.notifier, socket, "unknown", server.packetManager)
 
         val channel: SyncPacketChannel =
-            new SyncPacketChannel(server.identifier, "unknown", 6, tempChannelsHandler)
+            new SyncPacketChannel("unknown", 6, tempHandler)
 
         def deflect(): Unit = packetReader.nextPacket {
-            case (concerned: Packet, coords: PacketCoordinates) if coords.channelID == channel.channelID => channel.injectPacket(concerned)
+            case (concerned: Packet, coords: PacketCoordinates) if coords.containerID == channel.identifier =>
+                channel.injectPacket(concerned, coords)
             case _ => deflect()
         }
 

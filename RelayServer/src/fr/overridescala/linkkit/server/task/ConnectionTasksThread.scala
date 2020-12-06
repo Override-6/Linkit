@@ -2,7 +2,7 @@ package fr.overridescala.linkkit.server.task
 
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
-import fr.overridescala.linkkit.api.packet.Packet
+import fr.overridescala.linkkit.api.packet.{Packet, PacketCoordinates}
 import fr.overridescala.linkkit.api.system.{JustifiedCloseable, Reason, RemoteConsole}
 import fr.overridescala.linkkit.api.task.TaskTicket
 
@@ -12,7 +12,7 @@ import scala.util.control.NonFatal
 
 class ConnectionTasksThread private(ownerID: String,
                                     ticketQueue: BlockingQueue[TaskTicket],
-                                    lostPackets: mutable.Map[Int, ListBuffer[Packet]],
+                                    lostPackets: mutable.Map[Int, ListBuffer[(Packet, PacketCoordinates)]],
                                     remoteConsoleErr: RemoteConsole.Err) extends Thread with JustifiedCloseable {
 
     @volatile private var open = false
@@ -61,11 +61,11 @@ class ConnectionTasksThread private(ownerID: String,
         val ticket = ticketQueue.take()
         currentTicket = ticket
         val channel = ticket.channel
-        val taskID = channel.channelID
+        val taskID = channel.identifier
         //Adding eventual lost packets to this task
         if (lostPackets.contains(taskID)) {
             val queue = lostPackets(taskID)
-            queue.foreach(channel.injectPacket)
+            queue.foreach(element => channel.injectPacket(element._1, element._2))
             queue.clear()
             lostPackets.remove(taskID)
         }

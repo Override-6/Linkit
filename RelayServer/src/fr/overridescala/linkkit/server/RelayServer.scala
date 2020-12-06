@@ -12,6 +12,8 @@ import fr.overridescala.linkkit.api.system.event.EventObserver
 import fr.overridescala.linkkit.api.system.{Reason, RemoteConsole, RemoteConsolesHandler, SystemPacketChannel, Version}
 import fr.overridescala.linkkit.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.linkkit.api.Relay
+import fr.overridescala.linkkit.api.packet.channel.PacketChannel
+import fr.overridescala.linkkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
 import fr.overridescala.linkkit.server.RelayServer.Identifier
 import fr.overridescala.linkkit.server.connection.{ClientConnectionThread, ConnectionsManager, SocketContainer}
 
@@ -19,6 +21,8 @@ import scala.util.control.NonFatal
 
 object RelayServer {
     val Identifier = "server"
+
+    val version: Version = Version("RelayServer", "0.3.0", stable = false)
 }
 
 class RelayServer extends Relay {
@@ -37,17 +41,18 @@ class RelayServer extends Relay {
     override val properties: RelayProperties = new RelayProperties
     override val packetManager = new PacketManager(eventObserver.notifier)
 
-    override val relayVersion: Version = Version("RelayServer", "0.2.0", stable = false)
+    override val relayVersion: Version = RelayServer.version
 
     private[server] val notifier = eventObserver.notifier
-    private[server] val remoteConsoles = new RemoteConsolesHandler(this)
+    private var remoteConsoles: RemoteConsolesHandler = _
 
+    val trafficHandler = new ServerTrafficHandler(this)
     val connectionsManager = new ConnectionsManager(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
         val targetIdentifier = task.targetID
-        val connection = connectionsManager.getConnectionFromIdentifier(targetIdentifier)
+        val connection = getConnection(targetIdentifier)
         if (connection == null)
             throw new NoSuchElementException(s"Unknown or unregistered relay with identifier '$targetIdentifier'")
 
@@ -64,43 +69,56 @@ class RelayServer extends Relay {
         println(apiVersion)
         println(relayVersion)
 
-        AsyncPacketChannel.UploadThread.start()
+        open = true
         extensionLoader.loadExtensions()
+        remoteConsoles = new RemoteConsolesHandler(this)
 
         println("Ready !")
         notifier.onReady()
-        open = true
+
         while (open) handleSocketConnection()
     }
 
 
     override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
-        val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
+        ensureOpen()
+
+        val targetConnection = getConnection(linkedRelayID)
         targetConnection.createSync(id)
     }
 
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
-        val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
+        ensureOpen()
+
+        val targetConnection = getConnection(linkedRelayID)
         targetConnection.createAsync(id)
     }
 
+    override def createSyncCollector(id: Int): PacketCollector.Sync = {
+        ensureOpen()
+        new SyncPacketCollector(trafficHandler, id)
+    }
+
+    override def createAsyncCollector(id: Int): PacketCollector.Async = {
+        ensureOpen()
+        new AsyncPacketCollector(trafficHandler, id)
+    }
+
     override def getConsoleOut(targetId: String): Option[RemoteConsole] = {
-        val connection = connectionsManager.getConnectionFromIdentifier(targetId)
+        val connection = getConnection(targetId)
         if (connection == null)
             return Option.empty
 
-        val sysChannel = connection.systemChannel
-        Option(remoteConsoles.getOut(targetId, sysChannel))
+        Option(remoteConsoles.getOut(targetId))
     }
 
     override def getConsoleErr(targetId: String): Option[RemoteConsole.Err] = {
-        val connection = connectionsManager.getConnectionFromIdentifier(targetId)
+        val connection = getConnection(targetId)
         if (connection == null)
             return Option.empty
 
-        val sysChannel = connection.systemChannel
-        Option(remoteConsoles.getErr(targetId, sysChannel))
+        Option(remoteConsoles.getErr(targetId))
     }
 
     override def close(reason: Reason): Unit =
@@ -129,7 +147,7 @@ class RelayServer extends Relay {
             return
         }
 
-        val connection = connectionsManager.getConnectionFromIdentifier(identifier)
+        val connection = getConnection(identifier)
         if (connection.isConnected) {
             Console.err.println("Rejected connection of a client because he gave an already registered relay identifier.")
             sendResponse("ERROR")
@@ -140,6 +158,10 @@ class RelayServer extends Relay {
         sendResponse("OK")
     }
 
+    def getConnection(relayIdentifier: String): ClientConnectionThread = {
+        ensureOpen()
+        connectionsManager.getConnectionFromIdentifier(relayIdentifier)
+    }
 
     private def handleSocketConnection(): Unit = {
         try {
@@ -184,8 +206,4 @@ class RelayServer extends Relay {
     }
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.INTERNAL)))
-
-
 }
-
-// default tasks
