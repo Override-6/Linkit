@@ -35,7 +35,7 @@ class ConnectionTasksHandler(override val identifier: String,
             case e: TaskException =>
                 Console.err.println(e.getMessage)
                 systemChannel.sendOrder(SystemOrder.ABORT_TASK, Reason.INTERNAL_ERROR)
-                errConsole.reportException(e)
+                errConsole.reportExceptionSimplified(e)
         }
     }
 
@@ -45,12 +45,11 @@ class ConnectionTasksHandler(override val identifier: String,
      * @param taskIdentifier the task identifier
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
-    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
-        val linkedRelayID = if (ownFreeWill) targetID else senderID
-        if (linkedRelayID == server.identifier)
-            throw new TaskException("can't start a task from server to server !")
+    override def schedule(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit = {
+        if (targetID == server.identifier)
+            throw new TaskException("can't schedule any task execution from server to server !")
 
-        val ticket = new TaskTicket(executor, server, taskIdentifier, linkedRelayID, ownFreeWill)
+        val ticket = new TaskTicket(executor, server, taskIdentifier, targetID, ownFreeWill)
         tasksThread.addTicket(ticket)
     }
 

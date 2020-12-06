@@ -3,13 +3,8 @@ package fr.overridescala.linkkit.client
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.overridescala.linkkit.api.exceptions.TaskException
-import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.linkkit.api.system.{Reason, SystemPacketChannel}
-import fr.overridescala.linkkit.api.task.TaskTicket
-import fr.overridescala.linkkit.api.exceptions.TaskException
 import fr.overridescala.linkkit.api.packet.PacketCoordinates
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 import fr.overridescala.linkkit.api.system.{Reason, SystemOrder, SystemPacketChannel}
 import fr.overridescala.linkkit.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
 
@@ -29,12 +24,11 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
     override val identifier: String = relay.identifier
 
 
-    override def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit = {
-        val linkedRelay = if (ownFreeWill) targetID else senderID
-        if (linkedRelay == identifier)
+    override def schedule(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit = {
+        if (targetID == identifier)
             throw new TaskException("Can't start a task with oneself !")
 
-        val ticket = new TaskTicket(executor, relay, taskIdentifier, linkedRelay, ownFreeWill)
+        val ticket = new TaskTicket(executor, relay, taskIdentifier, targetID, ownFreeWill)
         queue.offer(ticket)
     }
 

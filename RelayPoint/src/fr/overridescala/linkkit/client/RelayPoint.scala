@@ -41,7 +41,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private val tasksHandler = new ClientTasksHandler(systemChannel, this)
     override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
 
-    override val relayVersion: Version = Version("RelayPoint", "0.1.0", stable = false)
+    override val relayVersion: Version = Version("RelayPoint", "0.2.0", stable = false)
 
     override def start(): Unit = {
         println("Current encoding is " + Charset.defaultCharset().name())
@@ -94,7 +94,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         ensureOpen()
         ensureTargetValid(task.targetID)
 
-        task.preInit(tasksHandler, identifier)
+        task.preInit(tasksHandler)
         notifier.onTaskScheduled(task)
         RelayTaskAction.of(task)
     }
@@ -104,9 +104,9 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
 
-    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
+    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync =  {
         ensureOpen()
-        createSyncChannel0(linkedRelayID, id)
+        new SyncPacketChannel(identifier, linkedRelayID, id, channelsHandler)
     }
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
@@ -119,10 +119,6 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     override def getConsoleErr(targetId: String): Option[RemoteConsole.Err] = Option(remoteConsoles.getErr(targetId, systemChannel))
 
     def isConnected: Boolean = socket.isConnected
-
-    private[client] def createSyncChannel0(linkedRelayID: String, id: Int): SyncPacketChannel = {
-        new SyncPacketChannel(linkedRelayID, identifier, id, channelsHandler)
-    }
 
     private def close(relayId: String, reason: Reason): Unit = {
         if (!open)

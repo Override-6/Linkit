@@ -37,7 +37,7 @@ class RelayServer extends Relay {
     override val properties: RelayProperties = new RelayProperties
     override val packetManager = new PacketManager(eventObserver.notifier)
 
-    override val relayVersion: Version = Version("RelayServer", "0.1.0", stable = false)
+    override val relayVersion: Version = Version("RelayServer", "0.2.0", stable = false)
 
     private[server] val notifier = eventObserver.notifier
     private[server] val remoteConsoles = new RemoteConsolesHandler(this)
@@ -52,7 +52,7 @@ class RelayServer extends Relay {
             throw new NoSuchElementException(s"Unknown or unregistered relay with identifier '$targetIdentifier'")
 
         val tasksHandler = connection.getTasksHandler
-        task.preInit(tasksHandler, identifier)
+        task.preInit(tasksHandler)
         notifier.onTaskScheduled(task)
         RelayTaskAction.of(task)
     }
@@ -74,12 +74,16 @@ class RelayServer extends Relay {
     }
 
 
-    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync =
-        createSync(linkedRelayID, id)
+    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
+        val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
+        targetConnection.createSync(id)
+    }
 
 
-    override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async =
-        createAsync(linkedRelayID, id)
+    override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
+        val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
+        targetConnection.createAsync(id)
+    }
 
     override def getConsoleOut(targetId: String): Option[RemoteConsole] = {
         val connection = connectionsManager.getConnectionFromIdentifier(targetId)
@@ -102,15 +106,6 @@ class RelayServer extends Relay {
     override def close(reason: Reason): Unit =
         close(identifier, reason)
 
-    private[server] def createSync(linkedRelayID: String, id: Int): SyncPacketChannel = {
-        val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
-        targetConnection.createSync(id)
-    }
-
-    private[server] def createAsync(linkedRelayID: String, id: Int): AsyncPacketChannel = {
-        val targetConnection = connectionsManager.getConnectionFromIdentifier(linkedRelayID)
-        targetConnection.createAsync(id)
-    }
 
     def close(relayId: String, reason: Reason): Unit = {
         println("closing server...")

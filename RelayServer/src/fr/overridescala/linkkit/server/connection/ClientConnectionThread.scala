@@ -77,11 +77,11 @@ class ClientConnectionThread private(socket: SocketContainer,
 
     def getTasksHandler: TasksHandler = tasksHandler
 
-    private[server] def createSync(id: Int): SyncPacketChannel =
-        new SyncPacketChannel(identifier, server.identifier, id, channelsHandler)
+    def createSync(id: Int): PacketChannel.Sync =
+        new SyncPacketChannel(server.identifier, identifier, id, channelsHandler)
 
-    private[server] def createAsync(id: Int): AsyncPacketChannel = {
-        new AsyncPacketChannel(identifier, server.identifier, id, channelsHandler)
+    def createAsync(id: Int): PacketChannel.Async = {
+        new AsyncPacketChannel(server.identifier, identifier, id, channelsHandler)
     }
 
     private[server] def updateSocket(socket: Socket): Unit =
@@ -145,7 +145,7 @@ object ClientConnectionThread {
         val tempChannelsHandler = new PacketChannelsHandler(server.notifier, socket, server.packetManager)
 
         val channel: SyncPacketChannel =
-            new SyncPacketChannel("unknown", server.identifier, 6, tempChannelsHandler)
+            new SyncPacketChannel(server.identifier, "unknown", 6, tempChannelsHandler)
 
         def deflect(): Unit = packetReader.nextPacket {
             case (concerned: Packet, coords: PacketCoordinates) if coords.channelID == channel.channelID => channel.injectPacket(concerned)
