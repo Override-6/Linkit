@@ -4,7 +4,6 @@ import java.util.concurrent.atomic.AtomicReference
 
 import fr.overridescala.linkkit.api.exceptions.TaskException
 import org.jetbrains.annotations.Nullable
-import fr.overridescala.linkkit.api.exceptions.{RelayException, TaskException}
 
 
 //TODO reedit the DOC
@@ -40,7 +39,6 @@ import fr.overridescala.linkkit.api.exceptions.{RelayException, TaskException}
 abstract class Task[T](val targetID: String) extends TaskExecutor with TaskAction[T] {
 
     @volatile private var handler: TasksHandler = _
-    @volatile private var relayIdentifier: String = _
 
     /**
      * Invoked when the task execution was successful.
@@ -60,9 +58,8 @@ abstract class Task[T](val targetID: String) extends TaskExecutor with TaskActio
      * initialises this task.
      * a task can't be executed if it was not initialised
      * */
-    final def preInit(tasksHandler: TasksHandler, relayIdentifier: String): Task[T] = {
+    final def preInit(tasksHandler: TasksHandler): Task[T] = {
         this.handler = tasksHandler
-        this.relayIdentifier = relayIdentifier
         this
     }
 
@@ -76,7 +73,7 @@ abstract class Task[T](val targetID: String) extends TaskExecutor with TaskActio
         checkInit()
         this.onSuccess = onSuccess
         this.onFail = onFail
-        handler.registerTask(this, identifier, targetID, relayIdentifier, true)
+        handler.schedule(this, identifier, targetID, true)
     }
 
     /**
@@ -90,7 +87,7 @@ abstract class Task[T](val targetID: String) extends TaskExecutor with TaskActio
     final override def complete(identifier: Int): T = {
         checkInit()
 
-        handler.registerTask(this, identifier, targetID, relayIdentifier, true)
+        handler.schedule(this, identifier, targetID, true)
         val atomicResult = new AtomicReference[T]()
 
         onSuccess  = result => synchronized {
@@ -110,7 +107,7 @@ abstract class Task[T](val targetID: String) extends TaskExecutor with TaskActio
     }
 
     private[task] def checkInit(): Unit =
-        if (relayIdentifier == null || handler == null)
+        if (handler == null)
             throw new TaskException("Please init this task before schedule it")
 
     /**

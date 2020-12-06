@@ -6,7 +6,7 @@ import fr.overridescala.linkkit.api.system.SystemPacketChannel.SystemChannelID
 class SystemPacketChannel(connectedID: String,
                           ownerID: String,
                           handler: PacketChannelsHandler)
-        extends SyncPacketChannel(connectedID, ownerID, SystemChannelID, handler) {
+        extends SyncPacketChannel(ownerID, connectedID, SystemChannelID, handler) {
 
     private val notifier = handler.notifier
 

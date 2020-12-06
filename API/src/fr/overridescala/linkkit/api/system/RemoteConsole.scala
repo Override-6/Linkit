@@ -72,7 +72,8 @@ object RemoteConsole {
             exception.printStackTrace(stream)
 
             val stackTrace = writer.toString
-            var message = s"(This is a remote StackTrace (RST) from Relay '${channel.connectedID}')\n$stackTrace"
+
+            var message = s"(This is a remote StackTrace (RST) from Relay '${channel.ownerID}')\n$stackTrace"
             message = message.slice(0, message.length - 1)
 
             this.print(message.replace("\n", "\nRST > "))

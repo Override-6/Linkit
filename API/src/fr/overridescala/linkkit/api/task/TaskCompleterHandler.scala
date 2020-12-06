@@ -31,14 +31,14 @@ class TaskCompleterHandler {
     def handleCompleter(initPacket: TaskInitPacket, coords: PacketCoordinates, tasksHandler: TasksHandler): Unit = {
         val taskType = initPacket.taskType
         val taskID = coords.channelID
-        val targetID = coords.targetID
-        val senderID = coords.senderID
+        val targetID = coords.senderID
+
         val completerOpt = completers.get(taskType)
         if (completerOpt.isEmpty)
             throw new TaskException(s"Could not find completer of type '$taskType'")
 
         val completer = completerOpt.get.apply(initPacket)
-        tasksHandler.registerTask(completer, taskID, targetID, senderID, false)
+        tasksHandler.schedule(completer, taskID, targetID, ownFreeWill = false)
     }
 
     /**

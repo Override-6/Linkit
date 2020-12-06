@@ -27,7 +27,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
       /**
        * The API Version represented by following the SemVer convention.
        */
-      final val apiVersion = Version("Api", "0.1.1", stable = false)
+      final val apiVersion = Version("Api", "0.2.0", stable = false)
 
       /**
        * The implementation version represented by following the SemVer convention.

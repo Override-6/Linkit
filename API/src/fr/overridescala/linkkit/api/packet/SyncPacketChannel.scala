@@ -17,8 +17,8 @@ import fr.overridescala.linkkit.api.system.Reason
  * @see [[PacketChannel]]
  * @see [[PacketChannel]]
  * */
-class SyncPacketChannel(override val connectedID: String,
-                        override val ownerID: String,
+class SyncPacketChannel(override val ownerID: String,
+                        override val connectedID: String,
                         override val channelID: Int,
                         handler: PacketChannelsHandler) extends PacketChannel.Sync(handler) {
 

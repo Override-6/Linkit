@@ -62,7 +62,7 @@ trait TasksHandler extends JustifiedCloseable {
      * @param taskIdentifier the task identifier
      * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
      * */
-    def registerTask(executor: TaskExecutor, taskIdentifier: Int, targetID: String, senderID: String, ownFreeWill: Boolean): Unit
+    def schedule(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit
 
     /**
      * Suddenly stop a task execution and execute his successor.
