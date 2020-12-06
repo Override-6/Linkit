@@ -3,14 +3,11 @@ package fr.overridescala.linkkit.api.task
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 
-import fr.overridescala.linkkit.api.packet.PacketChannel.Sync
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.exceptions.{TaskException, TaskOperationFailException}
-import fr.overridescala.linkkit.api.packet.{PacketChannel, PacketManager, SyncPacketChannel}
+import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.linkkit.api.system.{Reason, RemoteConsole, SystemPacketChannel}
-import fr.overridescala.linkkit.api.exceptions.{TaskException, TaskOperationFailException}
-import fr.overridescala.linkkit.api.packet.PacketChannel.Sync
+import fr.overridescala.linkkit.api.system.Reason
 
 import scala.util.control.NonFatal
 
@@ -22,7 +19,7 @@ class TaskTicket(executor: TaskExecutor,
 
     private val notifier = relay.eventObserver.notifier
     private val errConsole = relay.getConsoleErr(target).get
-    val channel: Sync = relay.createSyncChannel(target, taskId)
+    val channel: PacketChannel.Sync = relay.createSyncChannel(target, taskId)
 
 
     def abort(reason: Reason): Unit = {

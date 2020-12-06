@@ -4,10 +4,6 @@ import fr.overridescala.linkkit.api.`extension`.RelayExtension
 import fr.overridescala.linkkit.api.exceptions.TaskException
 import fr.overridescala.linkkit.api.packet.PacketCoordinates
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.linkkit.api.`extension`.RelayExtension
-import fr.overridescala.linkkit.api.exceptions.TaskException
-import fr.overridescala.linkkit.api.packet.PacketCoordinates
-import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -30,7 +26,7 @@ class TaskCompleterHandler {
      * */
     def handleCompleter(initPacket: TaskInitPacket, coords: PacketCoordinates, tasksHandler: TasksHandler): Unit = {
         val taskType = initPacket.taskType
-        val taskID = coords.channelID
+        val taskID = coords.containerID
         val targetID = coords.senderID
 
         val completerOpt = completers.get(taskType)

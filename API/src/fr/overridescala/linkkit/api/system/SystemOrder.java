@@ -5,7 +5,5 @@ public enum SystemOrder {
     SERVER_CLOSE,
     GET_IDENTIFIER,
     ABORT_TASK,
-    CHECK_ID,
-    LINK_CONSOLE_ERR,
-    LINK_CONSOLE_OUT
+    CHECK_ID
 }

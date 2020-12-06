@@ -5,7 +5,8 @@ import java.security.AccessController
 
 import fr.overridescala.linkkit.api.exceptions.UnexpectedPacketException
 import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
-import fr.overridescala.linkkit.api.packet.{Packet, PacketChannel}
+import fr.overridescala.linkkit.api.packet.Packet
+import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.utils.InactiveOutputStream
 import sun.security.action.GetPropertyAction
 

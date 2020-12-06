@@ -2,11 +2,9 @@ package fr.overridescala.linkkit.api.task
 
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.exceptions.TaskException
+import fr.overridescala.linkkit.api.packet.channel.{PacketChannel, SyncPacketChannel}
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.linkkit.api.packet.{PacketChannel, SyncPacketChannel}
 import fr.overridescala.linkkit.api.system.{Reason, RemoteConsole}
-import fr.overridescala.linkkit.api.Relay
-import fr.overridescala.linkkit.api.packet.PacketChannel.Sync
 
 /**
  * The class that will execute the Task.
@@ -21,7 +19,7 @@ abstract class TaskExecutor {
 
     private var canCloseChannel: Boolean = true
     implicit protected var relay: Relay = _
-    implicit protected var channel: Sync = _
+    implicit protected var channel: PacketChannel.Sync = _
     protected var remoteConsoleErr: RemoteConsole.Err = _
     protected var remoteConsoleOut: RemoteConsole = _
 

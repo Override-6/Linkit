@@ -1,26 +1,17 @@
-package fr.overridescala.linkkit.api.packet
+package fr.overridescala.linkkit.api.packet.channel
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.overridescala.linkkit.api.exceptions.UnexpectedPacketException
 import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
-import fr.overridescala.linkkit.api.system.Reason
+import fr.overridescala.linkkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
 import fr.overridescala.linkkit.api.system.Reason
 
+
 //TODO doc
-/**
- * this class is the implementation of [[PacketChannel]] and [[PacketChannel]]
- *
- * @param channelID the identifier attributed to this PacketChannel
- * @param ownerID the relay identifier of this channel owner
- *
- * @see [[PacketChannel]]
- * @see [[PacketChannel]]
- * */
-class SyncPacketChannel(override val ownerID: String,
-                        override val connectedID: String,
-                        override val channelID: Int,
-                        handler: PacketChannelsHandler) extends PacketChannel.Sync(handler) {
+class SyncPacketChannel(override val connectedID: String,
+                        override val identifier: Int,
+                        traffic: TrafficHandler) extends PacketChannel.Sync(traffic) {
 
 
     /**
@@ -28,15 +19,13 @@ class SyncPacketChannel(override val ownerID: String,
      * */
     private val queue: BlockingDeque[Packet] = new LinkedBlockingDeque()
 
-    handler.register(this)
-
     /**
      * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet
      *
      * @param packet the packet to add
      * @throws UnexpectedPacketException if the packet id not equals the channel task ID
      * */
-    override def injectPacket(packet: Packet): Unit = {
+    override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         queue.addFirst(packet)
     }
 
@@ -53,7 +42,7 @@ class SyncPacketChannel(override val ownerID: String,
      * */
     override def nextPacket(): Packet = {
         val packet = queue.takeLast()
-        handler.notifyPacketUsed(packet, coordinates)
+        //handler.notifyPacketUsed(packet, coordinates)
         packet
     }
 

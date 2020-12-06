@@ -2,13 +2,14 @@ package fr.overridescala.linkkit.api.system.event
 
 import fr.overridescala.linkkit.api.`extension`.RelayExtension
 import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.packet.PacketChannel
 import fr.overridescala.linkkit.api.`extension`.RelayExtension
 import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.packet.{Packet, PacketChannel, PacketCoordinates}
+import fr.overridescala.linkkit.api.packet.channel.PacketChannel
+import fr.overridescala.linkkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
 import fr.overridescala.linkkit.api.system.{Reason, SystemOrder}
 import fr.overridescala.linkkit.api.task.Task
 
+@deprecated
 abstract class EventListener {
 
     def onReady(): Unit = ()
@@ -31,9 +32,9 @@ abstract class EventListener {
 
     def onPacketTypeRegistered[T <: Packet](packetClass: Class[T], factoryClass: PacketFactory[T]): Unit = ()
 
-    def onPacketChannelRegistered(channel: PacketChannel): Unit = ()
+    def onPacketContainerRegistered(container: PacketContainer): Unit = ()
 
-    def onPacketChannelUnregistered(channel: PacketChannel, reason: Reason): Unit = ()
+    def onPacketContainerUnregistered(container: PacketContainer, reason: Reason): Unit = ()
 
     def onPacketSent(packet: Packet, coordinates: PacketCoordinates): Unit = ()
 

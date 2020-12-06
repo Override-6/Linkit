@@ -1,8 +1,7 @@
 package fr.overridescala.linkkit.api.packet.fundamental
 
 import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.packet.{Packet, PacketChannel}
+import fr.overridescala.linkkit.api.packet.Packet
 
 case class ErrorPacket(errorType: String,
                        errorMsg: String,

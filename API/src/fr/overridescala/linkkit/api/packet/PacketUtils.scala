@@ -1,6 +1,6 @@
 package fr.overridescala.linkkit.api.packet
 
-import java.{text, util}
+import java.util
 
 import fr.overridescala.linkkit.api.packet.PacketManager.{ChannelIDSeparator, SenderSeparator, TargetSeparator}
 
@@ -20,10 +20,10 @@ object PacketUtils {
 
 
     def getCoordinatesBytes(coords: PacketCoordinates): Array[Byte] = {
-        val channelID = coords.channelID.toString.getBytes
+        val identifier = coords.containerID.toString.getBytes
         val targetID = coords.targetID.getBytes
         val senderID = coords.senderID.getBytes
-        channelID ++ PacketManager.ChannelIDSeparator ++
+        identifier ++ PacketManager.ChannelIDSeparator ++
                 senderID ++ PacketManager.SenderSeparator ++
                 targetID ++ PacketManager.TargetSeparator
     }
@@ -33,11 +33,11 @@ object PacketUtils {
         val senderIndex = bytes.indexOfSlice(SenderSeparator)
         val targetIndex = bytes.indexOfSlice(TargetSeparator)
 
-        val channelID = new String(bytes.slice(0, channelIndex)).toInt
+        val containerID = new String(bytes.slice(0, channelIndex)).toInt
         val senderID = new String(bytes.slice(channelIndex + ChannelIDSeparator.length, senderIndex))
         val targetID = new String(bytes.slice(senderIndex + SenderSeparator.length, targetIndex))
 
-        (PacketCoordinates(channelID, targetID, senderID), targetIndex + TargetSeparator.length)
+        (PacketCoordinates(containerID, targetID, senderID), targetIndex + TargetSeparator.length)
     }
 
     def wrap(bytes: Array[Byte]): Array[Byte] = {

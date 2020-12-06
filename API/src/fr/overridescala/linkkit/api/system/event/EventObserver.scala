@@ -3,13 +3,15 @@ package fr.overridescala.linkkit.api.system.event
 import fr.overridescala.linkkit.api.`extension`.RelayExtension
 import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.packet.{Packet, PacketChannel, PacketCoordinates}
+import fr.overridescala.linkkit.api.packet.channel.PacketChannel
+import fr.overridescala.linkkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
 import fr.overridescala.linkkit.api.system.{Reason, SystemOrder}
 import fr.overridescala.linkkit.api.task.Task
 import javax.management.InstanceAlreadyExistsException
 
 import scala.collection.mutable.ListBuffer
 
+@deprecated
 class EventObserver {
 
     val notifier = new EventNotifier
@@ -48,9 +50,9 @@ object EventObserver {
 
         def onPacketTypeRegistered[T <: Packet](packetClass: Class[T], factoryClass: PacketFactory[T]): Unit = dispatch(_.onPacketTypeRegistered(packetClass, factoryClass))
 
-        def onPacketChannelRegistered(channel: PacketChannel): Unit = dispatch(_.onPacketChannelRegistered(channel))
+        def onPacketContainerRegistered(container: PacketContainer): Unit = dispatch(_.onPacketContainerRegistered(container))
 
-        def onPacketChannelUnregistered(channel: PacketChannel, reason: Reason): Unit = dispatch(_.onPacketChannelUnregistered(channel, reason))
+        def onPacketContainerUnregistered(container: PacketContainer, reason: Reason): Unit = dispatch(_.onPacketContainerUnregistered(container, reason))
 
         def onPacketSent(packet: Packet, coordinates: PacketCoordinates): Unit = dispatch(_.onPacketSent(packet, coordinates))
 

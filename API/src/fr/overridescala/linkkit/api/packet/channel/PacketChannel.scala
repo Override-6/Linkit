@@ -1,5 +1,6 @@
-package fr.overridescala.linkkit.api.packet
+package fr.overridescala.linkkit.api.packet.channel
 
+import fr.overridescala.linkkit.api.packet.{Packet, PacketContainer, PacketCoordinates, TrafficHandler}
 import fr.overridescala.linkkit.api.system.{JustifiedCloseable, Reason}
 
 //TODO Doc
@@ -7,30 +8,29 @@ import fr.overridescala.linkkit.api.system.{JustifiedCloseable, Reason}
  * this class link two Relay between them. As a Channel, it can send packet, or wait until a packet was received
  *
  * @see [[PacketChannel]]
- * @see [[DataPacket]]
  * */
-abstract class PacketChannel(handler: PacketChannelsHandler) extends JustifiedCloseable {
+abstract class PacketChannel(handler: TrafficHandler) extends JustifiedCloseable with PacketContainer {
 
-    val ownerID: String
     val connectedID: String
-    val channelID: Int
+    val ownerID: String = handler.relayID
 
-    val coordinates: PacketCoordinates = PacketCoordinates(channelID, connectedID, ownerID)
+    val coordinates: PacketCoordinates = PacketCoordinates(identifier, connectedID, ownerID)
 
-    override def close(reason: Reason): Unit = handler.unregister(channelID, reason)
+    handler.register(this)
 
-    def sendPacket[P <: Packet](packet: P): Unit = handler.sendPacket(packet, coordinates)
+    override def close(reason: Reason): Unit = handler.unregister(identifier, reason)
 
-    def injectPacket(packet: Packet): Unit
+    def sendPacket(packet: Packet): Unit = handler.sendPacket(packet, coordinates)
+
 }
 
 object PacketChannel {
 
-    abstract class Async(handler: PacketChannelsHandler) extends PacketChannel(handler) {
+    abstract class Async(handler: TrafficHandler) extends PacketChannel(handler) {
         def onPacketReceived(consumer: Packet => Unit): Unit
     }
 
-    abstract class Sync(handler: PacketChannelsHandler) extends PacketChannel(handler) {
+    abstract class Sync(traffic: TrafficHandler) extends PacketChannel(traffic) {
 
         /**
          * Waits until a data packet is received and concerned about this task.

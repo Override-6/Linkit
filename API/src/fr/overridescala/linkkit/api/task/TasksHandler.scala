@@ -1,12 +1,9 @@
 package fr.overridescala.linkkit.api.task
 
-import fr.overridescala.linkkit.api.exceptions.TaskException
-import fr.overridescala.linkkit.api.packet.PacketCoordinates
-import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
-import fr.overridescala.linkkit.api.system.{JustifiedCloseable, Reason}
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.exceptions.TaskException
 import fr.overridescala.linkkit.api.packet.PacketCoordinates
+import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.linkkit.api.system.{JustifiedCloseable, Reason}
 
@@ -23,7 +20,7 @@ import fr.overridescala.linkkit.api.system.{JustifiedCloseable, Reason}
  *
  *      <b>Notes:</b>
  *          if the packet identifier is equals to the current task identifier, the TasksHandler will add the packet to
- *          the used [[fr.overridescala.linkkit.api.packet.PacketChannel]]
+ *          the used [[PacketChannel]]
  *
  * @see PacketChannel
  * */

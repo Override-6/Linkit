@@ -3,55 +3,77 @@ package fr.overridescala.linkkit.api.system
 import java.util.concurrent.ThreadLocalRandom
 
 import fr.overridescala.linkkit.api.Relay
+import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
+import fr.overridescala.linkkit.api.system.RemoteConsolesHandler.ConsolesCollectorID
 
 import scala.collection.mutable
 
 class RemoteConsolesHandler(relay: Relay) {
 
-    private val outConsoles = mutable.Map.empty[String, RemoteConsole]
-    private val errConsoles = mutable.Map.empty[String, RemoteConsole.Err]
+    private val outConsoles = mutable.LinkedHashMap.empty[String, RemoteConsole]
+    private val errConsoles = mutable.LinkedHashMap.empty[String, RemoteConsole.Err]
 
-    def getOut(targetId: String, sysChannel: SystemPacketChannel): RemoteConsole = {
-        find(targetId, false, outConsoles, sysChannel)
+    private val consoleCollector = relay.createAsyncCollector(ConsolesCollectorID)
+
+    consoleCollector.onPacketReceived((packet, coos) => {
+        println("EL PACKETTO ESTAMOS " + packet + ", " + coos)
+        val data = packet.asInstanceOf[DataPacket]
+        val owner = coos.senderID
+        val consoleType = data.header
+        val consoleChannelId = new String(data.content).toInt
+        val channel = relay.createAsyncChannel(coos.senderID, consoleChannelId)
+
+        println("b")
+
+        consoleType match {
+            case "out" => outConsoles.put(owner, RemoteConsole.out(channel))
+            case "err" => errConsoles.put(owner, RemoteConsole.err(channel))
+        }
+        println(s"outConsoles = ${outConsoles}")
+        println(s"errConsoles = ${errConsoles}")
+    })
+
+    def getOut(targetId: String): RemoteConsole = {
+        if (outConsoles.contains(targetId))
+            return errConsoles(targetId)
+
+        val consoleChannelId = ThreadLocalRandom.current().nextInt()
+        consoleCollector.sendPacket(DataPacket("out", consoleChannelId.toString), targetId)
+
+        val channel = relay.createAsyncChannel(targetId, consoleChannelId)
+        val remoteConsole = RemoteConsole.out(channel)
+        outConsoles.put(targetId, remoteConsole)
+        remoteConsole
     }
 
-    def getErr(targetId: String, sysChannel: SystemPacketChannel): RemoteConsole.Err = {
-        find(targetId, true, errConsoles, sysChannel)
+    def getErr(targetId: String): RemoteConsole.Err = {
+        if (errConsoles.contains(targetId))
+            return errConsoles(targetId)
+
+        val consoleChannelId = ThreadLocalRandom.current().nextInt()
+        consoleCollector.sendPacket(DataPacket("err", consoleChannelId.toString), targetId)
+
+        val channel = relay.createAsyncChannel(targetId, consoleChannelId)
+        val remoteConsole = RemoteConsole.err(channel)
+        errConsoles.put(targetId, remoteConsole)
+        remoteConsole
     }
 
-    def linkErr(targetID: String, channelID: Int): Unit = {
-        val channel = relay.createAsyncChannel(targetID, channelID)
+    def linkErr(targetID: String, identifier: Int): Unit = {
+        val channel = relay.createAsyncChannel(targetID, identifier)
         val remoteConsole = RemoteConsole.err(channel)
         errConsoles.put(targetID, remoteConsole)
     }
 
-    def linkOut(targetId: String, channelID: Int): Unit = {
-        val channel = relay.createAsyncChannel(targetId, channelID)
+    def linkOut(targetId: String, identifier: Int): Unit = {
+        val channel = relay.createAsyncChannel(targetId, identifier)
         val remoteConsole = RemoteConsole.out(channel)
         outConsoles.put(targetId, remoteConsole)
     }
 
-    private def find[T <: RemoteConsole](targetId: String,
-                                         isErr: Boolean,
-                                         map: mutable.Map[String, T],
-                                         systemChannel: SystemPacketChannel): T = {
-        if (map.contains(targetId))
-            return map(targetId)
-
-        val consoleChannelId = ThreadLocalRandom.current().nextInt()
-
-        val order = if (isErr) SystemOrder.LINK_CONSOLE_ERR else SystemOrder.LINK_CONSOLE_OUT
-        systemChannel.sendOrder(order, Reason.INTERNAL, consoleChannelId.toString.getBytes)
-
-        val channel = relay.createAsyncChannel(targetId, consoleChannelId)
-        val remoteConsole = (if (isErr) RemoteConsole.err(channel) else RemoteConsole.out(channel)).asInstanceOf[T]
-        map.put(targetId, remoteConsole)
-        remoteConsole
-    }
 
 }
 
 object RemoteConsolesHandler {
-    val OutConsoleHandlerChannelID = 7
-    val ErrConsoleHandlerChannelID = 8
+    val ConsolesCollectorID = 7
 }
