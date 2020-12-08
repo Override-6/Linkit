@@ -5,26 +5,27 @@ import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
+import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.overridescala.linkkit.api.exceptions.{RelayClosedException, RelayException, RelayInitialisationException}
-import fr.overridescala.linkkit.api.packet.fundamental._
-import fr.overridescala.linkkit.api.packet.{PacketManager, _}
-import fr.overridescala.linkkit.api.system.event.EventObserver
-import fr.overridescala.linkkit.api.system._
-import fr.overridescala.linkkit.api.task.{Task, TaskCompleterHandler}
-import fr.overridescala.linkkit.api.Relay
-import RelayPoint.{Port, ServerID}
 import fr.overridescala.linkkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.overridescala.linkkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
+import fr.overridescala.linkkit.api.packet.fundamental._
+import fr.overridescala.linkkit.api.packet.{PacketManager, _}
+import fr.overridescala.linkkit.api.system._
+import fr.overridescala.linkkit.api.system.event.EventObserver
+import fr.overridescala.linkkit.api.task.{Task, TaskCompleterHandler}
+import fr.overridescala.linkkit.client.RelayPoint.{Port, ServerID}
 
 import scala.util.control.NonFatal
 
 object RelayPoint {
-    val version: Version = Version("RelayPoint", "0.3.0", stable = false)
+    val version: Version = Version("RelayPoint", "0.4.0", stable = false)
 
     val ServerID = "server"
     val Port = 48484
 }
+
 class RelayPoint(private val serverAddress: InetSocketAddress,
                  override val identifier: String, loadTasks: Boolean) extends Relay {
 
@@ -34,7 +35,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     @volatile private var open = false
     private val socket = new ClientDynamicSocket(serverAddress, notifier)
 
-    @volatile private var serverErrConsole: RemoteConsole.Err = _ //affected once Relay started
+    @volatile private var serverErrConsole: RemoteConsole.Err = _ //affected once Relay initialised
 
     override val packetManager = new PacketManager(notifier)
 
@@ -55,6 +56,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         println("Current encoding is " + Charset.defaultCharset().name())
         println("Listening on port " + Port)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
+        println(relayVersion)
+        println(apiVersion)
 
         loadLocal()
         startPacketThreadListener()
@@ -70,21 +73,29 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             open = true
             while (open && socket.isOpen)
                 listen(packetReader)
+            open = false
         })
-        thread.setName("RelayPoint Packet handling")
+        thread.setName("RelayPoint Packet Handling")
         thread.start()
     }
 
     private def loadRemote(): Unit = {
         println(s"Connecting to server with identifier '$identifier'...")
         socket.start()
+
         val response = systemChannel.nextPacketAsP(): DataPacket
         if (response.header == "ERROR")
             throw RelayInitialisationException(s"Another relay point with id '$identifier' is currently connected on the targeted network.")
 
-        serverErrConsole = getConsoleErr(ServerID).get
+        val outOpt = getConsoleOut(ServerID)
+        val errOpt = getConsoleErr(ServerID)
+        if (outOpt.isEmpty || errOpt.isEmpty)
+            throw RelayInitialisationException("Could not retrieve remote console of server")
+        serverErrConsole = errOpt.get
 
+        systemChannel.sendOrder(SystemOrder.PRINT_VERSION, Reason.INTERNAL)
         println("Connected !")
+
     }
 
     private def loadLocal(): Unit = {
@@ -110,14 +121,11 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         close(identifier, reason)
     }
 
-
-    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync =  {
-        ensureOpen()
+    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
         new SyncPacketChannel(linkedRelayID, id, traffic)
     }
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
-        ensureOpen()
         new AsyncPacketChannel(linkedRelayID, id, traffic)
     }
 
@@ -138,6 +146,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     private def close(relayId: String, reason: Reason): Unit = {
         if (!open)
             return //already closed.
+
         if (socket.isConnected && reason.isInternal) {
             systemChannel.sendPacket(SystemPacket(SystemOrder.CLIENT_CLOSE, reason))
         }
@@ -158,6 +167,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             val bytes = reader.readNextPacketBytes()
             if (bytes == null)
                 return
+
             val (packet, coordinates) = packetManager.toPacket(bytes)
             notifier.onPacketReceived(packet, coordinates)
             handlePacket(packet, coordinates)
@@ -188,16 +198,18 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         val order = system.order
         val reason = system.reason.reversed()
         val origin = coords.senderID
-        val content = system.content
 
         println(s"Received system order $order from $origin")
         notifier.onSystemOrderReceived(order, reason)
-        order match {
-            case SystemOrder.CLIENT_CLOSE => close(origin, reason)
-            case SystemOrder.GET_IDENTIFIER => systemChannel.sendPacket(DataPacket(identifier))
-            case SystemOrder.ABORT_TASK => tasksHandler.skipCurrent(reason)
 
-            case _@(SystemOrder.SERVER_CLOSE | SystemOrder.CHECK_ID) => sendErrorPacket(order, "Received forbidden order.")
+        import SystemOrder._
+        order match {
+            case CLIENT_CLOSE => close(origin, reason)
+            case GET_IDENTIFIER => systemChannel.sendPacket(DataPacket(identifier))
+            case ABORT_TASK => tasksHandler.skipCurrent(reason)
+            case PRINT_VERSION => getConsoleOut(origin).orNull.println(s"$relayVersion ($apiVersion)")
+
+            case _@(SERVER_CLOSE | CHECK_ID) => sendErrorPacket(order, "Received forbidden order.")
             case _ => sendErrorPacket(order, "Unknown order.")
         }
 

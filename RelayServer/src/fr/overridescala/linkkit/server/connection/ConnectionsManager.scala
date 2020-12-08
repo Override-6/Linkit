@@ -10,13 +10,13 @@ import scala.collection.mutable
  * TeamMate of RelayServer, handles the RelayPoint Connections.
  *
  * @see [[RelayServer]]
- * @see [[ClientConnectionThread]]
+ * @see [[ClientConnection]]
  * */
 class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
     /**
      * java map containing all RelayPointConnection instances
      * */
-    private val connections: mutable.Map[String, ClientConnectionThread] = mutable.Map.empty
+    private val connections: mutable.Map[String, ClientConnection] = mutable.Map.empty
 
     override def close(reason: Reason): Unit = {
         for ((_, connection) <- connections)
@@ -33,7 +33,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         if (connections.contains(identifier))
             throw RelayInitialisationException(s"This relay id is already registered ! ('$identifier')")
 
-        val connection = ClientConnectionThread.open(socket, server, identifier)
+        val connection = ClientConnection.open(socket, server, identifier)
         println(s"Relay Point connected with identifier '${connection.identifier}'")
         connections.put(identifier, connection)
     }
@@ -50,10 +50,10 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
     /**
      * retrieves a RelayPointConnection based on the address
      *
-     * @param identifier the identifier linked [[ClientConnectionThread]]
-     * @return the found [[ClientConnectionThread]] bound with the identifier
+     * @param identifier the identifier linked [[ClientConnection]]
+     * @return the found [[ClientConnection]] bound with the identifier
      * */
-    def getConnectionFromIdentifier(identifier: String): ClientConnectionThread = {
+    def getConnectionFromIdentifier(identifier: String): ClientConnection = {
         for ((_, connection) <- connections) {
             val connectionIdentifier = connection.identifier
             if (connectionIdentifier.equals(identifier))
@@ -87,7 +87,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
 
     /**
-     * Deflects a packet to his associated [[ClientConnectionThread]]
+     * Deflects a packet to his associated [[ClientConnection]]
      *
      * @throws RelayException if no connection where found for this packet.
      * @param bytes the packet bytes to deflect

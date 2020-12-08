@@ -4,25 +4,25 @@ import java.net.{ServerSocket, SocketException}
 import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
+import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.overridescala.linkkit.api.exceptions.{RelayClosedException, RelayException}
-import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
 import fr.overridescala.linkkit.api.packet._
-import fr.overridescala.linkkit.api.system.event.EventObserver
-import fr.overridescala.linkkit.api.system.{Reason, RemoteConsole, RemoteConsolesHandler, SystemPacketChannel, Version}
-import fr.overridescala.linkkit.api.task.{Task, TaskCompleterHandler}
-import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
+import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
+import fr.overridescala.linkkit.api.system.event.EventObserver
+import fr.overridescala.linkkit.api.system._
+import fr.overridescala.linkkit.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.linkkit.server.RelayServer.Identifier
-import fr.overridescala.linkkit.server.connection.{ClientConnectionThread, ConnectionsManager, SocketContainer}
+import fr.overridescala.linkkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
 
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val Identifier = "server"
+    val version: Version = Version("RelayServer", "0.5.0", stable = false)
 
-    val version: Version = Version("RelayServer", "0.3.0", stable = false)
+    val Identifier = "server"
 }
 
 class RelayServer extends Relay {
@@ -44,10 +44,10 @@ class RelayServer extends Relay {
     override val relayVersion: Version = RelayServer.version
 
     private[server] val notifier = eventObserver.notifier
-    private var remoteConsoles: RemoteConsolesHandler = _
 
     val trafficHandler = new ServerTrafficHandler(this)
     val connectionsManager = new ConnectionsManager(this)
+    private val remoteConsoles: RemoteConsolesHandler = new RemoteConsolesHandler(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -66,42 +66,35 @@ class RelayServer extends Relay {
         println("Current encoding is " + Charset.defaultCharset().name())
         println("Listening on port " + serverSocket.getLocalPort)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
-        println(apiVersion)
         println(relayVersion)
+        println(apiVersion)
 
-        open = true
         extensionLoader.loadExtensions()
-        remoteConsoles = new RemoteConsolesHandler(this)
 
         println("Ready !")
         notifier.onReady()
 
+        open = true
         while (open) handleSocketConnection()
     }
 
 
     override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
-        ensureOpen()
-
         val targetConnection = getConnection(linkedRelayID)
         targetConnection.createSync(id)
     }
 
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
-        ensureOpen()
-
         val targetConnection = getConnection(linkedRelayID)
         targetConnection.createAsync(id)
     }
 
     override def createSyncCollector(id: Int): PacketCollector.Sync = {
-        ensureOpen()
         new SyncPacketCollector(trafficHandler, id)
     }
 
     override def createAsyncCollector(id: Int): PacketCollector.Async = {
-        ensureOpen()
         new AsyncPacketCollector(trafficHandler, id)
     }
 
@@ -135,9 +128,14 @@ class RelayServer extends Relay {
         println("server closed !")
     }
 
+    def getConnection(relayIdentifier: String): ClientConnection = {
+        ensureOpen()
+        connectionsManager.getConnectionFromIdentifier(relayIdentifier)
+    }
+
     private val tempSocket = new SocketContainer(notifier, false)
 
-    def handleRelayPointConnection(identifier: String): Unit = {
+    private def handleRelayPointConnection(identifier: String): Unit = {
 
         if (connectionsManager.isNotRegistered(identifier)) {
             val socketContainer = new SocketContainer(notifier, true)
@@ -158,17 +156,12 @@ class RelayServer extends Relay {
         sendResponse("OK")
     }
 
-    def getConnection(relayIdentifier: String): ClientConnectionThread = {
-        ensureOpen()
-        connectionsManager.getConnectionFromIdentifier(relayIdentifier)
-    }
-
     private def handleSocketConnection(): Unit = {
         try {
             val clientSocket = serverSocket.accept()
             tempSocket.set(clientSocket)
 
-            val identifier = ClientConnectionThread.retrieveIdentifier(tempSocket, this)
+            val identifier = ClientConnection.retrieveIdentifier(tempSocket, this)
             handleRelayPointConnection(identifier)
         } catch {
             case e@(_: RelayException | _: SocketException) =>
