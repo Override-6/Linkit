@@ -14,7 +14,6 @@ class SimpleTrafficHandler(val notifier: EventNotifier,
 
     override def register(container: PacketContainer): Unit = {
         val id = container.identifier
-        println("registered " + id)
         if (registeredContainers.contains(id))
             throw new IllegalArgumentException(s"A packet container with id '$id' is already registered to this traffic handler")
 
@@ -24,15 +23,12 @@ class SimpleTrafficHandler(val notifier: EventNotifier,
 
 
     override def unregister(id: Int, reason: Reason): Unit = {
-        println("unregistering " + id)
         val opt = registeredContainers.remove(id)
         if (opt.isDefined)
             notifier.onPacketContainerUnregistered(opt.get, reason)
     }
 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        println(s"packet = ${packet}")
-        println(s"coordinates = ${coordinates}")
         registeredContainers(coordinates.containerID)
                 .injectPacket(packet, coordinates)
     }

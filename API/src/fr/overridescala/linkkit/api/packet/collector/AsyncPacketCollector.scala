@@ -1,6 +1,7 @@
 package fr.overridescala.linkkit.api.packet.collector
 
 import fr.overridescala.linkkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
+import fr.overridescala.linkkit.api.utils.async
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -22,16 +23,13 @@ class AsyncPacketCollector(traffic: TrafficHandler,
     }
 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        Future {
-            try {
-                println(s"onPacketReceivedAction = ${onPacketReceivedAction}")
-                if (onPacketReceivedAction != null)
-                    onPacketReceivedAction(packet, coordinates)
-                //handler.notifyPacketUsed(packet, coordinates)
-            } catch {
-                case NonFatal(e) =>
-                    e.printStackTrace()
-            }
+        try {
+            if (onPacketReceivedAction != null)
+                onPacketReceivedAction(packet, coordinates)
+            //handler.notifyPacketUsed(packet, coordinates)
+        } catch {
+            case NonFatal(e) =>
+                e.printStackTrace()
         }
     }
 }

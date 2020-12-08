@@ -16,26 +16,21 @@ class RemoteConsolesHandler(relay: Relay) {
     private val consoleCollector = relay.createAsyncCollector(ConsolesCollectorID)
 
     consoleCollector.onPacketReceived((packet, coos) => {
-        println("EL PACKETTO ESTAMOS " + packet + ", " + coos)
         val data = packet.asInstanceOf[DataPacket]
         val owner = coos.senderID
         val consoleType = data.header
         val consoleChannelId = new String(data.content).toInt
         val channel = relay.createAsyncChannel(coos.senderID, consoleChannelId)
 
-        println("b")
-
         consoleType match {
             case "out" => outConsoles.put(owner, RemoteConsole.out(channel))
             case "err" => errConsoles.put(owner, RemoteConsole.err(channel))
         }
-        println(s"outConsoles = ${outConsoles}")
-        println(s"errConsoles = ${errConsoles}")
     })
 
     def getOut(targetId: String): RemoteConsole = {
         if (outConsoles.contains(targetId))
-            return errConsoles(targetId)
+            return outConsoles(targetId)
 
         val consoleChannelId = ThreadLocalRandom.current().nextInt()
         consoleCollector.sendPacket(DataPacket("out", consoleChannelId.toString), targetId)
