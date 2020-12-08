@@ -4,3 +4,6 @@
 [submodule "LinkKitExtensions"]
 	path = LinkKitExtensions
 	url = https://github.com/Override-6/LinkKitExtensions
+[submodule "MoodCollector"]
+	path = MoodCollector
+	url = https://github.com/Override-6/MoodCollector

@@ -1,7 +1,6 @@
 package fr.overridescala.linkkit.api.packet.collector
 
 import fr.overridescala.linkkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
-import fr.overridescala.linkkit.api.utils.async
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
