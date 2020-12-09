@@ -151,6 +151,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
             systemChannel.sendPacket(SystemPacket(SystemOrder.CLIENT_CLOSE, reason))
         }
 
+        extensionLoader.close()
         systemChannel.close(reason)
         socket.close(reason)
         tasksHandler.close(reason)

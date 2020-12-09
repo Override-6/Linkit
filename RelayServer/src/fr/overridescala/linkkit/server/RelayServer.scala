@@ -120,6 +120,8 @@ class RelayServer extends Relay {
 
     def close(relayId: String, reason: Reason): Unit = {
         println("closing server...")
+
+        extensionLoader.close()
         connectionsManager.close(reason)
         serverSocket.close()
 

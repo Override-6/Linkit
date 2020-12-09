@@ -1,6 +1,3 @@
-[submodule "RelayEnviExtensions"]
-	path = RelayEnviExtensions
-	url = https://github.com/Override-6/RelayEnviExtensions
 [submodule "LinkKitExtensions"]
 	path = LinkKitExtensions
 	url = https://github.com/Override-6/LinkKitExtensions
