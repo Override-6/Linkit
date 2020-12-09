@@ -11,13 +11,14 @@ import fr.overridescala.linkkit.api.system.Reason
 //TODO doc
 class SyncPacketChannel(override val connectedID: String,
                         override val identifier: Int,
+                        packetCacheSize: Int,
                         traffic: TrafficHandler) extends PacketChannel.Sync(traffic) {
 
 
     /**
      * this blocking queue stores the received packets until they are requested
      * */
-    private val queue: BlockingDeque[Packet] = new LinkedBlockingDeque()
+    private val queue: BlockingDeque[Packet] = new LinkedBlockingDeque(packetCacheSize)
 
     /**
      * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet

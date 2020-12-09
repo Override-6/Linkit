@@ -8,10 +8,11 @@ import fr.overridescala.linkkit.api.system.Reason
 import scala.collection.mutable
 
 class SyncPacketCollector(handler: TrafficHandler,
+                          packetCacheSize: Int,
                           override val identifier: Int) extends PacketCollector.Sync(handler) {
 
     private val categorisedQueue: mutable.Map[String, BlockingDeque[(Packet, PacketCoordinates)]] = mutable.Map.empty
-    private val rawQueue: BlockingDeque[(Packet, PacketCoordinates)] = new LinkedBlockingDeque()
+    private val rawQueue: BlockingDeque[(Packet, PacketCoordinates)] = new LinkedBlockingDeque(packetCacheSize)
 
     override def nextPacket[P <: Packet](targetID: String, typeOfP: Class[P]): P = {
         nextPacketAndCoordinate(targetID, typeOfP)._1
@@ -30,7 +31,7 @@ class SyncPacketCollector(handler: TrafficHandler,
     }
 
     override def nextPacketAndCoordinate[P <: Packet](targetID: String, typeOfP: Class[P]): (P, PacketCoordinates) = {
-        val queue = categorisedQueue.getOrElseUpdate(targetID, new LinkedBlockingDeque)
+        val queue = categorisedQueue.getOrElseUpdate(targetID, new LinkedBlockingDeque(packetCacheSize))
 
         val element = queue.takeLast() //TODO event processing
         rawQueue.remove(element)
@@ -42,7 +43,7 @@ class SyncPacketCollector(handler: TrafficHandler,
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         val element = (packet, coordinates)
         rawQueue.addFirst(element)
-        categorisedQueue.getOrElseUpdate(coordinates.senderID, new LinkedBlockingDeque).addFirst(element)
+        categorisedQueue.getOrElseUpdate(coordinates.senderID, new LinkedBlockingDeque(packetCacheSize)).addFirst(element)
 
     }
 

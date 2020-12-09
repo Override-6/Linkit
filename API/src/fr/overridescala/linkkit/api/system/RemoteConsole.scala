@@ -8,17 +8,20 @@ import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
 import fr.overridescala.linkkit.api.packet.Packet
 import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.utils.InactiveOutputStream
+import org.jetbrains.annotations.Nullable
 import sun.security.action.GetPropertyAction
 
 
-class RemoteConsole private(channel: PacketChannel.Async, output: PrintStream) extends PrintStream(InactiveOutputStream, true) {
+class RemoteConsole private(@Nullable channel: PacketChannel.Async,
+                            @Nullable output: PrintStream) extends PrintStream(InactiveOutputStream, true) {
 
     private val connected = channel.connectedID
 
-    channel.onPacketReceived {
-        case data: DataPacket => output.println(s"[$connected]: ${new String(data.content)}")
-        case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")
-    }
+    if (channel != null || output != null)
+        channel.onPacketReceived {
+            case data: DataPacket => output.println(s"[$connected]: ${new String(data.content)}")
+            case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")
+        }
 
     override def write(b: Array[Byte]): Unit = {
         print(new String(b))
@@ -105,5 +108,9 @@ object RemoteConsole {
     def err(channel: PacketChannel.Async): Err = new Err(channel)
 
     def out(channel: PacketChannel.Async): RemoteConsole = new RemoteConsole(channel, System.out)
+
+    def mock(): RemoteConsole = new RemoteConsole(null, null)
+
+    def mockErr(): RemoteConsole.Err = new RemoteConsole.Err(null)
 
 }

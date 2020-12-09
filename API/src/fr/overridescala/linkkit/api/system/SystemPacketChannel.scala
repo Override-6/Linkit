@@ -6,7 +6,7 @@ import fr.overridescala.linkkit.api.system.SystemPacketChannel.SystemChannelID
 
 class SystemPacketChannel(connectedID: String,
                           traffic: TrafficHandler)
-        extends SyncPacketChannel(connectedID, SystemChannelID, traffic) {
+        extends SyncPacketChannel(connectedID, SystemChannelID, 128, traffic) {
 
 
     def sendOrder(systemOrder: SystemOrder, reason: Reason, content: Array[Byte] = Array()): Unit = {

@@ -5,6 +5,7 @@ import fr.overridescala.linkkit.api.exceptions.RelayInitialisationException
 import fr.overridescala.linkkit.api.packet.PacketManager
 import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.collector.PacketCollector
+import fr.overridescala.linkkit.api.system.config.RelayConfiguration
 import fr.overridescala.linkkit.api.system.event.EventObserver
 import fr.overridescala.linkkit.api.system.{JustifiedCloseable, RemoteConsole, Version}
 import fr.overridescala.linkkit.api.task.TaskScheduler
@@ -26,7 +27,7 @@ import org.jetbrains.annotations.Nullable
  */
 
 object Relay {
-    final val apiVersion = Version("Api", "0.4.0", stable = false)
+    final val apiVersion = Version("Api", "0.5.0", stable = false)
 }
 
 trait Relay extends JustifiedCloseable with TaskScheduler {
@@ -41,12 +42,14 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      */
     val relayVersion: Version
 
+    val configuration: RelayConfiguration
+
     /**
      * A Relay identifier is a string that identifies the Relay on the network.
      * No IP address is intended.
      * The identifier have to match \w{0,16} to be used threw the network
      */
-    val identifier: String
+    val identifier: String = configuration.identifier
 
     /**
      * The Packet Manager used by this relay.
@@ -88,7 +91,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      *
      * @see [[PacketChannel]]
      */
-    def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync
+    def createSyncChannel(linkedRelayID: String, id: Int, cacheSize: Int = configuration.defaultContainerPacketCacheSize): PacketChannel.Sync
 
     /**
      * @param linkedRelayID the targeted relay identifier to connect
@@ -105,7 +108,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      *
      * @see [[PacketCollector]], [[PacketCollector.Sync]]
      * */
-    def createSyncCollector(id: Int): PacketCollector.Sync
+    def createSyncCollector(id: Int, cacheSize: Int = configuration.defaultContainerPacketCacheSize): PacketCollector.Sync
 
     /**
      * @param id the identifier to attribute with the [[PacketCollector]]

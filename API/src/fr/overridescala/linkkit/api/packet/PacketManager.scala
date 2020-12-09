@@ -1,7 +1,8 @@
 package fr.overridescala.linkkit.api.packet
 
+import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.exceptions.UnexpectedPacketException
+import fr.overridescala.linkkit.api.exceptions.{PacketException, UnexpectedPacketException}
 import fr.overridescala.linkkit.api.packet.PacketUtils.wrap
 import fr.overridescala.linkkit.api.packet.fundamental._
 import fr.overridescala.linkkit.api.system.SystemPacket
@@ -16,7 +17,7 @@ object PacketManager {
     val TargetSeparator: Array[Byte] = "<target>".getBytes
 }
 
-class PacketManager(private[api] val notifier: EventNotifier) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
+class PacketManager(relay: Relay) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
     private val factories = mutable.LinkedHashMap.empty[Class[_ <: Packet], PacketFactory[_ <: Packet]]
     registerFundamentals()
@@ -29,13 +30,16 @@ class PacketManager(private[api] val notifier: EventNotifier) { //Notifier is ac
             throw new IllegalArgumentException(s"Packet '$ptClass' type is already registered !")
 
         factories.put(ptClass, factory)
-        notifier.onPacketTypeRegistered(ptClass, packetFactory)
+        //notifier.onPacketTypeRegistered(ptClass, packetFactory) //TODO
     }
 
     def toPacket(implicit bytes: Array[Byte]): (Packet, PacketCoordinates) = {
         val (coordinates, coordsLength) = PacketUtils.getCoordinates(bytes)
 
         val customPacketBytes = bytes.slice(coordsLength, bytes.length)
+        if (customPacketBytes.length > relay.configuration.maxPacketLength)
+            throw PacketException("Custom packet bytes length exceeded configuration limit")
+
         for (factory <- factories.values) {
             if (factory.canTransform(customPacketBytes))
                 return (factory.build(customPacketBytes), coordinates)

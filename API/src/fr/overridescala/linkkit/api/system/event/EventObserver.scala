@@ -1,10 +1,9 @@
 package fr.overridescala.linkkit.api.system.event
 
 import fr.overridescala.linkkit.api.`extension`.RelayExtension
-import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
+import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 import fr.overridescala.linkkit.api.system.{Reason, SystemOrder}
 import fr.overridescala.linkkit.api.task.Task
 import javax.management.InstanceAlreadyExistsException
@@ -12,22 +11,24 @@ import javax.management.InstanceAlreadyExistsException
 import scala.collection.mutable.ListBuffer
 
 @deprecated
-class EventObserver {
+class EventObserver(notifyEvents: Boolean) {
 
-    val notifier = new EventNotifier
+    val notifier = new EventNotifier(notifyEvents)
 
     def register(listener: EventListener): Unit = {
         if (listener == null)
             throw new NullPointerException("Listener is null !")
         if (notifier.listeners.contains(listener))
             throw new InstanceAlreadyExistsException("listener is already registered !")
-        notifier.listeners += listener
+        if (notifyEvents)
+            notifier.listeners += listener
     }
 
 }
 
 object EventObserver {
-    class EventNotifier {
+
+    class EventNotifier(notifyEvents: Boolean) {
         private[EventObserver] val listeners = ListBuffer.empty[EventListener]
 
         def onReady(): Unit = dispatch(_.onReady())
@@ -65,7 +66,9 @@ object EventObserver {
         def onSystemOrderSent(orderType: SystemOrder): Unit = dispatch(_.onSystemOrderSent(orderType))
 
         private def dispatch(f: EventListener => Unit): Unit = {
-            listeners.foreach(f)
+            if (notifyEvents)
+                listeners.foreach(f)
         }
     }
+
 }

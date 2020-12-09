@@ -2,9 +2,6 @@ package fr.overridescala.linkkit.api.system.event
 
 import fr.overridescala.linkkit.api.`extension`.RelayExtension
 import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.`extension`.RelayExtension
-import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
 import fr.overridescala.linkkit.api.system.{Reason, SystemOrder}
 import fr.overridescala.linkkit.api.task.Task

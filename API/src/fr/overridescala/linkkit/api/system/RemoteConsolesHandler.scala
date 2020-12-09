@@ -15,20 +15,24 @@ class RemoteConsolesHandler(relay: Relay) {
 
     private val consoleCollector = relay.createAsyncCollector(ConsolesCollectorID)
 
-    consoleCollector.onPacketReceived((packet, coos) => {
-        val data = packet.asInstanceOf[DataPacket]
-        val owner = coos.senderID
-        val consoleType = data.header
-        val consoleChannelId = new String(data.content).toInt
-        val channel = relay.createAsyncChannel(coos.senderID, consoleChannelId)
+    if (relay.configuration.enableRemoteConsoles)
+        consoleCollector.onPacketReceived((packet, coos) => {
+            val data = packet.asInstanceOf[DataPacket]
+            val owner = coos.senderID
+            val consoleType = data.header
+            val consoleChannelId = new String(data.content).toInt
+            val channel = relay.createAsyncChannel(coos.senderID, consoleChannelId)
 
-        consoleType match {
-            case "out" => outConsoles.put(owner, RemoteConsole.out(channel))
-            case "err" => errConsoles.put(owner, RemoteConsole.err(channel))
-        }
-    })
+            consoleType match {
+                case "out" => outConsoles.put(owner, RemoteConsole.out(channel))
+                case "err" => errConsoles.put(owner, RemoteConsole.err(channel))
+            }
+        })
 
     def getOut(targetId: String): RemoteConsole = {
+        if (!relay.configuration.enableRemoteConsoles)
+            return RemoteConsole.mock()
+
         if (outConsoles.contains(targetId))
             return outConsoles(targetId)
 
@@ -42,6 +46,9 @@ class RemoteConsolesHandler(relay: Relay) {
     }
 
     def getErr(targetId: String): RemoteConsole.Err = {
+        if (!relay.configuration.enableRemoteConsoles)
+            return RemoteConsole.mockErr()
+
         if (errConsoles.contains(targetId))
             return errConsoles(targetId)
 

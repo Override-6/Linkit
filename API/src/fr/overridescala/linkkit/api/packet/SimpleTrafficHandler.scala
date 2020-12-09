@@ -1,21 +1,29 @@
 package fr.overridescala.linkkit.api.packet
 
+import fr.overridescala.linkkit.api.Relay
+import fr.overridescala.linkkit.api.exceptions.RelayException
 import fr.overridescala.linkkit.api.system.Reason
 import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 
 import scala.collection.mutable
 
-class SimpleTrafficHandler(val notifier: EventNotifier,
-                           socket: DynamicSocket,
-                           override val relayID: String,
-                           packetManager: PacketManager) extends TrafficHandler {
+class SimpleTrafficHandler(relay: Relay,
+                           socket: DynamicSocket) extends TrafficHandler {
 
+    private val packetManager = relay.packetManager
     private val registeredContainers = mutable.Map.empty[Int, PacketContainer]
+    private val notifier = relay.eventObserver.notifier
+
+    override val relayID: String = relay.identifier
 
     override def register(container: PacketContainer): Unit = {
         val id = container.identifier
+
         if (registeredContainers.contains(id))
             throw new IllegalArgumentException(s"A packet container with id '$id' is already registered to this traffic handler")
+
+        if (registeredContainers.size > relay.configuration.maxPacketContainerCacheSize)
+            throw new RelayException("Maximum registered packet containers limit exceeded")
 
         registeredContainers.put(id, container)
         notifier.onPacketContainerRegistered(container)
