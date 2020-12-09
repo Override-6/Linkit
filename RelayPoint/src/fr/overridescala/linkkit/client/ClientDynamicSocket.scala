@@ -3,11 +3,12 @@ package fr.overridescala.linkkit.client
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
 
-import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 import fr.overridescala.linkkit.api.packet.DynamicSocket
-import ClientDynamicSocket.AttemptSleepTime
+import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 
-class ClientDynamicSocket(boundAddress: InetSocketAddress, notifier: EventNotifier) extends DynamicSocket(notifier) {
+class ClientDynamicSocket(boundAddress: InetSocketAddress,
+                          notifier: EventNotifier,
+                          reconnectionPeriod: Int) extends DynamicSocket(notifier) {
 
 
     private def newSocket(): Unit = {
@@ -25,8 +26,8 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress, notifier: EventNotifi
         } catch {
             case _@(_: SocketException | _: ConnectException) =>
                 println("Unable to connect to server.")
-                println(s"Waiting for $AttemptSleepTime ms before another try...")
-                Thread.sleep(AttemptSleepTime)
+                println(s"Waiting for $reconnectionPeriod ms before another try...")
+                Thread.sleep(reconnectionPeriod)
                 handleReconnection()
         }
     }
@@ -40,8 +41,4 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress, notifier: EventNotifi
         }
         markAsConnected()
     }
-}
-
-object ClientDynamicSocket {
-    private val AttemptSleepTime = 5000
 }

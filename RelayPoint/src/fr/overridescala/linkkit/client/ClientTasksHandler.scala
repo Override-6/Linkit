@@ -13,8 +13,7 @@ import scala.util.control.NonFatal
 protected class ClientTasksHandler(private val systemChannel: SystemPacketChannel,
                                    private val relay: RelayPoint) extends TasksHandler {
 
-    private val packetManager = relay.packetManager
-    private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](200)
+    private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](relay.configuration.taskQueueSize)
     private var tasksThread: Thread = _
 
     @volatile private var currentTicket: TaskTicket = _

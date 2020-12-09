@@ -6,6 +6,7 @@ import java.util.Scanner
 import fr.overridescala.linkkit.`extension`.cloud.CloudStorageExtension
 import fr.overridescala.linkkit.`extension`.controller.ControllerExtension
 import fr.overridescala.linkkit.`extension`.debug.DebugExtension
+import fr.overridescala.linkkit.client.config.RelayPointBuilder
 
 object Main {
 
@@ -28,7 +29,11 @@ object Main {
         val localRun = args.contains("--local-run")
         val loadExtensions = !(args.contains("--no-ext") || localRun)
 
-        val relayPoint = new RelayPoint(address, identifier, loadExtensions)
+        val relayPoint = new RelayPointBuilder {
+            enableExtensions = loadExtensions
+            override var serverAddress: InetSocketAddress = address
+            override var identifier: String = Main.this.identifier
+        }
         relayPoint.start()
 
         if (localRun) {

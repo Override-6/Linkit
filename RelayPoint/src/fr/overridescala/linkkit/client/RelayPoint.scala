@@ -1,13 +1,12 @@
 package fr.overridescala.linkkit.client
 
-import java.net.InetSocketAddress
 import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.overridescala.linkkit.api.exceptions.{RelayClosedException, RelayException, RelayInitialisationException}
+import fr.overridescala.linkkit.api.exceptions.{RelayClosedException, RelayException, RelayInitialisationException, TaskException, UnexpectedPacketException}
 import fr.overridescala.linkkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.overridescala.linkkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
 import fr.overridescala.linkkit.api.packet.fundamental._
@@ -16,34 +15,34 @@ import fr.overridescala.linkkit.api.system._
 import fr.overridescala.linkkit.api.system.event.EventObserver
 import fr.overridescala.linkkit.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.linkkit.client.RelayPoint.{Port, ServerID}
+import fr.overridescala.linkkit.client.config.RelayPointConfiguration
 
 import scala.util.control.NonFatal
 
 object RelayPoint {
-    val version: Version = Version("RelayPoint", "0.4.0", stable = false)
+    val version: Version = Version("RelayPoint", "0.5.0", stable = false)
 
     val ServerID = "server"
     val Port = 48484
 }
 
-class RelayPoint(private val serverAddress: InetSocketAddress,
-                 override val identifier: String, loadTasks: Boolean) extends Relay {
+class RelayPoint(override val configuration: RelayPointConfiguration) extends Relay {
 
-    override val eventObserver: EventObserver = new EventObserver
+    override val eventObserver: EventObserver = new EventObserver(configuration.enableEventHandling)
     private val notifier = eventObserver.notifier
 
     @volatile private var open = false
-    private val socket = new ClientDynamicSocket(serverAddress, notifier)
+    private val socket = new ClientDynamicSocket(configuration.serverAddress, notifier, configuration.reconnectionPeriod)
 
     @volatile private var serverErrConsole: RemoteConsole.Err = _ //affected once Relay initialised
 
-    override val packetManager = new PacketManager(notifier)
+    override val packetManager = new PacketManager(this)
 
     private val extensionFolderPath = getExtensionFolderPath
     override val extensionLoader = new RelayExtensionLoader(this, extensionFolderPath)
     override val properties = new RelayProperties
 
-    private val traffic = new SimpleTrafficHandler(notifier, socket, identifier, packetManager)
+    private val traffic = new SimpleTrafficHandler(this, socket)
     private implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(ServerID, traffic)
 
     private val tasksHandler = new ClientTasksHandler(systemChannel, this)
@@ -99,18 +98,21 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
     }
 
     private def loadLocal(): Unit = {
-        println("Loading tasks handler...")
-        tasksHandler.start()
-        if (loadTasks) {
+        if (configuration.enableTasks) {
+            println("Loading tasks handler...")
+            tasksHandler.start()
+        }
+        if (configuration.enableExtensions) {
             println("Loading Relay extensions from folder " + extensionFolderPath)
             extensionLoader.loadExtensions()
         }
-        println("Async Upload Thread started !")
     }
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
         ensureTargetValid(task.targetID)
+        if (!configuration.enableTasks)
+            throw new TaskException("Task handling is disabled according to RelayConfiguration")
 
         task.preInit(tasksHandler)
         notifier.onTaskScheduled(task)
@@ -121,8 +123,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         close(identifier, reason)
     }
 
-    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
-        new SyncPacketChannel(linkedRelayID, id, traffic)
+    override def createSyncChannel(linkedRelayID: String, id: Int, cacheSize: Int): PacketChannel.Sync = {
+        new SyncPacketChannel(linkedRelayID, id, cacheSize, traffic)
     }
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
@@ -133,8 +135,8 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         new AsyncPacketCollector(traffic, id)
     }
 
-    override def createSyncCollector(id: Int): PacketCollector.Sync = {
-        new SyncPacketCollector(traffic, id)
+    override def createSyncCollector(id: Int, cacheSize: Int): PacketCollector.Sync = {
+        new SyncPacketCollector(traffic, cacheSize, id)
     }
 
     override def getConsoleOut(targetId: String): Option[RemoteConsole] = Option(remoteConsoles.getOut(targetId))
@@ -170,6 +172,10 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                 return
 
             val (packet, coordinates) = packetManager.toPacket(bytes)
+
+            if (configuration.checkReceivedPacketTargetID)
+                checkPacket(coordinates)
+
             notifier.onPacketReceived(packet, coordinates)
             handlePacket(packet, coordinates)
         }
@@ -185,6 +191,18 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
                 Console.err.println(s"Suddenly disconnected from the server")
                 serverErrConsole.reportExceptionSimplified(e)
                 close(Reason.INTERNAL_ERROR)
+        }
+    }
+
+    private def checkPacket(coordinates: PacketCoordinates): Unit = {
+        val targetID = coordinates.targetID
+        if (coordinates.targetID != identifier) {
+            val sender = coordinates.senderID
+            val optErr = getConsoleErr(sender)
+            val msg = s"Could not handle packet : targetID ($targetID) isn't equals to this relay identifier !"
+            if (optErr.isDefined)
+                optErr.get.println(msg)
+            throw new UnexpectedPacketException(msg)
         }
     }
 
@@ -227,7 +245,7 @@ class RelayPoint(private val serverAddress: InetSocketAddress,
         val path = System.getenv().get("COMPUTERNAME") match {
             case "PC_MATERIEL_NET" => "C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\RelayExtensions"
             case "LORDI-N4SO7IERS" => "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\FileTransferer\\ClientSide\\RelayExtensions"
-            case _ => "RelayExtensions/"
+            case _ => configuration.extensionsFolder
         }
         Paths.get(path)
     }
