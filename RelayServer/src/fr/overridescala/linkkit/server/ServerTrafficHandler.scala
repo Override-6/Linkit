@@ -1,5 +1,6 @@
 package fr.overridescala.linkkit.server
 
+import fr.overridescala.linkkit.api.exceptions.RelayException
 import fr.overridescala.linkkit.api.packet.{Packet, PacketContainer, PacketCoordinates, TrafficHandler}
 import fr.overridescala.linkkit.api.system.Reason
 
@@ -18,6 +19,9 @@ class ServerTrafficHandler(server: RelayServer) extends TrafficHandler {
 
         if (registeredCollectors.contains(id))
             throw new IllegalArgumentException(s"A packet collector with id '$id' is already registered")
+
+        if (registeredCollectors.size > server.configuration.maxPacketContainerCacheSize)
+            throw new RelayException("Maximum registered packet containers limit exceeded")
 
         registeredCollectors.put(id, container)
         notifier.onPacketContainerRegistered(container)

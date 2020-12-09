@@ -11,23 +11,25 @@ import fr.overridescala.linkkit.api.packet._
 import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
 import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
-import fr.overridescala.linkkit.api.system.event.EventObserver
 import fr.overridescala.linkkit.api.system._
+import fr.overridescala.linkkit.api.system.config.RelayConfiguration
+import fr.overridescala.linkkit.api.system.event.EventObserver
 import fr.overridescala.linkkit.api.task.{Task, TaskCompleterHandler}
 import fr.overridescala.linkkit.server.RelayServer.Identifier
+import fr.overridescala.linkkit.server.config.RelayServerConfiguration
 import fr.overridescala.linkkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
 
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.5.0", stable = false)
+    val version: Version = Version("RelayServer", "0.6.0", stable = false)
 
     val Identifier = "server"
 }
 
-class RelayServer extends Relay {
+class RelayServer(override val configuration: RelayServerConfiguration) extends Relay {
 
-    private val serverSocket = new ServerSocket(48484)
+    private val serverSocket = new ServerSocket(configuration.port)
     private val taskFolderPath = getTasksFolderPath
 
     @volatile private var open = false
@@ -35,11 +37,11 @@ class RelayServer extends Relay {
      * For safety, prefer Relay#identfier instead of Constants.SERVER_ID
      * */
     override val identifier: String = Identifier
-    override val eventObserver: EventObserver = new EventObserver
+    override val eventObserver: EventObserver = new EventObserver(configuration.enableEventHandling)
     override val extensionLoader = new RelayExtensionLoader(this, taskFolderPath)
     override val taskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
-    override val packetManager = new PacketManager(eventObserver.notifier)
+    override val packetManager = new PacketManager(this)
 
     override val relayVersion: Version = RelayServer.version
 
@@ -64,12 +66,14 @@ class RelayServer extends Relay {
 
     override def start(): Unit = {
         println("Current encoding is " + Charset.defaultCharset().name())
-        println("Listening on port " + serverSocket.getLocalPort)
+        println("Listening on port " + configuration.port)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
+        println("Relay Identifier Ambiguity Strategy : " + configuration.relayIDAmbiguityStrategy)
         println(relayVersion)
         println(apiVersion)
 
-        extensionLoader.loadExtensions()
+        if (configuration.enableExtensions)
+            extensionLoader.loadExtensions()
 
         println("Ready !")
         notifier.onReady()
@@ -79,9 +83,9 @@ class RelayServer extends Relay {
     }
 
 
-    override def createSyncChannel(linkedRelayID: String, id: Int): PacketChannel.Sync = {
+    override def createSyncChannel(linkedRelayID: String, id: Int, cacheSize: Int): PacketChannel.Sync = {
         val targetConnection = getConnection(linkedRelayID)
-        targetConnection.createSync(id)
+        targetConnection.createSync(id, cacheSize)
     }
 
 
@@ -90,8 +94,8 @@ class RelayServer extends Relay {
         targetConnection.createAsync(id)
     }
 
-    override def createSyncCollector(id: Int): PacketCollector.Sync = {
-        new SyncPacketCollector(trafficHandler, id)
+    override def createSyncCollector(id: Int, cacheSize: Int): PacketCollector.Sync = {
+        new SyncPacketCollector(trafficHandler, cacheSize, id)
     }
 
     override def createAsyncCollector(id: Int): PacketCollector.Async = {
@@ -184,7 +188,7 @@ class RelayServer extends Relay {
     private def getTasksFolderPath: Path = {
         val path = System.getenv().get("COMPUTERNAME") match {
             case "PC_MATERIEL_NET" => "C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\RelayExtensions"
-            case _ => "RelayExtensions/"
+            case _ => configuration.extensionsFolder
         }
         Paths.get(path)
     }

@@ -33,6 +33,9 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         if (connections.contains(identifier))
             throw RelayInitialisationException(s"This relay id is already registered ! ('$identifier')")
 
+        if (connections.size > server.configuration.maxConnection)
+            throw new RelayException("Maximum connection limit exceeded")
+
         val connection = ClientConnection.open(socket, server, identifier)
         println(s"Relay Point connected with identifier '${connection.identifier}'")
         connections.put(identifier, connection)
@@ -43,8 +46,9 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      *
      * @param identifier the identifier to disconnect
      * */
-    def unregister(identifier: String): Unit =
+    def unregister(identifier: String): Unit = {
         connections.remove(identifier)
+    }
 
 
     /**

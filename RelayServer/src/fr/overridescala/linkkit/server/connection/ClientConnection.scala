@@ -10,6 +10,7 @@ import fr.overridescala.linkkit.api.system._
 import fr.overridescala.linkkit.api.task.TasksHandler
 import fr.overridescala.linkkit.server.RelayServer
 import fr.overridescala.linkkit.server.task.ConnectionTasksHandler
+import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
 
@@ -23,12 +24,16 @@ class ClientConnection private(socket: SocketContainer,
     private val notifier = server.eventObserver.notifier
     private val manager: ConnectionsManager = server.connectionsManager
 
-    private val connectionTraffic = new SimpleTrafficHandler(notifier, socket, server.identifier, packetManager)
+    private val connectionTraffic = new SimpleTrafficHandler(server, socket)
     private val serverTraffic = server.trafficHandler
 
+    private val configuration = server.configuration
     val systemChannel: SystemPacketChannel = new SystemPacketChannel(identifier, connectionTraffic)
 
-    @volatile private var tasksHandler: TasksHandler = _
+    /**
+     * null if task handling is disabled according to configurations
+     * */
+    @Nullable @volatile private var tasksHandler: TasksHandler = _
     @volatile private var closed = false
 
     private var remoteConsoleErr: RemoteConsole.Err = _
@@ -64,8 +69,8 @@ class ClientConnection private(socket: SocketContainer,
 
     def getConsoleErr: RemoteConsole.Err = remoteConsoleErr
 
-    def createSync(id: Int): PacketChannel.Sync =
-        new SyncPacketChannel(identifier, id, connectionTraffic)
+    def createSync(id: Int, cacheSize: Int): PacketChannel.Sync =
+        new SyncPacketChannel(identifier, id, cacheSize, connectionTraffic)
 
     def createAsync(id: Int): PacketChannel.Async = {
         new AsyncPacketChannel(identifier, id, connectionTraffic)
@@ -93,7 +98,8 @@ class ClientConnection private(socket: SocketContainer,
         remoteConsoleOut = outOpt.get
         systemChannel.sendOrder(SystemOrder.PRINT_VERSION, Reason.INTERNAL)
 
-        tasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel, remoteConsoleErr)
+        if (configuration.enableTasks)
+            tasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel, remoteConsoleErr)
     }
 
     private def run(): Unit = {
@@ -170,10 +176,10 @@ object ClientConnection {
 
     def retrieveIdentifier(socket: SocketContainer, server: RelayServer): String = {
         val packetReader = new ServerPacketReader(socket, server, null)
-        val tempHandler = new SimpleTrafficHandler(server.notifier, socket, "unknown", server.packetManager)
+        val tempHandler = new SimpleTrafficHandler(server, socket)
 
         val channel: SyncPacketChannel =
-            new SyncPacketChannel("unknown", 6, tempHandler)
+            new SyncPacketChannel("unknown", 6, 8, tempHandler)
 
         def deflect(): Unit = packetReader.nextPacket {
             case (concerned: Packet, coords: PacketCoordinates) if coords.containerID == channel.identifier =>
