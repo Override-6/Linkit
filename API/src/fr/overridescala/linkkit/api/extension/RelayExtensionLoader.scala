@@ -1,5 +1,6 @@
 package fr.overridescala.linkkit.api.`extension`
 
+import java.io.Closeable
 import java.net.URLClassLoader
 import java.nio.file.{Files, Path}
 import java.util.Properties
@@ -8,17 +9,29 @@ import java.util.zip.ZipFile
 
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.`extension`.RelayExtensionLoader.{MainClassField, PropertyName}
-import fr.overridescala.linkkit.api.exceptions.{RelayException, TaskExtensionLoadException}
+import fr.overridescala.linkkit.api.exceptions.{RelayException, ExtensionLoadException}
 
 import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
 
-class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) {
+class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) extends Closeable {
 
     type A = Class[_ <: RelayExtension]
 
     private val notifier = relay.eventObserver.notifier
+    private val loadedExtensions = ListBuffer.empty[(RelayExtension, ExtensionInfo)]
     private var classLoader: URLClassLoader = _
+
+    override def close(): Unit = {
+        loadedExtensions.foreach(extensionTupple => {
+            val extension = extensionTupple._1
+            val info = extensionTupple._2
+            println(s"Disabling '${info.name}...")
+            extension.onDisable()
+        })
+        loadedExtensions.clear()
+    }
 
     def loadExtensions(): Unit = {
         Files.createDirectories(extensionsFolder)
@@ -44,18 +57,21 @@ class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) {
     }
 
     def loadExtension[T <: RelayExtension](clazz: Class[T]): T = {
-        val name = retrieveInfo(clazz).name
+        val info = retrieveInfo(clazz)
+        val name = info.name
         try {
             val constructor = clazz.getConstructor(classOf[Relay])
             constructor.setAccessible(true)
             val extension = constructor.newInstance(relay)
             notifier.onExtensionLoaded(extension)
+            extension.onEnable()
             println(s"Relay extension $name loaded successfully !")
-            extension.main()
+            loadedExtensions.addOne(extension, info)
             extension
         } catch {
             case _: NoSuchMethodException =>
                 throw new RelayException(s"Could not load '$name : Constructor(Relay) is missing !")
+            case NonFatal(e) => throw ExtensionLoadException(s"An exception was thrown when loading $name", e)
         }
     }
 
@@ -64,14 +80,14 @@ class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) {
         val propertyFile = jarFile.getEntry(PropertyName)
         //Checking property presence
         if (propertyFile == null)
-            throw TaskExtensionLoadException(s"jar file $path must have a file called '$PropertyName' in his root")
+            throw ExtensionLoadException(s"jar file $path must have a file called '$PropertyName' in his root")
 
         //Checking property content
         val property = new Properties()
         property.load(jarFile.getInputStream(propertyFile))
         val className = property.getProperty(MainClassField)
         if (className == null)
-            throw TaskExtensionLoadException(s"jar file $path properties' must contains a field named '$MainClassField'")
+            throw ExtensionLoadException(s"jar file $path properties' must contains a field named '$MainClassField'")
 
         //Loading extension's main
         val clazz = classLoader.loadClass(className)

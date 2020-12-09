@@ -6,6 +6,8 @@ abstract class RelayExtension(protected val relay: Relay) {
 
     implicit protected val self: RelayExtension = this
 
-    def main(): Unit
+    def onEnable(): Unit
+
+    def onDisable(): Unit = ()
 
 }

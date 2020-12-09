@@ -5,9 +5,12 @@ package fr.overridescala.linkkit.api.exceptions;
  * */
 public class TaskException extends RelayException {
 
+    public TaskException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
+
     public TaskException(String msg) {
         super(msg);
     }
-
 
 }

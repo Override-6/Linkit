@@ -5,6 +5,10 @@ package fr.overridescala.linkkit.api.exceptions;
  * */
 public class RelayException extends Exception {
 
+    public RelayException(String msg, Throwable cause) {
+        super(msg, cause);
+    }
+
     public RelayException(String msg) {
         super(msg);
     }
