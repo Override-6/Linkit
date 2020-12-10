@@ -6,5 +6,5 @@ public enum SystemOrder {
     GET_IDENTIFIER,
     ABORT_TASK,
     CHECK_ID,
-    PRINT_VERSION
+    PRINT_INFO
 }

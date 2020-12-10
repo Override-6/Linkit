@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable
  */
 
 object Relay {
-    final val apiVersion = Version("Api", "0.5.0", stable = false)
+    final val apiVersion = Version("Api", "0.5.1", stable = false)
 }
 
 trait Relay extends JustifiedCloseable with TaskScheduler {

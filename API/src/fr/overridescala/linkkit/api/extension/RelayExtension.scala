@@ -9,5 +9,4 @@ abstract class RelayExtension(protected val relay: Relay) {
     def onEnable(): Unit
 
     def onDisable(): Unit = ()
-
 }

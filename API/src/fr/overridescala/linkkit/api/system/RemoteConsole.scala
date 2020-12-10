@@ -101,7 +101,7 @@ object RemoteConsole {
                 cause = cause.getCause
             }
             val causes = sb.toString()
-            print(s"(an exception occurred in relay '${channel.connectedID}') simplified description : \n$causes")
+            print(s"(an exception occurred in relay '${channel.ownerID}') simplified description : \n$causes")
         }
     }
 

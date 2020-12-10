@@ -1,0 +1,9 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="RelayPoint">
+    <output-path>D:/Users/Maxime/Desktop/Dev/Perso/FileTransferer/ClientSide</output-path>
+    <root id="archive" name="RelayPoint.jar">
+      <element id="module-output" name="RelayPoint" />
+      <element id="module-output" name="API" />
+    </root>
+  </artifact>
+</component>

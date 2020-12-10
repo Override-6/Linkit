@@ -41,9 +41,9 @@ class SimpleTrafficHandler(relay: Relay,
                 .injectPacket(packet, coordinates)
     }
 
-    override def sendPacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        socket.write(packetManager.toBytes(packet, coords))
-        notifier.onPacketSent(packet, coords)
+    override def sendPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+        socket.write(packetManager.toBytes(packet, coordinates))
+        notifier.onPacketSent(packet, coordinates)
     }
 
     override def sendPacket(packet: Packet, identifier: Int, targetID: String): Unit = {
