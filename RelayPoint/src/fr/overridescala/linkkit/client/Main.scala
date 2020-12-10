@@ -3,9 +3,6 @@ package fr.overridescala.linkkit.client
 import java.net.InetSocketAddress
 import java.util.Scanner
 
-import fr.overridescala.linkkit.`extension`.cloud.CloudStorageExtension
-import fr.overridescala.linkkit.`extension`.controller.ControllerExtension
-import fr.overridescala.linkkit.`extension`.debug.DebugExtension
 import fr.overridescala.linkkit.client.config.RelayPointBuilder
 
 object Main {
@@ -38,9 +35,9 @@ object Main {
 
         if (localRun) {
             val loader = relayPoint.extensionLoader
-            loader.loadExtension(classOf[ControllerExtension])
+            /*loader.loadExtension(classOf[ControllerExtension])
             loader.loadExtension(classOf[DebugExtension])
-            loader.loadExtension(classOf[CloudStorageExtension])
+            loader.loadExtension(classOf[CloudStorageExtension])*/
         }
     }
 

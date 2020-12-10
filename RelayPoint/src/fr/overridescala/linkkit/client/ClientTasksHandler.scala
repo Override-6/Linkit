@@ -22,7 +22,6 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
     override val tasksCompleterHandler = new TaskCompleterHandler()
     override val identifier: String = relay.identifier
 
-
     override def schedule(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit = {
         if (targetID == identifier)
             throw new TaskException("Can't start a task with oneself !")
