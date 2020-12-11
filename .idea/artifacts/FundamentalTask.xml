@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="jar" name="FundamentalTask">
-    <output-path>D:/Users/Maxime/Desktop/Dev/Perso/FileTransferer/ClientSide/RelayExtensions</output-path>
-    <root id="archive" name="FundamentalTask.jar">
-      <element id="module-output" name="FundamentalTasks" />
-    </root>
-  </artifact>
-</component>
