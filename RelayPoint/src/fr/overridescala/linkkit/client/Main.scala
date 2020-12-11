@@ -1,8 +1,12 @@
 package fr.overridescala.linkkit.client
 
 import java.net.InetSocketAddress
+import java.nio.file.{Path, Paths}
 import java.util.Scanner
 
+//import fr.overridescala.linkkit.`extension`.cloud.CloudStorageExtension
+import fr.overridescala.linkkit.`extension`.controller.ControllerExtension
+//import fr.overridescala.linkkit.`extension`.debug.DebugExtension
 import fr.overridescala.linkkit.client.config.RelayPointBuilder
 
 object Main {
@@ -27,7 +31,9 @@ object Main {
         val loadExtensions = !(args.contains("--no-ext") || localRun)
 
         val relayPoint = new RelayPointBuilder {
-            enableExtensions = loadExtensions
+            enableExtensionsFolderLoad = loadExtensions
+            extensionsFolder = getExtensionFolderPath
+
             override var serverAddress: InetSocketAddress = address
             override var identifier: String = Main.this.identifier
         }
@@ -35,9 +41,17 @@ object Main {
 
         if (localRun) {
             val loader = relayPoint.extensionLoader
-            /*loader.loadExtension(classOf[ControllerExtension])
-            loader.loadExtension(classOf[DebugExtension])
-            loader.loadExtension(classOf[CloudStorageExtension])*/
+            loader.loadExtension(classOf[ControllerExtension])
+            //loader.loadExtension(classOf[DebugExtension])
+            //loader.loadExtension(classOf[CloudStorageExtension])
+        }
+    }
+
+    private def getExtensionFolderPath: String = {
+        System.getenv().get("COMPUTERNAME") match {
+            case "PC_MATERIEL_NET" => "C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\RelayExtensions"
+            case "LORDI-N4SO7IERS" => "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\FileTransferer\\ClientSide\\RelayExtensions"
+            case _ => "/RelayExtensions/"
         }
     }
 
