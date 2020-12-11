@@ -3,7 +3,6 @@ package fr.overridescala.linkkit.api.packet
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.exceptions.RelayException
 import fr.overridescala.linkkit.api.system.Reason
-import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 
 import scala.collection.mutable
 
@@ -37,6 +36,7 @@ class SimpleTrafficHandler(relay: Relay,
     }
 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+        //println(s"packet = ${packet}, $coordinates")
         registeredContainers(coordinates.containerID)
                 .injectPacket(packet, coordinates)
     }

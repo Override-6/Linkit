@@ -1,5 +1,6 @@
 package fr.overridescala.linkkit.api.system;
 
+//TODO Add more Detailed Reason, may have a Reason interface, and a CloseReason Enum
 public enum Reason {
     INTERNAL_ERROR(true), EXTERNAL_ERROR(false), INTERNAL(true), EXTERNAL(false);
 

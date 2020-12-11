@@ -49,10 +49,10 @@ class PacketManager(relay: Relay) { //Notifier is accessible from api to reduce 
 
     def toBytes[P <: Packet](classOfP: Class[P], packet: P, coordinates: PacketCoordinates): Array[Byte] = {
         val packetBytes = factories(classOfP.asInstanceOf[Class[P]])
-                .asInstanceOf[PacketFactory[P]]
-                .decompose(packet)
+            .asInstanceOf[PacketFactory[P]]
+            .decompose(packet)
         val bytes = PacketUtils.getCoordinatesBytes(coordinates) ++ packetBytes
-        wrap(bytes)
+        wrap(relay.securityManager.hashBytes(bytes))
     }
 
     def toBytes[D <: Packet](packet: D, coordinates: PacketCoordinates): Array[Byte] = {

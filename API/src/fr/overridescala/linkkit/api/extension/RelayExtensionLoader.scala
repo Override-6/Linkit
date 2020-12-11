@@ -2,31 +2,32 @@ package fr.overridescala.linkkit.api.`extension`
 
 import java.io.Closeable
 import java.net.URLClassLoader
-import java.nio.file.{Files, Path}
+import java.nio.file.{Files, Path, Paths}
 import java.util.Properties
 import java.util.stream.Collectors
 import java.util.zip.ZipFile
 
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.`extension`.RelayExtensionLoader.{MainClassField, PropertyName}
-import fr.overridescala.linkkit.api.exceptions.{RelayException, ExtensionLoadException}
+import fr.overridescala.linkkit.api.exceptions.{ExtensionLoadException, RelayException}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 
-class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) extends Closeable {
+class RelayExtensionLoader(relay: Relay) extends Closeable {
 
     type A = Class[_ <: RelayExtension]
 
     private val notifier = relay.eventObserver.notifier
     private val loadedExtensions = ListBuffer.empty[(RelayExtension, ExtensionInfo)]
     private var classLoader: URLClassLoader = _
+    private val extensionsFolder = Paths.get(relay.configuration.extensionsFolder)
 
     override def close(): Unit = {
-        loadedExtensions.foreach(extensionTupple => {
-            val extension = extensionTupple._1
-            val info = extensionTupple._2
+        loadedExtensions.foreach(extensionTuple => {
+            val extension = extensionTuple._1
+            val info = extensionTuple._2
             println(s"Disabling '${info.name}...")
             extension.onDisable()
         })
@@ -67,6 +68,7 @@ class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) extends Clo
             extension.onEnable()
             println(s"Relay extension $name loaded successfully !")
             loadedExtensions.addOne(extension, info)
+
             extension
         } catch {
             case _: NoSuchMethodException =>
@@ -80,14 +82,14 @@ class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) extends Clo
         val propertyFile = jarFile.getEntry(PropertyName)
         //Checking property presence
         if (propertyFile == null)
-            throw ExtensionLoadException(s"jar file $path must have a file called '$PropertyName' in his root")
+            throw ExtensionLoadException(s"Jar file $path must have a file called '$PropertyName' in his root")
 
         //Checking property content
         val property = new Properties()
         property.load(jarFile.getInputStream(propertyFile))
         val className = property.getProperty(MainClassField)
         if (className == null)
-            throw ExtensionLoadException(s"jar file $path properties' must contains a field named '$MainClassField'")
+            throw ExtensionLoadException(s"Jar file $path properties' must contains a field named '$MainClassField'")
 
         //Loading extension's main
         val clazz = classLoader.loadClass(className)
@@ -96,7 +98,7 @@ class RelayExtensionLoader(relay: Relay, val extensionsFolder: Path) extends Clo
 
     private def loadClass(clazz: Class[_]): ExtensionInfo = {
         if (!classOf[RelayExtension].isAssignableFrom(clazz)) {
-            throw new RelayException(s"class '$clazz' must extends '${classOf[RelayExtension]}' to be loaded as a Relay extension.")
+            throw new RelayException(s"Class '$clazz' must extends '${classOf[RelayExtension]}' to be loaded as a Relay extension.")
         }
         retrieveInfo(clazz.asInstanceOf[A])
     }

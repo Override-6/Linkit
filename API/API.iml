@@ -7,7 +7,7 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="scala-sdk-2.13.3" level="application" />
     <orderEntry type="library" name="org.jetbrains:annotations:16.0.2" level="project" />
+    <orderEntry type="library" name="scala-sdk-2.13.3" level="application" />
   </component>
 </module>

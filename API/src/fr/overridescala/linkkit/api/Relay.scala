@@ -7,6 +7,7 @@ import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.collector.PacketCollector
 import fr.overridescala.linkkit.api.system.config.RelayConfiguration
 import fr.overridescala.linkkit.api.system.event.EventObserver
+import fr.overridescala.linkkit.api.system.security.RelaySecurityManager
 import fr.overridescala.linkkit.api.system.{JustifiedCloseable, RemoteConsole, Version}
 import fr.overridescala.linkkit.api.task.TaskScheduler
 import org.jetbrains.annotations.Nullable
@@ -27,7 +28,7 @@ import org.jetbrains.annotations.Nullable
  */
 
 object Relay {
-    final val apiVersion = Version("Api", "0.5.1", stable = false)
+    final val apiVersion = Version("Api", "0.6.0", stable = false)
 }
 
 trait Relay extends JustifiedCloseable with TaskScheduler {
@@ -43,6 +44,8 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     val relayVersion: Version
 
     val configuration: RelayConfiguration
+
+    val securityManager: RelaySecurityManager
 
     /**
      * A Relay identifier is a string that identifies the Relay on the network.

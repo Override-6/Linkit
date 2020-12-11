@@ -51,8 +51,8 @@ class RemoteConsole private(@Nullable channel: PacketChannel.Async,
     }
 
     override def print(s: Array[Char]): Unit = print(s: Any)
-
-    override def print(str: String): Unit = if (str != lineSeparator) print(str: Any) //avoid newLine
+                                                        //avoid newLine
+    override def print(str: String): Unit = if (str != lineSeparator) print(str: Any)
 
     override def print(i: Int): Unit = print(i: Any)
 

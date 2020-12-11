@@ -15,11 +15,7 @@ class AsyncPacketChannel(override val connectedID: String,
     private var onPacketReceived: Packet => Unit = _
 
     override def sendPacket(packet: Packet): Unit = {
-        if (packet.isInstanceOf[TaskInitPacket])
-            throw PacketException("can not send a TaskInitPacket.")
-        Future {
-            traffic.sendPacket(packet, coordinates)
-        }
+        traffic.sendPacket(packet, coordinates)
     }
 
     override def injectPacket(packet: Packet, ignored: PacketCoordinates): Unit = {

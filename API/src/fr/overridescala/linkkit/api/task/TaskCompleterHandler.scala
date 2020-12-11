@@ -1,12 +1,10 @@
 package fr.overridescala.linkkit.api.task
 
-import fr.overridescala.linkkit.api.`extension`.RelayExtension
 import fr.overridescala.linkkit.api.exceptions.TaskException
 import fr.overridescala.linkkit.api.packet.PacketCoordinates
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * handles TaskCompleters from
@@ -14,8 +12,7 @@ import scala.collection.mutable.ListBuffer
  * */
 class TaskCompleterHandler {
 
-    private val completers: mutable.Map[String, TaskInitPacket => TaskExecutor] = new mutable.HashMap()
-    private val families: mutable.Map[Class[_ <: RelayExtension], ListBuffer[String]] = new mutable.HashMap()
+    private val completers: mutable.Map[String, (TaskInitPacket, PacketCoordinates) => TaskExecutor] = new mutable.HashMap()
 
     /**
      * @param initPacket the initialization packet for completer.
@@ -33,7 +30,7 @@ class TaskCompleterHandler {
         if (completerOpt.isEmpty)
             throw new TaskException(s"Could not find completer of type '$taskType'")
 
-        val completer = completerOpt.get.apply(initPacket)
+        val completer = completerOpt.get.apply(initPacket, coords)
         tasksHandler.schedule(completer, taskID, targetID, ownFreeWill = false)
     }
 
@@ -43,15 +40,9 @@ class TaskCompleterHandler {
      * @param supplier this lambda takes a [[TaskInitPacket]] the Tasks Handler and the init packet sender identifier
      *                 and the task owner identifier
      * */
-    def putCompleter(taskType: String, supplier: TaskInitPacket => TaskExecutor)(implicit extension: RelayExtension): Unit = {
+    def register(taskType: String, supplier: (TaskInitPacket, PacketCoordinates) => TaskExecutor): Unit = {
         completers.put(taskType, supplier)
-        families.getOrElseUpdate(extension.getClass, ListBuffer.empty)
-                .addOne(taskType)
     }
-
-    def getLoadedTasks(extension: Class[_ <: RelayExtension]): Array[String] =
-        families.getOrElseUpdate(extension, ListBuffer.empty)
-                .toArray
 
     def isRegistered(taskType: String): Boolean =
         completers.contains(taskType)

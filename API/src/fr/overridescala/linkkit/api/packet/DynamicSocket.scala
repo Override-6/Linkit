@@ -3,8 +3,9 @@ package fr.overridescala.linkkit.api.packet
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
-import fr.overridescala.linkkit.api.exceptions.RelayClosedException
+import fr.overridescala.linkkit.api.exceptions.RelayCloseException
 import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
+import fr.overridescala.linkkit.api.system.security.RelaySecurityManager
 import fr.overridescala.linkkit.api.system.{JustifiedCloseable, Reason}
 
 abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable {
@@ -48,7 +49,7 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
             locker.markAsConnected()
             if (closed)
                 return -1
-            read(buff)
+            read(buff, pos)
         }
 
         -1
@@ -112,7 +113,7 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
 
     private def ensureOpen(): Unit = {
         if (closed)
-            throw new RelayClosedException("Socket closed.")
+            throw new RelayCloseException("Socket closed.")
     }
 
     private class SocketLocker {

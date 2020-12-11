@@ -1,12 +1,13 @@
 package fr.overridescala.linkkit.api.packet
 
 import fr.overridescala.linkkit.api.system.RemoteConsole
+import fr.overridescala.linkkit.api.system.security.RelaySecurityManager
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
 
 
-class PacketReader(socket: DynamicSocket, @Nullable errConsole: RemoteConsole.Err) {
+class PacketReader(socket: DynamicSocket, securityManager: RelaySecurityManager, @Nullable errConsole: RemoteConsole.Err) {
 
     def readNextPacketBytes(): Array[Byte] = synchronized {
         val nextLength = nextPacketLength()
@@ -14,7 +15,7 @@ class PacketReader(socket: DynamicSocket, @Nullable errConsole: RemoteConsole.Er
             return null
 
         val bytes = socket.read(nextLength)
-        bytes
+        securityManager.deHashBytes(bytes)
     }
 
     private def nextPacketLength(): Int = {
