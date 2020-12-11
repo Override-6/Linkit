@@ -29,7 +29,7 @@ class ConnectionTasksThread private(ownerID: String,
                 executeNextTicket()
             } catch {
                 //normal exception thrown when the thread was suddenly stopped
-                case e: InterruptedException =>
+                case _: InterruptedException =>
                 case NonFatal(e) =>
                     e.printStackTrace()
                     remoteConsoleErr.reportExceptionSimplified(e)

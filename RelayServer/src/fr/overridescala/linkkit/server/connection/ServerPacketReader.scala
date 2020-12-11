@@ -10,13 +10,13 @@ import org.jetbrains.annotations.Nullable
 class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
 
     @Nullable private val remoteConsoleErr = server.getConsoleErr(identifier).orNull
-    private val packetReader = new PacketReader(socket, remoteConsoleErr)
+    private val packetReader = new PacketReader(socket, server.securityManager, remoteConsoleErr)
     private val manager = server.connectionsManager
     private val packetManager = server.packetManager
 
     def nextPacket(onPacketReceived: (Packet, PacketCoordinates) => Unit): Unit = {
         try {
-            listenNextConcernedPacket(onPacketReceived)
+            nextConcernedPacket(onPacketReceived)
         } catch {
             case e: RelayException =>
                 if (remoteConsoleErr != null)
@@ -30,11 +30,10 @@ class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable i
         }
     }
 
-    private def listenNextConcernedPacket(event: (Packet, PacketCoordinates) => Unit): Unit = {
+    private def nextConcernedPacket(event: (Packet, PacketCoordinates) => Unit): Unit = {
         val bytes = packetReader.readNextPacketBytes()
         if (bytes == null)
             return
-
         val target = getTargetID(bytes)
 
         if (target == RelayServer.Identifier) { //check if packet concerns server
