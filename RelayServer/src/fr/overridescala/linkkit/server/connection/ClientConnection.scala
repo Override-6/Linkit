@@ -2,7 +2,7 @@ package fr.overridescala.linkkit.server.connection
 
 import java.net.Socket
 
-import fr.overridescala.linkkit.api.exceptions.{RelayException, RelayInitialisationException, UnexpectedPacketException}
+import fr.overridescala.linkkit.api.exception.{RelayException, RelayInitialisationException, UnexpectedPacketException}
 import fr.overridescala.linkkit.api.packet._
 import fr.overridescala.linkkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.overridescala.linkkit.api.packet.fundamental._
@@ -12,15 +12,13 @@ import fr.overridescala.linkkit.server.RelayServer
 import fr.overridescala.linkkit.server.task.ConnectionTasksHandler
 import org.jetbrains.annotations.Nullable
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class ClientConnection private(socket: SocketContainer,
                                server: RelayServer,
                                val identifier: String) extends JustifiedCloseable {
 
-    private val connectionThread = new Thread(() => run(), s"RP Connection($identifier)")
+    private val connectionThread = new Thread(server.packetWorkerThreadGroup, () => run(), s"Dedicated Packet Worker ($identifier)")
 
     private val packetManager = server.packetManager
     private val notifier = server.eventObserver.notifier
@@ -43,9 +41,6 @@ class ClientConnection private(socket: SocketContainer,
     private var remoteConsoleOut: RemoteConsole = _
 
     override def close(reason: Reason): Unit = {
-        val threadName = connectionThread.getName
-        println(s"Closing thread '$threadName'")
-
         if (socket.isConnected && reason.isInternal) {
             systemChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
         }
@@ -55,6 +50,7 @@ class ClientConnection private(socket: SocketContainer,
         socket.close(reason)
         connectionTraffic.close(reason)
         manager.unregister(identifier)
+        connectionThread.interrupt()
 
         closed = true
     }
@@ -127,6 +123,8 @@ class ClientConnection private(socket: SocketContainer,
 
     private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         val identifier = coordinates.containerID
+        if (closed)
+            return
 
         notifier.onPacketReceived(packet, coordinates)
         packet match {
@@ -134,7 +132,7 @@ class ClientConnection private(socket: SocketContainer,
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
             case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
             case _: Packet =>
-                if (serverTraffic.isTargeted(coordinates)) {
+                if (serverTraffic.isRegistered(coordinates.containerID)) {
                     serverTraffic.injectPacket(packet, coordinates)
                     return
                 }
@@ -157,7 +155,7 @@ class ClientConnection private(socket: SocketContainer,
             case CHECK_ID => checkIDRegistered(new String(content))
             case PRINT_INFO => server.getConsoleOut(identifier).get.println(s"Connected to server ${server.relayVersion} (${server.apiVersion})")
 
-            case _ => systemChannel.sendPacket(ErrorPacket("forbidden order", s"could not complete order '$orderType', can't be handled by a server or unknown order"))
+            case _ => systemChannel.sendPacket(ErrorPacket("Forbidden order", s"Could not complete order '$orderType', can't be handled by a server or unknown order"))
         }
     }
 

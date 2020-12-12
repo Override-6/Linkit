@@ -1,15 +1,15 @@
 package fr.overridescala.linkkit.server.connection
 
 import java.io._
-import java.net.Socket
+import java.net.{Socket, SocketException}
 
 import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 import fr.overridescala.linkkit.api.packet.DynamicSocket
 
-class SocketContainer(notifier: EventNotifier, closeStreamsOnRefresh: Boolean) extends DynamicSocket(notifier) {
+class SocketContainer(notifier: EventNotifier, autoReconnect: Boolean) extends DynamicSocket(notifier, autoReconnect) {
 
     def set(socket: Socket): Unit = synchronized {
-        if (currentSocket != null && closeStreamsOnRefresh)
+        if (currentSocket != null && !autoReconnect)
             closeCurrentStreams()
 
         currentSocket = socket
@@ -26,7 +26,11 @@ class SocketContainer(notifier: EventNotifier, closeStreamsOnRefresh: Boolean) e
         println(s"Socket disconnected from $address")
         println("Reconnecting...")
         synchronized {
-            wait()
+            try {
+                wait()
+            } catch {
+                case e:InterruptedException =>
+            }
         }
         println("Reconnected !")
     }

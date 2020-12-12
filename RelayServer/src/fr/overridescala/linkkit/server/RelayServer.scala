@@ -1,12 +1,12 @@
 package fr.overridescala.linkkit.server
 
-import java.net.{ServerSocket, Socket}
+import java.net.{ServerSocket, Socket, SocketException}
 import java.nio.charset.Charset
 import java.nio.file.{Path, Paths}
 
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.overridescala.linkkit.api.exceptions.RelayCloseException
+import fr.overridescala.linkkit.api.exception.RelayCloseException
 import fr.overridescala.linkkit.api.packet._
 import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
@@ -23,7 +23,7 @@ import fr.overridescala.linkkit.server.security.RelayServerSecurityManager
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.7.0", stable = false)
+    val version: Version = Version("RelayServer", "0.8.0", stable = false)
 
     val Identifier = "server"
 }
@@ -51,6 +51,7 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
 
     val trafficHandler = new ServerTrafficHandler(this)
     val connectionsManager = new ConnectionsManager(this)
+
     private val remoteConsoles: RemoteConsolesHandler = new RemoteConsolesHandler(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -199,12 +200,12 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
                 sendResponse(tempSocket, "ERROR", rejectMsg)
 
             case REPLACE =>
-                connectionsManager.unregister(identifier)
+                connectionsManager.unregister(identifier).close(Reason.INTERNAL_ERROR)
                 registerConnection(identifier, tempSocket.get)
                 sendResponse(tempSocket, "OK")
 
             case DISCONNECT_BOTH =>
-                connectionsManager.unregister(identifier)
+                connectionsManager.unregister(identifier).close(Reason.INTERNAL_ERROR)
                 sendResponse(tempSocket, "ERROR", rejectMsg + " Consequences : Disconnected both")
         }
     }
@@ -218,6 +219,13 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
             val identifier = ClientConnection.retrieveIdentifier(tempSocket, this)
             handleRelayPointConnection(identifier, tempSocket)
         } catch {
+            case e: SocketException =>
+                val msg = e.getMessage.toLowerCase
+                if (msg == "socket closed" || msg == "socket is closed")
+                    return
+                println("waaaiii")
+                Console.err.println(msg)
+            case e: RelayCloseException =>
             case NonFatal(e) =>
                 e.printStackTrace()
                 onException(e)

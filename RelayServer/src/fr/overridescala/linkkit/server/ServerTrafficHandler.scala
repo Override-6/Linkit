@@ -1,6 +1,6 @@
 package fr.overridescala.linkkit.server
 
-import fr.overridescala.linkkit.api.exceptions.RelayException
+import fr.overridescala.linkkit.api.exception.{IllegalPacketWorkerLockException, RelayException}
 import fr.overridescala.linkkit.api.packet.{Packet, PacketContainer, PacketCoordinates, TrafficHandler}
 import fr.overridescala.linkkit.api.system.Reason
 
@@ -50,5 +50,10 @@ class ServerTrafficHandler(server: RelayServer) extends TrafficHandler {
         registeredCollectors.clear()
     }
 
-    override def isTargeted(containerID: Int): Boolean = registeredCollectors.contains(containerID)
+    override def isRegistered(containerID: Int): Boolean = registeredCollectors.contains(containerID)
+
+    override def checkThread(): Unit = {
+        if (Thread.currentThread().getThreadGroup == server.packetWorkerThreadGroup)
+            throw new IllegalPacketWorkerLockException("This packet worker thread was about to be locked by a monitor in order to wait packet reception")
+    }
 }

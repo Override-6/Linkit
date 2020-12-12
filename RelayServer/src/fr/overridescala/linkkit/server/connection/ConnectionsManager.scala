@@ -1,6 +1,6 @@
 package fr.overridescala.linkkit.server.connection
 
-import fr.overridescala.linkkit.api.exceptions.{RelayException, RelayInitialisationException}
+import fr.overridescala.linkkit.api.exception.{RelayException, RelayInitialisationException}
 import fr.overridescala.linkkit.api.system.{JustifiedCloseable, Reason}
 import fr.overridescala.linkkit.server.RelayServer
 
@@ -19,8 +19,10 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
     private val connections: mutable.Map[String, ClientConnection] = mutable.Map.empty
 
     override def close(reason: Reason): Unit = {
-        for ((_, connection) <- connections)
+        for ((_, connection) <- connections) {
+            println(s"Closing '${connection.identifier}'...")
             connection.close(reason)
+        }
     }
 
     /**
@@ -67,13 +69,8 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      *
      * @param identifier the identifier to disconnect
      * */
-    def unregister(identifier: String): Unit = {
-        if (isNotRegistered(identifier))
-            return
-
-        connections.remove(identifier)
-            .get
-            .close(Reason.INTERNAL)
+    def unregister(identifier: String): ClientConnection = {
+        connections.remove(identifier).get
     }
 
 
@@ -84,12 +81,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @return the found [[ClientConnection]] bound with the identifier
      * */
     def getConnection(identifier: String): ClientConnection = {
-        for ((_, connection) <- connections) {
-            val connectionIdentifier = connection.identifier
-            if (connectionIdentifier.equals(identifier))
-                return connection
-        }
-        null
+        connections.get(identifier).orNull
     }
 
     /**

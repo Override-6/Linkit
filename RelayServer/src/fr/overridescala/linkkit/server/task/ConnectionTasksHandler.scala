@@ -1,6 +1,6 @@
 package fr.overridescala.linkkit.server.task
 
-import fr.overridescala.linkkit.api.exceptions.TaskException
+import fr.overridescala.linkkit.api.exception.TaskException
 import fr.overridescala.linkkit.api.packet.PacketCoordinates
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.linkkit.api.system.{Reason, RemoteConsole, SystemOrder, SystemPacketChannel}

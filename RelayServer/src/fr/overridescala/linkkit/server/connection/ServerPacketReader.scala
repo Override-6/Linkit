@@ -2,26 +2,21 @@ package fr.overridescala.linkkit.server.connection
 
 import java.net.SocketException
 
-import fr.overridescala.linkkit.api.exceptions.RelayException
 import fr.overridescala.linkkit.api.packet._
 import fr.overridescala.linkkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
 class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
 
-    @Nullable private val remoteConsoleErr = server.getConsoleErr(identifier).orNull
-    private val packetReader = new PacketReader(socket, server.securityManager, remoteConsoleErr)
+    private val packetReader = new PacketReader(socket, server.securityManager)
     private val manager = server.connectionsManager
     private val packetManager = server.packetManager
 
+    //TODO exceptions catches
     def nextPacket(onPacketReceived: (Packet, PacketCoordinates) => Unit): Unit = {
         try {
             nextConcernedPacket(onPacketReceived)
         } catch {
-            case e: RelayException =>
-                if (remoteConsoleErr != null)
-                    remoteConsoleErr.reportExceptionSimplified(e)
-                e.printStackTrace();
             case e: SocketException if e.getMessage == "Connection reset" =>
                 val msg =
                     if (identifier == null) "socket connection reset while initialising connection."
