@@ -9,7 +9,7 @@ import java.util.zip.ZipFile
 
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.`extension`.RelayExtensionLoader.{MainClassField, PropertyName}
-import fr.overridescala.linkkit.api.exceptions.{ExtensionLoadException, RelayException}
+import fr.overridescala.linkkit.api.exception.{ExtensionLoadException, RelayException}
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal

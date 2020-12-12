@@ -1,8 +1,8 @@
 package fr.overridescala.linkkit.api
 
 import fr.overridescala.linkkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.overridescala.linkkit.api.exceptions.RelayInitialisationException
-import fr.overridescala.linkkit.api.packet.PacketManager
+import fr.overridescala.linkkit.api.exception.RelayInitialisationException
+import fr.overridescala.linkkit.api.packet.{PacketManager, TrafficHandler}
 import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.collector.PacketCollector
 import fr.overridescala.linkkit.api.system.config.RelayConfiguration
@@ -28,7 +28,7 @@ import org.jetbrains.annotations.Nullable
  */
 
 object Relay {
-    final val apiVersion = Version("Api", "0.6.0", stable = false)
+    final val apiVersion = Version("Api", "0.7.0", stable = false)
 }
 
 trait Relay extends JustifiedCloseable with TaskScheduler {
@@ -46,6 +46,8 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     val configuration: RelayConfiguration
 
     val securityManager: RelaySecurityManager
+
+    val trafficHandler: TrafficHandler
 
     /**
      * A Relay identifier is a string that identifies the Relay on the network.
@@ -73,6 +75,14 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * The Relay properties must be used/updated by the extensions, and is Therefore empty by default.
      */
     val properties: RelayProperties
+
+    /**
+     * Packet Worker Threads have to be registered in this ThreadGroup in order to throw an exception when a relay worker thread
+     * is about to be locked by a monitor, that concern packet reception (example: lockers of BlockingQueues in PacketChannels)
+     *
+     * @see [[fr.overridescala.linkkit.api.exception.IllegalPacketWorkerLockException]]
+     * */
+    val packetWorkerThreadGroup: ThreadGroup = new ThreadGroup("Relay Packet Workers")
 
     /**
      * The Event Observer used by this relay.

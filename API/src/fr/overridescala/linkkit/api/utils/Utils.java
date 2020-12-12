@@ -1,8 +1,7 @@
 package fr.overridescala.linkkit.api.utils;
 
 import fr.overridescala.linkkit.api.packet.fundamental.DataPacket;
-import fr.overridescala.linkkit.api.exceptions.UnexpectedPacketException;
-import fr.overridescala.linkkit.api.packet.fundamental.DataPacket;
+import fr.overridescala.linkkit.api.exception.UnexpectedPacketException;
 import scala.collection.Seq;
 
 import java.io.*;

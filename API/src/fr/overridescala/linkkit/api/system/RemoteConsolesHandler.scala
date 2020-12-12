@@ -1,81 +1,81 @@
 package fr.overridescala.linkkit.api.system
 
-import java.util.concurrent.ThreadLocalRandom
+import java.util.Collections
+import java.util.concurrent.{ConcurrentHashMap, ThreadLocalRandom}
 
 import fr.overridescala.linkkit.api.Relay
-import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
-import fr.overridescala.linkkit.api.system.RemoteConsolesHandler.ConsolesCollectorID
+import fr.overridescala.linkkit.api.packet.fundamental.{DataPacket, EmptyPacket}
+import fr.overridescala.linkkit.api.system.RemoteConsolesHandler.{AsyncConsolesCollectorID, SyncConsolesCollectorID}
 
-import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class RemoteConsolesHandler(relay: Relay) {
 
-    private val outConsoles = mutable.LinkedHashMap.empty[String, RemoteConsole]
-    private val errConsoles = mutable.LinkedHashMap.empty[String, RemoteConsole.Err]
+    private val outConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])
+    private val errConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole.Err])
 
-    private val consoleCollector = relay.createAsyncCollector(ConsolesCollectorID)
+    private val asyncConsoleCollector = relay.createAsyncCollector(AsyncConsolesCollectorID)
+    private val syncConsoleCollector = relay.createSyncCollector(SyncConsolesCollectorID)
 
     if (relay.configuration.enableRemoteConsoles)
-        consoleCollector.onPacketReceived((packet, coos) => {
-            val data = packet.asInstanceOf[DataPacket]
-            val owner = coos.senderID
-            val consoleType = data.header
-            val consoleChannelId = new String(data.content).toInt
-            val channel = relay.createAsyncChannel(coos.senderID, consoleChannelId)
-
-            consoleType match {
-                case "out" => outConsoles.put(owner, RemoteConsole.out(channel))
-                case "err" => errConsoles.put(owner, RemoteConsole.err(channel))
-            }
-        })
+        listenRequests()
 
     def getOut(targetId: String): RemoteConsole = {
         if (!relay.configuration.enableRemoteConsoles)
             return RemoteConsole.mock()
 
-        if (outConsoles.contains(targetId))
-            return outConsoles(targetId)
+        if (outConsoles.containsKey(targetId)) {
+            return outConsoles.get(targetId)
+        }
 
-        val consoleChannelId = ThreadLocalRandom.current().nextInt()
-        consoleCollector.sendPacket(DataPacket("out", consoleChannelId.toString), targetId)
+        val outID = ThreadLocalRandom.current().nextInt()
+        val outChannel = relay.createAsyncChannel(targetId, outID)
+        val out = RemoteConsole.out(outChannel)
+        asyncConsoleCollector.sendPacket(DataPacket("out", outID.toString), targetId)
+        syncConsoleCollector.nextPacket(targetId)
+        outConsoles.put(targetId, out)
 
-        val channel = relay.createAsyncChannel(targetId, consoleChannelId)
-        val remoteConsole = RemoteConsole.out(channel)
-        outConsoles.put(targetId, remoteConsole)
-        remoteConsole
+        out
     }
 
     def getErr(targetId: String): RemoteConsole.Err = {
         if (!relay.configuration.enableRemoteConsoles)
             return RemoteConsole.mockErr()
 
-        if (errConsoles.contains(targetId))
-            return errConsoles(targetId)
+        if (errConsoles.containsKey(targetId)) {
+            return errConsoles.get(targetId)
+        }
 
-        val consoleChannelId = ThreadLocalRandom.current().nextInt()
-        consoleCollector.sendPacket(DataPacket("err", consoleChannelId.toString), targetId)
+        val errID = ThreadLocalRandom.current().nextInt()
+        val errChannel = relay.createAsyncChannel(targetId, errID)
+        val err = RemoteConsole.err(errChannel)
+        asyncConsoleCollector.sendPacket(DataPacket("err", errID.toString), targetId)
+        syncConsoleCollector.nextPacket(targetId)
+        errConsoles.put(targetId, err)
 
-        val channel = relay.createAsyncChannel(targetId, consoleChannelId)
-        val remoteConsole = RemoteConsole.err(channel)
-        errConsoles.put(targetId, remoteConsole)
-        remoteConsole
+        err
     }
 
-    def linkErr(targetID: String, identifier: Int): Unit = {
-        val channel = relay.createAsyncChannel(targetID, identifier)
-        val remoteConsole = RemoteConsole.err(channel)
-        errConsoles.put(targetID, remoteConsole)
+    private def listenRequests(): Unit = {
+        asyncConsoleCollector.onPacketReceived((packet, coos) => {
+            val data = packet.asInstanceOf[DataPacket]
+            val owner = coos.senderID
+            val consoleType = data.header
+            val consoleChannelId = new String(data.content).toInt
+
+            val channel = relay.createAsyncChannel(coos.senderID, consoleChannelId)
+
+            consoleType match {
+                case "out" => outConsoles.put(owner, RemoteConsole.out(channel))
+                case "err" => errConsoles.put(owner, RemoteConsole.err(channel))
+            }
+            syncConsoleCollector.sendPacket(EmptyPacket, owner)
+        })
     }
-
-    def linkOut(targetId: String, identifier: Int): Unit = {
-        val channel = relay.createAsyncChannel(targetId, identifier)
-        val remoteConsole = RemoteConsole.out(channel)
-        outConsoles.put(targetId, remoteConsole)
-    }
-
-
 }
 
 object RemoteConsolesHandler {
-    val ConsolesCollectorID = 7
+    val SyncConsolesCollectorID = 7
+    val AsyncConsolesCollectorID = 8
 }

@@ -2,7 +2,7 @@ package fr.overridescala.linkkit.api.packet.channel
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import fr.overridescala.linkkit.api.exceptions.UnexpectedPacketException
+import fr.overridescala.linkkit.api.exception.UnexpectedPacketException
 import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
 import fr.overridescala.linkkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
 import fr.overridescala.linkkit.api.system.Reason
@@ -42,6 +42,8 @@ class SyncPacketChannel(override val connectedID: String,
      * @see [[DataPacket]]
      * */
     override def nextPacket(): Packet = {
+        if (queue.isEmpty)
+            traffic.checkThread()
         val packet = queue.takeLast()
         //handler.notifyPacketUsed(packet, coordinates)
         packet

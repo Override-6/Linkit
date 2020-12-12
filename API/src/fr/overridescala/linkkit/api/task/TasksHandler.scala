@@ -1,7 +1,7 @@
 package fr.overridescala.linkkit.api.task
 
 import fr.overridescala.linkkit.api.Relay
-import fr.overridescala.linkkit.api.exceptions.TaskException
+import fr.overridescala.linkkit.api.exception.TaskException
 import fr.overridescala.linkkit.api.packet.PacketCoordinates
 import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket

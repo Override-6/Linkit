@@ -1,7 +1,7 @@
 package fr.overridescala.linkkit.api.`extension`
 
 import fr.overridescala.linkkit.api.Relay
-import fr.overridescala.linkkit.api.exceptions.RelayException
+import fr.overridescala.linkkit.api.exception.RelayException
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

@@ -1,4 +1,4 @@
-package fr.overridescala.linkkit.api.exceptions
+package fr.overridescala.linkkit.api.exception
 
 /**
  * Must be only thrown during task executions.

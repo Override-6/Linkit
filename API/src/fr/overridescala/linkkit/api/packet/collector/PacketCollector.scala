@@ -19,13 +19,17 @@ abstract class PacketCollector(handler: TrafficHandler) extends PacketContainer 
 object PacketCollector {
     abstract class Sync(handler: TrafficHandler) extends PacketCollector(handler) {
 
-        def nextPacket[P <: Packet](targetID: String, typeOfP: Class[P]): P
+        def nextPacket[P <: Packet](targetID: String, typeOfP: Class[P]): P = nextPacketAndCoordinates(targetID, typeOfP)._1
 
-        def nextPacket[P <: Packet](typeOfP: Class[P]): P
+        def nextPacket[P <: Packet](typeOfP: Class[P]): P = nextPacketAndCoordinates(typeOfP)._1
 
-        def nextPacketAndCoordinate[P <: Packet](targetID: String, typeOfP: Class[P]): (P, PacketCoordinates)
+        def nextPacket(targetID: String): Packet = nextPacketAndCoordinates(targetID)._1
 
-        def nextPacketAndCoordinate[P <: Packet](typeOfP: Class[P]): (Packet, PacketCoordinates)
+        def nextPacketAndCoordinates[P <: Packet](targetID: String, typeOfP: Class[P]): (P, PacketCoordinates)
+
+        def nextPacketAndCoordinates[P <: Packet](typeOfP: Class[P]): (P, PacketCoordinates)
+
+        def nextPacketAndCoordinates(targetID: String): (Packet, PacketCoordinates) = nextPacketAndCoordinates(targetID, classOf[Packet])
 
         def haveMorePackets: Boolean
 

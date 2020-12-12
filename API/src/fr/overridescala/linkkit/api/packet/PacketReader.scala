@@ -1,14 +1,12 @@
 package fr.overridescala.linkkit.api.packet
 
-import fr.overridescala.linkkit.api.system.RemoteConsole
+import fr.overridescala.linkkit.api.exception.RelayCloseException
 import fr.overridescala.linkkit.api.system.security.RelaySecurityManager
-import org.jetbrains.annotations.Nullable
-
-import scala.util.control.NonFatal
 
 
-class PacketReader(socket: DynamicSocket, securityManager: RelaySecurityManager, @Nullable errConsole: RemoteConsole.Err) {
+class PacketReader(socket: DynamicSocket, securityManager: RelaySecurityManager) {
 
+    //TODO exceptions catches
     def readNextPacketBytes(): Array[Byte] = synchronized {
         val nextLength = nextPacketLength()
         if (nextLength == -1 || !socket.isOpen)
@@ -24,11 +22,7 @@ class PacketReader(socket: DynamicSocket, securityManager: RelaySecurityManager,
             val packetLengthFlagLength = Integer.parseInt(int, 16)
             Integer.parseInt(new String(socket.read(packetLengthFlagLength)))
         } catch {
-            case NonFatal(e) =>
-                Console.err.println(e.getMessage)
-                if (errConsole != null)
-                    errConsole.reportException(e)
-                -1
+            case _: RelayCloseException => -1
         }
     }
 

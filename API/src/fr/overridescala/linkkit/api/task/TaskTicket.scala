@@ -4,7 +4,7 @@ import java.io.IOException
 import java.lang.reflect.InvocationTargetException
 
 import fr.overridescala.linkkit.api.Relay
-import fr.overridescala.linkkit.api.exceptions.{TaskException, TaskOperationFailException}
+import fr.overridescala.linkkit.api.exception.{TaskException, TaskOperationFailException}
 import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.linkkit.api.system.Reason

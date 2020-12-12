@@ -2,7 +2,7 @@ package fr.overridescala.linkkit.api.packet
 
 import fr.overridescala.linkkit.api.Relay
 import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
-import fr.overridescala.linkkit.api.exceptions.{PacketException, UnexpectedPacketException}
+import fr.overridescala.linkkit.api.exception.{PacketException, UnexpectedPacketException}
 import fr.overridescala.linkkit.api.packet.PacketUtils.wrap
 import fr.overridescala.linkkit.api.packet.fundamental._
 import fr.overridescala.linkkit.api.system.SystemPacket

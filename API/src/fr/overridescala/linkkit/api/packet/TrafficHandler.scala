@@ -16,9 +16,9 @@ trait TrafficHandler extends JustifiedCloseable {
 
     def sendPacket(packet: Packet, identifier: Int, targetID: String): Unit
 
-    def isTargeted(identifier: Int): Boolean
+    def isRegistered(identifier: Int): Boolean
 
-    def isTargeted(coordinates: PacketCoordinates): Boolean = isTargeted(coordinates.containerID)
+    def checkThread(): Unit
 
     //def notifyPacketUsed(packet: Packet, coordinates: PacketCoordinates): Unit
 

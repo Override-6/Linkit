@@ -2,7 +2,7 @@ package fr.overridescala.linkkit.api.task
 
 import java.util.concurrent.atomic.AtomicReference
 
-import fr.overridescala.linkkit.api.exceptions.TaskException
+import fr.overridescala.linkkit.api.exception.TaskException
 import org.jetbrains.annotations.Nullable
 
 

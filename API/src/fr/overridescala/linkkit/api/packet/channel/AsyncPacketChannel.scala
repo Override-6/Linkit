@@ -1,6 +1,6 @@
 package fr.overridescala.linkkit.api.packet.channel
 
-import fr.overridescala.linkkit.api.exceptions.PacketException
+import fr.overridescala.linkkit.api.exception.PacketException
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.linkkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
 

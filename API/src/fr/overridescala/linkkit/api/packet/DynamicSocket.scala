@@ -3,12 +3,12 @@ package fr.overridescala.linkkit.api.packet
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
-import fr.overridescala.linkkit.api.exceptions.RelayCloseException
+import fr.overridescala.linkkit.api.exception.RelayCloseException
 import fr.overridescala.linkkit.api.system.event.EventObserver.EventNotifier
 import fr.overridescala.linkkit.api.system.security.RelaySecurityManager
 import fr.overridescala.linkkit.api.system.{JustifiedCloseable, Reason}
 
-abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable {
+abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = true) extends JustifiedCloseable {
 
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
@@ -43,7 +43,7 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
 
         def onDisconnect(): Int = {
             locker.markDisconnected()
-            if (closed)
+            if (closed || autoReconnect)
                 return -1
             handleReconnection()
             locker.markAsConnected()
@@ -59,7 +59,7 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
         val buff = new Array[Byte](length)
         var totalRead = 0
         while (totalRead != length) {
-            val bytesRead = read(buff, totalRead )
+            val bytesRead = read(buff, totalRead)
             totalRead += bytesRead
         }
         buff
@@ -75,7 +75,7 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
-                if (closed)
+                if (closed || autoReconnect)
                     return
                 locker.markDisconnected()
                 handleReconnection()
@@ -91,12 +91,9 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
     def isOpen: Boolean = !closed
 
     override def close(reason: Reason): Unit = {
-        if (currentSocket.isClosed) {
-            closed = true
-            return
-        }
         closed = true
-        closeCurrentStreams()
+        if (!currentSocket.isClosed)
+            closeCurrentStreams()
     }
 
     protected def handleReconnection(): Unit
@@ -106,14 +103,19 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
             return
         locker.awaitRaise()
         currentSocket.close()
+        currentInputStream.close()
+        currentInputStream.close()
     }
 
     protected def markAsConnected(): Unit =
         locker.markAsConnected()
 
     private def ensureOpen(): Unit = {
-        if (closed)
-            throw new RelayCloseException("Socket closed.")
+        if (closed) {
+            //Thread.dumpStack()
+            throw new RelayCloseException("Socket closed")
+        }
+
     }
 
     private class SocketLocker {
@@ -148,8 +150,11 @@ abstract class DynamicSocket(notifier: EventNotifier) extends JustifiedCloseable
         }
 
         def awaitConnected(): Unit = disconnectLock.synchronized {
-            if (isDisconnected)
+            if (isDisconnected) try {
                 disconnectLock.wait()
+            } catch {
+                case _: InterruptedException =>
+            }
         }
 
     }

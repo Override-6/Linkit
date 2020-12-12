@@ -3,12 +3,13 @@ package fr.overridescala.linkkit.api.system
 import java.io.{PrintStream, PrintWriter, StringWriter}
 import java.security.AccessController
 
-import fr.overridescala.linkkit.api.exceptions.UnexpectedPacketException
+import fr.overridescala.linkkit.api.exception.UnexpectedPacketException
 import fr.overridescala.linkkit.api.packet.fundamental.DataPacket
 import fr.overridescala.linkkit.api.packet.Packet
 import fr.overridescala.linkkit.api.packet.channel.PacketChannel
 import fr.overridescala.linkkit.api.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
+import sun.misc.Unsafe
 import sun.security.action.GetPropertyAction
 
 
@@ -51,7 +52,8 @@ class RemoteConsole private(@Nullable channel: PacketChannel.Async,
     }
 
     override def print(s: Array[Char]): Unit = print(s: Any)
-                                                        //avoid newLine
+
+    //avoid newLine
     override def print(str: String): Unit = if (str != lineSeparator) print(str: Any)
 
     override def print(i: Int): Unit = print(i: Any)
@@ -95,7 +97,7 @@ object RemoteConsole {
                 sb.append(name)
                 if (message != null) {
                     sb.append(": ")
-                            .append(message)
+                        .append(message)
                 }
 
                 cause = cause.getCause
