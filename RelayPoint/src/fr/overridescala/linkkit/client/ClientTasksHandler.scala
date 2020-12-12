@@ -2,7 +2,7 @@ package fr.overridescala.linkkit.client
 
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
-import fr.overridescala.linkkit.api.exceptions.TaskException
+import fr.overridescala.linkkit.api.exception.TaskException
 import fr.overridescala.linkkit.api.packet.PacketCoordinates
 import fr.overridescala.linkkit.api.packet.fundamental.TaskInitPacket
 import fr.overridescala.linkkit.api.system.{Reason, SystemOrder, SystemPacketChannel}
@@ -40,7 +40,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
 
                 val errConsoleOpt = relay.getConsoleErr(coordinates.senderID)
                 if (errConsoleOpt.isDefined)
-                    errConsoleOpt.get.reportException(e)
+                    errConsoleOpt.get.reportExceptionSimplified(e)
         }
     }
 

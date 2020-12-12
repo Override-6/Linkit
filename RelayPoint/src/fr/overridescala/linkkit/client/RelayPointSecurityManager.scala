@@ -17,6 +17,8 @@ class RelayPointSecurityManager extends RelaySecurityManager {
      * */
     override def checkRelay(relay: Relay): Unit = {
         val identifier = relay.identifier
+        if (identifier.isEmpty)
+            throw RelaySecurityException("Relay Identifier can't be empty")
         if (identifier == RelayPoint.ServerID || identifier == "unknown")
             throw RelaySecurityException(s"'$identifier' is a blacklisted identifier !")
         if (!identifier.matches("^\\w{0,16}$"))
