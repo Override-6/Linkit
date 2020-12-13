@@ -50,11 +50,9 @@ class SyncPacketChannel(override val connectedID: String,
     }
 
 
-    override def nextPacketAsP[P <: Packet](): P =
-        nextPacket().asInstanceOf[P]
 
     /**
-     * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
+     * @return true if this channel contains stored packets. In other words, return true if [[nextPacketAsP]] will not wait
      * */
     override def haveMorePackets: Boolean =
         !queue.isEmpty

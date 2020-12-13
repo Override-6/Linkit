@@ -7,10 +7,11 @@ import fr.overridescala.linkkit.api.`extension`.packet.PacketFactory
 //TODO doc parameters
 /**
  * this type of packet is sent when a relay ask to server to schedule a task between him, the server, and the target
+ *
  * @see [[Packet]]
  * */
-case class TaskInitPacket private[api](taskType: String,
-                                       content: Array[Byte] = Array()) extends Packet {
+case class TaskInitPacket(taskType: String,
+                          content: Array[Byte] = Array()) extends Packet {
 
     /**
      * Represents this packet as a String
@@ -34,7 +35,7 @@ object TaskInitPacket extends PacketFactory[TaskInitPacket] {
     override def decompose(implicit packet: TaskInitPacket): Array[Byte] = {
         val typeBytes = packet.taskType.getBytes
         TYPE ++ typeBytes ++
-                CONTENT ++ packet.content
+            CONTENT ++ packet.content
     }
 
     override def canTransform(implicit bytes: Array[Byte]): Boolean =

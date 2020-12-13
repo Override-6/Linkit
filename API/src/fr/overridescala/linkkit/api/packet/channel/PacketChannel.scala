@@ -40,10 +40,10 @@ object PacketChannel {
          * */
         def nextPacket(): Packet
 
-        def nextPacketAsP[P <: Packet](): P
+        def nextPacketAsP[P <: Packet](): P = nextPacket().asInstanceOf[P]
 
         /**
-         * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
+         * @return true if this channel contains stored packets. In other words, return true if [[nextPacketAsP]] will not wait
          * */
         def haveMorePackets: Boolean
     }

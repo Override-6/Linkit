@@ -43,7 +43,7 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
 
         def onDisconnect(): Int = {
             locker.markDisconnected()
-            if (closed || autoReconnect)
+            if (closed || !autoReconnect)
                 return -1
             handleReconnection()
             locker.markAsConnected()
@@ -75,7 +75,7 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
-                if (closed || autoReconnect)
+                if (closed || !autoReconnect)
                     return
                 locker.markDisconnected()
                 handleReconnection()
@@ -112,10 +112,8 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
 
     private def ensureOpen(): Unit = {
         if (closed) {
-            //Thread.dumpStack()
             throw new RelayCloseException("Socket closed")
         }
-
     }
 
     private class SocketLocker {
