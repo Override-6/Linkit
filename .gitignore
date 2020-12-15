@@ -2,8 +2,6 @@
 /out/
 /target/
 /target/idea_output/
-/LinkKitExtensions/
-/MoodCollector/
 .idea
 .idea_modules
 *.iml
