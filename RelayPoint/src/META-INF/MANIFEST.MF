@@ -1,3 +1,3 @@
 Manifest-Version: 1.0
-Main-Class: fr.`override`.linkkit.client.Main
+Main-Class: fr.override.linkit.client.Main
 Class-Path: Dependencies\scala-library.jar

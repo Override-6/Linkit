@@ -1,1 +1,1 @@
-# Linkkit - Relay Server
+# linkit - Relay Server
