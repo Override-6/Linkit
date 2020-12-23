@@ -14,6 +14,9 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.RelayExtensionLoader.{MainClassField, PropertyName}
 import fr.`override`.linkit.api.exception.{ExtensionLoadException, RelayException}
 
+import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
+
 
 class RelayExtensionLoader(relay: Relay) extends Closeable {
 

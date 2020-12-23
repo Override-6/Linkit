@@ -11,6 +11,8 @@ import fr.`override`.linkit.api.system.{Reason, SystemOrder}
 import fr.`override`.linkit.api.task.Task
 import javax.management.InstanceAlreadyExistsException
 
+import scala.collection.mutable.ListBuffer
+
 @deprecated
 class EventObserver(notifyEvents: Boolean) {
 

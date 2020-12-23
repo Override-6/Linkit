@@ -17,6 +17,8 @@ import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import RelayPoint.ServerID
 
+import scala.util.control.NonFatal
+
 object RelayPoint {
     val version: Version = Version("RelayPoint", "0.6.0", stable = false)
 

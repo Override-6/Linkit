@@ -12,6 +12,8 @@ import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
 import org.jetbrains.annotations.Nullable
 
+import scala.util.control.NonFatal
+
 class ClientConnection private(socket: SocketContainer,
                                server: RelayServer,
                                val identifier: String) extends JustifiedCloseable {

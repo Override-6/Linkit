@@ -3,8 +3,6 @@ package fr.`override`.linkit.server
 import java.net.{ServerSocket, Socket, SocketException}
 import java.nio.charset.Charset
 
-import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
-import fr.`override`.linkit.server.security.RelayServerSecurityManager
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.exception.RelayCloseException
@@ -15,10 +13,12 @@ import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.event.EventObserver
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
-import RelayServer.Identifier
-import fr.`override`.linkit.server.config.RelayServerConfiguration
-import fr.`override`.linkit.server.config.RelayServerConfiguration
-import fr.`override`.linkit.server.connection.ClientConnection
+import fr.`override`.linkit.server.RelayServer.Identifier
+import fr.`override`.linkit.server.config.{RelayServerConfiguration, AmbiguityStrategy}
+import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
+import fr.`override`.linkit.server.security.RelayServerSecurityManager
+
+import scala.util.control.NonFatal
 
 object RelayServer {
     val version: Version = Version("RelayServer", "0.9.0", stable = false)

@@ -5,6 +5,10 @@ import fr.`override`.linkit.api.exception.PacketException
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.util.control.NonFatal
+
 class AsyncPacketChannel(override val connectedID: String,
                          override val identifier: Int,
                          traffic: TrafficHandler) extends PacketChannel.Async(traffic) {

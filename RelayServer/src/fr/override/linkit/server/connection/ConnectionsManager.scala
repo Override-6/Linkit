@@ -4,6 +4,8 @@ import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
 import fr.`override`.linkit.api.system.{JustifiedCloseable, Reason}
 
+import scala.collection.mutable
+
 /**
  * TeamMate of RelayServer, handles the RelayPoint Connections.
  *

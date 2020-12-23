@@ -2,11 +2,11 @@ package fr.`override`.linkit.api.`extension`.packet
 
 import scala.annotation.StaticAnnotation
 import scala.reflect.macros.whitebox
+import scala.language.experimental.macros
 
 object PacketMacros {
 
     class packetBuilder extends StaticAnnotation {
-        scala.language.experimental.macros
         def macroTransform(annottees: Any*): Any = macro macroTransformImpl
     }
 
