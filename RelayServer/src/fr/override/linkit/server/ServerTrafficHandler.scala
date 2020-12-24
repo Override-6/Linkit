@@ -2,7 +2,7 @@ package fr.`override`.linkit.server
 
 import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, RelayException}
 import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates, TrafficHandler}
-import fr.`override`.linkit.api.system.Reason
+import fr.`override`.linkit.api.system.CloseReason
 
 import scala.collection.mutable
 
@@ -27,7 +27,7 @@ class ServerTrafficHandler(server: RelayServer) extends TrafficHandler {
         notifier.onPacketContainerRegistered(container)
     }
 
-    override def unregister(id: Int, reason: Reason): Unit = {
+    override def unregister(id: Int, reason: CloseReason): Unit = {
         val opt = registeredCollectors.remove(id)
         if (opt.isDefined)
             notifier.onPacketContainerUnregistered(opt.get, reason)
@@ -45,7 +45,7 @@ class ServerTrafficHandler(server: RelayServer) extends TrafficHandler {
         server.getConnection(targetID).sendPacket(packet, channelID)
     }
 
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         registeredCollectors.values.foreach(_.close(reason))
         registeredCollectors.clear()
     }

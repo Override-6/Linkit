@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.task
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.system.{JustifiedCloseable, Reason, RemoteConsole}
+import fr.`override`.linkit.api.system.{JustifiedCloseable, CloseReason, RemoteConsole}
 import fr.`override`.linkit.api.task.TaskTicket
 
 import scala.collection.mutable
@@ -37,7 +37,7 @@ class ConnectionTasksThread private(ownerID: String,
         }
     }
 
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         if (currentTicket != null) {
             currentTicket.abort(reason)
             currentTicket = null

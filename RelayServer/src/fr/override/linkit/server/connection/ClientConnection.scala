@@ -40,7 +40,7 @@ class ClientConnection private(socket: SocketContainer,
     private var remoteConsoleErr: RemoteConsole.Err = _
     private var remoteConsoleOut: RemoteConsole = _
 
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         if (socket.isConnected && reason.isInternal) {
             systemChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
         }
@@ -97,7 +97,7 @@ class ClientConnection private(socket: SocketContainer,
 
         remoteConsoleErr = errOpt.get
         remoteConsoleOut = outOpt.get
-        systemChannel.sendOrder(SystemOrder.PRINT_INFO, Reason.INTERNAL)
+        systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
 
         if (configuration.enableTasks)
             tasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel, remoteConsoleErr)
@@ -116,7 +116,7 @@ class ClientConnection private(socket: SocketContainer,
             case NonFatal(e) =>
                 e.printStackTrace()
                 remoteConsoleErr.reportException(e)
-                close(Reason.INTERNAL_ERROR)
+                close(CloseReason.INTERNAL_ERROR)
         }
         println(s"End of Thread execution '$threadName'")
     }
@@ -143,7 +143,7 @@ class ClientConnection private(socket: SocketContainer,
 
     private def handleSystemOrder(packet: SystemPacket): Unit = {
         val orderType = packet.order
-        val reason = packet.reason.reversed()
+        val reason = packet.reason.reversedPOV()
         val content = packet.content
 
         notifier.onSystemOrderReceived(orderType, reason)
@@ -160,7 +160,7 @@ class ClientConnection private(socket: SocketContainer,
     }
 
     private def checkIDRegistered(target: String): Unit = {
-        val response = if (manager.containsIdentifier(target)) "OK" else "ERROR"
+        val response = if (server.isConnected(target)) "OK" else "ERROR"
         systemChannel.sendPacket(DataPacket(response))
     }
 
@@ -193,11 +193,11 @@ object ClientConnection {
                 throw new UnexpectedPacketException(s"Unexpected packet type $name received while getting RelayPoint identifier.")
         }
 
-        channel.sendPacket(SystemPacket(SystemOrder.GET_IDENTIFIER, Reason.INTERNAL))
+        channel.sendPacket(SystemPacket(SystemOrder.GET_IDENTIFIER, CloseReason.INTERNAL))
         deflect()
 
         val identifier = handleClientResponse()
-        channel.close(Reason.INTERNAL)
+        channel.close(CloseReason.INTERNAL)
 
         identifier
     }

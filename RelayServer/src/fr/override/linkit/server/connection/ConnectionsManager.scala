@@ -2,7 +2,7 @@ package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.system.{JustifiedCloseable, Reason}
+import fr.`override`.linkit.api.system.{JustifiedCloseable, CloseReason}
 
 import scala.collection.mutable
 
@@ -18,7 +18,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * */
     private val connections: mutable.Map[String, ClientConnection] = mutable.Map.empty
 
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         for ((_, connection) <- connections) {
             println(s"Closing '${connection.identifier}'...")
             connection.close(reason)
@@ -53,7 +53,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         Console.err.println(s"Relay Connection '$identifier': " + msg)
 
         connections.remove(identifier)
-        connection.close(Reason.INTERNAL)
+        connection.close(CloseReason.INTERNAL)
     }
 
     def broadcast(err: Boolean, msg: String): Unit = {
@@ -99,12 +99,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @return true if any connected Relay have the specified identifier
      * */
     def containsIdentifier(identifier: String): Boolean = {
-        for (connection <- connections.values) {
-            val connectionIdentifier = connection.identifier
-            if (connectionIdentifier.equals(identifier))
-                return true
-        }
-        identifier == server.identifier //blacklists server identifier
+        identifier == server.identifier || connections.contains(identifier) //reserved server identifier
     }
 
 

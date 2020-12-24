@@ -4,7 +4,7 @@ import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.api.exception.TaskException
 import fr.`override`.linkit.api.packet.PacketCoordinates
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.system.{Reason, RemoteConsole, SystemOrder, SystemPacketChannel}
+import fr.`override`.linkit.api.system.{CloseReason, RemoteConsole, SystemOrder, SystemPacketChannel}
 import fr.`override`.linkit.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
 
 /**
@@ -34,7 +34,7 @@ class ConnectionTasksHandler(override val identifier: String,
         } catch {
             case e: TaskException =>
                 Console.err.println(e.getMessage)
-                systemChannel.sendOrder(SystemOrder.ABORT_TASK, Reason.INTERNAL_ERROR)
+                systemChannel.sendOrder(SystemOrder.ABORT_TASK, CloseReason.INTERNAL_ERROR)
                 errConsole.reportExceptionSimplified(e)
         }
     }
@@ -56,14 +56,14 @@ class ConnectionTasksHandler(override val identifier: String,
     /**
      * closes the current client tasks thread
      * */
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         tasksThread.close(reason)
     }
 
     /**
      * Suddenly stop a task execution and execute his successor.
      * */
-    override def skipCurrent(reason: Reason): Unit = {
+    override def skipCurrent(reason: CloseReason): Unit = {
         //Restarting the thread causes the current task to be skipped
         //And wait or execute the task that come after it
         val lastThread = tasksThread

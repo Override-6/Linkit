@@ -89,13 +89,16 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
         } catch {
             case NonFatal(e) =>
                 e.printStackTrace()
-                close(Reason.INTERNAL_ERROR)
+                close(CloseReason.INTERNAL_ERROR)
         }
 
         println("Ready !")
         notifier.onReady()
     }
 
+    override def isConnected(identifier: String): Boolean = {
+        connectionsManager.containsIdentifier(identifier)
+    }
 
     override def createSyncChannel(linkedRelayID: String, id: Int, cacheSize: Int): PacketChannel.Sync = {
         val targetConnection = getConnection(linkedRelayID)
@@ -130,14 +133,14 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
         Option(remoteConsoles.getErr(targetId))
     }
 
-    override def close(reason: Reason): Unit =
+    override def close(reason: CloseReason): Unit =
         close(identifier, reason)
 
 
-    def close(relayId: String, reason: Reason): Unit = {
+    def close(relayId: String, reason: CloseReason): Unit = {
         println("closing server...")
 
-        if (reason == Reason.INTERNAL_ERROR)
+        if (reason == CloseReason.INTERNAL_ERROR)
             broadcast(true, "RelayServer will close your connection because of a critical error")
 
         extensionLoader.close()
@@ -190,19 +193,19 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
             case CLOSE_SERVER =>
                 sendResponse(tempSocket, "ERROR", rejectMsg + " Consequences: Closing Server...")
                 broadcast(true, "RelayServer will close your connection because of a critical error")
-                close(Reason.INTERNAL_ERROR)
+                close(CloseReason.INTERNAL_ERROR)
 
             case REJECT_NEW =>
                 Console.err.println("Rejected connection of a client because he gave an already registered relay identifier.")
                 sendResponse(tempSocket, "ERROR", rejectMsg)
 
             case REPLACE =>
-                connectionsManager.unregister(identifier).close(Reason.INTERNAL_ERROR)
+                connectionsManager.unregister(identifier).close(CloseReason.INTERNAL_ERROR)
                 registerConnection(identifier, tempSocket.get)
                 sendResponse(tempSocket, "OK")
 
             case DISCONNECT_BOTH =>
-                connectionsManager.unregister(identifier).close(Reason.INTERNAL_ERROR)
+                connectionsManager.unregister(identifier).close(CloseReason.INTERNAL_ERROR)
                 sendResponse(tempSocket, "ERROR", rejectMsg + " Consequences : Disconnected both")
         }
     }
@@ -230,7 +233,7 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
 
         def onException(e: Throwable): Unit = {
             sendResponse(tempSocket, "ERROR", s"An exception occurred in server during client connection initialisation ($e)") //send a negative response for the client initialisation handling
-            close(Reason.INTERNAL_ERROR)
+            close(CloseReason.INTERNAL_ERROR)
         }
     }
 
@@ -245,5 +248,6 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
         socket.write(packetManager.toBytes(responsePacket, coordinates))
     }
 
-    Runtime.getRuntime.addShutdownHook(new Thread(() => close(Reason.INTERNAL)))
+    Runtime.getRuntime.addShutdownHook(new Thread(() => close(CloseReason.INTERNAL)))
+
 }

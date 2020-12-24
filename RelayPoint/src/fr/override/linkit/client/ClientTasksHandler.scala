@@ -5,7 +5,7 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 import fr.`override`.linkit.api.exception.TaskException
 import fr.`override`.linkit.api.packet.PacketCoordinates
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.system.{Reason, SystemOrder, SystemPacketChannel}
+import fr.`override`.linkit.api.system.{CloseReason, SystemOrder, SystemPacketChannel}
 import fr.`override`.linkit.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
 
 import scala.util.control.NonFatal
@@ -36,7 +36,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
         } catch {
             case e: TaskException =>
                 Console.err.println(e.getMessage)
-                systemChannel.sendOrder(SystemOrder.ABORT_TASK, Reason.INTERNAL_ERROR)
+                systemChannel.sendOrder(SystemOrder.ABORT_TASK, CloseReason.INTERNAL_ERROR)
 
                 val errConsoleOpt = relay.getConsoleErr(coordinates.senderID)
                 if (errConsoleOpt.isDefined)
@@ -45,7 +45,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
     }
 
 
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         if (currentTicket != null) {
             currentTicket.abort(reason)
             currentTicket = null
@@ -54,7 +54,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
         tasksThread.interrupt()
     }
 
-    override def skipCurrent(reason: Reason): Unit = {
+    override def skipCurrent(reason: CloseReason): Unit = {
         //Restarting the thread causes the current task to be skipped
         //And wait or execute the task that come after it
         close(reason)
