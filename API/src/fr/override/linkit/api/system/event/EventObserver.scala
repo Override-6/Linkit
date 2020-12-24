@@ -2,12 +2,12 @@ package fr.`override`.linkit.api.system.event
 
 import fr.`override`.linkit.api.`extension`.RelayExtension
 import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
-import fr.`override`.linkit.api.system.{Reason, SystemOrder}
+import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
 import fr.`override`.linkit.api.`extension`.RelayExtension
 import fr.`override`.linkit.api.`extension`.packet.PacketFactory
 import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
 import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
-import fr.`override`.linkit.api.system.{Reason, SystemOrder}
+import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
 import fr.`override`.linkit.api.task.Task
 import javax.management.InstanceAlreadyExistsException
 
@@ -40,15 +40,15 @@ object EventObserver {
 
         def onDisconnected(): Unit = dispatch(_.onDisconnected())
 
-        def onClosed(relayId: String, reason: Reason): Unit = dispatch(_.onClosed(relayId, reason))
+        def onClosed(relayId: String, reason: CloseReason): Unit = dispatch(_.onClosed(relayId, reason))
 
         def onTaskScheduled(task: Task[_]): Unit = dispatch(_.onTaskScheduled(task))
 
-        def onTaskSkipped(task: Task[_], reason: Reason): Unit = dispatch(_.onTaskSkipped(task, reason))
+        def onTaskSkipped(task: Task[_], reason: CloseReason): Unit = dispatch(_.onTaskSkipped(task, reason))
 
         def onTaskStartExecuting(task: Task[_]): Unit = dispatch(_.onTaskStartExecuting(task))
 
-        def onTaskEnd(task: Task[_], reason: Reason): Unit = dispatch(_.onTaskEnd(task, reason))
+        def onTaskEnd(task: Task[_], reason: CloseReason): Unit = dispatch(_.onTaskEnd(task, reason))
 
         def onExtensionLoaded(extension: RelayExtension): Unit = dispatch(_.onExtensionLoaded(extension))
 
@@ -56,7 +56,7 @@ object EventObserver {
 
         def onPacketContainerRegistered(container: PacketContainer): Unit = dispatch(_.onPacketContainerRegistered(container))
 
-        def onPacketContainerUnregistered(container: PacketContainer, reason: Reason): Unit = dispatch(_.onPacketContainerUnregistered(container, reason))
+        def onPacketContainerUnregistered(container: PacketContainer, reason: CloseReason): Unit = dispatch(_.onPacketContainerUnregistered(container, reason))
 
         def onPacketSent(packet: Packet, coordinates: PacketCoordinates): Unit = dispatch(_.onPacketSent(packet, coordinates))
 
@@ -64,7 +64,7 @@ object EventObserver {
 
         def onPacketUsed(packet: Packet, coordinates: PacketCoordinates): Unit = dispatch(_.onPacketUsed(packet, coordinates))
 
-        def onSystemOrderReceived(orderType: SystemOrder, reason: Reason): Unit = dispatch(_.onSystemOrderReceived(orderType, reason))
+        def onSystemOrderReceived(orderType: SystemOrder, reason: CloseReason): Unit = dispatch(_.onSystemOrderReceived(orderType, reason))
 
         def onSystemOrderSent(orderType: SystemOrder): Unit = dispatch(_.onSystemOrderSent(orderType))
 

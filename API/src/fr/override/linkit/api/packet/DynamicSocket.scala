@@ -7,7 +7,7 @@ import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.api.system.{JustifiedCloseable, Reason}
+import fr.`override`.linkit.api.system.{JustifiedCloseable, CloseReason}
 
 abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = true) extends JustifiedCloseable {
 
@@ -91,7 +91,7 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
 
     def isOpen: Boolean = !closed
 
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         closed = true
         if (!currentSocket.isClosed)
             closeCurrentStreams()

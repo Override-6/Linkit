@@ -3,7 +3,7 @@ package fr.`override`.linkit.api.packet.collector
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
-import fr.`override`.linkit.api.system.Reason
+import fr.`override`.linkit.api.system.CloseReason
 
 import scala.collection.mutable
 
@@ -48,7 +48,7 @@ class SyncPacketCollector(handler: TrafficHandler,
 
     }
 
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         super.close(reason)
         categorisedQueue.clear()
         rawQueue.clear()

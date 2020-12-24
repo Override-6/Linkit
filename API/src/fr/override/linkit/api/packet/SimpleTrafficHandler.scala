@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.packet
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, RelayException}
-import fr.`override`.linkit.api.system.Reason
+import fr.`override`.linkit.api.system.CloseReason
 
 import scala.collection.mutable
 
@@ -29,7 +29,7 @@ class SimpleTrafficHandler(relay: Relay,
     }
 
 
-    override def unregister(id: Int, reason: Reason): Unit = {
+    override def unregister(id: Int, reason: CloseReason): Unit = {
         val opt = registeredContainers.remove(id)
         if (opt.isDefined)
             notifier.onPacketContainerUnregistered(opt.get, reason)
@@ -53,7 +53,7 @@ class SimpleTrafficHandler(relay: Relay,
 
     override def isRegistered(containerID: Int): Boolean = registeredContainers.contains(containerID)
 
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         for ((_, channel) <- registeredContainers) {
             channel.close(reason)
         }

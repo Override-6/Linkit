@@ -4,7 +4,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.TaskException
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.system.{Reason, RemoteConsole}
+import fr.`override`.linkit.api.system.{CloseReason, RemoteConsole}
 
 /**
  * The class that will execute the Task.
@@ -51,7 +51,7 @@ abstract class TaskExecutor {
         this.relay = relay
     }
 
-    def closeChannel(reason: Reason): Unit = {
+    def closeChannel(reason: CloseReason): Unit = {
         if (canCloseChannel)
             channel.close(reason)
     }

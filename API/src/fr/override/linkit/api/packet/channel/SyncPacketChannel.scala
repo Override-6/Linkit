@@ -3,15 +3,9 @@ package fr.`override`.linkit.api.packet.channel
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
-import fr.`override`.linkit.api.system.Reason
-import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
-import fr.`override`.linkit.api.system.Reason
-import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
-import fr.`override`.linkit.api.system.Reason
+import fr.`override`.linkit.api.system.CloseReason
 
 
 //TODO doc
@@ -36,7 +30,7 @@ class SyncPacketChannel(override val connectedID: String,
         queue.addFirst(packet)
     }
 
-    override def close(reason: Reason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         super.close(reason)
         queue.clear()
     }

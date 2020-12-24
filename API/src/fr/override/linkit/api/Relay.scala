@@ -28,9 +28,13 @@ import org.jetbrains.annotations.Nullable
  * @see [[RelayProperties]]
  * @see [[EventObserver]]
  */
-
+//TODO Recap :
+//TODO Rewrite/write Doc and README of API, RelayServer and RelayPoint
+//TODO Design a better event hooking system
+//TODO Replace every "OK" and "ERROR" by 0 or 1
+//TODO Design a brand new and optimised packet protocol
 object Relay {
-    final val apiVersion = Version("Api", "0.9.0", stable = false)
+    final val apiVersion = Version("Api", "0.10.0", stable = false)
 }
 
 trait Relay extends JustifiedCloseable with TaskScheduler {
@@ -98,6 +102,12 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * @throws RelayInitialisationException if the relay could not start properly
      */
     def start(): Unit
+
+    /**
+     * @param identifier the relay identifier to check
+     * @return true if the given relay identifier is connected on the network
+     * */
+    def isConnected(identifier: String): Boolean
 
     /**
      * @param linkedRelayID the targeted relay identifier to connect

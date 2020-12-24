@@ -6,7 +6,6 @@ import fr.`override`.linkit.api.system.security.RelaySecurityManager
 
 class PacketReader(socket: DynamicSocket, securityManager: RelaySecurityManager) {
 
-    //TODO exceptions catches
     def readNextPacketBytes(): Array[Byte] = synchronized {
         val nextLength = nextPacketLength()
         if (nextLength == -1 || !socket.isOpen)

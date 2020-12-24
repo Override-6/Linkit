@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.packet.collector
 
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
 import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates, TrafficHandler}
-import fr.`override`.linkit.api.system.Reason
+import fr.`override`.linkit.api.system.CloseReason
 
 abstract class PacketCollector(handler: TrafficHandler) extends PacketContainer {
 
@@ -12,7 +12,7 @@ abstract class PacketCollector(handler: TrafficHandler) extends PacketContainer 
         handler.sendPacket(packet, identifier, targetID)
     }
 
-    override def close(reason: Reason): Unit = handler.unregister(identifier, reason)
+    override def close(reason: CloseReason): Unit = handler.unregister(identifier, reason)
 
 
 }

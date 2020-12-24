@@ -1,9 +1,8 @@
 package fr.`override`.linkit.api.packet.channel
 
+import fr.`override`.linkit.api.`extension`.packet.PacketFactory
 import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates, TrafficHandler}
-import fr.`override`.linkit.api.system.{JustifiedCloseable, Reason}
-import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates, TrafficHandler}
-import fr.`override`.linkit.api.system.{JustifiedCloseable, Reason}
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
 //TODO Doc
 /**
@@ -20,7 +19,7 @@ abstract class PacketChannel(handler: TrafficHandler) extends JustifiedCloseable
 
     handler.register(this)
 
-    override def close(reason: Reason): Unit = handler.unregister(identifier, reason)
+    override def close(reason: CloseReason): Unit = handler.unregister(identifier, reason)
 
     def sendPacket(packet: Packet): Unit = handler.sendPacket(packet, coordinates)
 
@@ -43,6 +42,10 @@ object PacketChannel {
         def nextPacket(): Packet
 
         def nextPacketAsP[P <: Packet](): P = nextPacket().asInstanceOf[P]
+
+        def nextPacket[P <: Packet](classOfP: Class[P]): P = nextPacketAsP()
+
+        def nextPacket[P <: Packet](factoryOfP: PacketFactory[P]): P = nextPacket(factoryOfP.packetClass)
 
         /**
          * @return true if this channel contains stored packets. In other words, return true if [[nextPacketAsP]] will not wait

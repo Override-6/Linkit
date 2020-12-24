@@ -10,7 +10,7 @@ class SystemPacketChannel(connectedID: String,
         extends SyncPacketChannel(connectedID, SystemChannelID, 128, traffic) {
 
 
-    def sendOrder(systemOrder: SystemOrder, reason: Reason, content: Array[Byte] = Array()): Unit = {
+    def sendOrder(systemOrder: SystemOrder, reason: CloseReason, content: Array[Byte] = Array()): Unit = {
         sendPacket(SystemPacket(systemOrder, reason, content))
         //notifier.onSystemOrderSent(systemOrder) TODO rebased event system
     }

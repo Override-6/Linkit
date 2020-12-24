@@ -2,11 +2,11 @@ package fr.`override`.linkit.api.system.event
 
 import fr.`override`.linkit.api.`extension`.RelayExtension
 import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
-import fr.`override`.linkit.api.system.{Reason, SystemOrder}
+import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
 import fr.`override`.linkit.api.`extension`.RelayExtension
 import fr.`override`.linkit.api.`extension`.packet.PacketFactory
 import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
-import fr.`override`.linkit.api.system.{Reason, SystemOrder}
+import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
 import fr.`override`.linkit.api.task.Task
 
 @deprecated
@@ -18,15 +18,15 @@ abstract class EventListener {
 
     def onDisconnected(): Unit = ()
 
-    def onClosed(relayId: String, reason: Reason): Unit = ()
+    def onClosed(relayId: String, reason: CloseReason): Unit = ()
 
     def onTaskScheduled(task: Task[_]): Unit = ()
 
-    def onTaskSkipped(task: Task[_], reason: Reason): Unit = ()
+    def onTaskSkipped(task: Task[_], reason: CloseReason): Unit = ()
 
     def onTaskStartExecuting(task: Task[_]): Unit = ()
 
-    def onTaskEnd(task: Task[_], reason: Reason): Unit = ()
+    def onTaskEnd(task: Task[_], reason: CloseReason): Unit = ()
 
     def onExtensionLoaded(extension: RelayExtension): Unit = ()
 
@@ -34,7 +34,7 @@ abstract class EventListener {
 
     def onPacketContainerRegistered(container: PacketContainer): Unit = ()
 
-    def onPacketContainerUnregistered(container: PacketContainer, reason: Reason): Unit = ()
+    def onPacketContainerUnregistered(container: PacketContainer, reason: CloseReason): Unit = ()
 
     def onPacketSent(packet: Packet, coordinates: PacketCoordinates): Unit = ()
 
@@ -42,7 +42,7 @@ abstract class EventListener {
 
     def onPacketUsed(packet: Packet, coordinates: PacketCoordinates): Unit = ()
 
-    def onSystemOrderReceived(orderType: SystemOrder, reason: Reason): Unit = ()
+    def onSystemOrderReceived(orderType: SystemOrder, reason: CloseReason): Unit = ()
 
     def onSystemOrderSent(orderType: SystemOrder): Unit = ()
 

@@ -1,16 +1,13 @@
 package fr.`override`.linkit.api.system
 
+import java.util
 import java.util.Collections
 import java.util.concurrent.{ConcurrentHashMap, ThreadLocalRandom}
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.packet.fundamental.{DataPacket, EmptyPacket}
-import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.packet.fundamental.{DataPacket, EmptyPacket}
 import fr.`override`.linkit.api.system.RemoteConsolesHandler.{AsyncConsolesCollectorID, SyncConsolesCollectorID}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class RemoteConsolesHandler(relay: Relay) {
 
@@ -27,9 +24,12 @@ class RemoteConsolesHandler(relay: Relay) {
         if (!relay.configuration.enableRemoteConsoles)
             return RemoteConsole.mock()
 
-        if (outConsoles.containsKey(targetId)) {
-            return outConsoles.get(targetId)
-        }
+        val remote = getInCache(outConsoles, targetId)
+        if (remote.isDefined) // a value has been returned from the checks
+            return remote.get
+
+        if (!relay.isConnected(targetId))
+            throw new RelayException(s"'$targetId' is not connected on this network")
 
         val outID = ThreadLocalRandom.current().nextInt()
         val outChannel = relay.createAsyncChannel(targetId, outID)
@@ -45,9 +45,12 @@ class RemoteConsolesHandler(relay: Relay) {
         if (!relay.configuration.enableRemoteConsoles)
             return RemoteConsole.mockErr()
 
-        if (errConsoles.containsKey(targetId)) {
-            return errConsoles.get(targetId)
-        }
+        val remote = getInCache(errConsoles, targetId)
+        if (remote.isDefined) // a value has been returned from the checks
+            return remote.get
+
+        if (!relay.isConnected(targetId))
+            throw new RelayException(s"'$targetId' is not connected on this network")
 
         val errID = ThreadLocalRandom.current().nextInt()
         val errChannel = relay.createAsyncChannel(targetId, errID)
@@ -57,6 +60,16 @@ class RemoteConsolesHandler(relay: Relay) {
         errConsoles.put(targetId, err)
 
         err
+    }
+
+    private def getInCache[C <: RemoteConsole](cache: util.Map[String, C], targetId: String): Option[C] = {
+        if (targetId == relay.identifier)
+            throw new RelayException("Attempted to get remote console of this relay")
+
+        if (cache.containsKey(targetId)) {
+            return Option(cache.get(targetId))
+        }
+        Option.empty
     }
 
     private def listenRequests(): Unit = {

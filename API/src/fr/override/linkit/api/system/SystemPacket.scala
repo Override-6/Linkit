@@ -1,13 +1,10 @@
 package fr.`override`.linkit.api.system
 
-import fr.`override`.linkit.api.packet.PacketUtils
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
-import fr.`override`.linkit.api.packet.{Packet, PacketUtils}
 import fr.`override`.linkit.api.`extension`.packet.PacketFactory
 import fr.`override`.linkit.api.packet.{Packet, PacketUtils}
 
 case class SystemPacket private(order: SystemOrder,
-                                reason: Reason,
+                                reason: CloseReason,
                                 content: Array[Byte] = Array()) extends Packet
 
 object SystemPacket extends PacketFactory[SystemPacket] {
@@ -30,7 +27,7 @@ object SystemPacket extends PacketFactory[SystemPacket] {
         val content = PacketUtils.cutEnd(CONTENT)
 
         val systemOrder = SystemOrder.valueOf(orderName)
-        val reason = Reason.valueOf(reasonName)
+        val reason = CloseReason.valueOf(reasonName)
         new SystemPacket(systemOrder, reason, content)
     }
 

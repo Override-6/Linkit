@@ -7,7 +7,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{TaskException, TaskOperationFailException}
 import fr.`override`.linkit.api.packet.channel.PacketChannel
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.system.Reason
+import fr.`override`.linkit.api.system.CloseReason
 
 import scala.util.control.NonFatal
 
@@ -22,7 +22,7 @@ class TaskTicket(executor: TaskExecutor,
     val channel: PacketChannel.Sync = relay.createSyncChannel(target, taskId)
 
 
-    def abort(reason: Reason): Unit = {
+    def abort(reason: CloseReason): Unit = {
         notifyExecutor()
         executor match {
             case task: Task[_] =>
@@ -51,7 +51,7 @@ class TaskTicket(executor: TaskExecutor,
 
 
     def start(): Unit = {
-        var reason = Reason.INTERNAL_ERROR
+        var reason = CloseReason.INTERNAL_ERROR
         try {
             executor.init(relay, target, channel)
 
@@ -66,7 +66,7 @@ class TaskTicket(executor: TaskExecutor,
             }
 
             executor.execute()
-            reason = Reason.INTERNAL
+            reason = CloseReason.INTERNAL
         } catch {
             // Do not prints those exceptions : they are normal errors
             // lifted when a task execution is brutally aborted

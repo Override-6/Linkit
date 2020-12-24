@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet
 
-import fr.`override`.linkit.api.system.{JustifiedCloseable, Reason}
+import fr.`override`.linkit.api.system.{JustifiedCloseable, CloseReason}
 
 trait TrafficHandler extends JustifiedCloseable {
 
@@ -8,7 +8,7 @@ trait TrafficHandler extends JustifiedCloseable {
 
     def register(container: PacketContainer): Unit
 
-    def unregister(id: Int, reason: Reason): Unit
+    def unregister(id: Int, reason: CloseReason): Unit
 
     def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit
 
