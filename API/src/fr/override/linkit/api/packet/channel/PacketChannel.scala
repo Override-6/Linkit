@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.packet.channel
 
 import fr.`override`.linkit.api.`extension`.packet.PacketFactory
-import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates, TrafficHandler}
+import fr.`override`.linkit.api.packet.{HoleyPacketContainer, Packet, PacketContainer, PacketCoordinates, TrafficHandler}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
 //TODO Doc
@@ -22,14 +22,11 @@ abstract class PacketChannel(handler: TrafficHandler) extends JustifiedCloseable
     override def close(reason: CloseReason): Unit = handler.unregister(identifier, reason)
 
     def sendPacket(packet: Packet): Unit = handler.sendPacket(packet, coordinates)
-
 }
 
 object PacketChannel {
 
-    abstract class Async(handler: TrafficHandler) extends PacketChannel(handler) {
-        def onPacketReceived(consumer: Packet => Unit): Unit
-    }
+    abstract class Async(handler: TrafficHandler) extends PacketChannel(handler) with HoleyPacketContainer
 
     abstract class Sync(traffic: TrafficHandler) extends PacketChannel(traffic) {
 

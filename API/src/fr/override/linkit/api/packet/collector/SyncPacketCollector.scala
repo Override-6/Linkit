@@ -22,7 +22,9 @@ class SyncPacketCollector(handler: TrafficHandler,
         val element = rawQueue.takeLast() //TODO event processing
         val senderID = element._2.senderID
 
-        categorisedQueue(senderID).remove(element)
+        val opt = categorisedQueue.get(senderID)
+        if (opt.isDefined)
+            opt.get.remove(element)
         element.asInstanceOf[(P, PacketCoordinates)]
     }
 

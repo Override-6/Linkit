@@ -1,11 +1,8 @@
 package fr.`override`.linkit.api.packet.channel
 
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
-import fr.`override`.linkit.api.exception.PacketException
-import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
+import fr.`override`.linkit.api.utils.AsyncExecutionContext.context
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
@@ -13,7 +10,7 @@ class AsyncPacketChannel(override val connectedID: String,
                          override val identifier: Int,
                          traffic: TrafficHandler) extends PacketChannel.Async(traffic) {
 
-    private var onPacketReceived: Packet => Unit = _
+    private var onPacketReceived: (Packet, PacketCoordinates) => Unit = _
 
     override def sendPacket(packet: Packet): Unit = {
         traffic.sendPacket(packet, coordinates)
@@ -23,7 +20,7 @@ class AsyncPacketChannel(override val connectedID: String,
         Future {
             try {
                 if (onPacketReceived != null)
-                    onPacketReceived(packet)
+                    onPacketReceived(packet, coordinates)
                 //handler.notifyPacketUsed(packet, coordinates)
             } catch {
                 case NonFatal(e) =>
@@ -32,7 +29,7 @@ class AsyncPacketChannel(override val connectedID: String,
         }
     }
 
-    def onPacketReceived(consumer: Packet => Unit): Unit = {
+    def onPacketReceived(consumer: (Packet, PacketCoordinates) => Unit): Unit = {
         onPacketReceived = consumer
     }
 

@@ -6,8 +6,8 @@ class RelayProperties {
 
     private val map: mutable.Map[String, Object] = mutable.Map.empty
 
-    def putProperty(key: String, value: Object): Unit = {
-        map.put(key, value)
+    def putProperty(key: String, value: Object): Object = {
+        map.put(key, value).orNull
     }
 
     def get[T](key: String): Option[T] = {

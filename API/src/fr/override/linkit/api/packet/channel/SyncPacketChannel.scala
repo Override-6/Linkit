@@ -2,7 +2,6 @@ package fr.`override`.linkit.api.packet.channel
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
 import fr.`override`.linkit.api.system.CloseReason
@@ -24,9 +23,11 @@ class SyncPacketChannel(override val connectedID: String,
      * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet
      *
      * @param packet the packet to add
-     * @throws UnexpectedPacketException if the packet id not equals the channel task ID
+     * @param coords the packet coordinates
+     *
+     * @throws IllegalArgumentException if the packet coordinates does not match with this channel coordinates
      * */
-    override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+    override def injectPacket(packet: Packet, coords: PacketCoordinates): Unit = {
         queue.addFirst(packet)
     }
 
@@ -35,12 +36,6 @@ class SyncPacketChannel(override val connectedID: String,
         queue.clear()
     }
 
-    /**
-     * Waits until a data packet is received and concerned about this task.
-     *
-     * @return the received packet
-     * @see [[DataPacket]]
-     * */
     override def nextPacket(): Packet = {
         if (queue.isEmpty)
             traffic.checkThread()
@@ -50,9 +45,8 @@ class SyncPacketChannel(override val connectedID: String,
     }
 
 
-
     /**
-     * @return true if this channel contains stored packets. In other words, return true if [[nextPacketAsP]] will not wait
+     * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] would not wait
      * */
     override def haveMorePackets: Boolean =
         !queue.isEmpty

@@ -2,7 +2,6 @@ package fr.`override`.linkit.api.packet.fundamental
 
 import fr.`override`.linkit.api.`extension`.packet.PacketFactory
 import fr.`override`.linkit.api.packet.Packet
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
 
 object EmptyPacket extends Packet {
     type EmptyPacket = EmptyPacket.type
@@ -15,7 +14,7 @@ object EmptyPacket extends Packet {
 
         override def build(implicit bytes: Array[Byte]): EmptyPacket = EmptyPacket
 
-        override val packetClass: Class[EmptyPacket] = EmptyPacket.getClass.asInstanceOf[Class[EmptyPacket]]
+        override val packetClass: Class[EmptyPacket] = classOf[EmptyPacket.type]
     }
 
     override def toString: String = "EmptyPacket"

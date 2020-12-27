@@ -6,7 +6,7 @@ import fr.`override`.linkit.api.exception.{PacketException, UnexpectedPacketExce
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.system.SystemPacket
-import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
+import fr.`override`.linkit.api.utils.Tuple3Packet
 
 import scala.collection.mutable
 
@@ -20,11 +20,11 @@ object PacketManager {
 class PacketManager(relay: Relay) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
     private val factories = mutable.LinkedHashMap.empty[Class[_ <: Packet], PacketFactory[_ <: Packet]]
-    registerFundamentals()
+    registerDefaults()
 
     def register[P <: Packet](packetFactory: PacketFactory[P]): Unit = {
-        val factory = packetFactory.asInstanceOf[PacketFactory[P]]
-        val ptClass = packetFactory.packetClass.asInstanceOf[Class[P]]
+        val factory = packetFactory
+        val ptClass = packetFactory.packetClass
 
         if (factories.contains(ptClass))
             throw new IllegalArgumentException(s"Packet '$ptClass' type is already registered !")
@@ -48,7 +48,7 @@ class PacketManager(relay: Relay) { //Notifier is accessible from api to reduce 
     }
 
     def toBytes[P <: Packet](classOfP: Class[P], packet: P, coordinates: PacketCoordinates): Array[Byte] = {
-        val packetBytes = factories(classOfP.asInstanceOf[Class[P]])
+        val packetBytes = factories(classOfP)
             .asInstanceOf[PacketFactory[P]]
             .decompose(packet)
         val bytes = PacketUtils.getCoordinatesBytes(coordinates) ++ packetBytes
@@ -60,12 +60,13 @@ class PacketManager(relay: Relay) { //Notifier is accessible from api to reduce 
         toBytes(packetClass, packet, coordinates)
     }
 
-    private def registerFundamentals(): Unit = {
+    private def registerDefaults(): Unit = {
         register(DataPacket)
         register(EmptyPacket.Factory)
         register(TaskInitPacket)
         register(ErrorPacket)
         register(SystemPacket)
+        register(Tuple3Packet)
     }
 
 

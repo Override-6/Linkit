@@ -4,4 +4,6 @@ case class PacketCoordinates(containerID: Int, targetID: String, senderID: Strin
 
     override def toString: String = s"PacketCoordinates(channelId: $containerID, targetID: $targetID, senderID: $senderID)"
 
+    def reversed(): PacketCoordinates = PacketCoordinates(containerID, senderID, targetID)
+
 }

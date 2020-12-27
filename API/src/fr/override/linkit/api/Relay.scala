@@ -9,6 +9,7 @@ import fr.`override`.linkit.api.packet.collector.PacketCollector
 import fr.`override`.linkit.api.packet.{Packet, PacketManager, TrafficHandler}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.event.EventObserver
+import fr.`override`.linkit.api.system.network.{ConnectionState, Network}
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.system.{JustifiedCloseable, RemoteConsole, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
@@ -30,11 +31,13 @@ import org.jetbrains.annotations.Nullable
  */
 //TODO Recap :
 //TODO Rewrite/write Doc and README of API, RelayServer and RelayPoint
-//TODO Design a better event hooking system
+//TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
 //TODO Replace every "OK" and "ERROR" by 0 or 1
 //TODO Design a brand new and optimised packet protocol
+//TODO Make RelaySecurityManagers be able to get the network entity of a connection (maybe by adding a value into ClientConnection).
 object Relay {
-    final val apiVersion = Version("Api", "0.10.0", stable = false)
+    val ApiVersion: Version = Version("Api", "0.11.0", stable = false)
+    val ServerIdentifier: String = "server"
 }
 
 trait Relay extends JustifiedCloseable with TaskScheduler {
@@ -42,7 +45,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     /**
      * The API Version represented by following the SemVer convention.
      */
-    final val apiVersion = Relay.apiVersion
+    final val apiVersion = Relay.ApiVersion
 
     /**
      * The implementation version represented by following the SemVer convention.
@@ -97,6 +100,12 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     val eventObserver: EventObserver
 
     /**
+     * The network object of this relay, this object is such a [[fr.`override`.linkit.api.system.network.NetworkEntity]] container
+     * with some getters. No network interaction can be done through object.
+     * */
+    val network: Network
+
+    /**
      * Starts the Relay by loading every features.
      *
      * @throws RelayInitialisationException if the relay could not start properly
@@ -108,6 +117,17 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * @return true if the given relay identifier is connected on the network
      * */
     def isConnected(identifier: String): Boolean
+
+    /**
+     * Adds a function that which be called when the relay's connection is updated
+     * */
+    def addConnectionListener(action: ConnectionState => Unit)
+
+    /**
+     * @return the connection state of this relay
+     * @see [[ConnectionState]]
+     * */
+    def getState: ConnectionState
 
     /**
      * @param linkedRelayID the targeted relay identifier to connect

@@ -1,8 +1,8 @@
 package fr.`override`.linkit.api.packet.collector
 
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, TrafficHandler}
+import fr.`override`.linkit.api.utils.AsyncExecutionContext.context
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
@@ -15,9 +15,11 @@ class AsyncPacketCollector(traffic: TrafficHandler,
         onPacketReceivedAction = biConsumer
     }
 
-    override def sendPacket(packet: Packet, targetID: String): Unit = {
-        Future {
+    override def sendPacket(packet: Packet, targetID: String): Unit = Future {
+        try {
             traffic.sendPacket(packet, identifier, targetID)
+        } catch {
+            case NonFatal(e) => e.printStackTrace()
         }
     }
 

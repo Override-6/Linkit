@@ -3,11 +3,11 @@ package fr.`override`.linkit.api.packet
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
+import fr.`override`.linkit.api.exception.{RelayCloseException, RelayException}
 import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
-import fr.`override`.linkit.api.exception.RelayCloseException
-import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
-import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.api.system.{JustifiedCloseable, CloseReason}
+import fr.`override`.linkit.api.system.network.ConnectionState
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
+import fr.`override`.linkit.api.utils.ConsumerContainer
 
 abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = true) extends JustifiedCloseable {
 
@@ -30,7 +30,7 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
 
     def read(buff: Array[Byte], pos: Int): Int = {
         locker.awaitConnected()
-        ensureOpen()
+        ensureReady()
         try {
             val result = currentInputStream.read(buff, pos, buff.length - pos)
             if (result < 0)
@@ -68,7 +68,7 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
 
     def write(buff: Array[Byte]): Unit = {
         locker.awaitConnected()
-        ensureOpen()
+        ensureReady()
         locker.markAsWriting()
         try {
             currentOutputStream.write(buff)
@@ -87,7 +87,9 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
         }
     }
 
-    def isConnected: Boolean = !locker.isDisconnected
+    def getState: ConnectionState = locker.getState
+
+    def addConnectionStateListener(action: ConnectionState => Unit): Unit = locker.addStateListener(action)
 
     def isOpen: Boolean = !closed
 
@@ -111,17 +113,27 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
     protected def markAsConnected(): Unit =
         locker.markAsConnected()
 
-    private def ensureOpen(): Unit = {
+    private def ensureReady(): Unit = {
         if (closed) {
             throw new RelayCloseException("Socket closed")
         }
+        if (currentInputStream == null || currentOutputStream == null) {
+            throw new RelayException("Streams are not ready")
+        }
     }
 
+    import ConnectionState._
     private class SocketLocker {
+
         @volatile var isWriting = false
-        @volatile var isDisconnected = true
+        @volatile var state: ConnectionState = ConnectionState.DISCONNECTED
         private val writeLock = new Object
         private val disconnectLock = new Object
+        private val listeners = ConsumerContainer[ConnectionState]()
+
+        def addStateListener(action: ConnectionState => Unit): Unit = {
+            listeners += action
+        }
 
         def markAsWriting(): Unit = {
             isWriting = true
@@ -138,23 +150,32 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
         }
 
         def markDisconnected(): Unit = {
-            isDisconnected = true
+            state = DISCONNECTED
+            listeners.applyAll(state)
+
             notifier.onDisconnected()
         }
 
         def markAsConnected(): Unit = disconnectLock.synchronized {
-            isDisconnected = false
+            state = CONNECTED
+            listeners.applyAll(state)
+
             disconnectLock.notifyAll()
             notifier.onConnected()
         }
 
         def awaitConnected(): Unit = disconnectLock.synchronized {
-            if (isDisconnected) try {
+            if (state != CONNECTED) try {
+                state = CONNECTING
+                listeners.applyAll(state)
+
                 disconnectLock.wait()
             } catch {
                 case _: InterruptedException =>
             }
         }
+
+        def getState: ConnectionState = state
 
     }
 

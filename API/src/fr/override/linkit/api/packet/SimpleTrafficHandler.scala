@@ -42,7 +42,8 @@ class SimpleTrafficHandler(relay: Relay,
 
     override def sendPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         if (socket.isOpen) {
-            socket.write(packetManager.toBytes(packet, coordinates))
+            val bytes = packetManager.toBytes(packet, coordinates)
+            socket.write(bytes)
             notifier.onPacketSent(packet, coordinates)
         }
     }
