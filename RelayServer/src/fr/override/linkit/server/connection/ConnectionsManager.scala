@@ -2,9 +2,11 @@ package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.system.{JustifiedCloseable, CloseReason}
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
  * TeamMate of RelayServer, handles the RelayPoint Connections.
@@ -31,7 +33,10 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @param socket the socket to start the connection
      * @throws RelayInitialisationException when a id is already set for this address, or another connection is known under this id.
      * */
-    def register(socket: SocketContainer, identifier: String): Unit = {
+    def register(identifier: String,
+                 socket: SocketContainer,
+                 startsPacket: Seq[(Packet, PacketCoordinates)]): Unit = {
+
         if (connections.contains(identifier))
             throw RelayInitialisationException(s"This relay id is already registered ! ('$identifier')")
 
@@ -40,11 +45,10 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
         val connection = ClientConnection.preOpen(socket, server, identifier)
         connections.put(identifier, connection)
-        connection.start()
+        connection.start(startsPacket)
 
-        val canStillConnected = server.securityManager.leaveConnected(connection)
-        if (canStillConnected) {
-            println(s"Relay Point connected with identifier '${connection.identifier}'")
+        val canConnect = server.securityManager.canConnect(connection)
+        if (canConnect) {
             return
         }
 

@@ -1,26 +1,27 @@
 package fr.`override`.linkit.server.task
 
-import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.api.exception.TaskException
 import fr.`override`.linkit.api.packet.PacketCoordinates
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.system.{CloseReason, RemoteConsole, SystemOrder, SystemPacketChannel}
+import fr.`override`.linkit.api.system.{CloseReason, SystemOrder, SystemPacketChannel}
 import fr.`override`.linkit.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
+import fr.`override`.linkit.server.RelayServer
+import fr.`override`.linkit.server.connection.ClientConnection
 
 /**
  * handle tasks between a RelayPoint.
- * @param identifier the connected RelayPoint identifier.
  * @param server the server instance
  * */
-class ConnectionTasksHandler(override val identifier: String,
-                             server: RelayServer,
+class ConnectionTasksHandler(server: RelayServer,
                              systemChannel: SystemPacketChannel,
-                             errConsole: RemoteConsole.Err) extends TasksHandler {
+                             connection: ClientConnection) extends TasksHandler {
 
-    private var tasksThread = new ConnectionTasksThread(identifier, errConsole)
+    private var tasksThread = new ConnectionTasksThread(connection)
     tasksThread.start()
 
     override val tasksCompleterHandler: TaskCompleterHandler = server.taskCompleterHandler
+    private val errConsole = connection.getConsoleErr
+    override val identifier: String = connection.identifier
 
     /**
      * Handles the packet.

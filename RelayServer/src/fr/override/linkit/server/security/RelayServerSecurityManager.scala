@@ -6,14 +6,14 @@ import fr.`override`.linkit.api.system.security.RelaySecurityManager
 
 trait RelayServerSecurityManager extends RelaySecurityManager {
 
-    def leaveConnected(connection: ClientConnection): Boolean
+    def canConnect(connection: ClientConnection): Boolean
 
 }
 
 object RelayServerSecurityManager {
 
     class Default extends RelayServerSecurityManager{
-        override def leaveConnected(connection: ClientConnection): Boolean = true
+        override def canConnect(connection: ClientConnection): Boolean = true
 
         override def hashBytes(raw: Array[Byte]): Array[Byte] = raw
 

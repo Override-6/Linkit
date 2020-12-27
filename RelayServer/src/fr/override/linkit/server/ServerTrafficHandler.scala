@@ -10,7 +10,7 @@ class ServerTrafficHandler(server: RelayServer) extends TrafficHandler {
 
 
     private val registeredCollectors = mutable.Map.empty[Int, PacketContainer]
-    private val notifier = server.eventObserver.notifier
+    //private val notifier = server.eventObserver.notifier
 
     override val relayID: String = server.identifier
 
@@ -24,13 +24,13 @@ class ServerTrafficHandler(server: RelayServer) extends TrafficHandler {
             throw new RelayException("Maximum registered packet containers limit exceeded")
 
         registeredCollectors.put(id, container)
-        notifier.onPacketContainerRegistered(container)
+        //notifier.onPacketContainerRegistered(container)
     }
 
     override def unregister(id: Int, reason: CloseReason): Unit = {
         val opt = registeredCollectors.remove(id)
-        if (opt.isDefined)
-            notifier.onPacketContainerUnregistered(opt.get, reason)
+        //if (opt.isDefined)
+            //notifier.onPacketContainerUnregistered(opt.get, reason)
     }
 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
@@ -42,7 +42,10 @@ class ServerTrafficHandler(server: RelayServer) extends TrafficHandler {
     }
 
     override def sendPacket(packet: Packet, channelID: Int, targetID: String): Unit = {
-        server.getConnection(targetID).sendPacket(packet, channelID)
+        val connection = server.getConnection(targetID)
+        if (connection == null)
+            throw new IllegalArgumentException(s"Attempted to send packet to '$targetID', but this relay isn't connected on this server.")
+        connection.sendPacket(packet, channelID)
     }
 
     override def close(reason: CloseReason): Unit = {

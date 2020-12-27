@@ -2,18 +2,31 @@ package fr.`override`.linkit.server
 
 import java.nio.file.Paths
 
-import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.server.config.AmbiguityStrategy
+import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
 
 object Main {
     def main(args: Array[String]): Unit = {
+        val ideRun = args.contains("--ide-run")
+
         val relayServer: Relay = new RelayServerBuilder {
             relayIDAmbiguityStrategy = AmbiguityStrategy.REJECT_NEW
-
+            enableExtensionsFolderLoad = !ideRun
             extensionsFolder = getExtensionFolderPath
         }
         relayServer.start()
+
+        if (ideRun) {
+
+            import fr.`override`.linkit.`extension`.cloud.CloudStorageExtension
+            import fr.`override`.linkit.`extension`.controller.ControllerExtension
+            import fr.`override`.linkit.`extension`.debug.DebugExtension
+
+            relayServer.extensionLoader.loadExtension(classOf[ControllerExtension])
+            relayServer.extensionLoader.loadExtension(classOf[CloudStorageExtension])
+            relayServer.extensionLoader.loadExtension(classOf[DebugExtension])
+
+        }
     }
 
     private def getExtensionFolderPath: String = {

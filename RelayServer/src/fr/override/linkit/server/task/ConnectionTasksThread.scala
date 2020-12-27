@@ -3,23 +3,23 @@ package fr.`override`.linkit.server.task
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.system.{JustifiedCloseable, CloseReason, RemoteConsole}
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RemoteConsole}
 import fr.`override`.linkit.api.task.TaskTicket
+import fr.`override`.linkit.server.connection.ClientConnection
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class ConnectionTasksThread private(ownerID: String,
+class ConnectionTasksThread private(connection: ClientConnection,
                                     ticketQueue: BlockingQueue[TaskTicket],
-                                    lostPackets: mutable.Map[Int, ListBuffer[(Packet, PacketCoordinates)]],
-                                    remoteConsoleErr: RemoteConsole.Err) extends Thread with JustifiedCloseable {
+                                    lostPackets: mutable.Map[Int, ListBuffer[(Packet, PacketCoordinates)]]) extends Thread with JustifiedCloseable {
 
     @volatile private var open = false
     @volatile private var currentTicket: TaskTicket = _
 
-    def this(ownerID: String, remoteConsoleErr: RemoteConsole.Err) =
-        this(ownerID, new ArrayBlockingQueue[TaskTicket](15000), mutable.Map.empty, remoteConsoleErr)
+    def this(connection: ClientConnection) =
+        this(connection, new ArrayBlockingQueue[TaskTicket](15000), mutable.Map.empty)
 
 
     override def run(): Unit = {
@@ -32,7 +32,7 @@ class ConnectionTasksThread private(ownerID: String,
                 case _: InterruptedException =>
                 case NonFatal(e) =>
                     e.printStackTrace()
-                    remoteConsoleErr.reportExceptionSimplified(e)
+                    connection.getConsoleErr.reportExceptionSimplified(e)
             }
         }
     }
@@ -51,7 +51,7 @@ class ConnectionTasksThread private(ownerID: String,
     }
 
     def copy(): ConnectionTasksThread =
-        new ConnectionTasksThread(ownerID, ticketQueue, lostPackets, remoteConsoleErr)
+        new ConnectionTasksThread(connection, ticketQueue, lostPackets)
 
     private[task] def addTicket(ticket: TaskTicket): Unit = {
         ticketQueue.add(ticket)
@@ -72,6 +72,6 @@ class ConnectionTasksThread private(ownerID: String,
         ticket.start()
     }
 
-    setName(s"RP Task Execution ($ownerID)")
+    setName(s"RP Task Execution (${connection.identifier})")
 
 }

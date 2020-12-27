@@ -9,9 +9,11 @@ import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.system._
+import fr.`override`.linkit.api.system.network.ConnectionState
 import fr.`override`.linkit.api.task.TasksHandler
-import org.jetbrains.annotations.Nullable
+import org.jetbrains.annotations.{NotNull, Nullable}
 
+import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 class ClientConnection private(socket: SocketContainer,
@@ -41,7 +43,7 @@ class ClientConnection private(socket: SocketContainer,
     private var remoteConsoleOut: RemoteConsole = _
 
     override def close(reason: CloseReason): Unit = {
-        if (socket.isConnected && reason.isInternal) {
+        if (reason.isInternal && isConnected) {
             systemChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
         }
 
@@ -55,20 +57,25 @@ class ClientConnection private(socket: SocketContainer,
         closed = true
     }
 
-    def start(): Unit = {
+    def start(cachePacket: Seq[(Packet, PacketCoordinates)]): Unit = {
         if (closed)
             throw new RelayException("This Connection was already used and is now definitely closed.")
         connectionThread.start()
         loadRemote()
+        cachePacket.foreach(pair => handlePacket(pair._1, pair._2))
     }
 
-    def isConnected: Boolean = socket.isConnected
+    def isConnected: Boolean = getState == ConnectionState.CONNECTED
 
     def getTasksHandler: TasksHandler = tasksHandler
 
     def getConsoleOut: RemoteConsole = remoteConsoleOut
 
     def getConsoleErr: RemoteConsole.Err = remoteConsoleErr
+
+    def getState: ConnectionState = socket.getState
+
+    def addConnectionStateListener(action: ConnectionState => Unit): Unit = socket.addConnectionStateListener(action)
 
     def createSync(id: Int, cacheSize: Int): PacketChannel.Sync =
         new SyncPacketChannel(identifier, id, cacheSize, connectionTraffic)
@@ -78,7 +85,8 @@ class ClientConnection private(socket: SocketContainer,
     }
 
     def sendPacket(packet: Packet, channelID: Int): Unit = {
-        socket.write(packetManager.toBytes(packet, PacketCoordinates(channelID, identifier, server.identifier)))
+        val bytes = packetManager.toBytes(packet, PacketCoordinates(channelID, identifier, server.identifier))
+        socket.write(bytes)
     }
 
     private[server] def updateSocket(socket: Socket): Unit =
@@ -89,6 +97,7 @@ class ClientConnection private(socket: SocketContainer,
     }
 
     private def loadRemote(): Unit = {
+        systemChannel.sendPacket(DataPacket("OK"))
 
         val outOpt = server.getConsoleOut(identifier)
         val errOpt = server.getConsoleErr(identifier)
@@ -100,11 +109,10 @@ class ClientConnection private(socket: SocketContainer,
         systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
 
         if (configuration.enableTasks)
-            tasksHandler = new ConnectionTasksHandler(identifier, server, systemChannel, remoteConsoleErr)
+            tasksHandler = new ConnectionTasksHandler(server, systemChannel, this)
     }
 
     private def run(): Unit = {
-
         val threadName = connectionThread.getName
         println(s"Thread '$threadName' was started")
 
@@ -125,7 +133,6 @@ class ClientConnection private(socket: SocketContainer,
         val identifier = coordinates.containerID
         if (closed)
             return
-
         notifier.onPacketReceived(packet, coordinates)
         packet match {
             case systemError: ErrorPacket if identifier == systemChannel.identifier => systemError.printError()
@@ -168,12 +175,33 @@ class ClientConnection private(socket: SocketContainer,
 
 object ClientConnection {
 
-    def preOpen(socket: SocketContainer, server: RelayServer, identifier: String = null): ClientConnection = {
-        val relayIdentifier = if (identifier == null) retrieveIdentifier(socket, server) else identifier
-        new ClientConnection(socket, server, relayIdentifier)
+    /**
+     * Constructs a ClientConnection without starting it.
+     * @param socket the socket which will be used by the connection to perform in/out data transfer
+     * @param server the server which is asking for this client connection
+     * @param identifier The identifier of the connected relay.
+     * @throws NullPointerException if the identifier or the socket is null.
+     * @return a non-started ClientConnection.
+     * @see [[SocketContainer]]
+     * */
+    def preOpen(@NotNull socket: SocketContainer,
+                @NotNull server: RelayServer,
+                @NotNull identifier: String): ClientConnection = {
+        if (socket == null || identifier == null || server == null)
+            throw new NullPointerException("Unable to construct ClientConnection : one of the given parameters are null")
+        new ClientConnection(socket, server, identifier)
     }
 
-    def retrieveIdentifier(socket: SocketContainer, server: RelayServer): String = {
+    /**
+     * Helper method which retrieves an identifier by writing the system order "GET_IDENTIFIER" on the socket
+     * @param socket The socket in which the request will be write and received
+     * @param server The server which is asking for this request
+     * @param unhandledPackets a list of any packet that has been received, but could not be handled because they haven't concern the authentication.
+     * @return
+     * */
+    def retrieveIdentifier(socket: SocketContainer,
+                           server: RelayServer,
+                           unhandledPackets: ListBuffer[(Packet, PacketCoordinates)]): String = {
         val packetReader = new ServerPacketReader(socket, server, null)
         val tempHandler = new SimpleTrafficHandler(server, socket)
 
@@ -183,7 +211,9 @@ object ClientConnection {
         def deflect(): Unit = packetReader.nextPacket {
             case (concerned: Packet, coords: PacketCoordinates) if coords.containerID == channel.identifier =>
                 channel.injectPacket(concerned, coords)
-            case _ => deflect()
+            case other =>
+                unhandledPackets += other
+                deflect()
         }
 
         def handleClientResponse(): String = channel.nextPacket() match {

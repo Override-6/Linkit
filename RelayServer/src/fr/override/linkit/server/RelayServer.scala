@@ -12,28 +12,33 @@ import fr.`override`.linkit.api.packet.collector.{AsyncPacketCollector, PacketCo
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.event.EventObserver
+import fr.`override`.linkit.api.system.network.ConnectionState
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.server.RelayServer.Identifier
-import fr.`override`.linkit.server.config.{RelayServerConfiguration, AmbiguityStrategy}
+import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
 import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
+import fr.`override`.linkit.server.network.ServerNetwork
 import fr.`override`.linkit.server.security.RelayServerSecurityManager
 
+import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.9.0", stable = false)
+    val version: Version = Version("RelayServer", "0.11.0", stable = false)
 
     val Identifier = "server"
 }
 
+//TODO Create a connection helper for this poor class which swims into bad practices.
 class RelayServer(override val configuration: RelayServerConfiguration) extends Relay {
 
     private val serverSocket = new ServerSocket(configuration.port)
 
     @volatile private var open = false
-    /**
-     * For safety, prefer Relay#identfier instead of Constants.SERVER_ID
-     * */
+
+    val trafficHandler = new ServerTrafficHandler(this)
+    val connectionsManager = new ConnectionsManager(this)
+
     override val identifier: String = Identifier
     override val eventObserver: EventObserver = new EventObserver(configuration.enableEventHandling)
     override val extensionLoader = new RelayExtensionLoader(this)
@@ -41,15 +46,13 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
     override val properties: RelayProperties = new RelayProperties
     override val packetManager = new PacketManager(this)
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
+    override val network: ServerNetwork = new ServerNetwork(this)
 
     override val relayVersion: Version = RelayServer.version
 
     private[server] val notifier = eventObserver.notifier
 
-    val trafficHandler = new ServerTrafficHandler(this)
-    val connectionsManager = new ConnectionsManager(this)
-
-    private val remoteConsoles: RemoteConsolesHandler = new RemoteConsolesHandler(this)
+    private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -95,6 +98,10 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
         println("Ready !")
         notifier.onReady()
     }
+
+    override def addConnectionListener(action: ConnectionState => Unit): Unit = () //the connection of the server would never be updated
+
+    override def getState: ConnectionState = ConnectionState.CONNECTED //The server is always connected to itself !
 
     override def isConnected(identifier: String): Boolean = {
         connectionsManager.containsIdentifier(identifier)
@@ -161,24 +168,30 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
         connectionsManager.broadcast(err, "(broadcast) " + msg)
     }
 
-    private def registerConnection(identifier: String, socket: Socket): Unit = {
+    private def registerConnection(identifier: String,
+                                   unhandledPackets: Seq[(Packet, PacketCoordinates)],
+                                   socket: Socket): Unit = {
         val socketContainer = new SocketContainer(notifier, true)
         socketContainer.set(socket)
-        connectionsManager.register(socketContainer, identifier)
+        connectionsManager.register(identifier, socketContainer, unhandledPackets)
     }
 
-    private def handleRelayPointConnection(identifier: String, tempSocket: SocketContainer): Unit = {
+    private def handleRelayPointConnection(identifier: String,
+                                           unhandledPackets: Seq[(Packet, PacketCoordinates)],
+                                           tempSocket: SocketContainer): Unit = {
 
         if (connectionsManager.isNotRegistered(identifier)) {
-            registerConnection(identifier, tempSocket.get)
-            sendResponse(tempSocket, "OK")
+            registerConnection(identifier, unhandledPackets, tempSocket.get)
+            network.addEntity(identifier)
             return
         }
 
-        handleConnectionIDAmbiguity(getConnection(identifier), tempSocket)
+        handleConnectionIDAmbiguity(getConnection(identifier), tempSocket, unhandledPackets)
     }
 
-    private def handleConnectionIDAmbiguity(current: ClientConnection, tempSocket: SocketContainer): Unit = {
+    private def handleConnectionIDAmbiguity(current: ClientConnection,
+                                            tempSocket: SocketContainer,
+                                            unhandledPackets: Seq[(Packet, PacketCoordinates)]): Unit = {
 
         if (!current.isConnected) {
             current.updateSocket(tempSocket.get)
@@ -201,7 +214,7 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
 
             case REPLACE =>
                 connectionsManager.unregister(identifier).close(CloseReason.INTERNAL_ERROR)
-                registerConnection(identifier, tempSocket.get)
+                registerConnection(identifier, unhandledPackets, tempSocket.get)
                 sendResponse(tempSocket, "OK")
 
             case DISCONNECT_BOTH =>
@@ -216,16 +229,17 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
             val clientSocket = serverSocket.accept()
             tempSocket.set(clientSocket)
 
-            val identifier = ClientConnection.retrieveIdentifier(tempSocket, this)
-            handleRelayPointConnection(identifier, tempSocket)
+            val unhandledPackets = ListBuffer.empty[(Packet, PacketCoordinates)]
+            val identifier = ClientConnection.retrieveIdentifier(tempSocket, this, unhandledPackets)
+            handleRelayPointConnection(identifier, unhandledPackets.toSeq, tempSocket)
         } catch {
             case e: SocketException =>
                 val msg = e.getMessage.toLowerCase
                 if (msg == "socket closed" || msg == "socket is closed")
                     return
-                println("waaaiii")
                 Console.err.println(msg)
-            case e: RelayCloseException =>
+                onException(e)
+            case e: RelayCloseException => onException(e)
             case NonFatal(e) =>
                 e.printStackTrace()
                 onException(e)
