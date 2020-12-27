@@ -4,12 +4,10 @@ import java.net.InetSocketAddress
 import java.nio.file.Paths
 import java.util.Scanner
 
+import fr.`override`.linkit.api.utils.AsyncExecutionContext
 import fr.`override`.linkit.client.config.RelayPointBuilder
-import fr.`override`.linkit.`extension`.controller.ControllerExtension
-import fr.`override`.linkit.`extension`.debug.DebugExtension
 
 object Main {
-
     private val PORT = 48484
     private val SERVER_ADDRESS = new InetSocketAddress("161.97.104.230", PORT)
     private val LOCALHOST = new InetSocketAddress("localhost", PORT)
@@ -22,12 +20,12 @@ object Main {
     private val address = if (isLocalhost) LOCALHOST else SERVER_ADDRESS
 
     /**
-     * @param args "--local-run", used to determine if the application is run into IntelliJ or from an external context
+     * @param args "--ide-run", used to determine if the application is running into IntelliJ or from an external context
      *             "--no-tasks", used to decide if the relay should not load any tasks from his RelayExtensions.
      * */
     def main(args: Array[String]): Unit = {
-        val localRun = args.contains("--local-run")
-        val loadExtensions = !(args.contains("--no-ext") || localRun)
+        val ideRun = args.contains("--ide-run")
+        val loadExtensions = !(args.contains("--no-ext") || ideRun)
 
         val relayPoint: RelayPoint = new RelayPointBuilder {
             enableExtensionsFolderLoad = loadExtensions
@@ -38,7 +36,11 @@ object Main {
         }
         relayPoint.start()
 
-        if (localRun) {
+        if (ideRun) {
+
+            import fr.`override`.linkit.`extension`.controller.ControllerExtension
+            import fr.`override`.linkit.`extension`.debug.DebugExtension
+
             val loader = relayPoint.extensionLoader
             loader.loadExtension(classOf[ControllerExtension])
             loader.loadExtension(classOf[DebugExtension])
