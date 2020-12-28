@@ -22,7 +22,7 @@ import fr.`override`.linkit.client.network.PointNetwork
 import scala.util.control.NonFatal
 
 object RelayPoint {
-    val version: Version = Version("RelayPoint", "0.8.0", stable = false)
+    val version: Version = Version("RelayPoint", "0.8.1", stable = false)
 
     val ServerID = "server"
 }
