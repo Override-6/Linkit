@@ -4,7 +4,6 @@ import java.net.InetSocketAddress
 import java.nio.file.Paths
 import java.util.Scanner
 
-import fr.`override`.linkit.api.utils.AsyncExecutionContext
 import fr.`override`.linkit.client.config.RelayPointBuilder
 
 object Main {

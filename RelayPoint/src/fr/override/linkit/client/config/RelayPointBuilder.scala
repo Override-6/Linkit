@@ -2,9 +2,9 @@ package fr.`override`.linkit.client.config
 
 import java.net.InetSocketAddress
 
-import fr.`override`.linkit.client.{RelayPoint, RelayPointSecurityManager}
+import fr.`override`.linkit.api.system.fs.{FileSystemAdapter, JDKFileSystemAdapters}
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.client.RelayPoint
+import fr.`override`.linkit.client.{RelayPoint, RelayPointSecurityManager}
 
 abstract class RelayPointBuilder {
 
@@ -22,6 +22,7 @@ abstract class RelayPointBuilder {
     var extensionsFolder: String = "/RelayExtensions/"
 
     var securityManager: RelaySecurityManager = new RelayPointSecurityManager
+    var fsAdapter: FileSystemAdapter = JDKFileSystemAdapters.Nio
 
     var serverAddress: InetSocketAddress
     var identifier: String
@@ -53,7 +54,9 @@ abstract class RelayPointBuilder {
             override val identifier: String = builder.identifier
             override val reconnectionPeriod: Int = builder.reconnectionPeriod
             override val extensionsFolder: String = builder.extensionsFolder
+
             override val securityManager: RelaySecurityManager = builder.securityManager
+            override val fsAdapter: FileSystemAdapter = builder.fsAdapter
         }
     }
 
@@ -132,6 +135,11 @@ object RelayPointBuilder {
 
         def withSecurityManager(securityManager: RelayPointSecurityManager): this.type = {
             scalaBuilder.securityManager = securityManager
+            this
+        }
+
+        def withFsAdapter(fsa: FileSystemAdapter): this.type = {
+            scalaBuilder.fsAdapter = fsa
             this
         }
 

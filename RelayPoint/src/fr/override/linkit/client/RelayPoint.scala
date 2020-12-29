@@ -22,12 +22,12 @@ import fr.`override`.linkit.client.network.PointNetwork
 import scala.util.control.NonFatal
 
 object RelayPoint {
-    val version: Version = Version("RelayPoint", "0.8.1", stable = false)
+    val version: Version = Version("RelayPoint", "0.8.2", stable = false)
 
     val ServerID = "server"
 }
 
-class RelayPoint(override val configuration: RelayPointConfiguration) extends Relay {
+class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
 
     override val eventObserver: EventObserver = new EventObserver(configuration.enableEventHandling)
     private val notifier = eventObserver.notifier
@@ -63,7 +63,7 @@ class RelayPoint(override val configuration: RelayPointConfiguration) extends Re
         println("Listening on port " + configuration.serverAddress.getPort)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
         println(relayVersion)
-        println(apiVersion)
+        println(Relay.ApiVersion)
 
         try {
             loadLocal()
@@ -251,7 +251,7 @@ class RelayPoint(override val configuration: RelayPointConfiguration) extends Re
             case CLIENT_CLOSE => close(origin, reason)
             case GET_IDENTIFIER => systemChannel.sendPacket(DataPacket(identifier))
             case ABORT_TASK => tasksHandler.skipCurrent(reason)
-            case PRINT_INFO => getConsoleOut(origin).orNull.println(s"$relayVersion ($apiVersion)")
+            case PRINT_INFO => getConsoleOut(origin).orNull.println(s"$relayVersion (${Relay.ApiVersion})")
 
             case _@(SERVER_CLOSE | CHECK_ID) => sendErrorPacket(order, "Received forbidden order.")
             case _ => sendErrorPacket(order, "Unknown order.")
