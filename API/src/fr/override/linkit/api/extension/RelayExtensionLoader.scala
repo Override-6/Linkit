@@ -2,17 +2,14 @@ package fr.`override`.linkit.api.`extension`
 
 import java.io.Closeable
 import java.net.URLClassLoader
-import java.nio.file.{Files, Path, Paths}
 import java.util.Properties
 import java.util.stream.Collectors
 import java.util.zip.ZipFile
 
-import fr.`override`.linkit.api.exception.RelayException
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.RelayExtensionLoader.{MainClassField, PropertyName}
 import fr.`override`.linkit.api.exception.{ExtensionLoadException, RelayException}
+import fr.`override`.linkit.api.system.fsa.FileAdapter
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
@@ -22,10 +19,13 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
 
     type A = Class[_ <: RelayExtension]
 
+    private val configuration = relay.configuration
+    private val fsa = configuration.fsAdapter
     private val notifier = relay.eventObserver.notifier
     private val loadedExtensions = ListBuffer.empty[(RelayExtension, ExtensionInfo)]
+    private val extensionsFolder = fsa.getAdapter(configuration.extensionsFolder)
+
     private var classLoader: URLClassLoader = _
-    private val extensionsFolder = Paths.get(relay.configuration.extensionsFolder)
 
     override def close(): Unit = {
         loadedExtensions.foreach(extensionTuple => {
@@ -38,14 +38,11 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
     }
 
     def loadExtensions(): Unit = {
-        Files.createDirectories(extensionsFolder)
-        val content = Files.list(extensionsFolder)
-        val paths = content
-                .filter(_.toString.endsWith(".jar"))
-                .collect(Collectors.toList[Path])
-                .toArray(new Array[Path](0))
-        val urls = paths
-                .map(_.toUri.toURL)
+        fsa.createDirectories(extensionsFolder)
+        val content = fsa.list(extensionsFolder)
+        val paths = content.filter(_.toString.endsWith(".jar"))
+        val urls = paths.map(_.toUri.toURL)
+
         classLoader = new URLClassLoader(urls, if (classLoader == null) getClass.getClassLoader else classLoader)
 
         val extensions = ListBuffer.empty[ExtensionInfo]
@@ -80,8 +77,8 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
         }
     }
 
-    private def loadJar(path: Path): ExtensionInfo = {
-        val jarFile = new ZipFile(path.toFile)
+    private def loadJar(path: FileAdapter): ExtensionInfo = {
+        val jarFile = new ZipFile(path.getPath)
         val propertyFile = jarFile.getEntry(PropertyName)
         //Checking property presence
         if (propertyFile == null)

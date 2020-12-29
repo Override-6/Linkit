@@ -1,5 +1,6 @@
 package fr.`override`.linkit.api.system.config
 
+import fr.`override`.linkit.api.system.fsa.FileSystemAdapter
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 
 trait RelayConfiguration {
@@ -16,6 +17,7 @@ trait RelayConfiguration {
     val maxPacketContainerCacheSize: Int //max registered PacketContainer in a TrafficHandler
 
     val securityManager: RelaySecurityManager
+    val fsAdapter: FileSystemAdapter
 
     val extensionsFolder: String //can be relative or global
     val identifier: String

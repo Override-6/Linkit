@@ -36,27 +36,16 @@ import org.jetbrains.annotations.Nullable
 //TODO Design a brand new and optimised packet protocol
 //TODO Make RelaySecurityManagers be able to get the network entity of a connection (maybe by adding a value into ClientConnection).
 object Relay {
-    val ApiVersion: Version = Version("Api", "0.11.0", stable = false)
+    val ApiVersion: Version = Version("Api", "0.12.0", stable = false)
     val ServerIdentifier: String = "server"
 }
 
 trait Relay extends JustifiedCloseable with TaskScheduler {
-
     /**
-     * The API Version represented by following the SemVer convention.
-     */
-    final val apiVersion = Relay.ApiVersion
-
-    /**
-     * The implementation version represented by following the SemVer convention.
-     */
-    val relayVersion: Version
-
+     * The currently used Configuration of this relay.
+     * @see [[RelayConfiguration]]
+     * */
     val configuration: RelayConfiguration
-
-    val securityManager: RelaySecurityManager
-
-    val trafficHandler: TrafficHandler
 
     /**
      * A Relay identifier is a string that identifies the Relay on the network.
@@ -64,6 +53,15 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * The identifier have to match \w{0,16} to be used threw the network
      */
     val identifier: String = configuration.identifier
+
+    /**
+     * The implementation version represented by following the SemVer convention.
+     */
+    val relayVersion: Version
+
+    val securityManager: RelaySecurityManager
+
+    val trafficHandler: TrafficHandler
 
     /**
      * The Packet Manager used by this relay.

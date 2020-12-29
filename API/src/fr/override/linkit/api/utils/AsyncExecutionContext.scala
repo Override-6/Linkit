@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.utils
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
 
 object AsyncExecutionContext {

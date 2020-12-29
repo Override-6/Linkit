@@ -120,6 +120,7 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
         if (currentInputStream == null || currentOutputStream == null) {
             throw new RelayException("Streams are not ready")
         }
+
     }
 
     import ConnectionState._

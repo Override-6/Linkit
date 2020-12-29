@@ -5,8 +5,7 @@ import fr.override.linkit.api.exception.UnexpectedPacketException;
 import scala.collection.Seq;
 
 import java.io.*;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+
 
 public class Utils {
 
@@ -36,30 +35,6 @@ public class Utils {
              ObjectInputStream ois = new ObjectInputStream(bis)) {
             return (T) ois.readObject();
         }
-    }
-
-    public static Path formatPath(String path) {
-        String formatted = path
-                .replace('\\', File.separatorChar)
-                .replace('/', File.separatorChar);
-        return Paths.get(formatted);
-    }
-
-    public static Path subPathOfUnknownFile(Path unknownFile, int from) {
-        return subPathOfUnknownFile(unknownFile.toString(), from);
-    }
-
-    public static Path subPathOfUnknownFile(String path, int from) {
-        int currentNameCount = -1;
-        StringBuilder subPathBuilder = new StringBuilder();
-        for (char c : path.toCharArray()) {
-            if (c == '/' || c == '\\')
-                currentNameCount += 1;
-            if (currentNameCount >= from) {
-                subPathBuilder.append(c);
-            }
-        }
-        return Paths.get(subPathBuilder.toString().replace('\\', '/'));
     }
 
     public static void checkPacketHeader(DataPacket packet, Seq<String> expectedHeaders) throws UnexpectedPacketException {
