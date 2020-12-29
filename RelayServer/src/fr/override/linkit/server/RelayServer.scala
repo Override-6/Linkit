@@ -24,13 +24,13 @@ import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.11.0", stable = false)
+    val version: Version = Version("RelayServer", "0.11.1", stable = false)
 
     val Identifier = "server"
 }
 
 //TODO Create a connection helper for this poor class which swims into bad practices.
-class RelayServer(override val configuration: RelayServerConfiguration) extends Relay {
+class RelayServer private[server] (override val configuration: RelayServerConfiguration) extends Relay {
 
     private val serverSocket = new ServerSocket(configuration.port)
 
@@ -73,7 +73,7 @@ class RelayServer(override val configuration: RelayServerConfiguration) extends 
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
         println("Relay Identifier Ambiguity Strategy : " + configuration.relayIDAmbiguityStrategy)
         println(relayVersion)
-        println(apiVersion)
+        println(Relay.ApiVersion)
 
         try {
             securityManager.checkRelay(this)

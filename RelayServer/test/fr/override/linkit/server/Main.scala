@@ -5,6 +5,8 @@ import java.nio.file.Paths
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
 
+override.linkit.server
+
 object Main {
     def main(args: Array[String]): Unit = {
         val ideRun = args.contains("--ide-run")
