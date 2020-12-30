@@ -27,12 +27,13 @@ class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable i
 
     private def nextConcernedPacket(event: (Packet, PacketCoordinates) => Unit): Unit = {
         val bytes = packetReader.readNextPacketBytes()
+        //println(s"received : ${new String(bytes)}")
         if (bytes == null) {
             return
         }
         val target = getTargetID(bytes)
 
-        if (target == server.identifier) { //check if packet concerns server
+        if (target == server.identifier) { //check if the packet concerns server
             val (packet, coordinates) = packetManager.toPacket(bytes)
             event(packet, coordinates)
             return

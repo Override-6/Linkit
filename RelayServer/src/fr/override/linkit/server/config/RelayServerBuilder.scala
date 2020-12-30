@@ -1,6 +1,6 @@
 package fr.`override`.linkit.server.config
 
-import fr.`override`.linkit.api.system.fs.{FileSystemAdapter, JDKFileSystemAdapters}
+import fr.`override`.linkit.api.system.fsa.{FileSystemAdapter, JDKFileSystemAdapters}
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.server.security.RelayServerSecurityManager
 

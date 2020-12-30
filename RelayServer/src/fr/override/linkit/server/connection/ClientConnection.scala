@@ -2,6 +2,7 @@ package fr.`override`.linkit.server.connection
 
 import java.net.Socket
 
+import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.server.task.ConnectionTasksHandler
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException, UnexpectedPacketException}
@@ -160,7 +161,7 @@ class ClientConnection private(socket: SocketContainer,
             case SERVER_CLOSE => server.close(identifier, reason)
             case ABORT_TASK => tasksHandler.skipCurrent(reason)
             case CHECK_ID => checkIDRegistered(new String(content))
-            case PRINT_INFO => server.getConsoleOut(identifier).get.println(s"Connected to server ${server.relayVersion} (${server.apiVersion})")
+            case PRINT_INFO => server.getConsoleOut(identifier).get.println(s"Connected to server ${server.relayVersion} (${Relay.ApiVersion})")
 
             case _ => systemChannel.sendPacket(ErrorPacket("Forbidden order", s"Could not complete order '$orderType', can't be handled by a server or unknown order"))
         }

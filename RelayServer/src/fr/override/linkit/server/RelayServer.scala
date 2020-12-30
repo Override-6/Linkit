@@ -24,7 +24,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.11.1", stable = false)
+    val version: Version = Version("RelayServer", "0.11.2", stable = false)
 
     val Identifier = "server"
 }
