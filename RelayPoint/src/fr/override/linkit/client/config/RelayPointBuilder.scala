@@ -2,7 +2,7 @@ package fr.`override`.linkit.client.config
 
 import java.net.InetSocketAddress
 
-import fr.`override`.linkit.api.system.fs.{FileSystemAdapter, JDKFileSystemAdapters}
+import fr.`override`.linkit.api.system.fsa.{FileSystemAdapter, JDKFileSystemAdapters}
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.client.{RelayPoint, RelayPointSecurityManager}
 

@@ -12,7 +12,7 @@ import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.{PacketManager, _}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.event.EventObserver
-import fr.`override`.linkit.api.system.network.{ConnectionState, Network}
+import fr.`override`.linkit.api.system.network.ConnectionState
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.client.RelayPoint.ServerID
@@ -22,7 +22,7 @@ import fr.`override`.linkit.client.network.PointNetwork
 import scala.util.control.NonFatal
 
 object RelayPoint {
-    val version: Version = Version("RelayPoint", "0.8.2", stable = false)
+    val version: Version = Version("RelayPoint", "0.8.3", stable = false)
 
     val ServerID = "server"
 }
@@ -54,7 +54,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     override val securityManager: RelaySecurityManager = configuration.securityManager
 
-    override val network: Network = new PointNetwork(this)
+    override val network: PointNetwork = new PointNetwork(this)
 
     override def start(): Unit = {
         securityManager.checkRelay(this)
@@ -130,7 +130,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     }
 
     private def loadRemote(): Unit = {
-        println(s"Connecting to server with identifier '$identifier'...")
         val response = systemChannel.nextPacket(DataPacket)
         if (response.header == "ERROR")
             throw RelayInitialisationException(new String(response.content))
@@ -144,7 +143,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
         systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
         println("Connected !")
-
+        network.init()
     }
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -191,6 +190,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     private def listen(reader: PacketReader): Unit = {
         try {
             val bytes = reader.readNextPacketBytes()
+            //println(s"received : ${new String(bytes)}")
             if (bytes == null)
                 return
             val (packet, coordinates) = packetManager.toPacket(bytes)

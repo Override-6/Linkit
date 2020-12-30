@@ -4,11 +4,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.channel.PacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.network.{AbstractNetwork, ConnectionState, NetworkEntity}
-import fr.`override`.linkit.api.utils.AsyncExecutionContext.context
 import fr.`override`.linkit.client.RelayPoint
-
-import scala.concurrent.Future
-import scala.util.control.NonFatal
 
 class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {
 
@@ -36,15 +32,8 @@ class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {
         asyncChannel
     }
 
-    //immediately registers the server once connected
-    relay.addConnectionListener(state => {
-        Future {
-            if (state == ConnectionState.CONNECTED && getEntity(Relay.ServerIdentifier).isEmpty) try {
-                addEntity(new RelayNetworkEntity(relay, asyncChannel, syncChannel, Relay.ServerIdentifier))
-            } catch {
-                case NonFatal(e) => e.printStackTrace()
-            }
-        }(context)
-    })
+    def init(): Unit = {
+        addEntity(createEntity(Relay.ServerIdentifier))
+    }
 
 }
