@@ -36,7 +36,7 @@ import org.jetbrains.annotations.Nullable
 //TODO Design a brand new and optimised packet protocol
 //TODO Make RelaySecurityManagers be able to get the network entity of a connection (maybe by adding a value into ClientConnection).
 object Relay {
-    val ApiVersion: Version = Version("Api", "0.12.0", stable = false)
+    val ApiVersion: Version = Version("Api", "0.12.1", stable = false)
     val ServerIdentifier: String = "server"
 }
 

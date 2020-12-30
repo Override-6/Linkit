@@ -3,7 +3,6 @@ package fr.`override`.linkit.api.`extension`
 import java.io.Closeable
 import java.net.URLClassLoader
 import java.util.Properties
-import java.util.stream.Collectors
 import java.util.zip.ZipFile
 
 import fr.`override`.linkit.api.Relay

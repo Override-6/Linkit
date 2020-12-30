@@ -1,6 +1,7 @@
 package fr.`override`.linkit.api.system.fsa.nio
 
 import java.io.{InputStream, OutputStream}
+import java.net.URI
 import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
 
 import fr.`override`.linkit.api.system.fsa.FileAdapter
@@ -9,6 +10,8 @@ import fr.`override`.linkit.api.system.fsa.FileAdapter
 class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) extends FileAdapter {
 
     override def getPath: String = path.toString
+
+    override def getAbsolutePath: String = path.toAbsolutePath.toString
 
     override def getSize: Long = Files.size(path)
 
@@ -19,6 +22,8 @@ class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) extends
         }
         fsa.getAdapter(parent.toString)
     }
+
+    override def toUri: URI = path.toUri
 
     override def resolveSibling(path: String): FileAdapter = resolveSiblings(fsa.getAdapter(path))
 

@@ -1,12 +1,15 @@
 package fr.`override`.linkit.api.system.fsa.io
 
 import java.io.{File, FileInputStream, FileOutputStream, InputStream, OutputStream}
+import java.net.URI
 
 import fr.`override`.linkit.api.system.fsa.FileAdapter
 
 class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) extends FileAdapter {
 
-    override def getPath: String = file.getAbsolutePath
+    override def getPath: String = file.getPath
+
+    override def getAbsolutePath: String = file.getAbsolutePath
 
     override def getSize: Long = file.length()
 
@@ -16,6 +19,8 @@ class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) extends Fi
             parent = parent.getParentFile
         fsa.getAdapter(parent.toString)
     }
+
+    override def toUri: URI = file.toURI
 
     override def resolveSibling(path: String): FileAdapter = fsa.getAdapter(getPath + File.separatorChar + path)
 

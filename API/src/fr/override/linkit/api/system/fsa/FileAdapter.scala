@@ -6,11 +6,13 @@ import java.net.URI
 //TODO implements more methods from java.nio.file.Path
 trait FileAdapter {
 
-    override def toString: String = getPath
+    override def toString: String = getAbsolutePath
 
     override def equals(obj: Any): Boolean = obj != null && obj.getClass == getClass && obj.toString == toString
 
     def getPath: String
+
+    def getAbsolutePath: String
 
     def getSize: Long
 
@@ -22,7 +24,7 @@ trait FileAdapter {
 
     def resolveSiblings(path: FileAdapter): FileAdapter
 
-    def toUri: URI = URI.create(getPath)
+    def toUri: URI
 
     def isDirectory: Boolean
 
@@ -41,6 +43,7 @@ trait FileAdapter {
     def newOutputStream(append: Boolean = false): OutputStream
 
     def write(bytes: Array[Byte], append: Boolean = false): Unit
+
 
 
 }

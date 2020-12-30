@@ -16,7 +16,7 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     private val entities = mutable.Map[String, NetworkEntity]((relay.identifier, new SelfNetworkEntity(relay)))
 
-    override val onlineTimeStamp: Timestamp = Timestamp.from(Instant.now())
+    override val onlineTimeStamp: Timestamp = new Timestamp(System.currentTimeMillis())
 
     @volatile private var onEntityAdded: NetworkEntity => Unit = _ => ()
 

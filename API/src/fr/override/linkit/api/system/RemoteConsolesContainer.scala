@@ -62,7 +62,7 @@ class RemoteConsolesContainer(relay: Relay) {
             val channel = relay.createAsyncChannel(targetId, id)
             val console = supplier(channel)
 
-            val v = asyncConsoleCollector.sendPacket(DataPacket(name, id.toString), targetId)
+            asyncConsoleCollector.sendPacket(DataPacket(name, id.toString), targetId)
             syncConsoleCollector.nextPacket(targetId)
             consoles.put(targetId, console)
 

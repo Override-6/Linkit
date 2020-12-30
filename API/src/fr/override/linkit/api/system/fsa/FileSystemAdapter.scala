@@ -4,7 +4,7 @@ import java.io.{IOException, InputStream, OutputStream}
 
 /**
  * <p>
- *     It is possible to think that a FileSystem adapter should be overkill, and it's way better
+ *     It is possible to think that a FileSystem adapter should be overkill, that it's way better
  *     to use the java.nio.file system. And this is a good critic. The problem is, for some
  *     Java jre installations, nio.file is removed (ex: for android SDK < 26). To resolve this problem,
  *     an adapter was released. The utilisation of the adapter system is not inescapable,

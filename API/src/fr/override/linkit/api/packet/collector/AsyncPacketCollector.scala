@@ -15,12 +15,14 @@ class AsyncPacketCollector(traffic: TrafficHandler,
         onPacketReceivedAction = biConsumer
     }
 
-    override def sendPacket(packet: Packet, targetID: String): Unit = Future {
-        try {
-            traffic.sendPacket(packet, identifier, targetID)
-        } catch {
-            case NonFatal(e) => e.printStackTrace()
-        }
+    override def sendPacket(packet: Packet, targetID: String): Unit = {
+        //FIXME Future {
+            try {
+                traffic.sendPacket(packet, identifier, targetID)
+            } catch {
+                case NonFatal(e) => e.printStackTrace()
+            }
+        //}(context)
     }
 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
