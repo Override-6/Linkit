@@ -11,15 +11,17 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class ConnectionTasksThread private(connection: ClientConnection,
+class ConnectionTasksThread private(consoleErr: RemoteConsole.Err,
                                     ticketQueue: BlockingQueue[TaskTicket],
                                     lostPackets: mutable.Map[Int, ListBuffer[(Packet, PacketCoordinates)]]) extends Thread with JustifiedCloseable {
 
     @volatile private var open = false
     @volatile private var currentTicket: TaskTicket = _
 
-    def this(connection: ClientConnection) =
-        this(connection, new ArrayBlockingQueue[TaskTicket](15000), mutable.Map.empty)
+    def this(consoleErr: RemoteConsole.Err, identifier: String) = {
+        this(consoleErr, new ArrayBlockingQueue[TaskTicket](15000), mutable.Map.empty)
+        setName(s"RP Task Execution ($identifier)")
+    }
 
 
     override def run(): Unit = {
@@ -32,7 +34,7 @@ class ConnectionTasksThread private(connection: ClientConnection,
                 case _: InterruptedException =>
                 case NonFatal(e) =>
                     e.printStackTrace()
-                    connection.getConsoleErr.reportExceptionSimplified(e)
+                    consoleErr.reportExceptionSimplified(e)
             }
         }
     }
@@ -51,7 +53,7 @@ class ConnectionTasksThread private(connection: ClientConnection,
     }
 
     def copy(): ConnectionTasksThread =
-        new ConnectionTasksThread(connection, ticketQueue, lostPackets)
+        new ConnectionTasksThread(consoleErr, ticketQueue, lostPackets)
 
     private[task] def addTicket(ticket: TaskTicket): Unit = {
         ticketQueue.add(ticket)
@@ -72,6 +74,5 @@ class ConnectionTasksThread private(connection: ClientConnection,
         ticket.start()
     }
 
-    setName(s"RP Task Execution (${connection.identifier})")
 
 }

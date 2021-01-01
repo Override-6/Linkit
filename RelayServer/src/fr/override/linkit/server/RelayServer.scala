@@ -1,44 +1,45 @@
 package fr.`override`.linkit.server
 
-import java.net.{ServerSocket, Socket, SocketException}
+import java.net.{ServerSocket, SocketException}
 import java.nio.charset.Charset
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.exception.RelayCloseException
+import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.channel.PacketChannel
+import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.event.EventObserver
-import fr.`override`.linkit.api.system.network.ConnectionState
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.server.RelayServer.Identifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
+import fr.`override`.linkit.server.connection.ConnectionsManager.ConnectionContainer
 import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
+import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
 import fr.`override`.linkit.server.network.ServerNetwork
 import fr.`override`.linkit.server.security.RelayServerSecurityManager
 
-import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.11.2", stable = false)
+    val version: Version = Version("RelayServer", "0.12.0", stable = false)
 
     val Identifier = "server"
 }
 
 //TODO Create a connection helper for this poor class which swims into bad practices.
-class RelayServer private[server] (override val configuration: RelayServerConfiguration) extends Relay {
+class RelayServer private[server](override val configuration: RelayServerConfiguration) extends Relay {
 
     private val serverSocket = new ServerSocket(configuration.port)
 
     @volatile private var open = false
 
-    val trafficHandler = new ServerTrafficHandler(this)
-    val connectionsManager = new ConnectionsManager(this)
+    private[server] val connectionsManager = new ConnectionsManager(this)
 
+    override val trafficHandler = new ServerTrafficHandler(this) // FIXME I Think this is very bad to have this like this
     override val identifier: String = Identifier
     override val eventObserver: EventObserver = new EventObserver(configuration.enableEventHandling)
     override val extensionLoader = new RelayExtensionLoader(this)
@@ -108,14 +109,20 @@ class RelayServer private[server] (override val configuration: RelayServerConfig
     }
 
     override def createSyncChannel(linkedRelayID: String, id: Int, cacheSize: Int): PacketChannel.Sync = {
-        val targetConnection = getConnection(linkedRelayID)
-        targetConnection.createSync(id, cacheSize)
+        val container = getConnectionContainer(linkedRelayID)
+        if (container.isInitialised)
+            return container.getConnection.createSync(id, cacheSize)
+
+        new SyncPacketChannel(linkedRelayID, id, cacheSize, trafficHandler)
     }
 
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
-        val targetConnection = getConnection(linkedRelayID)
-        targetConnection.createAsync(id)
+        val container = getConnectionContainer(linkedRelayID)
+        if (container.isInitialised)
+            return container.getConnection.createAsync(id)
+
+        new AsyncPacketChannel(linkedRelayID, id, trafficHandler)
     }
 
     override def createSyncCollector(id: Int, cacheSize: Int): PacketCollector.Sync = {
@@ -127,16 +134,10 @@ class RelayServer private[server] (override val configuration: RelayServerConfig
     }
 
     override def getConsoleOut(targetId: String): Option[RemoteConsole] = {
-        if (connectionsManager.isNotRegistered(targetId))
-            return Option.empty
-
         Option(remoteConsoles.getOut(targetId))
     }
 
     override def getConsoleErr(targetId: String): Option[RemoteConsole.Err] = {
-        if (connectionsManager.isNotRegistered(targetId))
-            return Option.empty
-
         Option(remoteConsoles.getErr(targetId))
     }
 
@@ -164,38 +165,33 @@ class RelayServer private[server] (override val configuration: RelayServerConfig
         connectionsManager.getConnection(relayIdentifier)
     }
 
+    def getConnectionContainer(relayIdentifier: String): ConnectionContainer = {
+        ensureOpen()
+        connectionsManager.getConnectionContainer(relayIdentifier)
+    }
+
     def broadcast(err: Boolean, msg: String): Unit = {
         connectionsManager.broadcast(err, "(broadcast) " + msg)
     }
 
-    private def registerConnection(identifier: String,
-                                   unhandledPackets: Seq[(Packet, PacketCoordinates)],
-                                   socket: Socket): Unit = {
-        val socketContainer = new SocketContainer(notifier, true)
-        socketContainer.set(socket)
-        connectionsManager.register(identifier, socketContainer, unhandledPackets)
-    }
-
     private def handleRelayPointConnection(identifier: String,
-                                           unhandledPackets: Seq[(Packet, PacketCoordinates)],
-                                           tempSocket: SocketContainer): Unit = {
+                                           socket: SocketContainer): Unit = {
 
         if (connectionsManager.isNotRegistered(identifier)) {
-            registerConnection(identifier, unhandledPackets, tempSocket.get)
+            connectionsManager.registerConnection(identifier, socket)
             network.addEntity(identifier)
             return
         }
 
-        handleConnectionIDAmbiguity(getConnection(identifier), tempSocket, unhandledPackets)
+        handleConnectionIDAmbiguity(getConnection(identifier), socket)
     }
 
     private def handleConnectionIDAmbiguity(current: ClientConnection,
-                                            tempSocket: SocketContainer,
-                                            unhandledPackets: Seq[(Packet, PacketCoordinates)]): Unit = {
+                                            socket: SocketContainer): Unit = {
 
         if (!current.isConnected) {
-            current.updateSocket(tempSocket.get)
-            sendResponse(tempSocket, "OK")
+            current.updateSocket(socket.get)
+            sendResponse(socket, "OK")
             return
         }
         val identifier = current.identifier
@@ -204,34 +200,40 @@ class RelayServer private[server] (override val configuration: RelayServerConfig
         import AmbiguityStrategy._
         configuration.relayIDAmbiguityStrategy match {
             case CLOSE_SERVER =>
-                sendResponse(tempSocket, "ERROR", rejectMsg + " Consequences: Closing Server...")
+                sendResponse(socket, "ERROR", rejectMsg + " Consequences: Closing Server...")
                 broadcast(true, "RelayServer will close your connection because of a critical error")
                 close(CloseReason.INTERNAL_ERROR)
 
             case REJECT_NEW =>
                 Console.err.println("Rejected connection of a client because he gave an already registered relay identifier.")
-                sendResponse(tempSocket, "ERROR", rejectMsg)
+                sendResponse(socket, "ERROR", rejectMsg)
 
             case REPLACE =>
                 connectionsManager.unregister(identifier).close(CloseReason.INTERNAL_ERROR)
-                registerConnection(identifier, unhandledPackets, tempSocket.get)
-                sendResponse(tempSocket, "OK")
+                connectionsManager.registerConnection(identifier, socket)
+                sendResponse(socket, "OK")
 
             case DISCONNECT_BOTH =>
                 connectionsManager.unregister(identifier).close(CloseReason.INTERNAL_ERROR)
-                sendResponse(tempSocket, "ERROR", rejectMsg + " Consequences : Disconnected both")
+                sendResponse(socket, "ERROR", rejectMsg + " Consequences : Disconnected both")
         }
     }
 
     private def listenSocketConnection(): Unit = {
-        val tempSocket = new SocketContainer(notifier, false)
+        val socketContainer = new SocketContainer(notifier, true)
         try {
             val clientSocket = serverSocket.accept()
-            tempSocket.set(clientSocket)
+            socketContainer.set(clientSocket)
 
-            val unhandledPackets = ListBuffer.empty[(Packet, PacketCoordinates)]
-            val identifier = ClientConnection.retrieveIdentifier(tempSocket, this, unhandledPackets)
-            handleRelayPointConnection(identifier, unhandledPackets.toSeq, tempSocket)
+            val welcomePacketLength = socketContainer.read(1).head
+            if (welcomePacketLength > 32)
+                throw new ConnectionInitialisationException("Relay identifier exceeded maximum size limit of 32")
+            val welcomePacket = socketContainer.read(welcomePacketLength)
+
+
+            val identifier = new String(welcomePacket)
+            println(s"identifier = ${identifier}")
+            handleRelayPointConnection(identifier, socketContainer)
         } catch {
             case e: SocketException =>
                 val msg = e.getMessage.toLowerCase
@@ -246,7 +248,7 @@ class RelayServer private[server] (override val configuration: RelayServerConfig
         }
 
         def onException(e: Throwable): Unit = {
-            sendResponse(tempSocket, "ERROR", s"An exception occurred in server during client connection initialisation ($e)") //send a negative response for the client initialisation handling
+            sendResponse(socketContainer, "ERROR", s"An exception occurred in server during client connection initialisation ($e)") //sends a negative response for the client initialisation handling
             close(CloseReason.INTERNAL_ERROR)
         }
     }

@@ -1,12 +1,13 @@
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.packet.{SimpleTrafficHandler, TrafficHandler}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
+import fr.`override`.linkit.server.RelayServer
+import fr.`override`.linkit.server.connection.ConnectionsManager.ConnectionContainer
+import fr.`override`.linkit.server.exceptions.ConnectionException
 
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * TeamMate of RelayServer, handles the RelayPoint Connections.
@@ -18,10 +19,12 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
     /**
      * java map containing all RelayPointConnection instances
      * */
-    private val connections: mutable.Map[String, ClientConnection] = mutable.Map.empty
+    private val connections: mutable.Map[String, ConnectionContainer] = mutable.Map.empty
+
 
     override def close(reason: CloseReason): Unit = {
-        for ((_, connection) <- connections) {
+        for ((_, container) <- connections if container.isInitialised) {
+            val connection = container.getConnection
             println(s"Closing '${connection.identifier}'...")
             connection.close(reason)
         }
@@ -33,9 +36,8 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @param socket the socket to start the connection
      * @throws RelayInitialisationException when a id is already set for this address, or another connection is known under this id.
      * */
-    def register(identifier: String,
-                 socket: SocketContainer,
-                 startsPacket: Seq[(Packet, PacketCoordinates)]): Unit = {
+    def registerConnection(identifier: String,
+                           socket: SocketContainer): Unit = {
 
         if (connections.contains(identifier))
             throw RelayInitialisationException(s"This relay id is already registered ! ('$identifier')")
@@ -43,9 +45,13 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         if (connections.size > server.configuration.maxConnection)
             throw new RelayException("Maximum connection limit exceeded")
 
-        val connection = ClientConnection.preOpen(socket, server, identifier)
-        connections.put(identifier, connection)
-        connection.start(startsPacket)
+        //pre initialisation / pre registration
+        val trafficHandler = new SimpleTrafficHandler(server, socket)
+        val connectionContainer = ConnectionContainer(trafficHandler)
+        connections.put(identifier, connectionContainer)
+
+        val connection = ClientConnection.open(socket, server, identifier, trafficHandler)
+        connectionContainer.connection = Option(connection)
 
         val canConnect = server.securityManager.canConnect(connection)
         if (canConnect) {
@@ -57,15 +63,18 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         Console.err.println(s"Relay Connection '$identifier': " + msg)
 
         connections.remove(identifier)
-        connection.close(CloseReason.INTERNAL)
+        connection.close(CloseReason.SECURITY_CHEK)
     }
 
     def broadcast(err: Boolean, msg: String): Unit = {
-        connections.values.foreach(connection => {
-            if (err)
-                connection.getConsoleErr.println(msg)
-            else connection.getConsoleOut.println(msg)
-        })
+        connections.values
+            .filter(_.isInitialised)
+            .map(_.connection.get)
+            .foreach(connection => {
+                if (err)
+                    connection.getConsoleErr.println(msg)
+                else connection.getConsoleOut.println(msg)
+            })
     }
 
     /**
@@ -74,7 +83,10 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @param identifier the identifier to disconnect
      * */
     def unregister(identifier: String): ClientConnection = {
-        connections.remove(identifier).orNull
+        val container = connections.remove(identifier)
+        if (container.isDefined && container.get.isInitialised)
+            return container.get.getConnection
+        null
     }
 
 
@@ -85,6 +97,14 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @return the found [[ClientConnection]] bound with the identifier
      * */
     def getConnection(identifier: String): ClientConnection = {
+        val container = connections.get(identifier)
+        if (container isDefined)
+            return container.get.getConnection
+        null
+    }
+
+
+    def getConnectionContainer(identifier: String): ConnectionContainer = {
         connections.get(identifier).orNull
     }
 
@@ -120,5 +140,24 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         connection.sendDeflectedBytes(bytes)
     }
 
+
+}
+
+object ConnectionsManager {
+
+    case class ConnectionContainer(val trafficHandler: TrafficHandler) {
+
+        private[ConnectionsManager] var connection: Option[ClientConnection] = None
+
+        @throws[ConnectionException]
+        def getConnection: ClientConnection = {
+            if (connection isEmpty) {
+                throw ConnectionException("Unable to return ClientConnection : This connection is currently in initialisation phase")
+            }
+            connection.get
+        }
+
+        def isInitialised: Boolean = connection isDefined
+    }
 
 }

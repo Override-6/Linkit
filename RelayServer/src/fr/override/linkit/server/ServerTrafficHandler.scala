@@ -38,14 +38,14 @@ class ServerTrafficHandler(server: RelayServer) extends TrafficHandler {
     }
 
     override def sendPacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        sendPacket(packet, coords.containerID, coords.targetID)
+        val container = server.getConnectionContainer(coords.targetID)
+        if (container == null)
+            throw new IllegalArgumentException(s"Attempted to send packet to '${coords.targetID}', but this relay isn't connected on this server.")
+        container.trafficHandler.sendPacket(packet, coords)
     }
 
     override def sendPacket(packet: Packet, channelID: Int, targetID: String): Unit = {
-        val connection = server.getConnection(targetID)
-        if (connection == null)
-            throw new IllegalArgumentException(s"Attempted to send packet to '$targetID', but this relay isn't connected on this server.")
-        connection.sendPacket(packet, channelID)
+        sendPacket(packet, PacketCoordinates(channelID, targetID, server.identifier))
     }
 
     override def close(reason: CloseReason): Unit = {

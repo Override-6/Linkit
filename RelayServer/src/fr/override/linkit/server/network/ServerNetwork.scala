@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.network
 import fr.`override`.linkit.api.packet.collector.PacketCollector
 import fr.`override`.linkit.api.utils.Tuple3Packet._
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.system.network.{AbstractNetwork, ConnectionState, NetworkEntity, SelfNetworkEntity}
+import fr.`override`.linkit.api.network.{AbstractNetwork, ConnectionState, NetworkEntity, SelfNetworkEntity}
 import fr.`override`.linkit.server.RelayServer
 
 class ServerNetwork(relay: RelayServer) extends AbstractNetwork(relay) {
@@ -43,7 +43,7 @@ class ServerNetwork(relay: RelayServer) extends AbstractNetwork(relay) {
         val entities = listEntities.filterNot(e => e.isInstanceOf[SelfNetworkEntity] || e.identifier == identifier)
         entities.foreach(e => asyncCollector.sendPacket(packet, e.identifier))
 
-        //adding all currently connected entities of this network to the new entity
+        //adding all currently connected entities of this network into the new entity
         entities.foreach(e => asyncCollector.sendPacket(("add", e.identifier), identifier))
     }
 

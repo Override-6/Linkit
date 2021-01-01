@@ -6,7 +6,7 @@ import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.api.packet._
 import org.jetbrains.annotations.Nullable
 
-class ServerPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
+class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
 
     private val packetReader = new PacketReader(socket, server.securityManager)
     private val manager = server.connectionsManager

@@ -2,7 +2,7 @@ package fr.`override`.linkit.server.network
 
 import fr.`override`.linkit.api.packet.collector.PacketCollector
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
-import fr.`override`.linkit.api.system.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.system.{RemoteConsole, Version}
 import fr.`override`.linkit.api.utils.Tuple3Packet
 import fr.`override`.linkit.api.utils.Tuple3Packet._
