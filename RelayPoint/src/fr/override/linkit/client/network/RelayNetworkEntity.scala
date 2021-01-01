@@ -32,13 +32,9 @@ class RelayNetworkEntity(relay: RelayPoint, async: Async, sync: Sync, val identi
         before
     }
 
-    override def getRemoteConsole: RemoteConsole = {
-        relay.getConsoleOut(identifier).orNull
-    }
+    override def getRemoteConsole: RemoteConsole = relay.getConsoleOut(identifier)
 
-    override def getRemoteErrConsole: RemoteConsole.Err = {
-        relay.getConsoleErr(identifier).orNull
-    }
+    override def getRemoteErrConsole: RemoteConsole = relay.getConsoleErr(identifier)
 
     override def getApiVersion: Version = apiVersion
 

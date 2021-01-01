@@ -38,9 +38,8 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
                 Console.err.println(e.getMessage)
                 systemChannel.sendOrder(SystemOrder.ABORT_TASK, CloseReason.INTERNAL_ERROR)
 
-                val errConsoleOpt = relay.getConsoleErr(coordinates.senderID)
-                if (errConsoleOpt.isDefined)
-                    errConsoleOpt.get.reportExceptionSimplified(e)
+                val errConsole = relay.getConsoleErr(coordinates.senderID)
+                    errConsole.print(e)
         }
     }
 

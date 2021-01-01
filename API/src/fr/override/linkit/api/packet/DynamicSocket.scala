@@ -73,6 +73,7 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
         try {
             currentOutputStream.write(buff)
             currentOutputStream.flush()
+            //NETWORK-DEBUG-MARK
             //println(s"written : ${new String(buff)}")
         } catch {
             case e@(_: ConnectException | _: IOException) =>

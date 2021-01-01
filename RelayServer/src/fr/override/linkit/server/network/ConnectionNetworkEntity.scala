@@ -31,7 +31,7 @@ class ConnectionNetworkEntity(async: PacketCollector.Async,
 
     override def getRemoteConsole: RemoteConsole = connection.getConsoleOut
 
-    override def getRemoteErrConsole: RemoteConsole.Err = connection.getConsoleErr
+    override def getRemoteErrConsole: RemoteConsole = connection.getConsoleErr
 
     override def getApiVersion: Version = apiVersion
 

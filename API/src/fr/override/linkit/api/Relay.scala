@@ -36,7 +36,7 @@ import org.jetbrains.annotations.Nullable
 //TODO Design a brand new and optimised packet protocol
 //TODO Make RelaySecurityManagers be able to get the network entity of a connection (maybe by adding a value into ClientConnection).
 object Relay {
-    val ApiVersion: Version = Version("Api", "0.13.0", stable = false)
+    val ApiVersion: Version = Version("Api", "0.14.0", stable = false)
     val ServerIdentifier: String = "server"
 }
 
@@ -165,13 +165,13 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * @param targetId the targeted Relay identifier
      * @return the Console out controller of the specified relay
      */
-    def getConsoleOut(@Nullable targetId: String): Option[RemoteConsole]
+    def getConsoleOut(@Nullable targetId: String): RemoteConsole
 
     /**
      * @param targetId the targeted Relay identifier
      * @return the Console err controller of the specified relay
      */
-    def getConsoleErr(@Nullable targetId: String): Option[RemoteConsole.Err]
+    def getConsoleErr(@Nullable targetId: String): RemoteConsole
 
 
 }

@@ -11,14 +11,14 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class ConnectionTasksThread private(consoleErr: RemoteConsole.Err,
+class ConnectionTasksThread private(consoleErr: RemoteConsole,
                                     ticketQueue: BlockingQueue[TaskTicket],
                                     lostPackets: mutable.Map[Int, ListBuffer[(Packet, PacketCoordinates)]]) extends Thread with JustifiedCloseable {
 
     @volatile private var open = false
     @volatile private var currentTicket: TaskTicket = _
 
-    def this(consoleErr: RemoteConsole.Err, identifier: String) = {
+    def this(consoleErr: RemoteConsole, identifier: String) = {
         this(consoleErr, new ArrayBlockingQueue[TaskTicket](15000), mutable.Map.empty)
         setName(s"RP Task Execution ($identifier)")
     }
@@ -34,7 +34,7 @@ class ConnectionTasksThread private(consoleErr: RemoteConsole.Err,
                 case _: InterruptedException =>
                 case NonFatal(e) =>
                     e.printStackTrace()
-                    consoleErr.reportExceptionSimplified(e)
+                    consoleErr.print(e)
             }
         }
     }

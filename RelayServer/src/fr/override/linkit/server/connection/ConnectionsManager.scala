@@ -45,13 +45,16 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         if (connections.size > server.configuration.maxConnection)
             throw new RelayException("Maximum connection limit exceeded")
 
-        //pre initialisation / pre registration
+        //Pre initialisation / pre registration
         val trafficHandler = new SimpleTrafficHandler(server, socket)
         val connectionContainer = ConnectionContainer(trafficHandler)
         connections.put(identifier, connectionContainer)
 
-        val connection = ClientConnection.open(socket, server, identifier, trafficHandler)
+        //Opening ClientConnection and finalizing registration
+        val connectionSession = ClientConnectionSession(identifier, socket, server, trafficHandler)
+        val connection = ClientConnection.open(connectionSession)
         connectionContainer.connection = Option(connection)
+        connectionSession.initNetwork()
 
         val canConnect = server.securityManager.canConnect(connection)
         if (canConnect) {
@@ -63,7 +66,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         Console.err.println(s"Relay Connection '$identifier': " + msg)
 
         connections.remove(identifier)
-        connection.close(CloseReason.SECURITY_CHEK)
+        connection.close(CloseReason.SECURITY_CHECK)
     }
 
     def broadcast(err: Boolean, msg: String): Unit = {

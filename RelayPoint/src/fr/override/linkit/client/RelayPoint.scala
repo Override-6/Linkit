@@ -35,7 +35,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     @volatile private var open = false
     private val socket = new ClientDynamicSocket(configuration.serverAddress, notifier, configuration.reconnectionPeriod)
 
-    @volatile private var serverErrConsole: RemoteConsole.Err = _ //affected once Relay initialised
+    @volatile private var serverErrConsole: RemoteConsole = _ //affected once Relay initialised
 
     override val packetManager = new PacketManager(this)
 
@@ -110,9 +110,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         new SyncPacketCollector(trafficHandler, cacheSize, id)
     }
 
-    override def getConsoleOut(targetId: String): Option[RemoteConsole] = Option(remoteConsoles.getOut(targetId))
+    override def getConsoleOut(targetId: String): RemoteConsole = remoteConsoles.getOut(targetId)
 
-    override def getConsoleErr(targetId: String): Option[RemoteConsole.Err] = Option(remoteConsoles.getErr(targetId))
+    override def getConsoleErr(targetId: String): RemoteConsole = remoteConsoles.getErr(targetId)
 
     def isConnected: Boolean = socket.getState == ConnectionState.CONNECTED
 
@@ -138,13 +138,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         if (response.header == "ERROR")
             throw RelayInitialisationException(new String(response.content))
 
-        val outOpt = getConsoleOut(ServerID)
-        val errOpt = getConsoleErr(ServerID)
-
-        if (outOpt.isEmpty || errOpt.isEmpty)
-            throw RelayInitialisationException("Could not retrieve remote console of server")
-        serverErrConsole = errOpt.get
-
+        serverErrConsole = getConsoleErr(ServerID)
         systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
         println("Connected !")
         network.init()
@@ -194,6 +188,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     private def listen(reader: PacketReader): Unit = {
         try {
             val bytes = reader.readNextPacketBytes()
+            //NETWORK-DEBUG-MARK
             //println(s"received : ${new String(bytes)}")
             if (bytes == null)
                 return
@@ -210,7 +205,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             case e: AsynchronousCloseException =>
                 Console.err.println("Asynchronous close.")
                 if (serverErrConsole != null)
-                    serverErrConsole.reportExceptionSimplified(e)
+                    serverErrConsole.print(e)
                 close(CloseReason.INTERNAL_ERROR)
 
             case NonFatal(e) =>
@@ -218,7 +213,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
                 Console.err.println(s"Suddenly disconnected from the server")
                 if (serverErrConsole != null)
-                    serverErrConsole.reportExceptionSimplified(e)
+                    serverErrConsole.print(e)
                 close(CloseReason.INTERNAL_ERROR)
         }
     }
@@ -229,10 +224,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             return
 
         val sender = coordinates.senderID
-        val optErr = getConsoleErr(sender)
+        val consoleOut = getConsoleErr(sender)
         val msg = s"Could not handle packet : targetID ($targetID) isn't equals to this relay identifier !"
-        if (optErr.isDefined)
-            optErr.get.println(msg)
+        consoleOut.println(msg)
         throw new UnexpectedPacketException(msg)
     }
 
@@ -254,7 +248,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         order match {
             case CLIENT_CLOSE => close(origin, reason)
             case ABORT_TASK => tasksHandler.skipCurrent(reason)
-            case PRINT_INFO => getConsoleOut(origin).orNull.println(s"$relayVersion (${Relay.ApiVersion})")
+            case PRINT_INFO => getConsoleOut(origin).println(s"$relayVersion (${Relay.ApiVersion})")
 
             case _@(SERVER_CLOSE | CHECK_ID) => sendErrorPacket(order, "Received forbidden order.")
             case _ => sendErrorPacket(order, "Unknown order.")

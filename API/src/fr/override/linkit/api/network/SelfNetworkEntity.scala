@@ -18,7 +18,7 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     override def getRemoteConsole: RemoteConsole = throw new UnsupportedOperationException("Attempted to get a remote console of the current relay")
 
-    override def getRemoteErrConsole: RemoteConsole.Err = throw new UnsupportedOperationException("Attempted to get a remote console of the current relay")
+    override def getRemoteErrConsole: RemoteConsole = throw new UnsupportedOperationException("Attempted to get a remote console of the current relay")
 
     override def getApiVersion: Version = relay.relayVersion
 

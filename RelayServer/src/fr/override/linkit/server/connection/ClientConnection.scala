@@ -11,7 +11,6 @@ import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.system.SystemPacketChannel.SystemChannelID
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
-import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.NotNull
 
 import scala.util.control.NonFatal
@@ -33,7 +32,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     def start(): Unit = {
         if (closed)
             throw new RelayException("This Connection was already used and is now definitely closed.")
-
         connectionThread.start()
     }
 
@@ -55,7 +53,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
     def getConsoleOut: RemoteConsole = session.outConsole
 
-    def getConsoleErr: RemoteConsole.Err = session.errConsole
+    def getConsoleErr: RemoteConsole = session.errConsole
 
     def getState: ConnectionState = session.getSocketState
 
@@ -83,14 +81,13 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     private def run(): Unit = {
         val threadName = connectionThread.getName
         println(s"Thread '$threadName' was started")
-
         try {
             while (!closed)
                 session.packetReader.nextPacket(handlePacket)
         } catch {
             case NonFatal(e) =>
                 e.printStackTrace()
-                getConsoleErr.reportException(e)
+                e.printStackTrace(session.errConsole)
                 close(CloseReason.INTERNAL_ERROR)
         }
         println(s"End of Thread execution '$threadName'")
@@ -127,7 +124,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
             case SERVER_CLOSE => server.close(identifier, reason)
             case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
             case CHECK_ID => checkIDRegistered(new String(content))
-            case PRINT_INFO => server.getConsoleOut(identifier).get.println(s"Connected to server ${server.relayVersion} (${Relay.ApiVersion})")
+            case PRINT_INFO => server.getConsoleOut(identifier).println(s"Connected to server ${server.relayVersion} (${Relay.ApiVersion})")
 
             case _ => session.channel.sendPacket(ErrorPacket("Forbidden order", s"Could not complete order '$orderType', can't be handled by a server or unknown order"))
         }
@@ -145,23 +142,16 @@ object ClientConnection {
     /**
      * Constructs a ClientConnection without starting it.
      *
-     * @param socket the socket which will be used by the connection to perform in/out data transfer
-     * @param server the server which is asking for this client connection
      * @throws NullPointerException if the identifier or the socket is null.
      * @return a started ClientConnection.
      * @see [[SocketContainer]]
      * */
-    def open(@NotNull socket: SocketContainer,
-             @NotNull server: RelayServer,
-             @NotNull identifier: String,
-             @NotNull trafficHandler: TrafficHandler): ClientConnection = {
-        if (socket == null || server == null || identifier == null || trafficHandler == null) {
-            throw new NullPointerException("Unable to construct ClientConnection : one of the given parameters are null")
+    def open(@NotNull session: ClientConnectionSession): ClientConnection = {
+        if (session == null) {
+            throw new NullPointerException("Unable to construct ClientConnection : session cant be null")
         }
-        val session = ClientConnectionSession.open(identifier, socket, server, trafficHandler)
         val connection = new ClientConnection(session)
         connection.start()
-
         connection
     }
 

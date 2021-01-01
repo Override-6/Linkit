@@ -1,23 +1,18 @@
 package fr.`override`.linkit.api.system
 
-import java.io.{PrintStream, PrintWriter, StringWriter}
+import java.io.PrintStream
 import java.security.AccessController
 
-import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.Packet
-import fr.`override`.linkit.api.packet.channel.PacketChannel
-import fr.`override`.linkit.api.packet.channel.PacketChannel.Async
+import fr.`override`.linkit.api.packet.collector.PacketCollector
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
 import sun.security.action.GetPropertyAction
 
 
-class RemoteConsole private(@Nullable channel: Async,
-                            @Nullable output: PrintStream) extends PrintStream(InactiveOutputStream, true) {
-
-    if (channel != null && output != null)
-        listen()
+class RemoteConsole private(@Nullable channel: PacketCollector.Async,
+                            kind: String,
+                            boundIdentifier: String) extends PrintStream(InactiveOutputStream, true) {
 
     override def write(b: Array[Byte]): Unit = {
         print(new String(b))
@@ -32,12 +27,13 @@ class RemoteConsole private(@Nullable channel: Async,
     }
 
     override def print(obj: Any): Unit = {
-        var str = if (obj == null) "null" else obj.toString
+        var str = String.valueOf(obj)
 
         if (obj.getClass.isArray)
             str = java.util.Arrays.deepToString(obj.asInstanceOf[Array[AnyRef]])
 
-        channel.sendPacket(DataPacket("", str))
+        if (channel != null)
+            channel.sendPacket(DataPacket(kind, String.valueOf(obj)), boundIdentifier)
     }
 
     override def print(x: Boolean): Unit = print(x: Any)
@@ -61,61 +57,14 @@ class RemoteConsole private(@Nullable channel: Async,
 
     private val lineSeparator = AccessController.doPrivileged(new GetPropertyAction("line.separator"))
 
-    def listen(): Unit = {
-        val connected = channel.connectedID
-        channel.onPacketReceived((packet, _) => packet match {
-            case data: DataPacket => output.println(s"[$connected]: ${new String(data.content)}")
-            case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")
-        })
-    }
-
 }
 
 object RemoteConsole {
 
-    class Err private[RemoteConsole](channel: PacketChannel.Async) extends RemoteConsole(channel, System.err) {
+    def err(channel: PacketCollector.Async, boundIdentifier: String): RemoteConsole = new RemoteConsole(channel, "err", boundIdentifier)
 
-        def reportException(exception: Throwable): Unit = {
-            val writer = new StringWriter()
-            val stream = new PrintWriter(writer)
-            exception.printStackTrace(stream)
+    def out(channel: PacketCollector.Async, boundIdentifier: String): RemoteConsole = new RemoteConsole(channel, "out", boundIdentifier)
 
-            val stackTrace = writer.toString
-
-            var message = s"(This is a remote StackTrace (RST) from Relay '${channel.ownerID}')\n$stackTrace"
-            message = message.slice(0, message.length - 1)
-
-            this.print(message.replace("\n", "\nRST > "))
-        }
-
-
-        def reportExceptionSimplified(exception: Throwable): Unit = {
-            val sb = new StringBuilder
-            var cause = exception
-            while (cause != null) {
-                val name = cause.getClass.getSimpleName
-                val message = cause.getMessage
-                if (cause != exception)
-                    sb.append("     caused by ")
-                sb.append(name)
-                if (message != null) {
-                    sb.append(": ")
-                        .append(message)
-                }
-
-                cause = cause.getCause
-            }
-            val causes = sb.toString()
-            print(s"(an exception occurred in relay '${channel.ownerID}') simplified description : \n$causes")
-        }
-    }
-
-    def err(channel: PacketChannel.Async): Err = new Err(channel)
-
-    def out(channel: PacketChannel.Async): RemoteConsole = new RemoteConsole(channel, System.out)
-
-    def mock(): RemoteConsole = new RemoteConsole(null, null)
-
-    def mockErr(): RemoteConsole.Err = new RemoteConsole.Err(null)
+    val Mock: RemoteConsole = new RemoteConsole(null, "mock", null)
 
 }

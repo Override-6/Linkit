@@ -31,7 +31,7 @@ class ConnectionTasksHandler(session: ClientConnectionSession) extends TasksHand
       case e: TaskException =>
         Console.err.println(e.getMessage)
         systemChannel.sendOrder(SystemOrder.ABORT_TASK, CloseReason.INTERNAL_ERROR)
-        session.errConsole.reportExceptionSimplified(e)
+        session.errConsole.print(e)
     }
   }
 

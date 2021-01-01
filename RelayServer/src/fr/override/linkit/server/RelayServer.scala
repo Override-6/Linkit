@@ -133,12 +133,12 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         new AsyncPacketCollector(trafficHandler, id)
     }
 
-    override def getConsoleOut(targetId: String): Option[RemoteConsole] = {
-        Option(remoteConsoles.getOut(targetId))
+    override def getConsoleOut(targetId: String): RemoteConsole = {
+        remoteConsoles.getOut(targetId)
     }
 
-    override def getConsoleErr(targetId: String): Option[RemoteConsole.Err] = {
-        Option(remoteConsoles.getErr(targetId))
+    override def getConsoleErr(targetId: String): RemoteConsole = {
+        remoteConsoles.getErr(targetId)
     }
 
     override def close(reason: CloseReason): Unit =
@@ -179,7 +179,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
         if (connectionsManager.isNotRegistered(identifier)) {
             connectionsManager.registerConnection(identifier, socket)
-            network.addEntity(identifier)
+            sendResponse(socket, "OK")
             return
         }
 
@@ -232,7 +232,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
 
             val identifier = new String(welcomePacket)
-            println(s"identifier = ${identifier}")
             handleRelayPointConnection(identifier, socketContainer)
         } catch {
             case e: SocketException =>

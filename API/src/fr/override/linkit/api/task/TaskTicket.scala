@@ -18,7 +18,7 @@ class TaskTicket(executor: TaskExecutor,
                  ownFreeWill: Boolean) {
 
     private val notifier = relay.eventObserver.notifier
-    private val errConsole = relay.getConsoleErr(target).get
+    private val errRemote = relay.getConsoleErr(target)
     val channel: PacketChannel.Sync = relay.createSyncChannel(target, taskId)
 
 
@@ -38,10 +38,10 @@ class TaskTicket(executor: TaskExecutor,
                     case e: InvocationTargetException => e.getCause.printStackTrace()
                     case e: TaskOperationFailException =>
                         Console.err.println(e.getMessage)
-                        errConsole.reportException(e)
+                        e.printStackTrace(errRemote)
 
                     case NonFatal(e) => e.printStackTrace()
-                        errConsole.reportException(e)
+                        e.printStackTrace(errRemote)
                 } finally {
                     notifier.onTaskSkipped(task, reason)
                 }
@@ -53,7 +53,7 @@ class TaskTicket(executor: TaskExecutor,
     def start(): Unit = {
         var reason = CloseReason.INTERNAL_ERROR
         try {
-            executor.init(relay, target, channel)
+            executor.init(relay, channel)
 
             executor match {
                 case task: Task[_] => notifier.onTaskStartExecuting(task)
@@ -76,11 +76,11 @@ class TaskTicket(executor: TaskExecutor,
 
             case e: TaskOperationFailException =>
                 Console.err.println(e.getMessage)
-                errConsole.reportException(e)
+                e.printStackTrace(errRemote)
 
             case NonFatal(e) =>
                 e.printStackTrace()
-                errConsole.reportException(e)
+                e.printStackTrace(errRemote)
 
         } finally {
             notifyExecutor()

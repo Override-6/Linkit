@@ -16,7 +16,7 @@ trait NetworkEntity {
 
     def getRemoteConsole: RemoteConsole
 
-    def getRemoteErrConsole: RemoteConsole.Err
+    def getRemoteErrConsole: RemoteConsole
 
     def getApiVersion: Version
 

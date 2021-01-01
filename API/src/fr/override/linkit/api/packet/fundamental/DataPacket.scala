@@ -16,7 +16,7 @@ import fr.`override`.linkit.api.`extension`.packet.PacketFactory
 case class DataPacket(header: String,
                       content: Array[Byte] = Array()) extends Packet {
 
-    val contentAsString: String = new String(content)
+    lazy val contentAsString: String = new String(content)
 
     /**
      * Represents this packet as a String
