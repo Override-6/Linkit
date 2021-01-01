@@ -19,7 +19,7 @@ class RelayPointSecurityManager extends RelaySecurityManager {
         val identifier = relay.identifier
         if (identifier.isEmpty)
             throw RelaySecurityException("Relay Identifier can't be empty")
-        if (identifier == RelayPoint.ServerID || identifier == "unknown")
+        if (identifier == Relay.ServerIdentifier || identifier == "unknown")
             throw RelaySecurityException(s"'$identifier' is a blacklisted identifier !")
         if (!identifier.matches("^\\w{0,16}$"))
             throw RelaySecurityException(s"'$identifier' does not match regex '^\\w{0,16}$$'")

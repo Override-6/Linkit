@@ -12,7 +12,7 @@ import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.{PacketManager, _}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.event.EventObserver
-import fr.`override`.linkit.api.system.network.ConnectionState
+import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.client.RelayPoint.ServerID
@@ -22,7 +22,7 @@ import fr.`override`.linkit.client.network.PointNetwork
 import scala.util.control.NonFatal
 
 object RelayPoint {
-    val version: Version = Version("RelayPoint", "0.8.3", stable = false)
+    val version: Version = Version("RelayPoint", "0.9.0", stable = false)
 
     val ServerID = "server"
 }
@@ -130,6 +130,10 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     }
 
     private def loadRemote(): Unit = {
+        println(s"Connecting to server with relay id '$identifier'")
+        val idLength = identifier.length
+        socket.write(Array(idLength.toByte) ++ identifier.getBytes) //welcome packet
+
         val response = systemChannel.nextPacket(DataPacket)
         if (response.header == "ERROR")
             throw RelayInitialisationException(new String(response.content))
@@ -249,7 +253,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         import SystemOrder._
         order match {
             case CLIENT_CLOSE => close(origin, reason)
-            case GET_IDENTIFIER => systemChannel.sendPacket(DataPacket(identifier))
             case ABORT_TASK => tasksHandler.skipCurrent(reason)
             case PRINT_INFO => getConsoleOut(origin).orNull.println(s"$relayVersion (${Relay.ApiVersion})")
 

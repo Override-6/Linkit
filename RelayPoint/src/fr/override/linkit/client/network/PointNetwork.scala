@@ -3,7 +3,7 @@ package fr.`override`.linkit.client.network
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.channel.PacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.system.network.{AbstractNetwork, ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.network.{AbstractNetwork, ConnectionState, NetworkEntity}
 import fr.`override`.linkit.client.RelayPoint
 
 class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {

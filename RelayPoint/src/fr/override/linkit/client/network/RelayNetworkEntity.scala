@@ -2,7 +2,7 @@ package fr.`override`.linkit.client.network
 
 import fr.`override`.linkit.api.packet.channel.PacketChannel.{Async, Sync}
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
-import fr.`override`.linkit.api.system.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.system.{RemoteConsole, Version}
 import fr.`override`.linkit.api.utils.Tuple3Packet._
 import fr.`override`.linkit.api.utils.{ConsumerContainer, Tuple3Packet}
