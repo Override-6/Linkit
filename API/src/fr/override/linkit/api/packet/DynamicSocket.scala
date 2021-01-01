@@ -5,7 +5,7 @@ import java.net.{ConnectException, InetSocketAddress, Socket}
 
 import fr.`override`.linkit.api.exception.{RelayCloseException, RelayException}
 import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
-import fr.`override`.linkit.api.system.network.ConnectionState
+import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 

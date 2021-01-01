@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.system.network
+package fr.`override`.linkit.api.network
 
 import java.sql.Timestamp
 
@@ -11,7 +11,7 @@ trait Network {
 
     def getEntity(identifier: String): Option[NetworkEntity]
 
-    def setOnEntityAdded(action: NetworkEntity => Unit): Unit
+    def addOnEntityAdded(action: NetworkEntity => Unit): Unit
 
 
 }

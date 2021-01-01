@@ -7,6 +7,7 @@ import fr.`override`.linkit.api.system.fsa.{AbstractFileSystemAdapter, FileAdapt
 
 class NIOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
+    override val name: String = "java.nio.file"
 
     override def createDirectories(path: FileAdapter): Unit = Files.createDirectories(path)
 

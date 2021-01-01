@@ -1,8 +1,8 @@
-package fr.`override`.linkit.api.system.network
+package fr.`override`.linkit.api.network
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.system.{RemoteConsole, Version}
-import fr.`override`.linkit.api.system.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 
 class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
     override val identifier: String = relay.identifier

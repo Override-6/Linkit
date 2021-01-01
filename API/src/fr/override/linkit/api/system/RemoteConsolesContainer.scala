@@ -7,6 +7,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.packet.channel.PacketChannel
 import fr.`override`.linkit.api.packet.fundamental.{DataPacket, EmptyPacket}
+import fr.`override`.linkit.api.system.RemoteConsole
 import fr.`override`.linkit.api.system.RemoteConsolesContainer.{AsyncConsolesCollectorID, SyncConsolesCollectorID}
 
 class RemoteConsolesContainer(relay: Relay) {
@@ -53,7 +54,7 @@ class RemoteConsolesContainer(relay: Relay) {
                 return mock
 
             if (targetId == relay.identifier)
-                throw new RelayException("Attempted to get remote console of this relay")
+                throw new RelayException("Attempted to get remote console of this current relay")
 
             if (consoles.containsKey(targetId))
                 return consoles.get(targetId)

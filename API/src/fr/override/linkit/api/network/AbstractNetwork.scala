@@ -1,13 +1,12 @@
-package fr.`override`.linkit.api.system.network
+package fr.`override`.linkit.api.network
 
 import java.sql.Timestamp
-import java.time.Instant
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.packet.{HoleyPacketContainer, Packet, PacketCoordinates}
-import fr.`override`.linkit.api.utils.Tuple3Packet
+import fr.`override`.linkit.api.utils.{ConsumerContainer, Tuple3Packet}
 import fr.`override`.linkit.api.utils.Tuple3Packet._
 
 import scala.collection.mutable
@@ -18,15 +17,14 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override val onlineTimeStamp: Timestamp = new Timestamp(System.currentTimeMillis())
 
-    @volatile private var onEntityAdded: NetworkEntity => Unit = _ => ()
+    @volatile private var entityAddedListeners: ConsumerContainer[NetworkEntity] = ConsumerContainer()
 
     //immutable
     override def listEntities: List[NetworkEntity] = entities.values.to(List)
 
-
     override def getEntity(identifier: String): Option[NetworkEntity] = entities.get(identifier)
 
-    override def setOnEntityAdded(action: NetworkEntity => Unit): Unit = onEntityAdded = action
+    override def addOnEntityAdded(action: NetworkEntity => Unit): Unit = entityAddedListeners += action
 
     getAsyncChannel.onPacketReceived((packet, coords) => {
         val tuple = packet.asInstanceOf[Tuple3Packet]
@@ -52,7 +50,6 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
                     if (entity.isDefined)
                         updateEntityState(entity.get, ConnectionState.valueOf(tuple._3))
                 case "versions" =>
-                    //TODO move this request to a System order
                     sendPacket((Relay.ApiVersion.toString, relay.relayVersion.toString), coords.reversed())
 
                 case _ => throw new UnexpectedPacketException(s"Could not handle network order '$order'")
@@ -66,7 +63,7 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     protected def addEntity(entity: NetworkEntity): Unit = {
         entities.put(entity.identifier, entity)
-        onEntityAdded(entity)
+        entityAddedListeners.applyAll(entity)
     }
 
     protected def removeEntity(identifier: String): Unit = {

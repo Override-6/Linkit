@@ -1,2 +1,2 @@
-# linkit - API
+# linKit - API
 

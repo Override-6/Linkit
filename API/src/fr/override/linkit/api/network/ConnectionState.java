@@ -1,4 +1,4 @@
-package fr.override.linkit.api.system.network;
+package fr.override.linkit.api.network;
 
 public enum ConnectionState {
 

@@ -16,6 +16,8 @@ import java.io.{IOException, InputStream, OutputStream}
 //TODO implements more methods from java.nio.file.Files
 trait FileSystemAdapter {
 
+    val name: String
+
     implicit def getAdapter(path: String): FileAdapter
 
     def createDirectories(path: String): Unit = createDirectories(getAdapter(path))

@@ -14,7 +14,7 @@ object EmptyPacket extends Packet {
 
         override def build(implicit bytes: Array[Byte]): EmptyPacket = EmptyPacket
 
-        override val packetClass: Class[EmptyPacket] = classOf[EmptyPacket.type]
+        override val packetClass: Class[EmptyPacket] = EmptyPacket.getClass.asInstanceOf[Class[EmptyPacket]]
     }
 
     override def toString: String = "EmptyPacket"

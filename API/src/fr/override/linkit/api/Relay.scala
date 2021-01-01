@@ -9,7 +9,7 @@ import fr.`override`.linkit.api.packet.collector.PacketCollector
 import fr.`override`.linkit.api.packet.{Packet, PacketManager, TrafficHandler}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.event.EventObserver
-import fr.`override`.linkit.api.system.network.{ConnectionState, Network}
+import fr.`override`.linkit.api.network.{ConnectionState, Network}
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.system.{JustifiedCloseable, RemoteConsole, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
@@ -36,7 +36,7 @@ import org.jetbrains.annotations.Nullable
 //TODO Design a brand new and optimised packet protocol
 //TODO Make RelaySecurityManagers be able to get the network entity of a connection (maybe by adding a value into ClientConnection).
 object Relay {
-    val ApiVersion: Version = Version("Api", "0.12.1", stable = false)
+    val ApiVersion: Version = Version("Api", "0.13.0", stable = false)
     val ServerIdentifier: String = "server"
 }
 
@@ -98,7 +98,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     val eventObserver: EventObserver
 
     /**
-     * The network object of this relay, this object is such a [[fr.`override`.linkit.api.system.network.NetworkEntity]] container
+     * The network object of this relay, this object is such a [[fr.`override`.linkit.api.network.NetworkEntity]] container
      * with some getters. No network interaction can be done through object.
      * */
     val network: Network

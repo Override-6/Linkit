@@ -5,6 +5,8 @@ import java.io.{File, InputStream, OutputStream}
 import fr.`override`.linkit.api.system.fsa.{AbstractFileSystemAdapter, FileAdapter}
 
 class IOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
+    override val name: String = "java.io"
+
     override def createAdapter(path: String): FileAdapter = new IOFileAdapter(path, this)
 
     override def createDirectories(path: FileAdapter): Unit = path.getPath.mkdirs()
