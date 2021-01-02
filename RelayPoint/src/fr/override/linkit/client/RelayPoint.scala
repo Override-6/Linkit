@@ -6,13 +6,13 @@ import java.nio.charset.Charset
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.exception._
+import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.{PacketManager, _}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.event.EventObserver
-import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.client.RelayPoint.ServerID
@@ -22,7 +22,7 @@ import fr.`override`.linkit.client.network.PointNetwork
 import scala.util.control.NonFatal
 
 object RelayPoint {
-    val version: Version = Version("RelayPoint", "0.9.0", stable = false)
+    val version: Version = Version("RelayPoint", "0.9.1", stable = false)
 
     val ServerID = "server"
 }
@@ -132,7 +132,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     private def loadRemote(): Unit = {
         println(s"Connecting to server with relay id '$identifier'")
         val idLength = identifier.length
-        socket.write(Array(idLength.toByte) ++ identifier.getBytes) //welcome packet
+        val welcomePacket = Array(idLength.toByte) ++ identifier.getBytes
+        socket.write(welcomePacket)
+        socket.addConnectionStateListener(state => if (state == ConnectionState.CONNECTED) socket.write(welcomePacket))
 
         val response = systemChannel.nextPacket(DataPacket)
         if (response.header == "ERROR")
