@@ -8,7 +8,7 @@ import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperti
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
+import fr.`override`.linkit.api.packet.channel.PacketChannel
 import fr.`override`.linkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.system._
@@ -16,7 +16,6 @@ import fr.`override`.linkit.api.system.event.EventObserver
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.server.RelayServer.Identifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
-import fr.`override`.linkit.server.connection.ConnectionsManager.ConnectionContainer
 import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
 import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
 import fr.`override`.linkit.server.network.ServerNetwork
@@ -25,7 +24,7 @@ import fr.`override`.linkit.server.security.RelayServerSecurityManager
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.12.0", stable = false)
+    val version: Version = Version("RelayServer", "0.13.0", stable = false)
 
     val Identifier = "server"
 }
@@ -109,20 +108,12 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     override def createSyncChannel(linkedRelayID: String, id: Int, cacheSize: Int): PacketChannel.Sync = {
-        val container = getConnectionContainer(linkedRelayID)
-        if (container.isInitialised)
-            return container.getConnection.createSync(id, cacheSize)
-
-        new SyncPacketChannel(linkedRelayID, id, cacheSize, trafficHandler)
+        getConnection(linkedRelayID).createSync(id, cacheSize)
     }
 
 
     override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
-        val container = getConnectionContainer(linkedRelayID)
-        if (container.isInitialised)
-            return container.getConnection.createAsync(id)
-
-        new AsyncPacketChannel(linkedRelayID, id, trafficHandler)
+        getConnection(linkedRelayID).createAsync(id)
     }
 
     override def createSyncCollector(id: Int, cacheSize: Int): PacketCollector.Sync = {
@@ -165,11 +156,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.getConnection(relayIdentifier)
     }
 
-    def getConnectionContainer(relayIdentifier: String): ConnectionContainer = {
-        ensureOpen()
-        connectionsManager.getConnectionContainer(relayIdentifier)
-    }
-
     def broadcast(err: Boolean, msg: String): Unit = {
         connectionsManager.broadcast(err, "(broadcast) " + msg)
     }
@@ -209,12 +195,12 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
                 sendResponse(socket, "ERROR", rejectMsg)
 
             case REPLACE =>
-                connectionsManager.unregister(identifier).close(CloseReason.INTERNAL_ERROR)
+                connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
                 connectionsManager.registerConnection(identifier, socket)
                 sendResponse(socket, "OK")
 
             case DISCONNECT_BOTH =>
-                connectionsManager.unregister(identifier).close(CloseReason.INTERNAL_ERROR)
+                connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
                 sendResponse(socket, "ERROR", rejectMsg + " Consequences : Disconnected both")
         }
     }

@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.connection
 import java.net.Socket
 
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
-import fr.`override`.linkit.api.packet.TrafficHandler
+import fr.`override`.linkit.api.packet.{SimpleTrafficHandler, TrafficHandler}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RemoteConsole, SystemPacketChannel}
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
@@ -11,10 +11,9 @@ import fr.`override`.linkit.server.task.ConnectionTasksHandler
 
 case class ClientConnectionSession private(identifier: String,
                                            private val socket: SocketContainer,
-                                           server: RelayServer,
-                                           traffic: TrafficHandler) extends JustifiedCloseable {
+                                           server: RelayServer) extends JustifiedCloseable {
 
-
+    val traffic = new SimpleTrafficHandler(server, socket)
     val channel: SystemPacketChannel = new SystemPacketChannel(identifier, traffic)
     val packetReader = new ConnectionPacketReader(socket, server, identifier)
     val tasksHandler = new ConnectionTasksHandler(this)
