@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.utils
 
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
+import fr.`override`.linkit.api.packet.factory.PacketFactory
 import fr.`override`.linkit.api.packet.{Packet, PacketUtils}
 
 case class Tuple3Packet(_1: String, _2: String, _3: String) extends Packet

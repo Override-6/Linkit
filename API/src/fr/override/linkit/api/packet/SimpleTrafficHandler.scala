@@ -10,12 +10,12 @@ class SimpleTrafficHandler(relay: Relay,
                            socket: DynamicSocket) extends TrafficHandler {
 
     private val packetManager = relay.packetManager
-    private val registeredContainers = mutable.Map.empty[Int, PacketContainer]
+    private val registeredContainers = mutable.Map.empty[Int, PacketInjectable]
     private val notifier = relay.eventObserver.notifier
 
     override val relayID: String = relay.identifier
 
-    override def register(container: PacketContainer): Unit = {
+    override def register(container: PacketInjectable): Unit = {
         val id = container.identifier
 
         if (registeredContainers.contains(id))

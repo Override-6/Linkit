@@ -1,8 +1,7 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
 import fr.`override`.linkit.api.packet.Packet
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
+import fr.`override`.linkit.api.packet.factory.PacketFactory
 
 //TODO Doc
 /**

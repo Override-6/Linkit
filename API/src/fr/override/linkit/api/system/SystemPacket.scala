@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.system
 
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
+import fr.`override`.linkit.api.packet.factory.PacketFactory
 import fr.`override`.linkit.api.packet.{Packet, PacketUtils}
 
 case class SystemPacket private(order: SystemOrder,

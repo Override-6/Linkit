@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.packet.channel
 
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
-import fr.`override`.linkit.api.packet.{HoleyPacketContainer, Packet, PacketContainer, PacketCoordinates, TrafficHandler}
+import fr.`override`.linkit.api.packet.factory.PacketFactory
+import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
 //TODO Doc
@@ -10,7 +10,7 @@ import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
  *
  * @see [[PacketChannel]]
  * */
-abstract class PacketChannel(handler: TrafficHandler) extends JustifiedCloseable with PacketContainer {
+abstract class PacketChannel(handler: TrafficHandler) extends JustifiedCloseable with PacketInjectable {
 
     val connectedID: String
     val ownerID: String = handler.relayID
@@ -26,7 +26,7 @@ abstract class PacketChannel(handler: TrafficHandler) extends JustifiedCloseable
 
 object PacketChannel {
 
-    abstract class Async(handler: TrafficHandler) extends PacketChannel(handler) with HoleyPacketContainer
+    abstract class Async(handler: TrafficHandler) extends PacketChannel(handler) with ImmediatePacketInjectable
 
     abstract class Sync(traffic: TrafficHandler) extends PacketChannel(traffic) {
 

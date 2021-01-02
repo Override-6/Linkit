@@ -1,11 +1,8 @@
 package fr.`override`.linkit.api.system.event
 
 import fr.`override`.linkit.api.`extension`.RelayExtension
-import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
-import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
-import fr.`override`.linkit.api.`extension`.RelayExtension
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
-import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
+import fr.`override`.linkit.api.packet.factory.PacketFactory
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketInjectable}
 import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
 import fr.`override`.linkit.api.task.Task
 
@@ -32,9 +29,9 @@ abstract class EventListener {
 
     def onPacketTypeRegistered[T <: Packet](packetClass: Class[T], factoryClass: PacketFactory[T]): Unit = ()
 
-    def onPacketContainerRegistered(container: PacketContainer): Unit = ()
+    def onPacketContainerRegistered(container: PacketInjectable): Unit = ()
 
-    def onPacketContainerUnregistered(container: PacketContainer, reason: CloseReason): Unit = ()
+    def onPacketContainerUnregistered(container: PacketInjectable, reason: CloseReason): Unit = ()
 
     def onPacketSent(packet: Packet, coordinates: PacketCoordinates): Unit = ()
 

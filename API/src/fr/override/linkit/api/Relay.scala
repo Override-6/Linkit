@@ -1,15 +1,14 @@
 package fr.`override`.linkit.api
 
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, RelayInitialisationException}
+import fr.`override`.linkit.api.network.{ConnectionState, Network}
 import fr.`override`.linkit.api.packet.channel.PacketChannel
-import fr.`override`.linkit.api.packet.channel.PacketChannel.Sync
 import fr.`override`.linkit.api.packet.collector.PacketCollector
-import fr.`override`.linkit.api.packet.{Packet, PacketManager, TrafficHandler}
+import fr.`override`.linkit.api.packet.factory.{PacketChannelFactory, PacketCollectorFactory, PacketFactory}
+import fr.`override`.linkit.api.packet.{Packet, PacketManager}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.event.EventObserver
-import fr.`override`.linkit.api.network.{ConnectionState, Network}
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.system.{JustifiedCloseable, RemoteConsole, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
@@ -36,7 +35,7 @@ import org.jetbrains.annotations.Nullable
 //TODO Design a brand new and optimised packet protocol
 //TODO Make RelaySecurityManagers be able to get the network entity of a connection (maybe by adding a value into ClientConnection).
 object Relay {
-    val ApiVersion: Version = Version("Api", "0.14.0", stable = false)
+    val ApiVersion: Version = Version("Api", "0.15.0", stable = false)
     val ServerIdentifier: String = "server"
 }
 
@@ -60,8 +59,6 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     val relayVersion: Version
 
     val securityManager: RelaySecurityManager
-
-    val trafficHandler: TrafficHandler
 
     /**
      * The Packet Manager used by this relay.
@@ -127,39 +124,9 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * */
     def getState: ConnectionState
 
-    /**
-     * @param linkedRelayID the targeted relay identifier to connect
-     * @param id            the PacketChannel identifier
-     * @return a synchronous packet channel linked with the specified relay
-     *
-     * @see [[PacketChannel]]
-     */
-    def createSyncChannel(linkedRelayID: String, id: Int, cacheSize: Int = configuration.defaultContainerPacketCacheSize): Sync
+    def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
 
-    /**
-     * @param linkedRelayID the targeted relay identifier to connect
-     * @param id            the PacketChannel identifier
-     * @return an asynchronous packet channel linked with the specified relay
-     *
-     * @see [[PacketChannel]]
-     */
-    def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async
-
-    /**
-     * @param id the identifier to attribute with the [[PacketCollector]]
-     * @return a synchronised [[PacketCollector]]
-     *
-     * @see [[PacketCollector]], [[PacketCollector.Sync]]
-     * */
-    def createSyncCollector(id: Int, cacheSize: Int = configuration.defaultContainerPacketCacheSize): PacketCollector.Sync
-
-    /**
-     * @param id the identifier to attribute with the [[PacketCollector]]
-     * @return an asynchronous [[PacketCollector]]
-     *
-     * @see [[PacketCollector]], [[PacketCollector.Async]]
-     * */
-    def createAsyncCollector(id: Int): PacketCollector.Async
+    def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C
 
     /**
      * @param targetId the targeted Relay identifier

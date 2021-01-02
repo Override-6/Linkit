@@ -5,9 +5,9 @@ import java.sql.Timestamp
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
-import fr.`override`.linkit.api.packet.{HoleyPacketContainer, Packet, PacketCoordinates}
-import fr.`override`.linkit.api.utils.{ConsumerContainer, Tuple3Packet}
+import fr.`override`.linkit.api.packet.{ImmediatePacketInjectable, Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.Tuple3Packet._
+import fr.`override`.linkit.api.utils.{ConsumerContainer, Tuple3Packet}
 
 import scala.collection.mutable
 
@@ -26,9 +26,34 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override def addOnEntityAdded(action: NetworkEntity => Unit): Unit = entityAddedListeners += action
 
-    getAsyncChannel.onPacketReceived((packet, coords) => {
+    protected def addEntity(identifier: String): Unit = {
+        addEntity(createEntity(identifier))
+    }
+
+    protected def addEntity(entity: NetworkEntity): Unit = {
+        entities.put(entity.identifier, entity)
+        entityAddedListeners.applyAll(entity)
+    }
+
+    protected def removeEntity(identifier: String): Unit = {
+        entities.remove(identifier)
+    }
+
+    protected def createEntity(identifier: String): NetworkEntity
+
+    protected def updateEntityState(entity: NetworkEntity, state: ConnectionState): Unit
+
+    protected def handleOrder(packet: Tuple3Packet): Boolean = false
+
+    protected def sendPacket(packet: Packet, coords: PacketCoordinates): Unit
+
+    protected def getAsyncChannel: ImmediatePacketInjectable
+
+    getAsyncChannel.onPacketInjected((packet, coords) => {
         val tuple = packet.asInstanceOf[Tuple3Packet]
         val order = tuple._1
+
+        println(s"packet = ${packet}")
 
         if (!handleOrder(tuple)) {
             order match {
@@ -56,29 +81,6 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
             }
         }
     })
-
-    protected def addEntity(identifier: String): Unit = {
-        addEntity(createEntity(identifier))
-    }
-
-    protected def addEntity(entity: NetworkEntity): Unit = {
-        entities.put(entity.identifier, entity)
-        entityAddedListeners.applyAll(entity)
-    }
-
-    protected def removeEntity(identifier: String): Unit = {
-        entities.remove(identifier)
-    }
-
-    protected def createEntity(identifier: String): NetworkEntity
-
-    protected def updateEntityState(entity: NetworkEntity, state: ConnectionState): Unit
-
-    protected def handleOrder(packet: Tuple3Packet): Boolean = false
-
-    protected def sendPacket(packet: Packet, coords: PacketCoordinates): Unit
-
-    protected def getAsyncChannel: HoleyPacketContainer
 
 
 }

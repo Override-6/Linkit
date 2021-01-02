@@ -1,9 +1,10 @@
 package fr.`override`.linkit.api.packet.collector
 
-import fr.`override`.linkit.api.packet.{HoleyPacketContainer, Packet, PacketContainer, PacketCoordinates, TrafficHandler}
+import fr.`override`.linkit.api.packet.channel.PacketChannel
+import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.system.CloseReason
 
-abstract class PacketCollector(handler: TrafficHandler) extends PacketContainer {
+abstract class PacketCollector(handler: TrafficHandler) extends PacketInjectable {
 
     handler.register(this)
 
@@ -13,6 +14,9 @@ abstract class PacketCollector(handler: TrafficHandler) extends PacketContainer 
 
     override def close(reason: CloseReason): Unit = handler.unregister(identifier, reason)
 
+    def subSyncChannel(boundIdentifier: String): PacketChannel
+
+    def subAsyncChannel(boundIdentifier: String): PacketChannel
 }
 
 object PacketCollector {
@@ -33,8 +37,9 @@ object PacketCollector {
 
         def haveMorePackets: Boolean
 
+
     }
 
-    abstract class Async(traffic: TrafficHandler) extends PacketCollector(traffic) with HoleyPacketContainer
+    abstract class Async(traffic: TrafficHandler) extends PacketCollector(traffic) with ImmediatePacketInjectable
 
 }

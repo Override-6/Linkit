@@ -41,7 +41,7 @@ class RemoteConsolesContainer(relay: Relay) {
     init()
 
     protected def init() {
-        asyncConsoleMessageCollector.onPacketReceived((packet, coords) => packet match {
+        asyncConsoleMessageCollector.onPacketInjected((packet, coords) => packet match {
             case data: DataPacket =>
                 val output = if (data.header == "err") System.err else System.out
                 output.println(s"[${coords.senderID}]: ${data.contentAsString}")

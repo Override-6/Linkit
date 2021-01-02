@@ -29,7 +29,7 @@ class AsyncPacketChannel(override val connectedID: String,
         }
     }
 
-    def onPacketReceived(consumer: (Packet, PacketCoordinates) => Unit): Unit = {
+    def onPacketInjected(consumer: (Packet, PacketCoordinates) => Unit): Unit = {
         onPacketReceived = consumer
     }
 

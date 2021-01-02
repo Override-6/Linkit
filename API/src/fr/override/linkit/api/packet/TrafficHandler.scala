@@ -1,12 +1,12 @@
 package fr.`override`.linkit.api.packet
 
-import fr.`override`.linkit.api.system.{JustifiedCloseable, CloseReason}
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
 trait TrafficHandler extends JustifiedCloseable {
 
     val relayID: String
 
-    def register(container: PacketContainer): Unit
+    def register(container: PacketInjectable): Unit
 
     def unregister(id: Int, reason: CloseReason): Unit
 

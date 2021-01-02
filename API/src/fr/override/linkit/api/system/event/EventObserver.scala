@@ -1,11 +1,8 @@
 package fr.`override`.linkit.api.system.event
 
 import fr.`override`.linkit.api.`extension`.RelayExtension
-import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
-import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
-import fr.`override`.linkit.api.`extension`.RelayExtension
-import fr.`override`.linkit.api.`extension`.packet.PacketFactory
-import fr.`override`.linkit.api.packet.{Packet, PacketContainer, PacketCoordinates}
+import fr.`override`.linkit.api.packet.factory.PacketFactory
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketInjectable}
 import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
 import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
 import fr.`override`.linkit.api.task.Task
@@ -54,9 +51,9 @@ object EventObserver {
 
         def onPacketTypeRegistered[T <: Packet](packetClass: Class[T], factoryClass: PacketFactory[T]): Unit = dispatch(_.onPacketTypeRegistered(packetClass, factoryClass))
 
-        def onPacketContainerRegistered(container: PacketContainer): Unit = dispatch(_.onPacketContainerRegistered(container))
+        def onPacketContainerRegistered(container: PacketInjectable): Unit = dispatch(_.onPacketContainerRegistered(container))
 
-        def onPacketContainerUnregistered(container: PacketContainer, reason: CloseReason): Unit = dispatch(_.onPacketContainerUnregistered(container, reason))
+        def onPacketContainerUnregistered(container: PacketInjectable, reason: CloseReason): Unit = dispatch(_.onPacketContainerUnregistered(container, reason))
 
         def onPacketSent(packet: Packet, coordinates: PacketCoordinates): Unit = dispatch(_.onPacketSent(packet, coordinates))
 

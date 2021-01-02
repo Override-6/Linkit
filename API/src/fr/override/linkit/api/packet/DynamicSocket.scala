@@ -4,8 +4,8 @@ import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
 import fr.`override`.linkit.api.exception.{RelayCloseException, RelayException}
-import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
 import fr.`override`.linkit.api.network.ConnectionState
+import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
@@ -74,7 +74,7 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
             currentOutputStream.write(buff)
             currentOutputStream.flush()
             //NETWORK-DEBUG-MARK
-            //println(s"written : ${new String(buff)}")
+            println(s"written : ${new String(buff)}")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
