@@ -4,9 +4,9 @@ The main key points of this project are the extension, stability, pleasant and t
 The project is entirely wrote in the scala language, and some classes are wrote in Java.  
 
 ## Table of contents
-* [Notes and General information](TODO)
-* The API
-* The Client
+* [Notes and General information](https://github.com/Override-6/LinKit/#notes-and-general-information)
+* [The API](https://github.com/Override-6/LinKit/#the-api)
+* [The Client](https://github.com/Override-6/LinKit/#the-client)
 * The Server
 * Features
 * How to extend
@@ -40,7 +40,7 @@ All of those features are accessible from the Relay interface.
 
 TODO continue this part
 
-##The Client
+##The Client  
 The Client, or RelayPoint, is one implementation of the Relay interface, that can connect to any server implementation.  
 In order to instantiate a RelayPoint, you need a RelayPointConfiguration.  
 The different option explications of a RelayPointConfiguration can be find in the RelayPoint READ%E, but here, we will focus on how to create a default RelayPoint by using its builder :
