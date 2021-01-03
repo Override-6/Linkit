@@ -55,8 +55,8 @@ relayPoint.start()
 
 Here you have the JavaBuilder version if you are using Java :
 ```java
-RelayPoint relayPoint = new RelayPointBuilder
-    .JavaBuilder(serverAddress, relayPointIdentifier)
+RelayPoint relayPoint = RelayPointBuilder
+    .javaBuilder(serverAddress, relayPointIdentifier)
     .build();
 relayPoint.start();
 ```
