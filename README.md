@@ -1,7 +1,7 @@
-# LinKit - A personal project to easily synchronise and link everything 
+# LinKit - A personal project to easily synchronise and link programs
 LinKit offers an entire networking interface, that can be extended and controlled by any 'Relay'  
 The main key points of this project are the extension, stability, pleasant and the practicality  
-The project is entirely write using the scala language, and some classes are write in Java.  
+The project is mainly write in scala, and some classes are write in Java.  
 
 ## Table of contents
 * [Notes and General information](https://github.com/Override-6/LinKit/#notes-and-general-information)
