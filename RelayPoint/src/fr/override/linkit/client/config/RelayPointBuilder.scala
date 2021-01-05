@@ -68,6 +68,10 @@ object RelayPointBuilder {
         builder.build()
     }
 
+    def javaBuilder(serverAddress: InetSocketAddress, identifier: String): JavaBuilder = {
+        new JavaBuilder(serverAddress, identifier)
+    }
+
     class JavaBuilder(serverAddress: InetSocketAddress, identifier: String) {
         private val scalaBuilder: RelayPointBuilder = {
             val serv = serverAddress

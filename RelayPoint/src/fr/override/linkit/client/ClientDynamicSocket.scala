@@ -3,12 +3,10 @@ package fr.`override`.linkit.client
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
 
-import fr.`override`.linkit.api.packet.DynamicSocket
-import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
+import fr.`override`.linkit.api.packet.traffic.DynamicSocket
 
 class ClientDynamicSocket(boundAddress: InetSocketAddress,
-                          notifier: EventNotifier,
-                          reconnectionPeriod: Int) extends DynamicSocket(notifier, true) {
+                          reconnectionPeriod: Int) extends DynamicSocket(true) {
 
 
     private def newSocket(): Unit = {

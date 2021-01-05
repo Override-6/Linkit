@@ -1,15 +1,15 @@
 package fr.`override`.linkit.client.network
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.packet.channel.PacketChannel
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.network.{AbstractNetwork, ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.client.RelayPoint
 
 class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {
 
     private var asyncChannel: PacketChannel.Async = _
-    private val syncChannel = relay.createSyncChannel(Relay.ServerIdentifier, 2)
+    private val syncChannel = relay.createChannel(2, Relay.ServerIdentifier, SyncPacketChannel)
 
     override protected def createEntity(identifier: String): NetworkEntity = {
         new RelayNetworkEntity(relay, getAsyncChannel, syncChannel, identifier)
@@ -18,7 +18,8 @@ class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {
     override protected def updateEntityState(entity: NetworkEntity, state: ConnectionState): Unit = {
         val relayEntity = entity.asInstanceOf[RelayNetworkEntity]
         relayEntity.onConnectionChange(state)
-        if (state == ConnectionState.DISCONNECTED)
+        println(s"state updated for ${entity.identifier} = ${state}")
+        if (state == ConnectionState.CLOSED)
             removeEntity(entity.identifier)
     }
 
@@ -28,7 +29,7 @@ class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {
 
     override protected def getAsyncChannel: PacketChannel.Async = {
         if (asyncChannel == null)
-            asyncChannel = relay.createAsyncChannel(Relay.ServerIdentifier, 1)
+            asyncChannel = relay.createChannel(1, Relay.ServerIdentifier, AsyncPacketChannel)
         asyncChannel
     }
 

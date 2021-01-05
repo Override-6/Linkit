@@ -7,6 +7,7 @@ import java.util.Scanner
 import fr.`override`.linkit.client.config.RelayPointBuilder
 
 object Main {
+
     private val PORT = 48484
     private val SERVER_ADDRESS = new InetSocketAddress("192.168.1.19", PORT)
     private val LOCALHOST = new InetSocketAddress("localhost", PORT)
@@ -37,13 +38,14 @@ object Main {
 
         if (ideRun) {
 
-            /*import fr.`override`.linkit.`extension`.controller.ControllerExtension
+            import fr.`override`.linkit.`extension`.cloud.CloudStorageExtension
+            import fr.`override`.linkit.`extension`.controller.ControllerExtension
             import fr.`override`.linkit.`extension`.debug.DebugExtension
 
             val loader = relayPoint.extensionLoader
             loader.loadExtension(classOf[ControllerExtension])
-            loader.loadExtension(classOf[DebugExtension])*/
-            //loader.loadExtension(classOf[CloudStorageExtension])
+            loader.loadExtension(classOf[DebugExtension])
+            loader.loadExtension(classOf[CloudStorageExtension])
         }
     }
 

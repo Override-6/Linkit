@@ -86,4 +86,5 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
         tasksThread.start()
     }
 
+    override def isClosed: Boolean = !open
 }

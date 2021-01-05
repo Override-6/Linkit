@@ -7,12 +7,12 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.exception._
 import fr.`override`.linkit.api.network.ConnectionState
-import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
-import fr.`override`.linkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
+import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.fundamental._
-import fr.`override`.linkit.api.packet.{PacketManager, _}
+import fr.`override`.linkit.api.packet.traffic.{DedicatedPacketTraffic, PacketReader}
+import fr.`override`.linkit.api.packet.{PacketTranslator, _}
 import fr.`override`.linkit.api.system._
-import fr.`override`.linkit.api.system.event.EventObserver
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.client.RelayPoint.ServerID
@@ -22,28 +22,23 @@ import fr.`override`.linkit.client.network.PointNetwork
 import scala.util.control.NonFatal
 
 object RelayPoint {
-    val version: Version = Version("RelayPoint", "0.9.1", stable = false)
+    val version: Version = Version(name = "RelayPoint", version = "0.10.0", stable = false)
 
     val ServerID = "server"
 }
 
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
 
-    override val eventObserver: EventObserver = new EventObserver(configuration.enableEventHandling)
-    private val notifier = eventObserver.notifier
-
     @volatile private var open = false
-    private val socket = new ClientDynamicSocket(configuration.serverAddress, notifier, configuration.reconnectionPeriod)
+    override val packetTranslator = new PacketTranslator(this)
 
     @volatile private var serverErrConsole: RemoteConsole = _ //affected once Relay initialised
-
-    override val packetManager = new PacketManager(this)
+    private val socket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
 
     override val extensionLoader = new RelayExtensionLoader(this)
     override val properties = new RelayProperties
-
-    override val trafficHandler = new SimpleTrafficHandler(this, socket)
-    implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(ServerID, trafficHandler)
+    private val traffic = new DedicatedPacketTraffic(this, socket, identifier)
+    implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(ServerID, traffic)
 
     private val tasksHandler = new ClientTasksHandler(systemChannel, this)
     override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
@@ -77,8 +72,28 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         securityManager.checkRelay(this)
 
         println("Ready !")
-        notifier.onReady()
     }
+
+    override def close(reason: CloseReason): Unit = {
+        if (!open)
+            return //already closed.
+        println("Closing...")
+
+        if (reason.isInternal && isConnected) {
+            systemChannel.sendPacket(SystemPacket(SystemOrder.CLIENT_CLOSE, reason))
+        }
+
+        extensionLoader.close()
+        systemChannel.close(reason)
+        socket.close(reason)
+        tasksHandler.close(reason)
+        traffic.close(reason)
+
+        open = false
+        println("closed !")
+    }
+
+    def isConnected: Boolean = socket.getState == ConnectionState.CONNECTED
 
     override def isConnected(identifier: String): Boolean = {
         systemChannel.sendOrder(SystemOrder.CHECK_ID, CloseReason.INTERNAL, identifier.getBytes)
@@ -86,51 +101,10 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         response == "OK"
     }
 
-    override def close(reason: CloseReason): Unit = {
-        close(identifier, reason)
-    }
-
-    override def addConnectionListener(action: ConnectionState => Unit): Unit = socket.addConnectionStateListener(action)
-
-    override def getState: ConnectionState = socket.getState
-
-    override def createSyncChannel(linkedRelayID: String, id: Int, cacheSize: Int): PacketChannel.Sync = {
-        new SyncPacketChannel(linkedRelayID, id, cacheSize, trafficHandler)
-    }
-
-    override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
-        new AsyncPacketChannel(linkedRelayID, id, trafficHandler)
-    }
-
-    override def createAsyncCollector(id: Int): PacketCollector.Async = {
-        new AsyncPacketCollector(trafficHandler, id)
-    }
-
-    override def createSyncCollector(id: Int, cacheSize: Int): PacketCollector.Sync = {
-        new SyncPacketCollector(trafficHandler, cacheSize, id)
-    }
-
-    override def getConsoleOut(targetId: String): RemoteConsole = remoteConsoles.getOut(targetId)
-
-    override def getConsoleErr(targetId: String): RemoteConsole = remoteConsoles.getErr(targetId)
-
-    def isConnected: Boolean = socket.getState == ConnectionState.CONNECTED
-
-    private def startPacketWorker(): Unit = {
-        val thread = new Thread(packetWorkerThreadGroup, () => {
-            val packetReader = new PacketReader(socket, securityManager)
-            socket.start()
-            open = true
-            while (open && socket.isOpen)
-                listen(packetReader)
-            open = false
-        })
-        thread.setName("RelayPoint Packet Worker")
-        thread.start()
-    }
-
     private def loadRemote(): Unit = {
         println(s"Connecting to server with relay id '$identifier'")
+        traffic.register(systemChannel)
+
         val idLength = identifier.length
         val welcomePacket = Array(idLength.toByte) ++ identifier.getBytes
         socket.write(welcomePacket)
@@ -146,6 +120,42 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         network.init()
     }
 
+    override def getState: ConnectionState = socket.getState
+
+    override def isClosed: Boolean = !open
+
+    override def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
+        val channel = factory.createNew(traffic, channelId, targetID)
+        traffic.register(channel)
+        channel
+    }
+
+    override def getConsoleOut(targetId: String): RemoteConsole = remoteConsoles.getOut(targetId)
+
+    override def getConsoleErr(targetId: String): RemoteConsole = remoteConsoles.getErr(targetId)
+
+    override def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
+        val channel = factory.createNew(traffic, channelId)
+        traffic.register(channel)
+        channel
+    }
+
+
+    private def startPacketWorker(): Unit = {
+        val thread = new Thread(packetWorkerThreadGroup, () => {
+            val packetReader = new PacketReader(socket, securityManager)
+            socket.start()
+            open = true
+            while (open && socket.isOpen)
+                listen(packetReader)
+            open = false
+        })
+        thread.setName("RelayPoint Packet Worker")
+        thread.start()
+    }
+
+    override def addConnectionListener(action: ConnectionState => Unit): Unit = socket.addConnectionStateListener(action)
+
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
         ensureTargetValid(task.targetID)
@@ -153,28 +163,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             throw new TaskException("Task handling is disabled according to RelayConfiguration")
 
         task.preInit(tasksHandler)
-        notifier.onTaskScheduled(task)
         RelayTaskAction.of(task)
     }
 
-    private def close(relayId: String, reason: CloseReason): Unit = {
-        if (!open)
-            return //already closed.
-
-        if (reason.isInternal && isConnected) {
-            systemChannel.sendPacket(SystemPacket(SystemOrder.CLIENT_CLOSE, reason))
-        }
-
-        extensionLoader.close()
-        systemChannel.close(reason)
-        socket.close(reason)
-        tasksHandler.close(reason)
-        trafficHandler.close(reason)
-
-        open = false
-        notifier.onClosed(relayId, reason)
-        println("closed !")
-    }
 
     private def loadLocal(): Unit = {
         if (configuration.enableTasks) {
@@ -194,13 +185,11 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             //println(s"received : ${new String(bytes)}")
             if (bytes == null)
                 return
-            val (packet, coordinates) = packetManager.toPacket(bytes)
+            val (packet, coordinates) = packetTranslator.toPacket(bytes)
 
             if (configuration.checkReceivedPacketTargetID)
                 checkPacket(coordinates)
 
-
-            notifier.onPacketReceived(packet, coordinates)
             handlePacket(packet, coordinates)
         }
         catch {
@@ -211,7 +200,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
                 close(CloseReason.INTERNAL_ERROR)
 
             case NonFatal(e) =>
-                e.printStackTrace()
+                e.printStackTrace(System.out)
 
                 Console.err.println(s"Suddenly disconnected from the server")
                 if (serverErrConsole != null)
@@ -235,7 +224,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = packet match {
         case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
         case system: SystemPacket => handleSystemPacket(system, coordinates)
-        case _: Packet => trafficHandler.injectPacket(packet, coordinates)
+        case _: Packet => traffic.injectPacket(packet, coordinates)
     }
 
 
@@ -244,11 +233,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         val reason = system.reason.reversedPOV()
         val origin = coords.senderID
 
-        notifier.onSystemOrderReceived(order, reason)
-
         import SystemOrder._
         order match {
-            case CLIENT_CLOSE => close(origin, reason)
+            case CLIENT_CLOSE => close(reason)
             case ABORT_TASK => tasksHandler.skipCurrent(reason)
             case PRINT_INFO => getConsoleOut(origin).println(s"$relayVersion (${Relay.ApiVersion})")
 
@@ -278,7 +265,4 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         if (!isConnected(targetID))
             throw new RelayException(s"Target '$targetID' does not exists !")
     }
-
-    //initial tasks
-    Runtime.getRuntime.addShutdownHook(new Thread(() => close(CloseReason.INTERNAL)))
 }

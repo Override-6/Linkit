@@ -1,14 +1,16 @@
 package fr.`override`.linkit.client.network
 
+import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.packet.channel.PacketChannel.{Async, Sync}
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
-import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.system.{RemoteConsole, Version}
 import fr.`override`.linkit.api.utils.Tuple3Packet._
 import fr.`override`.linkit.api.utils.{ConsumerContainer, Tuple3Packet}
 import fr.`override`.linkit.client.RelayPoint
 
-class RelayNetworkEntity(relay: RelayPoint, async: Async, sync: Sync, val identifier: String) extends NetworkEntity {
+class RelayNetworkEntity(relay: RelayPoint,
+                         async: Async, sync: Sync,
+                         override val identifier: String) extends NetworkEntity {
 
     private val (apiVersion, relayVersion) = retrieveVersions()
     private val connectionStateListeners = ConsumerContainer[ConnectionState]()
@@ -46,7 +48,7 @@ class RelayNetworkEntity(relay: RelayPoint, async: Async, sync: Sync, val identi
     }
 
     private def retrieveVersions(): (Version, Version) = {
-        async.sendPacket(("versions", ""))
+        async.sendPacket(("versions", identifier))
         val versions = sync.nextPacket(Tuple3Packet)
         val api = Version.fromString(versions._1)
         val relay = Version.fromString(versions._2)
