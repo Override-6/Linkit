@@ -2,15 +2,16 @@ package fr.`override`.linkit.server.connection
 
 import java.net.SocketException
 
-import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.api.packet._
+import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketReader}
+import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
 class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
 
     private val packetReader = new PacketReader(socket, server.securityManager)
     private val manager = server.connectionsManager
-    private val packetManager = server.packetManager
+    private val packetTranslator = server.packetTranslator
 
     //TODO exceptions catches
     def nextPacket(onPacketReceived: (Packet, PacketCoordinates) => Unit): Unit = {
@@ -35,14 +36,15 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
         val target = getTargetID(bytes)
 
         if (target == server.identifier) { //check if the packet concerns server
-            val (packet, coordinates) = packetManager.toPacket(bytes)
+            val (packet, coordinates) = packetTranslator.toPacket(bytes)
             event(packet, coordinates)
             return
         }
+        //println("Deflected " + new String(bytes))
         manager.deflectTo(bytes, target)
     }
 
     private def getTargetID(bytes: Array[Byte]): String =
-        PacketUtils.cutString(PacketManager.SenderSeparator, PacketManager.TargetSeparator)(bytes)
+        PacketUtils.cutString(PacketTranslator.SenderSeparator, PacketTranslator.TargetSeparator)(bytes)
 
 }

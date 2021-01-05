@@ -1,11 +1,11 @@
 package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.packet.SimpleTrafficHandler
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.server.RelayServer
 
 import scala.collection.mutable
+import scala.util.control.NonFatal
 
 /**
  * TeamMate of RelayServer, handles the RelayPoint Connections.
@@ -18,13 +18,18 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * java map containing all RelayPointConnection instances
      * */
     private val connections: mutable.Map[String, ClientConnection] = mutable.Map.empty
+    @volatile private var closed = false
 
 
     override def close(reason: CloseReason): Unit = {
-        for ((_, connection) <- connections) {
+        for ((_, connection) <- connections) try {
             println(s"Closing '${connection.identifier}'...")
             connection.close(reason)
+        } catch {
+            case NonFatal(e) => e.printStackTrace()
         }
+        closed = true
+
     }
 
     /**
@@ -120,5 +125,5 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         connection.sendDeflectedBytes(bytes)
     }
 
-
+    override def isClosed: Boolean = ???
 }

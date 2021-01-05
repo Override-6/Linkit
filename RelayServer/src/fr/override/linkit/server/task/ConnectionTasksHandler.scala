@@ -3,10 +3,9 @@ package fr.`override`.linkit.server.task
 import fr.`override`.linkit.api.exception.TaskException
 import fr.`override`.linkit.api.packet.PacketCoordinates
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.system.{CloseReason, RemoteConsole, SystemOrder, SystemPacketChannel}
+import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
 import fr.`override`.linkit.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
-import fr.`override`.linkit.server.RelayServer
-import fr.`override`.linkit.server.connection.{ClientConnection, ClientConnectionSession}
+import fr.`override`.linkit.server.connection.ClientConnectionSession
 
 class ConnectionTasksHandler(session: ClientConnectionSession) extends TasksHandler {
 
@@ -69,4 +68,5 @@ class ConnectionTasksHandler(session: ClientConnectionSession) extends TasksHand
     tasksThread.start()
   }
 
+  override def isClosed: Boolean = tasksThread.isClosed
 }

@@ -5,7 +5,6 @@ import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RemoteConsole}
 import fr.`override`.linkit.api.task.TaskTicket
-import fr.`override`.linkit.server.connection.ClientConnection
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -74,5 +73,5 @@ class ConnectionTasksThread private(consoleErr: RemoteConsole,
         ticket.start()
     }
 
-
+    override def isClosed: Boolean = !open
 }

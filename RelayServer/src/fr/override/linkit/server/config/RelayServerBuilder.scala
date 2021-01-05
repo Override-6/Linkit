@@ -52,6 +52,7 @@ class RelayServerBuilder {
 
 }
 
+//TODO Java style Builder
 object RelayServerBuilder {
 
     implicit def autoBuild(builder: RelayServerBuilder): RelayServer = {

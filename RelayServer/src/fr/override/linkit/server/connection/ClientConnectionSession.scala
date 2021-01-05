@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.connection
 import java.net.Socket
 
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
-import fr.`override`.linkit.api.packet.{SimpleTrafficHandler, TrafficHandler}
+import fr.`override`.linkit.api.packet.traffic.DedicatedPacketTraffic
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RemoteConsole, SystemPacketChannel}
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
@@ -13,7 +13,7 @@ case class ClientConnectionSession private(identifier: String,
                                            private val socket: SocketContainer,
                                            server: RelayServer) extends JustifiedCloseable {
 
-    val traffic = new SimpleTrafficHandler(server, socket)
+    val traffic = new DedicatedPacketTraffic(server, socket, identifier)
     val channel: SystemPacketChannel = new SystemPacketChannel(identifier, traffic)
     val packetReader = new ConnectionPacketReader(socket, server, identifier)
     val tasksHandler = new ConnectionTasksHandler(this)
@@ -22,10 +22,10 @@ case class ClientConnectionSession private(identifier: String,
     private var entity: NetworkEntity = _ //Can't be a val because the NetworkEntity initialisation needs the connection to be registered and started
 
     override def close(reason: CloseReason): Unit = {
-        if (tasksHandler != null)
-            tasksHandler.close(reason)
-        socket.close(reason)
+        tasksHandler.close(reason)
         traffic.close(reason)
+        server.network.removeEntity(identifier)
+        socket.close(reason)
     }
 
     def getSocketState: ConnectionState = socket.getState
@@ -47,4 +47,5 @@ case class ClientConnectionSession private(identifier: String,
             throw new ConnectionInitialisationException("Something went wrong when registering this connection session to the network")
     }
 
+    override def isClosed: Boolean = socket.isClosed //refers to an used closeable element
 }

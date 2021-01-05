@@ -1,15 +1,15 @@
 package fr.`override`.linkit.server.network
 
-import fr.`override`.linkit.api.packet.collector.PacketCollector
-import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, SyncPacketChannel}
+import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.system.{RemoteConsole, Version}
 import fr.`override`.linkit.api.utils.Tuple3Packet
 import fr.`override`.linkit.api.utils.Tuple3Packet._
 import fr.`override`.linkit.server.connection.ClientConnection
 
-class ConnectionNetworkEntity(async: PacketCollector.Async,
-                              sync: PacketCollector.Sync,
+class ConnectionNetworkEntity(async: AsyncPacketChannel,
+                              sync: SyncPacketChannel,
                               connection: ClientConnection) extends NetworkEntity {
 
     override val identifier: String = connection.identifier
@@ -18,15 +18,15 @@ class ConnectionNetworkEntity(async: PacketCollector.Async,
 
     override def getConnectionState: ConnectionState = connection.getState
 
-    override def getStringProperty(name: String): String = {
-        async.sendPacket(("getProperty", name), identifier)
-        sync.nextPacket(classOf[DataPacket]).contentAsString
-    }
-
     override def setStringProperty(name: String, value: String): String = {
         val before = getStringProperty(name)
-        async.sendPacket(("setProperty", name, value), identifier)
+        async.sendPacket(("setProperty", name, value))
         before
+    }
+
+    override def getStringProperty(name: String): String = {
+        async.sendPacket(("getProperty", name))
+        sync.nextPacket(classOf[DataPacket]).contentAsString
     }
 
     override def getRemoteConsole: RemoteConsole = connection.getConsoleOut
@@ -40,7 +40,7 @@ class ConnectionNetworkEntity(async: PacketCollector.Async,
     private val (apiVersion, relayVersion) = retrieveVersions()
 
     private def retrieveVersions(): (Version, Version) = {
-        async.sendPacket(("versions", ""), identifier)
+        async.sendPacket(("versions", ""))
         val versions = sync.nextPacket(classOf[Tuple3Packet])
         val api = Version.fromString(versions._1)
         val relay = Version.fromString(versions._2)

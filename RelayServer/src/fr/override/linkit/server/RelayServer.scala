@@ -8,11 +8,11 @@ import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperti
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.channel.PacketChannel
-import fr.`override`.linkit.api.packet.collector.{AsyncPacketCollector, PacketCollector, SyncPacketCollector}
+import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
+import fr.`override`.linkit.api.packet.traffic.DynamicSocket
 import fr.`override`.linkit.api.system._
-import fr.`override`.linkit.api.system.event.EventObserver
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.server.RelayServer.Identifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
@@ -24,7 +24,7 @@ import fr.`override`.linkit.server.security.RelayServerSecurityManager
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.13.0", stable = false)
+    val version: Version = Version("RelayServer", "0.14.0", stable = false)
 
     val Identifier = "server"
 }
@@ -33,26 +33,23 @@ object RelayServer {
 class RelayServer private[server](override val configuration: RelayServerConfiguration) extends Relay {
 
     private val serverSocket = new ServerSocket(configuration.port)
+    private val globalTraffic = new GlobalPacketTraffic(this)
+    private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
 
     @volatile private var open = false
 
     private[server] val connectionsManager = new ConnectionsManager(this)
 
-    override val trafficHandler = new ServerTrafficHandler(this) // FIXME I Think this is very bad to have this like this
     override val identifier: String = Identifier
-    override val eventObserver: EventObserver = new EventObserver(configuration.enableEventHandling)
     override val extensionLoader = new RelayExtensionLoader(this)
     override val taskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
-    override val packetManager = new PacketManager(this)
+    override val packetTranslator = new PacketTranslator(this)
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
     override val network: ServerNetwork = new ServerNetwork(this)
 
     override val relayVersion: Version = RelayServer.version
 
-    private[server] val notifier = eventObserver.notifier
-
-    private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -63,7 +60,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
         val tasksHandler = connection.getTasksHandler
         task.preInit(tasksHandler)
-        notifier.onTaskScheduled(task)
         RelayTaskAction.of(task)
     }
 
@@ -96,7 +92,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
 
         println("Ready !")
-        notifier.onReady()
     }
 
     override def addConnectionListener(action: ConnectionState => Unit): Unit = () //the connection of the server would never be updated
@@ -107,21 +102,16 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.containsIdentifier(identifier)
     }
 
-    override def createSyncChannel(linkedRelayID: String, id: Int, cacheSize: Int): PacketChannel.Sync = {
-        getConnection(linkedRelayID).createSync(id, cacheSize)
+    override def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
+        val channel = factory.createNew(globalTraffic, channelId, targetID)
+        globalTraffic.register(channel)
+        channel
     }
 
-
-    override def createAsyncChannel(linkedRelayID: String, id: Int): PacketChannel.Async = {
-        getConnection(linkedRelayID).createAsync(id)
-    }
-
-    override def createSyncCollector(id: Int, cacheSize: Int): PacketCollector.Sync = {
-        new SyncPacketCollector(trafficHandler, cacheSize, id)
-    }
-
-    override def createAsyncCollector(id: Int): PacketCollector.Async = {
-        new AsyncPacketCollector(trafficHandler, id)
+    override def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
+        val channel = factory.createNew(globalTraffic, channelId)
+        globalTraffic.register(channel)
+        channel
     }
 
     override def getConsoleOut(targetId: String): RemoteConsole = {
@@ -132,12 +122,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         remoteConsoles.getErr(targetId)
     }
 
-    override def close(reason: CloseReason): Unit =
-        close(identifier, reason)
-
-
-    def close(relayId: String, reason: CloseReason): Unit = {
+    override def close(reason: CloseReason): Unit = {
         println("closing server...")
+        Thread.dumpStack()
 
         if (reason == CloseReason.INTERNAL_ERROR)
             broadcast(true, "RelayServer will close your connection because of a critical error")
@@ -147,9 +134,10 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         serverSocket.close()
 
         open = false
-        notifier.onClosed(relayId, reason)
         println("server closed !")
     }
+
+    override def isClosed: Boolean = !open
 
     def getConnection(relayIdentifier: String): ClientConnection = {
         ensureOpen()
@@ -158,6 +146,26 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     def broadcast(err: Boolean, msg: String): Unit = {
         connectionsManager.broadcast(err, "(broadcast) " + msg)
+    }
+
+    /**
+     * Pre handles a packet, if this packet is a global one, it will be injected into the global traffic.
+     *
+     * Any packet received by a [[ClientConnection]] will invoke this method before it could be handled by the connection.
+     * If the handled packet prove to be a global packet,
+     * the client connection that just received this packet will stop handling it.
+     * (that's why this method is named as 'preHandlePacket' !)
+     *
+     * @param packet the packet to inject whether his coordinates prove to be a global packet
+     * @param coordinates the packet coordinates to check. If the injectableID is registered in the global traffic,
+     *                    that's means the packet is global.
+     * @return true if the following handling int the client connection should stop, false instead
+     * */
+    private[server] def preHandlePacket(packet: Packet, coordinates: PacketCoordinates): Boolean = {
+        val isGlobalPacket = globalTraffic.isRegistered(coordinates.injectableID)
+        if (isGlobalPacket)
+            globalTraffic.injectPacket(packet, coordinates)
+        !isGlobalPacket
     }
 
     private def handleRelayPointConnection(identifier: String,
@@ -206,7 +214,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     private def listenSocketConnection(): Unit = {
-        val socketContainer = new SocketContainer(notifier, true)
+        val socketContainer = new SocketContainer(true)
         try {
             val clientSocket = serverSocket.accept()
             socketContainer.set(clientSocket)
@@ -226,7 +234,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
                     return
                 Console.err.println(msg)
                 onException(e)
-            case e: RelayCloseException => onException(e)
             case NonFatal(e) =>
                 e.printStackTrace()
                 onException(e)
@@ -246,7 +253,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {
         val responsePacket = DataPacket(response, message)
         val coordinates = PacketCoordinates(SystemPacketChannel.SystemChannelID, "unknown", identifier)
-        socket.write(packetManager.toBytes(responsePacket, coordinates))
+        socket.write(packetTranslator.toBytes(responsePacket, coordinates))
     }
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(CloseReason.INTERNAL)))

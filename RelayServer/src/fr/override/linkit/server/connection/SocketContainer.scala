@@ -1,12 +1,11 @@
 package fr.`override`.linkit.server.connection
 
 import java.io._
-import java.net.{Socket, SocketException}
+import java.net.Socket
 
-import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
-import fr.`override`.linkit.api.packet.DynamicSocket
+import fr.`override`.linkit.api.packet.traffic.DynamicSocket
 
-class SocketContainer(notifier: EventNotifier, autoReconnect: Boolean) extends DynamicSocket(notifier, autoReconnect) {
+class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnect) {
 
     def set(socket: Socket): Unit = synchronized {
         if (currentSocket != null && !autoReconnect)

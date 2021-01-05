@@ -6,7 +6,6 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.system.SystemPacketChannel.SystemChannelID
 import fr.`override`.linkit.api.system._
@@ -20,10 +19,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     val identifier: String = session.identifier
 
     private val server = session.server
-    private val packetManager = server.packetManager
-    private val notifier = server.eventObserver.notifier
+    private val packetTranslator = server.packetTranslator
     private val manager: ConnectionsManager = server.connectionsManager
-    private val serverTraffic = server.trafficHandler
 
     private val connectionThread = new Thread(server.packetWorkerThreadGroup, () => run(), s"Dedicated Packet Worker ($identifier)")
 
@@ -36,6 +33,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     }
 
     override def close(reason: CloseReason): Unit = {
+        closed = true
+
         if (reason.isInternal && isConnected) {
             session.channel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
         }
@@ -44,7 +43,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         manager.unregister(identifier)
         connectionThread.interrupt()
 
-        closed = true
     }
 
     def isConnected: Boolean = getState == ConnectionState.CONNECTED
@@ -59,15 +57,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
     def addConnectionStateListener(action: ConnectionState => Unit): Unit = session.addStateListener(action)
 
-    def createSync(id: Int, cacheSize: Int): PacketChannel.Sync =
-        new SyncPacketChannel(identifier, id, cacheSize, session.traffic)
-
-    def createAsync(id: Int): PacketChannel.Async = {
-        new AsyncPacketChannel(identifier, id, session.traffic)
-    }
-
     def sendPacket(packet: Packet, channelID: Int): Unit = {
-        val bytes = packetManager.toBytes(packet, PacketCoordinates(channelID, identifier, server.identifier))
+        val bytes = packetTranslator.toBytes(packet, PacketCoordinates(channelID, identifier, server.identifier))
         session.send(bytes)
     }
 
@@ -94,20 +85,16 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     }
 
     private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        val containerID = coordinates.containerID
+        val containerID = coordinates.injectableID
         if (closed)
             return
-        notifier.onPacketReceived(packet, coordinates)
         packet match {
             case systemError: ErrorPacket if containerID == SystemChannelID => systemError.printError()
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
             case init: TaskInitPacket => session.tasksHandler.handlePacket(init, coordinates)
             case _: Packet =>
-                if (serverTraffic.isRegistered(coordinates.containerID)) {
-                    serverTraffic.injectPacket(packet, coordinates)
-                    return
-                }
-                session.traffic.injectPacket(packet, coordinates)
+                if (server.preHandlePacket(packet, coordinates))
+                    session.traffic.injectPacket(packet, coordinates)
         }
     }
 
@@ -117,11 +104,10 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         val reason = packet.reason.reversedPOV()
         val content = packet.content
 
-        notifier.onSystemOrderReceived(orderType, reason)
         import SystemOrder._
         orderType match {
             case CLIENT_CLOSE => close(reason)
-            case SERVER_CLOSE => server.close(identifier, reason)
+            case SERVER_CLOSE => server.close(reason)
             case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
             case CHECK_ID => checkIDRegistered(new String(content))
             case PRINT_INFO => server.getConsoleOut(identifier).println(s"Connected to server ${server.relayVersion} (${Relay.ApiVersion})")
@@ -135,6 +121,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         }
     }
 
+    override def isClosed: Boolean = closed
 }
 
 object ClientConnection {
