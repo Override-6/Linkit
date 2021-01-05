@@ -5,7 +5,7 @@ import java.lang.reflect.InvocationTargetException
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{TaskException, TaskOperationFailException}
-import fr.`override`.linkit.api.packet.channel.PacketChannel
+import fr.`override`.linkit.api.packet.channel.{PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
 import fr.`override`.linkit.api.system.CloseReason
 
@@ -17,19 +17,15 @@ class TaskTicket(executor: TaskExecutor,
                  target: String,
                  ownFreeWill: Boolean) {
 
-    private val notifier = relay.eventObserver.notifier
     private val errRemote = relay.getConsoleErr(target)
-    val channel: PacketChannel.Sync = relay.createSyncChannel(target, taskId)
-
+    val channel: PacketChannel.Sync = relay.createChannel(taskId, target, SyncPacketChannel)
 
     def abort(reason: CloseReason): Unit = {
         notifyExecutor()
         executor match {
             case task: Task[_] =>
-
                 val errorMethod = task.getClass.getMethod("fail", classOf[String])
                 errorMethod.setAccessible(true)
-                notifier.onTaskSkipped(task, reason)
 
                 try {
                     errorMethod.invoke(task, "Task aborted from an external handler")
@@ -42,8 +38,6 @@ class TaskTicket(executor: TaskExecutor,
 
                     case NonFatal(e) => e.printStackTrace()
                         e.printStackTrace(errRemote)
-                } finally {
-                    notifier.onTaskSkipped(task, reason)
                 }
             case _ =>
         }
@@ -54,11 +48,6 @@ class TaskTicket(executor: TaskExecutor,
         var reason = CloseReason.INTERNAL_ERROR
         try {
             executor.init(relay, channel)
-
-            executor match {
-                case task: Task[_] => notifier.onTaskStartExecuting(task)
-                case _ =>
-            }
 
             if (ownFreeWill) {
                 val initInfo = executor.initInfo
@@ -84,10 +73,6 @@ class TaskTicket(executor: TaskExecutor,
 
         } finally {
             notifyExecutor()
-            executor match {
-                case task: Task[_] => notifier.onTaskEnd(task, reason)
-                case _ =>
-            }
             executor.closeChannel(reason)
         }
     }

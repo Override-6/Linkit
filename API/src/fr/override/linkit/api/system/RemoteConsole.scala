@@ -3,16 +3,15 @@ package fr.`override`.linkit.api.system
 import java.io.PrintStream
 import java.security.AccessController
 
-import fr.`override`.linkit.api.packet.collector.PacketCollector
+import fr.`override`.linkit.api.packet.channel.PacketChannel
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
 import sun.security.action.GetPropertyAction
 
 
-class RemoteConsole private(@Nullable channel: PacketCollector.Async,
-                            kind: String,
-                            boundIdentifier: String) extends PrintStream(InactiveOutputStream, true) {
+class RemoteConsole private(@Nullable channel: PacketChannel,
+                            kind: String) extends PrintStream(InactiveOutputStream, true) {
 
     override def write(b: Array[Byte]): Unit = {
         print(new String(b))
@@ -33,7 +32,7 @@ class RemoteConsole private(@Nullable channel: PacketCollector.Async,
             str = java.util.Arrays.deepToString(obj.asInstanceOf[Array[AnyRef]])
 
         if (channel != null)
-            channel.sendPacket(DataPacket(kind, String.valueOf(obj)), boundIdentifier)
+            channel.sendPacket(DataPacket(kind, String.valueOf(obj)))
     }
 
     override def print(x: Boolean): Unit = print(x: Any)
@@ -61,10 +60,10 @@ class RemoteConsole private(@Nullable channel: PacketCollector.Async,
 
 object RemoteConsole {
 
-    def err(channel: PacketCollector.Async, boundIdentifier: String): RemoteConsole = new RemoteConsole(channel, "err", boundIdentifier)
+    def err(channel: PacketChannel): RemoteConsole = new RemoteConsole(channel, "err")
 
-    def out(channel: PacketCollector.Async, boundIdentifier: String): RemoteConsole = new RemoteConsole(channel, "out", boundIdentifier)
+    def out(channel: PacketChannel): RemoteConsole = new RemoteConsole(channel, "out")
 
-    val Mock: RemoteConsole = new RemoteConsole(null, "mock", null)
+    val Mock: RemoteConsole = new RemoteConsole(null, "mock")
 
 }

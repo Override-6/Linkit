@@ -23,7 +23,7 @@ class TaskCompleterHandler {
      * */
     def handleCompleter(initPacket: TaskInitPacket, coords: PacketCoordinates, tasksHandler: TasksHandler): Unit = {
         val taskType = initPacket.taskType
-        val taskID = coords.containerID
+        val taskID = coords.injectableID
         val targetID = coords.senderID
 
         val completerOpt = completers.get(taskType)

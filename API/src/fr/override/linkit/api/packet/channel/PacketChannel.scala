@@ -1,34 +1,37 @@
 package fr.`override`.linkit.api.packet.channel
 
-import fr.`override`.linkit.api.packet.factory.PacketFactory
-import fr.`override`.linkit.api.packet._
+import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketInjectable, PacketSender}
+import fr.`override`.linkit.api.packet.{PacketFactory, _}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
-//TODO Doc
+//TODO Think about on creating an abstract class to implement this class as a trait
 /**
  * this class link two Relay between them. As a Channel, it can send packet, or wait until a packet was received
  *
  * @see [[PacketChannel]]
  * */
-abstract class PacketChannel(handler: TrafficHandler) extends JustifiedCloseable with PacketInjectable {
+abstract class PacketChannel(sender: PacketSender) extends JustifiedCloseable with PacketInjectable {
 
+    override val ownerID: String = sender.ownerID
+    @volatile private var closed = false
     val connectedID: String
-    val ownerID: String = handler.relayID
-
     val coordinates: PacketCoordinates = PacketCoordinates(identifier, connectedID, ownerID)
 
-    handler.register(this)
+    override def close(reason: CloseReason): Unit = {
+        closed = true
+    }
 
-    override def close(reason: CloseReason): Unit = handler.unregister(identifier, reason)
+    override def isClosed: Boolean = closed
 
-    def sendPacket(packet: Packet): Unit = handler.sendPacket(packet, coordinates)
+    def sendPacket(packet: Packet): Unit = sender.sendPacket(packet, coordinates)
+
 }
 
 object PacketChannel {
 
-    abstract class Async(handler: TrafficHandler) extends PacketChannel(handler) with ImmediatePacketInjectable
+    abstract class Async(handler: PacketSender) extends PacketChannel(handler) with ImmediatePacketInjectable
 
-    abstract class Sync(traffic: TrafficHandler) extends PacketChannel(traffic) {
+    abstract class Sync(traffic: PacketSender) extends PacketChannel(traffic) {
 
         /**
          * Waits until a data packet is received and concerned about this task.

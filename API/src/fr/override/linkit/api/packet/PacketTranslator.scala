@@ -3,7 +3,6 @@ package fr.`override`.linkit.api.packet
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{PacketException, UnexpectedPacketException}
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
-import fr.`override`.linkit.api.packet.factory.PacketFactory
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.system.SystemPacket
 import fr.`override`.linkit.api.utils.Tuple3Packet
@@ -11,26 +10,24 @@ import fr.`override`.linkit.api.utils.Tuple3Packet
 import scala.collection.mutable
 
 
-object PacketManager {
+object PacketTranslator {
     val ChannelIDSeparator: Array[Byte] = "<channel>".getBytes
     val SenderSeparator: Array[Byte] = "<sender>".getBytes
     val TargetSeparator: Array[Byte] = "<target>".getBytes
 }
 
-class PacketManager(relay: Relay) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
+class PacketTranslator(relay: Relay) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
     private val factories = mutable.LinkedHashMap.empty[Class[_ <: Packet], PacketFactory[_ <: Packet]]
     registerDefaults()
 
-    def register[P <: Packet](packetFactory: PacketFactory[P]): Unit = {
-        val factory = packetFactory
-        val ptClass = packetFactory.packetClass
-
-        if (factories.contains(ptClass))
-            throw new IllegalArgumentException(s"Packet '$ptClass' type is already registered !")
-
-        factories.put(ptClass, factory)
-        //notifier.onPacketTypeRegistered(ptClass, packetFactory) //TODO
+    private def registerDefaults(): Unit = {
+        registerFactory(DataPacket)
+        registerFactory(EmptyPacket.Factory)
+        registerFactory(TaskInitPacket)
+        registerFactory(ErrorPacket)
+        registerFactory(SystemPacket)
+        registerFactory(Tuple3Packet)
     }
 
     def toPacket(implicit bytes: Array[Byte]): (Packet, PacketCoordinates) = {
@@ -60,13 +57,15 @@ class PacketManager(relay: Relay) { //Notifier is accessible from api to reduce 
         toBytes(packetClass, packet, coordinates)
     }
 
-    private def registerDefaults(): Unit = {
-        register(DataPacket)
-        register(EmptyPacket.Factory)
-        register(TaskInitPacket)
-        register(ErrorPacket)
-        register(SystemPacket)
-        register(Tuple3Packet)
+    def registerFactory[P <: Packet](packetFactory: PacketFactory[P]): Unit = {
+        val factory = packetFactory
+        val ptClass = packetFactory.packetClass
+
+        if (factories.contains(ptClass))
+            throw new IllegalArgumentException(s"Packet '$ptClass' type is already registered !")
+
+        factories.put(ptClass, factory)
+        //notifier.onPacketTypeRegistered(ptClass, packetFactory) //TODO
     }
 
 

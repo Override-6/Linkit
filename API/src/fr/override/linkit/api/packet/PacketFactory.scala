@@ -1,8 +1,6 @@
-package fr.`override`.linkit.api.packet.factory
+package fr.`override`.linkit.api.packet
 
-import fr.`override`.linkit.api.packet.Packet
-
-override.linkit.api.packet.factory
+override.linkit.api.packet
 
 trait PacketFactory[T <: Packet] {
 
@@ -13,5 +11,7 @@ trait PacketFactory[T <: Packet] {
     def canTransform(implicit bytes: Array[Byte]): Boolean
 
     def build(implicit bytes: Array[Byte]): T
+
+    final val factory = this //For Java users
 
 }

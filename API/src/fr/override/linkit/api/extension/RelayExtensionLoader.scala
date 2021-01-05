@@ -20,7 +20,6 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
 
     private val configuration = relay.configuration
     private val fsa = configuration.fsAdapter
-    private val notifier = relay.eventObserver.notifier
     private val loadedExtensions = ListBuffer.empty[(RelayExtension, ExtensionInfo)]
     private val extensionsFolder = fsa.getAdapter(configuration.extensionsFolder)
 
@@ -63,7 +62,6 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
             val constructor = clazz.getConstructor(classOf[Relay])
             constructor.setAccessible(true)
             val extension = constructor.newInstance(relay)
-            notifier.onExtensionLoaded(extension)
             extension.onEnable()
             println(s"Relay extension $name loaded successfully !")
             loadedExtensions.addOne(extension, info)

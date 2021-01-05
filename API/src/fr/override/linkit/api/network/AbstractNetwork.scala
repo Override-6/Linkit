@@ -5,7 +5,8 @@ import java.sql.Timestamp
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
-import fr.`override`.linkit.api.packet.{ImmediatePacketInjectable, Packet, PacketCoordinates}
+import fr.`override`.linkit.api.packet.traffic.ImmediatePacketInjectable
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.Tuple3Packet._
 import fr.`override`.linkit.api.utils.{ConsumerContainer, Tuple3Packet}
 
@@ -31,19 +32,22 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
     }
 
     protected def addEntity(entity: NetworkEntity): Unit = {
-        entities.put(entity.identifier, entity)
+        val identifier = entity.identifier
+        entities.put(identifier, entity)
+        println(entities.size + " Connected")
         entityAddedListeners.applyAll(entity)
     }
 
     protected def removeEntity(identifier: String): Unit = {
         entities.remove(identifier)
+        println(entities.size + " Connected")
     }
 
     protected def createEntity(identifier: String): NetworkEntity
 
     protected def updateEntityState(entity: NetworkEntity, state: ConnectionState): Unit
 
-    protected def handleOrder(packet: Tuple3Packet): Boolean = false
+    protected def handleOrder(packet: Tuple3Packet, coords: PacketCoordinates): Boolean = false
 
     protected def sendPacket(packet: Packet, coords: PacketCoordinates): Unit
 
@@ -53,14 +57,12 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
         val tuple = packet.asInstanceOf[Tuple3Packet]
         val order = tuple._1
 
-        println(s"packet = ${packet}")
-
-        if (!handleOrder(tuple)) {
+        if (!handleOrder(tuple, coords)) {
             order match {
                 case "add" =>
                     val affected = tuple._2
-                    addEntity(affected)
-
+                    if (!entities.contains(affected))
+                        addEntity(affected)
 
                 case "getProperty" =>
                     val name = tuple._2

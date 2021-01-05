@@ -2,6 +2,6 @@ package fr.override.linkit.api.network;
 
 public enum ConnectionState {
 
-    CONNECTED, CONNECTING, DISCONNECTED
+    CONNECTED, CONNECTING, DISCONNECTED, CLOSED
 
 }

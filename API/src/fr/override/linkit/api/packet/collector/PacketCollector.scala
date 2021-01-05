@@ -1,27 +1,29 @@
 package fr.`override`.linkit.api.packet.collector
 
-import fr.`override`.linkit.api.packet.channel.PacketChannel
 import fr.`override`.linkit.api.packet._
+import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketInjectable}
 import fr.`override`.linkit.api.system.CloseReason
 
-abstract class PacketCollector(handler: TrafficHandler) extends PacketInjectable {
+trait PacketCollector extends PacketInjectable {
 
-    handler.register(this)
+    override val ownerID: String
 
-    def sendPacket(packet: Packet, targetID: String): Unit = {
-        handler.sendPacket(packet, identifier, targetID)
-    }
+    override def close(reason: CloseReason): Unit
 
-    override def close(reason: CloseReason): Unit = handler.unregister(identifier, reason)
+    override def isClosed: Boolean
 
-    def subSyncChannel(boundIdentifier: String): PacketChannel
+    def sendPacket(packet: Packet, targetID: String): Unit
 
-    def subAsyncChannel(boundIdentifier: String): PacketChannel
+    def subChannel[C <: PacketChannel](boundIdentifier: String, factory: PacketChannelFactory[C]): C
+
 }
 
 object PacketCollector {
 
-    abstract class Sync(handler: TrafficHandler) extends PacketCollector(handler) {
+    trait Async extends PacketCollector with ImmediatePacketInjectable
+
+    trait Sync extends PacketCollector {
 
         def nextPacket[P <: Packet](targetID: String, typeOfP: Class[P]): P = nextPacketAndCoordinates(targetID, typeOfP)._1
 
@@ -37,9 +39,6 @@ object PacketCollector {
 
         def haveMorePackets: Boolean
 
-
     }
-
-    abstract class Async(traffic: TrafficHandler) extends PacketCollector(traffic) with ImmediatePacketInjectable
 
 }

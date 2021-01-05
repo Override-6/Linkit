@@ -1,15 +1,15 @@
-package fr.`override`.linkit.api.packet
+package fr.`override`.linkit.api.packet.traffic
 
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
 import fr.`override`.linkit.api.exception.{RelayCloseException, RelayException}
 import fr.`override`.linkit.api.network.ConnectionState
-import fr.`override`.linkit.api.system.event.EventObserver.EventNotifier
+import fr.`override`.linkit.api.network.ConnectionState.CLOSED
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
-abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = true) extends JustifiedCloseable {
+abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
 
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
@@ -19,12 +19,14 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
 
     private val locker = new SocketLocker()
 
-    def remoteSocketAddress(): InetSocketAddress = {
-        val inet = currentSocket.getInetAddress
-        val port = currentSocket.getPort
-        new InetSocketAddress(inet, port)
+    override def close(reason: CloseReason): Unit = {
+        closed = true
+        locker.state = CLOSED
+        if (!currentSocket.isClosed)
+            closeCurrentStreams()
     }
 
+    override def isClosed: Boolean = closed
 
     def read(buff: Array[Byte]): Int = read(buff, 0)
 
@@ -74,7 +76,7 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
             currentOutputStream.write(buff)
             currentOutputStream.flush()
             //NETWORK-DEBUG-MARK
-            println(s"written : ${new String(buff)}")
+            //println(s"written : ${new String(buff)}")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
@@ -89,16 +91,14 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
         }
     }
 
-    def getState: ConnectionState = locker.getState
+    def getState: ConnectionState = locker.state
 
     def addConnectionStateListener(action: ConnectionState => Unit): Unit = locker.addStateListener(action)
 
-    def isOpen: Boolean = !closed
-
-    override def close(reason: CloseReason): Unit = {
-        closed = true
-        if (!currentSocket.isClosed)
-            closeCurrentStreams()
+    def remoteSocketAddress(): InetSocketAddress = {
+        val inet = currentSocket.getInetAddress
+        val port = currentSocket.getPort
+        new InetSocketAddress(inet, port)
     }
 
     protected def handleReconnection(): Unit
@@ -126,10 +126,11 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
     }
 
     import ConnectionState._
+
     private class SocketLocker {
 
         @volatile var isWriting = false
-        @volatile var state: ConnectionState = ConnectionState.DISCONNECTED
+        @volatile var state: ConnectionState = DISCONNECTED
         private val writeLock = new Object
         private val disconnectLock = new Object
         private val listeners = ConsumerContainer[ConnectionState]()
@@ -155,8 +156,6 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
         def markDisconnected(): Unit = {
             state = DISCONNECTED
             listeners.applyAll(state)
-
-            notifier.onDisconnected()
         }
 
         def markAsConnected(): Unit = disconnectLock.synchronized {
@@ -164,7 +163,6 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
             listeners.applyAll(state)
 
             disconnectLock.notifyAll()
-            notifier.onConnected()
         }
 
         def awaitConnected(): Unit = disconnectLock.synchronized {
@@ -177,8 +175,6 @@ abstract class DynamicSocket(notifier: EventNotifier, autoReconnect: Boolean = t
                 case _: InterruptedException =>
             }
         }
-
-        def getState: ConnectionState = state
 
     }
 
