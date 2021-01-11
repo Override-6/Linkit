@@ -5,7 +5,8 @@ import fr.`override`.linkit.api.exception.{PacketException, UnexpectedPacketExce
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.system.SystemPacket
-import fr.`override`.linkit.api.utils.Tuple3Packet
+import fr.`override`.linkit.api.utils.cache.ObjectPacket
+import fr.`override`.linkit.api.utils.{Tuple2Packet, Tuple3Packet, WrappedPacket}
 
 import scala.collection.mutable
 
@@ -21,43 +22,51 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     private val factories = mutable.LinkedHashMap.empty[Class[_ <: Packet], PacketFactory[_ <: Packet]]
     registerDefaults()
 
-    private def registerDefaults(): Unit = {
-        registerFactory(DataPacket)
-        registerFactory(EmptyPacket.Factory)
-        registerFactory(TaskInitPacket)
-        registerFactory(ErrorPacket)
-        registerFactory(SystemPacket)
-        registerFactory(Tuple3Packet)
-    }
-
-    def toPacket(implicit bytes: Array[Byte]): (Packet, PacketCoordinates) = {
+    def toPacketAndCoords(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
         val (coordinates, coordsLength) = PacketUtils.getCoordinates(bytes)
 
         val customPacketBytes = bytes.slice(coordsLength, bytes.length)
-        if (customPacketBytes.length > relay.configuration.maxPacketLength)
+        (toPacket(customPacketBytes), coordinates)
+    }
+
+    def toPacket(bytes: Array[Byte]): Packet = {
+        if (bytes.length > relay.configuration.maxPacketLength)
             throw PacketException("Custom packet bytes length exceeded configuration limit")
 
         for (factory <- factories.values) {
-            if (factory.canTransform(customPacketBytes))
-                return (factory.build(customPacketBytes), coordinates)
+            if (factory.canTransform(this)(bytes))
+                return factory.build(this)(bytes)
         }
         throw new UnexpectedPacketException(s"Could not find packet factory for ${new String(bytes)}")
     }
 
-    def toBytes[P <: Packet](classOfP: Class[P], packet: P, coordinates: PacketCoordinates): Array[Byte] = {
-        val packetBytes = factories(classOfP)
-            .asInstanceOf[PacketFactory[P]]
-            .decompose(packet)
+    def fromPacketAndCoords(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
+        wrap(fromPacketAndCoordsNoWrap(packet, coordinates))
+    }
+
+    def fromPacketAndCoordsNoWrap(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
+        val packetBytes = fromPacket(packet)
         val bytes = PacketUtils.getCoordinatesBytes(coordinates) ++ packetBytes
-        wrap(relay.securityManager.hashBytes(bytes))
+        relay.securityManager.hashBytes(bytes)
     }
 
-    def toBytes[D <: Packet](packet: D, coordinates: PacketCoordinates): Array[Byte] = {
-        val packetClass = packet.getClass.asInstanceOf[Class[D]]
-        toBytes(packetClass, packet, coordinates)
+    def fromPacket(packet: Packet): Array[Byte] = {
+        val packetClass = packet.getClass
+        factories(packetClass)
+                .asInstanceOf[PacketFactory[Packet]]
+                .decompose(this)(packet)
     }
 
-    def registerFactory[P <: Packet](packetFactory: PacketFactory[P]): Unit = {
+    private def registerDefaults(): Unit = {
+        Array(
+            DataPacket, EmptyPacket.Factory,
+            TaskInitPacket, ErrorPacket,
+            SystemPacket, WrappedPacket, ObjectPacket,
+            Tuple2Packet, Tuple3Packet
+        ).foreach(registerFactory)
+    }
+
+    def registerFactory(packetFactory: PacketFactory[_ <: Packet]): Unit = {
         val factory = packetFactory
         val ptClass = packetFactory.packetClass
 

@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.channel
 
-import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketInjectable, PacketSender}
+import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketInjectable, PacketWriter}
 import fr.`override`.linkit.api.packet.{PacketFactory, _}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
@@ -10,7 +10,7 @@ import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
  *
  * @see [[PacketChannel]]
  * */
-abstract class PacketChannel(sender: PacketSender) extends JustifiedCloseable with PacketInjectable {
+abstract class PacketChannel(sender: PacketWriter) extends JustifiedCloseable with PacketInjectable {
 
     override val ownerID: String = sender.ownerID
     @volatile private var closed = false
@@ -23,15 +23,15 @@ abstract class PacketChannel(sender: PacketSender) extends JustifiedCloseable wi
 
     override def isClosed: Boolean = closed
 
-    def sendPacket(packet: Packet): Unit = sender.sendPacket(packet, coordinates)
+    def sendPacket(packet: Packet): Unit = sender.writePacket(packet, coordinates)
 
 }
 
 object PacketChannel {
 
-    abstract class Async(handler: PacketSender) extends PacketChannel(handler) with ImmediatePacketInjectable
+    abstract class Async(handler: PacketWriter) extends PacketChannel(handler) with ImmediatePacketInjectable
 
-    abstract class Sync(traffic: PacketSender) extends PacketChannel(traffic) {
+    abstract class Sync(traffic: PacketWriter) extends PacketChannel(traffic) {
 
         /**
          * Waits until a data packet is received and concerned about this task.

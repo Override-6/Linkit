@@ -6,7 +6,9 @@ import java.util.Properties
 import java.util.zip.ZipFile
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.`extension`.LoadPhase._
 import fr.`override`.linkit.api.`extension`.RelayExtensionLoader.{MainClassField, PropertyName}
+import fr.`override`.linkit.api.`extension`.fragment.FragmentHandler
 import fr.`override`.linkit.api.exception.{ExtensionLoadException, RelayException}
 import fr.`override`.linkit.api.system.fsa.FileAdapter
 
@@ -16,26 +18,31 @@ import scala.util.control.NonFatal
 
 class RelayExtensionLoader(relay: Relay) extends Closeable {
 
-    type A = Class[_ <: RelayExtension]
-
     private val configuration = relay.configuration
     private val fsa = configuration.fsAdapter
-    private val loadedExtensions = ListBuffer.empty[(RelayExtension, ExtensionInfo)]
     private val extensionsFolder = fsa.getAdapter(configuration.extensionsFolder)
 
+    val fragmentHandler = new FragmentHandler(relay, this)
+
     private var classLoader: URLClassLoader = _
+    private val loadedExtensions = ListBuffer.empty[RelayExtension]
+    private var phase: LoadPhase = INACTIVE
 
     override def close(): Unit = {
-        loadedExtensions.foreach(extensionTuple => {
-            val extension = extensionTuple._1
-            val info = extensionTuple._2
-            println(s"Disabling '${info.name}...")
+        phase = DISABLE
+        fragmentHandler.destroyFragments()
+        loadedExtensions.foreach(extension => {
+            println(s"Disabling '${extension.name}...")
             extension.onDisable()
         })
         loadedExtensions.clear()
+        phase = CLOSE
     }
 
-    def loadExtensions(): Unit = {
+    def launch(): Unit = {
+        if (phase != INACTIVE)
+            throw new IllegalStateException("Extension loader is currently working")
+
         fsa.createDirectories(extensionsFolder)
         val content = fsa.list(extensionsFolder)
         val paths = content.filter(_.toString.endsWith(".jar"))
@@ -43,7 +50,7 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
 
         classLoader = new URLClassLoader(urls, if (classLoader == null) getClass.getClassLoader else classLoader)
 
-        val extensions = ListBuffer.empty[ExtensionInfo]
+        val extensions = ListBuffer.empty[Class[_ <: RelayExtension]]
 
         for (path <- paths) {
             try {
@@ -52,29 +59,10 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
                 case e: RelayException => e.printStackTrace()
             }
         }
-        ExtensionLoaderNode.loadGraph(relay, extensions.toSeq)
+        loadAllExtensions(extensions.toSeq)
     }
 
-    def loadExtension[T <: RelayExtension](clazz: Class[T]): T = {
-        val info = retrieveInfo(clazz)
-        val name = info.name
-        try {
-            val constructor = clazz.getConstructor(classOf[Relay])
-            constructor.setAccessible(true)
-            val extension = constructor.newInstance(relay)
-            extension.onEnable()
-            println(s"Relay extension $name loaded successfully !")
-            loadedExtensions.addOne(extension, info)
-
-            extension
-        } catch {
-            case _: NoSuchMethodException =>
-                throw new RelayException(s"Could not load '$name : Constructor(Relay) is missing !")
-            case NonFatal(e) => throw ExtensionLoadException(s"An exception was thrown when loading $name", e)
-        }
-    }
-
-    private def loadJar(path: FileAdapter): ExtensionInfo = {
+    private def loadJar(path: FileAdapter): Class[_ <: RelayExtension] = {
         val jarFile = new ZipFile(path.getPath)
         val propertyFile = jarFile.getEntry(PropertyName)
         //Checking property presence
@@ -93,22 +81,85 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
         loadClass(clazz)
     }
 
-    private def loadClass(clazz: Class[_]): ExtensionInfo = {
+    private def loadClass(clazz: Class[_]): Class[_ <: RelayExtension] = {
         if (!classOf[RelayExtension].isAssignableFrom(clazz)) {
             throw new RelayException(s"Class '$clazz' must extends '${classOf[RelayExtension]}' to be loaded as a Relay extension.")
         }
-        retrieveInfo(clazz.asInstanceOf[A])
+        clazz.asInstanceOf[Class[_ <: RelayExtension]]
     }
 
-    private def retrieveInfo(extClass: A): ExtensionInfo = {
-        if (extClass.isAnnotationPresent(classOf[relayExtensionInfo])) {
-            val annotation = extClass.getAnnotation(classOf[relayExtensionInfo])
-            var name = annotation.name()
-            if (name.isEmpty) name = extClass.getSimpleName
-            return ExtensionInfo(annotation.dependencies, name, extClass)
+    def loadExtension[T <: RelayExtension](clazz: Class[T]): T = {
+        if (phase == CLOSE)
+            throw new IllegalStateException("This loader is closed !")
+        if (phase != ACTIVE && phase != INACTIVE)
+            throw new IllegalStateException("Loader must be active or inactive in order to load a specific extension")
+
+        val name = clazz.getSimpleName
+        try {
+            val constructor = clazz.getConstructor(classOf[Relay])
+            constructor.setAccessible(true)
+            val extension = constructor.newInstance(relay)
+
+            phase = LOAD
+            extension.onLoad()
+            phase = ENABLE
+            fragmentHandler.startFragments(clazz)
+            extension.onEnable()
+            phase = ACTIVE
+
+            println(s"Relay extension $name loaded successfully !")
+            loadedExtensions.addOne(extension)
+
+            extension
+        } catch {
+            case _: NoSuchMethodException =>
+                throw new RelayException(s"Could not load '$name : Constructor(Relay) is missing !")
+            case NonFatal(e) => throw ExtensionLoadException(s"An exception was thrown when loading $name", e)
         }
-        ExtensionInfo(Array(), extClass.getSimpleName, extClass)
     }
+
+    def loadExtensions(classes: Class[_ <: RelayExtension]*): Unit =
+        loadAllExtensions(classes)
+
+    private def loadAllExtensions(extensions: Seq[Class[_ <: RelayExtension]]): Unit = {
+        val instances = (for (clazz <- extensions) yield {
+            try {
+                clazz.getConstructor(classOf[Relay]).newInstance(relay)
+            } catch {
+                case _: NoSuchMethodException =>
+                    throw new RelayException(s"Could not load '${clazz.getSimpleName}' : Constructor(Relay) is missing !")
+            }
+        }).to(ListBuffer)
+
+        def perform(action: RelayExtension => Unit): Unit = {
+            for (i <- ListBuffer.from(instances).indices) {
+                try {
+                    val extension = instances(i)
+                    action(extension)
+                    if (phase == ENABLE)
+                        println(`extension`.name + " Enabled successfully !")
+                } catch {
+                    case NonFatal(e) =>
+                        instances.remove(i)
+                        throw ExtensionLoadException(s"Could not start extension : Exception thrown during phase '$phase'", e)
+                }
+            }
+        }
+
+        phase = LOAD
+        perform(e => e.onLoad())
+        phase = ENABLE
+        println("Starting all fragments...")
+        val count = fragmentHandler.startFragments()
+        println(s"$count Fragment started !")
+        perform(e => e.onEnable())
+        phase = ACTIVE
+
+        loadedExtensions.addAll(instances)
+
+    }
+
+    def getPhase: LoadPhase = phase
 
 }
 

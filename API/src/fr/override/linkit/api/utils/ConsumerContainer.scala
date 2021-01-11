@@ -1,6 +1,8 @@
 package fr.`override`.linkit.api.utils
 
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 case class ConsumerContainer[T]() {
 
@@ -16,8 +18,21 @@ case class ConsumerContainer[T]() {
      * */
     def +=(consumer: T => Unit): this.type = add(consumer)
 
-    def applyAll(t: T): this.type = {
-        consumers.foreach(_.apply(t))
+    def applyAllAsync(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
+        Future {
+            applyAll(t, onException)
+        }(AsyncExecutionContext)
+        this
+    }
+
+    def applyAll(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
+        consumers.foreach(consumer => {
+            try {
+                consumer.apply(t)
+            } catch {
+                case NonFatal(e) => onException(e)
+            }
+        })
         this
     }
 

@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.system
+package fr.`override`.linkit.api.network
 
 import java.io.PrintStream
 import java.security.AccessController

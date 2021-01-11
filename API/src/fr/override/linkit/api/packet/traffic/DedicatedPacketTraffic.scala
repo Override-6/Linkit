@@ -10,9 +10,9 @@ class DedicatedPacketTraffic(relay: Relay,
 
     private val packetTranslator = relay.packetTranslator
 
-    override def sendPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+    override def send(packet: Packet, coordinates: PacketCoordinates): Unit = {
         if (socket.isOpen) {
-            val bytes = packetTranslator.toBytes(packet, coordinates)
+            val bytes = packetTranslator.fromPacketAndCoords(packet, coordinates)
             socket.write(bytes)
         }
     }

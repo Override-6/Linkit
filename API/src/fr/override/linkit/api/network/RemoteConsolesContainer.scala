@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.system
+package fr.`override`.linkit.api.network
 
 import java.util
 import java.util.Collections
@@ -10,12 +10,11 @@ import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel}
 import fr.`override`.linkit.api.packet.collector.AsyncPacketCollector
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
-import fr.`override`.linkit.api.system.RemoteConsole
-import fr.`override`.linkit.api.system.RemoteConsolesContainer.CollectorID
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 
 class RemoteConsolesContainer(relay: Relay) {
 
-    private val asyncConsoleMessageCollector = relay.createCollector(CollectorID, AsyncPacketCollector)
+    private val asyncConsoleMessageCollector = relay.createCollector(PacketTraffic.RemoteConsolesCollectorID, AsyncPacketCollector)
 
     private val outConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])
     private val errConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])
@@ -44,7 +43,7 @@ class RemoteConsolesContainer(relay: Relay) {
     init()
 
     protected def init() {
-        asyncConsoleMessageCollector.onPacketInjected((packet, coords) => packet match {
+        asyncConsoleMessageCollector.addOnPacketInjected((packet, coords) => packet match {
             case data: DataPacket =>
                 val output = if (data.header == "err") System.err else System.out
                 output.println(s"[${coords.senderID}]: ${data.contentAsString}")
@@ -52,8 +51,4 @@ class RemoteConsolesContainer(relay: Relay) {
         })
     }
 
-}
-
-object RemoteConsolesContainer {
-    val CollectorID = 8
 }

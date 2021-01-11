@@ -4,7 +4,7 @@ import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
 
-trait PacketTraffic extends PacketSender with JustifiedCloseable {
+trait PacketTraffic extends PacketWriter with JustifiedCloseable {
 
     def register(injectable: PacketInjectable): Unit
 
@@ -14,4 +14,15 @@ trait PacketTraffic extends PacketSender with JustifiedCloseable {
 
     def isRegistered(identifier: Int): Boolean
 
+
+
+}
+
+object PacketTraffic {
+    val SystemChannelID = 1
+    val AsyncNetworkCollectorID = 2
+    val SyncNetworkCollectorID = 3
+    val RemoteConsolesCollectorID = 4
+    val RemoteFragmentsReqCollectorID = 5
+    val RemoteFragmentsRespCollectorID = 6
 }

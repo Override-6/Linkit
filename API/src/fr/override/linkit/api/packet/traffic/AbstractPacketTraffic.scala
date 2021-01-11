@@ -54,14 +54,19 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
                 .injectPacket(packet, coordinates)
     }
 
-    override def sendPacket(packet: Packet, coordinates: PacketCoordinates): Unit
-
-    override def sendPacket(packet: Packet, identifier: Int, targetID: String): Unit = {
+    override def writePacket(packet: Packet, identifier: Int, targetID: String): Unit = {
         ensureOpen()
-        sendPacket(packet, PacketCoordinates(identifier, targetID, relay.identifier))
+        writePacket(packet, PacketCoordinates(identifier, targetID, relay.identifier))
+    }
+
+    override def writePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+        if (coordinates.targetID == relay.identifier)
+            injectPacket(packet, coordinates)
+        else send(packet, coordinates)
     }
 
     override def isRegistered(containerID: Int): Boolean = registeredInjectables.contains(containerID)
+
 
     override def close(reason: CloseReason): Unit = {
         for ((_, channel) <- registeredInjectables if channel.isClosed) try {
@@ -79,4 +84,6 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
     }
 
     override def isClosed: Boolean = closed
+
+    def send(packet: Packet, coordinates: PacketCoordinates): Unit
 }

@@ -1,33 +1,34 @@
 package fr.`override`.linkit.api.packet.channel
 
-import fr.`override`.linkit.api.packet.traffic.PacketSender
+import fr.`override`.linkit.api.exception.UnexpectedPacketException
+import fr.`override`.linkit.api.packet.traffic.PacketWriter
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.utils.AsyncExecutionContext.context
+import fr.`override`.linkit.api.utils.{ConsumerContainer, SyncExecutionContext}
 
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class AsyncPacketChannel protected(override val connectedID: String,
                                    override val identifier: Int,
-                                   sender: PacketSender) extends PacketChannel.Async(sender) {
+                                   sender: PacketWriter) extends PacketChannel.Async(sender) {
 
-    private var onPacketReceived: (Packet, PacketCoordinates) => Unit = _
+    private val packetReceivedContainer: ConsumerContainer[(Packet, PacketCoordinates)] = ConsumerContainer()
 
-    override def injectPacket(packet: Packet, ignored: PacketCoordinates): Unit = {
+    override def injectPacket(packet: Packet, coords: PacketCoordinates): Unit = {
+        if (coords.senderID != connectedID)
+            throw new UnexpectedPacketException("Attempted to inject a packet that comes from a relay that is not bound to this channel")
         Future {
             try {
-                if (onPacketReceived != null)
-                    onPacketReceived(packet, coordinates)
-                //handler.notifyPacketUsed(packet, coordinates)
+                packetReceivedContainer.applyAll((packet, coords))
             } catch {
                 case NonFatal(e) =>
                     e.printStackTrace()
             }
-        }
+        }(SyncExecutionContext)
     }
 
-    def onPacketInjected(consumer: (Packet, PacketCoordinates) => Unit): Unit = {
-        onPacketReceived = consumer
+    def addOnPacketInjected(consumer: (Packet, PacketCoordinates) => Unit): Unit = {
+        packetReceivedContainer += (tuple => consumer(tuple._1, tuple._2))
     }
 
 }
@@ -35,7 +36,7 @@ class AsyncPacketChannel protected(override val connectedID: String,
 object AsyncPacketChannel extends PacketChannelFactory[AsyncPacketChannel] {
     override val channelClass: Class[AsyncPacketChannel] = classOf[AsyncPacketChannel]
 
-    override def createNew(sender: PacketSender, channelId: Int, connectedID: String): AsyncPacketChannel = {
-        new AsyncPacketChannel(connectedID, channelId, sender)
+    override def createNew(writer: PacketWriter, channelId: Int, connectedID: String): AsyncPacketChannel = {
+        new AsyncPacketChannel(connectedID, channelId, writer)
     }
 }

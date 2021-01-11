@@ -4,6 +4,6 @@ import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 
 trait ImmediatePacketInjectable extends PacketInjectable {
 
-    def onPacketInjected(action: (Packet, PacketCoordinates) => Unit): Unit
+    def addOnPacketInjected(action: (Packet, PacketCoordinates) => Unit): Unit
 
 }

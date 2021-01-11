@@ -21,4 +21,8 @@ class RelayProperties {
         opt.get
     }
 
+    def foreach(action: (String, Object) => Unit): Unit = {
+        map.foreach(element => action(element._1, element._2))
+    }
+
 }

@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.system
 
-import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketUtils}
+import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator, PacketUtils}
 
 case class SystemPacket private(order: SystemOrder,
                                 reason: CloseReason,
@@ -12,18 +12,18 @@ object SystemPacket extends PacketFactory[SystemPacket] {
     private val REASON = "<reason>".getBytes
     private val CONTENT = "<content>".getBytes
 
-    override def decompose(implicit packet: SystemPacket): Array[Byte] = {
+    override def decompose(translator: PacketTranslator)(implicit packet: SystemPacket): Array[Byte] = {
         TYPE ++ packet.order.name().getBytes() ++
                 REASON ++ packet.reason.name().getBytes() ++
                 CONTENT ++ packet.content
     }
 
-    override def canTransform(implicit bytes: Array[Byte]): Boolean = bytes.containsSlice(TYPE)
+    override def canTransform(translator: PacketTranslator)(implicit bytes: Array[Byte]): Boolean = bytes.containsSlice(TYPE)
 
-    override def build(implicit bytes: Array[Byte]): SystemPacket = {
-        val orderName = PacketUtils.cutString(TYPE, REASON)
-        val reasonName = PacketUtils.cutString(REASON, CONTENT)
-        val content = PacketUtils.cutEnd(CONTENT)
+    override def build(translator: PacketTranslator)(implicit bytes: Array[Byte]): SystemPacket = {
+        val orderName = PacketUtils.stringBetween(TYPE, REASON)
+        val reasonName = PacketUtils.stringBetween(REASON, CONTENT)
+        val content = PacketUtils.untilEnd(CONTENT)
 
         val systemOrder = SystemOrder.valueOf(orderName)
         val reason = CloseReason.valueOf(reasonName)

@@ -6,17 +6,17 @@ import fr.`override`.linkit.api.packet.PacketTranslator.{ChannelIDSeparator, Sen
 
 object PacketUtils {
 
-    def cut(a: Array[Byte], b: Array[Byte])(implicit src: Array[Byte]): Array[Byte] =
-        util.Arrays.copyOfRange(src, src.indexOfSlice(a) + a.length, src.indexOfSlice(b))
+    def stringUntilEnd(a: Array[Byte])(implicit src: Array[Byte]): String =
+        new String(untilEnd(a))
 
-    def cutEnd(a: Array[Byte])(implicit src: Array[Byte]): Array[Byte] =
+    def untilEnd(a: Array[Byte])(implicit src: Array[Byte]): Array[Byte] =
         util.Arrays.copyOfRange(src, src.indexOfSlice(a) + a.length, src.length)
 
-    def cutEndString(a: Array[Byte])(implicit src: Array[Byte]): String =
-        new String(cutEnd(a))
+    def stringBetween(a: Array[Byte], b: Array[Byte])(implicit src: Array[Byte]) =
+        new String(between(a, b))
 
-    def cutString(a: Array[Byte], b: Array[Byte])(implicit src: Array[Byte]) =
-        new String(cut(a, b))
+    def between(a: Array[Byte], b: Array[Byte])(implicit src: Array[Byte]): Array[Byte] =
+        util.Arrays.copyOfRange(src, src.indexOfSlice(a) + a.length, src.indexOfSlice(b))
 
 
     def getCoordinatesBytes(coords: PacketCoordinates): Array[Byte] = {

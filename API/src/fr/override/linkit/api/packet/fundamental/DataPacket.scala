@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-import fr.`override`.linkit.api.packet.{Packet, PacketFactory}
+import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
 
 //TODO Doc
 /**
@@ -48,18 +48,18 @@ object DataPacket extends PacketFactory[DataPacket] {
     private val TYPE = "[data]".getBytes
     private val CONTENT = "<content>".getBytes
 
-    override def decompose(implicit packet: DataPacket): Array[Byte] = {
+    override def decompose(translator: PacketTranslator)(implicit packet: DataPacket): Array[Byte] = {
         val header = packet.header.getBytes
         TYPE ++ header ++
                 CONTENT ++ packet.content
     }
 
-    override def canTransform(implicit bytes: Array[Byte]): Boolean =
+    override def canTransform(translator: PacketTranslator)(implicit bytes: Array[Byte]): Boolean =
         bytes.containsSlice(TYPE)
 
-    override def build(implicit bytes: Array[Byte]): DataPacket = {
-        val header = cutString(TYPE, CONTENT)
-        val content = cutEnd(CONTENT)
+    override def build(translator: PacketTranslator)(implicit bytes: Array[Byte]): DataPacket = {
+        val header = stringBetween(TYPE, CONTENT)
+        val content = untilEnd(CONTENT)
         new DataPacket(header, content)
     }
 

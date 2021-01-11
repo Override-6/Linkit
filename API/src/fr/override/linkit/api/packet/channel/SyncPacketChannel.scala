@@ -2,7 +2,8 @@ package fr.`override`.linkit.api.packet.channel
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import fr.`override`.linkit.api.packet.traffic.PacketSender
+import fr.`override`.linkit.api.exception.UnexpectedPacketException
+import fr.`override`.linkit.api.packet.traffic.PacketWriter
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
@@ -10,7 +11,7 @@ import fr.`override`.linkit.api.system.CloseReason
 //TODO doc
 class SyncPacketChannel protected(override val connectedID: String,
                                   override val identifier: Int,
-                                  sender: PacketSender) extends PacketChannel.Sync(sender) {
+                                  writer: PacketWriter) extends PacketChannel.Sync(writer) {
 
 
     /**
@@ -27,6 +28,8 @@ class SyncPacketChannel protected(override val connectedID: String,
      * @throws IllegalArgumentException if the packet coordinates does not match with this channel coordinates
      * */
     override def injectPacket(packet: Packet, coords: PacketCoordinates): Unit = {
+        if (coords.senderID != connectedID)
+            throw new UnexpectedPacketException("Attempted to inject a packet that comes from a relay that is not bound to this channel")
         queue.addFirst(packet)
     }
 
@@ -37,7 +40,7 @@ class SyncPacketChannel protected(override val connectedID: String,
 
     override def nextPacket(): Packet = {
         if (queue.isEmpty)
-            sender.checkThread()
+            writer.checkThread()
         val packet = queue.takeLast()
         //handler.notifyPacketUsed(packet, coordinates)
         packet
@@ -57,7 +60,7 @@ class SyncPacketChannel protected(override val connectedID: String,
 object SyncPacketChannel extends PacketChannelFactory[SyncPacketChannel] {
     override val channelClass: Class[SyncPacketChannel] = classOf[SyncPacketChannel]
 
-    override def createNew(sender: PacketSender, channelId: Int, connectedID: String): SyncPacketChannel = {
-        new SyncPacketChannel(connectedID, channelId, sender)
+    override def createNew(writer: PacketWriter, channelId: Int, connectedID: String): SyncPacketChannel = {
+        new SyncPacketChannel(connectedID, channelId, writer)
     }
 }

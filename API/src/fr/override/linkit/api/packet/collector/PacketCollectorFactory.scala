@@ -1,12 +1,12 @@
 package fr.`override`.linkit.api.packet.collector
 
-import fr.`override`.linkit.api.packet.traffic.PacketSender
+import fr.`override`.linkit.api.packet.traffic.PacketWriter
 
 trait PacketCollectorFactory[C <: PacketCollector] {
 
     final val factory = this //For Java users
     val collectorClass: Class[C]
 
-    def createNew(sender: PacketSender, collectorId: Int): C
+    def createNew(writer: PacketWriter, collectorId: Int): C
 
 }

@@ -1,10 +1,9 @@
 package fr.`override`.linkit.api.task
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.exception.TaskException
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.system.{CloseReason, RemoteConsole}
+import fr.`override`.linkit.api.system.CloseReason
 
 /**
  * The class that will execute the Task.

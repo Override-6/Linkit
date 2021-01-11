@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-import fr.`override`.linkit.api.packet.{Packet, PacketFactory}
+import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
 
 //TODO doc parameters
 /**
@@ -30,18 +30,18 @@ object TaskInitPacket extends PacketFactory[TaskInitPacket] {
     private val TYPE = "[task_init]".getBytes
     private val CONTENT = "<content>".getBytes
 
-    override def decompose(implicit packet: TaskInitPacket): Array[Byte] = {
+    override def decompose(translator: PacketTranslator)(implicit packet: TaskInitPacket): Array[Byte] = {
         val typeBytes = packet.taskType.getBytes
         TYPE ++ typeBytes ++
             CONTENT ++ packet.content
     }
 
-    override def canTransform(implicit bytes: Array[Byte]): Boolean =
+    override def canTransform(translator: PacketTranslator)(implicit bytes: Array[Byte]): Boolean =
         bytes.startsWith(TYPE)
 
-    override def build(implicit bytes: Array[Byte]): TaskInitPacket = {
-        val taskType = cutString(TYPE, CONTENT)
-        val content = cutEnd(CONTENT)
+    override def build(translator: PacketTranslator)(implicit bytes: Array[Byte]): TaskInitPacket = {
+        val taskType = stringBetween(TYPE, CONTENT)
+        val content = untilEnd(CONTENT)
         TaskInitPacket(taskType, content)
     }
 

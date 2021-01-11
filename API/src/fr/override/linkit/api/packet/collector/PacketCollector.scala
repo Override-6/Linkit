@@ -15,6 +15,8 @@ trait PacketCollector extends PacketInjectable {
 
     def sendPacket(packet: Packet, targetID: String): Unit
 
+    def broadcastPacket(packet: Packet)
+
     def subChannel[C <: PacketChannel](boundIdentifier: String, factory: PacketChannelFactory[C]): C
 
 }
@@ -25,17 +27,9 @@ object PacketCollector {
 
     trait Sync extends PacketCollector {
 
-        def nextPacket[P <: Packet](targetID: String, typeOfP: Class[P]): P = nextPacketAndCoordinates(targetID, typeOfP)._1
-
         def nextPacket[P <: Packet](typeOfP: Class[P]): P = nextPacketAndCoordinates(typeOfP)._1
 
-        def nextPacket(targetID: String): Packet = nextPacketAndCoordinates(targetID)._1
-
-        def nextPacketAndCoordinates[P <: Packet](targetID: String, typeOfP: Class[P]): (P, PacketCoordinates)
-
         def nextPacketAndCoordinates[P <: Packet](typeOfP: Class[P]): (P, PacketCoordinates)
-
-        def nextPacketAndCoordinates(targetID: String): (Packet, PacketCoordinates) = nextPacketAndCoordinates(targetID, classOf[Packet])
 
         def haveMorePackets: Boolean
 

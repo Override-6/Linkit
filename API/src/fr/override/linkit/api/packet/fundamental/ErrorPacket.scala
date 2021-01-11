@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-import fr.`override`.linkit.api.packet.{Packet, PacketFactory}
+import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
 
 case class ErrorPacket(errorType: String,
                        errorMsg: String,
@@ -23,7 +23,7 @@ object ErrorPacket extends PacketFactory[ErrorPacket] {
         private val MSG = "<msg>".getBytes
         private val CAUSE = "<cause>".getBytes
 
-        override def decompose(implicit packet: ErrorPacket): Array[Byte] = {
+        override def decompose(translator: PacketTranslator)(implicit packet: ErrorPacket): Array[Byte] = {
             val errorType = packet.errorType.getBytes
             val errorMsg = packet.errorMsg.getBytes
             val cause = packet.cause.getBytes
@@ -32,13 +32,13 @@ object ErrorPacket extends PacketFactory[ErrorPacket] {
                     CAUSE ++ cause
         }
 
-        override def canTransform(implicit bytes: Array[Byte]): Boolean =
+        override def canTransform(translator: PacketTranslator)(implicit bytes: Array[Byte]): Boolean =
             bytes.startsWith(TYPE)
 
-        override def build(implicit bytes: Array[Byte]): ErrorPacket = {
-            val errorType = cutString(TYPE, MSG)
-            val msg = cutString(MSG, CAUSE)
-            val cause = new String(cutEnd(CAUSE))
+        override def build(translator: PacketTranslator)(implicit bytes: Array[Byte]): ErrorPacket = {
+            val errorType = stringBetween(TYPE, MSG)
+            val msg = stringBetween(MSG, CAUSE)
+            val cause = new String(untilEnd(CAUSE))
             ErrorPacket(errorType, msg, cause)
         }
 

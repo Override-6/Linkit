@@ -1,17 +1,16 @@
 package fr.`override`.linkit.api.packet
 
-override.linkit.api.packet
 
 trait PacketFactory[T <: Packet] {
 
     val packetClass: Class[T]
 
-    def decompose(implicit packet: T): Array[Byte]
+    val factory: this.type = this //For Java users
 
-    def canTransform(implicit bytes: Array[Byte]): Boolean
+    def decompose(translator: PacketTranslator)(implicit packet: T): Array[Byte]
 
-    def build(implicit bytes: Array[Byte]): T
+    def canTransform(translator: PacketTranslator)(implicit bytes: Array[Byte]): Boolean
 
-    final val factory = this //For Java users
+    def build(translator: PacketTranslator)(implicit bytes: Array[Byte]): T
 
 }

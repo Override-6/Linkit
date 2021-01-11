@@ -2,13 +2,13 @@ package fr.`override`.linkit.api
 
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, RelayInitialisationException}
-import fr.`override`.linkit.api.network.{ConnectionState, Network}
+import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole}
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.api.system.{JustifiedCloseable, RemoteConsole, Version}
+import fr.`override`.linkit.api.system.{JustifiedCloseable, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
 import org.jetbrains.annotations.Nullable
 
@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable
 //TODO Replace every "OK" and "ERROR" by 0 or 1
 //TODO Design a brand new and optimised packet protocol
 object Relay {
-    val ApiVersion: Version = Version(name = "Api", version = "0.16.0", stable = false)
+    val ApiVersion: Version = Version(name = "Api", version = "0.17.0", stable = false)
     val ServerIdentifier: String = "server"
 }
 

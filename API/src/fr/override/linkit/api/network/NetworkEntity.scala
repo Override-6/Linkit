@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.network
 
-import fr.`override`.linkit.api.system.{RemoteConsole, Version}
+import fr.`override`.linkit.api.system.Version
 
 trait NetworkEntity {
 
@@ -21,5 +21,9 @@ trait NetworkEntity {
     def getApiVersion: Version
 
     def getRelayVersion: Version
+
+    /*def listRemoteFragmentControllers: List[RemoteFragmentController]
+
+    def getRemoteFragmentController(nameIdentifier: String): Option[RemoteFragmentController]*/
 
 }
