@@ -17,11 +17,17 @@ class RelayPointSecurityManager extends RelaySecurityManager {
      * */
     override def checkRelay(relay: Relay): Unit = {
         val identifier = relay.identifier
-        if (identifier.isEmpty)
+        if (identifier.isEmpty) {
             throw RelaySecurityException("Relay Identifier can't be empty")
-        if (identifier == Relay.ServerIdentifier || identifier == "unknown")
+        }
+
+        val blacklistedIdentifiers = Array(Relay.ServerIdentifier, "unknown", "BROADCAST")
+        if (blacklistedIdentifiers.contains(identifier)) {
             throw RelaySecurityException(s"'$identifier' is a blacklisted identifier !")
-        if (!identifier.matches("^\\w{0,16}$"))
+        }
+
+        if (!identifier.matches("^\\w{0,16}$")) {
             throw RelaySecurityException(s"'$identifier' does not match regex '^\\w{0,16}$$'")
+        }
     }
 }

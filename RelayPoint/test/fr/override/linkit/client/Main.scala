@@ -36,21 +36,23 @@ object Main {
         }
         relayPoint.start()
 
-        if (ideRun) {
+        if (ideRun && relayPoint.isOpen) {
 
             import fr.`override`.linkit.`extension`.cloud.CloudStorageExtension
             import fr.`override`.linkit.`extension`.controller.ControllerExtension
             import fr.`override`.linkit.`extension`.debug.DebugExtension
 
             val loader = relayPoint.extensionLoader
-            loader.loadExtension(classOf[ControllerExtension])
-            loader.loadExtension(classOf[DebugExtension])
-            loader.loadExtension(classOf[CloudStorageExtension])
+            loader.loadExtensions(
+                classOf[ControllerExtension],
+                classOf[CloudStorageExtension],
+                classOf[DebugExtension]
+            )
         }
     }
 
     private def getExtensionFolderPath: String = {
-        val sourcePath = Paths.get(getClass.getProtectionDomain.getCodeSource.getLocation.toURI).getParent.toString
+        lazy val sourcePath = Paths.get(getClass.getProtectionDomain.getCodeSource.getLocation.toURI).getParent.toString
         System.getenv().get("COMPUTERNAME") match {
             case "PC_MATERIEL_NET" => "C:\\Users\\maxim\\Desktop\\Dev\\VPS\\ClientSide\\RelayExtensions"
             case "LORDI-N4SO7IERS" => "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\FileTransferer\\ClientSide\\RelayExtensions"
