@@ -1,6 +1,8 @@
 package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
+import fr.`override`.linkit.api.packet.fundamental.DataPacket
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.server.RelayServer
 
@@ -14,6 +16,7 @@ import scala.util.control.NonFatal
  * @see [[ClientConnection]]
  * */
 class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
+
     /**
      * java map containing all RelayPointConnection instances
      * */
@@ -51,6 +54,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connectionSession = ClientConnectionSession(identifier, socket, server)
         val connection = ClientConnection.open(connectionSession)
         connections.put(identifier, connection)
+        connection.sendPacket(DataPacket("OK"), PacketTraffic.SystemChannelID)
         connectionSession.initNetwork()
 
         val canConnect = server.securityManager.canConnect(connection)
@@ -66,13 +70,25 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         connection.close(CloseReason.SECURITY_CHECK)
     }
 
-    def broadcast(err: Boolean, msg: String): Unit = {
+    def broadcastMessage(err: Boolean, msg: String): Unit = {
         connections.values
-            .foreach(connection => {
-                if (err)
-                    connection.getConsoleErr.println(msg)
-                else connection.getConsoleOut.println(msg)
-            })
+                .foreach(connection => {
+                    if (err)
+                        connection.getConsoleErr.println(msg)
+                    else connection.getConsoleOut.println(msg)
+                })
+    }
+
+    /**
+     * Broadcast bytes sequence to every connected clients
+     * @param bytes the bytes to broadcast
+     * @param broadcaster the client who broadcasts the bytes.
+     *                    This way, the broadcaster will be ignored
+     * */
+    def broadcastBytes(bytes: Array[Byte], broadcaster: String): Unit = {
+        connections.values
+                .filter(_.identifier != broadcaster)
+                .foreach(_.sendBytes(bytes))
     }
 
     /**
@@ -111,6 +127,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         identifier == server.identifier || connections.contains(identifier) //reserved server identifier
     }
 
+    override def isClosed: Boolean = closed
 
     /**
      * Deflects a packet to his associated [[ClientConnection]]
@@ -122,8 +139,6 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connection = getConnection(target)
         if (connection == null)
             throw new RelayException(s"unknown ID '$target' to deflect packet")
-        connection.sendDeflectedBytes(bytes)
+        connection.sendBytes(bytes)
     }
-
-    override def isClosed: Boolean = ???
 }

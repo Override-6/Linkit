@@ -5,8 +5,12 @@ import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 
 class GlobalPacketTraffic(server: RelayServer) extends AbstractPacketTraffic(server, server.identifier) {
 
-    override def sendPacket(packet: Packet, coords: PacketCoordinates): Unit = {
+    override def send(packet: Packet, coords: PacketCoordinates): Unit = {
+        if (coords.targetID == "BROADCAST") {
+            server.broadcastPacket(packet, coords.injectableID)
+            return
+        }
         server.getConnection(coords.targetID).sendPacket(packet, coords.injectableID)
     }
-    
+
 }

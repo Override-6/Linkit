@@ -19,13 +19,15 @@ object Main {
 
         if (ideRun) {
 
-            /*import fr.`override`.linkit.`extension`.cloud.CloudStorageExtension
+            import fr.`override`.linkit.`extension`.cloud.CloudStorageExtension
             import fr.`override`.linkit.`extension`.controller.ControllerExtension
             import fr.`override`.linkit.`extension`.debug.DebugExtension
 
-            relayServer.extensionLoader.loadExtension(classOf[ControllerExtension])
-            relayServer.extensionLoader.loadExtension(classOf[CloudStorageExtension])
-            relayServer.extensionLoader.loadExtension(classOf[DebugExtension])*/
+            relayServer.extensionLoader.loadExtensions(
+                classOf[ControllerExtension],
+                classOf[CloudStorageExtension],
+                classOf[DebugExtension]
+            )
 
         }
     }

@@ -2,11 +2,10 @@ package fr.`override`.linkit.server.connection
 
 import java.net.Socket
 
-import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity, RemoteConsole}
 import fr.`override`.linkit.api.packet.traffic.DedicatedPacketTraffic
-import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RemoteConsole, SystemPacketChannel}
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, SystemPacketChannel}
 import fr.`override`.linkit.server.RelayServer
-import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
 import fr.`override`.linkit.server.task.ConnectionTasksHandler
 
 case class ClientConnectionSession private(identifier: String,
@@ -24,7 +23,7 @@ case class ClientConnectionSession private(identifier: String,
     override def close(reason: CloseReason): Unit = {
         tasksHandler.close(reason)
         traffic.close(reason)
-        server.network.removeEntity(identifier)
+        //server.serverNetwork.removeEntity(identifier)
         socket.close(reason)
     }
 
@@ -39,12 +38,12 @@ case class ClientConnectionSession private(identifier: String,
     def getEntity: NetworkEntity = entity
 
     private[connection] def initNetwork(): Unit = {
-        val network = server.network
-        network.addEntity(identifier)
+        val network = server.serverNetwork
+        //network.addEntity(identifier)
         entity = network.getEntity(identifier).orNull
 
-        if (entity == null)
-            throw new ConnectionInitialisationException("Something went wrong when registering this connection session to the network")
+        /*if (entity == null)
+            throw new ConnectionInitialisationException("Something went wrong when registering this connection session to the network")*/
     }
 
     override def isClosed: Boolean = socket.isClosed //refers to an used closeable element

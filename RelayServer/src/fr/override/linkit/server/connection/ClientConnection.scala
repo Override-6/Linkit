@@ -4,10 +4,10 @@ import java.net.Socket
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.RelayException
-import fr.`override`.linkit.api.network.ConnectionState
+import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental._
-import fr.`override`.linkit.api.system.SystemPacketChannel.SystemChannelID
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
 import org.jetbrains.annotations.NotNull
@@ -58,20 +58,20 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     def addConnectionStateListener(action: ConnectionState => Unit): Unit = session.addStateListener(action)
 
     def sendPacket(packet: Packet, channelID: Int): Unit = {
-        val bytes = packetTranslator.toBytes(packet, PacketCoordinates(channelID, identifier, server.identifier))
+        val bytes = packetTranslator.fromPacketAndCoords(packet, PacketCoordinates(channelID, identifier, server.identifier))
         session.send(bytes)
     }
 
     private[server] def updateSocket(socket: Socket): Unit =
         session.updateSocket(socket)
 
-    private[connection] def sendDeflectedBytes(bytes: Array[Byte]): Unit = {
+    private[connection] def sendBytes(bytes: Array[Byte]): Unit = {
         session.send(PacketUtils.wrap(bytes))
     }
 
     private def run(): Unit = {
         val threadName = connectionThread.getName
-        println(s"Thread '$threadName' was started")
+        println(s"Thread '$threadName' started")
         try {
             while (!closed)
                 session.packetReader.nextPacket(handlePacket)
@@ -89,7 +89,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         if (closed)
             return
         packet match {
-            case systemError: ErrorPacket if containerID == SystemChannelID => systemError.printError()
+            case systemError: ErrorPacket if containerID == PacketTraffic.SystemChannelID => systemError.printError()
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
             case init: TaskInitPacket => session.tasksHandler.handlePacket(init, coordinates)
             case _: Packet =>

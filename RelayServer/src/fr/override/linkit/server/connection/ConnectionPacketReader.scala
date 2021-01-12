@@ -13,7 +13,6 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
     private val manager = server.connectionsManager
     private val packetTranslator = server.packetTranslator
 
-    //TODO exceptions catches
     def nextPacket(onPacketReceived: (Packet, PacketCoordinates) => Unit): Unit = {
         try {
             nextConcernedPacket(onPacketReceived)
@@ -35,16 +34,22 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
         }
         val target = getTargetID(bytes)
 
-        if (target == server.identifier) { //check if the packet concerns server
-            val (packet, coordinates) = packetTranslator.toPacket(bytes)
-            event(packet, coordinates)
-            return
+        target match {
+            case server.identifier =>
+                val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
+                event(packet, coordinates)
+
+            case "BROADCAST" =>
+                manager.broadcastBytes(bytes, identifier)
+                val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
+                //handles the packet if it is registered into the server's collectors
+                server.preHandlePacket(packet, coordinates)
+
+            case _ => manager.deflectTo(bytes, target)
         }
-        //println("Deflected " + new String(bytes))
-        manager.deflectTo(bytes, target)
     }
 
     private def getTargetID(bytes: Array[Byte]): String =
-        PacketUtils.cutString(PacketTranslator.SenderSeparator, PacketTranslator.TargetSeparator)(bytes)
+        PacketUtils.stringBetween(PacketTranslator.SenderSeparator, PacketTranslator.TargetSeparator)(bytes)
 
 }

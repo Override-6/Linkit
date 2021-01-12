@@ -6,25 +6,24 @@ import java.nio.charset.Charset
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.exception.RelayCloseException
-import fr.`override`.linkit.api.network.ConnectionState
+import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
-import fr.`override`.linkit.api.packet.traffic.DynamicSocket
+import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketTraffic}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.server.RelayServer.Identifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
 import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
 import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
-import fr.`override`.linkit.server.network.ServerNetwork
 import fr.`override`.linkit.server.security.RelayServerSecurityManager
 
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.14.0", stable = false)
+    val version: Version = Version("RelayServer", "0.15.0", stable = false)
 
     val Identifier = "server"
 }
@@ -34,10 +33,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     private val serverSocket = new ServerSocket(configuration.port)
     private val globalTraffic = new GlobalPacketTraffic(this)
-    private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
-
+    override val network: Network = serverNetwork
     @volatile private var open = false
-
+    private val remoteConsoles = new RemoteConsolesContainer(this)
     private[server] val connectionsManager = new ConnectionsManager(this)
 
     override val identifier: String = Identifier
@@ -46,7 +44,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     override val properties: RelayProperties = new RelayProperties
     override val packetTranslator = new PacketTranslator(this)
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
-    override val network: ServerNetwork = new ServerNetwork(this)
+    private[server] val serverNetwork = new MockNetwork
 
     override val relayVersion: Version = RelayServer.version
 
@@ -75,7 +73,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
             securityManager.checkRelay(this)
 
             if (configuration.enableExtensionsFolderLoad)
-                extensionLoader.loadExtensions()
+                extensionLoader.launch()
 
             val thread = new Thread(() => {
                 open = true
@@ -124,7 +122,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     override def close(reason: CloseReason): Unit = {
         println("closing server...")
-        Thread.dumpStack()
 
         if (reason == CloseReason.INTERNAL_ERROR)
             broadcast(true, "RelayServer will close your connection because of a critical error")
@@ -144,76 +141,8 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.getConnection(relayIdentifier)
     }
 
-    def broadcast(err: Boolean, msg: String): Unit = {
-        connectionsManager.broadcast(err, "(broadcast) " + msg)
-    }
-
-    /**
-     * Pre handles a packet, if this packet is a global one, it will be injected into the global traffic.
-     *
-     * Any packet received by a [[ClientConnection]] will invoke this method before it could be handled by the connection.
-     * If the handled packet prove to be a global packet,
-     * the client connection that just received this packet will stop handling it.
-     * (that's why this method is named as 'preHandlePacket' !)
-     *
-     * @param packet the packet to inject whether his coordinates prove to be a global packet
-     * @param coordinates the packet coordinates to check. If the injectableID is registered in the global traffic,
-     *                    that's means the packet is global.
-     * @return true if the following handling int the client connection should stop, false instead
-     * */
-    private[server] def preHandlePacket(packet: Packet, coordinates: PacketCoordinates): Boolean = {
-        val isGlobalPacket = globalTraffic.isRegistered(coordinates.injectableID)
-        if (isGlobalPacket)
-            globalTraffic.injectPacket(packet, coordinates)
-        !isGlobalPacket
-    }
-
-    private def handleRelayPointConnection(identifier: String,
-                                           socket: SocketContainer): Unit = {
-
-        if (connectionsManager.isNotRegistered(identifier)) {
-            connectionsManager.registerConnection(identifier, socket)
-            sendResponse(socket, "OK")
-            return
-        }
-
-        handleConnectionIDAmbiguity(getConnection(identifier), socket)
-    }
-
-    private def handleConnectionIDAmbiguity(current: ClientConnection,
-                                            socket: SocketContainer): Unit = {
-
-        if (!current.isConnected) {
-            current.updateSocket(socket.get)
-            sendResponse(socket, "OK")
-            return
-        }
-        val identifier = current.identifier
-        val rejectMsg = s"Another relay point with id '$identifier' is currently connected on the targeted network."
-
-        import AmbiguityStrategy._
-        configuration.relayIDAmbiguityStrategy match {
-            case CLOSE_SERVER =>
-                sendResponse(socket, "ERROR", rejectMsg + " Consequences: Closing Server...")
-                broadcast(true, "RelayServer will close your connection because of a critical error")
-                close(CloseReason.INTERNAL_ERROR)
-
-            case REJECT_NEW =>
-                Console.err.println("Rejected connection of a client because he gave an already registered relay identifier.")
-                sendResponse(socket, "ERROR", rejectMsg)
-
-            case REPLACE =>
-                connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
-                connectionsManager.registerConnection(identifier, socket)
-                sendResponse(socket, "OK")
-
-            case DISCONNECT_BOTH =>
-                connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
-                sendResponse(socket, "ERROR", rejectMsg + " Consequences : Disconnected both")
-        }
-    }
-
     private def listenSocketConnection(): Unit = {
+        println("Listening next socket connection...")
         val socketContainer = new SocketContainer(true)
         try {
             val clientSocket = serverSocket.accept()
@@ -245,15 +174,87 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
     }
 
+    private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {
+        val responsePacket = DataPacket(response, message)
+        val coordinates = PacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
+        socket.write(packetTranslator.fromPacketAndCoords(responsePacket, coordinates))
+    }
+
+    /**
+     * Pre handles a packet, if this packet is a global one, it will be injected into the global traffic.
+     *
+     * Any packet received by a [[ClientConnection]] will invoke this method before it could be handled by the connection.
+     * If the handled packet prove to be a global packet,
+     * the client connection that just received this packet will stop handling it.
+     * (that's why this method is named as 'preHandlePacket' !)
+     *
+     * @param packet the packet to inject whether his coordinates prove to be a global packet
+     * @param coordinates the packet coordinates to check. If the injectableID is registered in the global traffic,
+     *                    that's means the packet is global.
+     * @return true if the following handling int the client connection should stop, false instead
+     * */
+    private[server] def preHandlePacket(packet: Packet, coordinates: PacketCoordinates): Boolean = {
+        val isGlobalPacket = globalTraffic.isRegistered(coordinates.injectableID)
+        if (isGlobalPacket)
+            globalTraffic.injectPacket(packet, coordinates)
+        !isGlobalPacket
+    }
+
+    private def handleRelayPointConnection(identifier: String,
+                                           socket: SocketContainer): Unit = {
+
+        if (connectionsManager.isNotRegistered(identifier)) {
+            connectionsManager.registerConnection(identifier, socket)
+            return
+        }
+
+        handleConnectionIDAmbiguity(getConnection(identifier), socket)
+    }
+
+    private def handleConnectionIDAmbiguity(current: ClientConnection,
+                                            socket: SocketContainer): Unit = {
+
+        if (!current.isConnected) {
+            current.updateSocket(socket.get)
+            sendResponse(socket, "OK")
+            return
+        }
+        val identifier = current.identifier
+        val rejectMsg = s"Another relay point with id '$identifier' is currently connected on the targeted network."
+
+        import AmbiguityStrategy._
+        configuration.relayIDAmbiguityStrategy match {
+            case CLOSE_SERVER =>
+                sendResponse(socket, "ERROR", rejectMsg + " Consequences: Closing Server...")
+                broadcast(true, "RelayServer will close your connection because of a critical error")
+                close(CloseReason.INTERNAL_ERROR)
+
+            case REJECT_NEW =>
+                Console.err.println("Rejected connection of a client because he gave an already registered relay identifier.")
+                sendResponse(socket, "ERROR", rejectMsg)
+
+            case REPLACE =>
+                connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
+                connectionsManager.registerConnection(identifier, socket)
+
+            case DISCONNECT_BOTH =>
+                connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
+                sendResponse(socket, "ERROR", rejectMsg + " Consequences : Disconnected both")
+        }
+    }
+
+    def broadcast(err: Boolean, msg: String): Unit = {
+        connectionsManager.broadcastMessage(err, "(broadcast) " + msg)
+    }
+
     private def ensureOpen(): Unit = {
         if (!open)
             throw new RelayCloseException("Relay Server have to be started !")
     }
 
-    private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {
-        val responsePacket = DataPacket(response, message)
-        val coordinates = PacketCoordinates(SystemPacketChannel.SystemChannelID, "unknown", identifier)
-        socket.write(packetTranslator.toBytes(responsePacket, coordinates))
+    def broadcastPacket(packet: Packet, injectableID: Int): Unit = {
+        val bytes = packetTranslator.fromPacketAndCoordsNoWrap(packet, PacketCoordinates(injectableID, "BROADCAST", identifier))
+        connectionsManager.broadcastBytes(bytes, identifier)
     }
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(CloseReason.INTERNAL)))

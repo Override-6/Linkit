@@ -2,8 +2,9 @@ package fr.`override`.linkit.server.task
 
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
+import fr.`override`.linkit.api.network.RemoteConsole
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RemoteConsole}
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.api.task.TaskTicket
 
 import scala.collection.mutable
