@@ -3,14 +3,14 @@ package fr.`override`.linkit.api.network
 import java.io.PrintStream
 import java.security.AccessController
 
-import fr.`override`.linkit.api.packet.channel.PacketChannel
+import fr.`override`.linkit.api.packet.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
 import sun.security.action.GetPropertyAction
 
 
-class RemoteConsole private(@Nullable channel: PacketChannel,
+class RemoteConsole private(@Nullable channel: AsyncPacketChannel,
                             kind: String) extends PrintStream(InactiveOutputStream, true) {
 
     override def write(b: Array[Byte]): Unit = {
@@ -32,7 +32,7 @@ class RemoteConsole private(@Nullable channel: PacketChannel,
             str = java.util.Arrays.deepToString(obj.asInstanceOf[Array[AnyRef]])
 
         if (channel != null)
-            channel.sendPacket(DataPacket(kind, String.valueOf(obj)))
+            channel.sendPacket(DataPacket(kind, String.valueOf(obj))) //prints to the linked relay
     }
 
     override def print(x: Boolean): Unit = print(x: Any)
@@ -60,9 +60,9 @@ class RemoteConsole private(@Nullable channel: PacketChannel,
 
 object RemoteConsole {
 
-    def err(channel: PacketChannel): RemoteConsole = new RemoteConsole(channel, "err")
+    def err(channel: AsyncPacketChannel): RemoteConsole = new RemoteConsole(channel, "err")
 
-    def out(channel: PacketChannel): RemoteConsole = new RemoteConsole(channel, "out")
+    def out(channel: AsyncPacketChannel): RemoteConsole = new RemoteConsole(channel, "out")
 
     val Mock: RemoteConsole = new RemoteConsole(null, "mock")
 

@@ -35,7 +35,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     private val socket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
 
     private val traffic = new DedicatedPacketTraffic(this, socket, identifier)
-    private val pointNetwork = new MockNetwork
+    private val pointNetwork = new AbstractNetwork
     override val extensionLoader = new RelayExtensionLoader(this)
     override val properties = new RelayProperties
     implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(ServerID, traffic)
@@ -125,20 +125,17 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override def isClosed: Boolean = !open
 
     override def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
-        val channel = factory.createNew(traffic, channelId, targetID)
-        traffic.register(channel)
-        channel
+        traffic.createChannel(channelId, targetID, factory)
+    }
+
+    override def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
+        traffic.createCollector(channelId, factory)
+
     }
 
     override def getConsoleOut(targetId: String): RemoteConsole = remoteConsoles.getOut(targetId)
 
     override def getConsoleErr(targetId: String): RemoteConsole = remoteConsoles.getErr(targetId)
-
-    override def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
-        val channel = factory.createNew(traffic, channelId)
-        traffic.register(channel)
-        channel
-    }
 
 
     private def startPacketWorker(): Unit = {

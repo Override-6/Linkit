@@ -3,15 +3,16 @@ package fr.`override`.linkit.api.utils.cache
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.collector.AsyncPacketCollector
 
-class SharedInstance[T <: Serializable](collector: AsyncPacketCollector, autoFlush: Boolean) extends SharedCache {
+class SharedInstance[A <: Serializable, B <: Serializable](collector: AsyncPacketCollector, mapper: A => B) extends SharedCache {
 
-    override val isAutoFlush: Boolean = autoFlush
-    @volatile private var instance: T = _
+    override var autoFlush: Boolean = true
+    @volatile private var instance: B = _
+    @volatile private var modCount = 0
 
     collector.addOnPacketInjected((packet, _) => {
         packet match {
-            case objectPacket: ObjectPacket =>
-                instance = objectPacket.obj.asInstanceOf[T]
+            case ObjectPacket(remoteInstance: B) =>
+                this.instance = remoteInstance
                 modCount += 1
 
                 println(s"instance has been remotely updated ($instance)")
@@ -20,16 +21,14 @@ class SharedInstance[T <: Serializable](collector: AsyncPacketCollector, autoFlu
             case _ => throw new UnexpectedPacketException("Unable to handle a non-ObjectPacket into SharedInstance")
         }
     })
-    @volatile private var modCount = 0
 
     override def modificationCount(): Int = modCount
 
-    def get: T = instance
+    def get: B = instance
 
-    def set(t: T): Unit = {
+    def set(t: B): Unit = {
         instance = t
         modCount += 1
-        println(s"modCount = ${modCount}")
         if (autoFlush)
             flush()
     }

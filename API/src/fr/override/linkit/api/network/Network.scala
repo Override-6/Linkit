@@ -13,5 +13,4 @@ trait Network {
 
     def addOnEntityAdded(action: NetworkEntity => Unit): Unit
 
-
 }

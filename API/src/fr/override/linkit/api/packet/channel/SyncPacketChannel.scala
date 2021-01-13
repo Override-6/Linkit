@@ -3,7 +3,7 @@ package fr.`override`.linkit.api.packet.channel
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.traffic.PacketWriter
+import fr.`override`.linkit.api.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
@@ -11,7 +11,7 @@ import fr.`override`.linkit.api.system.CloseReason
 //TODO doc
 class SyncPacketChannel protected(override val connectedID: String,
                                   override val identifier: Int,
-                                  writer: PacketWriter) extends PacketChannel.Sync(writer) {
+                                  traffic: PacketTraffic) extends PacketChannel.Sync(traffic) {
 
 
     /**

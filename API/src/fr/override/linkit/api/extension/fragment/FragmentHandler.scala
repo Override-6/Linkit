@@ -5,7 +5,6 @@ import fr.`override`.linkit.api.`extension`.{LoadPhase, RelayExtension, RelayExt
 import fr.`override`.linkit.api.exception.ExtensionLoadException
 import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.collector.{AsyncPacketCollector, SyncPacketCollector}
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.utils.WrappedPacket
 
 import scala.collection.mutable
@@ -16,8 +15,8 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
 
     private val fragmentMap: mutable.Map[Class[_ <: RelayExtension], ExtensionFragments] = mutable.Map.empty
 
-    private val remoteFragmentRequestCollector = relay.createCollector(PacketTraffic.RemoteFragmentsReqCollectorID, AsyncPacketCollector)
-    private val remoteFragmentResponseCollector = relay.createCollector(PacketTraffic.RemoteFragmentsRespCollectorID, SyncPacketCollector)
+    private val remoteFragmentRequestCollector = relay.createCollector(4, AsyncPacketCollector)
+    private val remoteFragmentResponseCollector = relay.createCollector(5, SyncPacketCollector)
 
     def setFragment(fragment: ExtensionFragment)(implicit extension: RelayExtension): Unit = {
         if (extensionLoader.getPhase != LoadPhase.LOAD)

@@ -89,7 +89,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         if (closed)
             return
         packet match {
-            case systemError: ErrorPacket if containerID == PacketTraffic.SystemChannelID => systemError.printError()
+            case systemError: ErrorPacket if containerID == PacketTraffic.SystemChannel => systemError.printError()
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
             case init: TaskInitPacket => session.tasksHandler.handlePacket(init, coordinates)
             case _: Packet =>

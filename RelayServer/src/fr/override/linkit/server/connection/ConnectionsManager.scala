@@ -54,7 +54,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connectionSession = ClientConnectionSession(identifier, socket, server)
         val connection = ClientConnection.open(connectionSession)
         connections.put(identifier, connection)
-        connection.sendPacket(DataPacket("OK"), PacketTraffic.SystemChannelID)
+        connection.sendPacket(DataPacket("OK"), PacketTraffic.SystemChannel)
         connectionSession.initNetwork()
 
         val canConnect = server.securityManager.canConnect(connection)

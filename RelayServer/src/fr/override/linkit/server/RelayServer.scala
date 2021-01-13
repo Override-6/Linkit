@@ -44,7 +44,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     override val properties: RelayProperties = new RelayProperties
     override val packetTranslator = new PacketTranslator(this)
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
-    private[server] val serverNetwork = new MockNetwork
+    private[server] val serverNetwork = new AbstractNetwork
 
     override val relayVersion: Version = RelayServer.version
 
@@ -176,7 +176,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {
         val responsePacket = DataPacket(response, message)
-        val coordinates = PacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
+        val coordinates = PacketCoordinates(PacketTraffic.SystemChannel, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(responsePacket, coordinates))
     }
 

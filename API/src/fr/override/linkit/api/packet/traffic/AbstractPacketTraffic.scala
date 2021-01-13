@@ -2,6 +2,8 @@ package fr.`override`.linkit.api.packet.traffic
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{ClosedException, IllegalPacketWorkerLockException, RelayException}
+import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.traffic.{PacketInjectable, PacketTraffic}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
@@ -37,15 +39,16 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
             throw new ClosedException("This Traffic handler is closed")
     }
 
-    override def unregister(id: Int, reason: CloseReason): Unit = {
-        ensureOpen()
+    override def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
+        val channel = factory.createNew(this, channelId, targetID)
+        register(channel)
+        channel
+    }
 
-        val opt = registeredInjectables.remove(id)
-        if (opt.isDefined) {
-            val injectable = opt.get
-            if (!injectable.isClosed)
-                injectable.close(reason)
-        }
+    override def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
+        val channel = factory.createNew(this, channelId)
+        register(channel)
+        channel
     }
 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {

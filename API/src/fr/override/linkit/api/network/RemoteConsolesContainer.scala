@@ -7,14 +7,14 @@ import java.util.concurrent.ConcurrentHashMap
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.packet.Packet
-import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel}
+import fr.`override`.linkit.api.packet.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.packet.collector.AsyncPacketCollector
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 
 class RemoteConsolesContainer(relay: Relay) {
 
-    private val asyncConsoleMessageCollector = relay.createCollector(PacketTraffic.RemoteConsolesCollectorID, AsyncPacketCollector)
+    private val printChannel = relay.createCollector(PacketTraffic.RemoteConsoles, AsyncPacketCollector)
 
     private val outConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])
     private val errConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])
@@ -23,7 +23,7 @@ class RemoteConsolesContainer(relay: Relay) {
 
     def getErr(targetId: String): RemoteConsole = get(targetId, RemoteConsole.err, errConsoles)
 
-    private def get(targetId: String, supplier: PacketChannel => RemoteConsole, consoles: util.Map[String, RemoteConsole]): RemoteConsole = {
+    private def get(targetId: String, supplier: AsyncPacketChannel => RemoteConsole, consoles: util.Map[String, RemoteConsole]): RemoteConsole = {
         if (!relay.configuration.enableRemoteConsoles)
             return RemoteConsole.Mock
 
@@ -33,7 +33,7 @@ class RemoteConsolesContainer(relay: Relay) {
         if (consoles.containsKey(targetId))
             return consoles.get(targetId)
 
-        val channel: PacketChannel = asyncConsoleMessageCollector.subChannel(targetId, AsyncPacketChannel)
+        val channel = printChannel.subChannel(targetId, AsyncPacketChannel, true)
         val console = supplier(channel)
         consoles.put(targetId, console)
 
@@ -43,11 +43,13 @@ class RemoteConsolesContainer(relay: Relay) {
     init()
 
     protected def init() {
-        asyncConsoleMessageCollector.addOnPacketInjected((packet, coords) => packet match {
-            case data: DataPacket =>
-                val output = if (data.header == "err") System.err else System.out
-                output.println(s"[${coords.senderID}]: ${data.contentAsString}")
-            case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")
+        printChannel.addOnPacketInjected((packet, coords) => {
+            packet match {
+                case data: DataPacket =>
+                    val output = if (data.header == "err") System.err else System.out
+                    output.println(s"[${coords.senderID}]: ${data.contentAsString}")
+                case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")
+            }
         })
     }
 

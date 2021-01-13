@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.utils.cache
 
 trait SharedCache extends {
 
-    val isAutoFlush: Boolean
+    var autoFlush: Boolean
 
     def flush(): Unit
 
