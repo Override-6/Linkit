@@ -10,5 +10,4 @@ trait PacketWriter {
 
     def writePacket(packet: Packet, identifier: Int, targetID: String): Unit
 
-    def checkThread(): Unit //FIXME find another place to move this method, this method must not be declared in a PacketWriter
 }

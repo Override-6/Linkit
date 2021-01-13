@@ -1,16 +1,19 @@
 package fr.`override`.linkit.api
 
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, RelayInitialisationException}
+import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, RelayException}
 import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole}
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.system.{JustifiedCloseable, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
 import org.jetbrains.annotations.Nullable
+
+import scala.reflect.ClassTag
 
 /**
  * The Relay trait is the core of this program.
@@ -30,8 +33,9 @@ import org.jetbrains.annotations.Nullable
 //TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
 //TODO Replace every "OK" and "ERROR" by 0 or 1
 //TODO Design a brand new and optimised packet protocol
+//TODO Find a solution about packets that are send into a non-registered channel : if an exception is thrown, this can cause some problems, and if not, this can cause other problems. SOLUTION : Looking for "RemoteActionDescription" that can control and get some information about an action that where made over the network.
 object Relay {
-    val ApiVersion: Version = Version(name = "Api", version = "0.17.0", stable = false)
+    val ApiVersion: Version = Version(name = "Api", version = "0.18.0", stable = false)
     val ServerIdentifier: String = "server"
 }
 
@@ -88,14 +92,23 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * The network object of this relay, this object is such a [[fr.`override`.linkit.api.network.NetworkEntity]] container
      * with some getters. No network interaction can be done through object.
      * */
-    val network: Network
+    def network: Network
+
+    val traffic: PacketTraffic
 
     /**
-     * Starts the Relay by loading every features.
+     * Will Start the Relay in the current thread.
+     * This method will load every local and remote feature,
+     * enable everything that needs to be enabled, and perform some security checks before go.
      *
-     * @throws RelayInitialisationException if the relay could not start properly
-     */
+     * @throws RelayException if something went wrong, In Local, during the client-to-server, or client-to-network initialisation.
+     * */
     def start(): Unit
+
+    /**
+     * Will run this callback in a worker thread.
+     * */
+    def runLater(callback: => Unit): Unit
 
     /**
      * @param identifier the relay identifier to check
@@ -112,11 +125,11 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * @return the connection state of this relay
      * @see [[ConnectionState]]
      * */
-    def getState: ConnectionState
+    def getConnectionState: ConnectionState
 
-    def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
+    def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
 
-    def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C
+    def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C
 
     /**
      * @param targetId the targeted Relay identifier

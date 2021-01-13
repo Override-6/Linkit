@@ -3,11 +3,13 @@ package fr.`override`.linkit.client
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
 
+import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.traffic.DynamicSocket
 
 class ClientDynamicSocket(boundAddress: InetSocketAddress,
                           reconnectionPeriod: Int) extends DynamicSocket(true) {
 
+    override val boundIdentifier: String = Relay.ServerIdentifier
 
     private def newSocket(): Unit = {
         closeCurrentStreams()
@@ -18,9 +20,7 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
 
     override protected def handleReconnection(): Unit = {
         try {
-            println("Reconnecting...")
             newSocket()
-            println("Reconnected !")
         } catch {
             case _@(_: SocketException | _: ConnectException) =>
                 println("Unable to connect to server.")

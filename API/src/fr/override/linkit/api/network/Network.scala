@@ -2,10 +2,14 @@ package fr.`override`.linkit.api.network
 
 import java.sql.Timestamp
 
+import fr.`override`.linkit.api.network.cache.SharedCacheHandler
+
 
 trait Network {
 
-    val onlineTimeStamp: Timestamp
+    val startUpDate: Timestamp
+
+    val selfEntity: SelfNetworkEntity
 
     def listEntities: List[NetworkEntity]
 
@@ -13,5 +17,6 @@ trait Network {
 
     def addOnEntityAdded(action: NetworkEntity => Unit): Unit
 
+    val globalCache: SharedCacheHandler
 
 }

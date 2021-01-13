@@ -43,7 +43,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * */
     def registerConnection(identifier: String,
                            socket: SocketContainer): Unit = {
-
+        println(s"Registering connection of '$identifier'...")
         if (connections.contains(identifier))
             throw RelayInitialisationException(s"This relay id is already registered ! ('$identifier')")
 
@@ -54,11 +54,12 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connectionSession = ClientConnectionSession(identifier, socket, server)
         val connection = ClientConnection.open(connectionSession)
         connections.put(identifier, connection)
-        connection.sendPacket(DataPacket("OK"), PacketTraffic.SystemChannelID)
+        connection.sendPacket(DataPacket("OK"), PacketTraffic.SystemChannel)
         connectionSession.initNetwork()
 
         val canConnect = server.securityManager.canConnect(connection)
         if (canConnect) {
+            println(s"Connection of '$identifier' was successfully registered !")
             return
         }
 
@@ -68,6 +69,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
         connections.remove(identifier)
         connection.close(CloseReason.SECURITY_CHECK)
+        println(s"Connection with $identifier successfully handled !")
     }
 
     def broadcastMessage(err: Boolean, msg: String): Unit = {
@@ -87,7 +89,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * */
     def broadcastBytes(bytes: Array[Byte], broadcaster: String): Unit = {
         connections.values
-                .filter(_.identifier != broadcaster)
+                .filter(con => con.identifier != broadcaster && con.isConnected)
                 .foreach(_.sendBytes(bytes))
     }
 

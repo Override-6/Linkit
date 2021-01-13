@@ -10,7 +10,8 @@ class GlobalPacketTraffic(server: RelayServer) extends AbstractPacketTraffic(ser
             server.broadcastPacket(packet, coords.injectableID)
             return
         }
-        server.getConnection(coords.targetID).sendPacket(packet, coords.injectableID)
+        if (server.isConnected(coords.targetID))
+            server.getConnection(coords.targetID).sendPacket(packet, coords.injectableID)
     }
 
 }

@@ -1,13 +1,13 @@
 package fr.`override`.linkit.api.packet.collector
 
-import fr.`override`.linkit.api.packet.traffic.PacketWriter
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
 import scala.util.control.NonFatal
 
-class AsyncPacketCollector protected(sender: PacketWriter, identifier: Int)
-        extends AbstractPacketCollector(sender, identifier, true) with PacketCollector.Async {
+class AsyncPacketCollector protected(traffic: PacketTraffic, identifier: Int)
+        extends AbstractPacketCollector(traffic, identifier, true) with PacketCollector.Async {
 
     private val packetReceivedListeners = ConsumerContainer[(Packet, PacketCoordinates)]()
 
@@ -28,7 +28,7 @@ class AsyncPacketCollector protected(sender: PacketWriter, identifier: Int)
 object AsyncPacketCollector extends PacketCollectorFactory[AsyncPacketCollector] {
     override val collectorClass: Class[AsyncPacketCollector] = classOf[AsyncPacketCollector]
 
-    override def createNew(writer: PacketWriter, collectorId: Int): AsyncPacketCollector = {
-        new AsyncPacketCollector(writer, collectorId)
+    override def createNew(traffic: PacketTraffic, collectorId: Int): AsyncPacketCollector = {
+        new AsyncPacketCollector(traffic, collectorId)
     }
 }

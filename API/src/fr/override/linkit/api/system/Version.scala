@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.system
 
-case class Version(name: String, major: Byte, minor: Byte, patch: Byte, stable: Boolean) {
+case class Version(name: String, major: Byte, minor: Byte, patch: Byte, stable: Boolean) extends Serializable {
 
     override def toString: String = {
         s"$name: v$major.$minor.$patch-${if (stable) "stable" else "unstable"}"

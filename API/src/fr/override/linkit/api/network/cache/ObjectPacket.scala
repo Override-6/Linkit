@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.utils.cache
+package fr.`override`.linkit.api.network.cache
 
 import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator, PacketUtils}
 import fr.`override`.linkit.api.utils.Utils
@@ -29,6 +29,6 @@ object ObjectPacket extends PacketFactory[ObjectPacket] {
         ObjectPacket(Utils.deserialize(objectBytes))
     }
 
-    implicit def asPacket(obj: Serializable): ObjectPacket = ObjectPacket(obj)
+    def asPacket(obj: Serializable): ObjectPacket = ObjectPacket(obj)
 
 }

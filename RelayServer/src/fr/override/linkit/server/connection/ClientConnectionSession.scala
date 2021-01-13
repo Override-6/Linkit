@@ -21,10 +21,10 @@ case class ClientConnectionSession private(identifier: String,
     private var entity: NetworkEntity = _ //Can't be a val because the NetworkEntity initialisation needs the connection to be registered and started
 
     override def close(reason: CloseReason): Unit = {
-        tasksHandler.close(reason)
-        traffic.close(reason)
-        //server.serverNetwork.removeEntity(identifier)
         socket.close(reason)
+        tasksHandler.close(reason)
+        server.network.removeEntity(identifier)
+        traffic.close(reason)
     }
 
     def getSocketState: ConnectionState = socket.getState
@@ -35,16 +35,7 @@ case class ClientConnectionSession private(identifier: String,
 
     def updateSocket(socket: Socket): Unit = this.socket.set(socket)
 
-    def getEntity: NetworkEntity = entity
-
-    private[connection] def initNetwork(): Unit = {
-        val network = server.serverNetwork
-        //network.addEntity(identifier)
-        entity = network.getEntity(identifier).orNull
-
-        /*if (entity == null)
-            throw new ConnectionInitialisationException("Something went wrong when registering this connection session to the network")*/
-    }
+    def getEntity: NetworkEntity = server.network.getEntity(identifier).get
 
     override def isClosed: Boolean = socket.isClosed //refers to an used closeable element
 }

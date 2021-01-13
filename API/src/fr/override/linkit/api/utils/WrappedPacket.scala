@@ -6,8 +6,8 @@ case class WrappedPacket(category: String, subPacket: Packet) extends Packet
 object WrappedPacket extends PacketFactory[WrappedPacket] {
 
     override val packetClass: Class[WrappedPacket] = classOf[WrappedPacket]
-    private val Type = "[fpckt]".getBytes
-    private val FragPacket = "<frag>".getBytes
+    private val Type = "[wpckt]".getBytes
+    private val FragPacket = "<pckt>".getBytes
 
     override def decompose(translator: PacketTranslator)(implicit packet: WrappedPacket): Array[Byte] = {
         val subPacketBytes = translator.fromPacket(packet.subPacket)

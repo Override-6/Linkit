@@ -4,9 +4,9 @@ import scala.collection.mutable
 
 class RelayProperties {
 
-    private val map: mutable.Map[String, Object] = mutable.Map.empty
+    private val map: mutable.Map[String, Any] = mutable.Map.empty
 
-    def putProperty(key: String, value: Object): Object = {
+    def putProperty(key: String, value: Any): Any = {
         map.put(key, value).orNull
     }
 
@@ -21,7 +21,7 @@ class RelayProperties {
         opt.get
     }
 
-    def foreach(action: (String, Object) => Unit): Unit = {
+    def foreach(action: (String, Any) => Unit): Unit = {
         map.foreach(element => action(element._1, element._2))
     }
 

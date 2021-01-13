@@ -3,9 +3,9 @@ package fr.`override`.linkit.api.`extension`.fragment
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{LoadPhase, RelayExtension, RelayExtensionLoader}
 import fr.`override`.linkit.api.exception.ExtensionLoadException
-import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, PacketChannel, SyncPacketChannel}
-import fr.`override`.linkit.api.packet.collector.{AsyncPacketCollector, SyncPacketCollector}
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.network.cache.collection.SharedCollection
+import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
 import fr.`override`.linkit.api.utils.WrappedPacket
 
 import scala.collection.mutable
@@ -16,8 +16,18 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
 
     private val fragmentMap: mutable.Map[Class[_ <: RelayExtension], ExtensionFragments] = mutable.Map.empty
 
-    private val remoteFragmentRequestCollector = relay.createCollector(PacketTraffic.RemoteFragmentsReqCollectorID, AsyncPacketCollector)
-    private val remoteFragmentResponseCollector = relay.createCollector(PacketTraffic.RemoteFragmentsRespCollectorID, SyncPacketCollector)
+    private val communicator = relay.openCollector(4, CommunicationPacketCollector)
+
+    private lazy val sharedRemoteFragments: SharedCollection[String] = {
+        var ptn: SharedCollection[String] = null
+        ptn = relay.network
+                .selfEntity
+                .cache
+                .open(6, SharedCollection.set[String])
+
+        ptn
+    }
+
 
     def setFragment(fragment: ExtensionFragment)(implicit extension: RelayExtension): Unit = {
         if (extensionLoader.getPhase != LoadPhase.LOAD)
@@ -30,6 +40,13 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
 
         fragmentMap.getOrElseUpdate(extensionClass, new ExtensionFragments)
                 .setFragment(fragment)
+
+        fragment match {
+            case remote: RemoteFragment =>
+                sharedRemoteFragments.add(remote.nameIdentifier)
+
+            case _ =>
+        }
 
     }
 
@@ -53,10 +70,6 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
                 .toList
     }
 
-    def getRemoteFragmentsChannel(targetID: String): PacketChannel.Async = {
-        remoteFragmentRequestCollector.subChannel(targetID, AsyncPacketChannel)
-    }
-
     private[extension] def startFragments(): Int = {
         var count = 0
         fragmentMap.values.foreach(fragments => {
@@ -73,16 +86,17 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
         fragmentMap.values.foreach(_.destroyAll())
     }
 
-    remoteFragmentRequestCollector.addOnPacketInjected((pack, coords) => {
+    communicator.addRequestListener((pack, coords) => {
+        println(s"IN FRAGMENT HANDLER = ${pack}")
         pack match {
             case fragmentPacket: WrappedPacket =>
                 val fragmentName = fragmentPacket.category
                 val packet = fragmentPacket.subPacket
                 val sender = coords.senderID
-                val responseChannel = remoteFragmentResponseCollector.subChannel(sender, SyncPacketChannel)
+                val subCommunicator = communicator.subChannel(sender, CommunicationPacketChannel)
                 listRemoteFragments()
                         .find(_.nameIdentifier == fragmentName)
-                        .foreach(fragment => fragment.handleRequest(packet, responseChannel))
+                        .foreach(fragment => fragment.handleRequest(packet, subCommunicator))
         }
     })
 

@@ -5,6 +5,7 @@ import java.nio.charset.Charset
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
+import fr.`override`.linkit.api.concurrency.RelayWorkerThread
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
@@ -18,12 +19,14 @@ import fr.`override`.linkit.server.RelayServer.Identifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
 import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
 import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
+import fr.`override`.linkit.server.network.ServerNetwork
 import fr.`override`.linkit.server.security.RelayServerSecurityManager
 
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.15.0", stable = false)
+    val version: Version = Version("RelayServer", "0.16.0", stable = false)
 
     val Identifier = "server"
 }
@@ -31,22 +34,24 @@ object RelayServer {
 //TODO Create a connection helper for this poor class which swims into bad practices.
 class RelayServer private[server](override val configuration: RelayServerConfiguration) extends Relay {
 
+    override val identifier: String = Identifier
+
     private val serverSocket = new ServerSocket(configuration.port)
     private val globalTraffic = new GlobalPacketTraffic(this)
-    override val network: Network = serverNetwork
+
     @volatile private var open = false
     private val remoteConsoles = new RemoteConsolesContainer(this)
     private[server] val connectionsManager = new ConnectionsManager(this)
 
-    override val identifier: String = Identifier
-    override val extensionLoader = new RelayExtensionLoader(this)
-    override val taskCompleterHandler = new TaskCompleterHandler
-    override val properties: RelayProperties = new RelayProperties
-    override val packetTranslator = new PacketTranslator(this)
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
-    private[server] val serverNetwork = new MockNetwork
-
+    override val traffic: PacketTraffic = globalTraffic
+    override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
+    override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler
+    override val properties: RelayProperties = new RelayProperties
+    override val packetTranslator: PacketTranslator = new PacketTranslator(this)
+    override val network: ServerNetwork = new ServerNetwork(this)(globalTraffic)
     override val relayVersion: Version = RelayServer.version
+    private val workerThread: RelayWorkerThread = new RelayWorkerThread()
 
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -61,6 +66,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         RelayTaskAction.of(task)
     }
 
+
     override def start(): Unit = {
         println("Current encoding is " + Charset.defaultCharset().name())
         println("Listening on port " + configuration.port)
@@ -70,19 +76,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         println(Relay.ApiVersion)
 
         try {
-            securityManager.checkRelay(this)
-
-            if (configuration.enableExtensionsFolderLoad)
-                extensionLoader.launch()
-
-            val thread = new Thread(() => {
-                open = true
-                while (open) listenSocketConnection()
-            })
-            thread.setName("Socket Connection Listener")
-            thread.start()
-
-            securityManager.checkRelay(this)
+            initSocketListening()
         } catch {
             case NonFatal(e) =>
                 e.printStackTrace()
@@ -94,22 +88,18 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     override def addConnectionListener(action: ConnectionState => Unit): Unit = () //the connection of the server would never be updated
 
-    override def getState: ConnectionState = ConnectionState.CONNECTED //The server is always connected to itself !
+    override def getConnectionState: ConnectionState = ConnectionState.CONNECTED //The server is always connected to itself !
 
     override def isConnected(identifier: String): Boolean = {
         connectionsManager.containsIdentifier(identifier)
     }
 
-    override def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
-        val channel = factory.createNew(globalTraffic, channelId, targetID)
-        globalTraffic.register(channel)
-        channel
+    override def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
+        getConnection(targetID).openChannel(channelId, factory)
     }
 
-    override def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
-        val channel = factory.createNew(globalTraffic, channelId)
-        globalTraffic.register(channel)
-        channel
+    override def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C = {
+        globalTraffic.openCollector(channelId, factory)
     }
 
     override def getConsoleOut(targetId: String): RemoteConsole = {
@@ -124,7 +114,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         println("closing server...")
 
         if (reason == CloseReason.INTERNAL_ERROR)
-            broadcast(true, "RelayServer will close your connection because of a critical error")
+            broadcastMessage(true, "RelayServer will close your connection because of a critical error")
 
         extensionLoader.close()
         connectionsManager.close(reason)
@@ -136,26 +126,57 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     override def isClosed: Boolean = !open
 
+    private def initSocketListening(): Unit = {
+        securityManager.checkRelay(this)
+
+        if (configuration.enableExtensionsFolderLoad)
+            extensionLoader.launch()
+
+        val thread = new Thread(() => {
+            open = true
+            while (open) listenSocketConnection()
+        })
+        thread.setName("Socket Connection Listener")
+        thread.start()
+
+        securityManager.checkRelay(this)
+    }
+
     def getConnection(relayIdentifier: String): ClientConnection = {
         ensureOpen()
         connectionsManager.getConnection(relayIdentifier)
     }
 
+    def broadcastMessage(err: Boolean, msg: String): Unit = {
+        connectionsManager.broadcastMessage(err, "(broadcast) " + msg)
+    }
+
+    def broadcastPacket(packet: Packet, injectableID: Int): Unit = {
+        val bytes = packetTranslator.fromPacketAndCoordsNoWrap(packet, PacketCoordinates(injectableID, "BROADCAST", identifier))
+        connectionsManager.broadcastBytes(bytes, identifier)
+    }
+
+    /**
+     * Reads a welcome packet from a relay
+     * A Welcome packet is the first packet that a client must send in order to communicate his identifier.
+     * @return the identifier bound with the socket
+     * */
+    private def readWelcomePacket(socket: SocketContainer): String = {
+        val welcomePacketLength = socket.read(1).head
+        if (welcomePacketLength > 32)
+            throw new ConnectionInitialisationException("Relay identifier exceeded maximum size limit of 32")
+        val welcomePacket = socket.read(welcomePacketLength)
+        new String(welcomePacket)
+    }
+
     private def listenSocketConnection(): Unit = {
-        println("Listening next socket connection...")
         val socketContainer = new SocketContainer(true)
         try {
             val clientSocket = serverSocket.accept()
             socketContainer.set(clientSocket)
-
-            val welcomePacketLength = socketContainer.read(1).head
-            if (welcomePacketLength > 32)
-                throw new ConnectionInitialisationException("Relay identifier exceeded maximum size limit of 32")
-            val welcomePacket = socketContainer.read(welcomePacketLength)
-
-
-            val identifier = new String(welcomePacket)
-            handleRelayPointConnection(identifier, socketContainer)
+            runLater {
+                handleSocket(socketContainer)
+            }
         } catch {
             case e: SocketException =>
                 val msg = e.getMessage.toLowerCase
@@ -174,9 +195,19 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
     }
 
+    override def runLater(callback: => Unit): Unit = {
+        workerThread.runLater(_ => callback)
+    }
+
+    private def handleSocket(socket: SocketContainer): Unit = {
+        val identifier = readWelcomePacket(socket)
+        socket.identifier = identifier
+        handleRelayPointConnection(identifier, socket)
+    }
+
     private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {
         val responsePacket = DataPacket(response, message)
-        val coordinates = PacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
+        val coordinates = PacketCoordinates(PacketTraffic.SystemChannel, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(responsePacket, coordinates))
     }
 
@@ -194,7 +225,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
      * @return true if the following handling int the client connection should stop, false instead
      * */
     private[server] def preHandlePacket(packet: Packet, coordinates: PacketCoordinates): Boolean = {
-        val isGlobalPacket = globalTraffic.isRegistered(coordinates.injectableID)
+        val isGlobalPacket = globalTraffic.isRegistered(coordinates.injectableID, coordinates.senderID)
         if (isGlobalPacket)
             globalTraffic.injectPacket(packet, coordinates)
         !isGlobalPacket
@@ -226,7 +257,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         configuration.relayIDAmbiguityStrategy match {
             case CLOSE_SERVER =>
                 sendResponse(socket, "ERROR", rejectMsg + " Consequences: Closing Server...")
-                broadcast(true, "RelayServer will close your connection because of a critical error")
+                broadcastMessage(true, "RelayServer will close your connection because of a critical error")
                 close(CloseReason.INTERNAL_ERROR)
 
             case REJECT_NEW =>
@@ -243,20 +274,10 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
     }
 
-    def broadcast(err: Boolean, msg: String): Unit = {
-        connectionsManager.broadcastMessage(err, "(broadcast) " + msg)
-    }
-
     private def ensureOpen(): Unit = {
         if (!open)
             throw new RelayCloseException("Relay Server have to be started !")
     }
 
-    def broadcastPacket(packet: Packet, injectableID: Int): Unit = {
-        val bytes = packetTranslator.fromPacketAndCoordsNoWrap(packet, PacketCoordinates(injectableID, "BROADCAST", identifier))
-        connectionsManager.broadcastBytes(bytes, identifier)
-    }
-
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(CloseReason.INTERNAL)))
-
 }

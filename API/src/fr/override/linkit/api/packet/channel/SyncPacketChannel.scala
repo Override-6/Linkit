@@ -2,8 +2,9 @@ package fr.`override`.linkit.api.packet.channel
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
+import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.traffic.PacketWriter
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
@@ -11,7 +12,7 @@ import fr.`override`.linkit.api.system.CloseReason
 //TODO doc
 class SyncPacketChannel protected(override val connectedID: String,
                                   override val identifier: Int,
-                                  writer: PacketWriter) extends PacketChannel.Sync(writer) {
+                                  traffic: PacketTraffic) extends PacketChannel.Sync(traffic) {
 
 
     /**
@@ -40,7 +41,7 @@ class SyncPacketChannel protected(override val connectedID: String,
 
     override def nextPacket(): Packet = {
         if (queue.isEmpty)
-            writer.checkThread()
+            PacketWorkerThread.checkNotCurrent()
         val packet = queue.takeLast()
         //handler.notifyPacketUsed(packet, coordinates)
         packet
@@ -60,7 +61,7 @@ class SyncPacketChannel protected(override val connectedID: String,
 object SyncPacketChannel extends PacketChannelFactory[SyncPacketChannel] {
     override val channelClass: Class[SyncPacketChannel] = classOf[SyncPacketChannel]
 
-    override def createNew(writer: PacketWriter, channelId: Int, connectedID: String): SyncPacketChannel = {
-        new SyncPacketChannel(connectedID, channelId, writer)
+    override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): SyncPacketChannel = {
+        new SyncPacketChannel(connectedID, channelId, traffic)
     }
 }

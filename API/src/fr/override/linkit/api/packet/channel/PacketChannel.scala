@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.channel
 
-import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketInjectable, PacketWriter}
+import fr.`override`.linkit.api.packet.traffic.{DedicatedPacketInjectable, ImmediatePacketInjectable, PacketTraffic}
 import fr.`override`.linkit.api.packet.{PacketFactory, _}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
@@ -10,12 +10,14 @@ import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
  *
  * @see [[PacketChannel]]
  * */
-abstract class PacketChannel(sender: PacketWriter) extends JustifiedCloseable with PacketInjectable {
+abstract class PacketChannel(traffic: PacketTraffic) extends JustifiedCloseable with DedicatedPacketInjectable {
 
-    override val ownerID: String = sender.ownerID
-    @volatile private var closed = false
+    override val ownerID: String = traffic.ownerID
+    override val injector: PacketTraffic = traffic
+
     val connectedID: String
     val coordinates: PacketCoordinates = PacketCoordinates(identifier, connectedID, ownerID)
+    @volatile private var closed = false
 
     override def close(reason: CloseReason): Unit = {
         closed = true
@@ -23,15 +25,16 @@ abstract class PacketChannel(sender: PacketWriter) extends JustifiedCloseable wi
 
     override def isClosed: Boolean = closed
 
-    def sendPacket(packet: Packet): Unit = sender.writePacket(packet, coordinates)
+    //TODO make this method only accessible from an injector.
+    def sendPacket(packet: Packet): Unit = traffic.writePacket(packet, coordinates)
 
 }
 
 object PacketChannel {
 
-    abstract class Async(handler: PacketWriter) extends PacketChannel(handler) with ImmediatePacketInjectable
+    abstract class Async(traffic: PacketTraffic) extends PacketChannel(traffic) with ImmediatePacketInjectable
 
-    abstract class Sync(traffic: PacketWriter) extends PacketChannel(traffic) {
+    abstract class Sync(traffic: PacketTraffic) extends PacketChannel(traffic) {
 
         /**
          * Waits until a data packet is received and concerned about this task.

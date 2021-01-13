@@ -1,52 +1,54 @@
 package fr.`override`.linkit.api.network
 
+import java.sql.Timestamp
+
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
-import fr.`override`.linkit.api.packet.channel.PacketChannel
+import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
 import fr.`override`.linkit.api.system.Version
 
-class SelfNetworkEntity(relay: Relay, packetChannel: PacketChannel.Async) extends NetworkEntity {
+class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     override val identifier: String = relay.identifier
 
+    override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)(relay.traffic)
+
+    private val fragmentHandler = relay.extensionLoader.fragmentHandler
+
+    override val connectionDate: Timestamp = cache.post(2, new Timestamp(System.currentTimeMillis()))
+
     override def addOnStateUpdate(action: ConnectionState => Unit): Unit = relay.addConnectionListener(action)
 
-    override def getConnectionState: ConnectionState = relay.getState
+    override def getConnectionState: ConnectionState = relay.getConnectionState
 
-    override def getStringProperty(name: String): String = relay.properties.get(name).getOrElse("")
+    override def getProperty(name: String): Serializable = relay.properties.get(name).orNull
 
-    override def setStringProperty(name: String, value: String): String =
-        String.valueOf(relay.properties.putProperty(name, value))
+    override def setProperty(name: String, value: Serializable): Unit = relay.properties.putProperty(name, value)
 
     override def getRemoteConsole: RemoteConsole = throw new UnsupportedOperationException("Attempted to get a remote console of the current relay")
 
     override def getRemoteErrConsole: RemoteConsole = throw new UnsupportedOperationException("Attempted to get a remote console of the current relay")
 
-    override def getApiVersion: Version = relay.relayVersion
+    override def getApiVersion: Version = Relay.ApiVersion
 
-    override def getRelayVersion: Version = Relay.ApiVersion
+    override def getRelayVersion: Version = relay.relayVersion
 
-    override def toString: String = s"SelfNetworkEntity(identifier: ${relay.identifier})"
+    override def listRemoteFragmentControllers: List[RemoteFragmentController] = {
+        val communicator = relay
+                .openCollector(4, CommunicationPacketCollector)
+                .subChannel(identifier, CommunicationPacketChannel, true)
 
-    /*override def listRemoteFragmentControllers: List[RemoteFragmentController] = {
-        relay
-                .extensionLoader
-                .fragmentHandler
+        fragmentHandler
                 .listRemoteFragments()
-                .map(frag => new RemoteFragmentController(frag.nameIdentifier, packetChannel))
+                .map(frag => new RemoteFragmentController(frag.nameIdentifier, communicator))
     }
 
-    override def getRemoteFragmentController(nameIdentifier: String): Option[RemoteFragmentController] = {
+    override def getFragmentController(nameIdentifier: String): Option[RemoteFragmentController] = {
         listRemoteFragmentControllers.find(_.nameIdentifier == nameIdentifier)
     }
 
-    /*
-     * The following implementations are useless,
-     * because the connection state or remote fragments are already handled and updated due to handling data
-     * of the current relay.
-     * However, the implementation still required in order to fit into entity collections
-     * */
-    override def setConnectionState(state: ConnectionState): Unit = ()
+    override def toString: String = s"SelfNetworkEntity(identifier: ${relay.identifier})"
 
-    override def addRemoteFragments(names: Array[String]): Unit = ()*/
 }

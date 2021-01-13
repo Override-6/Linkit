@@ -18,7 +18,7 @@ object SystemPacket extends PacketFactory[SystemPacket] {
                 CONTENT ++ packet.content
     }
 
-    override def canTransform(translator: PacketTranslator)(implicit bytes: Array[Byte]): Boolean = bytes.containsSlice(TYPE)
+    override def canTransform(translator: PacketTranslator)(implicit bytes: Array[Byte]): Boolean = bytes.startsWith(TYPE)
 
     override def build(translator: PacketTranslator)(implicit bytes: Array[Byte]): SystemPacket = {
         val orderName = PacketUtils.stringBetween(TYPE, REASON)

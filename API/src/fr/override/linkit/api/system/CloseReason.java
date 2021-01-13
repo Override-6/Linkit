@@ -2,22 +2,32 @@ package fr.override.linkit.api.system;
 
 //TODO Add more Detailed Reason, may have a Reason interface, and a CloseReason Enum
 public enum CloseReason {
-    INTERNAL_ERROR(true),
-    EXTERNAL_ERROR(false),
-    INTERNAL(true),
-    EXTERNAL(false),
-    SECURITY_CHECK(false),
-    NOT_SPECIFIED(false);
+    INTERNAL(true, false),
+    INTERNAL_ERROR(true, false),
 
-    private final boolean isLocal;
+    EXTERNAL_ERROR(false, true),
+    EXTERNAL(false, true),
 
-    CloseReason(boolean isLocal) {
-        this.isLocal = isLocal;
+    SECURITY_CHECK(false, false),
+    NOT_SPECIFIED(false, false);
+
+    private final boolean isInternal;
+    private final boolean isExternal;
+
+    CloseReason(boolean isInternal, boolean isExternal) {
+        this.isInternal = isInternal;
+        this.isExternal = isExternal;
     }
 
     public boolean isInternal() {
-        return isLocal;
+        return isInternal;
     }
+
+    public boolean isExternal() {
+        return isExternal;
+    }
+
+
 
     public CloseReason reversedPOV() {
         switch (this) {

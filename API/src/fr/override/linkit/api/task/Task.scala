@@ -101,7 +101,7 @@ abstract class Task[T](val targetID: String) extends TaskExecutor with TaskActio
         }
 
         synchronized {
-            wait()
+            wait
         }
         atomicResult.get()
     }

@@ -1,7 +1,7 @@
 package fr.override.linkit.api.utils;
 
-import fr.override.linkit.api.packet.fundamental.DataPacket;
 import fr.override.linkit.api.exception.UnexpectedPacketException;
+import fr.override.linkit.api.packet.fundamental.DataPacket;
 import scala.collection.Seq;
 
 import java.io.*;
