@@ -6,6 +6,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
+import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system._
@@ -56,6 +57,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     def getState: ConnectionState = session.getSocketState
 
     def addConnectionStateListener(action: ConnectionState => Unit): Unit = session.addStateListener(action)
+
+    def openChannel[C <: PacketChannel](channelId: Int, factory: PacketChannelFactory[C]): C = {
+        val channel = factory.createNew(session.traffic, channelId, identifier)
+        session.traffic.register(channel)
+        channel
+    }
 
     def sendPacket(packet: Packet, channelID: Int): Unit = {
         val bytes = packetTranslator.fromPacketAndCoords(packet, PacketCoordinates(channelID, identifier, server.identifier))

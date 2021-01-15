@@ -3,7 +3,7 @@ package fr.`override`.linkit.api.packet.channel
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.traffic.{PacketTraffic, PacketWriter}
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
@@ -40,7 +40,7 @@ class SyncPacketChannel protected(override val connectedID: String,
 
     override def nextPacket(): Packet = {
         if (queue.isEmpty)
-            writer.checkThread()
+            traffic.checkThread()
         val packet = queue.takeLast()
         //handler.notifyPacketUsed(packet, coordinates)
         packet
@@ -60,7 +60,7 @@ class SyncPacketChannel protected(override val connectedID: String,
 object SyncPacketChannel extends PacketChannelFactory[SyncPacketChannel] {
     override val channelClass: Class[SyncPacketChannel] = classOf[SyncPacketChannel]
 
-    override def createNew(writer: PacketWriter, channelId: Int, connectedID: String): SyncPacketChannel = {
-        new SyncPacketChannel(connectedID, channelId, writer)
+    override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): SyncPacketChannel = {
+        new SyncPacketChannel(connectedID, channelId, traffic)
     }
 }

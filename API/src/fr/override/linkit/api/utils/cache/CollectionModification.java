@@ -1,5 +1,5 @@
 package fr.override.linkit.api.utils.cache;
 
-enum CollectionModification {
+public enum CollectionModification {
     SET, CLEAR, REMOVE, ADD
 }

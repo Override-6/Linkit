@@ -5,6 +5,7 @@ import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, Rel
 import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole}
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
@@ -30,6 +31,8 @@ import org.jetbrains.annotations.Nullable
 //TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
 //TODO Replace every "OK" and "ERROR" by 0 or 1
 //TODO Design a brand new and optimised packet protocol
+//TODO Find a solution about packets that are send into a non-registered channel : if an exception is thrown, this can cause some problems, and if not, this can cause other problems. SOLUTION : Looking for "RemoteActionDescription" that can control and get some information about an action that where made over the network.
+//TODO Think about a more useful, powerful and stable api.util.cache system
 object Relay {
     val ApiVersion: Version = Version(name = "Api", version = "0.17.0", stable = false)
     val ServerIdentifier: String = "server"
@@ -90,6 +93,8 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * */
     val network: Network
 
+    val traffic: PacketTraffic
+
     /**
      * Starts the Relay by loading every features.
      *
@@ -114,9 +119,9 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * */
     def getState: ConnectionState
 
-    def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
+    def openChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
 
-    def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C
+    def openCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C
 
     /**
      * @param targetId the targeted Relay identifier

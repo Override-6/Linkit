@@ -18,6 +18,7 @@ import fr.`override`.linkit.server.RelayServer.Identifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
 import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
 import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
+import fr.`override`.linkit.server.network.ServerNetwork
 import fr.`override`.linkit.server.security.RelayServerSecurityManager
 
 import scala.util.control.NonFatal
@@ -33,18 +34,19 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     private val serverSocket = new ServerSocket(configuration.port)
     private val globalTraffic = new GlobalPacketTraffic(this)
-    override val network: Network = serverNetwork
+
     @volatile private var open = false
     private val remoteConsoles = new RemoteConsolesContainer(this)
     private[server] val connectionsManager = new ConnectionsManager(this)
 
+    override val securityManager: RelayServerSecurityManager = configuration.securityManager
+    override val traffic: PacketTraffic = globalTraffic
     override val identifier: String = Identifier
     override val extensionLoader = new RelayExtensionLoader(this)
     override val taskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
     override val packetTranslator = new PacketTranslator(this)
-    override val securityManager: RelayServerSecurityManager = configuration.securityManager
-    private[server] val serverNetwork = new AbstractNetwork
+    override val network = new ServerNetwork(this)(globalTraffic)
 
     override val relayVersion: Version = RelayServer.version
 
@@ -100,16 +102,12 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.containsIdentifier(identifier)
     }
 
-    override def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
-        val channel = factory.createNew(globalTraffic, channelId, targetID)
-        globalTraffic.register(channel)
-        channel
+    override def openChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
+        getConnection(targetID).openChannel(channelId, factory)
     }
 
-    override def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
-        val channel = factory.createNew(globalTraffic, channelId)
-        globalTraffic.register(channel)
-        channel
+    override def openCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
+        globalTraffic.openCollector(channelId, factory)
     }
 
     override def getConsoleOut(targetId: String): RemoteConsole = {
@@ -194,7 +192,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
      * @return true if the following handling int the client connection should stop, false instead
      * */
     private[server] def preHandlePacket(packet: Packet, coordinates: PacketCoordinates): Boolean = {
-        val isGlobalPacket = globalTraffic.isRegistered(coordinates.injectableID)
+        val isGlobalPacket = globalTraffic.isRegistered(coordinates.injectableID, coordinates.senderID)
         if (isGlobalPacket)
             globalTraffic.injectPacket(packet, coordinates)
         !isGlobalPacket

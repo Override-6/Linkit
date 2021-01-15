@@ -2,10 +2,10 @@ package fr.`override`.linkit.api.packet.collector
 
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketInjectable}
+import fr.`override`.linkit.api.packet.traffic.{GlobalPacketInjectable, ImmediatePacketInjectable}
 import fr.`override`.linkit.api.system.CloseReason
 
-trait PacketCollector extends PacketInjectable {
+trait PacketCollector extends GlobalPacketInjectable {
 
     override val ownerID: String
 

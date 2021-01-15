@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.channel
 
-import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketInjectable, PacketTraffic}
+import fr.`override`.linkit.api.packet.traffic.{DedicatedPacketInjectable, ImmediatePacketInjectable, PacketTraffic}
 import fr.`override`.linkit.api.packet.{PacketFactory, _}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
@@ -10,7 +10,7 @@ import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
  *
  * @see [[PacketChannel]]
  * */
-abstract class PacketChannel(traffic: PacketTraffic) extends JustifiedCloseable with PacketInjectable {
+abstract class PacketChannel(traffic: PacketTraffic) extends JustifiedCloseable with DedicatedPacketInjectable {
 
     override val ownerID: String = traffic.ownerID
     override val injector: PacketTraffic = traffic

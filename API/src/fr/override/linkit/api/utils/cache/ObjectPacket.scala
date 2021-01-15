@@ -29,6 +29,6 @@ object ObjectPacket extends PacketFactory[ObjectPacket] {
         ObjectPacket(Utils.deserialize(objectBytes))
     }
 
-    implicit def asPacket(obj: Serializable): ObjectPacket = ObjectPacket(obj)
+    def asPacket(obj: Serializable): ObjectPacket = ObjectPacket(obj)
 
 }

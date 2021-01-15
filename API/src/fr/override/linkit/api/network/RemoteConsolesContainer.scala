@@ -14,7 +14,7 @@ import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 
 class RemoteConsolesContainer(relay: Relay) {
 
-    private val printChannel = relay.createCollector(PacketTraffic.RemoteConsoles, AsyncPacketCollector)
+    private val printChannel = relay.openCollector(PacketTraffic.RemoteConsoles, AsyncPacketCollector)
 
     private val outConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])
     private val errConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])

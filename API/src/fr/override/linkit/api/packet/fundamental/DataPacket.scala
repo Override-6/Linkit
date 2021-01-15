@@ -55,7 +55,7 @@ object DataPacket extends PacketFactory[DataPacket] {
     }
 
     override def canTransform(translator: PacketTranslator)(implicit bytes: Array[Byte]): Boolean =
-        bytes.containsSlice(TYPE)
+        bytes.startsWith(TYPE)
 
     override def build(translator: PacketTranslator)(implicit bytes: Array[Byte]): DataPacket = {
         val header = stringBetween(TYPE, CONTENT)

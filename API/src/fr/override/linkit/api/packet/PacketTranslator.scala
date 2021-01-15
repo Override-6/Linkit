@@ -5,8 +5,8 @@ import fr.`override`.linkit.api.exception.{PacketException, UnexpectedPacketExce
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.system.SystemPacket
+import fr.`override`.linkit.api.utils.WrappedPacket
 import fr.`override`.linkit.api.utils.cache.ObjectPacket
-import fr.`override`.linkit.api.utils.{Tuple2Packet, Tuple3Packet, WrappedPacket}
 
 import scala.collection.mutable
 
@@ -61,8 +61,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
         Array(
             DataPacket, EmptyPacket.Factory,
             TaskInitPacket, ErrorPacket,
-            SystemPacket, WrappedPacket, ObjectPacket,
-            Tuple2Packet, Tuple3Packet
+            SystemPacket, WrappedPacket, ObjectPacket
         ).foreach(registerFactory)
     }
 

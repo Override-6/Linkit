@@ -8,15 +8,17 @@ import fr.`override`.linkit.api.system.JustifiedCloseable
 
 trait PacketTraffic extends PacketWriter with JustifiedCloseable {
 
-    def register(injectable: PacketInjectable): Unit
+    def register(dedicated: DedicatedPacketInjectable): Unit
 
-    def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
+    def register(global: GlobalPacketInjectable): Unit
 
-    def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C
+    def openChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
+
+    def openCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C
 
     def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit
 
-    def isRegistered(identifier: Int): Boolean
+    def isRegistered(identifier: Int, boundTarget: String): Boolean
 
     def checkThread(): Unit
 

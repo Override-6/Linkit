@@ -69,8 +69,10 @@ abstract class AbstractPacketCollector(traffic: PacketTraffic, collectorID: Int,
             val subChannel = subChannelContainer.subInjectable
             subChannel.injectPacket(packet, coordinates)
         }
-        if (!subChannelInject || subChannelContainer.transparent)
+
+        if (!subChannelInject || subChannelContainer.transparent) {
             handlePacket(packet, coordinates)
+        }
     }
 
     protected def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit

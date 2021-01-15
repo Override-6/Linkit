@@ -9,6 +9,4 @@ trait PacketInjectable extends JustifiedCloseable {
     val injector: PacketTraffic
 
     def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit
-
-
 }

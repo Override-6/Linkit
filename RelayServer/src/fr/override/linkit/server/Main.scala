@@ -2,15 +2,13 @@ package fr.`override`.linkit.server
 
 import java.nio.file.Paths
 
-import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
 
 
 object Main {
     def main(args: Array[String]): Unit = {
         val ideRun = args.contains("--ide-run")
-
-        val relayServer: Relay = new RelayServerBuilder {
+        val relayServer: RelayServer = new RelayServerBuilder {
             relayIDAmbiguityStrategy = AmbiguityStrategy.REJECT_NEW
             enableExtensionsFolderLoad = !ideRun
             extensionsFolder = getExtensionFolderPath

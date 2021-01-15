@@ -1,10 +1,10 @@
 package fr.`override`.linkit.api.utils.cache
 
-trait SharedCache extends {
+trait SharedCache extends AutoCloseable {
 
     var autoFlush: Boolean
 
-    def flush(): Unit
+    def flush(): this.type
 
     def modificationCount(): Int
 

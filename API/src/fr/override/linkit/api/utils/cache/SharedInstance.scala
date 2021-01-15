@@ -1,17 +1,20 @@
 package fr.`override`.linkit.api.utils.cache
 
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.collector.AsyncPacketCollector
+import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
+import fr.`override`.linkit.api.utils.ConsumerContainer
 
-class SharedInstance[A <: Serializable, B <: Serializable](collector: AsyncPacketCollector, mapper: A => B) extends SharedCache {
+class SharedInstance[A <: Serializable](collector: CommunicationPacketCollector) extends SharedCache {
 
     override var autoFlush: Boolean = true
-    @volatile private var instance: B = _
-    @volatile private var modCount = 0
 
-    collector.addOnPacketInjected((packet, _) => {
+    private val listeners = new ConsumerContainer[A]
+    @volatile private var modCount = 0
+    @volatile private var instance: A = _
+
+    collector.addRequestListener((packet, _) => {
         packet match {
-            case ObjectPacket(remoteInstance: B) =>
+            case ObjectPacket(remoteInstance: A) =>
                 this.instance = remoteInstance
                 modCount += 1
 
@@ -24,16 +27,24 @@ class SharedInstance[A <: Serializable, B <: Serializable](collector: AsyncPacke
 
     override def modificationCount(): Int = modCount
 
-    def get: B = instance
+    override def close(): Unit = collector.close()
 
-    def set(t: B): Unit = {
+    def get: A = instance
+
+    def set(t: A): Unit = {
         instance = t
         modCount += 1
         if (autoFlush)
             flush()
     }
 
-    override def flush(): Unit = {
+    override def flush(): this.type = {
         collector.broadcastPacket(ObjectPacket(instance))
+        this
     }
+
+    def addListener(callback: A => Unit): Unit = {
+        listeners += callback
+    }
+
 }

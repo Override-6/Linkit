@@ -10,9 +10,9 @@ trait NetworkEntity {
 
     def getConnectionState: ConnectionState
 
-    def getStringProperty(name: String): String
+    def getProperty(name: String): Serializable
 
-    def setStringProperty(name: String, value: String): String
+    def setProperty(name: String, value: Serializable): Unit
 
     def getRemoteConsole: RemoteConsole
 
@@ -22,8 +22,8 @@ trait NetworkEntity {
 
     def getRelayVersion: Version
 
-    /*def listRemoteFragmentControllers: List[RemoteFragmentController]
+    def listRemoteFragmentControllers: List[RemoteFragmentController]
 
-    def getRemoteFragmentController(nameIdentifier: String): Option[RemoteFragmentController]*/
+    def getRemoteFragmentController(nameIdentifier: String): Option[RemoteFragmentController]
 
 }

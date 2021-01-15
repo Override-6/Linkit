@@ -6,7 +6,7 @@ import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, Packe
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketFactory}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 
-class PacketCommunicationCollector(traffic: PacketTraffic, collectorID: Int)
+class CommunicationPacketCollector(traffic: PacketTraffic, collectorID: Int)
         extends AbstractPacketCollector(traffic, collectorID, false)
                 with ImmediatePacketInjectable {
 
@@ -16,6 +16,7 @@ class PacketCommunicationCollector(traffic: PacketTraffic, collectorID: Int)
 
     override def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         def injectAsNormal(): Unit = normalPacketListeners.applyAll((packet, coordinates))
+        println("In communication : " + packet)
         packet match {
             case wrapped: WrappedPacket =>
                 val subPacket = wrapped.subPacket
@@ -44,11 +45,15 @@ class PacketCommunicationCollector(traffic: PacketTraffic, collectorID: Int)
 
     def sendResponse(packet: Packet, targetID: String): Unit = traffic.writePacket(WrappedPacket("res", packet), identifier, targetID)
 
+    def broadcastRequest(packet: Packet): Unit = sendRequest(packet, "BROADCAST")
+
+    def broadcastResponse(packet: Packet): Unit = sendResponse(packet, "BROADCAST")
+
 }
 
-object PacketCommunicationCollector extends PacketCollectorFactory[PacketCommunicationCollector] {
-    override val collectorClass: Class[PacketCommunicationCollector] = classOf[PacketCommunicationCollector]
+object CommunicationPacketCollector extends PacketCollectorFactory[CommunicationPacketCollector] {
+    override val collectorClass: Class[CommunicationPacketCollector] = classOf[CommunicationPacketCollector]
 
-    override def createNew(traffic: PacketTraffic, collectorId: Int): PacketCommunicationCollector =
-        new PacketCommunicationCollector(traffic, collectorId)
+    override def createNew(traffic: PacketTraffic, collectorId: Int): CommunicationPacketCollector =
+        new CommunicationPacketCollector(traffic, collectorId)
 }

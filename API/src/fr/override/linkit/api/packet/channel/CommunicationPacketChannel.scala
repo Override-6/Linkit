@@ -2,14 +2,14 @@ package fr.`override`.linkit.api.packet.channel
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketWriter}
+import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketTraffic}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketFactory}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 
-class PacketCommunicationChannel(override val identifier: Int,
+class CommunicationPacketChannel(override val identifier: Int,
                                  override val connectedID: String,
-                                 sender: PacketWriter)
-        extends PacketChannel(sender)
+                                 traffic: PacketTraffic)
+        extends PacketChannel(traffic)
                 with ImmediatePacketInjectable{
 
     private val responses: BlockingDeque[Packet] = new LinkedBlockingDeque()
@@ -42,18 +42,18 @@ class PacketCommunicationChannel(override val identifier: Int,
 
     def nextResponse(): Packet = responses.takeFirst()
 
-    def sendResponse(packet: Packet): Unit = sender.writePacket(WrappedPacket("res", packet), coordinates)
+    def sendResponse(packet: Packet): Unit = traffic.writePacket(WrappedPacket("res", packet), coordinates)
 
     @deprecated("Use sendRequest or sendResponse instead.")
     override def sendPacket(packet: Packet): Unit = sendRequest(packet)
 
-    def sendRequest(packet: Packet): Unit = sender.writePacket(WrappedPacket("req", packet), coordinates)
+    def sendRequest(packet: Packet): Unit = traffic.writePacket(WrappedPacket("req", packet), coordinates)
 
 }
 
-object PacketCommunicationChannel extends PacketChannelFactory[PacketCommunicationChannel] {
-    override val channelClass: Class[PacketCommunicationChannel] = classOf[PacketCommunicationChannel]
+object CommunicationPacketChannel extends PacketChannelFactory[CommunicationPacketChannel] {
+    override val channelClass: Class[CommunicationPacketChannel] = classOf[CommunicationPacketChannel]
 
-    override def createNew(writer: PacketWriter, channelId: Int, connectedID: String): PacketCommunicationChannel =
-        new PacketCommunicationChannel(channelId, connectedID, writer)
+    override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): CommunicationPacketChannel =
+        new CommunicationPacketChannel(channelId, connectedID, traffic)
 }

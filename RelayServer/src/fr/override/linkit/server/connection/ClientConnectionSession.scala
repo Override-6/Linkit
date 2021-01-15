@@ -38,7 +38,7 @@ case class ClientConnectionSession private(identifier: String,
     def getEntity: NetworkEntity = entity
 
     private[connection] def initNetwork(): Unit = {
-        val network = server.serverNetwork
+        val network = server.network
         //network.addEntity(identifier)
         entity = network.getEntity(identifier).orNull
 

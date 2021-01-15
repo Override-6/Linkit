@@ -17,6 +17,7 @@ import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.client.RelayPoint.ServerID
 import fr.`override`.linkit.client.config.RelayPointConfiguration
+import fr.`override`.linkit.client.network.PointNetwork
 
 import scala.util.control.NonFatal
 
@@ -33,9 +34,10 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     @volatile private var serverErrConsole: RemoteConsole = _ //affected once Relay initialised
     private val socket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
+    override val securityManager: RelaySecurityManager = configuration.securityManager
 
-    private val traffic = new DedicatedPacketTraffic(this, socket, identifier)
-    private val pointNetwork = new AbstractNetwork
+    override val traffic = new DedicatedPacketTraffic(this, socket, identifier)
+    private var pointNetwork: PointNetwork = _ //will be instantiated once connected
     override val extensionLoader = new RelayExtensionLoader(this)
     override val properties = new RelayProperties
     implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(ServerID, traffic)
@@ -43,11 +45,10 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     private val tasksHandler = new ClientTasksHandler(systemChannel, this)
     override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
 
+
     private val remoteConsoles = new RemoteConsolesContainer(this)
 
     override val relayVersion: Version = RelayPoint.version
-
-    override val securityManager: RelaySecurityManager = configuration.securityManager
 
     override val network: Network = pointNetwork
 
@@ -117,19 +118,22 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         serverErrConsole = getConsoleErr(ServerID)
         systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
         println("Connected !")
-        //pointNetwork.init()
+
+        println("Initialising Network...")
+        this.pointNetwork = new PointNetwork(this)
+        println("Network initialised !")
     }
 
     override def getState: ConnectionState = socket.getState
 
     override def isClosed: Boolean = !open
 
-    override def createChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
-        traffic.createChannel(channelId, targetID, factory)
+    override def openChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
+        traffic.openChannel(channelId, targetID, factory)
     }
 
-    override def createCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
-        traffic.createCollector(channelId, factory)
+    override def openCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
+        traffic.openCollector(channelId, factory)
 
     }
 
@@ -262,4 +266,5 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         if (!isConnected(targetID))
             throw new RelayException(s"Target '$targetID' does not exists !")
     }
+
 }
