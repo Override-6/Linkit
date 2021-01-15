@@ -31,6 +31,7 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
             throw new RelayException("Maximum registered packet containers limit exceeded")
         }
 
+        //Does work as expected; this is the entiere port that is tested and/or removed, where this is the old closed injectable that MUST be replaced
         if (isRegistered(id, dedicatedTarget)) {
             val injectable = registeredInjectables(id)
             if (injectable.isClosed)
@@ -46,11 +47,11 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
                 .foreach(_.foreach(t => dedicated.injectPacket(t._1, t._2)))
         lostPackets.remove((id, dedicatedTarget))
 
-        registeredInjectables.getOrElseUpdate(id, InjectablePort(id)).putGlobal()
+        registeredInjectables.getOrElseUpdate(id, InjectablePort(id)).put(dedicated)
     }
 
     override def openChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
-        if (isRegistered(channelId)) {
+        if (isRegistered(channelId, targetID)) {
             registeredInjectables(channelId) match {
                 case registeredChannel: C => return registeredChannel
                 case other => throw new UnsupportedOperationException(s"Attempted to retrieve channel (id: $channelId) with requested kind : ${factory.channelClass}, but found ${other.getClass}")
@@ -62,7 +63,7 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
     }
 
     override def openCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
-        if (isRegistered(channelId)) {
+        if (isRegistered(channelId, null)) {
             registeredInjectables(channelId) match {
                 case registeredChannel: C => return registeredChannel
                 case other => throw new UnsupportedOperationException(s"Attempted to retrieve channel (id: $channelId) with requested kind : ${factory.collectorClass}, but found ${other.getClass}")
@@ -121,18 +122,18 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
 
     private case class InjectablePort(identifier: Int) extends JustifiedCloseable {
         private val cache = mutable.Map.empty[String, PacketInjectable]
-        private var global = false
+        private var isGlobal = false
         private var closed = false
 
         def isRegistered(target: String): Boolean = {
-            cache.contains(null) || cache.contains(target)
+            isGlobal || cache.contains(target)
         }
 
         def put(global: GlobalPacketInjectable): Unit = {
             ensureNotGlobal()
             cache.clear()
-            global = true
-            cache += ((null, dedicated))
+            isGlobal = true
+            cache += ((null, global))
         }
 
         def put(dedicated: DedicatedPacketInjectable): Unit = {
@@ -140,8 +141,12 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
             cache += ((dedicated.connectedID, dedicated))
         }
 
+        def inject(packet: Packet, coords: PacketCoordinates): Unit = {
+
+        }
+
         private def ensureNotGlobal(): Unit = {
-            if (global)
+            if (isGlobal)
                 throw new IllegalStateException(s"Attempted to register a PacketInjectable into a global context")
         }
 
