@@ -93,7 +93,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * The network object of this relay, this object is such a [[fr.`override`.linkit.api.network.NetworkEntity]] container
      * with some getters. No network interaction can be done through object.
      * */
-    val network: Network
+    def network: Network
 
     val traffic: PacketTraffic
 

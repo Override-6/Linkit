@@ -42,12 +42,13 @@ class BoundedMap[K, V, nK, nV](mapper: (K, V) => (nK, nV)) extends Mutator[K, V]
 
     override def apply(any: Any): nV = map(any)
 
+    override def contains(any: Any): Boolean = map.contains(any)
+
     override def addListener(callback: (MapModification, Any) => Unit): Unit = {
         listeners += (tuple2 => callback(tuple2._1, tuple2._2))
     }
 
     override def iterator: Iterator[(nK, nV)] = map.iterator.asInstanceOf[Iterator[(nK, nV)]]
-
 }
 
 object BoundedMap {
@@ -66,6 +67,8 @@ object BoundedMap {
         def get(any: Any): Option[V]
 
         def apply(any: Any): V
+
+        def contains(any: Any): Boolean
 
         def addListener(callback: (MapModification, Any) => Unit)
 

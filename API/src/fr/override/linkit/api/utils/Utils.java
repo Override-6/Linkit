@@ -1,7 +1,7 @@
 package fr.override.linkit.api.utils;
 
-import fr.override.linkit.api.packet.fundamental.DataPacket;
 import fr.override.linkit.api.exception.UnexpectedPacketException;
+import fr.override.linkit.api.packet.fundamental.DataPacket;
 import scala.collection.Seq;
 
 import java.io.*;
@@ -42,6 +42,13 @@ public class Utils {
             return;
         String msg = expectedHeaders.mkString("or") + " expected, received : " + packet.header();
         throw new UnexpectedPacketException(msg);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T[] castArray(Object[] any) {
+        System.out.println("OMAGADE :D");
+        T[] casted = (T[]) any;
+        return java.util.Arrays.copyOf(casted, casted.length);
     }
 
 }

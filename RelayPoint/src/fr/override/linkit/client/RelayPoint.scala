@@ -15,7 +15,6 @@ import fr.`override`.linkit.api.packet.{PacketTranslator, _}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
-import fr.`override`.linkit.client.RelayPoint.ServerID
 import fr.`override`.linkit.client.config.RelayPointConfiguration
 import fr.`override`.linkit.client.network.PointNetwork
 
@@ -25,7 +24,6 @@ import scala.util.control.NonFatal
 object RelayPoint {
     val version: Version = Version(name = "RelayPoint", version = "0.11.0", stable = false)
 
-    val ServerID = "server"
 }
 
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
@@ -33,25 +31,19 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     @volatile private var open = false
     override val packetTranslator = new PacketTranslator(this)
 
-    @volatile private var serverErrConsole: RemoteConsole = _ //affected once Relay initialised
-    private val socket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
-    override val securityManager: RelaySecurityManager = configuration.securityManager
-
-    override val traffic = new DedicatedPacketTraffic(this, socket, identifier)
-    private var pointNetwork: PointNetwork = _ //will be instantiated once connected
-    override val extensionLoader = new RelayExtensionLoader(this)
-    override val properties = new RelayProperties
-    implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(ServerID, traffic)
-
-    private val tasksHandler = new ClientTasksHandler(systemChannel, this)
-    override val taskCompleterHandler: TaskCompleterHandler = tasksHandler.tasksCompleterHandler
-
-
-    private val remoteConsoles = new RemoteConsolesContainer(this)
-
-    override val relayVersion: Version = RelayPoint.version
-
-    override val network: Network = pointNetwork
+    private lazy val serverErrConsole     : RemoteConsole           = getConsoleErr(Relay.ServerIdentifier)
+    override val securityManager          : RelaySecurityManager    = configuration.securityManager
+    override val traffic                  : DedicatedPacketTraffic  = new DedicatedPacketTraffic(this, socket, identifier)
+    override val extensionLoader          : RelayExtensionLoader    = new RelayExtensionLoader(this)
+    override val properties               : RelayProperties         = new RelayProperties
+    override val taskCompleterHandler     : TaskCompleterHandler    = tasksHandler.tasksCompleterHandler
+    implicit val systemChannel            : SystemPacketChannel     = new SystemPacketChannel(Relay.ServerIdentifier, traffic)
+    override val relayVersion             : Version                 = RelayPoint.version
+    private val socket                    : ClientDynamicSocket     = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
+    private val tasksHandler              : ClientTasksHandler      = new ClientTasksHandler(systemChannel, this)
+    private val remoteConsoles            : RemoteConsolesContainer = new RemoteConsolesContainer(this)
+    private var pointNetwork              : PointNetwork            = _ //will be instantiated once connected
+    override def network                  : Network                 = pointNetwork
 
     override def start(): Unit = {
         securityManager.checkRelay(this)
@@ -116,7 +108,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         if (response.header == "ERROR")
             throw RelayInitialisationException(new String(response.content))
 
-        serverErrConsole = getConsoleErr(ServerID)
         systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
         println("Connected !")
 

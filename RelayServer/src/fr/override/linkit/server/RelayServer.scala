@@ -33,6 +33,8 @@ object RelayServer {
 //TODO Create a connection helper for this poor class which swims into bad practices.
 class RelayServer private[server](override val configuration: RelayServerConfiguration) extends Relay {
 
+    override val identifier: String = Identifier
+
     private val serverSocket = new ServerSocket(configuration.port)
     private val globalTraffic = new GlobalPacketTraffic(this)
 
@@ -40,16 +42,14 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     private val remoteConsoles = new RemoteConsolesContainer(this)
     private[server] val connectionsManager = new ConnectionsManager(this)
 
-    override val securityManager: RelayServerSecurityManager = configuration.securityManager
-    override val traffic: PacketTraffic = globalTraffic
-    override val identifier: String = Identifier
-    override val extensionLoader = new RelayExtensionLoader(this)
-    override val taskCompleterHandler = new TaskCompleterHandler
-    override val properties: RelayProperties = new RelayProperties
-    override val packetTranslator = new PacketTranslator(this)
-    override val network = new ServerNetwork(this)(globalTraffic)
-
-    override val relayVersion: Version = RelayServer.version
+    override val securityManager     : RelayServerSecurityManager = configuration.securityManager
+    override val traffic             : PacketTraffic              = globalTraffic
+    override val extensionLoader     : RelayExtensionLoader       = new RelayExtensionLoader(this)
+    override val taskCompleterHandler: TaskCompleterHandler       = new TaskCompleterHandler
+    override val properties          : RelayProperties            = new RelayProperties
+    override val packetTranslator    : PacketTranslator           = new PacketTranslator(this)
+    override val network             : Network                    = new ServerNetwork(this)(globalTraffic)
+    override val relayVersion        : Version                    = RelayServer.version
 
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -257,5 +257,4 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(CloseReason.INTERNAL)))
-
 }

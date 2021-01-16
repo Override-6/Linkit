@@ -1,16 +1,18 @@
 package fr.`override`.linkit.api.utils.cache.collection
 
-import fr.`override`.linkit.api.packet.channel.PacketChannel
+import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.utils.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.api.utils.cache.{ObjectPacket, SharedCache, SharedCacheFactory, SharedCacheNotifier}
-import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
+import fr.`override`.linkit.api.utils.cache.{HandleableSharedCache, ObjectPacket, SharedCacheFactory}
+import fr.`override`.linkit.api.utils.{AsyncExecutionContext, ConsumerContainer}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.Future
+import scala.util.control.NonFatal
 
-class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: PacketChannel) extends SharedCache with SharedCacheNotifier {
+class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: CommunicationPacketChannel) extends HandleableSharedCache(identifier, channel) {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
     private val localCollection = new LocalCollection
@@ -23,7 +25,6 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Packe
 
     override def flush(): this.type = this.synchronized {
         collectionModifications.foreach(flushModification)
-        println(collectionModifications)
         collectionModifications.clear()
         this
     }
@@ -32,6 +33,11 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Packe
 
     def add(t: A): this.type = {
         addLocalModification(ADD, localCollection.add(t), t)
+        this
+    }
+
+    def foreach(action: A => Unit): this.type = {
+        localCollection.foreach(action)
         this
     }
 
@@ -98,18 +104,17 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Packe
     }
 
     private def flushModification(mod: (CollectionModification, Int, Any)): Unit = {
-        sendPacket(ObjectPacket(mod))
+        sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
-        println("COLLECTION IS NOW (local): " + localCollection + s" id : $identifier")
+        //println("COLLECTION IS NOW (local): " + localCollection + " IDENTIFIER : " + identifier)
     }
 
-    protected def sendPacket(packet: Packet): Unit = channel.sendPacket(WrappedPacket(s"$identifier", packet))
-
-
-    override final def notifyPacket(packet: Packet, coords: PacketCoordinates): Unit = {
+    override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case modPacket: ObjectPacket => handleNetworkModRequest(modPacket)
+            case modPacket: ObjectPacket => Future {
+                handleNetworkModRequest(modPacket)
+            }(AsyncExecutionContext)
         }
     }
 
@@ -126,17 +131,20 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Packe
             case REMOVE => _.remove(index)
             case ADD => if (index < 0) _.add(item) else _.add(index, item)
         }
-        action(localCollection)
+        try {
+            action(localCollection)
+        } catch {
+            case NonFatal(e) => e.printStackTrace()
+        }
         modCount += 1
 
-        networkListeners.applyAll(mod.asInstanceOf[(CollectionModification, Int, A)])
-        println("COLLECTION IS NOW (network): " + localCollection + s" id : $identifier")
-
+        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
+        //println("COLLECTION IS NOW (network): " + localCollection + s" identifier : $identifier")
     }
 
     class LocalCollection {
         type X
-        private val mainCollection: ListBuffer[A] = ListBuffer(baseContent)
+        private val mainCollection: ListBuffer[A] = ListBuffer(baseContent: _*)
         private val boundedCollections: ListBuffer[BoundedCollection[A, X]] = ListBuffer.empty
 
         //Only for debug purpose
@@ -145,51 +153,55 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Packe
         def createBoundedCollection[B](map: A => B): BoundedCollection.Immutable[B] = {
             val boundedCollection = new BoundedCollection[A, B](map)
             boundedCollections += boundedCollection.asInstanceOf[BoundedCollection[A, X]]
-            boundedCollection.set(mainCollection.toArray[Any].asInstanceOf[Array[A]])
+
+            val mainContent = mainCollection.toArray[Any].asInstanceOf[Array[A]]
+            boundedCollection.set(mainContent)
             boundedCollection
         }
 
         def clear(): Unit = {
             mainCollection.clear()
-            foreach(_.clear())
+            foreachCollection(_.clear())
         }
 
         def set(i: Int, it: A): Unit = {
             mainCollection.update(i, it)
-            foreach(_.add(i, it))
+            foreachCollection(_.add(i, it))
         }
 
         def add(i: Int, it: A): Unit = {
             mainCollection.insert(i, it)
-            foreach(_.add(i, it))
+            foreachCollection(_.add(i, it))
         }
 
         def add(it: A): Int = {
             mainCollection += it
-            foreach(_.add(it))
+            foreachCollection(_.add(it))
             mainCollection.size - 1
         }
 
         def set(array: Array[A]): Unit = {
             mainCollection.clear()
             mainCollection ++= array
-            foreach(_.set(array))
+            foreachCollection(_.set(array))
         }
 
         def remove(i: Int): Unit = {
             mainCollection.remove(i)
-            foreach(_.remove(i))
+            foreachCollection(_.remove(i))
         }
 
-        def toArray: Array[A] = mainCollection.toArray[Any].asInstanceOf[Array[A]]
+        def foreach(action: A => Unit): Unit = mainCollection.foreach(action)
 
-        private def foreach(action: BoundedCollection.Mutator[A] => Unit): Unit = {
+        def toArray: Array[Any] = mainCollection.toArray[Any]
+
+        private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit = {
             boundedCollections.foreach(action)
         }
 
     }
 
-
+    override def currentContent: Array[Any] = localCollection.toArray
 }
 
 object SharedCollection {
@@ -197,7 +209,7 @@ object SharedCollection {
     def apply[A]: SharedCacheFactory[SharedCollection[A]] = {
         new SharedCacheFactory[SharedCollection[A]] {
 
-            override def createNew(identifier: Int, baseContent: Array[Any], channel: PacketChannel): SharedCollection[A] = {
+            override def createNew(identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedCollection[A] = {
                 new SharedCollection[A](identifier, baseContent.asInstanceOf[Array[A]], channel)
             }
 

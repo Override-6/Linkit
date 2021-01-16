@@ -4,10 +4,13 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, CommunicationPacketChannel}
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system.Version
-import fr.`override`.linkit.api.utils.cache.ObjectPacket
 import fr.`override`.linkit.api.utils.cache.collection.SharedCollection
+import fr.`override`.linkit.api.utils.cache.{ObjectPacket, SharedCacheHandler}
 
-abstract class AbstractNetworkEntity(relay: Relay, val identifier: String, communicator: CommunicationPacketChannel) extends NetworkEntity {
+abstract case class AbstractNetworkEntity(relay: Relay,
+                                          cache: SharedCacheHandler,
+                                          val identifier: String,
+                                          communicator: CommunicationPacketChannel) extends NetworkEntity {
 
     protected implicit val traffic: PacketTraffic = relay.traffic
     private lazy val apiVersion: Version = {
@@ -21,8 +24,8 @@ abstract class AbstractNetworkEntity(relay: Relay, val identifier: String, commu
     protected val remoteFragmentChannel: AsyncPacketChannel = traffic.openChannel(8, identifier, AsyncPacketChannel)
 
     private val remoteFragments = {
-        SharedCollection
-                .dedicated(6, identifier)
+        cache
+                .open(6, SharedCollection[String])
                 .mapped(new RemoteFragmentController(_, remoteFragmentChannel))
     }
 

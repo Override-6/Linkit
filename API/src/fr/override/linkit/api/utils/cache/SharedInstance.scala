@@ -27,8 +27,6 @@ class SharedInstance[A <: Serializable](collector: CommunicationPacketCollector)
 
     override def modificationCount(): Int = modCount
 
-    override def close(): Unit = collector.close()
-
     def get: A = instance
 
     def set(t: A): Unit = {

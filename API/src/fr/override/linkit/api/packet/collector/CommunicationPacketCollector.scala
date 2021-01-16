@@ -16,7 +16,7 @@ class CommunicationPacketCollector(traffic: PacketTraffic, collectorID: Int)
 
     override def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         def injectAsNormal(): Unit = normalPacketListeners.applyAll((packet, coordinates))
-        println("In communication : " + packet)
+
         packet match {
             case wrapped: WrappedPacket =>
                 val subPacket = wrapped.subPacket
