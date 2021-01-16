@@ -5,7 +5,7 @@ import java.sql.Timestamp
 import fr.`override`.linkit.api.network.{AbstractNetwork, NetworkEntity}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
-import fr.`override`.linkit.api.utils.cache.{BoundedCollection, SharedCollection}
+import fr.`override`.linkit.api.utils.cache.collection.SharedCollection
 import fr.`override`.linkit.server.RelayServer
 
 class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extends AbstractNetwork(server) {

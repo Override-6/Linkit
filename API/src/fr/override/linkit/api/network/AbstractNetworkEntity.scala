@@ -4,7 +4,8 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.channel.{AsyncPacketChannel, CommunicationPacketChannel}
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system.Version
-import fr.`override`.linkit.api.utils.cache.{ObjectPacket, SharedCollection}
+import fr.`override`.linkit.api.utils.cache.ObjectPacket
+import fr.`override`.linkit.api.utils.cache.collection.SharedCollection
 
 abstract class AbstractNetworkEntity(relay: Relay, val identifier: String, communicator: CommunicationPacketChannel) extends NetworkEntity {
 

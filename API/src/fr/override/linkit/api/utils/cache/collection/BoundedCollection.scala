@@ -1,18 +1,14 @@
-package fr.`override`.linkit.api.utils.cache
+package fr.`override`.linkit.api.utils.cache.collection
 
 import fr.`override`.linkit.api.utils.ConsumerContainer
-import fr.`override`.linkit.api.utils.cache.BoundedCollection.{Immutable, Mutator}
-import fr.`override`.linkit.api.utils.cache.CollectionModification._
+import fr.`override`.linkit.api.utils.cache.collection.BoundedCollection.{Immutable, Mutator}
+import fr.`override`.linkit.api.utils.cache.collection.CollectionModification._
 
 import scala.collection.mutable.ListBuffer
 
 class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] {
     private val collection: ListBuffer[B] = ListBuffer.empty
     private val listeners = ConsumerContainer[(CollectionModification, Int, B)]()
-
-    override def isEmpty: Boolean = size == 0
-
-    override def size(): Int = collection.size
 
     override def iterator: Iterator[B] = collection.iterator
 
@@ -39,7 +35,6 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
     }
 
     override def clear(): Unit = {
-        val head = collection.head
         collection.clear()
         listeners.applyAll((CLEAR, -1, head))
     }
@@ -73,10 +68,6 @@ object BoundedCollection {
 
     trait Immutable[A] extends Iterable[A] {
         override def iterator: Iterator[A]
-
-        def size(): Int
-
-        def isEmpty: Boolean
 
         def addListener(callback: (CollectionModification, Int, A) => Unit): Unit
     }

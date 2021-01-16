@@ -4,7 +4,6 @@ import java.sql.Timestamp
 
 import fr.`override`.linkit.api.network.{AbstractNetwork, NetworkEntity}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.utils.cache.{BoundedCollection, SharedCaches, SharedCollection}
 import fr.`override`.linkit.client.RelayPoint
 
 class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {

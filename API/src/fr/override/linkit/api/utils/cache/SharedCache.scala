@@ -1,8 +1,8 @@
 package fr.`override`.linkit.api.utils.cache
 
-trait SharedCache extends AutoCloseable {
+trait SharedCache {
 
-    var autoFlush: Boolean
+    @volatile var autoFlush: Boolean
 
     def flush(): this.type
 

@@ -4,7 +4,8 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
-import fr.`override`.linkit.api.utils.cache.{BoundedCollection, CollectionModification, ObjectPacket, SharedCollection}
+import fr.`override`.linkit.api.utils.cache.ObjectPacket
+import fr.`override`.linkit.api.utils.cache.collection.{BoundedCollection, CollectionModification, SharedCollection}
 
 abstract class AbstractNetwork(relay: Relay) extends Network {
 

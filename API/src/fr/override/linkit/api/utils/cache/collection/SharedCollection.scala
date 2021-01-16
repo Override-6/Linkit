@@ -1,0 +1,209 @@
+package fr.`override`.linkit.api.utils.cache.collection
+
+import fr.`override`.linkit.api.packet.channel.PacketChannel
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.utils.cache.collection.CollectionModification._
+import fr.`override`.linkit.api.utils.cache.collection.{BoundedCollection, CollectionModification}
+import fr.`override`.linkit.api.utils.cache.{ObjectPacket, SharedCache, SharedCacheFactory, SharedCacheNotifier}
+import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
+import org.jetbrains.annotations.{NotNull, Nullable}
+
+import scala.collection.mutable.ListBuffer
+
+class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: PacketChannel) extends SharedCache with SharedCacheNotifier {
+
+    private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
+    private val localCollection = new LocalCollection
+    private val networkListeners = ConsumerContainer[(CollectionModification, Int, A)]()
+
+    @volatile private var modCount = 0
+    @volatile override var autoFlush: Boolean = true
+
+    override def modificationCount(): Int = modCount
+
+    override def flush(): this.type = this.synchronized {
+        collectionModifications.foreach(flushModification)
+        println(collectionModifications)
+        collectionModifications.clear()
+        this
+    }
+
+    override def toString: String = localCollection.toString
+
+    def add(t: A): this.type = {
+        addLocalModification(ADD, localCollection.add(t), t)
+        this
+    }
+
+    def add(i: Int, t: A): this.type = {
+        localCollection.add(i, t)
+        addLocalModification(ADD, i, t)
+        this
+    }
+
+
+    def set(i: Int, t: A): this.type = {
+        addLocalModification(SET, i, localCollection.set(i, t))
+        this
+    }
+
+    def set(content: Array[A]): this.type = {
+        clear()
+        var i = -1
+        content.foreach({
+            i += 1
+            add(i, _)
+        })
+        this
+    }
+
+    def remove(i: Int): this.type = {
+        addLocalModification(REMOVE, i, localCollection.remove(i))
+        this
+    }
+
+
+    def clear(): this.type = {
+        localCollection.clear()
+        addLocalModification(CLEAR, -1, null)
+        this
+    }
+
+    def mapped[B](map: A => B): BoundedCollection.Immutable[B] = {
+        localCollection.createBoundedCollection(map)
+    }
+
+    /**
+     * (CollectionModification, _, _) : the kind of modification that were done
+     * (_, Int, _) : the index affected (may be -1 for mod kinds that does not specify any index such as CLEAR)
+     * (_, _, T) : The object affected (may be null for mod kinds that does not specify any object such as CLEAR, or REMOVE)
+     * */
+    def addListener(action: (CollectionModification, Int, A) => Unit): this.type = {
+        networkListeners += (tuple3 => action.apply(tuple3._1, tuple3._2, tuple3._3))
+        this
+    }
+
+    private def addLocalModification(@NotNull kind: CollectionModification, @Nullable index: Int, @Nullable value: Any): Unit = {
+        if (autoFlush) {
+            flushModification((kind, index, value))
+            return
+        }
+
+        kind match {
+            case CLEAR => collectionModifications.clear()
+            case SET | REMOVE => collectionModifications.filterInPlace(m => !((m._1 == SET || m._1 == REMOVE) && m._2 == index))
+            case ADD => //Do not optimise : the addition result may be different according to the order
+        }
+        collectionModifications += ((kind, index, value))
+    }
+
+    private def flushModification(mod: (CollectionModification, Int, Any)): Unit = {
+        sendPacket(ObjectPacket(mod))
+        networkListeners.applyAll(mod.asInstanceOf[(CollectionModification, Int, A)])
+        modCount += 1
+        println("COLLECTION IS NOW (local): " + localCollection + s" id : $identifier")
+    }
+
+    protected def sendPacket(packet: Packet): Unit = channel.sendPacket(WrappedPacket(s"$identifier", packet))
+
+
+    override final def notifyPacket(packet: Packet, coords: PacketCoordinates): Unit = {
+        packet match {
+            case modPacket: ObjectPacket => handleNetworkModRequest(modPacket)
+        }
+    }
+
+    private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
+        val mod: (CollectionModification, Int, Any) = packet.casted
+
+        val modKind: CollectionModification = mod._1
+        val index: Int = mod._2
+        lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed
+
+        val action: LocalCollection => Unit = modKind match {
+            case CLEAR => _.clear()
+            case SET => _.set(index, item)
+            case REMOVE => _.remove(index)
+            case ADD => if (index < 0) _.add(item) else _.add(index, item)
+        }
+        action(localCollection)
+        modCount += 1
+
+        networkListeners.applyAll(mod.asInstanceOf[(CollectionModification, Int, A)])
+        println("COLLECTION IS NOW (network): " + localCollection + s" id : $identifier")
+
+    }
+
+    class LocalCollection {
+        type X
+        private val mainCollection: ListBuffer[A] = ListBuffer(baseContent)
+        private val boundedCollections: ListBuffer[BoundedCollection[A, X]] = ListBuffer.empty
+
+        //Only for debug purpose
+        override def toString: String = mainCollection.toString()
+
+        def createBoundedCollection[B](map: A => B): BoundedCollection.Immutable[B] = {
+            val boundedCollection = new BoundedCollection[A, B](map)
+            boundedCollections += boundedCollection.asInstanceOf[BoundedCollection[A, X]]
+            boundedCollection.set(mainCollection.toArray[Any].asInstanceOf[Array[A]])
+            boundedCollection
+        }
+
+        def clear(): Unit = {
+            mainCollection.clear()
+            foreach(_.clear())
+        }
+
+        def set(i: Int, it: A): Unit = {
+            mainCollection.update(i, it)
+            foreach(_.add(i, it))
+        }
+
+        def add(i: Int, it: A): Unit = {
+            mainCollection.insert(i, it)
+            foreach(_.add(i, it))
+        }
+
+        def add(it: A): Int = {
+            mainCollection += it
+            foreach(_.add(it))
+            mainCollection.size - 1
+        }
+
+        def set(array: Array[A]): Unit = {
+            mainCollection.clear()
+            mainCollection ++= array
+            foreach(_.set(array))
+        }
+
+        def remove(i: Int): Unit = {
+            mainCollection.remove(i)
+            foreach(_.remove(i))
+        }
+
+        def toArray: Array[A] = mainCollection.toArray[Any].asInstanceOf[Array[A]]
+
+        private def foreach(action: BoundedCollection.Mutator[A] => Unit): Unit = {
+            boundedCollections.foreach(action)
+        }
+
+    }
+
+
+}
+
+object SharedCollection {
+
+    def apply[A]: SharedCacheFactory[SharedCollection[A]] = {
+        new SharedCacheFactory[SharedCollection[A]] {
+
+            override def createNew(identifier: Int, baseContent: Array[Any], channel: PacketChannel): SharedCollection[A] = {
+                new SharedCollection[A](identifier, baseContent.asInstanceOf[Array[A]], channel)
+            }
+
+            override def sharedCacheClass: Class[SharedCollection[A]] = classOf[SharedCollection[A]]
+        }
+    }
+
+}
+
