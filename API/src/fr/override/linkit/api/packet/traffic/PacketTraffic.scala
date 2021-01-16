@@ -5,6 +5,8 @@ import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollect
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.JustifiedCloseable
 
+import scala.reflect.ClassTag
+
 
 trait PacketTraffic extends PacketWriter with JustifiedCloseable {
 
@@ -12,9 +14,9 @@ trait PacketTraffic extends PacketWriter with JustifiedCloseable {
 
     def register(global: GlobalPacketInjectable): Unit
 
-    def openChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
+    def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
 
-    def openCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C
+    def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C
 
     def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit
 

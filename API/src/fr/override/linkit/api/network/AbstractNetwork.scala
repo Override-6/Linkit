@@ -4,13 +4,23 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
-import fr.`override`.linkit.api.utils.cache.{BoundedCollection, CollectionModification, ObjectPacket}
+import fr.`override`.linkit.api.utils.cache.{BoundedCollection, CollectionModification, ObjectPacket, SharedCollection}
 
 abstract class AbstractNetwork(relay: Relay) extends Network {
+
+
 
     protected implicit val traffic: PacketTraffic = relay.traffic
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     private val communicator = relay.openCollector(9, CommunicationPacketCollector)
+    private val sharedFragments = SharedCollection.open[String](6)(relay.traffic)
+
+    private val fragmentHandler = relay.extensionLoader.fragmentHandler
+    sharedFragments.set(fragmentHandler.listRemoteFragments().map(_.nameIdentifier).toArray)
+    fragmentHandler.addOnRemoteFragmentsAdded(sharedFragments.add(_))
+
+    println(s"sharedFragments = ${sharedFragments}")
+    sharedFragments.addListener((a, b, c) => println("Fragments modified : " + a, b, c))
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 

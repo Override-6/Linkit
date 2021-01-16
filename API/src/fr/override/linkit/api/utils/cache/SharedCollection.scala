@@ -230,8 +230,16 @@ object SharedCollection {
         new Dedicated[A](traffic.openChannel(channelID, boundRelay, AsyncPacketChannel))
     }
 
+    def dedicated[A](channel: AsyncPacketChannel): SharedCollection[A] = {
+        new Dedicated[A](channel)
+    }
+
     def open[A](channelID: Int)(implicit traffic: PacketTraffic): SharedCollection[A] = {
         new Public[A](traffic.openCollector(channelID, AsyncPacketCollector))
+    }
+
+    def open[A](collector: AsyncPacketCollector): SharedCollection[A] = {
+        new Public[A](collector)
     }
 
     private class Dedicated[A](channel: AsyncPacketChannel) extends SharedCollection[A]() {

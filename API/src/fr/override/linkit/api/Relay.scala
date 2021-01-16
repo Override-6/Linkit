@@ -13,6 +13,8 @@ import fr.`override`.linkit.api.system.{JustifiedCloseable, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
 import org.jetbrains.annotations.Nullable
 
+import scala.reflect.ClassTag
+
 /**
  * The Relay trait is the core of this program.
  * Every features are accessible from a Relay, but some features needs the Relay to be started.
@@ -119,9 +121,9 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * */
     def getState: ConnectionState
 
-    def openChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
+    def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
 
-    def openCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C
+    def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C
 
     /**
      * @param targetId the targeted Relay identifier

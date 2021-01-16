@@ -4,20 +4,12 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.packet.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.system.Version
-import fr.`override`.linkit.api.utils.cache.SharedCollection
 
 class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     override val identifier: String = relay.identifier
 
     private val fragmentHandler = relay.extensionLoader.fragmentHandler
-    private val sharedFragments = SharedCollection.open[String](6)(relay.traffic)
-
-    sharedFragments.set(fragmentHandler.listRemoteFragments().map(_.nameIdentifier).toArray)
-    fragmentHandler.addOnRemoteFragmentsAdded(sharedFragments.add(_))
-
-    println(s"sharedFragments = ${sharedFragments}")
-    sharedFragments.addListener((a, b, c) => println("Fragments modified : " + a, b, c))
 
     override def addOnStateUpdate(action: ConnectionState => Unit): Unit = relay.addConnectionListener(action)
 

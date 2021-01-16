@@ -19,6 +19,7 @@ import fr.`override`.linkit.client.RelayPoint.ServerID
 import fr.`override`.linkit.client.config.RelayPointConfiguration
 import fr.`override`.linkit.client.network.PointNetwork
 
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 object RelayPoint {
@@ -128,11 +129,11 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     override def isClosed: Boolean = !open
 
-    override def openChannel[C <: PacketChannel](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
+    override def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
         traffic.openChannel(channelId, targetID, factory)
     }
 
-    override def openCollector[C <: PacketCollector](channelId: Int, factory: PacketCollectorFactory[C]): C = {
+    override def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C = {
         traffic.openCollector(channelId, factory)
 
     }

@@ -18,6 +18,7 @@ abstract class AbstractNetworkEntity(relay: Relay, val identifier: String, commu
         communicator.nextResponse(ObjectPacket).casted
     }
     protected val remoteFragmentChannel: AsyncPacketChannel = traffic.openChannel(8, identifier, AsyncPacketChannel)
+
     private val remoteFragments = {
         SharedCollection
                 .dedicated(6, identifier)
