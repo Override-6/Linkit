@@ -10,7 +10,7 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     override val identifier: String = relay.identifier
 
-    override val cache: SharedCacheHandler = SharedCacheHandler.dedicated(identifier)(relay.traffic)
+    override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)(relay.traffic)
 
     private val fragmentHandler = relay.extensionLoader.fragmentHandler
 

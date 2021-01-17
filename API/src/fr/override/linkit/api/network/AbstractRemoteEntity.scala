@@ -41,7 +41,7 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override def getRemoteErrConsole: RemoteConsole = relay.getConsoleErr(identifier)
 
     override def getApiVersion: Version = apiVersion
-    override val cache: SharedCacheHandler = SharedCacheHandler.dedicated(identifier)
+    override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
 
     override def getRelayVersion: Version = relayVersion
     private val remoteFragments = {

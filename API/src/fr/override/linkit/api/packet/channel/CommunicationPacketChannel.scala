@@ -16,6 +16,9 @@ class CommunicationPacketChannel(override val identifier: Int,
     private val requestListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
     private val normalPacketListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
 
+    var enablePacketSending = true
+    var packetTransform: Packet => Packet = p => p
+
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         def injectAsNormal(): Unit = normalPacketListeners.applyAll((packet, coordinates))
         packet match {
@@ -36,18 +39,22 @@ class CommunicationPacketChannel(override val identifier: Int,
     def addRequestListener(action: (Packet, PacketCoordinates) => Unit): Unit =
         requestListeners += (tuple => action(tuple._1, tuple._2))
 
-    def nextResponse[P <: Packet](factory: PacketFactory[P]): P = nextResponse(factory.packetClass)
-
-    def nextResponse[P <: Packet](classOfP: Class[P]): P = nextResponse().asInstanceOf[P]
+    def nextResponse[P <: Packet](factory: PacketFactory[P]): P = nextResponse().asInstanceOf[P]
 
     def nextResponse(): Packet = responses.takeFirst()
 
-    def sendResponse(packet: Packet): Unit = traffic.writePacket(WrappedPacket("res", packet), coordinates)
+    def sendResponse(packet: Packet): Unit = if (enablePacketSending) {
+        traffic.writePacket(WrappedPacket("res", packetTransform(packet)), coordinates)
+    }
 
     @deprecated("Use sendRequest or sendResponse instead.")
-    override def sendPacket(packet: Packet): Unit = sendRequest(packet)
+    override def sendPacket(packet: Packet): Unit = if (enablePacketSending) {
+        traffic.writePacket(packetTransform(packet), coordinates)
+    }
 
-    def sendRequest(packet: Packet): Unit = traffic.writePacket(WrappedPacket("req", packet), coordinates)
+    def sendRequest(packet: Packet): Unit = if (enablePacketSending) {
+        traffic.writePacket(WrappedPacket("req", packetTransform(packet)), coordinates)
+    }
 
 }
 

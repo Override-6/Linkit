@@ -26,7 +26,7 @@ case class ConsumerContainer[T]() {
     }
 
     def applyAll(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        consumers.foreach(consumer => {
+        consumers.clone().foreach(consumer => {
             try {
                 consumer.apply(t)
             } catch {

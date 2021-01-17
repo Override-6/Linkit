@@ -4,7 +4,7 @@ import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 
 trait SharedCacheFactory[A <: SharedCache] {
 
-    def createNew(identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): A
+    def createNew(family: String, identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): A
 
     def sharedCacheClass: Class[A]
 

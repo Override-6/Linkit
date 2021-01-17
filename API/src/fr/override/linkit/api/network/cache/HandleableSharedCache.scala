@@ -5,7 +5,7 @@ import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.api.utils.WrappedPacket
 
-abstract class HandleableSharedCache(identifier: Int, channel: CommunicationPacketChannel) extends SharedCache with JustifiedCloseable {
+abstract class HandleableSharedCache(family: String, identifier: Int, channel: CommunicationPacketChannel) extends SharedCache with JustifiedCloseable {
 
     override def close(reason: CloseReason): Unit = channel.close(reason)
 
@@ -15,6 +15,6 @@ abstract class HandleableSharedCache(identifier: Int, channel: CommunicationPack
 
     def currentContent: Array[Any]
 
-    protected def sendRequest(packet: Packet): Unit = channel.sendRequest(WrappedPacket(s"$identifier", packet))
+    protected def sendRequest(packet: Packet): Unit = channel.sendRequest(WrappedPacket(s"$family", WrappedPacket(identifier.toString, packet)))
 
 }

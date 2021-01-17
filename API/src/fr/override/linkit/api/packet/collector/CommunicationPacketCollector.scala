@@ -14,6 +14,9 @@ class CommunicationPacketCollector(traffic: PacketTraffic, collectorID: Int)
     private val requestListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
     private val normalPacketListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
 
+    var enablePacketSending = true
+    var packetTransform: Packet => Packet = p => p
+
     override def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         def injectAsNormal(): Unit = normalPacketListeners.applyAll((packet, coordinates))
 
@@ -41,13 +44,21 @@ class CommunicationPacketCollector(traffic: PacketTraffic, collectorID: Int)
 
     def nextResponse(): Packet = responses.takeFirst()
 
-    def sendRequest(packet: Packet, targetID: String): Unit = traffic.writePacket(WrappedPacket("req", packet), identifier, targetID)
+    def broadcastRequest(packet: Packet): Unit = if (enablePacketSending) {
+        sendRequest(packetTransform(packet), "BROADCAST")
+    }
 
-    def sendResponse(packet: Packet, targetID: String): Unit = traffic.writePacket(WrappedPacket("res", packet), identifier, targetID)
+    def sendRequest(packet: Packet, targetID: String): Unit = if (enablePacketSending) {
+        traffic.writePacket(WrappedPacket("req", packetTransform(packet)), identifier, targetID)
+    }
 
-    def broadcastRequest(packet: Packet): Unit = sendRequest(packet, "BROADCAST")
+    def broadcastResponse(packet: Packet): Unit = if (enablePacketSending) {
+        sendResponse(packetTransform(packet), "BROADCAST")
+    }
 
-    def broadcastResponse(packet: Packet): Unit = sendResponse(packet, "BROADCAST")
+    def sendResponse(packet: Packet, targetID: String): Unit = if (enablePacketSending) {
+        traffic.writePacket(WrappedPacket("res", packetTransform(packet)), identifier, targetID)
+    }
 
 }
 

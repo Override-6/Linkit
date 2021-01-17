@@ -12,7 +12,7 @@ import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: CommunicationPacketChannel) extends HandleableSharedCache(identifier, channel) {
+class SharedCollection[A](family: String, identifier: Int, baseContent: Array[A], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
     private val localCollection = new LocalCollection
@@ -107,7 +107,7 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Commu
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
-        println("COLLECTION IS NOW (local): " + localCollection + " IDENTIFIER : " + identifier)
+        println(s"<${family}> COLLECTION IS NOW (local): " + localCollection + " IDENTIFIER : " + identifier)
     }
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
@@ -139,7 +139,7 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Commu
         modCount += 1
 
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
-        println("COLLECTION IS NOW (network): " + localCollection + s" identifier : $identifier")
+        println(s"<${family}> COLLECTION IS NOW (network): " + localCollection + s" identifier : $identifier")
     }
 
     class LocalCollection {
@@ -208,8 +208,8 @@ object SharedCollection {
     def apply[A]: SharedCacheFactory[SharedCollection[A]] = {
         new SharedCacheFactory[SharedCollection[A]] {
 
-            override def createNew(identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedCollection[A] = {
-                new SharedCollection[A](identifier, baseContent.asInstanceOf[Array[A]], channel)
+            override def createNew(family: String, identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedCollection[A] = {
+                new SharedCollection[A](family, identifier, baseContent.asInstanceOf[Array[A]], channel)
             }
 
             override def sharedCacheClass: Class[SharedCollection[A]] = classOf[SharedCollection[A]]

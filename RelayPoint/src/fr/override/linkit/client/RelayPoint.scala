@@ -38,8 +38,8 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override val properties               : RelayProperties         = new RelayProperties
     implicit val systemChannel            : SystemPacketChannel     = new SystemPacketChannel(Relay.ServerIdentifier, traffic)
     private val tasksHandler              : ClientTasksHandler      = new ClientTasksHandler(systemChannel, this)
-    override val relayVersion             : Version                 = RelayPoint.version
     private val socket                    : ClientDynamicSocket     = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
+    override val relayVersion             : Version                 = RelayPoint.version
     private val remoteConsoles            : RemoteConsolesContainer = new RemoteConsolesContainer(this)
     private var pointNetwork              : PointNetwork            = _ //will be instantiated once connected
     override def network                  : Network                 = pointNetwork

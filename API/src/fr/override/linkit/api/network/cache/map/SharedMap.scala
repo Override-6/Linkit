@@ -10,7 +10,7 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](identifier: Int, baseContent: Array[(K, V)], channel: CommunicationPacketChannel) extends HandleableSharedCache(identifier, channel) {
+class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
 
     private val localMap = LocalMap()
     private val networkListeners = ConsumerContainer[(MapModification, K, V)]()
@@ -84,7 +84,7 @@ class SharedMap[K, V](identifier: Int, baseContent: Array[(K, V)], channel: Comm
         modCount += 1
 
         networkListeners.applyAll(mod)
-        println("MAP IS NOW (network): " + localMap + " IDENTIFIER : " + identifier)
+        println(s"<${family}> MAP IS NOW (network): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     private def addLocalModification(@NotNull kind: MapModification, @Nullable key: Any, @Nullable value: Any): Unit = {
@@ -104,7 +104,7 @@ class SharedMap[K, V](identifier: Int, baseContent: Array[(K, V)], channel: Comm
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
         modCount += 1
-        println("MAP IS NOW (local): " + localMap + " IDENTIFIER : " + identifier)
+        println(s"<${family}> MAP IS NOW (local): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     case class LocalMap() {
@@ -166,8 +166,8 @@ object SharedMap {
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
         new SharedCacheFactory[SharedMap[K, V]] {
 
-            override def createNew(identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedMap[K, V] = {
-                new SharedMap[K, V](identifier, ScalaUtils.cloneArray(baseContent), channel)
+            override def createNew(family: String, identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedMap[K, V] = {
+                new SharedMap[K, V](family, identifier, ScalaUtils.cloneArray(baseContent), channel)
             }
 
             override def sharedCacheClass: Class[SharedMap[K, V]] = classOf[SharedMap[K, V]]

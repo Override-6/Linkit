@@ -22,11 +22,11 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
     @deprecated("Find a better solution; cache every lost packets may be very heavy. (take a look at Relay.scala TODO list)")
     private val lostPackets = mutable.Map.empty[(Int, String), ListBuffer[(Packet, PacketCoordinates)]]
 
-    override def openChannel[A <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[A]): A = {
-        if (isRegistered(channelId, targetID)) {
-            return getInjectableOfType[A](channelId, targetID)
+    override def openChannel[A <: PacketChannel : ClassTag](injectableID: Int, targetID: String, factory: PacketChannelFactory[A]): A = {
+        if (isRegistered(injectableID, targetID)) {
+            return getInjectableOfType[A](injectableID, targetID)
         }
-        val channel = factory.createNew(this, channelId, targetID)
+        val channel = factory.createNew(this, injectableID, targetID)
         register(channel)
         channel
     }
@@ -79,12 +79,12 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
                 .flatMap(_.getInjectable(target))
     }
 
-    override def openCollector[A <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[A]): A = {
-        if (isRegistered(channelId, null)) {
-            return getInjectableOfType[A](channelId, null)
+    override def openCollector[A <: PacketCollector : ClassTag](injectableID: Int, factory: PacketCollectorFactory[A]): A = {
+        if (isRegistered(injectableID, null)) {
+            return getInjectableOfType[A](injectableID, null)
         }
 
-        val channel = factory.createNew(this, channelId)
+        val channel = factory.createNew(this, injectableID)
         register(channel)
         channel
     }
@@ -95,7 +95,7 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
     }
 
     override def writePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        println("SENDING PACKET " + packet + " WITH COORDINATES " + coordinates)
+        //println("SENDING PACKET " + packet + " WITH COORDINATES " + coordinates)
         if (coordinates.targetID == relay.identifier)
             injectPacket(packet, coordinates)
         else send(packet, coordinates)

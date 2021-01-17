@@ -14,9 +14,9 @@ trait PacketTraffic extends PacketWriter with JustifiedCloseable {
 
     def register(global: GlobalPacketInjectable): Unit
 
-    def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
+    def openChannel[C <: PacketChannel : ClassTag](injectableID: Int, targetID: String, factory: PacketChannelFactory[C]): C
 
-    def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C
+    def openCollector[C <: PacketCollector : ClassTag](injectableID: Int, factory: PacketCollectorFactory[C]): C
 
     def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit
 
