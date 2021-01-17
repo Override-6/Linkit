@@ -61,7 +61,6 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
         }
 
         //Will inject every lost packets
-
         lostPackets.get((id, target))
                 .foreach(_.foreach(t => injectable.injectPacket(t._1, t._2)))
         lostPackets.remove((id, target))
@@ -96,6 +95,7 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
     }
 
     override def writePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+        println("SENDING PACKET " + packet + " WITH COORDINATES " + coordinates)
         if (coordinates.targetID == relay.identifier)
             injectPacket(packet, coordinates)
         else send(packet, coordinates)
@@ -106,7 +106,8 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
     }
 
     override def close(reason: CloseReason): Unit = {
-        registeredInjectables.values.foreach(_.close(reason))
+        registeredInjectables.values
+                .foreach(_.close(reason))
         registeredInjectables.clear()
         closed = true
     }
@@ -138,10 +139,11 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         ensureOpen()
         val id = coordinates.injectableID
-        /*if (!isRegistered(id, coordinates.senderID)) {
-            //lostPackets.getOrElseUpdate(id, ListBuffer.empty) += ((packet, coordinates))
+        val sender = coordinates.senderID
+        if (!isRegistered(id, sender)) {
+            lostPackets.getOrElseUpdate((id, sender), ListBuffer.empty) += ((packet, coordinates))
             return
-        }*/
+        }
         registeredInjectables(id)
                 .inject(packet, coordinates)
     }

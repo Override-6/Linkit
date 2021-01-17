@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.utils.cache
+package fr.`override`.linkit.api.network.cache
 
 import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator, PacketUtils}
 import fr.`override`.linkit.api.utils.Utils

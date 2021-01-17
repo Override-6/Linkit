@@ -3,9 +3,10 @@ package fr.`override`.linkit.api.`extension`.fragment
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{LoadPhase, RelayExtension, RelayExtensionLoader}
 import fr.`override`.linkit.api.exception.ExtensionLoadException
+import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
-import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
+import fr.`override`.linkit.api.utils.WrappedPacket
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -16,7 +17,18 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
     private val fragmentMap: mutable.Map[Class[_ <: RelayExtension], ExtensionFragments] = mutable.Map.empty
 
     private val communicator = relay.openCollector(4, CommunicationPacketCollector)
-    private val remoteFragmentAddListeners = ConsumerContainer[String]()
+    private lazy val sharedRemoteFragments: SharedCollection[String] = {
+        var ptn: SharedCollection[String] = null
+        ptn = relay.network
+                .selfEntity
+                .cache
+                .open(6, SharedCollection[String])
+                .addListener((_, _, _) => println("Frags are actually : " + ptn))
+
+        println("Frags are actually : " + ptn)
+        ptn
+    }
+
 
     def setFragment(fragment: ExtensionFragment)(implicit extension: RelayExtension): Unit = {
         if (extensionLoader.getPhase != LoadPhase.LOAD)
@@ -31,7 +43,10 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
                 .setFragment(fragment)
 
         fragment match {
-            case remote: RemoteFragment => remoteFragmentAddListeners.applyAll(remote.nameIdentifier)
+            case remote: RemoteFragment =>
+                println("ADDING REMOTE FRAGMENT " + remote.nameIdentifier)
+                sharedRemoteFragments.add(remote.nameIdentifier)
+
             case _ =>
         }
 
@@ -45,11 +60,6 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
         fragmentsOpt
                 .get
                 .getFragment(fragmentClass)
-    }
-
-    //TODO introduce JavaFX ObservableValues
-    def addOnRemoteFragmentsAdded(callback: String => Unit): Unit = {
-        remoteFragmentAddListeners += callback
     }
 
     def listRemoteFragments(): List[RemoteFragment] = {

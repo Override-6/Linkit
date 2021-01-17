@@ -1,4 +1,4 @@
-package fr.override.linkit.api.utils.cache.map;
+package fr.override.linkit.api.network.cache.map;
 
 public enum MapModification {
 

@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.utils.cache
+package fr.`override`.linkit.api.network.cache
 
 trait SharedCache {
 

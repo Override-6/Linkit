@@ -1,6 +1,7 @@
 package fr.`override`.linkit.api.network
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.packet.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.system.Version
@@ -8,6 +9,8 @@ import fr.`override`.linkit.api.system.Version
 class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     override val identifier: String = relay.identifier
+
+    override val cache: SharedCacheHandler = SharedCacheHandler.dedicated(identifier)(relay.traffic)
 
     private val fragmentHandler = relay.extensionLoader.fragmentHandler
 
@@ -35,9 +38,10 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
                 .map(frag => new RemoteFragmentController(frag.nameIdentifier, fragmentControllerChannel))
     }
 
-    override def getRemoteFragmentController(nameIdentifier: String): Option[RemoteFragmentController] = {
+    override def getFragmentController(nameIdentifier: String): Option[RemoteFragmentController] = {
         listRemoteFragmentControllers.find(_.nameIdentifier == nameIdentifier)
     }
 
     override def toString: String = s"SelfNetworkEntity(identifier: ${relay.identifier})"
+
 }

@@ -23,7 +23,6 @@ import scala.util.control.NonFatal
 
 object RelayPoint {
     val version: Version = Version(name = "RelayPoint", version = "0.11.0", stable = false)
-
 }
 
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
@@ -33,14 +32,14 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     private lazy val serverErrConsole     : RemoteConsole           = getConsoleErr(Relay.ServerIdentifier)
     override val securityManager          : RelaySecurityManager    = configuration.securityManager
+    override val taskCompleterHandler     : TaskCompleterHandler    = tasksHandler.tasksCompleterHandler
     override val traffic                  : DedicatedPacketTraffic  = new DedicatedPacketTraffic(this, socket, identifier)
     override val extensionLoader          : RelayExtensionLoader    = new RelayExtensionLoader(this)
     override val properties               : RelayProperties         = new RelayProperties
-    override val taskCompleterHandler     : TaskCompleterHandler    = tasksHandler.tasksCompleterHandler
     implicit val systemChannel            : SystemPacketChannel     = new SystemPacketChannel(Relay.ServerIdentifier, traffic)
+    private val tasksHandler              : ClientTasksHandler      = new ClientTasksHandler(systemChannel, this)
     override val relayVersion             : Version                 = RelayPoint.version
     private val socket                    : ClientDynamicSocket     = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
-    private val tasksHandler              : ClientTasksHandler      = new ClientTasksHandler(systemChannel, this)
     private val remoteConsoles            : RemoteConsolesContainer = new RemoteConsolesContainer(this)
     private var pointNetwork              : PointNetwork            = _ //will be instantiated once connected
     override def network                  : Network                 = pointNetwork

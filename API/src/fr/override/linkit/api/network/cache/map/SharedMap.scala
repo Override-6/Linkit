@@ -1,9 +1,9 @@
-package fr.`override`.linkit.api.utils.cache.map
+package fr.`override`.linkit.api.network.cache.map
 
+import fr.`override`.linkit.api.network.cache.map.MapModification._
+import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, ObjectPacket, SharedCacheFactory}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.utils.cache.map.MapModification._
-import fr.`override`.linkit.api.utils.cache.{HandleableSharedCache, ObjectPacket, SharedCacheFactory}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -84,7 +84,7 @@ class SharedMap[K, V](identifier: Int, baseContent: Array[(K, V)], channel: Comm
         modCount += 1
 
         networkListeners.applyAll(mod)
-        //println("MAP IS NOW (network): " + localMap + " IDENTIFIER : " + identifier)
+        println("MAP IS NOW (network): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     private def addLocalModification(@NotNull kind: MapModification, @Nullable key: Any, @Nullable value: Any): Unit = {
@@ -104,7 +104,7 @@ class SharedMap[K, V](identifier: Int, baseContent: Array[(K, V)], channel: Comm
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
         modCount += 1
-        //println("MAP IS NOW (local): " + localMap + " IDENTIFIER : " + identifier)
+        println("MAP IS NOW (local): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     case class LocalMap() {

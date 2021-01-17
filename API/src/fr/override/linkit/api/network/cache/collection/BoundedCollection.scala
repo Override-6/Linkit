@@ -1,8 +1,8 @@
-package fr.`override`.linkit.api.utils.cache.collection
+package fr.`override`.linkit.api.network.cache.collection
 
+import fr.`override`.linkit.api.network.cache.collection.BoundedCollection.{Immutable, Mutator}
+import fr.`override`.linkit.api.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.utils.ConsumerContainer
-import fr.`override`.linkit.api.utils.cache.collection.BoundedCollection.{Immutable, Mutator}
-import fr.`override`.linkit.api.utils.cache.collection.CollectionModification._
 
 import scala.collection.mutable.ListBuffer
 

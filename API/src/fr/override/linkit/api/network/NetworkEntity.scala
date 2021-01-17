@@ -1,10 +1,13 @@
 package fr.`override`.linkit.api.network
 
+import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.system.Version
 
 trait NetworkEntity {
 
     val identifier: String
+
+    val cache: SharedCacheHandler
 
     def addOnStateUpdate(action: ConnectionState => Unit): Unit
 
@@ -24,6 +27,6 @@ trait NetworkEntity {
 
     def listRemoteFragmentControllers: List[RemoteFragmentController]
 
-    def getRemoteFragmentController(nameIdentifier: String): Option[RemoteFragmentController]
+    def getFragmentController(nameIdentifier: String): Option[RemoteFragmentController]
 
 }

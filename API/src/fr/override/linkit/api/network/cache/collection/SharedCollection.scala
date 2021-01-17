@@ -1,10 +1,10 @@
-package fr.`override`.linkit.api.utils.cache.collection
+package fr.`override`.linkit.api.network.cache.collection
 
+import fr.`override`.linkit.api.network.cache.collection.CollectionModification._
+import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
+import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, ObjectPacket, SharedCacheFactory}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.utils.cache.collection.CollectionModification._
-import fr.`override`.linkit.api.utils.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.api.utils.cache.{HandleableSharedCache, ObjectPacket, SharedCacheFactory}
 import fr.`override`.linkit.api.utils.{AsyncExecutionContext, ConsumerContainer}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -107,7 +107,7 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Commu
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
-        //println("COLLECTION IS NOW (local): " + localCollection + " IDENTIFIER : " + identifier)
+        println("COLLECTION IS NOW (local): " + localCollection + " IDENTIFIER : " + identifier)
     }
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
@@ -139,7 +139,7 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Commu
         modCount += 1
 
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
-        //println("COLLECTION IS NOW (network): " + localCollection + s" identifier : $identifier")
+        println("COLLECTION IS NOW (network): " + localCollection + s" identifier : $identifier")
     }
 
     class LocalCollection {
@@ -147,7 +147,6 @@ class SharedCollection[A](identifier: Int, baseContent: Array[A], channel: Commu
         private val mainCollection: ListBuffer[A] = ListBuffer(baseContent: _*)
         private val boundedCollections: ListBuffer[BoundedCollection[A, X]] = ListBuffer.empty
 
-        //Only for debug purpose
         override def toString: String = mainCollection.toString()
 
         def createBoundedCollection[B](map: A => B): BoundedCollection.Immutable[B] = {

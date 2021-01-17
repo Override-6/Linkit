@@ -2,11 +2,11 @@ package fr.`override`.linkit.api.packet
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{PacketException, UnexpectedPacketException}
+import fr.`override`.linkit.api.network.cache.ObjectPacket
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.system.SystemPacket
 import fr.`override`.linkit.api.utils.WrappedPacket
-import fr.`override`.linkit.api.utils.cache.ObjectPacket
 
 import scala.collection.mutable
 

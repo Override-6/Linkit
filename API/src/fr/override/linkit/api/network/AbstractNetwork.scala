@@ -1,22 +1,19 @@
 package fr.`override`.linkit.api.network
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
+import fr.`override`.linkit.api.network.cache.{ObjectPacket, SharedCacheHandler}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
-import fr.`override`.linkit.api.utils.cache.collection.{BoundedCollection, CollectionModification, SharedCollection}
-import fr.`override`.linkit.api.utils.cache.{ObjectPacket, SharedCacheHandler}
 
 abstract class AbstractNetwork(relay: Relay) extends Network {
 
-    override val cache: SharedCacheHandler = new SharedCacheHandler()(relay.traffic)
+    override val globalCache: SharedCacheHandler = SharedCacheHandler.global(relay.traffic)
+
+    override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     private val communicator = relay.openCollector(9, CommunicationPacketCollector)
-    private val sharedFragments = cache.open(6, SharedCollection[String])
-
-    private val fragmentHandler = relay.extensionLoader.fragmentHandler
-    sharedFragments.set(fragmentHandler.listRemoteFragments().map(_.nameIdentifier).toArray)
-    fragmentHandler.addOnRemoteFragmentsAdded(sharedFragments.add(_))
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
@@ -27,18 +24,21 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
         })
     }
 
-    def createEntity(identifier: String): NetworkEntity = {
-        if (getEntity(identifier).isDefined)
-            throw new IllegalArgumentException("This entity is already registered to the network !")
-        if (identifier == relay.identifier)
-            return new SelfNetworkEntity(relay)
-        createRelayEntity(identifier, communicator.subChannel(identifier, CommunicationPacketChannel))
-    }
-
     override def getEntity(identifier: String): Option[NetworkEntity] = {
         if (entities != null)
             entities.find(_.identifier == identifier)
         else None
+    }
+
+    def createEntity(identifier: String): NetworkEntity = {
+        if (getEntity(identifier).isDefined) {
+            throw new IllegalArgumentException("This entity is already registered to the network !")
+        }
+
+        if (identifier == relay.identifier) {
+            return selfEntity
+        }
+        createRelayEntity(identifier, communicator.subChannel(identifier, CommunicationPacketChannel))
     }
 
     def createRelayEntity(identifier: String, communicationChannel: CommunicationPacketChannel): NetworkEntity
