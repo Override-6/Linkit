@@ -10,7 +10,7 @@ import fr.`override`.linkit.api.system.Version
 abstract class AbstractRemoteEntity(private val relay: Relay,
                                     override val identifier: String,
                                     private val communicator: CommunicationPacketChannel) extends NetworkEntity {
-
+    //println(s"CREATED REMOTE ENTITY NAMED '$identifier'")
     protected implicit val traffic: PacketTraffic = relay.traffic
     private lazy val apiVersion: Version = {
         communicator.sendRequest(ObjectPacket("vAPI"))
@@ -45,13 +45,12 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
 
     override def getRelayVersion: Version = relayVersion
     private val remoteFragments = {
-        println("Dedicated Cache with : " + identifier)
         var c: BoundedCollection.Immutable[RemoteFragmentController] = null
         c = cache
                 .open(6, SharedCollection[String])
-                .addListener((_, _, _) => println("Frags are actually : " + c))
+                .addListener((_, _, _) => println("Frags are actually : " + c + s" for relay $identifier"))
                 .mapped(new RemoteFragmentController(_, remoteFragmentChannel))
-        println("frags is actually : " + c)
+        //println("frags is actually : " + c + s" for relay $identifier")
         c
     }
 

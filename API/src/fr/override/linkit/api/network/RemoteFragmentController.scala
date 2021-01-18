@@ -22,4 +22,6 @@ class RemoteFragmentController(val nameIdentifier: String, channel: AsyncPacketC
         channel.sendPacket(WrappedPacket(nameIdentifier, packet))
     }
 
+    override def toString: String = s"RemoteFragmentController($nameIdentifier)"
+
 }

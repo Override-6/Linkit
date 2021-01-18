@@ -107,7 +107,7 @@ class SharedCollection[A](family: String, identifier: Int, baseContent: Array[A]
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
-        println(s"<${family}> COLLECTION IS NOW (local): " + localCollection + " IDENTIFIER : " + identifier)
+        //println(s"<${family}> COLLECTION IS NOW (local): " + localCollection + " IDENTIFIER : " + identifier)
     }
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
@@ -139,7 +139,7 @@ class SharedCollection[A](family: String, identifier: Int, baseContent: Array[A]
         modCount += 1
 
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
-        println(s"<${family}> COLLECTION IS NOW (network): " + localCollection + s" identifier : $identifier")
+        //println(s"<${family}> COLLECTION IS NOW (network): " + localCollection + s" identifier : $identifier")
     }
 
     class LocalCollection {

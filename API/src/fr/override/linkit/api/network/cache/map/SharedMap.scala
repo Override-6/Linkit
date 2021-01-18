@@ -64,6 +64,24 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         localMap.createBoundedMap(map)
     }
 
+    def foreach(action: (K, V) => Unit): Unit = {
+        localMap.foreach(action)
+    }
+
+    def values: Iterable[V] = {
+        localMap.values
+    }
+
+    def keys: Iterable[K] = {
+        localMap.keys
+    }
+
+    def iterator: Iterator[(K, V)] = localMap.iterator
+
+    def size: Int = iterator.size
+
+    def isEmpty: Boolean = iterator.isEmpty
+
     override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
             case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
@@ -84,7 +102,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         modCount += 1
 
         networkListeners.applyAll(mod)
-        println(s"<${family}> MAP IS NOW (network): " + localMap + " IDENTIFIER : " + identifier)
+        //println(s"<$family> MAP IS NOW (network): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     private def addLocalModification(@NotNull kind: MapModification, @Nullable key: Any, @Nullable value: Any): Unit = {
@@ -104,7 +122,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
         modCount += 1
-        println(s"<${family}> MAP IS NOW (local): " + localMap + " IDENTIFIER : " + identifier)
+        //println(s"<$family> MAP IS NOW (local): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     case class LocalMap() {
@@ -147,9 +165,23 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
             foreach(_.remove(k))
         }
 
+        def foreach(action: (K, V) => Unit): Unit = {
+            mainMap.foreachEntry(action)
+        }
+
+        def values: Iterable[V] = {
+            mainMap.values
+        }
+
+        def keys: Iterable[K] = {
+            mainMap.keys
+        }
+
         def contains(key: K): Boolean = mainMap.contains(key)
 
         def toArray: Array[Any] = mainMap.toArray
+
+        def iterator: Iterator[(K, V)] = mainMap.iterator
 
         private def foreach(action: BoundedMap.Mutator[K, V] => Unit): Unit = {
             boundedCollections.foreach(action)

@@ -15,6 +15,8 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     private val communicator = relay.openCollector(9, CommunicationPacketCollector)
 
+    println(s"CURRENT ENTITIES = ${entities}")
+
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
     override def addOnEntityAdded(action: NetworkEntity => Unit): Unit = {

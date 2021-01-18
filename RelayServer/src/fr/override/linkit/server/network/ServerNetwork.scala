@@ -16,12 +16,12 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         globalCache
                 .open(3, SharedCollection[String])
-                .addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
+                .addListener((_, _, _) => if (entities != null) () /*println("entities are now : " + entities)*/) //debug purposes
                 .add(server.identifier)
                 .flush()
                 .mapped(createEntity)
     }
-    println("ENTITIES : " + entities)
+    //println("ENTITIES : " + entities)
 
     override def createRelayEntity(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {
         new ConnectionNetworkEntity(server, identifier, communicator)
