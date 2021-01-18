@@ -73,6 +73,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         session.updateSocket(socket)
 
     private[connection] def sendBytes(bytes: Array[Byte]): Unit = {
+        println(s"Sending bytes to $identifier")
         session.send(PacketUtils.wrap(bytes))
     }
 

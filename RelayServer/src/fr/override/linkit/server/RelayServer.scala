@@ -123,7 +123,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         println("closing server...")
 
         if (reason == CloseReason.INTERNAL_ERROR)
-            broadcast(true, "RelayServer will close your connection because of a critical error")
+            broadcastMessage(true, "RelayServer will close your connection because of a critical error")
 
         extensionLoader.close()
         connectionsManager.close(reason)
@@ -140,21 +140,43 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.getConnection(relayIdentifier)
     }
 
+    def broadcastMessage(err: Boolean, msg: String): Unit = {
+        connectionsManager.broadcastMessage(err, "(broadcast) " + msg)
+    }
+
+    def broadcastPacket(packet: Packet, injectableID: Int): Unit = {
+        val bytes = packetTranslator.fromPacketAndCoordsNoWrap(packet, PacketCoordinates(injectableID, "BROADCAST", identifier))
+        connectionsManager.broadcastBytes(bytes, identifier)
+    }
+
+    /**
+     * Reads a welcome packet from a relay
+     * A Welcome packet is the first packet that a client must send in order to communicate his identifier.
+     * @return the identifier bound with the socket
+     * */
+    private def readWelcomePacket(socket: SocketContainer): String = {
+        val welcomePacketLength = socket.read(1).head
+        if (welcomePacketLength > 32)
+            throw new ConnectionInitialisationException("Relay identifier exceeded maximum size limit of 32")
+        val welcomePacket = socket.read(welcomePacketLength)
+        new String(welcomePacket)
+    }
+
     private def listenSocketConnection(): Unit = {
         println("Listening next socket connection...")
         val socketContainer = new SocketContainer(true)
         try {
             val clientSocket = serverSocket.accept()
             socketContainer.set(clientSocket)
+            println("Accepted socket " + clientSocket)
 
-            val welcomePacketLength = socketContainer.read(1).head
-            if (welcomePacketLength > 32)
-                throw new ConnectionInitialisationException("Relay identifier exceeded maximum size limit of 32")
-            val welcomePacket = socketContainer.read(welcomePacketLength)
+            val identifier = readWelcomePacket(socketContainer)
+            socketContainer.identifier = identifier
+            println(s"Welcome Packet handled ! ($identifier)")
 
-
-            val identifier = new String(welcomePacket)
+            println("Registering connection...")
             handleRelayPointConnection(identifier, socketContainer)
+            println("Socket connection fully handled !")
         } catch {
             case e: SocketException =>
                 val msg = e.getMessage.toLowerCase
@@ -225,7 +247,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         configuration.relayIDAmbiguityStrategy match {
             case CLOSE_SERVER =>
                 sendResponse(socket, "ERROR", rejectMsg + " Consequences: Closing Server...")
-                broadcast(true, "RelayServer will close your connection because of a critical error")
+                broadcastMessage(true, "RelayServer will close your connection because of a critical error")
                 close(CloseReason.INTERNAL_ERROR)
 
             case REJECT_NEW =>
@@ -242,18 +264,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
     }
 
-    def broadcast(err: Boolean, msg: String): Unit = {
-        connectionsManager.broadcastMessage(err, "(broadcast) " + msg)
-    }
-
     private def ensureOpen(): Unit = {
         if (!open)
             throw new RelayCloseException("Relay Server have to be started !")
-    }
-
-    def broadcastPacket(packet: Packet, injectableID: Int): Unit = {
-        val bytes = packetTranslator.fromPacketAndCoordsNoWrap(packet, PacketCoordinates(injectableID, "BROADCAST", identifier))
-        connectionsManager.broadcastBytes(bytes, identifier)
     }
 
     Runtime.getRuntime.addShutdownHook(new Thread(() => close(CloseReason.INTERNAL)))

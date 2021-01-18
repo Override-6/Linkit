@@ -26,9 +26,10 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
     }
 
     private def nextConcernedPacket(event: (Packet, PacketCoordinates) => Unit): Unit = {
+        println(s"Reading next packet... ($identifier) ${Thread.currentThread()}")
         val bytes = packetReader.readNextPacketBytes()
         //NETWORK-DEBUG-MARK
-        //println(s"received : ${new String(bytes)}")
+        println(s"received : ${new String(bytes)}")
         if (bytes == null) {
             return
         }
@@ -40,7 +41,9 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
                 event(packet, coordinates)
 
             case "BROADCAST" =>
+                println("This packet is a broadcast packet !")
                 manager.broadcastBytes(bytes, identifier)
+                println("Broadcasted !")
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
                 //handles the packet if it is registered into the server's collectors
                 server.preHandlePacket(packet, coordinates)

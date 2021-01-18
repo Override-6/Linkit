@@ -29,11 +29,11 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     @volatile private var open = false
     override val packetTranslator = new PacketTranslator(this)
+    private val socket                    : ClientDynamicSocket     = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
     override val traffic                  : DedicatedPacketTraffic  = new DedicatedPacketTraffic(this, socket, identifier)
     override val extensionLoader          : RelayExtensionLoader    = new RelayExtensionLoader(this)
     override val properties               : RelayProperties         = new RelayProperties
     implicit val systemChannel            : SystemPacketChannel     = new SystemPacketChannel(Relay.ServerIdentifier, traffic)
-    private val socket                    : ClientDynamicSocket     = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
     private val tasksHandler              : ClientTasksHandler      = new ClientTasksHandler(systemChannel, this)
     private val remoteConsoles            : RemoteConsolesContainer = new RemoteConsolesContainer(this)
     private lazy val serverErrConsole     : RemoteConsole           = getConsoleErr(Relay.ServerIdentifier)
@@ -173,7 +173,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         try {
             val bytes = reader.readNextPacketBytes()
             //NETWORK-DEBUG-MARK
-            //println(s"received : ${new String(bytes)}")
+            println(s"received : ${new String(bytes)}")
             if (bytes == null)
                 return
             val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)

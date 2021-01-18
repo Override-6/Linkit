@@ -14,14 +14,14 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream: InputStream = _
+    @volatile protected val boundIdentifier: String
 
     @volatile private var closed = false
 
-    private val locker = new SocketLocker()
 
     override def close(reason: CloseReason): Unit = {
         closed = true
-        locker.state = CLOSED
+        SocketLocker.state = CLOSED
         if (!currentSocket.isClosed)
             closeCurrentStreams()
     }
@@ -30,8 +30,28 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
     def read(buff: Array[Byte]): Int = read(buff, 0)
 
+    protected def closeCurrentStreams(): Unit = {
+        if (currentSocket == null)
+            return
+        SocketLocker.awaitRaise()
+
+        currentSocket.close()
+        currentInputStream.close()
+        currentInputStream.close()
+    }
+
+    def read(length: Int): Array[Byte] = {
+        val buff = new Array[Byte](length)
+        var totalRead = 0
+        while (totalRead != length) {
+            val bytesRead = read(buff, totalRead)
+            totalRead += bytesRead
+        }
+        buff
+    }
+
     def read(buff: Array[Byte], pos: Int): Int = {
-        locker.awaitConnected()
+        SocketLocker.awaitConnected()
         ensureReady()
         try {
             val result = currentInputStream.read(buff, pos, buff.length - pos)
@@ -45,11 +65,11 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
 
         def onDisconnect(): Int = {
-            locker.markDisconnected()
+            SocketLocker.markDisconnected()
             if (closed || !autoReconnect)
                 return -1
-            handleReconnection()
-            locker.markAsConnected()
+            reconnect()
+            SocketLocker.markAsConnected()
             if (closed)
                 return -1
             read(buff, pos)
@@ -58,42 +78,30 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         -1
     }
 
-    def read(length: Int): Array[Byte] = {
-        val buff = new Array[Byte](length)
-        var totalRead = 0
-        while (totalRead != length) {
-            val bytesRead = read(buff, totalRead)
-            totalRead += bytesRead
-        }
-        buff
-    }
-
     def write(buff: Array[Byte]): Unit = {
-        locker.awaitConnected()
+        SocketLocker.awaitConnected()
         ensureReady()
-        locker.markAsWriting()
+        SocketLocker.markAsWriting()
         try {
             currentOutputStream.write(buff)
             currentOutputStream.flush()
             //NETWORK-DEBUG-MARK
-            //println(s"written : ${new String(buff)}")
+            println(s"written : ${new String(buff)}")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
                 if (closed || !autoReconnect)
                     return
-                locker.markDisconnected()
-                handleReconnection()
-                locker.markAsConnected()
+                SocketLocker.markDisconnected()
+                reconnect()
+                SocketLocker.markAsConnected()
                 write(buff)
         } finally {
-            locker.unMarkAsWriting()
+            SocketLocker.unMarkAsWriting()
         }
     }
 
-    def getState: ConnectionState = locker.state
-
-    def addConnectionStateListener(action: ConnectionState => Unit): Unit = locker.addStateListener(action)
+    def getState: ConnectionState = SocketLocker.state
 
     def remoteSocketAddress(): InetSocketAddress = {
         val inet = currentSocket.getInetAddress
@@ -101,19 +109,17 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         new InetSocketAddress(inet, port)
     }
 
+    def addConnectionStateListener(action: ConnectionState => Unit): Unit = SocketLocker.addStateListener(action)
+
+    /**
+     * Defines the algorithm that will handle the reconnection to the target.
+     * If the method returns normally, that would mean the socket reconnection was made successfully.
+     * For any exception, that make the reconnection impossible, the method may throw any exception.
+     * */
     protected def handleReconnection(): Unit
 
-    protected def closeCurrentStreams(): Unit = {
-        if (currentSocket == null)
-            return
-        locker.awaitRaise()
-        currentSocket.close()
-        currentInputStream.close()
-        currentInputStream.close()
-    }
-
     protected def markAsConnected(): Unit =
-        locker.markAsConnected()
+        SocketLocker.markAsConnected()
 
     private def ensureReady(): Unit = {
         if (closed) {
@@ -125,9 +131,15 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
     }
 
+    private def reconnect(): Unit = {
+        println(s"WARNING : The connection with $boundIdentifier has been lost. Currently trying to reconnect...")
+        handleReconnection()
+        println(s"The connection with $boundIdentifier has been reestablished.")
+    }
+
     import ConnectionState._
 
-    private class SocketLocker {
+    private object SocketLocker {
 
         @volatile var isWriting = false
         @volatile var state: ConnectionState = DISCONNECTED
@@ -154,11 +166,14 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
 
         def markDisconnected(): Unit = {
+            println(s"MARKED AS DISCONNECTED ($boundIdentifier)")
+            Thread.dumpStack()
             state = DISCONNECTED
             listeners.applyAll(state)
         }
 
         def markAsConnected(): Unit = disconnectLock.synchronized {
+            println(s"MARKED AS CONNECTED ($boundIdentifier)")
             state = CONNECTED
             listeners.applyAll(state)
 
@@ -166,11 +181,14 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
 
         def awaitConnected(): Unit = disconnectLock.synchronized {
+            println(s"state = ${state}  ($boundIdentifier)")
             if (state != CONNECTED) try {
                 state = CONNECTING
                 listeners.applyAll(state)
 
+                println(s"WARNING : The socket is currently waiting because the connection with $boundIdentifier is not fully initialised yet.")
                 disconnectLock.wait()
+                println(s"The connection with $boundIdentifier is now fully initialised.")
             } catch {
                 case _: InterruptedException =>
             }

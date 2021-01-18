@@ -7,6 +7,9 @@ import fr.`override`.linkit.api.packet.traffic.DynamicSocket
 
 class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnect) {
 
+    override lazy val boundIdentifier: String = identifier
+    var identifier: String = "$NOT SET$"
+
     def set(socket: Socket): Unit = synchronized {
         if (currentSocket != null && !autoReconnect)
             closeCurrentStreams()
@@ -21,17 +24,13 @@ class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnec
     def get: Socket = currentSocket
 
     override protected def handleReconnection(): Unit = {
-        val address = remoteSocketAddress().getAddress.getHostAddress
-        println(s"Socket disconnected from $address")
-        println("Reconnecting...")
         synchronized {
             try {
                 wait()
             } catch {
-                case e:InterruptedException =>
+                case e:InterruptedException => //thrown when the reconnection is brutally stopped (ex: server stopped, critical error...)
             }
         }
-        println("Reconnected !")
     }
 
 }
