@@ -1,11 +1,12 @@
 package fr.`override`.linkit.api.network.cache.collection
 
+import fr.`override`.linkit.api.concurency.AsyncExecutionContext
 import fr.`override`.linkit.api.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, ObjectPacket, SharedCacheFactory}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.utils.{AsyncExecutionContext, ConsumerContainer}
+import fr.`override`.linkit.api.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable.ListBuffer

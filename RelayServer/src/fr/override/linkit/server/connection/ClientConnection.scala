@@ -3,6 +3,7 @@ package fr.`override`.linkit.server.connection
 import java.net.Socket
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.concurency.AsyncExecutionContext
 import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
@@ -11,7 +12,6 @@ import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
-import fr.`override`.linkit.api.utils.AsyncExecutionContext
 import org.jetbrains.annotations.NotNull
 
 import scala.concurrent.Future

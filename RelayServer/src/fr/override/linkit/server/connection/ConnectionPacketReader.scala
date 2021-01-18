@@ -2,12 +2,13 @@ package fr.`override`.linkit.server.connection
 
 import java.net.SocketException
 
+import fr.`override`.linkit.api.concurency.PacketReaderThread
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketReader}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
-class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
+class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) extends PacketReaderThread {
 
     private val packetReader = new PacketReader(socket, server.securityManager)
     private val manager = server.connectionsManager
