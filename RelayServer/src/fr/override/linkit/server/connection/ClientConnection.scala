@@ -11,8 +11,10 @@ import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
+import fr.`override`.linkit.api.utils.AsyncExecutionContext
 import org.jetbrains.annotations.NotNull
 
+import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends JustifiedCloseable {
@@ -72,10 +74,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     private[server] def updateSocket(socket: Socket): Unit =
         session.updateSocket(socket)
 
-    private[connection] def sendBytes(bytes: Array[Byte]): Unit = {
+    //TODO Make all socket operation on the client thread
+    //FIXME Using AsyncExecutionContext may block if more than 5 relays are connecting
+    private[connection] def sendBytes(bytes: Array[Byte]): Unit = Future {
         println(s"Sending bytes to $identifier")
         session.send(PacketUtils.wrap(bytes))
-    }
+    } (AsyncExecutionContext)
 
     private def run(): Unit = {
         val threadName = connectionThread.getName

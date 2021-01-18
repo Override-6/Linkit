@@ -7,7 +7,7 @@ import fr.`override`.linkit.api.packet.traffic.DynamicSocket
 
 class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnect) {
 
-    override lazy val boundIdentifier: String = identifier
+    override def boundIdentifier: String = identifier
     var identifier: String = "$NOT SET$"
 
     def set(socket: Socket): Unit = synchronized {

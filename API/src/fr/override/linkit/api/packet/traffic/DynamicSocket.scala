@@ -14,7 +14,28 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream: InputStream = _
-    @volatile protected val boundIdentifier: String
+    def write(buff: Array[Byte]): Unit = {
+        SocketLocker.awaitConnected()
+        ensureReady()
+        SocketLocker.markAsWriting()
+        try {
+            currentOutputStream.write(buff)
+            currentOutputStream.flush()
+            //NETWORK-DEBUG-MARK
+            //println(s"written : ${new String(buff)}")
+        } catch {
+            case e@(_: ConnectException | _: IOException) =>
+                System.err.println(e.getMessage)
+                if (closed || !autoReconnect)
+                    return
+                SocketLocker.markDisconnected()
+                reconnect()
+                SocketLocker.markAsConnected()
+                write(buff)
+        } finally {
+            SocketLocker.unMarkAsWriting()
+        }
+    }
 
     @volatile private var closed = false
 
@@ -78,28 +99,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         -1
     }
 
-    def write(buff: Array[Byte]): Unit = {
-        SocketLocker.awaitConnected()
-        ensureReady()
-        SocketLocker.markAsWriting()
-        try {
-            currentOutputStream.write(buff)
-            currentOutputStream.flush()
-            //NETWORK-DEBUG-MARK
-            println(s"written : ${new String(buff)}")
-        } catch {
-            case e@(_: ConnectException | _: IOException) =>
-                System.err.println(e.getMessage)
-                if (closed || !autoReconnect)
-                    return
-                SocketLocker.markDisconnected()
-                reconnect()
-                SocketLocker.markAsConnected()
-                write(buff)
-        } finally {
-            SocketLocker.unMarkAsWriting()
-        }
-    }
+    @volatile protected def boundIdentifier: String
 
     def getState: ConnectionState = SocketLocker.state
 
@@ -141,6 +141,8 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
     private object SocketLocker {
 
+        println("INITIALISED NEW OBJECT " + this)
+
         @volatile var isWriting = false
         @volatile var state: ConnectionState = DISCONNECTED
         private val writeLock = new Object
@@ -181,7 +183,6 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
 
         def awaitConnected(): Unit = disconnectLock.synchronized {
-            println(s"state = ${state}  ($boundIdentifier)")
             if (state != CONNECTED) try {
                 state = CONNECTING
                 listeners.applyAll(state)
@@ -193,7 +194,5 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
                 case _: InterruptedException =>
             }
         }
-
     }
-
 }

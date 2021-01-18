@@ -173,7 +173,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         try {
             val bytes = reader.readNextPacketBytes()
             //NETWORK-DEBUG-MARK
-            println(s"received : ${new String(bytes)}")
+            //println(s"received : ${new String(bytes)}")
             if (bytes == null)
                 return
             val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
