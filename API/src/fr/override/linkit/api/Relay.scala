@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api
 
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, RelayException, RelayInitialisationException}
+import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, RelayException}
 import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole}
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
@@ -98,20 +98,18 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     val traffic: PacketTraffic
 
     /**
-     * Starts the Relay in the [[RelayWorkerThread]] used by this relay.
-     *
-     * @see [[startHere]]
-     */
-    def start(): Unit
-
-    /**
      * Will Start the Relay in the current thread.
      * This method will load every local and remote feature,
      * enable everything that needs to be enabled, and perform some security checks before go.
      *
      * @throws RelayException if something went wrong, In Local, during the client-to-server, or client-to-network initialisation.
      * */
-    def startHere(): Unit
+    def start(): Unit
+
+    /**
+     * Will run this callback in a worker thread.
+     * */
+    def runLater(callback: => Unit): Unit
 
     /**
      * @param identifier the relay identifier to check

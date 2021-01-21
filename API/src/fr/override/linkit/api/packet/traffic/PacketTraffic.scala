@@ -22,8 +22,6 @@ trait PacketTraffic extends PacketWriter with JustifiedCloseable {
 
     def isRegistered(identifier: Int, boundTarget: String): Boolean
 
-    def checkThread(): Unit
-
 }
 
 object PacketTraffic {

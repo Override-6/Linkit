@@ -102,7 +102,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
                 val cacheID: Int = cacheIdentifier.toInt
                 val senderID: String = coords.senderID
                 if (cacheID != -1 && cacheOwners(cacheID) != relayID)
-                    throw new UnexpectedPacketException("Attempted to retrieve a cache content from this relay, but this relay isn't the current owner of this cache.")
+                    throw new UnexpectedPacketException(s"Attempted to retrieve a cache (${cacheID}) content from this relay, but this relay isn't the current owner of this cache.")
 
                 val content = if (cacheID == -1) {
                     if (cacheOwners == null) {

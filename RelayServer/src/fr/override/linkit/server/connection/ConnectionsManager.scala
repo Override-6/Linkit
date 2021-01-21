@@ -43,7 +43,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * */
     def registerConnection(identifier: String,
                            socket: SocketContainer): Unit = {
-
+        println(s"Registering connection with $identifier...")
         if (connections.contains(identifier))
             throw RelayInitialisationException(s"This relay id is already registered ! ('$identifier')")
 
@@ -68,6 +68,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
         connections.remove(identifier)
         connection.close(CloseReason.SECURITY_CHECK)
+        println(s"Connection with $identifier successfully handled !")
     }
 
     def broadcastMessage(err: Boolean, msg: String): Unit = {

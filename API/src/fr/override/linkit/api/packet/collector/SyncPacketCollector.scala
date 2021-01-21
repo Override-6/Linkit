@@ -2,6 +2,7 @@ package fr.`override`.linkit.api.packet.collector
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
+import fr.`override`.linkit.api.concurency.PacketWorkerThread
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
@@ -13,7 +14,7 @@ class SyncPacketCollector(traffic: PacketTraffic, override val identifier: Int)
 
     override def nextPacketAndCoordinates[P <: Packet](typeOfP: Class[P]): (P, PacketCoordinates) = {
         if (queue.isEmpty) {
-            traffic.checkThread()
+            PacketWorkerThread.checkNotCurrent()
         }
 
         queue.takeLast().asInstanceOf[(P, PacketCoordinates)]

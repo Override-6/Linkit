@@ -22,7 +22,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             currentOutputStream.write(buff)
             currentOutputStream.flush()
             //NETWORK-DEBUG-MARK
-            //println(s"written : ${new String(buff)}")
+            println(s"written : ${new String(buff)}")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
@@ -141,8 +141,6 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
     private object SocketLocker {
 
-        println("INITIALISED NEW OBJECT " + this)
-
         @volatile var isWriting = false
         @volatile var state: ConnectionState = DISCONNECTED
         private val writeLock = new Object
@@ -169,7 +167,6 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
         def markDisconnected(): Unit = {
             println(s"MARKED AS DISCONNECTED ($boundIdentifier)")
-            Thread.dumpStack()
             state = DISCONNECTED
             listeners.applyAll(state)
         }

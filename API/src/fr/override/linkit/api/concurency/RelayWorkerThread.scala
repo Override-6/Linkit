@@ -1,40 +1,29 @@
 package fr.`override`.linkit.api.concurency
 
-import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
+import java.util.concurrent.{Executors, ThreadFactory}
 
-import fr.`override`.linkit.api.concurency.PacketWorkerThread.checkNotCurrent
-import fr.`override`.linkit.api.exception.IllegalPacketWorkerLockException
+import fr.`override`.linkit.api.concurency.RelayWorkerThread.factory
 
-class RelayWorkerThread extends Thread with AutoCloseable {
+class RelayWorkerThread() extends AutoCloseable {
 
-    private val queue: BlockingDeque[() => Unit] = new LinkedBlockingDeque()
+    private val executor = Executors.newFixedThreadPool(3, factory)
     private var closed = false
 
-    start()
-
-    def runLater(action: => Unit): ParallelAction[Unit] = {
-        queue.addLast(() => action)
-
+    def runLater(action: Unit => Unit): Unit = {
+        executor.submit((() => action(null)): Runnable)
     }
-
-    override def run(): Unit = while(!closed) queue.takeFirst().apply()
 
     override def close(): Unit = {
         closed = true
-        interrupt()
+        executor.shutdown()
     }
 
 }
 
 object RelayWorkerThread {
 
-    /**
-     * Packet Worker Threads have to be registered in this ThreadGroup in order to throw an exception when a relay worker thread
-     * is about to be locked by a monitor, that concern packet reception (example: lockers of BlockingQueues in PacketChannels)
-     *
-     * @see [[IllegalPacketWorkerLockException]]
-     * */
-    val packetReaderThreadGroup: ThreadGroup = new ThreadGroup("Relay Packet Worker")
+    val workerThreadGroup: ThreadGroup = new ThreadGroup("Relay Worker")
+    val factory: ThreadFactory = new Thread(workerThreadGroup, _, "Relay Worker Thread")
 
     def checkCurrentIsWorker(): Unit = {
         if (!isCurrentWorkerThread)

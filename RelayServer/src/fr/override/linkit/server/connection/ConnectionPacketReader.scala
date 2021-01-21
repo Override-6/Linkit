@@ -2,13 +2,12 @@ package fr.`override`.linkit.server.connection
 
 import java.net.SocketException
 
-import fr.`override`.linkit.api.concurency.PacketWorkerThread
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketReader}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
-class ConnectionPacketWorker(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) extends PacketWorkerThread {
+class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
 
     private val packetReader = new PacketReader(socket, server.securityManager)
     private val manager = server.connectionsManager
@@ -29,7 +28,7 @@ class ConnectionPacketWorker(socket: DynamicSocket, server: RelayServer, @Nullab
     private def nextConcernedPacket(event: (Packet, PacketCoordinates) => Unit): Unit = {
         val bytes = packetReader.readNextPacketBytes()
         //NETWORK-DEBUG-MARK
-        //println(s"received : ${new String(bytes)}")
+        println(s"received : ${new String(bytes)}")
         if (bytes == null) {
             return
         }

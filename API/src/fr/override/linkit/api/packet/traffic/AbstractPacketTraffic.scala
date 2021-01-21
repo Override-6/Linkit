@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.packet.traffic
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.exception.{ClosedException, IllegalPacketWorkerLockException, RelayException}
+import fr.`override`.linkit.api.exception.{ClosedException, RelayException}
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.traffic.{PacketInjectable, PacketTraffic}
@@ -110,11 +110,6 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
                 .foreach(_.close(reason))
         registeredInjectables.clear()
         closed = true
-    }
-
-    override def checkThread(): Unit = {
-        if (Thread.currentThread().getThreadGroup == relay.packetWorkerThreadGroup)
-            throw new IllegalPacketWorkerLockException("This packet worker thread was about to be locked by a monitor in order to wait packet reception")
     }
 
     override def isClosed: Boolean = closed

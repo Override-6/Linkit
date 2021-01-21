@@ -14,11 +14,10 @@ case class ClientConnectionSession private(identifier: String,
 
     val traffic = new DedicatedPacketTraffic(server, socket, identifier)
     val channel: SystemPacketChannel = new SystemPacketChannel(identifier, traffic)
-    val packetReader = new ConnectionPacketWorker(socket, server, identifier)
+    val packetReader = new ConnectionPacketReader(socket, server, identifier)
     val tasksHandler = new ConnectionTasksHandler(this)
     val outConsole: RemoteConsole = server.getConsoleOut(identifier)
     val errConsole: RemoteConsole = server.getConsoleErr(identifier)
-    val sessionThreads: ConnectionPacketWorkerThread = new ConnectionPacketWorkerThread(this)
     private var entity: NetworkEntity = _ //Can't be a val because the NetworkEntity initialisation needs the connection to be registered and started
 
     override def close(reason: CloseReason): Unit = {

@@ -4,6 +4,8 @@ import fr.`override`.linkit.api.concurency.PacketWorkerThread.packetReaderThread
 import fr.`override`.linkit.api.exception.IllegalPacketWorkerLockException
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
+import scala.util.control.NonFatal
+
 abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packet Read Worker") with JustifiedCloseable {
 
     private var open = true
@@ -11,8 +13,14 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
     override def isClosed: Boolean = open
 
     override def run(): Unit = {
-        while (open) {
-            readAndHandleOnePacket()
+        try {
+            while (open) {
+                readAndHandleOnePacket()
+            }
+        } catch {
+            case NonFatal(e) =>
+                e.printStackTrace()
+                open = false
         }
     }
 
@@ -21,6 +29,11 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
         interrupt()
     }
 
+    /**
+     * This methods reads and handle any packet that comes from a socket.
+     * The method may not throw any exception. if it is, this packet worker thread will
+     * stop !
+     * */
     protected def readAndHandleOnePacket(): Unit
 
 }

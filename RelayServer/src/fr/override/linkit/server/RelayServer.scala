@@ -32,7 +32,7 @@ object RelayServer {
 }
 
 //TODO Create a connection helper for this poor class which swims into bad practices.
-class RelayServer private[server](override val configuration: RelayServerConfiguration) extends RelayWorkerThread with Relay {
+class RelayServer private[server](override val configuration: RelayServerConfiguration) extends Relay {
 
     override val identifier: String = Identifier
 
@@ -43,14 +43,15 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     private val remoteConsoles = new RemoteConsolesContainer(this)
     private[server] val connectionsManager = new ConnectionsManager(this)
 
-    override val securityManager     : RelayServerSecurityManager = configuration.securityManager
-    override val traffic             : PacketTraffic              = globalTraffic
-    override val extensionLoader     : RelayExtensionLoader       = new RelayExtensionLoader(this)
-    override val taskCompleterHandler: TaskCompleterHandler       = new TaskCompleterHandler
-    override val properties          : RelayProperties            = new RelayProperties
-    override val packetTranslator    : PacketTranslator           = new PacketTranslator(this)
-    override val network             : Network                    = new ServerNetwork(this)(globalTraffic)
-    override val relayVersion        : Version                    = RelayServer.version
+    override val securityManager: RelayServerSecurityManager = configuration.securityManager
+    override val traffic: PacketTraffic = globalTraffic
+    override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
+    override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler
+    override val properties: RelayProperties = new RelayProperties
+    override val packetTranslator: PacketTranslator = new PacketTranslator(this)
+    override val network: Network = new ServerNetwork(this)(globalTraffic)
+    override val relayVersion: Version = RelayServer.version
+    private val workerThread: RelayWorkerThread = new RelayWorkerThread()
 
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -65,6 +66,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         RelayTaskAction.of(task)
     }
 
+
     override def start(): Unit = {
         println("Current encoding is " + Charset.defaultCharset().name())
         println("Listening on port " + configuration.port)
@@ -74,19 +76,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         println(Relay.ApiVersion)
 
         try {
-            securityManager.checkRelay(this)
-
-            if (configuration.enableExtensionsFolderLoad)
-                extensionLoader.launch()
-
-            val thread = new Thread(() => {
-                open = true
-                while (open) listenSocketConnection()
-            })
-            thread.setName("Socket Connection Listener")
-            thread.start()
-
-            securityManager.checkRelay(this)
+            initSocketListening()
         } catch {
             case NonFatal(e) =>
                 e.printStackTrace()
@@ -136,6 +126,22 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     override def isClosed: Boolean = !open
 
+    private def initSocketListening(): Unit = {
+        securityManager.checkRelay(this)
+
+        if (configuration.enableExtensionsFolderLoad)
+            extensionLoader.launch()
+
+        val thread = new Thread(() => {
+            open = true
+            while (open) listenSocketConnection()
+        })
+        thread.setName("Socket Connection Listener")
+        thread.start()
+
+        securityManager.checkRelay(this)
+    }
+
     def getConnection(relayIdentifier: String): ClientConnection = {
         ensureOpen()
         connectionsManager.getConnection(relayIdentifier)
@@ -169,15 +175,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         try {
             val clientSocket = serverSocket.accept()
             socketContainer.set(clientSocket)
-            println("Accepted socket " + clientSocket)
-
-            val identifier = readWelcomePacket(socketContainer)
-            socketContainer.identifier = identifier
-            println(s"Welcome Packet handled ! ($identifier)")
-
-            println("Registering connection...")
-            handleRelayPointConnection(identifier, socketContainer)
-            println("Socket connection fully handled !")
+            runLater {
+                handleSocket(socketContainer)
+            }
         } catch {
             case e: SocketException =>
                 val msg = e.getMessage.toLowerCase
@@ -194,6 +194,20 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
             sendResponse(socketContainer, "ERROR", s"An exception occurred in server during client connection initialisation ($e)") //sends a negative response for the client initialisation handling
             close(CloseReason.INTERNAL_ERROR)
         }
+    }
+
+    override def runLater(callback: => Unit): Unit = {
+        workerThread.runLater(_ => callback)
+    }
+
+    private def handleSocket(socket: SocketContainer): Unit = {
+        val identifier = readWelcomePacket(socket)
+        socket.identifier = identifier
+        println(s"Welcome Packet handled ! ($identifier)")
+
+        println("Registering connection...")
+        handleRelayPointConnection(identifier, socket)
+        println("Socket connection fully handled !")
     }
 
     private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {

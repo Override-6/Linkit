@@ -2,6 +2,7 @@ package fr.`override`.linkit.api.packet.channel
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
+import fr.`override`.linkit.api.concurency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
@@ -40,7 +41,7 @@ class SyncPacketChannel protected(override val connectedID: String,
 
     override def nextPacket(): Packet = {
         if (queue.isEmpty)
-            traffic.checkThread()
+            PacketWorkerThread.checkNotCurrent()
         val packet = queue.takeLast()
         //handler.notifyPacketUsed(packet, coordinates)
         packet

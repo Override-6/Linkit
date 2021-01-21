@@ -46,10 +46,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler()
 
     override def start(): Unit = {
-        workerThread.runLater(() => super.start())
-    }
-
-    override def startHere(): Unit = {
         securityManager.checkRelay(this)
 
         println("Current encoding is " + Charset.defaultCharset().name())
@@ -71,6 +67,10 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         securityManager.checkRelay(this)
 
         println("Ready !")
+    }
+
+    override def runLater(callback: => Unit): Unit = {
+        workerThread.runLater(_ => callback)
     }
 
     override def close(reason: CloseReason): Unit = {
@@ -104,6 +104,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     private def loadRemote(): Unit = {
         println(s"Connecting to server with relay id '$identifier'")
+        socket.start()
         traffic.register(systemChannel)
 
         val idLength = identifier.length
@@ -126,6 +127,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override def getConnectionState: ConnectionState = socket.getState
 
     override def isClosed: Boolean = !open
+
 
     override def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
         traffic.openChannel(channelId, targetID, factory)
@@ -150,7 +152,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         task.preInit(tasksHandler)
         RelayTaskAction.of(task)
     }
-
 
     private def loadLocal(): Unit = {
         if (configuration.enableTasks) {
@@ -201,6 +202,26 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             throw new RelayException(s"Target '$targetID' does not exists !")
     }
 
+    private def checkCoordinates(coordinates: PacketCoordinates): Unit = {
+        val targetID = coordinates.targetID
+        if (targetID == identifier || targetID == "unknown")
+            return
+
+        val sender = coordinates.senderID
+        val consoleOut = getConsoleErr(sender)
+        val msg = s"Could not handle packet : targetID ($targetID) isn't equals to this relay identifier !"
+        consoleOut.println(msg)
+        throw new UnexpectedPacketException(msg)
+    }
+
+    private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+        packet match {
+            case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
+            case system: SystemPacket => handleSystemPacket(system, coordinates)
+            case _: Packet => traffic.injectPacket(packet, coordinates)
+        }
+    }
+
     object PointPacketWorkerThread extends PacketWorkerThread() {
         private val packetReader = new PacketReader(socket, securityManager)
 
@@ -212,7 +233,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             try {
                 val bytes = packetReader.readNextPacketBytes()
                 //NETWORK-DEBUG-MARK
-                //println(s"received : ${new String(bytes)}")
+                println(s"received : ${new String(bytes)}")
                 if (bytes == null)
                     return
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
@@ -220,7 +241,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
                 if (configuration.checkReceivedPacketTargetID)
                     checkCoordinates(coordinates)
 
-                handlePacket(packet, coordinates)
+                runLater {
+                    handlePacket(packet, coordinates)
+                }
             }
             catch {
                 case e: AsynchronousCloseException =>
@@ -236,25 +259,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
                     close(CloseReason.INTERNAL_ERROR)
             }
-        }
-
-
-        private def checkCoordinates(coordinates: PacketCoordinates): Unit = {
-            val targetID = coordinates.targetID
-            if (targetID == identifier || targetID == "unknown")
-                return
-
-            val sender = coordinates.senderID
-            val consoleOut = getConsoleErr(sender)
-            val msg = s"Could not handle packet : targetID ($targetID) isn't equals to this relay identifier !"
-            consoleOut.println(msg)
-            throw new UnexpectedPacketException(msg)
-        }
-
-        private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = packet match {
-            case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
-            case system: SystemPacket => handleSystemPacket(system, coordinates)
-            case _: Packet => traffic.injectPacket(packet, coordinates)
         }
 
     }

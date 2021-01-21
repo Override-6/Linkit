@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.connection
 import java.net.Socket
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.concurency.AsyncExecutionContext
+import fr.`override`.linkit.api.concurency.{PacketWorkerThread, RelayWorkerThread}
 import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
@@ -14,7 +14,6 @@ import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
 import org.jetbrains.annotations.NotNull
 
-import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends JustifiedCloseable {
@@ -25,17 +24,19 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     private val packetTranslator = server.packetTranslator
     private val manager: ConnectionsManager = server.connectionsManager
 
-    private val connectionThread = new Thread(server.packetWorkerThreadGroup, () => run(), s"Dedicated Packet Worker ($identifier)")
+    private val workerThread = new RelayWorkerThread()
 
     @volatile private var closed = false
 
     def start(): Unit = {
-        if (closed)
+        if (closed) {
             throw new RelayException("This Connection was already used and is now definitely closed.")
-        connectionThread.start()
+        }
+        ConnectionPacketWorker.start()
     }
 
     override def close(reason: CloseReason): Unit = {
+        RelayWorkerThread.checkCurrentIsWorker()
         closed = true
 
         if (reason.isInternal && isConnected) {
@@ -44,8 +45,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
         session.close(reason)
         manager.unregister(identifier)
-        connectionThread.interrupt()
+        ConnectionPacketWorker.close(reason)
+    }
 
+    def sendPacket(packet: Packet, channelID: Int): Unit = runLater {
+        val bytes = packetTranslator.fromPacketAndCoords(packet, PacketCoordinates(channelID, identifier, server.identifier))
+        session.send(bytes)
     }
 
     def isConnected: Boolean = getState == ConnectionState.CONNECTED
@@ -66,74 +71,73 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         channel
     }
 
-    def sendPacket(packet: Packet, channelID: Int): Unit = {
-        val bytes = packetTranslator.fromPacketAndCoords(packet, PacketCoordinates(channelID, identifier, server.identifier))
-        session.send(bytes)
-    }
-
-    private[server] def updateSocket(socket: Socket): Unit =
-        session.updateSocket(socket)
-
-    //TODO Make all socket operation on the client thread
-    //FIXME Using AsyncExecutionContext may block if more than 5 relays are connecting
-    private[connection] def sendBytes(bytes: Array[Byte]): Unit = Future {
-        println(s"Sending bytes to $identifier")
-        session.send(PacketUtils.wrap(bytes))
-    } (AsyncExecutionContext)
-
-    private def run(): Unit = {
-        val threadName = connectionThread.getName
-        println(s"Thread '$threadName' started")
-        try {
-            while (!closed)
-                session.packetReader.nextPacket(handlePacket)
-        } catch {
-            case NonFatal(e) =>
-                e.printStackTrace()
-                e.printStackTrace(session.errConsole)
-                close(CloseReason.INTERNAL_ERROR)
-        }
-        println(s"End of Thread execution '$threadName'")
-    }
-
-    private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        val containerID = coordinates.injectableID
-        if (closed)
-            return
-        packet match {
-            case systemError: ErrorPacket if containerID == PacketTraffic.SystemChannel => systemError.printError()
-            case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
-            case init: TaskInitPacket => session.tasksHandler.handlePacket(init, coordinates)
-            case _: Packet =>
-                if (server.preHandlePacket(packet, coordinates))
-                    session.traffic.injectPacket(packet, coordinates)
-        }
-    }
-
-
-    private def handleSystemOrder(packet: SystemPacket): Unit = {
-        val orderType = packet.order
-        val reason = packet.reason.reversedPOV()
-        val content = packet.content
-
-        import SystemOrder._
-        orderType match {
-            case CLIENT_CLOSE => close(reason)
-            case SERVER_CLOSE => server.close(reason)
-            case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
-            case CHECK_ID => checkIDRegistered(new String(content))
-            case PRINT_INFO => server.getConsoleOut(identifier).println(s"Connected to server ${server.relayVersion} (${Relay.ApiVersion})")
-
-            case _ => session.channel.sendPacket(ErrorPacket("Forbidden order", s"Could not complete order '$orderType', can't be handled by a server or unknown order"))
-        }
-
-        def checkIDRegistered(target: String): Unit = {
-            val response = if (server.isConnected(target)) "OK" else "ERROR"
-            session.channel.sendPacket(DataPacket(response))
-        }
+    def runLater(callback: => Unit): Unit = {
+        workerThread.runLater(_ => callback)
     }
 
     override def isClosed: Boolean = closed
+
+    private[server] def updateSocket(socket: Socket): Unit = {
+        RelayWorkerThread.checkCurrentIsWorker()
+        session.updateSocket(socket)
+    }
+
+    private[connection] def sendBytes(bytes: Array[Byte]): Unit = runLater {
+        println(s"Sending bytes to $identifier")
+        session.send(PacketUtils.wrap(bytes))
+    }
+
+    object ConnectionPacketWorker extends PacketWorkerThread {
+        override protected def readAndHandleOnePacket(): Unit = {
+            try {
+                session.packetReader.nextPacket(handlePacket)
+            } catch {
+                case NonFatal(e) =>
+                    e.printStackTrace()
+                    e.printStackTrace(session.errConsole)
+                    close(CloseReason.INTERNAL_ERROR)
+            }
+        }
+
+        private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+            val containerID = coordinates.injectableID
+            if (closed)
+                return
+            packet match {
+                case systemError: ErrorPacket if containerID == PacketTraffic.SystemChannel => systemError.printError()
+                case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
+                case init: TaskInitPacket => session.tasksHandler.handlePacket(init, coordinates)
+                case _: Packet =>
+                    if (server.preHandlePacket(packet, coordinates))
+                        session.traffic.injectPacket(packet, coordinates)
+            }
+        }
+
+
+        private def handleSystemOrder(packet: SystemPacket): Unit = {
+            val orderType = packet.order
+            val reason = packet.reason.reversedPOV()
+            val content = packet.content
+
+            import SystemOrder._
+            orderType match {
+                case CLIENT_CLOSE => close(reason)
+                case SERVER_CLOSE => server.close(reason)
+                case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
+                case CHECK_ID => checkIDRegistered(new String(content))
+                case PRINT_INFO => server.getConsoleOut(identifier).println(s"Connected to server ${server.relayVersion} (${Relay.ApiVersion})")
+
+                case _ => session.channel.sendPacket(ErrorPacket("Forbidden order", s"Could not complete order '$orderType', can't be handled by a server or unknown order"))
+            }
+
+            def checkIDRegistered(target: String): Unit = {
+                val response = if (server.isConnected(target)) "OK" else "ERROR"
+                session.channel.sendPacket(DataPacket(response))
+            }
+        }
+
+    }
+
 }
 
 object ClientConnection {

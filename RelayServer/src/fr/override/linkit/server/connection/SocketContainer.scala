@@ -26,7 +26,7 @@ class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnec
     override protected def handleReconnection(): Unit = {
         synchronized {
             try {
-                wait()
+                wait
             } catch {
                 case e:InterruptedException => //thrown when the reconnection is brutally stopped (ex: server stopped, critical error...)
             }
