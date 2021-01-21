@@ -37,7 +37,7 @@ object Main {
         relayPoint.start()
 
         if (ideRun && relayPoint.isOpen) {
-
+            /*
             import fr.`override`.linkit.`extension`.cloud.CloudStorageExtension
             import fr.`override`.linkit.`extension`.controller.ControllerExtension
             import fr.`override`.linkit.`extension`.debug.DebugExtension
@@ -48,6 +48,7 @@ object Main {
                 classOf[CloudStorageExtension],
                 classOf[DebugExtension]
             )
+             */
         }
     }
 

@@ -1,32 +1,31 @@
 package fr.`override`.linkit.api.concurency
 
-import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
-
-import fr.`override`.linkit.api.concurency.PacketWorkerThread.checkNotCurrent
+import fr.`override`.linkit.api.concurency.PacketWorkerThread.packetReaderThreadGroup
 import fr.`override`.linkit.api.exception.IllegalPacketWorkerLockException
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
-class RelayWorkerThread extends Thread with AutoCloseable {
+abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packet Read Worker") with JustifiedCloseable {
 
-    private val queue: BlockingDeque[() => Unit] = new LinkedBlockingDeque()
-    private var closed = false
+    private var open = true
 
-    start()
+    override def isClosed: Boolean = open
 
-    def runLater(action: => Unit): ParallelAction[Unit] = {
-        queue.addLast(() => action)
-
+    override def run(): Unit = {
+        while (open) {
+            readAndHandleOnePacket()
+        }
     }
 
-    override def run(): Unit = while(!closed) queue.takeFirst().apply()
-
-    override def close(): Unit = {
-        closed = true
+    override def close(reason: CloseReason): Unit = {
+        open = false
         interrupt()
     }
 
+    protected def readAndHandleOnePacket(): Unit
+
 }
 
-object RelayWorkerThread {
+object PacketWorkerThread {
 
     /**
      * Packet Worker Threads have to be registered in this ThreadGroup in order to throw an exception when a relay worker thread
@@ -36,19 +35,19 @@ object RelayWorkerThread {
      * */
     val packetReaderThreadGroup: ThreadGroup = new ThreadGroup("Relay Packet Worker")
 
-    def checkCurrentIsWorker(): Unit = {
+    def checkCurrent(): Unit = {
         if (!isCurrentWorkerThread)
             throw new IllegalStateException("This action must be performed in a Packet Worker thread !")
     }
 
-    def checkCurrentIsNotWorker(): Unit = {
+    def checkNotCurrent(): Unit = {
         if (isCurrentWorkerThread)
             throw new IllegalStateException("This action must not be performed in a Packet Worker thread !")
     }
 
-    def currentThread(): Option[RelayWorkerThread] = {
+    def currentThread(): Option[PacketWorkerThread] = {
         Thread.currentThread() match {
-            case worker: RelayWorkerThread => Some(worker)
+            case worker: PacketWorkerThread => Some(worker)
             case _ => None
         }
     }
@@ -58,9 +57,10 @@ object RelayWorkerThread {
     }
 
     def safeLock(anyRef: AnyRef, timeout: Long = 0): Unit = {
-        checkCurrentIsNotWorker()
+        checkNotCurrent()
         anyRef.synchronized {
             anyRef.wait(timeout)
         }
     }
+
 }

@@ -16,7 +16,7 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     override def addOnStateUpdate(action: ConnectionState => Unit): Unit = relay.addConnectionListener(action)
 
-    override def getConnectionState: ConnectionState = relay.getState
+    override def getConnectionState: ConnectionState = relay.getConnectionState
 
     override def getProperty(name: String): Serializable = relay.properties.get(name).orNull
 

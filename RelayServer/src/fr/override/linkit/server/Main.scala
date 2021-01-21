@@ -16,7 +16,7 @@ object Main {
         relayServer.start()
 
         if (ideRun) {
-
+            /*
             import fr.`override`.linkit.`extension`.cloud.CloudStorageExtension
             import fr.`override`.linkit.`extension`.controller.ControllerExtension
             import fr.`override`.linkit.`extension`.debug.DebugExtension
@@ -26,6 +26,7 @@ object Main {
                 classOf[CloudStorageExtension],
                 classOf[DebugExtension]
             )
+             */
 
         }
     }

@@ -5,6 +5,7 @@ import java.nio.charset.Charset
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
+import fr.`override`.linkit.api.concurency.RelayWorkerThread
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
@@ -31,7 +32,7 @@ object RelayServer {
 }
 
 //TODO Create a connection helper for this poor class which swims into bad practices.
-class RelayServer private[server](override val configuration: RelayServerConfiguration) extends Relay {
+class RelayServer private[server](override val configuration: RelayServerConfiguration) extends RelayWorkerThread with Relay {
 
     override val identifier: String = Identifier
 
@@ -97,7 +98,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     override def addConnectionListener(action: ConnectionState => Unit): Unit = () //the connection of the server would never be updated
 
-    override def getState: ConnectionState = ConnectionState.CONNECTED //The server is always connected to itself !
+    override def getConnectionState: ConnectionState = ConnectionState.CONNECTED //The server is always connected to itself !
 
     override def isConnected(identifier: String): Boolean = {
         connectionsManager.containsIdentifier(identifier)

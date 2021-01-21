@@ -14,7 +14,7 @@ case class ClientConnectionSession private(identifier: String,
 
     val traffic = new DedicatedPacketTraffic(server, socket, identifier)
     val channel: SystemPacketChannel = new SystemPacketChannel(identifier, traffic)
-    val packetReader = new ConnectionPacketReader(socket, server, identifier)
+    val packetReader = new ConnectionPacketWorker(socket, server, identifier)
     val tasksHandler = new ConnectionTasksHandler(this)
     val outConsole: RemoteConsole = server.getConsoleOut(identifier)
     val errConsole: RemoteConsole = server.getConsoleErr(identifier)
