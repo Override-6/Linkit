@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.network
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
+import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification, SharedCollection}
 import fr.`override`.linkit.api.network.cache.{ObjectPacket, SharedCacheHandler}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
@@ -12,10 +12,11 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 
+    protected val sharedIdentifiers: SharedCollection[String] = globalCache
+            .open(3, SharedCollection.set[String])
+
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     private val communicator = relay.openCollector(9, CommunicationPacketCollector)
-
-    println(s"CURRENT ENTITIES = ${entities}")
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
@@ -32,15 +33,15 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
         else None
     }
 
+    //Will replace the entity if the identifier is already present in the network's entities cache.
     def createEntity(identifier: String): NetworkEntity = {
-        if (getEntity(identifier).isDefined) {
-            throw new IllegalArgumentException("This entity is already registered to the network !")
-        }
-
         if (identifier == relay.identifier) {
             return selfEntity
         }
-        createRelayEntity(identifier, communicator.subChannel(identifier, CommunicationPacketChannel))
+        if (getEntity(identifier).isDefined) {
+            sharedIdentifiers.remove(identifier)
+        }
+        createRelayEntity(identifier, communicator.subChannel(identifier, CommunicationPacketChannel, true))
     }
 
     def createRelayEntity(identifier: String, communicationChannel: CommunicationPacketChannel): NetworkEntity

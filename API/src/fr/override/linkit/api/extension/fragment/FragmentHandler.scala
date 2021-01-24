@@ -17,15 +17,14 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
     private val fragmentMap: mutable.Map[Class[_ <: RelayExtension], ExtensionFragments] = mutable.Map.empty
 
     private val communicator = relay.openCollector(4, CommunicationPacketCollector)
+
     private lazy val sharedRemoteFragments: SharedCollection[String] = {
         var ptn: SharedCollection[String] = null
         ptn = relay.network
                 .selfEntity
                 .cache
-                .open(6, SharedCollection[String])
-                .addListener((_, _, _) => println("Frags are actually : " + ptn))
+                .open(6, SharedCollection.set[String])
 
-        println("Frags are actually : " + ptn)
         ptn
     }
 
@@ -44,7 +43,6 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
 
         fragment match {
             case remote: RemoteFragment =>
-                println("ADDING REMOTE FRAGMENT " + remote.nameIdentifier)
                 sharedRemoteFragments.add(remote.nameIdentifier)
 
             case _ =>
@@ -89,6 +87,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
     }
 
     communicator.addRequestListener((pack, coords) => {
+        println(s"IN FRAGMENT HANDLER = ${pack}")
         pack match {
             case fragmentPacket: WrappedPacket =>
                 val fragmentName = fragmentPacket.category

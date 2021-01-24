@@ -21,10 +21,10 @@ case class ClientConnectionSession private(identifier: String,
     private var entity: NetworkEntity = _ //Can't be a val because the NetworkEntity initialisation needs the connection to be registered and started
 
     override def close(reason: CloseReason): Unit = {
-        tasksHandler.close(reason)
-        traffic.close(reason)
-        //server.serverNetwork.removeEntity(identifier)
         socket.close(reason)
+        tasksHandler.close(reason)
+        server.network.removeEntity(identifier)
+        traffic.close(reason)
     }
 
     def getSocketState: ConnectionState = socket.getState

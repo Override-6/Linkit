@@ -10,7 +10,6 @@ import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
 abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
-
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream: InputStream = _
@@ -26,7 +25,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
-                if (closed || !autoReconnect)
+                if (isClosed || !autoReconnect)
                     return
                 SocketLocker.markDisconnected()
                 reconnect()
@@ -37,17 +36,16 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
     }
 
-    @volatile private var closed = false
-
-
     override def close(reason: CloseReason): Unit = {
-        closed = true
         SocketLocker.state = CLOSED
+
         if (!currentSocket.isClosed)
             closeCurrentStreams()
+        SocketLocker.releaseAllMonitors()
+        println(s"INFO : All monitors that were waiting the socket that belongs to '$boundIdentifier' were been released")
     }
 
-    override def isClosed: Boolean = closed
+    override def isClosed: Boolean = SocketLocker.state == CLOSED
 
     def read(buff: Array[Byte]): Int = read(buff, 0)
 
@@ -76,8 +74,9 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         ensureReady()
         try {
             val result = currentInputStream.read(buff, pos, buff.length - pos)
-            if (result < 0)
+            if (result < 0) {
                 return onDisconnect()
+            }
             return result
         } catch {
             case e@(_: ConnectException | _: IOException) =>
@@ -87,11 +86,11 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
         def onDisconnect(): Int = {
             SocketLocker.markDisconnected()
-            if (closed || !autoReconnect)
+            if (isClosed || !autoReconnect)
                 return -1
             reconnect()
             SocketLocker.markAsConnected()
-            if (closed)
+            if (isClosed)
                 return -1
             read(buff, pos)
         }
@@ -122,7 +121,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         SocketLocker.markAsConnected()
 
     private def ensureReady(): Unit = {
-        if (closed) {
+        if (isClosed) {
             throw new RelayCloseException("Socket closed")
         }
         if (currentInputStream == null || currentOutputStream == null) {
@@ -166,13 +165,11 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
 
         def markDisconnected(): Unit = {
-            println(s"MARKED AS DISCONNECTED ($boundIdentifier)")
             state = DISCONNECTED
             listeners.applyAll(state)
         }
 
         def markAsConnected(): Unit = disconnectLock.synchronized {
-            println(s"MARKED AS CONNECTED ($boundIdentifier)")
             state = CONNECTED
             listeners.applyAll(state)
 
@@ -181,15 +178,26 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
         def awaitConnected(): Unit = disconnectLock.synchronized {
             if (state != CONNECTED) try {
-                state = CONNECTING
+                if (state == CLOSED)
+                    throw new RelayCloseException("Attempted to wait this socket to be connected again, but it is now closed.")
                 listeners.applyAll(state)
 
-                println(s"WARNING : The socket is currently waiting because the connection with $boundIdentifier is not fully initialised yet.")
+                println(s"WARNING : The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier is not fully initialised or disconnected.")
                 disconnectLock.wait()
                 println(s"The connection with $boundIdentifier is now fully initialised.")
             } catch {
                 case _: InterruptedException =>
             }
         }
+
+        def releaseAllMonitors(): Unit = {
+            writeLock.synchronized {
+                writeLock.notifyAll()
+            }
+            disconnectLock.synchronized {
+                disconnectLock.notifyAll()
+            }
+        }
+
     }
 }

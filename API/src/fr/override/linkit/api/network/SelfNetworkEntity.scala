@@ -1,9 +1,12 @@
 package fr.`override`.linkit.api.network
 
+import java.sql.Timestamp
+
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
-import fr.`override`.linkit.api.packet.channel.AsyncPacketChannel
+import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
 import fr.`override`.linkit.api.system.Version
 
 class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
@@ -13,6 +16,8 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
     override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)(relay.traffic)
 
     private val fragmentHandler = relay.extensionLoader.fragmentHandler
+
+    override val connectionDate: Timestamp = cache.post(2, new Timestamp(System.currentTimeMillis()))
 
     override def addOnStateUpdate(action: ConnectionState => Unit): Unit = relay.addConnectionListener(action)
 
@@ -26,16 +31,18 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     override def getRemoteErrConsole: RemoteConsole = throw new UnsupportedOperationException("Attempted to get a remote console of the current relay")
 
-    override def getApiVersion: Version = relay.relayVersion
+    override def getApiVersion: Version = Relay.ApiVersion
 
-    override def getRelayVersion: Version = Relay.ApiVersion
+    override def getRelayVersion: Version = relay.relayVersion
 
     override def listRemoteFragmentControllers: List[RemoteFragmentController] = {
-        val fragmentControllerChannel = relay.openChannel(4, identifier, AsyncPacketChannel)
+        val communicator = relay
+                .openCollector(4, CommunicationPacketCollector)
+                .subChannel(identifier, CommunicationPacketChannel, true)
 
         fragmentHandler
                 .listRemoteFragments()
-                .map(frag => new RemoteFragmentController(frag.nameIdentifier, fragmentControllerChannel))
+                .map(frag => new RemoteFragmentController(frag.nameIdentifier, communicator))
     }
 
     override def getFragmentController(nameIdentifier: String): Option[RemoteFragmentController] = {

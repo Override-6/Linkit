@@ -7,7 +7,7 @@ import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 
 trait Network {
 
-    val onlineTimeStamp: Timestamp
+    val startUpDate: Timestamp
 
     val selfEntity: SelfNetworkEntity
 

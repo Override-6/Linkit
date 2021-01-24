@@ -30,7 +30,7 @@ case class ConsumerContainer[T]() {
     def applyAll(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
         consumers.clone().foreach(consumer => {
             try {
-                consumer.apply(t)
+                consumer(t)
             } catch {
                 case NonFatal(e) => onException(e)
             }

@@ -34,21 +34,19 @@ object Main {
             override var serverAddress: InetSocketAddress = address
             override var identifier: String = Main.this.identifier
         }
+
         relayPoint.start()
 
         if (ideRun && relayPoint.isOpen) {
-            /*
-            import fr.`override`.linkit.`extension`.cloud.CloudStorageExtension
+
             import fr.`override`.linkit.`extension`.controller.ControllerExtension
             import fr.`override`.linkit.`extension`.debug.DebugExtension
 
             val loader = relayPoint.extensionLoader
             loader.loadExtensions(
                 classOf[ControllerExtension],
-                classOf[CloudStorageExtension],
                 classOf[DebugExtension]
             )
-             */
         }
     }
 

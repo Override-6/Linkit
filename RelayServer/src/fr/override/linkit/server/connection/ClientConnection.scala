@@ -38,14 +38,17 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     override def close(reason: CloseReason): Unit = {
         RelayWorkerThread.checkCurrentIsWorker()
         closed = true
-
         if (reason.isInternal && isConnected) {
-            session.channel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
+            val sysChannel = session.channel
+            sysChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
         }
+        ConnectionPacketWorker.close(reason)
 
         session.close(reason)
+
         manager.unregister(identifier)
-        ConnectionPacketWorker.close(reason)
+        workerThread.close()
+        println(s"Connection closed for $identifier")
     }
 
     def sendPacket(packet: Packet, channelID: Int): Unit = runLater {
@@ -83,7 +86,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     }
 
     private[connection] def sendBytes(bytes: Array[Byte]): Unit = runLater {
-        println(s"Sending bytes to $identifier")
         session.send(PacketUtils.wrap(bytes))
     }
 
@@ -95,7 +97,9 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
                 case NonFatal(e) =>
                     e.printStackTrace()
                     e.printStackTrace(session.errConsole)
-                    close(CloseReason.INTERNAL_ERROR)
+                    runLater {
+                        ClientConnection.this.close(CloseReason.INTERNAL_ERROR)
+                    }
             }
         }
 
@@ -121,7 +125,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
             import SystemOrder._
             orderType match {
-                case CLIENT_CLOSE => close(reason)
+                case CLIENT_CLOSE => runLater(ClientConnection.this.close(reason))
                 case SERVER_CLOSE => server.close(reason)
                 case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
                 case CHECK_ID => checkIDRegistered(new String(content))

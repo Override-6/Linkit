@@ -46,6 +46,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler()
 
     override def start(): Unit = {
+        open = true
         securityManager.checkRelay(this)
 
         println("Current encoding is " + Charset.defaultCharset().name())
@@ -78,17 +79,26 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
         if (!open)
             return //already closed.
-        println("Closing...")
+        println(s"Closing...")
 
         if (reason.isInternal && isConnected) {
             systemChannel.sendPacket(SystemPacket(SystemOrder.CLIENT_CLOSE, reason))
         }
-        extensionLoader.close()
+
+        //Closing workers
         PointPacketWorkerThread.close(reason)
-        systemChannel.close(reason)
-        socket.close(reason)
+        workerThread.close()
+
+        //Closing Tasks and extensions
+        extensionLoader.close()
         tasksHandler.close(reason)
+
+        //Closing Traffic
+        systemChannel.close(reason)
         traffic.close(reason)
+
+        //Closing socket
+        socket.close(reason)
 
         open = false
         println("closed !")
@@ -127,7 +137,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override def getConnectionState: ConnectionState = socket.getState
 
     override def isClosed: Boolean = !open
-
 
     override def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
         traffic.openChannel(channelId, targetID, factory)
@@ -232,16 +241,16 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         private def listen(): Unit = {
             try {
                 val bytes = packetReader.readNextPacketBytes()
-                //NETWORK-DEBUG-MARK
-                println(s"received : ${new String(bytes)}")
                 if (bytes == null)
                     return
+                //NETWORK-DEBUG-MARK
+                println(s"received : ${new String(bytes)}")
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
 
                 if (configuration.checkReceivedPacketTargetID)
                     checkCoordinates(coordinates)
 
-                runLater {
+                runLater { //handles the packet in the worker thread pool
                     handlePacket(packet, coordinates)
                 }
             }
@@ -249,15 +258,19 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
                 case e: AsynchronousCloseException =>
                     Console.err.println("Asynchronous close.")
                     getConsoleErr(Relay.ServerIdentifier).print(e)
-                    close(CloseReason.INTERNAL_ERROR)
+
+                    runLater {
+                        RelayPoint.this.close(CloseReason.INTERNAL_ERROR)
+                    }
 
                 case NonFatal(e) =>
                     e.printStackTrace(System.out)
-
                     Console.err.println(s"Suddenly disconnected from the server")
                     getConsoleErr(Relay.ServerIdentifier).print(e)
 
-                    close(CloseReason.INTERNAL_ERROR)
+                    runLater {
+                        RelayPoint.this.close(CloseReason.INTERNAL_ERROR)
+                    }
             }
         }
 

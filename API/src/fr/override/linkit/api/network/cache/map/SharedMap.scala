@@ -64,8 +64,19 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         localMap.createBoundedMap(map)
     }
 
-    def foreach(action: (K, V) => Unit): Unit = {
+    def foreach(action: (K, V) => Unit): this.type = {
         localMap.foreach(action)
+        this
+    }
+
+    def foreachKeys(action: K => Unit): this.type = {
+        keys.foreach(action)
+        this
+    }
+
+    def foreachValues(action: V => Unit): this.type = {
+        values.foreach(action)
+        this
     }
 
     def values: Iterable[V] = {

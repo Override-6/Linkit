@@ -49,7 +49,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
     override val packetTranslator: PacketTranslator = new PacketTranslator(this)
-    override val network: Network = new ServerNetwork(this)(globalTraffic)
+    override val network: ServerNetwork = new ServerNetwork(this)(globalTraffic)
     override val relayVersion: Version = RelayServer.version
     private val workerThread: RelayWorkerThread = new RelayWorkerThread()
 
@@ -170,7 +170,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     private def listenSocketConnection(): Unit = {
-        println("Listening next socket connection...")
         val socketContainer = new SocketContainer(true)
         try {
             val clientSocket = serverSocket.accept()
@@ -203,11 +202,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     private def handleSocket(socket: SocketContainer): Unit = {
         val identifier = readWelcomePacket(socket)
         socket.identifier = identifier
-        println(s"Welcome Packet handled ! ($identifier)")
-
-        println("Registering connection...")
         handleRelayPointConnection(identifier, socket)
-        println("Socket connection fully handled !")
     }
 
     private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {

@@ -2,6 +2,7 @@ package fr.`override`.linkit.api.packet.fundamental
 
 import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
 
+@deprecated("May be removed when exiting beta version")
 case class ErrorPacket(errorType: String,
                        errorMsg: String,
                        cause: String = "") extends Packet {
