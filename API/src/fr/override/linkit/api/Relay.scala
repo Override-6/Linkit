@@ -35,7 +35,7 @@ import scala.reflect.ClassTag
 //TODO Design a brand new and optimised packet protocol
 //TODO Find a solution about packets that are send into a non-registered channel : if an exception is thrown, this can cause some problems, and if not, this can cause other problems. SOLUTION : Looking for "RemoteActionDescription" that can control and get some information about an action that where made over the network.
 object Relay {
-    val ApiVersion: Version = Version(name = "Api", version = "0.17.0", stable = false)
+    val ApiVersion: Version = Version(name = "Api", version = "0.18.0", stable = false)
     val ServerIdentifier: String = "server"
 }
 
