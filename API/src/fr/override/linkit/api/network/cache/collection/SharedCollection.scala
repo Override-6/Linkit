@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.network.cache.collection
 
-import fr.`override`.linkit.api.concurency.AsyncExecutionContext
+import fr.`override`.linkit.api.concurrency.AsyncExecutionContext
 import fr.`override`.linkit.api.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}

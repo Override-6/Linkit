@@ -1,8 +1,8 @@
-package fr.`override`.linkit.api.concurency
+package fr.`override`.linkit.api.concurrency
 
 import java.util.concurrent.{Executors, ThreadFactory}
 
-import fr.`override`.linkit.api.concurency.RelayWorkerThread.factory
+import fr.`override`.linkit.api.concurrency.RelayWorkerThread.factory
 
 import scala.util.control.NonFatal
 

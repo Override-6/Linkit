@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.concurency
+package fr.`override`.linkit.api.concurrency
 
 import java.util.concurrent.{Executors, TimeUnit}
 

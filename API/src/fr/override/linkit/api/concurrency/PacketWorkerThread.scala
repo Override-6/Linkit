@@ -1,6 +1,6 @@
-package fr.`override`.linkit.api.concurency
+package fr.`override`.linkit.api.concurrency
 
-import fr.`override`.linkit.api.concurency.PacketWorkerThread.packetReaderThreadGroup
+import fr.`override`.linkit.api.concurrency.PacketWorkerThread.packetReaderThreadGroup
 import fr.`override`.linkit.api.exception.IllegalPacketWorkerLockException
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 

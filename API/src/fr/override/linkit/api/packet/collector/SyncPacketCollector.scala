@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.packet.collector
 
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import fr.`override`.linkit.api.concurency.PacketWorkerThread
+import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason

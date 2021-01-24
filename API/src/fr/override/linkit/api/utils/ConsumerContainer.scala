@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.utils
 
-import fr.`override`.linkit.api.concurency.AsyncExecutionContext
+import fr.`override`.linkit.api.concurrency.AsyncExecutionContext
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.Future

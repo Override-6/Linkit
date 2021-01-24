@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.channel
 
-import fr.`override`.linkit.api.concurency.SyncExecutionContext
+import fr.`override`.linkit.api.concurrency.SyncExecutionContext
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer

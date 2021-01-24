@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.connection
 import java.net.Socket
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.concurency.{PacketWorkerThread, RelayWorkerThread}
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThread}
 import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._

@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.concurency.{PacketWorkerThread, RelayWorkerThread}
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThread}
 import fr.`override`.linkit.api.exception._
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
