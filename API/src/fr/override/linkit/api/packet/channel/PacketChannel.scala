@@ -25,6 +25,7 @@ abstract class PacketChannel(traffic: PacketTraffic) extends JustifiedCloseable 
 
     override def isClosed: Boolean = closed
 
+    //TODO make this method only accessible from an injector.
     def sendPacket(packet: Packet): Unit = traffic.writePacket(packet, coordinates)
 
 }

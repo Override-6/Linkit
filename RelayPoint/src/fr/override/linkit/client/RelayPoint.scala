@@ -79,7 +79,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
         if (!open)
             return //already closed.
-        println(s"Closing...")
 
         if (reason.isInternal && isConnected) {
             systemChannel.sendPacket(SystemPacket(SystemOrder.CLIENT_CLOSE, reason))
@@ -244,7 +243,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
                 if (bytes == null)
                     return
                 //NETWORK-DEBUG-MARK
-                println(s"received : ${new String(bytes)}")
+                //println(s"received : ${new String(bytes)}")
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
 
                 if (configuration.checkReceivedPacketTargetID)

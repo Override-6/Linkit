@@ -9,7 +9,6 @@ class RemoteFragmentController(val nameIdentifier: String, val channel: Communic
     private val listeners = ConsumerContainer[(Packet, PacketCoordinates)]()
 
     channel.addRequestListener((packet, coords) => {
-        println("Response Received " + packet)
         packet match {
             case WrappedPacket(this.nameIdentifier, subPacket) => listeners.applyAll((subPacket, coords))
             case _ =>

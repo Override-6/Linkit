@@ -44,11 +44,4 @@ public class Utils {
         throw new UnexpectedPacketException(msg);
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T> T[] castArray(Object[] any) {
-        System.out.println("OMAGADE :D");
-        T[] casted = (T[]) any;
-        return java.util.Arrays.copyOf(casted, casted.length);
-    }
-
 }

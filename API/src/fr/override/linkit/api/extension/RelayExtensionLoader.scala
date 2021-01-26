@@ -30,13 +30,8 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
 
     override def close(): Unit = {
         phase = DISABLE
-        println("Destroying fragments...")
         fragmentHandler.destroyFragments()
-        println("Disabling extensions...")
-        loadedExtensions.foreach(extension => {
-            println(s"Disabling '${extension.name}...")
-            extension.onDisable()
-        })
+        loadedExtensions.foreach(_.onDisable())
         loadedExtensions.clear()
         phase = CLOSE
     }

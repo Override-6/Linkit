@@ -35,16 +35,7 @@ case class ClientConnectionSession private(identifier: String,
 
     def updateSocket(socket: Socket): Unit = this.socket.set(socket)
 
-    def getEntity: NetworkEntity = entity
-
-    private[connection] def initNetwork(): Unit = {
-        val network = server.network
-        //network.addEntity(identifier)
-        entity = network.getEntity(identifier).orNull
-
-        /*if (entity == null)
-            throw new ConnectionInitialisationException("Something went wrong when registering this connection session to the network")*/
-    }
+    def getEntity: NetworkEntity = server.network.getEntity(identifier).get
 
     override def isClosed: Boolean = socket.isClosed //refers to an used closeable element
 }
