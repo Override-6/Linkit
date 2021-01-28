@@ -10,7 +10,9 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override val globalCache: SharedCacheHandler = SharedCacheHandler.create("Global Shared Cache", Relay.ServerIdentifier)(relay.traffic)
 
+    println(s"--> [${Thread.currentThread()}] Creating SelfNetworkEntity ")
     override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
+
 
     protected val sharedIdentifiers: SharedCollection[String] = globalCache
             .open(3, SharedCollection.set[String])
@@ -35,6 +37,7 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     //Will replace the entity if the identifier is already present in the network's entities cache.
     def createEntity(identifier: String): NetworkEntity = {
+        println(s"---> ${Thread.currentThread()} Creating entity '$identifier'")
         if (identifier == relay.identifier) {
             return selfEntity
         }
@@ -55,11 +58,6 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
             case ObjectPacket(("setProp", name: String, value)) =>
                 relay.properties.putProperty(name, value)
-
-            case ObjectPacket("vAPI") =>
-                communicator.sendResponse(ObjectPacket(Relay.ApiVersion), sender)
-            case ObjectPacket("vImpl") =>
-                communicator.sendResponse(ObjectPacket(relay.relayVersion), sender)
         }
     })
 

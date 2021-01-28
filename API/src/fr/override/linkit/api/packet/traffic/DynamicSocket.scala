@@ -13,6 +13,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream: InputStream = _
+
     def write(buff: Array[Byte]): Unit = {
         SocketLocker.awaitConnected()
         ensureReady()
@@ -37,7 +38,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     }
 
     override def close(reason: CloseReason): Unit = {
-        SocketLocker.state = CLOSED
+        SocketLocker.markAsClosed()
 
         if (!currentSocket.isClosed)
             closeCurrentStreams()
@@ -165,22 +166,24 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
 
         def markDisconnected(): Unit = {
-            state = DISCONNECTED
-            listeners.applyAll(state)
+            updateState(DISCONNECTED)
         }
 
         def markAsConnected(): Unit = disconnectLock.synchronized {
-            state = CONNECTED
-            listeners.applyAll(state)
+            updateState(CONNECTED)
 
             disconnectLock.notifyAll()
+        }
+
+        private def updateState(newState: ConnectionState): Unit = {
+            state = newState
+            listeners.applyAll(state)
         }
 
         def awaitConnected(): Unit = disconnectLock.synchronized {
             if (state != CONNECTED) try {
                 if (state == CLOSED)
                     throw new RelayCloseException("Attempted to wait this socket to be connected again, but it is now closed.")
-                listeners.applyAll(state)
 
                 println(s"WARNING : The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier is not fully initialised or disconnected.")
                 disconnectLock.wait()
@@ -199,5 +202,10 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             }
         }
 
+        def markAsClosed(): Unit = {
+            updateState(CLOSED)
+        }
+
     }
+
 }

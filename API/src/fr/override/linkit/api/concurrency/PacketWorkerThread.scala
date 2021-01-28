@@ -15,22 +15,21 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
     override def run(): Unit = {
         try {
             while (open) {
+                println("Waiting for next packet...")
                 readAndHandleOnePacket()
             }
         } catch {
             case NonFatal(e) =>
                 e.printStackTrace()
                 open = false
+        } finally {
+            println("STOPPED PACKET WORKER")
         }
     }
 
     override def close(reason: CloseReason): Unit = {
         open = false
-        //The stop is mandatory here because, if we interrupt, the thread will continue reading socket despite the request
-        //Interrupting could cause some problems in a relay closing context, because the socket that this thread handles will
-        //try to reconnect.
-        //FIXME replace deprecated stop method with interrupt
-        stop()
+        interrupt()
     }
 
     /**

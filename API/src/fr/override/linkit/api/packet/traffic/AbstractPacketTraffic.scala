@@ -1,6 +1,7 @@
 package fr.`override`.linkit.api.packet.traffic
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{ClosedException, RelayException}
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
@@ -94,8 +95,9 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
         writePacket(packet, PacketCoordinates(identifier, targetID, relay.identifier))
     }
 
+
     override def writePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        //println("SENDING PACKET " + packet + " WITH COORDINATES " + coordinates)
+        //println("SENDING PACKET " + packet + " WITH COORDINATES " + coordinates + s"(${Thread.currentThread()})")
         if (coordinates.targetID == relay.identifier)
             injectPacket(packet, coordinates)
         else send(packet, coordinates)
@@ -132,7 +134,10 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
     }
 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+        //println(s"INJECTING PACKET : $packet With coordinate : $coordinates (${Thread.currentThread()})")
+        PacketWorkerThread.checkNotCurrent()
         ensureOpen()
+
         val id = coordinates.injectableID
         val sender = coordinates.senderID
         if (!isRegistered(id, sender)) {

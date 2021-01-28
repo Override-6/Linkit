@@ -20,9 +20,7 @@ class SharedInstance[A <: Serializable](family: String,
             case ObjectPacket(remoteInstance: A) =>
                 this.instance = remoteInstance
                 modCount += 1
-
-                println(s"instance has been remotely updated ($instance)")
-                println(s"modCount = ${modCount}")
+                listeners.applyAll(remoteInstance)
 
             case _ => throw new UnexpectedPacketException("Unable to handle a non-ObjectPacket into SharedInstance")
         }
@@ -35,6 +33,7 @@ class SharedInstance[A <: Serializable](family: String,
     def set(t: A): this.type = {
         instance = t
         modCount += 1
+        listeners.applyAll(t)
         if (autoFlush)
             flush()
         this
