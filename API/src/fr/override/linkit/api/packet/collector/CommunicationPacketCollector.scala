@@ -1,16 +1,24 @@
 package fr.`override`.linkit.api.packet.collector
 
-import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
+import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketTraffic}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketFactory}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 
-class CommunicationPacketCollector(traffic: PacketTraffic, collectorID: Int)
+class CommunicationPacketCollector protected(traffic: PacketTraffic, collectorID: Int, providable: Boolean)
         extends AbstractPacketCollector(traffic, collectorID, false)
                 with ImmediatePacketInjectable {
 
-    private val responses: BlockingDeque[Packet] = new LinkedBlockingDeque()
+    private val responses: BlockingQueue[Packet] = {
+        if (!providable)
+            new LinkedBlockingQueue[Packet]()
+        else {
+            RelayWorkerThreadPool.ifCurrentOrElse(_.newProvidedQueue, new LinkedBlockingQueue[Packet]())
+        }
+    }
+
     private val requestListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
     private val normalPacketListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
 
@@ -24,7 +32,7 @@ class CommunicationPacketCollector(traffic: PacketTraffic, collectorID: Int)
             case wrapped: WrappedPacket =>
                 val subPacket = wrapped.subPacket
                 wrapped.category match {
-                    case "res" => responses.addLast(subPacket)
+                    case "res" => responses.add(subPacket)
                     case "req" => requestListeners.applyAll((subPacket, coordinates))
                     case _ => injectAsNormal()
                 }
@@ -42,7 +50,7 @@ class CommunicationPacketCollector(traffic: PacketTraffic, collectorID: Int)
 
     def nextResponse[P <: Packet](classOfP: Class[P]): P = nextResponse().asInstanceOf[P]
 
-    def nextResponse(): Packet = responses.takeFirst()
+    def nextResponse(): Packet = responses.take()
 
     def broadcastRequest(packet: Packet): Unit = if (enablePacketSending) {
         sendRequest(packetTransform(packet), "BROADCAST")
@@ -65,6 +73,17 @@ class CommunicationPacketCollector(traffic: PacketTraffic, collectorID: Int)
 object CommunicationPacketCollector extends PacketCollectorFactory[CommunicationPacketCollector] {
     override val collectorClass: Class[CommunicationPacketCollector] = classOf[CommunicationPacketCollector]
 
+    private val providableFactory: PacketCollectorFactory[CommunicationPacketCollector] =
+        new PacketCollectorFactory[CommunicationPacketCollector] {
+            override val collectorClass: Class[CommunicationPacketCollector] = classOf[CommunicationPacketCollector]
+
+            override def createNew(traffic: PacketTraffic, channelId: Int): CommunicationPacketCollector = {
+                new CommunicationPacketCollector(traffic, channelId, true)
+            }
+        }
+
     override def createNew(traffic: PacketTraffic, collectorId: Int): CommunicationPacketCollector =
-        new CommunicationPacketCollector(traffic, collectorId)
+        new CommunicationPacketCollector(traffic, collectorId, false)
+
+    def providable: PacketCollectorFactory[CommunicationPacketCollector] = providableFactory
 }

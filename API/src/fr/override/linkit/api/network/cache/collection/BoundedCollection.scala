@@ -67,7 +67,7 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
         val lastModCount = modCount
         val b = map(a)
         if (modCount != lastModCount)
-            throw new ConcurrentModificationException("Bounded Collection got modified durring mapping.")
+            throw new ConcurrentModificationException("Bounded Collection got modified during mapping.")
         b
     }
 

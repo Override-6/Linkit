@@ -12,11 +12,12 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 
+
     protected val sharedIdentifiers: SharedCollection[String] = globalCache
             .open(3, SharedCollection.set[String])
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
-    private val communicator = relay.openCollector(9, CommunicationPacketCollector)
+    private val communicator = relay.openCollector(9, CommunicationPacketCollector.providable)
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
@@ -38,10 +39,9 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
         if (identifier == relay.identifier) {
             return selfEntity
         }
-        if (getEntity(identifier).isDefined) {
-            sharedIdentifiers.remove(identifier)
-        }
-        createRelayEntity(identifier, communicator.subChannel(identifier, CommunicationPacketChannel, true))
+
+        val channel = communicator.subChannel(identifier, CommunicationPacketChannel.providable, true)
+        createRelayEntity(identifier, channel)
     }
 
     def createRelayEntity(identifier: String, communicationChannel: CommunicationPacketChannel): NetworkEntity
@@ -55,11 +55,6 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
             case ObjectPacket(("setProp", name: String, value)) =>
                 relay.properties.putProperty(name, value)
-
-            case ObjectPacket("vAPI") =>
-                communicator.sendResponse(ObjectPacket(Relay.ApiVersion), sender)
-            case ObjectPacket("vImpl") =>
-                communicator.sendResponse(ObjectPacket(relay.relayVersion), sender)
         }
     })
 

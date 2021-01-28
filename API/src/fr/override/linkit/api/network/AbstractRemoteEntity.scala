@@ -3,7 +3,7 @@ package fr.`override`.linkit.api.network
 import java.sql.Timestamp
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, SharedCollection}
+import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.network.cache.{ObjectPacket, SharedCacheHandler}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
@@ -16,28 +16,17 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
 
     //println(s"CREATED REMOTE ENTITY NAMED '$identifier'")
     protected implicit val traffic: PacketTraffic = relay.traffic
-    private lazy val apiVersion: Version = {
-        communicator.sendRequest(ObjectPacket("vAPI"))
-        communicator.nextResponse(ObjectPacket).casted
-    }
-
-    private lazy val relayVersion: Version = {
-        communicator.sendRequest(ObjectPacket("vImpl"))
-        communicator.nextResponse(ObjectPacket).casted
-    }
 
     override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
     override val connectionDate: Timestamp = cache(2)
     private val remoteFragments = {
         val communicator = traffic
-                .openCollector(4, CommunicationPacketCollector)
-                .subChannel(identifier, CommunicationPacketChannel, true)
+                .openCollector(4, CommunicationPacketCollector.providable)
+                .subChannel(identifier, CommunicationPacketChannel.providable, true)
 
-        var c: BoundedCollection.Immutable[RemoteFragmentController] = null
-        c = cache
+        cache
                 .open(6, SharedCollection.set[String])
                 .mapped(new RemoteFragmentController(_, communicator))
-        c
     }
 
     override def addOnStateUpdate(action: ConnectionState => Unit): Unit
@@ -57,9 +46,9 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
 
     override def getRemoteErrConsole: RemoteConsole = relay.getConsoleErr(identifier)
 
-    override def getApiVersion: Version = apiVersion
+    override def getApiVersion: Version = cache(4)
 
-    override def getRelayVersion: Version = relayVersion
+    override def getRelayVersion: Version = cache(5)
 
 
     override def listRemoteFragmentControllers: List[RemoteFragmentController] = remoteFragments.toList
