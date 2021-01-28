@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThread}
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
 import fr.`override`.linkit.api.exception._
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
@@ -29,7 +29,7 @@ object RelayPoint {
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
 
     @volatile private var open = false
-    private val workerThread = new RelayWorkerThread()
+    private val workerThread = new RelayWorkerThreadPool()
     override val packetTranslator = new PacketTranslator(this)
     private val socket: ClientDynamicSocket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
     override val traffic: DedicatedPacketTraffic = new DedicatedPacketTraffic(this, socket, identifier)
@@ -63,7 +63,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         } catch {
             case NonFatal(e) =>
                 e.printStackTrace()
-                close(CloseReason.INTERNAL_ERROR)
+                runLater(close(CloseReason.INTERNAL_ERROR))
         }
         securityManager.checkRelay(this)
 
@@ -75,7 +75,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     }
 
     override def close(reason: CloseReason): Unit = {
-        RelayWorkerThread.checkCurrentIsWorker()
+        RelayWorkerThreadPool.checkCurrentIsWorker()
 
         if (!open)
             return //already closed.
@@ -231,32 +231,15 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     }
 
     object PointPacketWorkerThread extends PacketWorkerThread() {
+
         private val packetReader = new PacketReader(socket, securityManager)
 
         override protected def readAndHandleOnePacket(): Unit = {
-            listen()
-        }
-
-        private def listen(): Unit = {
             try {
-                val bytes = packetReader.readNextPacketBytes()
-                if (bytes == null)
-                    return
-                //NETWORK-DEBUG-MARK
-                //println(s"received : ${new String(bytes)}")
-                val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
-
-                if (configuration.checkReceivedPacketTargetID)
-                    checkCoordinates(coordinates)
-
-                runLater { //handles the packet in the worker thread pool
-                    handlePacket(packet, coordinates)
-                }
-            }
-            catch {
+                listen()
+            } catch {
                 case e: AsynchronousCloseException =>
                     Console.err.println("Asynchronous close.")
-                    getConsoleErr(Relay.ServerIdentifier).print(e)
 
                     runLater {
                         RelayPoint.this.close(CloseReason.INTERNAL_ERROR)
@@ -264,8 +247,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
                 case NonFatal(e) =>
                     e.printStackTrace(System.out)
-                    Console.err.println(s"Suddenly disconnected from the server")
-                    getConsoleErr(Relay.ServerIdentifier).print(e)
+                    Console.err.println(s"Suddenly disconnected from the server.")
 
                     runLater {
                         RelayPoint.this.close(CloseReason.INTERNAL_ERROR)
@@ -273,6 +255,21 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             }
         }
 
-    }
+        private def listen(): Unit = {
+            val bytes = packetReader.readNextPacketBytes()
+            if (bytes == null)
+                return
+            //NETWORK-DEBUG-MARK
+            //println(s"received : ${new String(bytes)}")
+            val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
 
+            if (configuration.checkReceivedPacketTargetID)
+                checkCoordinates(coordinates)
+
+            runLater { //handles the packet in the worker thread pool
+                handlePacket(packet, coordinates)
+            }
+        }
+
+    }
 }

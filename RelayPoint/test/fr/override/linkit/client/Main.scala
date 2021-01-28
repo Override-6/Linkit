@@ -4,6 +4,7 @@ import java.net.InetSocketAddress
 import java.nio.file.Paths
 import java.util.Scanner
 
+import fr.`override`.linkit.api.system.CloseReason
 import fr.`override`.linkit.client.config.RelayPointBuilder
 
 object Main {
@@ -36,6 +37,7 @@ object Main {
         }
 
         relayPoint.start()
+        Runtime.getRuntime.addShutdownHook(new Thread(() => relayPoint.runLater(relayPoint.close(CloseReason.INTERNAL))))
 
         if (ideRun && relayPoint.isOpen) {
 
