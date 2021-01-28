@@ -1,10 +1,12 @@
 package fr.`override`.linkit.server.connection
 
+import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.server.RelayServer
+import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
@@ -55,7 +57,6 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connection = ClientConnection.open(connectionSession)
         connections.put(identifier, connection)
         connection.sendPacket(DataPacket("OK"), PacketTraffic.SystemChannel)
-        connectionSession.initNetwork()
 
         val canConnect = server.securityManager.canConnect(connection)
         if (canConnect) {
@@ -88,6 +89,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      *                    This way, the broadcaster will be ignored
      * */
     def broadcastBytes(bytes: Array[Byte], broadcaster: String): Unit = {
+        PacketWorkerThread.checkNotCurrent()
         connections.values
                 .filter(con => con.identifier != broadcaster && con.isConnected)
                 .foreach(_.sendBytes(bytes))
@@ -109,7 +111,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @param identifier the identifier linked [[ClientConnection]]
      * @return the found [[ClientConnection]] bound with the identifier
      * */
-    def getConnection(identifier: String): ClientConnection = connections(identifier)
+    @Nullable def getConnection(identifier: String): ClientConnection = connections.get(identifier).orNull
 
     /**
      * determines if the address is not registered

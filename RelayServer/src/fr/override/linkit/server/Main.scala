@@ -2,6 +2,7 @@ package fr.`override`.linkit.server
 
 import java.nio.file.Paths
 
+import fr.`override`.linkit.api.system.CloseReason
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
 
 
@@ -29,6 +30,7 @@ object Main {
 
 
         }
+        Runtime.getRuntime.addShutdownHook(new Thread(() => relayServer.runLater(relayServer.close(CloseReason.INTERNAL))))
     }
 
     private def getExtensionFolderPath: String = {
