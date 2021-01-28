@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.concurrency
 
-import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory}
+import java.util.concurrent.{BlockingDeque, BlockingQueue, Executors, LinkedBlockingDeque, ThreadFactory}
 
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool.{WorkerThread, checkCurrentIsWorker}
 
@@ -53,7 +53,6 @@ class RelayWorkerThreadPool() extends AutoCloseable {
             }
         }
     }
-
     def provideWhileThenWait(check: => Boolean): Unit = {
         provideWhileThenWait(this.lock, check)
         if (check) { //we may still need to provide
@@ -92,6 +91,10 @@ class RelayWorkerThreadPool() extends AutoCloseable {
         field.get(executor).asInstanceOf[BlockingQueue[Runnable]]
     }
 
+    def createProvidedQueue[A]: BlockingDeque[A] = {
+        val queue = new LinkedBlockingDeque[A]()
+        val clazz = queue.getClass
+    }
 }
 
 object RelayWorkerThreadPool {
