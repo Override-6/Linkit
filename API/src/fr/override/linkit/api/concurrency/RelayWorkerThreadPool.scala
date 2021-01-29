@@ -5,7 +5,6 @@ import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory}
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool.{WorkerThread, checkCurrentIsWorker, providers}
 import fr.`override`.linkit.api.exception.IllegalThreadException
 
-import scala.annotation.tailrec
 import scala.util.control.NonFatal
 
 class RelayWorkerThreadPool() extends AutoCloseable {
@@ -16,7 +15,7 @@ class RelayWorkerThreadPool() extends AutoCloseable {
     //The different tasks to make
     private val workQueue = extractWorkQueue()
     private var closed = false
-    private val lock: AnyRef = new Object()
+    private val providerLocks = new ProvidersLock
 
     def runLater(action: => Unit): Unit = {
         runLater(_ => action)
@@ -33,10 +32,8 @@ class RelayWorkerThreadPool() extends AutoCloseable {
                     case NonFatal(e) => e.printStackTrace()
                 }
             }): Runnable)
-            lock.synchronized {
-                //notifies one thread that was provided with other tasks, and waited for the queue to be not empty
-                lock.notify()
-            }
+            //if there is one provided thread that is waiting for a new task to be performed, it would instantly execute the current task.
+            providerLocks.notifyOneProvider()
         }
         println(s"RunLater submitted ! (queueLength: ${workQueue.size()}, current: $currentThread)")
     }
@@ -44,6 +41,7 @@ class RelayWorkerThreadPool() extends AutoCloseable {
 
     def provideWhile(check: => Boolean): Unit = {
         checkCurrentIsWorker()
+
         println(s"Providing in $currentThread")
         providers += 1
         println(s"Total providers are : $providers")
@@ -62,6 +60,7 @@ class RelayWorkerThreadPool() extends AutoCloseable {
         provideWhile(check)
 
         if (check) { //we may still need to provide
+            providerLocks.addProvidingLock(lock)
             lock.synchronized {
                 println(s"WAITING LOCK ON THREAD ${Thread.currentThread()}")
                 lock.wait()
@@ -69,23 +68,9 @@ class RelayWorkerThreadPool() extends AutoCloseable {
         }
     }
 
-    def provideAllWhileThenWait(check: => Boolean): Unit = {
-        println("Providing on condition only")
-        provideWhile(check)
-
-        if (check) { //we may still need to provide
-            patience()
-        }
-
-        @tailrec
-        def patience(): Unit = {
-            Thread.sleep(25)
-            println(s"check = ${check}")
-            if (!check)
-                return //we do not need to provide anymore.
-            if (workQueue.isEmpty)
-                patience()
-            else provideAllWhileThenWait(check)
+    def provideOnLock(lock: AnyRef): Unit = {
+        while (!workQueue.isEmpty) {
+            workQueue.remove().run()
         }
     }
 

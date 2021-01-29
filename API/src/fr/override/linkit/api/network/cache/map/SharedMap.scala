@@ -9,6 +9,7 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.control.NonFatal
 
 class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
 
@@ -141,7 +142,14 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         type nK
         type nV
 
-        private val mainMap = mutable.Map[K, V](baseContent: _*)
+
+        private val mainMap = try {
+            mutable.Map[K, V](baseContent: _*)
+        } catch {
+            case NonFatal(e) =>
+                println(s"EKSEPTION : baseContent = ${baseContent.mkString("Array(", ", ", ")")}")
+                throw e
+        }
         private val boundedCollections = ListBuffer.empty[BoundedMap[K, V, nK, nV]]
 
         def createBoundedMap[nK, nV](map: (K, V) => (nK, nV)): BoundedMap.Immutable[nK, nV] = {
@@ -210,11 +218,12 @@ object SharedMap {
         new SharedCacheFactory[SharedMap[K, V]] {
 
             override def createNew(family: String, identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedMap[K, V] = {
-                new SharedMap[K, V](family, identifier, ScalaUtils.cloneArray(baseContent), channel)
+                new SharedMap[K, V](family, identifier, ScalaUtils.slowCopy(baseContent), channel)
             }
 
             override def sharedCacheClass: Class[SharedMap[K, V]] = classOf[SharedMap[K, V]]
         }
     }
+
 }
 

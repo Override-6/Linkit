@@ -43,7 +43,7 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
 
     override def take(): A = {
         println(s"PERFORMING TAKE ($list)")
-        pool.provideAllWhileThenWait(list.isEmpty)
+        pool.provideAllWhileThenWait(lock, list.isEmpty)
 
         poll()
     }
@@ -54,12 +54,12 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
         var last = now()
 
         println(s"PERFORMING TIMED POLL ($list)")
-        pool.provideAllWhileThenWait {
+        pool.provideAllWhileThenWait(lock, {
             val n = now()
             total += n - last
             last = n
             total <= toWait
-        }
+        })
 
         poll()
     }

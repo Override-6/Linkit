@@ -16,6 +16,7 @@ import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
+
 class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: PacketTraffic) {
 
     private val communicator: CommunicationPacketCollector = traffic.openCollector(11, CommunicationPacketCollector.providable)
@@ -67,7 +68,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
         content
     }
 
-    private def retrieveBaseContent(cacheID: Int, owner: String): Array[AnyRef] = {
+    private def retrieveBaseContent(cacheID: Int, owner: String): Array[AnyRef] = this.synchronized {
         if (cacheID == -1 && isHandlingSelf)
             return Array()
         println(s"family($family) " + s"Retrieving content id $cacheID to owner $owner (${Thread.currentThread()})" )
