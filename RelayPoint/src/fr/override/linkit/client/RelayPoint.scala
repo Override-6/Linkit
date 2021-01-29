@@ -46,6 +46,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler()
 
     override def start(): Unit = {
+        RelayWorkerThreadPool.checkCurrentIsWorker("Must start relay point in a worker thread.")
+
+        val t0 = System.currentTimeMillis()
         open = true
         securityManager.checkRelay(this)
 
@@ -67,7 +70,8 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         }
         securityManager.checkRelay(this)
 
-        println("Ready !")
+        val t1 = System.currentTimeMillis()
+        println(s"Ready ! (took (${t1 - t0}ms)")
     }
 
     override def runLater(callback: => Unit): Unit = {
@@ -272,4 +276,5 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         }
 
     }
+
 }
