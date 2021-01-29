@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.concurrency
 
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread.packetReaderThreadGroup
-import fr.`override`.linkit.api.exception.IllegalPacketWorkerLockException
+import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, IllegalThreadException}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
 import scala.util.control.NonFatal
@@ -15,7 +15,7 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
     override def run(): Unit = {
         try {
             while (open) {
-                println("Waiting for next packet...")
+                //println("Waiting for next packet...")
                 readAndHandleOnePacket()
             }
         } catch {
@@ -23,7 +23,7 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
                 e.printStackTrace()
                 open = false
         } finally {
-            println("STOPPED PACKET WORKER")
+            //println("STOPPED PACKET WORKER")
         }
     }
 
@@ -53,12 +53,12 @@ object PacketWorkerThread {
 
     def checkCurrent(): Unit = {
         if (!isCurrentWorkerThread)
-            throw new IllegalStateException("This action must be performed in a Packet Worker thread !")
+            throw new IllegalThreadException("This action must be performed in a Packet Worker thread !")
     }
 
     def checkNotCurrent(): Unit = {
         if (isCurrentWorkerThread)
-            throw new IllegalStateException("This action must not be performed in a Packet Worker thread !")
+            throw new IllegalThreadException("This action must not be performed in a Packet Worker thread !")
     }
 
     def currentThread(): Option[PacketWorkerThread] = {

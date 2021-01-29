@@ -18,4 +18,6 @@ package object concurrency {
 
     def now(): Long = System.currentTimeMillis()
 
+    def currentThread: Thread = Thread.currentThread()
+
 }

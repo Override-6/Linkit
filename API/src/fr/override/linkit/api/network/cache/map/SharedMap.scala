@@ -113,7 +113,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         modCount += 1
 
         networkListeners.applyAll(mod)
-        println(s"<$family> MAP IS NOW (network): " + localMap + " IDENTIFIER : " + identifier)
+        //println(s"<$family> MAP IS NOW (network): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     private def addLocalModification(@NotNull kind: MapModification, @Nullable key: Any, @Nullable value: Any): Unit = {
@@ -133,7 +133,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
         modCount += 1
-        println(s"<$family> MAP IS NOW (local): " + localMap + " IDENTIFIER : " + identifier)
+        //println(s"<$family> MAP IS NOW (local): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     case class LocalMap() {

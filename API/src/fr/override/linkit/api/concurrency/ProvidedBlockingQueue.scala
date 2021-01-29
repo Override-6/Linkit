@@ -5,12 +5,16 @@ import java.util.concurrent.{BlockingQueue, TimeUnit}
 
 import scala.collection.mutable.ListBuffer
 
-class ProvidedBlockingDeque[A](pool: RelayWorkerThreadPool) extends BlockingQueue[A] {
+class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) extends BlockingQueue[A] {
 
     private val list = ListBuffer.empty[A]
+    private val lock = new Object
 
     override def add(e: A): Boolean = {
         list += e
+        lock.synchronized {
+            lock.notifyAll()
+        }
         true
     }
 
@@ -23,6 +27,7 @@ class ProvidedBlockingDeque[A](pool: RelayWorkerThreadPool) extends BlockingQueu
     override def remove(): A = {
         if (list.isEmpty)
             throw new NoSuchElementException()
+
         val head = list.head
         list.remove(0)
         head
@@ -30,22 +35,31 @@ class ProvidedBlockingDeque[A](pool: RelayWorkerThreadPool) extends BlockingQueu
 
     override def poll(): A = {
         if (list.isEmpty)
-            return _
+            return _: A
         val head = list.head
         list.remove(0)
         head
     }
 
     override def take(): A = {
-        pool.provideWhileThenWait(list.isEmpty)
-        val head = list.head
-        list.remove(0)
-        head
+        println(s"PERFORMING TAKE ($list)")
+        pool.provideAllWhileThenWait(list.isEmpty)
+
+        poll()
     }
 
     override def poll(timeout: Long, unit: TimeUnit): A = {
         val toWait = unit.toMillis(timeout)
-        pool.provide(toWait)
+        var total: Long = 0
+        var last = now()
+
+        println(s"PERFORMING TIMED POLL ($list)")
+        pool.provideAllWhileThenWait {
+            val n = now()
+            total += n - last
+            last = n
+            total <= toWait
+        }
 
         poll()
     }
@@ -69,6 +83,7 @@ class ProvidedBlockingDeque[A](pool: RelayWorkerThreadPool) extends BlockingQueu
 
     override def iterator(): util.Iterator[A] = new util.Iterator[A] {
         private val iterator = list.iterator
+
         override def hasNext: Boolean = iterator.hasNext
 
         override def next(): A = iterator.next()
@@ -76,15 +91,12 @@ class ProvidedBlockingDeque[A](pool: RelayWorkerThreadPool) extends BlockingQueu
 
     override def remainingCapacity(): Int = -1 //Provided queue does not have defined capacity
 
-    override def drainTo(c: util.Collection[_ >: A]): Int = null
+    override def drainTo(c: util.Collection[_ >: A]): Int = throw new UnsupportedOperationException()
 
-    override def drainTo(c: util.Collection[_ >: A], maxElements: Int): Int = null
+    override def drainTo(c: util.Collection[_ >: A], maxElements: Int): Int = throw new UnsupportedOperationException()
 
     override def isEmpty: Boolean = list.isEmpty
 
-    override def toArray: Array[AnyRef] = list.toArray[AnyRef]
-
-    override def toArray[T](a: Array[T]): Array[T] = list.toArray[T]
 
     override def containsAll(c: util.Collection[_]): Boolean = list.containsSlice(c.toArray)
 
@@ -98,7 +110,22 @@ class ProvidedBlockingDeque[A](pool: RelayWorkerThreadPool) extends BlockingQueu
         !c.isEmpty
     }
 
-    override def retainAll(c: util.Collection[_]): Boolean = null
+    override def retainAll(c: util.Collection[_]): Boolean = {
+        list.filterInPlace(c.contains)
+        true
+    }
 
     override def clear(): Unit = list.clear()
+
+    override def toArray: Array[AnyRef] = {
+        val buff = ListBuffer.empty[Any]
+        list.foreach(e => buff.addOne(e))
+        buff.toArray.asInstanceOf[Array[AnyRef]]
+    }
+
+    override def toArray[T](a: Array[T with Object]): Array[T with Object] = {
+        toArray.asInstanceOf[Array[T with Object]]
+    }
+
+
 }

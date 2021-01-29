@@ -10,7 +10,6 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override val globalCache: SharedCacheHandler = SharedCacheHandler.create("Global Shared Cache", Relay.ServerIdentifier)(relay.traffic)
 
-    println(s"--> [${Thread.currentThread()}] Creating SelfNetworkEntity ")
     override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 
 
@@ -18,7 +17,7 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
             .open(3, SharedCollection.set[String])
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
-    private val communicator = relay.openCollector(9, CommunicationPacketCollector)
+    private val communicator = relay.openCollector(9, CommunicationPacketCollector.providable)
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
@@ -37,14 +36,17 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     //Will replace the entity if the identifier is already present in the network's entities cache.
     def createEntity(identifier: String): NetworkEntity = {
-        println(s"---> ${Thread.currentThread()} Creating entity '$identifier'")
+        println()
+        println()
+        println(s"CREATING ENTITY $identifier ($sharedIdentifiers)")
+        println()
+        println()
         if (identifier == relay.identifier) {
             return selfEntity
         }
-        if (getEntity(identifier).isDefined) {
-            sharedIdentifiers.remove(identifier)
-        }
-        createRelayEntity(identifier, communicator.subChannel(identifier, CommunicationPacketChannel, true))
+
+        val channel = communicator.subChannel(identifier, CommunicationPacketChannel.providable, true)
+        createRelayEntity(identifier, channel)
     }
 
     def createRelayEntity(identifier: String, communicationChannel: CommunicationPacketChannel): NetworkEntity

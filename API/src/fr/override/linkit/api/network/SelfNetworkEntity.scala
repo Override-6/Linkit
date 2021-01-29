@@ -39,8 +39,8 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     override def listRemoteFragmentControllers: List[RemoteFragmentController] = {
         val communicator = relay
-                .openCollector(4, CommunicationPacketCollector)
-                .subChannel(identifier, CommunicationPacketChannel, true)
+                .openCollector(4, CommunicationPacketCollector.providable)
+                .subChannel(identifier, CommunicationPacketChannel.providable, true)
 
         fragmentHandler
                 .listRemoteFragments()

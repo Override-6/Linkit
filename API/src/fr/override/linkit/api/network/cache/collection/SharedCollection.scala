@@ -39,7 +39,8 @@ class SharedCollection[A](family: String, identifier: Int, adapter: CollectionAd
     def contains(a: Any): Boolean = adapter.contains(a)
 
     def add(t: A): this.type = {
-        addLocalModification(ADD, adapter.insert(t), t)
+        adapter.add(t)
+        addLocalModification(ADD, -1, t)
         this
     }
 
@@ -117,11 +118,10 @@ class SharedCollection[A](family: String, identifier: Int, adapter: CollectionAd
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
-        println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
+        //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
     }
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        println(s"<$family, $identifier> received packet : $packet")
         packet match {
             case modPacket: ObjectPacket => RelayWorkerThreadPool.smartRun {
                 handleNetworkModRequest(modPacket)
@@ -130,32 +130,32 @@ class SharedCollection[A](family: String, identifier: Int, adapter: CollectionAd
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
-        println("HANDLING MOD REQUEST")
+        //println("HANDLING MOD REQUEST")
         val mod: (CollectionModification, Int, Any) = packet.casted
-        println("casted")
+        //println("casted")
         val modKind: CollectionModification = mod._1
         val index: Int = mod._2
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed
-        println("Everything fine...")
+        //println("Everything fine...")
         val action: CollectionAdapter[A] => Unit = modKind match {
             case CLEAR => _.clear()
             case SET => _.set(index, item)
             case REMOVE => _.remove(index)
-            case ADD => if (index < 0) _.insert(item) else _.insert(index, item)
+            case ADD => if (index < 0) _.add(item) else _.insert(index, item)
         }
 
         try {
-            println(s"Making action $mod... (${Thread.currentThread()})")
+            //println(s"Making action $mod... (${Thread.currentThread()})")
             action(adapter)
-            println("Action made !")
+            //println("Action made !")
         } catch {
             case NonFatal(e) => e.printStackTrace()
         }
         modCount += 1
 
-        println("Applying asyncly...")
+        //println("Applying asyncly...")
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
-        println(s"<$family> COLLECTION IS NOW (network): " + adapter + s" identifier : $identifier")
+        //println(s"<$family> COLLECTION IS NOW (network): " + adapter + s" identifier : $identifier")
     }
 
 }
@@ -230,7 +230,7 @@ object SharedCollection {
             foreachCollection(_.add(i, it))
         }
 
-        def insert(it: A): Int = {
+        def add(it: A): Int = {
             if (!insertFilter(it))
                 return -1
 
@@ -238,6 +238,7 @@ object SharedCollection {
             foreachCollection(_.add(it))
             mainCollection.size - 1
         }
+
 
         def set(array: Array[A]): Unit = {
             mainCollection.clear()
