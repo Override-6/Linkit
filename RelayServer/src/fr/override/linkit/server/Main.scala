@@ -14,21 +14,19 @@ object Main {
             enableExtensionsFolderLoad = !ideRun
             extensionsFolder = getExtensionFolderPath
         }
-        relayServer.start()
+        relayServer.runLater {
+            relayServer.start()
 
-        if (ideRun) {
+            if (ideRun) {
 
-            import fr.`override`.linkit.`extension`.cloud.CloudStorageExtension
-            import fr.`override`.linkit.`extension`.controller.ControllerExtension
-            import fr.`override`.linkit.`extension`.debug.DebugExtension
+                import fr.`override`.linkit.`extension`.controller.ControllerExtension
+                import fr.`override`.linkit.`extension`.debug.DebugExtension
 
-            relayServer.extensionLoader.loadExtensions(
-                classOf[ControllerExtension],
-                classOf[CloudStorageExtension],
-                classOf[DebugExtension]
-            )
-
-
+                relayServer.extensionLoader.loadExtensions(
+                    classOf[ControllerExtension],
+                    classOf[DebugExtension]
+                )
+            }
         }
         Runtime.getRuntime.addShutdownHook(new Thread(() => relayServer.runLater(relayServer.close(CloseReason.INTERNAL))))
     }

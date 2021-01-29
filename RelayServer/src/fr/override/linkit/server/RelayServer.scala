@@ -68,6 +68,8 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
 
     override def start(): Unit = {
+        RelayWorkerThreadPool.checkCurrentIsWorker("Must start server in a worker thread.")
+
         println("Current encoding is " + Charset.defaultCharset().name())
         println("Listening on port " + configuration.port)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
