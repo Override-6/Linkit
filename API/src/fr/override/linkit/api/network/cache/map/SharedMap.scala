@@ -9,7 +9,6 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.util.control.NonFatal
 
 class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
 
@@ -143,13 +142,10 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         type nV
 
 
-        private val mainMap = try {
+        private val mainMap = {
             mutable.Map.from[K, V](baseContent)
-        } catch {
-            case NonFatal(e) =>
-                //println(s"EKSEPTION : baseContent = ${baseContent.mkString("Array(", ", ", ")")}")
-                throw e
         }
+
         private val boundedCollections = ListBuffer.empty[BoundedMap[K, V, nK, nV]]
 
         def createBoundedMap[nK, nV](map: (K, V) => (nK, nV)): BoundedMap.Immutable[nK, nV] = {
