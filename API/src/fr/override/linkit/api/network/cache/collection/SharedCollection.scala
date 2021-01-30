@@ -14,7 +14,10 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class SharedCollection[A](family: String, identifier: Int, adapter: CollectionAdapter[A], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) with mutable.Iterable[A] {
+class SharedCollection[A](family: String,
+                          identifier: Int,
+                          adapter: CollectionAdapter[A],
+                          channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
     private val networkListeners = ConsumerContainer[(CollectionModification, Int, A)]()
@@ -118,7 +121,7 @@ class SharedCollection[A](family: String, identifier: Int, adapter: CollectionAd
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
-        //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
+        println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
     }
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
@@ -155,7 +158,7 @@ class SharedCollection[A](family: String, identifier: Int, adapter: CollectionAd
 
         //println("Applying asyncly...")
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
-        //println(s"<$family> COLLECTION IS NOW (network): " + adapter + s" identifier : $identifier")
+        println(s"<$family> COLLECTION IS NOW (network): " + adapter + s" identifier : $identifier")
     }
 
 }
@@ -178,7 +181,7 @@ object SharedCollection {
     def ofInsertFilter[A](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
         new SharedCacheFactory[SharedCollection[A]] {
 
-            override def createNew(family: String, identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedCollection[A] = {
+            override def createNew(family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel): SharedCollection[A] = {
                 var adapter: CollectionAdapter[A] = null
                 adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
 

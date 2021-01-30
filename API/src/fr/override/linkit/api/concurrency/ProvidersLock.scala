@@ -1,58 +1,73 @@
 package fr.`override`.linkit.api.concurrency
 
 import java.util
-import java.util.concurrent.ThreadLocalRandom
 
 import scala.collection.mutable
 
 class ProvidersLock {
 
     private val providers = mutable.Map.empty[Thread, ThreadLocks]
-    private val random = ThreadLocalRandom.current()
 
     def addProvidingLock(lock: AnyRef): Unit = {
-        providers.getOrElseUpdate(currentThread, new ThreadLocks)
-                .addLock(lock)
+        val locks = providers.getOrElseUpdate(currentThread, new ThreadLocks)
+        locks.addLock(lock)
+        //println(s"locks = ${locks} ($currentThread) - ADDED")
     }
 
     def removeProvidingLock(): AnyRef = {
-        val locks = providers.getOrElseUpdate(currentThread, new ThreadLocks)
-        val lock = locks.removeLock()
-        if (locks.isEmpty) {
-            providers.remove(currentThread)
-        }
+        val locksOpt = providers.get(currentThread)
+        if (locksOpt.isEmpty)
+            return null
 
+        val locks = locksOpt.get
+        val lock = locks.removeLock()
+
+        if (locks.isEmpty) {
+            providers.remove(currentThread) //will unregister this lock.
+        }
         lock
     }
 
     def notifyOneProvider(): Unit = {
-        val randIndex = random.nextInt(0, providers.size)
-        providers.values.toList(randIndex).notifyLock()
+        if (providers.isEmpty)
+            return
+        providers
+                .values
+                .find(_.owner.getState == Thread.State.WAITING)
+                .foreach(_.notifyLock())
     }
 
     private class ThreadLocks {
-        private val locks = new util.ArrayDeque[AnyRef]()
-        @volatile private var notified = false
+        val owner: Thread = currentThread
+        private val queue = new util.ArrayDeque[AnyRef]()
+        @volatile private var inSync = false
 
         def addLock(lock: AnyRef): Unit = {
-            notified = false
-            locks.addLast(lock)
+            queue.addLast(lock)
         }
 
         def removeLock(): AnyRef = {
-            notified = false
-            locks.removeLast()
+            queue.removeLast()
         }
-
-        def isEmpty: Boolean = locks.isEmpty
 
         def notifyLock(): Unit = {
-            val lock = locks.peekLast()
+            if (isEmpty)
+                return
+
+            val lock = queue.getLast
+            //println(s"NOTIFYING... (current: $currentThread, lock: $lock, owner: $owner, inSync: $inSync)")
             lock.synchronized {
-                notified = true
+                inSync = true
+                //println(s"In Synchronized (current: $currentThread, lock: $lock)")
                 lock.notify()
+                //println(s"Done exec sync block ! (current: $currentThread, lock: $lock)")
+                inSync = false
             }
         }
+
+        def isEmpty: Boolean = queue.isEmpty
+
+        override def toString: String = queue.toString
 
     }
 

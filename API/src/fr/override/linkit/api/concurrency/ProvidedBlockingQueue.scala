@@ -14,6 +14,7 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
         list += e
         lock.synchronized {
             lock.notifyAll()
+            //println("NOTIFIED :D")
         }
         true
     }
@@ -42,9 +43,8 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
     }
 
     override def take(): A = {
-        println(s"PERFORMING TAKE ($list)")
+        //println(s"PERFORMING TAKE ($list)")
         pool.provideAllWhileThenWait(lock, list.isEmpty)
-
         poll()
     }
 
@@ -53,7 +53,7 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
         var total: Long = 0
         var last = now()
 
-        println(s"PERFORMING TIMED POLL ($list)")
+        //println(s"PERFORMING TIMED POLL ($list)")
         pool.provideAllWhileThenWait(lock, {
             val n = now()
             total += n - last
@@ -96,7 +96,6 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
     override def drainTo(c: util.Collection[_ >: A], maxElements: Int): Int = throw new UnsupportedOperationException()
 
     override def isEmpty: Boolean = list.isEmpty
-
 
     override def containsAll(c: util.Collection[_]): Boolean = list.containsSlice(c.toArray)
 

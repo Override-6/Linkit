@@ -41,42 +41,31 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
 
     def open[A <: HandleableSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A]): A = {
-        println(s"<$family, $ownerID> " + "Opening " + cacheID + " In " + Thread.currentThread() )
+        //println(s"<$family, $ownerID> " + "Opening " + cacheID + " In " + Thread.currentThread() )
 
         LocalCacheHandler
                 .findCache[A](cacheID)
                 .getOrElse {
-                    val baseContent: Array[AnyRef] = retrieveBaseContent(cacheID)
+                    val baseContent: Array[Any] = retrieveBaseContent(cacheID)
                     val sharedCache = factory.createNew(family, cacheID, baseContent, subBroadcastChannel)
                     LocalCacheHandler.register(cacheID, sharedCache)
                     sharedCache
                 }
     }
 
-    private def retrieveBaseContent(cacheID: Int): Array[AnyRef] = {
-        println(s"<$family> " + "RETRIEVING BASE CONTENT FOR " + cacheID + s"(${Thread.currentThread()})")
-        println(s"<$family> " + s"cacheOwners = ${cacheOwners}")
+    private def retrieveBaseContent(cacheID: Int): Array[Any] = {
+        //println(s"<$family> " + "RETRIEVING BASE CONTENT FOR " + cacheID + s"(${Thread.currentThread()})")
+        //println(s"<$family> " + s"cacheOwners = ${cacheOwners}")
         if (isHandlingSelf || !cacheOwners.contains(cacheID)) {
-            println(s"<$family> " + "Does not exists, setting current relay as owner of this cache")
+            //println(s"<$family> " + "Does not exists, setting current relay as owner of this cache")
             cacheOwners.put(cacheID, relayID)
             return Array()
         }
-        println(s"<$family> " + "Retrieving cache...")
+        //println(s"<$family> " + "Retrieving cache...")
         val owner = cacheOwners(cacheID)
         val content = retrieveBaseContent(cacheID, owner)
-        println(s"<$family, $ownerID> " + "Content retrieved is : " + content.mkString("Array(", ", ", ")"))
+        //println(s"<$family, $ownerID> " + "Content retrieved is : " + content.mkString("Array(", ", ", ")"))
         content
-    }
-
-    private def retrieveBaseContent(cacheID: Int, owner: String): Array[AnyRef] = this.synchronized {
-        if (cacheID == -1 && isHandlingSelf)
-            return Array()
-        println(s"family($family) " + s"Retrieving content id $cacheID to owner $owner (${Thread.currentThread()})" )
-        communicator.sendRequest(WrappedPacket(family, DataPacket(s"$cacheID")), owner)
-        println(s"family($family) " + s"waiting for response...")
-        val o: Array[AnyRef] = communicator.nextResponse(ObjectPacket).casted //The request will return the cache content
-        println(s"family($family) " + "Response got !")
-        o
     }
 
     private def init(): SharedMap[Int, String] = {
@@ -92,13 +81,23 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
         cacheOwners
                 .foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
                 .addListener((_, key, _) => LocalCacheHandler.registerMock(key)) //Add a listener for all future registered caches that would not be registered locally
-        println(s"Cache owners currently : $cacheOwners")
+        ////println(s"Cache owners currently : $cacheOwners")
         cacheOwners
+    }
+
+    private def retrieveBaseContent(cacheID: Int, owner: String): Array[Any] = this.synchronized {
+        if (cacheID == -1 && isHandlingSelf)
+            return Array()
+        ////println(s"family($family) " + s"Retrieving content id $cacheID to owner $owner (${Thread.currentThread()})" )
+        communicator.sendRequest(WrappedPacket(family, DataPacket(s"$cacheID")), owner)
+        ////println(s"family($family) " + s"waiting for response...")
+        val o: Array[Any] = communicator.nextResponse(ObjectPacket).casted //The request will return the cache content
+        ////println(s"family($family) " + "Response got !")
+        o
     }
 
     private def initPacketHandling(): Unit = {
         communicator.addRequestListener((packet, coords) => {
-            ////println(s"family($family) " + "Testing " + packet + " for family " + family)
             packet match {
                 case WrappedPacket(tag, subPacket) => if (tag == family)
                     handlePacket(subPacket, coords)
@@ -107,7 +106,6 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
     }
 
     private def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        println(s"<$family> #### Received " + packet + " Sent from " + coords.senderID + s"(${Thread.currentThread()})")
         packet match {
             //Normal packet
             case WrappedPacket(key, subPacket) =>
@@ -144,28 +142,21 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
         def register(identifier: Int, cache: HandleableSharedCache): Unit = {
             localRegisteredCaches.put(identifier, cache)
-            ////println(s"<$family> REGISTERED CACHE '$identifier', Local Registered Caches are actually : " + localRegisteredCaches)
         }
 
         def injectPacket(key: Int, packet: Packet, coords: PacketCoordinates): Unit = try {
-            ////println(s"<$family> localRegisteredCaches = ${localRegisteredCaches}")
-            ////println(s"<$family> cacheOwners = ${cacheOwners}")
             localRegisteredCaches(key).handlePacket(packet, coords)
         } catch {
-            case e: NoSuchElementException =>
+            case _: NoSuchElementException =>
                 registerMock(key)
-                ////println(s"SharedCacheHandler: (${family}) The shared cache number $key was forced to be registered as a mock : received packet from it, but was not opened locally")
             case NonFatal(e) => e.printStackTrace(Console.out)
         }
 
         def registerMock(identifier: Int): Unit = {
             localRegisteredCaches.put(identifier, MockCache)
-            ////println(s"<$family, $ownerID> Mocked identifier : $identifier, cacheOwners are now : $cacheOwners")
         }
 
         def getContent(cacheID: Int): Array[Any] = {
-            ////println(s"<$family> localRegisteredCaches = ${localRegisteredCaches}")
-            ////println(s"<$family> cacheOwners = ${cacheOwners}")
             localRegisteredCaches(cacheID).currentContent
         }
 
@@ -190,10 +181,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 object SharedCacheHandler {
 
     def create(identifier: String, ownerID: String)(implicit traffic: PacketTraffic): SharedCacheHandler = {
-        println(s"--> [${Thread.currentThread()}] Creating Shared Cache Handler '<$identifier, $ownerID>'")
-        val s = new SharedCacheHandler(identifier, ownerID)(traffic)
-        println(s"--> [${Thread.currentThread()}] Finished Initialisation of '<$identifier, $ownerID>'")
-        s
+        new SharedCacheHandler(identifier, ownerID)(traffic)
     }
 
     object MockCache extends HandleableSharedCache("", -1, null) {

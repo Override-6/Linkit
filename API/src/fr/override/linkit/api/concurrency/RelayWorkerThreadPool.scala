@@ -25,9 +25,9 @@ class RelayWorkerThreadPool() extends AutoCloseable {
         if (!closed) {
             executor.submit((() => {
                 try {
-                    println(s"Making action...($currentThread)")
+                    //println(s"Making action...($currentThread)")
                     action(null)
-                    println(s"Action made ! (queueLength: ${workQueue.size()}, current: $currentThread)")
+                    //println(s"Action made ! (queueLength: ${workQueue.size()}, current: $currentThread)")
                 } catch {
                     case NonFatal(e) => e.printStackTrace()
                 }
@@ -35,42 +35,43 @@ class RelayWorkerThreadPool() extends AutoCloseable {
             //if there is one provided thread that is waiting for a new task to be performed, it would instantly execute the current task.
             providerLocks.notifyOneProvider()
         }
-        println(s"RunLater submitted ! (queueLength: ${workQueue.size()}, current: $currentThread)")
+        //println(s"RunLater submitted ! (queueLength: ${workQueue.size()}, current: $currentThread)")
     }
 
 
     def provideWhile(check: => Boolean): Unit = {
         checkCurrentIsWorker()
 
-        println(s"Providing in $currentThread")
+        //println(s"Providing in $currentThread")
         providers += 1
-        println(s"Total providers are : $providers")
+        //println(s"Total providers are : $providers")
         while (!workQueue.isEmpty && check) {
             val task = workQueue.poll()
             if (task != null)
                 task.run()
         }
         providers -= 1
-        println(s"End Of Provide $currentThread")
-        println(s"Total providers are now : $providers")
+        //println(s"End Of Provide $currentThread")
+        //println(s"Total providers are now : $providers")
     }
 
     def provideAllWhileThenWait(lock: AnyRef, check: => Boolean): Unit = {
-        println(s"Providing on lock ($lock) and condition")
+        //println(s"Providing on lock ($lock) and condition")
         provideWhile(check)
 
         if (check) { //we may still need to provide
             providerLocks.addProvidingLock(lock)
-            lock.synchronized {
-                println(s"WAITING LOCK ON THREAD ${Thread.currentThread()}")
-                lock.wait()
+            while (check) {
+                //println(s"CONTINUING... ($lock, $currentThread)")
+                lock.synchronized {
+                    //println(s"WAiTING ($lock, $currentThread)")
+                    if (check)// because of the synchronisation block, the check value may be true, so
+                        lock.wait()
+                }
+                //println(s"CONTINUED ! ($lock, $currentThread)")
+                provideWhile(check)
             }
-        }
-    }
-
-    def provideOnLock(lock: AnyRef): Unit = {
-        while (!workQueue.isEmpty) {
-            workQueue.remove().run()
+            providerLocks.removeProvidingLock()
         }
     }
 
@@ -86,7 +87,7 @@ class RelayWorkerThreadPool() extends AutoCloseable {
         }
         val toWait = millis - totalProvided
         if (toWait > 0) {
-            val waited = timedWait(lock, toWait)
+            val waited = timedWait(getClass, toWait)
             if (waited < toWait)
                 provide(millis)
         }
@@ -158,10 +159,9 @@ object RelayWorkerThreadPool {
     }
 
     def smartWait(lock: AnyRef, asLongAs: => Boolean): Unit = {
-        println("Performing smart wait...")
+        //println("Performing smart wait...")
         ifCurrentOrElse(_ => s"Providing ${Thread.currentThread()}", s"Waiting ${Thread.currentThread()}")
         ifCurrentOrElse(_.provideAllWhileThenWait(lock, asLongAs), lock.synchronized(lock.wait()))
-
     }
 
     def smartWait(lock: AnyRef, minTimeOut: Long): Unit = {

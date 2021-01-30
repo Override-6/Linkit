@@ -3,7 +3,7 @@ package fr.`override`.linkit.api.network
 import java.sql.Timestamp
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.network.cache.SharedCacheHandler
+import fr.`override`.linkit.api.network.cache.{SharedCacheHandler, SharedInstance}
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
@@ -17,7 +17,8 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
     cache.post(4, Relay.ApiVersion)
     cache.post(5, relay.relayVersion)
 
-    private val fragmentHandler = relay.extensionLoader.fragmentHandler
+    private val sharedState = cache.open(3, SharedInstance[ConnectionState])
+    addOnStateUpdate(sharedState.set)
 
     override val connectionDate: Timestamp = cache.post(2, new Timestamp(System.currentTimeMillis()))
 
@@ -42,6 +43,7 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
                 .openCollector(4, CommunicationPacketCollector.providable)
                 .subChannel(identifier, CommunicationPacketChannel.providable, true)
 
+        val fragmentHandler = relay.extensionLoader.fragmentHandler
         fragmentHandler
                 .listRemoteFragments()
                 .map(frag => new RemoteFragmentController(frag.nameIdentifier, communicator))

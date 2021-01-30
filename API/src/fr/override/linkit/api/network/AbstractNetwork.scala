@@ -36,11 +36,6 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     //Will replace the entity if the identifier is already present in the network's entities cache.
     def createEntity(identifier: String): NetworkEntity = {
-        println()
-        println()
-        println(s"CREATING ENTITY $identifier ($sharedIdentifiers)")
-        println()
-        println()
         if (identifier == relay.identifier) {
             return selfEntity
         }

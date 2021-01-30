@@ -144,10 +144,10 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
 
 
         private val mainMap = try {
-            mutable.Map[K, V](baseContent: _*)
+            mutable.Map.from[K, V](baseContent)
         } catch {
             case NonFatal(e) =>
-                println(s"EKSEPTION : baseContent = ${baseContent.mkString("Array(", ", ", ")")}")
+                //println(s"EKSEPTION : baseContent = ${baseContent.mkString("Array(", ", ", ")")}")
                 throw e
         }
         private val boundedCollections = ListBuffer.empty[BoundedMap[K, V, nK, nV]]
@@ -217,7 +217,7 @@ object SharedMap {
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
         new SharedCacheFactory[SharedMap[K, V]] {
 
-            override def createNew(family: String, identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedMap[K, V] = {
+            override def createNew(family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel): SharedMap[K, V] = {
                 new SharedMap[K, V](family, identifier, ScalaUtils.slowCopy(baseContent), channel)
             }
 
