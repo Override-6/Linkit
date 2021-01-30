@@ -45,12 +45,12 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
     override val traffic: PacketTraffic = globalTraffic
+    override val relayVersion: Version = RelayServer.version
     override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
     override val packetTranslator: PacketTranslator = new PacketTranslator(this)
     override val network: ServerNetwork = new ServerNetwork(this)(globalTraffic)
-    override val relayVersion: Version = RelayServer.version
     private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
 
 
