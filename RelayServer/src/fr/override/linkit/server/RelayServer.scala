@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.16.0", stable = false)
+    val version: Version = Version("RelayServer", "0.17.0", stable = false)
 
     val Identifier = "server"
 }
