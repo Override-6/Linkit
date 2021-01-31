@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.connection
 import java.net.Socket
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThread}
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
 import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
@@ -24,7 +24,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     private val packetTranslator = server.packetTranslator
     private val manager: ConnectionsManager = server.connectionsManager
 
-    private val workerThread = new RelayWorkerThread()
+    private val workerThread = new RelayWorkerThreadPool()
 
     @volatile private var closed = false
 
@@ -36,7 +36,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     }
 
     override def close(reason: CloseReason): Unit = {
-        RelayWorkerThread.checkCurrentIsWorker()
+        RelayWorkerThreadPool.checkCurrentIsWorker()
         closed = true
         if (reason.isInternal && isConnected) {
             val sysChannel = session.channel
@@ -81,18 +81,22 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     override def isClosed: Boolean = closed
 
     private[server] def updateSocket(socket: Socket): Unit = {
-        RelayWorkerThread.checkCurrentIsWorker()
+        RelayWorkerThreadPool.checkCurrentIsWorker()
         session.updateSocket(socket)
     }
 
-    private[connection] def sendBytes(bytes: Array[Byte]): Unit = runLater {
+    private[connection] def sendBytes(bytes: Array[Byte]): Unit = {
         session.send(PacketUtils.wrap(bytes))
     }
 
     object ConnectionPacketWorker extends PacketWorkerThread {
         override protected def readAndHandleOnePacket(): Unit = {
             try {
-                session.packetReader.nextPacket(handlePacket)
+                session
+                        .packetReader
+                        .nextPacket((packet, coordinates) => {
+                            runLater(handlePacket(packet, coordinates))
+                        })
             } catch {
                 case NonFatal(e) =>
                     e.printStackTrace()

@@ -5,7 +5,7 @@ import java.nio.charset.Charset
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.concurrency.RelayWorkerThread
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 object RelayServer {
-    val version: Version = Version("RelayServer", "0.16.0", stable = false)
+    val version: Version = Version("RelayServer", "0.17.0", stable = false)
 
     val Identifier = "server"
 }
@@ -45,13 +45,13 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
     override val traffic: PacketTraffic = globalTraffic
+    override val relayVersion: Version = RelayServer.version
     override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
     override val packetTranslator: PacketTranslator = new PacketTranslator(this)
     override val network: ServerNetwork = new ServerNetwork(this)(globalTraffic)
-    override val relayVersion: Version = RelayServer.version
-    private val workerThread: RelayWorkerThread = new RelayWorkerThread()
+    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
 
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -68,6 +68,8 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
 
     override def start(): Unit = {
+        RelayWorkerThreadPool.checkCurrentIsWorker("Must start server in a worker thread.")
+
         println("Current encoding is " + Charset.defaultCharset().name())
         println("Listening on port " + configuration.port)
         println("Computer name is " + System.getenv().get("COMPUTERNAME"))
@@ -225,6 +227,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
      * @return true if the following handling int the client connection should stop, false instead
      * */
     private[server] def preHandlePacket(packet: Packet, coordinates: PacketCoordinates): Boolean = {
+        PacketWorkerThread.checkNotCurrent()
         val isGlobalPacket = globalTraffic.isRegistered(coordinates.injectableID, coordinates.senderID)
         if (isGlobalPacket)
             globalTraffic.injectPacket(packet, coordinates)
@@ -279,5 +282,4 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
             throw new RelayCloseException("Relay Server have to be started !")
     }
 
-    Runtime.getRuntime.addShutdownHook(new Thread(() => close(CloseReason.INTERNAL)))
 }

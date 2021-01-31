@@ -27,11 +27,12 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
 
     private def nextConcernedPacket(event: (Packet, PacketCoordinates) => Unit): Unit = {
         val bytes = packetReader.readNextPacketBytes()
-        //NETWORK-DEBUG-MARK
-        //println(s"received : ${new String(bytes)}")
         if (bytes == null) {
             return
         }
+
+        //NETWORK-DEBUG-MARK
+        //println(s"received : ${new String(bytes)}")
         val target = getTargetID(bytes)
 
         target match {
@@ -39,12 +40,12 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
                 event(packet, coordinates)
 
-            case "BROADCAST" =>
+            case "BROADCAST" => server.runLater {
                 manager.broadcastBytes(bytes, identifier)
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
-                //handles the packet if it is registered into the server's collectors
+                //would inject the packet into registered injectables (if some are registered)
                 server.preHandlePacket(packet, coordinates)
-
+            }
             case _ => manager.deflectTo(bytes, target)
         }
     }

@@ -1,8 +1,8 @@
 package fr.`override`.linkit.api.packet.channel
 
-import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
-import fr.`override`.linkit.api.concurrency.PacketWorkerThread
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
@@ -12,13 +12,21 @@ import fr.`override`.linkit.api.system.CloseReason
 //TODO doc
 class SyncPacketChannel protected(override val connectedID: String,
                                   override val identifier: Int,
-                                  traffic: PacketTraffic) extends PacketChannel.Sync(traffic) {
+                                  traffic: PacketTraffic,
+                                  providable: Boolean) extends PacketChannel.Sync(traffic) {
 
 
     /**
      * this blocking queue stores the received packets until they are requested
      * */
-    private val queue: BlockingDeque[Packet] = new LinkedBlockingDeque()
+    private val queue: BlockingQueue[Packet] = {
+        if (!providable)
+            new LinkedBlockingQueue[Packet]()
+        else {
+            RelayWorkerThreadPool
+                    .ifCurrentOrElse(_.newProvidedQueue, new LinkedBlockingQueue[Packet]())
+        }
+    }
 
     /**
      * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet
@@ -31,7 +39,7 @@ class SyncPacketChannel protected(override val connectedID: String,
     override def injectPacket(packet: Packet, coords: PacketCoordinates): Unit = {
         if (coords.senderID != connectedID)
             throw new UnexpectedPacketException("Attempted to inject a packet that comes from a relay that is not bound to this channel")
-        queue.addFirst(packet)
+        queue.add(packet)
     }
 
     override def close(reason: CloseReason): Unit = {
@@ -42,7 +50,7 @@ class SyncPacketChannel protected(override val connectedID: String,
     override def nextPacket(): Packet = {
         if (queue.isEmpty)
             PacketWorkerThread.checkNotCurrent()
-        val packet = queue.takeLast()
+        val packet = queue.take()
         //handler.notifyPacketUsed(packet, coordinates)
         packet
     }
@@ -61,7 +69,18 @@ class SyncPacketChannel protected(override val connectedID: String,
 object SyncPacketChannel extends PacketChannelFactory[SyncPacketChannel] {
     override val channelClass: Class[SyncPacketChannel] = classOf[SyncPacketChannel]
 
-    override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): SyncPacketChannel = {
-        new SyncPacketChannel(connectedID, channelId, traffic)
+    private val providableFactory: PacketChannelFactory[SyncPacketChannel] = new PacketChannelFactory[SyncPacketChannel] {
+        override val channelClass: Class[SyncPacketChannel] = classOf[SyncPacketChannel]
+
+        override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): SyncPacketChannel = {
+            new SyncPacketChannel(connectedID, channelId, traffic, true)
+        }
     }
+
+    override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): SyncPacketChannel = {
+        new SyncPacketChannel(connectedID, channelId, traffic, false)
+    }
+
+    def providable: PacketChannelFactory[SyncPacketChannel] = providableFactory
+
 }

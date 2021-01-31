@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.network.cache.collection
 
-import fr.`override`.linkit.api.concurrency.AsyncExecutionContext
+import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
@@ -12,10 +12,12 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-class SharedCollection[A](family: String, identifier: Int, adapter: CollectionAdapter[A], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) with mutable.Iterable[A] {
+class SharedCollection[A](family: String,
+                          identifier: Int,
+                          adapter: CollectionAdapter[A],
+                          channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
     private val networkListeners = ConsumerContainer[(CollectionModification, Int, A)]()
@@ -40,7 +42,8 @@ class SharedCollection[A](family: String, identifier: Int, adapter: CollectionAd
     def contains(a: Any): Boolean = adapter.contains(a)
 
     def add(t: A): this.type = {
-        addLocalModification(ADD, adapter.insert(t), t)
+        adapter.add(t)
+        addLocalModification(ADD, -1, t)
         this
     }
 
@@ -116,42 +119,46 @@ class SharedCollection[A](family: String, identifier: Int, adapter: CollectionAd
 
     private def flushModification(mod: (CollectionModification, Int, Any)): Unit = {
         sendRequest(ObjectPacket(mod))
-        networkListeners.applyAll(mod.asInstanceOf[(CollectionModification, Int, A)])
+        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
-        //println(s"<${family}> COLLECTION IS NOW (local): " + localCollection + " IDENTIFIER : " + identifier)
+        println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
     }
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        //println(s"<$family, $identifier> received packet : $packet")
         packet match {
-            case modPacket: ObjectPacket => Future {
+            case modPacket: ObjectPacket => RelayWorkerThreadPool.smartRun {
                 handleNetworkModRequest(modPacket)
-            }(AsyncExecutionContext)
+            }
         }
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
+        //println("HANDLING MOD REQUEST")
         val mod: (CollectionModification, Int, Any) = packet.casted
-
+        //println("casted")
         val modKind: CollectionModification = mod._1
         val index: Int = mod._2
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed
-
+        //println("Everything fine...")
         val action: CollectionAdapter[A] => Unit = modKind match {
             case CLEAR => _.clear()
             case SET => _.set(index, item)
             case REMOVE => _.remove(index)
-            case ADD => if (index < 0) _.insert(item) else _.insert(index, item)
+            case ADD => if (index < 0) _.add(item) else _.insert(index, item)
         }
+
         try {
+            //println(s"Making action $mod... (${Thread.currentThread()})")
             action(adapter)
+            //println("Action made !")
         } catch {
             case NonFatal(e) => e.printStackTrace()
         }
         modCount += 1
 
+        //println("Applying asyncly...")
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
-        //println(s"<${family}> COLLECTION IS NOW (network): " + localCollection + s" identifier : $identifier")
+        println(s"<$family> COLLECTION IS NOW (network): " + adapter + s" identifier : $identifier")
     }
 
 }
@@ -174,7 +181,7 @@ object SharedCollection {
     def ofInsertFilter[A](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
         new SharedCacheFactory[SharedCollection[A]] {
 
-            override def createNew(family: String, identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedCollection[A] = {
+            override def createNew(family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel): SharedCollection[A] = {
                 var adapter: CollectionAdapter[A] = null
                 adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
 
@@ -220,20 +227,21 @@ object SharedCollection {
 
         def insert(i: Int, it: A): Unit = {
             if (!insertFilter(it))
-            return
+                return
 
             mainCollection.insert(i, it)
             foreachCollection(_.add(i, it))
         }
 
-        def insert(it: A): Int = {
+        def add(it: A): Int = {
             if (!insertFilter(it))
-            return -1
+                return -1
 
             mainCollection += it
             foreachCollection(_.add(it))
             mainCollection.size - 1
         }
+
 
         def set(array: Array[A]): Unit = {
             mainCollection.clear()
@@ -251,11 +259,10 @@ object SharedCollection {
 
         private[SharedCollection] def get(): S[A] = mainCollection
 
-        private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit = {
-            boundedCollections.foreach(action)
-        }
-
+        private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit =
+            RelayWorkerThreadPool.smartRun {
+                boundedCollections.foreach(action)
+            }
     }
 
 }
-

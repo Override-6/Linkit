@@ -141,7 +141,11 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         type nK
         type nV
 
-        private val mainMap = mutable.Map[K, V](baseContent: _*)
+
+        private val mainMap = {
+            mutable.Map.from[K, V](baseContent)
+        }
+
         private val boundedCollections = ListBuffer.empty[BoundedMap[K, V, nK, nV]]
 
         def createBoundedMap[nK, nV](map: (K, V) => (nK, nV)): BoundedMap.Immutable[nK, nV] = {
@@ -209,12 +213,13 @@ object SharedMap {
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
         new SharedCacheFactory[SharedMap[K, V]] {
 
-            override def createNew(family: String, identifier: Int, baseContent: Array[AnyRef], channel: CommunicationPacketChannel): SharedMap[K, V] = {
-                new SharedMap[K, V](family, identifier, ScalaUtils.cloneArray(baseContent), channel)
+            override def createNew(family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel): SharedMap[K, V] = {
+                new SharedMap[K, V](family, identifier, ScalaUtils.slowCopy(baseContent), channel)
             }
 
             override def sharedCacheClass: Class[SharedMap[K, V]] = classOf[SharedMap[K, V]]
         }
     }
+
 }
 

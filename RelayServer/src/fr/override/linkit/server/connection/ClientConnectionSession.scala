@@ -18,7 +18,6 @@ case class ClientConnectionSession private(identifier: String,
     val tasksHandler = new ConnectionTasksHandler(this)
     val outConsole: RemoteConsole = server.getConsoleOut(identifier)
     val errConsole: RemoteConsole = server.getConsoleErr(identifier)
-    private var entity: NetworkEntity = _ //Can't be a val because the NetworkEntity initialisation needs the connection to be registered and started
 
     override def close(reason: CloseReason): Unit = {
         socket.close(reason)

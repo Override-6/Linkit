@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api
 
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, RelayException}
+import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, IllegalThreadException, RelayException}
 import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole}
 import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
@@ -35,7 +35,7 @@ import scala.reflect.ClassTag
 //TODO Design a brand new and optimised packet protocol
 //TODO Find a solution about packets that are send into a non-registered channel : if an exception is thrown, this can cause some problems, and if not, this can cause other problems. SOLUTION : Looking for "RemoteActionDescription" that can control and get some information about an action that where made over the network.
 object Relay {
-    val ApiVersion: Version = Version(name = "Api", version = "0.18.0", stable = false)
+    val ApiVersion: Version = Version(name = "Api", version = "0.19.0", stable = false)
     val ServerIdentifier: String = "server"
 }
 
@@ -102,6 +102,8 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * enable everything that needs to be enabled, and perform some security checks before go.
      *
      * @throws RelayException if something went wrong, In Local, during the client-to-server, or client-to-network initialisation.
+     * @throws IllegalThreadException if this method is not executed in one of the RelayWorkerThreadPool threads.
+     *
      * */
     def start(): Unit
 

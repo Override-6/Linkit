@@ -5,7 +5,7 @@ import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 
 class SystemPacketChannel(connectedID: String,
                           traffic: PacketTraffic)
-        extends SyncPacketChannel(connectedID, PacketTraffic.SystemChannel, traffic) {
+        extends SyncPacketChannel(connectedID, PacketTraffic.SystemChannel, traffic, true) {
 
 
     def sendOrder(systemOrder: SystemOrder, reason: CloseReason, content: Array[Byte] = Array()): Unit = {
