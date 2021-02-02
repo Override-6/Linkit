@@ -15,7 +15,7 @@ abstract class RelayExtension(protected val relay: Relay) {
     def onLoad(): Unit = ()
 
     protected def putFragment(fragment: ExtensionFragment): Unit = {
-        fragmentsManager.setFragment(fragment)
+        fragmentsManager.putFragment(fragment)
     }
 
     protected def getFragment[F <: ExtensionFragment](extensionClass: Class[_ <: RelayExtension], fragmentClass: Class[F]): Option[F] = {

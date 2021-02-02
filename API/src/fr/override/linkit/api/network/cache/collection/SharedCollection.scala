@@ -121,7 +121,7 @@ class SharedCollection[A](family: String,
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
-        println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
+        //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
     }
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
@@ -133,13 +133,10 @@ class SharedCollection[A](family: String,
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
-        //println("HANDLING MOD REQUEST")
         val mod: (CollectionModification, Int, Any) = packet.casted
-        //println("casted")
         val modKind: CollectionModification = mod._1
         val index: Int = mod._2
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed
-        //println("Everything fine...")
         val action: CollectionAdapter[A] => Unit = modKind match {
             case CLEAR => _.clear()
             case SET => _.set(index, item)
@@ -148,17 +145,13 @@ class SharedCollection[A](family: String,
         }
 
         try {
-            //println(s"Making action $mod... (${Thread.currentThread()})")
             action(adapter)
-            //println("Action made !")
         } catch {
             case NonFatal(e) => e.printStackTrace()
         }
         modCount += 1
 
-        //println("Applying asyncly...")
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
-        println(s"<$family> COLLECTION IS NOW (network): " + adapter + s" identifier : $identifier")
     }
 
 }

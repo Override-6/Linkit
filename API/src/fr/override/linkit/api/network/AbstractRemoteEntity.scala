@@ -54,7 +54,6 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override def listRemoteFragmentControllers: List[RemoteFragmentController] = remoteFragments.toList
 
     override def getFragmentController(nameIdentifier: String): Option[RemoteFragmentController] = {
-        println(s"remoteFragments = $remoteFragments")
         remoteFragments.find(_.nameIdentifier == nameIdentifier)
     }
 

@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.network
 
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 
-abstract class AbstractRemoteFragment(controller: RemoteFragmentController) {
+abstract class AbstractRemoteFragmentController(controller: RemoteFragmentController) {
 
     def handleRequest(packet: Packet, coordinates: PacketCoordinates): Unit
 

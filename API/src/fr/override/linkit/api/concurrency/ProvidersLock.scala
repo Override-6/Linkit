@@ -37,6 +37,10 @@ class ProvidersLock {
                 .foreach(_.notifyLock())
     }
 
+    def isProviding: Boolean = {
+        providers.contains(currentThread)
+    }
+
     private class ThreadLocks {
         val owner: Thread = currentThread
         private val queue = new util.ArrayDeque[AnyRef]()

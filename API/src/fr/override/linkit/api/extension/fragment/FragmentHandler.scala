@@ -29,7 +29,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
     }
 
 
-    def setFragment(fragment: ExtensionFragment)(implicit extension: RelayExtension): Unit = {
+    def putFragment(fragment: ExtensionFragment)(implicit extension: RelayExtension): Unit = {
         if (extensionLoader.getPhase != LoadPhase.LOAD)
             throw new IllegalStateException("Could not set fragment : fragmentMap can only be set during LOAD phase")
 
@@ -39,7 +39,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
             throw new IllegalArgumentException("This fragment kind is already set for this extension")
 
         fragmentMap.getOrElseUpdate(extensionClass, new ExtensionFragments)
-                .setFragment(fragment)
+                .putFragment(fragment)
 
         fragment match {
             case remote: RemoteFragment =>
@@ -87,7 +87,6 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
     }
 
     communicator.addRequestListener((pack, coords) => {
-        println(s"IN FRAGMENT HANDLER = ${pack}")
         pack match {
             case fragmentPacket: WrappedPacket =>
                 val fragmentName = fragmentPacket.category
@@ -107,7 +106,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
             fragments.get(fragmentClass).asInstanceOf[Option[F]]
         }
 
-        def setFragment(fragment: ExtensionFragment): Unit = {
+        def putFragment(fragment: ExtensionFragment): Unit = {
             fragments.put(fragment.getClass, fragment)
         }
 

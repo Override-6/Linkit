@@ -25,13 +25,13 @@ class SharedInstance[A <: Serializable] private(family: String,
     }
 
     override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        println(s"<$family> Handling packet $packet")
+        //println(s"<$family> Handling packet $packet")
         packet match {
             case ObjectPacket(remoteInstance: A) =>
                 this.instance = remoteInstance
                 modCount += 1
                 listeners.applyAll(remoteInstance)
-                println(s"<$family> INSTANCE IS NOW (network): $instance")
+                //println(s"<$family> INSTANCE IS NOW (network): $instance")
 
             case _ => throw new UnexpectedPacketException("Unable to handle a non-ObjectPacket into SharedInstance")
         }
@@ -45,7 +45,7 @@ class SharedInstance[A <: Serializable] private(family: String,
         instance = t
         modCount += 1
         listeners.applyAll(t)
-        println(s"INSTANCE IS NOW (local) : $instance $autoFlush")
+        //println(s"INSTANCE IS NOW (local) : $instance $autoFlush")
         if (autoFlush)
             flush()
         this

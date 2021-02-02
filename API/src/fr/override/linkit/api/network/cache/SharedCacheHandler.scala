@@ -20,14 +20,14 @@ import scala.util.control.NonFatal
 class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: PacketTraffic) {
 
     private val communicator: CommunicationPacketCollector = traffic.openCollector(11, CommunicationPacketCollector.providable)
-    private val subBroadcastChannel: CommunicationPacketChannel = communicator.subChannel("BROADCAST", CommunicationPacketChannel)
+    private val broadcastChannel: CommunicationPacketChannel = communicator.subChannel("BROADCAST", CommunicationPacketChannel)
     private val relayID = traffic.ownerID
     private val cacheOwners: SharedMap[Int, String] = init()
     private val sharedObjects: SharedMap[Int, Any] = open(1, SharedMap[Int, Any])
     private val isHandlingSelf = ownerID == relayID
 
     this.synchronized {
-        notifyAll() //Releases all awaitReady locks, mark as ready.
+        notifyAll() //Releases all awaitReady locks, this action is marking this cache handler as ready.
     }
 
     def post[A](key: Int, value: A): A = {
@@ -41,31 +41,31 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
 
     def open[A <: HandleableSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A]): A = {
-        //println(s"<$family, $ownerID> " + "Opening " + cacheID + " In " + Thread.currentThread() )
-
         LocalCacheHandler
                 .findCache[A](cacheID)
                 .getOrElse {
                     val baseContent: Array[Any] = retrieveBaseContent(cacheID)
-                    val sharedCache = factory.createNew(family, cacheID, baseContent, subBroadcastChannel)
+                    val sharedCache = factory.createNew(family, cacheID, baseContent, broadcastChannel)
                     LocalCacheHandler.register(cacheID, sharedCache)
                     sharedCache
                 }
     }
 
     private def retrieveBaseContent(cacheID: Int): Array[Any] = {
-        //println(s"<$family> " + "RETRIEVING BASE CONTENT FOR " + cacheID + s"(${Thread.currentThread()})")
-        //println(s"<$family> " + s"cacheOwners = ${cacheOwners}")
-        if (isHandlingSelf || !cacheOwners.contains(cacheID)) {
-            //println(s"<$family> " + "Does not exists, setting current relay as owner of this cache")
+        if (!cacheOwners.contains(cacheID)) {
             cacheOwners.put(cacheID, relayID)
             return Array()
         }
-        //println(s"<$family> " + "Retrieving cache...")
         val owner = cacheOwners(cacheID)
         val content = retrieveBaseContent(cacheID, owner)
-        //println(s"<$family, $ownerID> " + "Content retrieved is : " + content.mkString("Array(", ", ", ")"))
         content
+    }
+
+    private def retrieveBaseContent(cacheID: Int, owner: String): Array[Any] = LocalCacheHandler.synchronized {
+        if (cacheID == -1 && isHandlingSelf)
+            return Array()
+        communicator.sendRequest(WrappedPacket(family, DataPacket(s"$cacheID")), owner)
+        communicator.nextResponse(ObjectPacket).casted[Array[Any]] //The request will return the cache content
     }
 
     private def init(): SharedMap[Int, String] = {
@@ -76,24 +76,11 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
         val content = retrieveBaseContent(-1, ownerID)
 
-        val cacheOwners = SharedMap[Int, String].createNew(family, -1, content, subBroadcastChannel)
+        val cacheOwners = SharedMap[Int, String].createNew(family, -1, content, broadcastChannel)
         LocalCacheHandler.register(-1, cacheOwners)
         cacheOwners
                 .foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
-                .addListener((_, key, _) => LocalCacheHandler.registerMock(key)) //Add a listener for all future registered caches that would not be registered locally
-        ////println(s"Cache owners currently : $cacheOwners")
         cacheOwners
-    }
-
-    private def retrieveBaseContent(cacheID: Int, owner: String): Array[Any] = this.synchronized {
-        if (cacheID == -1 && isHandlingSelf)
-            return Array()
-        ////println(s"family($family) " + s"Retrieving content id $cacheID to owner $owner (${Thread.currentThread()})" )
-        communicator.sendRequest(WrappedPacket(family, DataPacket(s"$cacheID")), owner)
-        ////println(s"family($family) " + s"waiting for response...")
-        val o: Array[Any] = communicator.nextResponse(ObjectPacket).casted //The request will return the cache content
-        ////println(s"family($family) " + "Response got !")
-        o
     }
 
     private def initPacketHandling(): Unit = {
@@ -131,6 +118,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
     private def awaitReady(): Unit = {
         def notReady: Boolean = cacheOwners == null || cacheOwners.isEmpty
+
         if (notReady) this.synchronized {
             RelayWorkerThreadPool.smartWait(this, notReady)
         }
@@ -160,12 +148,12 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
             localRegisteredCaches(cacheID).currentContent
         }
 
-        def findCache[A : ClassTag](cacheID: Int): Option[A] = {
+        def findCache[A: ClassTag](cacheID: Int): Option[A] = {
             val opt = localRegisteredCaches.get(cacheID).asInstanceOf[Option[A]]
             if (opt.exists(_.isInstanceOf[MockCache.type]))
                 return None
 
-            if (opt.exists(_.isInstanceOf[A])) {
+            if (opt.exists(!_.isInstanceOf[A])) {
                 val requestedClass = classTag[A].runtimeClass
                 val presentClass = opt.get.getClass
                 throw new IllegalArgumentException(s"Attempted to open a cache of type '$cacheID' while a cache with the same id is already registered, but does not have the same type. ($presentClass vs $requestedClass)")
@@ -173,6 +161,9 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
             opt
         }
+
+        override def toString: String = localRegisteredCaches.toString()
+
     }
 
 

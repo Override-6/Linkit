@@ -41,7 +41,8 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
         }
 
         val channel = communicator.subChannel(identifier, CommunicationPacketChannel.providable, true)
-        createRelayEntity(identifier, channel)
+        val ent = createRelayEntity(identifier, channel)
+        ent
     }
 
     def createRelayEntity(identifier: String, communicationChannel: CommunicationPacketChannel): NetworkEntity
