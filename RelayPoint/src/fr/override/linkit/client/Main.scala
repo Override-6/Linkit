@@ -4,6 +4,7 @@ import java.net.InetSocketAddress
 import java.nio.file.Paths
 import java.util.Scanner
 
+import fr.`override`.linkit.`extension`.easysharing.EasySharing
 import fr.`override`.linkit.api.system.CloseReason
 import fr.`override`.linkit.client.config.RelayPointBuilder
 
@@ -59,6 +60,7 @@ object Main {
                 val loader = relayPoint.extensionLoader
                 loader.loadExtensions(
                     classOf[ControllerExtension],
+                    classOf[EasySharing],
                     classOf[DebugExtension]
                 )
             }
@@ -70,7 +72,7 @@ object Main {
         lazy val sourcePath = Paths.get(getClass.getProtectionDomain.getCodeSource.getLocation.toURI).getParent.toString
         System.getenv().get("COMPUTERNAME") match {
             case "PC_MATERIEL_NET" => "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\ClientSide\\RelayExtensions"
-            case "LORDI-N4SO7IERS" => "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\FileTransferer\\ClientSide\\RelayExtensions"
+            //case "LORDI-N4SO7IERS" => "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\FileTransferer\\ClientSide\\RelayExtensions"
             case _ => sourcePath + "/RelayExtensions/"
         }
     }

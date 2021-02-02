@@ -29,18 +29,18 @@ object RelayPoint {
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
 
     @volatile private var open = false
-    private val workerThread = new RelayWorkerThreadPool()
-    override val packetTranslator = new PacketTranslator(this)
-    private val socket: ClientDynamicSocket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
-    override val traffic: DedicatedPacketTraffic = new DedicatedPacketTraffic(this, socket, identifier)
-    override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
-    override val properties: RelayProperties = new RelayProperties
-    implicit val systemChannel: SystemPacketChannel = new SystemPacketChannel(Relay.ServerIdentifier, traffic)
-    private val tasksHandler: ClientTasksHandler = new ClientTasksHandler(systemChannel, this)
-    private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
-    override val relayVersion: Version = RelayPoint.version
-    private var pointNetwork: PointNetwork = _ //will be instantiated once connected
-    override def network: Network = pointNetwork
+    override val packetTranslator   : PacketTranslator          = new PacketTranslator(this)
+    override val traffic            : DedicatedPacketTraffic    = new DedicatedPacketTraffic(this, socket, identifier)
+    override val extensionLoader    : RelayExtensionLoader      = new RelayExtensionLoader(this)
+    override val properties         : RelayProperties           = new RelayProperties
+    override val relayVersion       : Version                   = RelayPoint.version
+    private val workerThread        : RelayWorkerThreadPool     = new RelayWorkerThreadPool()
+    implicit val systemChannel      : SystemPacketChannel       = new SystemPacketChannel(Relay.ServerIdentifier, traffic)
+    private val socket              : ClientDynamicSocket       = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
+    private val tasksHandler        : ClientTasksHandler        = new ClientTasksHandler(systemChannel, this)
+    private val remoteConsoles      : RemoteConsolesContainer   = new RemoteConsolesContainer(this)
+    private var pointNetwork        : PointNetwork              = _ //will be instantiated once connected
+    override def network            : Network                   = pointNetwork
 
     override val securityManager: RelaySecurityManager = configuration.securityManager
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler()
@@ -60,9 +60,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
 
         try {
-            loadLocal()
             PointPacketWorkerThread.start()
             loadRemote()
+            loadUserFeatures()
         } catch {
             case NonFatal(e) =>
                 e.printStackTrace()
@@ -82,7 +82,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         RelayWorkerThreadPool.checkCurrentIsWorker()
 
         if (!open)
-            return //already closed.
+            return //already closed
 
         if (reason.isInternal && isConnected) {
             systemChannel.sendPacket(SystemPacket(SystemOrder.CLIENT_CLOSE, reason))
@@ -115,28 +115,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         response == "OK"
     }
 
-    private def loadRemote(): Unit = {
-        println(s"Connecting to server with relay id '$identifier'")
-        socket.start()
-        traffic.register(systemChannel)
-
-        val idLength = identifier.length
-        val welcomePacket = Array(idLength.toByte) ++ identifier.getBytes
-        socket.write(welcomePacket)
-        socket.addConnectionStateListener(state => if (state == ConnectionState.CONNECTED) socket.write(welcomePacket))
-
-        val response = systemChannel.nextPacket(DataPacket)
-        if (response.header == "ERROR")
-            throw RelayInitialisationException(new String(response.content))
-
-        systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
-        println("Connected !")
-
-        println("Initialising Network...")
-        this.pointNetwork = new PointNetwork(this)
-        println("Network initialised !")
-    }
-
     override def getConnectionState: ConnectionState = socket.getState
 
     override def isClosed: Boolean = !open
@@ -165,17 +143,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         RelayTaskAction.of(task)
     }
 
-    private def loadLocal(): Unit = {
-        if (configuration.enableTasks) {
-            println("Loading tasks handler...")
-            tasksHandler.start()
-        }
-        if (configuration.enableExtensionsFolderLoad) {
-            println("Loading Relay extensions from folder " + configuration.extensionsFolder)
-            extensionLoader.launch()
-        }
-    }
-
     private def handleSystemPacket(system: SystemPacket, coords: PacketCoordinates): Unit = {
         val order = system.order
         val reason = system.reason.reversedPOV()
@@ -200,6 +167,39 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         }
     }
 
+    private def loadRemote(): Unit = {
+        println(s"Connecting to server with relay id '$identifier'")
+        socket.start()
+        traffic.register(systemChannel)
+
+        val idLength = identifier.length
+        val welcomePacket = Array(idLength.toByte) ++ identifier.getBytes
+        socket.write(welcomePacket)
+        socket.addConnectionStateListener(state => if (state == ConnectionState.CONNECTED) socket.write(welcomePacket))
+
+        val response = systemChannel.nextPacket(DataPacket)
+        if (response.header == "ERROR")
+            throw RelayInitialisationException(new String(response.content))
+
+        systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
+        println("Connected !")
+
+        println("Initialising Network...")
+        this.pointNetwork = new PointNetwork(this)
+        println("Network initialised !")
+    }
+
+    private def loadUserFeatures(): Unit = {
+        if (configuration.enableTasks) {
+            println("Loading tasks handler...")
+            tasksHandler.start()
+        }
+        if (configuration.enableExtensionsFolderLoad) {
+            println("Loading Relay extensions from folder " + configuration.extensionsFolder)
+            extensionLoader.launch()
+        }
+    }
+
     private def ensureOpen(): Unit = {
         if (!open)
             throw new RelayCloseException("Relay Point have to be started !")
@@ -220,9 +220,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             return
 
         val sender = coordinates.senderID
-        val consoleOut = getConsoleErr(sender)
+        val consoleErr = getConsoleErr(sender)
         val msg = s"Could not handle packet : targetID ($targetID) isn't equals to this relay identifier !"
-        consoleOut.println(msg)
+        consoleErr.println(msg)
         throw new UnexpectedPacketException(msg)
     }
 
