@@ -2,6 +2,7 @@ package fr.`override`.linkit.server
 
 import java.nio.file.Paths
 
+import fr.`override`.linkit.`extension`.easysharing.EasySharing
 import fr.`override`.linkit.api.system.CloseReason
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
 
@@ -24,6 +25,7 @@ object Main {
 
                 relayServer.extensionLoader.loadExtensions(
                     classOf[ControllerExtension],
+                    classOf[EasySharing],
                     classOf[DebugExtension]
                 )
             }

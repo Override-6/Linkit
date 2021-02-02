@@ -2,6 +2,7 @@ package fr.`override`.linkit.server.network
 
 import java.sql.Timestamp
 
+import fr.`override`.linkit.api.network.cache.SharedInstance
 import fr.`override`.linkit.api.network.cache.collection.BoundedCollection
 import fr.`override`.linkit.api.network.{AbstractNetwork, ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
@@ -19,7 +20,10 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
                 .flush()
                 .mapped(createEntity)
     }
-    //println("ENTITIES : " + entities)
+    selfEntity
+            .cache
+            .open(3, SharedInstance[ConnectionState])
+            .set(ConnectionState.CONNECTED) //technically already connected
 
     override def createRelayEntity(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {
         new ConnectionNetworkEntity(server, identifier, communicator)
