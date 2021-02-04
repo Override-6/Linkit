@@ -8,9 +8,9 @@ import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperti
 import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
 import fr.`override`.linkit.api.exception._
 import fr.`override`.linkit.api.network._
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.fundamental._
+import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.traffic.{DedicatedPacketTraffic, PacketReader}
 import fr.`override`.linkit.api.packet.{PacketTranslator, _}
 import fr.`override`.linkit.api.system._
@@ -29,18 +29,18 @@ object RelayPoint {
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
 
     @volatile private var open = false
+    override val relayVersion       : Version                   = RelayPoint.version
+    private var pointNetwork        : PointNetwork              = _ //will be instantiated once connected
+    override def network            : Network                   = pointNetwork
+    private val socket              : ClientDynamicSocket       = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
     override val packetTranslator   : PacketTranslator          = new PacketTranslator(this)
     override val traffic            : DedicatedPacketTraffic    = new DedicatedPacketTraffic(this, socket, identifier)
     override val extensionLoader    : RelayExtensionLoader      = new RelayExtensionLoader(this)
     override val properties         : RelayProperties           = new RelayProperties
-    override val relayVersion       : Version                   = RelayPoint.version
     private val workerThread        : RelayWorkerThreadPool     = new RelayWorkerThreadPool()
     implicit val systemChannel      : SystemPacketChannel       = new SystemPacketChannel(Relay.ServerIdentifier, traffic)
-    private val socket              : ClientDynamicSocket       = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
     private val tasksHandler        : ClientTasksHandler        = new ClientTasksHandler(systemChannel, this)
     private val remoteConsoles      : RemoteConsolesContainer   = new RemoteConsolesContainer(this)
-    private var pointNetwork        : PointNetwork              = _ //will be instantiated once connected
-    override def network            : Network                   = pointNetwork
 
     override val securityManager: RelaySecurityManager = configuration.securityManager
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler()
@@ -71,7 +71,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         securityManager.checkRelay(this)
 
         val t1 = System.currentTimeMillis()
-        println(s"Ready ! (took (${t1 - t0}ms)")
+        println(s"Ready ! (took ${t1 - t0}ms)")
     }
 
     override def runLater(callback: => Unit): Unit = {
