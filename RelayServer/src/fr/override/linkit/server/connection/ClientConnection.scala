@@ -7,9 +7,9 @@ import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThre
 import fr.`override`.linkit.api.exception.RelayException
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
 import org.jetbrains.annotations.NotNull

@@ -9,9 +9,9 @@ import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThre
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
+import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketTraffic}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
