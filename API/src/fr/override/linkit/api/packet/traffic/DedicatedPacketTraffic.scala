@@ -3,10 +3,11 @@ package fr.`override`.linkit.api.packet.traffic
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.traffic.DynamicSocket
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import org.jetbrains.annotations.NotNull
 
-class DedicatedPacketTraffic(relay: Relay,
-                             socket: DynamicSocket,
-                             ownerID: String) extends AbstractPacketTraffic(relay, ownerID) {
+class DedicatedPacketTraffic(@NotNull relay: Relay,
+                             @NotNull socket: DynamicSocket,
+                             @NotNull ownerID: String) extends AbstractPacketTraffic(relay, ownerID) {
 
     private val packetTranslator = relay.packetTranslator
 

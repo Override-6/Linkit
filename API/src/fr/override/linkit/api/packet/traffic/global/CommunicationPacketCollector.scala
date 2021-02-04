@@ -1,15 +1,14 @@
-package fr.`override`.linkit.api.packet.collector
+package fr.`override`.linkit.api.packet.traffic.global
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
-import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketTraffic}
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketFactory}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 
 class CommunicationPacketCollector protected(traffic: PacketTraffic, collectorID: Int, providable: Boolean)
-        extends AbstractPacketCollector(traffic, collectorID, false)
-                with ImmediatePacketInjectable {
+        extends AbstractPacketCollector(traffic, collectorID, false) {
 
     private val responses: BlockingQueue[Packet] = {
         if (!providable)
@@ -39,9 +38,6 @@ class CommunicationPacketCollector protected(traffic: PacketTraffic, collectorID
             case _ => injectAsNormal()
         }
     }
-
-    override def addOnPacketInjected(action: (Packet, PacketCoordinates) => Unit): Unit =
-        normalPacketListeners += (tuple => action(tuple._1, tuple._2))
 
     def addRequestListener(action: (Packet, PacketCoordinates) => Unit): Unit =
         requestListeners += (tuple => action(tuple._1, tuple._2))

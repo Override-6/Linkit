@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.network
 
-import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketFactory}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 

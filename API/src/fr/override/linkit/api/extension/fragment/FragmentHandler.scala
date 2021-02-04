@@ -4,8 +4,8 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{LoadPhase, RelayExtension, RelayExtensionLoader}
 import fr.`override`.linkit.api.exception.ExtensionLoadException
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
-import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
+import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
 import fr.`override`.linkit.api.utils.WrappedPacket
 
 import scala.collection.mutable

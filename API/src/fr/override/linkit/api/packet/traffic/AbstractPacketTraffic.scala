@@ -3,18 +3,19 @@ package fr.`override`.linkit.api.packet.traffic
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{ClosedException, RelayException}
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
+import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.traffic.{PacketInjectable, PacketTraffic}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
+import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
-abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) extends PacketTraffic {
+abstract class AbstractPacketTraffic(@NotNull relay: Relay, @NotNull private val ownerId: String) extends PacketTraffic {
 
     override val ownerID: String = ownerId
     private val registeredInjectables = mutable.Map.empty[Int, InjectableGroup]
@@ -32,6 +33,16 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
         channel
     }
 
+    override def openCollector[A <: PacketCollector : ClassTag](injectableID: Int, factory: PacketCollectorFactory[A]): A = {
+        if (isRegistered(injectableID, null)) {
+            return getInjectableOfType[A](injectableID, null)
+        }
+
+        val channel = factory.createNew(this, injectableID)
+        register(channel)
+        channel
+    }
+
     override def register(dedicated: DedicatedPacketInjectable): Unit = {
         ensureOpen()
 
@@ -41,6 +52,16 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
         init(dedicated, dedicatedTarget)
 
         registeredInjectables.getOrElseUpdate(id, InjectableGroup(id)).put(dedicated)
+    }
+
+    override def register(global: GlobalPacketInjectable): Unit = {
+        ensureOpen()
+
+        val id = global.identifier
+
+        init(global, null)
+
+        registeredInjectables.getOrElseUpdate(id, InjectableGroup(id)).put(global)
     }
 
     private def init(injectable: PacketInjectable, target: String): Unit = {
@@ -67,7 +88,7 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
         lostPackets.remove((id, target))
     }
 
-    private def getInjectableOfType[A <: PacketInjectable : ClassTag](identifier: Int, target: String): A = {
+    private def getInjectableOfType[A : ClassTag](identifier: Int, target: String): A = {
         getInjectable(identifier, target).orNull match {
             case registeredInjectable: A => registeredInjectable
             case other => throw new UnsupportedOperationException(s"Attempted to retrieve injectable (id: $identifier) with requested kind : ${classTag[A].runtimeClass}, but found ${other.getClass}")
@@ -80,21 +101,11 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
                 .flatMap(_.getInjectable(target))
     }
 
-    override def openCollector[A <: PacketCollector : ClassTag](injectableID: Int, factory: PacketCollectorFactory[A]): A = {
-        if (isRegistered(injectableID, null)) {
-            return getInjectableOfType[A](injectableID, null)
-        }
-
-        val channel = factory.createNew(this, injectableID)
-        register(channel)
-        channel
-    }
 
     override def writePacket(packet: Packet, identifier: Int, targetID: String): Unit = {
         ensureOpen()
         writePacket(packet, PacketCoordinates(identifier, targetID, relay.identifier))
     }
-
 
     override def writePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         //println("SENDING PACKET " + packet + " WITH COORDINATES " + coordinates + s"(${Thread.currentThread()})")
@@ -122,16 +133,6 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
     }
 
     protected def send(packet: Packet, coordinates: PacketCoordinates): Unit
-
-    override def register(global: GlobalPacketInjectable): Unit = {
-        ensureOpen()
-
-        val id = global.identifier
-
-        init(global, null)
-
-        registeredInjectables.getOrElseUpdate(id, InjectableGroup(id)).put(global)
-    }
 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         //println(s"INJECTING PACKET : $packet With coordinate : $coordinates (${Thread.currentThread()})")

@@ -1,6 +1,7 @@
-package fr.`override`.linkit.api.packet.collector
+package fr.`override`.linkit.api.packet.traffic.global
 
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.concurrency.relayWorkerExecution
+import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.traffic.{PacketInjectable, PacketTraffic}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
@@ -22,16 +23,8 @@ abstract class AbstractPacketCollector(traffic: PacketTraffic, collectorID: Int,
 
     override def isClosed: Boolean = closed
 
-    override def sendPacket(packet: Packet, targetID: String): Unit = {
-        injector.writePacket(packet, identifier, targetID)
-    }
-
-    override def broadcastPacket(packet: Packet): Unit = {
-        injector.writePacket(packet, identifier, "BROADCAST")
-    }
-
     /**
-     * Creates a PacketChannel that will be handled by this packet collector. <br>
+     * Creates a PacketChannel that will be handled by this packet collector instead if the usual injector. <br>
      * The packet channel can send and receive packets from the target.  <br>
      * In other words, this will create a sub channel that is bound to a specific relay.  <br>
      * If the sub channel receives a packet, the parent collector will handle the packet as well if the
@@ -59,7 +52,7 @@ abstract class AbstractPacketCollector(traffic: PacketTraffic, collectorID: Int,
         channel
     }
 
-
+    @relayWorkerExecution
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         val opt = subChannels.get(coordinates.senderID)
         val subChannelInject = opt.isDefined
@@ -75,6 +68,7 @@ abstract class AbstractPacketCollector(traffic: PacketTraffic, collectorID: Int,
         }
     }
 
+    @relayWorkerExecution
     protected def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit
 
     private case class SubInjectableContainer(subInjectable: PacketInjectable, transparent: Boolean)

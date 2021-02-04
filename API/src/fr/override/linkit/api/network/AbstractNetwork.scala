@@ -3,8 +3,8 @@ package fr.`override`.linkit.api.network
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification, SharedCollection}
 import fr.`override`.linkit.api.network.cache.{ObjectPacket, SharedCacheHandler}
-import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
+import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
 
 abstract class AbstractNetwork(relay: Relay) extends Network {
 

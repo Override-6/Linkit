@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.packet.collector
+package fr.`override`.linkit.api.packet.traffic.global
 
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 
@@ -9,4 +9,14 @@ trait PacketCollectorFactory[C <: PacketCollector] {
 
     def createNew(traffic: PacketTraffic, collectorId: Int): C
 
+
+
+
+    type T <: CollectorBehavior
+
+    implicit def behavioralFactory(behavior: T): PacketCollectorFactory[C] = this
+
+    //an Empty behavior description
+    trait CollectorBehavior {
+    }
 }

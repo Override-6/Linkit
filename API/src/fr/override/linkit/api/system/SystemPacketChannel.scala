@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.system
 
-import fr.`override`.linkit.api.packet.channel.SyncPacketChannel
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.traffic.dedicated.SyncPacketChannel
 
 class SystemPacketChannel(connectedID: String,
                           traffic: PacketTraffic)

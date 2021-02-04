@@ -5,8 +5,8 @@ import java.lang.reflect.InvocationTargetException
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{TaskException, TaskOperationFailException}
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
+import fr.`override`.linkit.api.packet.traffic.dedicated.SyncPacketChannel
 import fr.`override`.linkit.api.system.CloseReason
 
 import scala.util.control.NonFatal
@@ -18,7 +18,7 @@ class TaskTicket(executor: TaskExecutor,
                  ownFreeWill: Boolean) {
 
     private val errRemote = relay.getConsoleErr(target)
-    val channel: PacketChannel.Sync = relay.openChannel(taskId, target, SyncPacketChannel)
+    val channel: SyncPacketChannel = relay.openChannel(taskId, target, SyncPacketChannel)
 
     def abort(reason: CloseReason): Unit = {
         notifyExecutor()

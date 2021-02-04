@@ -7,10 +7,10 @@ import java.util.concurrent.ConcurrentHashMap
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.packet.Packet
-import fr.`override`.linkit.api.packet.channel.AsyncPacketChannel
-import fr.`override`.linkit.api.packet.collector.AsyncPacketCollector
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.traffic.dedicated.AsyncPacketChannel
+import fr.`override`.linkit.api.packet.traffic.global.AsyncPacketCollector
 
 class RemoteConsolesContainer(relay: Relay) {
 
@@ -43,7 +43,7 @@ class RemoteConsolesContainer(relay: Relay) {
     init()
 
     protected def init() {
-        printChannel.addOnPacketInjected((packet, coords) => {
+        printChannel.addOnPacketReceived((packet, coords) => {
             packet match {
                 case data: DataPacket =>
                     val output = if (data.header == "err") System.err else System.out

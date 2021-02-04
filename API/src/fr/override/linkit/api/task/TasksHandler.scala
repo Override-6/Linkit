@@ -1,12 +1,11 @@
 package fr.`override`.linkit.api.task
 
-import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.TaskException
 import fr.`override`.linkit.api.packet.PacketCoordinates
-import fr.`override`.linkit.api.packet.channel.PacketChannel
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.system.{JustifiedCloseable, CloseReason}
+import fr.`override`.linkit.api.packet.traffic.dedicated.PacketChannel
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
 /**
  * This class is the hearth of this program.

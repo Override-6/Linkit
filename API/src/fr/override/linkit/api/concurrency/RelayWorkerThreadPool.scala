@@ -17,8 +17,8 @@ class RelayWorkerThreadPool() extends AutoCloseable {
     private var closed = false
     private val providerLocks = new ProvidersLock
 
-    def runLater(action: => Unit): Unit = {
-        runLater(_ => action)
+    def runLater(action: => Any): Unit = {
+        runLater((_ => action): Unit => Unit)
     }
 
     def runLater(action: Unit => Unit): Unit = {

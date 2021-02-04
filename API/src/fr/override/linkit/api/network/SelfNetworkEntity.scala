@@ -5,8 +5,8 @@ import java.sql.Timestamp
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.{SharedCacheHandler, SharedInstance}
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
-import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
+import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
 import fr.`override`.linkit.api.system.Version
 
 class SelfNetworkEntity(relay: Relay) extends NetworkEntity {

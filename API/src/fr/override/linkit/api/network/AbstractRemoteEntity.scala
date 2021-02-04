@@ -5,9 +5,9 @@ import java.sql.Timestamp
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.network.cache.{ObjectPacket, SharedCacheHandler}
-import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
 import fr.`override`.linkit.api.system.Version
 
 abstract class AbstractRemoteEntity(private val relay: Relay,

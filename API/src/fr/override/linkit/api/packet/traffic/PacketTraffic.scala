@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.packet.traffic
 
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
+import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.JustifiedCloseable
 

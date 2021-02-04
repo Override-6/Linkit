@@ -1,18 +1,17 @@
-package fr.`override`.linkit.api.packet.channel
+package fr.`override`.linkit.api.packet.traffic.dedicated
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
-import fr.`override`.linkit.api.packet.traffic.{ImmediatePacketInjectable, PacketTraffic}
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketFactory}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 
-class CommunicationPacketChannel(override val identifier: Int,
-                                 override val connectedID: String,
+class CommunicationPacketChannel(identifier: Int,
+                                 connectedID: String,
                                  traffic: PacketTraffic,
                                  providable: Boolean)
-        extends PacketChannel(traffic)
-                with ImmediatePacketInjectable{
+        extends AbstractPacketChannel(connectedID, identifier, traffic) {
 
     private val responses: BlockingQueue[Packet] = {
         if (!providable)
@@ -44,9 +43,6 @@ class CommunicationPacketChannel(override val identifier: Int,
         }
     }
 
-    override def addOnPacketInjected(action: (Packet, PacketCoordinates) => Unit): Unit =
-        normalPacketListeners += (tuple => action(tuple._1, tuple._2))
-
     def addRequestListener(action: (Packet, PacketCoordinates) => Unit): Unit =
         requestListeners += (tuple => action(tuple._1, tuple._2))
 
@@ -56,11 +52,6 @@ class CommunicationPacketChannel(override val identifier: Int,
 
     def sendResponse(packet: Packet): Unit = if (enablePacketSending) {
         traffic.writePacket(WrappedPacket("res", packetTransform(packet)), coordinates)
-    }
-
-    @deprecated("Use sendRequest or sendResponse instead.")
-    override def sendPacket(packet: Packet): Unit = if (enablePacketSending) {
-        traffic.writePacket(packetTransform(packet), coordinates)
     }
 
     def sendRequest(packet: Packet): Unit = if (enablePacketSending) {

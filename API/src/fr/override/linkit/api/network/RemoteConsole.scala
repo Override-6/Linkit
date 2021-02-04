@@ -3,8 +3,8 @@ package fr.`override`.linkit.api.network
 import java.io.PrintStream
 import java.security.AccessController
 
-import fr.`override`.linkit.api.packet.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.packet.fundamental.DataPacket
+import fr.`override`.linkit.api.packet.traffic.dedicated.AsyncPacketChannel
 import fr.`override`.linkit.api.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
 import sun.security.action.GetPropertyAction
