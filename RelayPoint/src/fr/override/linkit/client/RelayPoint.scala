@@ -75,7 +75,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     }
 
     override def runLater(callback: => Unit): Unit = {
-        workerThread.runLater(_ => callback)
+        workerThread.runLater(callback)
     }
 
     override def close(reason: CloseReason): Unit = {
@@ -111,7 +111,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     override def isConnected(identifier: String): Boolean = {
         systemChannel.sendOrder(SystemOrder.CHECK_ID, CloseReason.INTERNAL, identifier.getBytes)
-        val response = systemChannel.nextPacket(DataPacket).header
+        val response = systemChannel.nextPacket(ValPacket).value
         response == "OK"
     }
 
@@ -146,24 +146,20 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     private def handleSystemPacket(system: SystemPacket, coords: PacketCoordinates): Unit = {
         val order = system.order
         val reason = system.reason.reversedPOV()
-        val origin = coords.senderID
+        val sender = coords.senderID
 
         import SystemOrder._
         order match {
             case CLIENT_CLOSE => close(reason)
             case ABORT_TASK => tasksHandler.skipCurrent(reason)
-            case PRINT_INFO => getConsoleOut(origin).println(s"$relayVersion (${Relay.ApiVersion})")
+            case PRINT_INFO => getConsoleOut(sender).println(s"$relayVersion (${Relay.ApiVersion})")
 
-            case _@(SERVER_CLOSE | CHECK_ID) => sendErrorPacket(order, "Received forbidden order.")
-            case _ => sendErrorPacket(order, "Unknown order.")
-        }
+            case _@(SERVER_CLOSE | CHECK_ID) =>
+                new UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this RelayPoint : Received forbidden order")
+                        .printStackTrace(getConsoleErr(sender))
 
-        def sendErrorPacket(order: SystemOrder, cause: String): Unit = {
-            val error = ErrorPacket("SystemError",
-                s"System packet order '$order' couldn't be handled by this RelayPoint.",
-                cause)
-            systemChannel.sendPacket(error)
-            error.printError()
+            case _ => new UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this RelayPoint : Unknown order")
+                    .printStackTrace(getConsoleErr(sender))
         }
     }
 
@@ -172,14 +168,13 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         socket.start()
         traffic.register(systemChannel)
 
-        val idLength = identifier.length
-        val welcomePacket = Array(idLength.toByte) ++ identifier.getBytes
+        val welcomePacket = PacketUtils.wrap(identifier.getBytes)
         socket.write(welcomePacket)
         socket.addConnectionStateListener(state => if (state == ConnectionState.CONNECTED) socket.write(welcomePacket))
 
-        val response = systemChannel.nextPacket(DataPacket)
-        if (response.header == "ERROR")
-            throw RelayInitialisationException(new String(response.content))
+        val response = systemChannel.nextPacket(ValPacket)
+        if (response.value == "ERROR")
+            throw RelayInitialisationException(response.casted)
 
         systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
         println("Connected !")

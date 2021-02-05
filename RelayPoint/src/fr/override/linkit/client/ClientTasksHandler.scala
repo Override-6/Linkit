@@ -39,7 +39,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
                 systemChannel.sendOrder(SystemOrder.ABORT_TASK, CloseReason.INTERNAL_ERROR)
 
                 val errConsole = relay.getConsoleErr(coordinates.senderID)
-                    errConsole.print(e)
+                errConsole.print(e)
         }
     }
 
@@ -50,7 +50,8 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
             currentTicket = null
         }
         open = false
-        tasksThread.interrupt()
+        if (tasksThread != null)
+            tasksThread.interrupt()
     }
 
     override def skipCurrent(reason: CloseReason): Unit = {
