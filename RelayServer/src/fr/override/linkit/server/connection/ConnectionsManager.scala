@@ -2,7 +2,7 @@ package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.packet.fundamental.DataPacket
+import fr.`override`.linkit.api.packet.fundamental.ValPacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.server.RelayServer
@@ -56,7 +56,8 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connectionSession = ClientConnectionSession(identifier, socket, server)
         val connection = ClientConnection.open(connectionSession)
         connections.put(identifier, connection)
-        connection.sendPacket(DataPacket("OK"), PacketTraffic.SystemChannel)
+        println("Sending packet...")
+        connection.sendPacket(ValPacket("OK"), PacketTraffic.SystemChannel)
 
         val canConnect = server.securityManager.canConnect(connection)
         if (canConnect) {

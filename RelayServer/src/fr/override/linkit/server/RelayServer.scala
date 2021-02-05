@@ -9,7 +9,7 @@ import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThre
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.fundamental.DataPacket
+import fr.`override`.linkit.api.packet.fundamental.PairPacket
 import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
 import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketTraffic}
@@ -53,7 +53,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     override val network: ServerNetwork = new ServerNetwork(this)(globalTraffic)
     private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
 
-
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
         val targetIdentifier = task.targetID
@@ -78,7 +77,8 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         println(Relay.ApiVersion)
 
         try {
-            initSocketListening()
+            loadInternal()
+            loadSocketListener()
         } catch {
             case NonFatal(e) =>
                 e.printStackTrace()
@@ -128,22 +128,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     override def isClosed: Boolean = !open
 
-    private def initSocketListening(): Unit = {
-        securityManager.checkRelay(this)
-
-        if (configuration.enableExtensionsFolderLoad)
-            extensionLoader.launch()
-
-        val thread = new Thread(() => {
-            open = true
-            while (open) listenSocketConnection()
-        })
-        thread.setName("Socket Connection Listener")
-        thread.start()
-
-        securityManager.checkRelay(this)
-    }
-
     def getConnection(relayIdentifier: String): ClientConnection = {
         ensureOpen()
         connectionsManager.getConnection(relayIdentifier)
@@ -164,9 +148,10 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
      * @return the identifier bound with the socket
      * */
     private def readWelcomePacket(socket: SocketContainer): String = {
-        val welcomePacketLength = socket.read(1).head
+        val welcomePacketLength = socket.readInt()
         if (welcomePacketLength > 32)
             throw new ConnectionInitialisationException("Relay identifier exceeded maximum size limit of 32")
+
         val welcomePacket = socket.read(welcomePacketLength)
         new String(welcomePacket)
     }
@@ -198,7 +183,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     override def runLater(callback: => Unit): Unit = {
-        workerThread.runLater(_ => callback)
+        workerThread.runLater(callback)
     }
 
     private def handleSocket(socket: SocketContainer): Unit = {
@@ -208,9 +193,27 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {
-        val responsePacket = DataPacket(response, message)
+        val responsePacket = PairPacket(response, message)
         val coordinates = PacketCoordinates(PacketTraffic.SystemChannel, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(responsePacket, coordinates))
+    }
+
+    private def loadInternal(): Unit = {
+        if (configuration.enableExtensionsFolderLoad)
+            extensionLoader.launch()
+    }
+
+    private def loadSocketListener(): Unit = {
+        securityManager.checkRelay(this)
+
+        val thread = new Thread(() => {
+            open = true
+            while (open) listenSocketConnection()
+        })
+        thread.setName("Socket Connection Listener")
+        thread.start()
+
+        securityManager.checkRelay(this)
     }
 
     /**
