@@ -10,7 +10,6 @@ import scala.collection.mutable
 class CategorisedPacketChannel(connectedID: String,
                                identifier: Int,
                                traffic: PacketTraffic) extends AbstractPacketChannel(connectedID, identifier, traffic) {
-
     private val categories = mutable.Map.empty[String, PacketInjectable]
 
     @relayWorkerExecution
@@ -20,19 +19,12 @@ class CategorisedPacketChannel(connectedID: String,
                 categories.get(category).foreach(_.injectPacket(packet, coordinates))
         }
     }
-
-    class SyncCategory(name: String) extends SyncPacketChannel() {
-        override def nextPacket(): Packet = ???
-
-        override def haveMorePackets: Boolean = ???
-
-        override def sendPacket(packet: Packet): Unit = ???
-
-        @relayWorkerExecution
-        override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = ???
+    //TODO
+/*
+    class SyncCategory(name: String) extends SyncPacketChannel(traffic, connectedID, identifier, new SyncPacketChannelBehavior(true, WrappedPacket(name, _))) {
     }
 
-    class AsyncCategory(name: String) extends AbstractPacketChannel(connectedID, identifier, traffic)
+    class AsyncCategory(name: String) extends AsyncPacketChannel(traffic, connectedID, identifier, new AsyncPacketChannelBehavior(WrappedPacket(name, _)))
             with DedicatedPacketAsyncReceiver with DedicatedPacketSender {
         override def onPacketReceived(callback: Packet => Unit): Unit = ???
 
@@ -40,5 +32,5 @@ class CategorisedPacketChannel(connectedID: String,
 
         @relayWorkerExecution
         override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = ???
-    }
+    }*/
 }

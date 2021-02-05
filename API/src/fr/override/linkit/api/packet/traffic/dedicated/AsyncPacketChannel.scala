@@ -62,7 +62,13 @@ object AsyncPacketChannel extends PacketChannelFactory[AsyncPacketChannel] {
     def apply: AsyncPacketChannelBehavior = AsyncPacketChannelBehavior()
 
     case class AsyncPacketChannelBehavior() extends ChannelBehavior {
+
         private[AsyncPacketChannel] var overlay: Packet => Packet = packet => packet
+
+        def this(overlay: Packet => Packet) = {
+            this()
+            this.overlay = overlay
+        }
 
         def withOverlay(overlay: Packet => Packet): this.type = {
             this.overlay = overlay

@@ -4,7 +4,7 @@ import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketFactory}
+import fr.`override`.linkit.api.packet.{Packet, PacketCompanion, PacketCoordinates}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 
 class CommunicationPacketChannel(identifier: Int,
@@ -34,7 +34,7 @@ class CommunicationPacketChannel(identifier: Int,
         packet match {
             case wrapped: WrappedPacket =>
                 val subPacket = wrapped.subPacket
-                wrapped.category match {
+                wrapped.tag match {
                     case "res" => responses.add(subPacket)
                     case "req" => requestListeners.applyAll((subPacket, coordinates))
                     case _ => injectAsNormal()
@@ -46,7 +46,7 @@ class CommunicationPacketChannel(identifier: Int,
     def addRequestListener(action: (Packet, PacketCoordinates) => Unit): Unit =
         requestListeners += (tuple => action(tuple._1, tuple._2))
 
-    def nextResponse[P <: Packet](factory: PacketFactory[P]): P = nextResponse().asInstanceOf[P]
+    def nextResponse[P <: Packet](factory: PacketCompanion[P]): P = nextResponse().asInstanceOf[P]
 
     def nextResponse(): Packet = responses.take()
 

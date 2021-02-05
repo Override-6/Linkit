@@ -6,7 +6,7 @@ import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
-import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
+import fr.`override`.linkit.api.packet.{Packet, PacketTranslator}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.system.{JustifiedCloseable, Version}
@@ -63,7 +63,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     /**
      * The Packet Manager used by this relay.
      * A packetTranslator can register a [[Packet]]
-     * then build or decompose a packet using [[PacketFactory]]
+     * then build or decompose a packet using [[PacketCompanion]]
      *
      * @see packetTranslator on how to register and use a customised packet kind
      * */

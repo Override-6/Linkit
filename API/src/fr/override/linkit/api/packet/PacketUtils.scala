@@ -3,6 +3,7 @@ package fr.`override`.linkit.api.packet
 import java.util
 
 import fr.`override`.linkit.api.packet.PacketTranslator.{ChannelIDSeparator, SenderSeparator, TargetSeparator}
+import fr.`override`.linkit.api.utils.ScalaUtils
 
 object PacketUtils {
 
@@ -41,15 +42,7 @@ object PacketUtils {
     }
 
     def wrap(bytes: Array[Byte]): Array[Byte] = {
-        val lengthBytes = bytes.length.toString.getBytes
-        val flagLength = lengthBytes.length
-
-        if (flagLength > 16)
-            throw new UnsupportedOperationException("flagLength > 16")
-
-        val packetLengthBytesLength = Integer.toHexString(flagLength).getBytes
-        val result = packetLengthBytesLength ++ lengthBytes ++ bytes
-        result
+        ScalaUtils.fromInt(bytes.length) ++ bytes
     }
 
 }

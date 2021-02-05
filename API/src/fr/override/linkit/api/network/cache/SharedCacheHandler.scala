@@ -5,7 +5,7 @@ import java.util.NoSuchElementException
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler.MockCache
 import fr.`override`.linkit.api.network.cache.map.SharedMap
-import fr.`override`.linkit.api.packet.fundamental.DataPacket
+import fr.`override`.linkit.api.packet.fundamental.ValPacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
@@ -64,8 +64,8 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
     private def retrieveBaseContent(cacheID: Int, owner: String): Array[Any] = LocalCacheHandler.synchronized {
         if (cacheID == -1 && isHandlingSelf)
             return Array()
-        communicator.sendRequest(WrappedPacket(family, DataPacket(s"$cacheID")), owner)
-        communicator.nextResponse(ObjectPacket).casted[Array[Any]] //The request will return the cache content
+        communicator.sendRequest(WrappedPacket(family, ValPacket(cacheID)), owner)
+        communicator.nextResponse(ValPacket).casted[Array[Any]] //The request will return the cache content
     }
 
     private def init(): SharedMap[Int, String] = {
@@ -92,6 +92,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
         })
     }
 
+
     private def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
             //Normal packet
@@ -100,8 +101,8 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
                 LocalCacheHandler.injectPacket(key.toInt, subPacket, coords)
 
             //Cache initialisation packet
-            case DataPacket(cacheIdentifier, _) =>
-                val cacheID: Int = cacheIdentifier.toInt
+            case ValPacket(value) =>
+                val cacheID = value.asInstanceOf[Int]
                 val senderID: String = coords.senderID
 
                 val content = if (cacheID == -1) {
@@ -112,7 +113,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
                 }
                 else LocalCacheHandler.getContent(cacheID)
 
-                communicator.sendResponse(ObjectPacket(content), senderID)
+                communicator.sendResponse(ValPacket(content), senderID)
         }
     }
 

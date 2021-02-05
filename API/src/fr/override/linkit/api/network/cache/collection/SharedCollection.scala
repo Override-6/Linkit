@@ -4,7 +4,8 @@ import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, ObjectPacket, SharedCacheFactory}
+import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
+import fr.`override`.linkit.api.packet.fundamental.ValPacket
 import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
@@ -118,7 +119,7 @@ class SharedCollection[A](family: String,
     }
 
     private def flushModification(mod: (CollectionModification, Int, Any)): Unit = {
-        sendRequest(ObjectPacket(mod))
+        sendRequest(ValPacket(mod))
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
         //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
@@ -126,13 +127,13 @@ class SharedCollection[A](family: String,
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case modPacket: ObjectPacket => RelayWorkerThreadPool.smartRun {
+            case modPacket: ValPacket => RelayWorkerThreadPool.smartRun {
                 handleNetworkModRequest(modPacket)
             }
         }
     }
 
-    private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
+    private def handleNetworkModRequest(packet: ValPacket): Unit = {
         val mod: (CollectionModification, Int, Any) = packet.casted
         val modKind: CollectionModification = mod._1
         val index: Int = mod._2

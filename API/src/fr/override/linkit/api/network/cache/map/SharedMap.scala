@@ -1,7 +1,8 @@
 package fr.`override`.linkit.api.network.cache.map
 
 import fr.`override`.linkit.api.network.cache.map.MapModification._
-import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, ObjectPacket, SharedCacheFactory}
+import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
+import fr.`override`.linkit.api.packet.fundamental.ValPacket
 import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, ScalaUtils}
@@ -95,7 +96,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
 
     override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
+            case ValPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
         }
     }
 
@@ -129,7 +130,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
     }
 
     private def flushModification(mod: (MapModification, Any, Any)): Unit = {
-        sendRequest(ObjectPacket(mod))
+        sendRequest(ValPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
         modCount += 1
     }

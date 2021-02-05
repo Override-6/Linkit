@@ -1,11 +1,6 @@
 package fr.override.linkit.api.utils;
 
-import fr.override.linkit.api.exception.UnexpectedPacketException;
-import fr.override.linkit.api.packet.fundamental.DataPacket;
-import scala.collection.Seq;
-
 import java.io.*;
-
 
 public class Utils {
 
@@ -36,12 +31,4 @@ public class Utils {
             return (T) ois.readObject();
         }
     }
-
-    public static void checkPacketHeader(DataPacket packet, Seq<String> expectedHeaders) throws UnexpectedPacketException {
-        if (expectedHeaders.contains(packet.header()))
-            return;
-        String msg = expectedHeaders.mkString("or") + " expected, received : " + packet.header();
-        throw new UnexpectedPacketException(msg);
-    }
-
 }

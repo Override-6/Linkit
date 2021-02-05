@@ -14,6 +14,7 @@ trait PacketChannel extends JustifiedCloseable {
 
     val ownerID: String
     val injector: PacketTraffic
+    val identifier: Int
 
     val connectedID: String
     val coordinates: PacketCoordinates

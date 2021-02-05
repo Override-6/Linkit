@@ -7,7 +7,7 @@ import fr.`override`.linkit.api.exception.{RelayCloseException, RelayException}
 import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.network.ConnectionState.CLOSED
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
-import fr.`override`.linkit.api.utils.ConsumerContainer
+import fr.`override`.linkit.api.utils.{ConsumerContainer, ScalaUtils}
 
 abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
     @volatile protected var currentSocket: Socket = _
@@ -68,6 +68,10 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             totalRead += bytesRead
         }
         buff
+    }
+
+    def readInt(): Int = {
+        ScalaUtils.toInt(read(4))
     }
 
     def read(buff: Array[Byte], pos: Int): Int = {

@@ -89,7 +89,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
     communicator.addRequestListener((pack, coords) => {
         pack match {
             case fragmentPacket: WrappedPacket =>
-                val fragmentName = fragmentPacket.category
+                val fragmentName = fragmentPacket.tag
                 val packet = fragmentPacket.subPacket
                 val sender = coords.senderID
                 val subCommunicator = communicator.subChannel(sender, CommunicationPacketChannel)

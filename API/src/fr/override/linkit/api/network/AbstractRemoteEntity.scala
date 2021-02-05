@@ -3,8 +3,9 @@ package fr.`override`.linkit.api.network
 import java.sql.Timestamp
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
-import fr.`override`.linkit.api.network.cache.{ObjectPacket, SharedCacheHandler}
+import fr.`override`.linkit.api.packet.fundamental.ValPacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
@@ -34,12 +35,12 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override def getConnectionState: ConnectionState
 
     override def getProperty(name: String): Serializable = {
-        communicator.sendRequest(ObjectPacket(("getProp", name)))
-        communicator.nextResponse(ObjectPacket).obj
+        communicator.sendRequest(ValPacket(("getProp", name)))
+        communicator.nextResponse(ValPacket).casted
     }
 
     override def setProperty(name: String, value: Serializable): Unit = {
-        communicator.sendRequest(ObjectPacket(("setProp", name, value)))
+        communicator.sendRequest(ValPacket(("setProp", name, value)))
     }
 
     override def getRemoteConsole: RemoteConsole = relay.getConsoleOut(identifier)

@@ -1,8 +1,9 @@
 package fr.`override`.linkit.api.network
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification, SharedCollection}
-import fr.`override`.linkit.api.network.cache.{ObjectPacket, SharedCacheHandler}
+import fr.`override`.linkit.api.packet.fundamental.ValPacket
 import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
 
@@ -50,11 +51,11 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
     communicator.addRequestListener((packet, coords) => {
         val sender = coords.senderID
         packet match {
-            case ObjectPacket(("getProp", name: String)) =>
+            case ValPacket(("getProp", name: String)) =>
                 val prop = relay.properties.get(name).orNull
-                communicator.sendResponse(ObjectPacket(prop), sender)
+                communicator.sendResponse(ValPacket(prop), sender)
 
-            case ObjectPacket(("setProp", name: String, value)) =>
+            case ValPacket(("setProp", name: String, value)) =>
                 relay.properties.putProperty(name, value)
         }
     })

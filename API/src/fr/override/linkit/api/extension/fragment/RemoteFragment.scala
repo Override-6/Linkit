@@ -1,9 +1,9 @@
 package fr.`override`.linkit.api.`extension`.fragment
 
 import fr.`override`.linkit.api.packet.Packet
-import fr.`override`.linkit.api.packet.traffic.dedicated.{CommunicationPacketChannel, DedicatedPacketSender}
+import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
 
-abstract class RemoteFragment(protected val broadcaster: DedicatedPacketSender) extends ExtensionFragment {
+abstract class RemoteFragment() extends ExtensionFragment {
 
     val nameIdentifier: String
 

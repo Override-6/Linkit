@@ -2,11 +2,10 @@ package fr.`override`.linkit.api.packet
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{PacketException, UnexpectedPacketException}
-import fr.`override`.linkit.api.network.cache.ObjectPacket
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
-import fr.`override`.linkit.api.packet.fundamental._
+import fr.`override`.linkit.api.packet.fundamental.{EmptyPacket, PairPacket, TaskInitPacket, ValPacket}
 import fr.`override`.linkit.api.system.SystemPacket
-import fr.`override`.linkit.api.utils.WrappedPacket
+import fr.`override`.linkit.api.utils.{ScalaUtils, Utils, WrappedPacket}
 
 import scala.collection.mutable
 
@@ -19,7 +18,6 @@ object PacketTranslator {
 
 class PacketTranslator(relay: Relay) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
-    private val factories = mutable.LinkedHashMap.empty[Class[_ <: Packet], PacketFactory[_ <: Packet]]
     registerDefaults()
 
     def toPacketAndCoords(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
@@ -32,12 +30,13 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     def toPacket(bytes: Array[Byte]): Packet = {
         if (bytes.length > relay.configuration.maxPacketLength)
             throw PacketException("Custom packet bytes length exceeded configuration limit")
+        val packetTypeInt = ScalaUtils.toInt(bytes.slice(0, 4))
+        val packetClassOpt = PacketKindBag.getKind(packetTypeInt)
 
-        for (factory <- factories.values) {
-            if (factory.canTransform(this)(bytes))
-                return factory.build(this)(bytes)
-        }
-        throw new UnexpectedPacketException(s"Could not find packet factory for ${new String(bytes)}")
+        if (packetClassOpt.isEmpty)
+            throw new UnexpectedPacketException(s"Could not find packet factory of identifier $packetTypeInt")
+
+        Utils.deserialize(bytes.drop(4))
     }
 
     def fromPacketAndCoords(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
@@ -51,30 +50,67 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     }
 
     def fromPacket(packet: Packet): Array[Byte] = {
-        val packetClass = packet.getClass
-        factories(packetClass)
-                .asInstanceOf[PacketFactory[Packet]]
-                .decompose(this)(packet)
+        val kind = packet.getClass
+        val identifierOpt = PacketKindBag.getIdentifier(kind)
+        if (identifierOpt.isEmpty)
+            throw PacketException(s"Could not serialize packet : $kind is not registered.")
+
+        ScalaUtils.fromInt(identifierOpt.get) ++ Utils.serialize(packet)
+    }
+
+    def register[P <: Packet](packetCompanion: PacketCompanion[P]): Unit = {
+        register(packetCompanion.identifier, packetCompanion.packetClass)
+    }
+
+    def register(identifier: Int, packetClass: Class[_ <: Packet]): Unit = {
+        if (PacketKindBag.containsID(identifier))
+            throw PacketException("This companion identifier is already registered !")
+
+        PacketKindBag.add(identifier, packetClass)
     }
 
     private def registerDefaults(): Unit = {
-        Array(
-            DataPacket, EmptyPacket.Factory,
-            TaskInitPacket, ErrorPacket,
-            SystemPacket, WrappedPacket, ObjectPacket
-        ).foreach(registerFactory)
+        register(EmptyPacket.Companion)
+        register(TaskInitPacket)
+        register(SystemPacket)
+        register(WrappedPacket)
+        register(ValPacket)
+        register(PairPacket)
     }
 
-    def registerFactory(packetFactory: PacketFactory[_ <: Packet]): Unit = {
-        val factory = packetFactory
-        val ptClass = packetFactory.packetClass
+    object PacketKindBag {
+        private val classMap = mutable.LinkedHashMap.empty[Int, Class[_ <: Packet]]
+        private val idMap = mutable.LinkedHashMap.empty[Class[_ <: Packet], Int]
 
-        if (factories.contains(ptClass))
-            throw new IllegalArgumentException(s"Packet '$ptClass' type is already registered !")
+        def add(identifier: Int, clazz: Class[_ <: Packet]): Unit = {
+            classMap.put(identifier, clazz)
+            idMap.put(clazz, identifier)
+        }
 
-        factories.put(ptClass, factory)
-        //notifier.onPacketTypeRegistered(ptClass, packetFactory) //TODO
+        def getKind(identifier: Int): Option[Class[_ <: Packet]] = {
+            classMap.get(identifier)
+        }
+
+        def getIdentifier(kind: Class[_ <: Packet]): Option[Int] = {
+            idMap.get(kind)
+        }
+
+        def containsID(identifier: Int): Boolean = {
+            classMap.contains(identifier)
+        }
+
     }
-
 
 }
+
+
+
+
+
+
+
+
+
+
+
+

@@ -17,15 +17,11 @@ class RelayWorkerThreadPool() extends AutoCloseable {
     private var closed = false
     private val providerLocks = new ProvidersLock
 
-    def runLater(action: => Any): Unit = {
-        runLater((_ => action): Unit => Unit)
-    }
-
-    def runLater(action: Unit => Unit): Unit = {
+    def runLater(action: => Unit): Unit = {
         if (!closed) {
             executor.submit((() => {
                 try {
-                    action(null)
+                    action
                 } catch {
                     case NonFatal(e) => e.printStackTrace()
                 }
@@ -34,6 +30,7 @@ class RelayWorkerThreadPool() extends AutoCloseable {
             providerLocks.notifyOneProvider()
         }
     }
+
 
 
     def provideWhile(check: => Boolean): Unit = {
