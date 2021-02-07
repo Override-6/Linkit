@@ -3,12 +3,12 @@ package fr.`override`.linkit.api.packet.traffic.global
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.traffic.PacketWriter
 import fr.`override`.linkit.api.packet.{Packet, PacketCompanion, PacketCoordinates}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 
-class CommunicationPacketCollector protected(traffic: PacketTraffic, collectorID: Int, providable: Boolean)
-        extends AbstractPacketCollector(traffic, collectorID, false) {
+class CommunicationPacketCollector protected(writer: PacketWriter, providable: Boolean)
+        extends AbstractPacketCollector(writer, false) {
 
     private val responses: BlockingQueue[Packet] = {
         if (!providable)
@@ -22,7 +22,6 @@ class CommunicationPacketCollector protected(traffic: PacketTraffic, collectorID
     private val normalPacketListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
 
     var enablePacketSending = true
-    var packetTransform: Packet => Packet = p => p
 
     override def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         def injectAsNormal(): Unit = normalPacketListeners.applyAll((packet, coordinates))
@@ -49,37 +48,30 @@ class CommunicationPacketCollector protected(traffic: PacketTraffic, collectorID
     def nextResponse(): Packet = responses.take()
 
     def broadcastRequest(packet: Packet): Unit = if (enablePacketSending) {
-        sendRequest(packetTransform(packet), "BROADCAST")
+        sendRequest(packet, "BROADCAST")
     }
 
     def sendRequest(packet: Packet, targetID: String): Unit = if (enablePacketSending) {
-        traffic.writePacket(WrappedPacket("req", packetTransform(packet)), identifier, targetID)
+        writer.writePacket(WrappedPacket("req", packet), targetID)
     }
 
     def broadcastResponse(packet: Packet): Unit = if (enablePacketSending) {
-        sendResponse(packetTransform(packet), "BROADCAST")
+        sendResponse(packet, "BROADCAST")
     }
 
     def sendResponse(packet: Packet, targetID: String): Unit = if (enablePacketSending) {
-        traffic.writePacket(WrappedPacket("res", packetTransform(packet)), identifier, targetID)
+        writer.writePacket(WrappedPacket("res", packet), targetID)
     }
 
 }
 
 object CommunicationPacketCollector extends PacketCollectorFactory[CommunicationPacketCollector] {
-    override val collectorClass: Class[CommunicationPacketCollector] = classOf[CommunicationPacketCollector]
 
-    private val providableFactory: PacketCollectorFactory[CommunicationPacketCollector] =
-        new PacketCollectorFactory[CommunicationPacketCollector] {
-            override val collectorClass: Class[CommunicationPacketCollector] = classOf[CommunicationPacketCollector]
+    override def createNew(writer: PacketWriter): CommunicationPacketCollector = {
+        new CommunicationPacketCollector(writer, false)
+    }
 
-            override def createNew(traffic: PacketTraffic, channelId: Int): CommunicationPacketCollector = {
-                new CommunicationPacketCollector(traffic, channelId, true)
-            }
-        }
-
-    override def createNew(traffic: PacketTraffic, collectorId: Int): CommunicationPacketCollector =
-        new CommunicationPacketCollector(traffic, collectorId, false)
-
-    def providable: PacketCollectorFactory[CommunicationPacketCollector] = providableFactory
+    def providable: PacketCollectorFactory[CommunicationPacketCollector] = {
+        new CommunicationPacketCollector(_, true)
+    }
 }

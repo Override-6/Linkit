@@ -21,7 +21,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
     private val communicator: CommunicationPacketCollector = traffic.openCollector(11, CommunicationPacketCollector.providable)
     private val broadcastChannel: CommunicationPacketChannel = communicator.subChannel("BROADCAST", CommunicationPacketChannel)
-    private val relayID = traffic.ownerID
+    private val relayID = traffic.relayID
     private val cacheOwners: SharedMap[Int, String] = init()
     private val sharedObjects: SharedMap[Int, Any] = open(1, SharedMap[Int, Any])
     private val isHandlingSelf = ownerID == relayID

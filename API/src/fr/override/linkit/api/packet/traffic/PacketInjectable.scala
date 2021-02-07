@@ -7,7 +7,10 @@ import fr.`override`.linkit.api.system.JustifiedCloseable
 trait PacketInjectable extends JustifiedCloseable {
     val identifier: Int
     val ownerID: String
-    val injector: PacketTraffic
+    /**
+     * The traffic handler that is directly or not injecting the packets
+     * */
+    val traffic: PacketTraffic
 
     @relayWorkerExecution
     def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit

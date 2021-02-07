@@ -8,7 +8,9 @@ import fr.`override`.linkit.api.system.JustifiedCloseable
 import scala.reflect.ClassTag
 
 
-trait PacketTraffic extends PacketWriter with JustifiedCloseable {
+trait PacketTraffic extends JustifiedCloseable {
+
+    val relayID: String
 
     def register(dedicated: DedicatedPacketInjectable): Unit
 
@@ -21,6 +23,8 @@ trait PacketTraffic extends PacketWriter with JustifiedCloseable {
     def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit
 
     def isRegistered(identifier: Int, boundTarget: String): Boolean
+
+    def newWriter(identifier: Int, transform: Packet => Packet = p => p): PacketWriter
 
 }
 

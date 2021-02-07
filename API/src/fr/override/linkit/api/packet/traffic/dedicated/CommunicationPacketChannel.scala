@@ -3,15 +3,14 @@ package fr.`override`.linkit.api.packet.traffic.dedicated
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.traffic.PacketWriter
 import fr.`override`.linkit.api.packet.{Packet, PacketCompanion, PacketCoordinates}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 
-class CommunicationPacketChannel(identifier: Int,
+class CommunicationPacketChannel(writer: PacketWriter,
                                  connectedID: String,
-                                 traffic: PacketTraffic,
                                  providable: Boolean)
-        extends AbstractPacketChannel(connectedID, identifier, traffic) {
+        extends AbstractPacketChannel(writer, connectedID) {
 
     private val responses: BlockingQueue[Packet] = {
         if (!providable)
@@ -24,22 +23,19 @@ class CommunicationPacketChannel(identifier: Int,
 
 
     private val requestListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
-    private val normalPacketListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
 
     var enablePacketSending = true
     var packetTransform: Packet => Packet = p => p
 
     override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        def injectAsNormal(): Unit = normalPacketListeners.applyAll((packet, coordinates))
         packet match {
-            case wrapped: WrappedPacket =>
-                val subPacket = wrapped.subPacket
-                wrapped.tag match {
+            case WrappedPacket(tag, subPacket) =>
+                tag match {
                     case "res" => responses.add(subPacket)
                     case "req" => requestListeners.applyAll((subPacket, coordinates))
-                    case _ => injectAsNormal()
+                    case _ =>
                 }
-            case _ => injectAsNormal()
+            case _ =>
         }
     }
 
@@ -51,29 +47,21 @@ class CommunicationPacketChannel(identifier: Int,
     def nextResponse(): Packet = responses.take()
 
     def sendResponse(packet: Packet): Unit = if (enablePacketSending) {
-        traffic.writePacket(WrappedPacket("res", packetTransform(packet)), coordinates)
+        writer.writePacket(WrappedPacket("res", packet), connectedID)
     }
 
     def sendRequest(packet: Packet): Unit = if (enablePacketSending) {
-        traffic.writePacket(WrappedPacket("req", packetTransform(packet)), coordinates)
+        writer.writePacket(WrappedPacket("req", packet), connectedID)
     }
 
 }
 
 object CommunicationPacketChannel extends PacketChannelFactory[CommunicationPacketChannel] {
-    override val channelClass: Class[CommunicationPacketChannel] = classOf[CommunicationPacketChannel]
-
-    override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): CommunicationPacketChannel =
-        new CommunicationPacketChannel(channelId, connectedID, traffic, false)
-
-    def providable: PacketChannelFactory[CommunicationPacketChannel] = providableFactory
-
-    private val providableFactory: PacketChannelFactory[CommunicationPacketChannel] = new PacketChannelFactory[CommunicationPacketChannel] {
-        override val channelClass: Class[CommunicationPacketChannel] = classOf[CommunicationPacketChannel]
-
-        override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): CommunicationPacketChannel = {
-            new CommunicationPacketChannel(channelId, connectedID, traffic, true)
-        }
+    override def createNew(writer: PacketWriter,
+                           connectedID: String): CommunicationPacketChannel = {
+        new CommunicationPacketChannel(writer, connectedID, false)
     }
-    
+
+    def providable: PacketChannelFactory[CommunicationPacketChannel] = new CommunicationPacketChannel(_, _, true)
+
 }

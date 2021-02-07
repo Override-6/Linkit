@@ -1,14 +1,14 @@
 package fr.`override`.linkit.api.packet.traffic.global
 
 import fr.`override`.linkit.api.concurrency.relayWorkerExecution
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.traffic.PacketWriter
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
 import scala.util.control.NonFatal
 
-class AsyncPacketCollector protected(traffic: PacketTraffic, identifier: Int)
-        extends AbstractPacketCollector(traffic, identifier, true) with GlobalPacketSender with GlobalPacketAsyncReceiver {
+class AsyncPacketCollector protected(writer: PacketWriter)
+        extends AbstractPacketCollector(writer, true) with GlobalPacketSender with GlobalPacketAsyncReceiver {
 
     private val packetReceivedListeners = ConsumerContainer[(Packet, PacketCoordinates)]()
 
@@ -22,7 +22,7 @@ class AsyncPacketCollector protected(traffic: PacketTraffic, identifier: Int)
         }
     }
 
-    override def sendPacket(packet: Packet, targetID: String): Unit = traffic.writePacket(packet, identifier, targetID)
+    override def sendPacket(packet: Packet, targetID: String): Unit = writer.writePacket(packet, targetID)
 
     override def addOnPacketReceived(callback: (Packet, PacketCoordinates) => Unit): Unit = {
         packetReceivedListeners += (tuple => callback(tuple._1, tuple._2))
@@ -30,9 +30,7 @@ class AsyncPacketCollector protected(traffic: PacketTraffic, identifier: Int)
 }
 
 object AsyncPacketCollector extends PacketCollectorFactory[AsyncPacketCollector] {
-    override val collectorClass: Class[AsyncPacketCollector] = classOf[AsyncPacketCollector]
-
-    override def createNew(traffic: PacketTraffic, collectorId: Int): AsyncPacketCollector = {
-        new AsyncPacketCollector(traffic, collectorId)
+    override def createNew(writer: PacketWriter): AsyncPacketCollector = {
+        new AsyncPacketCollector(writer)
     }
 }

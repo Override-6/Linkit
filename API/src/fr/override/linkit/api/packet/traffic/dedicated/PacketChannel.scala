@@ -13,7 +13,7 @@ import fr.`override`.linkit.api.system.JustifiedCloseable
 trait PacketChannel extends JustifiedCloseable {
 
     val ownerID: String
-    val injector: PacketTraffic
+    val traffic: PacketTraffic
     val identifier: Int
 
     val connectedID: String

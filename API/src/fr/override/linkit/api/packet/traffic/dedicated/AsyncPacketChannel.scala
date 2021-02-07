@@ -1,18 +1,16 @@
 package fr.`override`.linkit.api.packet.traffic.dedicated
 
 import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
-import fr.`override`.linkit.api.packet.traffic.dedicated.AsyncPacketChannel.AsyncPacketChannelBehavior
+import fr.`override`.linkit.api.packet.traffic.PacketWriter
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
 import scala.util.control.NonFatal
 
-class AsyncPacketChannel protected(traffic: PacketTraffic,
-                                   connectedID: String,
-                                   identifier: Int,
-                                   behaviour: AsyncPacketChannelBehavior)
-        extends AbstractPacketChannel(connectedID, identifier, traffic) with DedicatedPacketSender with DedicatedPacketAsyncReceiver {
+class AsyncPacketChannel protected(writer: PacketWriter,
+                                   connectedID: String)
+
+        extends AbstractPacketChannel(writer, connectedID) with DedicatedPacketSender with DedicatedPacketAsyncReceiver {
 
     private val packetReceivedContainer: ConsumerContainer[Packet] = ConsumerContainer()
 
@@ -30,7 +28,7 @@ class AsyncPacketChannel protected(traffic: PacketTraffic,
     }
 
     override def sendPacket(packet: Packet): Unit = {
-        traffic.writePacket(packet, coordinates)
+        writer.writePacket(packet, connectedID)
     }
 
     override def onPacketReceived(callback: Packet => Unit): Unit = {
@@ -39,41 +37,9 @@ class AsyncPacketChannel protected(traffic: PacketTraffic,
 }
 
 object AsyncPacketChannel extends PacketChannelFactory[AsyncPacketChannel] {
-    override type T = AsyncPacketChannelBehavior
 
-    private val DefaultBehavior: AsyncPacketChannelBehavior = AsyncPacketChannelBehavior()
-
-    override val channelClass: Class[AsyncPacketChannel] = classOf[AsyncPacketChannel]
-
-    override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): AsyncPacketChannel = {
-        new AsyncPacketChannel(traffic, connectedID, channelId, DefaultBehavior)
-    }
-
-    override implicit def behavioralFactory(behavior: AsyncPacketChannelBehavior): PacketChannelFactory[AsyncPacketChannel] = {
-        new PacketChannelFactory[AsyncPacketChannel] {
-            override val channelClass: Class[AsyncPacketChannel] = classOf[AsyncPacketChannel]
-
-            override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): AsyncPacketChannel = {
-                new AsyncPacketChannel(traffic, connectedID, channelId, behavior)
-            }
-        }
-    }
-
-    def apply: AsyncPacketChannelBehavior = AsyncPacketChannelBehavior()
-
-    case class AsyncPacketChannelBehavior() extends ChannelBehavior {
-
-        private[AsyncPacketChannel] var overlay: Packet => Packet = packet => packet
-
-        def this(overlay: Packet => Packet) = {
-            this()
-            this.overlay = overlay
-        }
-
-        def withOverlay(overlay: Packet => Packet): this.type = {
-            this.overlay = overlay
-            this
-        }
+    override def createNew(writer: PacketWriter, connectedID: String): AsyncPacketChannel = {
+        new AsyncPacketChannel(writer, connectedID)
     }
 
 }

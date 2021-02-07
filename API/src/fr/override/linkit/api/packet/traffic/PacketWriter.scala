@@ -1,13 +1,15 @@
 package fr.`override`.linkit.api.packet.traffic
 
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.packet.Packet
 
 trait PacketWriter {
 
-    val ownerID: String
+    val relayID: String
+    val identifier: Int
+    val traffic: PacketTraffic
 
-    def writePacket(packet: Packet, coords: PacketCoordinates): Unit
+    def writePacket(packet: Packet, targetID: String): Unit
 
-    def writePacket(packet: Packet, identifier: Int, targetID: String): Unit
+    def writeBroadcastPacket(packet: Packet): Unit
 
 }

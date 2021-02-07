@@ -4,17 +4,16 @@ import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.traffic.PacketWriter
 import fr.`override`.linkit.api.packet.traffic.dedicated.{AbstractPacketChannel, DedicatedPacketSender, DedicatedPacketSyncReceiver, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
 
 //TODO doc
-class SyncPacketChannel protected(connectedID: String,
-                                  identifier: Int,
-                                  traffic: PacketTraffic,
-                                  providable: Boolean) extends AbstractPacketChannel(connectedID, identifier, traffic)
+class SyncPacketChannel protected(writer: PacketWriter,
+                                  connectedID: String,
+                                  providable: Boolean) extends AbstractPacketChannel(writer, connectedID)
         with DedicatedPacketSender with DedicatedPacketSyncReceiver {
 
 
@@ -44,7 +43,7 @@ class SyncPacketChannel protected(connectedID: String,
         queue.add(packet)
     }
 
-    override def sendPacket(packet: Packet): Unit = traffic.writePacket(packet, coordinates)
+    override def sendPacket(packet: Packet): Unit = writer.writePacket(packet, connectedID)
 
     override def close(reason: CloseReason): Unit = {
         super.close(reason)
@@ -70,20 +69,12 @@ class SyncPacketChannel protected(connectedID: String,
 
 
 object SyncPacketChannel extends PacketChannelFactory[SyncPacketChannel] {
-    override val channelClass: Class[SyncPacketChannel] = classOf[SyncPacketChannel]
 
-    private val providableFactory: PacketChannelFactory[SyncPacketChannel] = new PacketChannelFactory[SyncPacketChannel] {
-        override val channelClass: Class[SyncPacketChannel] = classOf[SyncPacketChannel]
-
-        override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): SyncPacketChannel = {
-            new SyncPacketChannel(connectedID, channelId, traffic, true)
-        }
+    override def createNew(writer: PacketWriter,
+                           connectedID: String): SyncPacketChannel = {
+        new SyncPacketChannel(writer, connectedID, false)
     }
 
-    override def createNew(traffic: PacketTraffic, channelId: Int, connectedID: String): SyncPacketChannel = {
-        new SyncPacketChannel(connectedID, channelId, traffic, false)
-    }
-
-    def providable: PacketChannelFactory[SyncPacketChannel] = providableFactory
+    def providable: PacketChannelFactory[SyncPacketChannel] = new SyncPacketChannel(_, _, true)
 
 }

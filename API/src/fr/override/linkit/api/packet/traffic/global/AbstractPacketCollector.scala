@@ -2,19 +2,19 @@ package fr.`override`.linkit.api.packet.traffic.global
 
 import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.traffic.{PacketInjectable, PacketTraffic}
+import fr.`override`.linkit.api.packet.traffic.{PacketInjectable, PacketTraffic, PacketWriter}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
 import scala.collection.mutable
 
-abstract class AbstractPacketCollector(traffic: PacketTraffic, collectorID: Int, defaultSubChannelTransparent: Boolean)
+abstract class AbstractPacketCollector(writer: PacketWriter, defaultSubChannelTransparent: Boolean)
         extends PacketCollector {
 
 
-    override val ownerID: String = traffic.ownerID
-    override val identifier: Int = collectorID
-    override val injector: PacketTraffic = traffic
+    override val traffic: PacketTraffic = writer.traffic
+    override val ownerID: String = traffic.relayID
+    override val identifier: Int = writer.identifier
 
     private val subChannels: mutable.Map[String, SubInjectableContainer] = mutable.Map.empty
     @volatile private var closed = false
@@ -47,7 +47,7 @@ abstract class AbstractPacketCollector(traffic: PacketTraffic, collectorID: Int,
             }
         }
 
-        val channel = factory.createNew(injector, identifier, targetID)
+        val channel = factory.createNew(writer, targetID)
         subChannels.put(targetID, SubInjectableContainer(channel, transparent))
         channel
     }
