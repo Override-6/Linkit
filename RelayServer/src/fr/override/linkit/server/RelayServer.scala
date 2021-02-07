@@ -37,21 +37,21 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     override val identifier: String = Identifier
 
     private val serverSocket = new ServerSocket(configuration.port)
-    private val globalTraffic = new GlobalPacketTraffic(this)
+    private val globalTraffic = new ServerPacketTraffic(this)
 
     @volatile private var open = false
     private val remoteConsoles = new RemoteConsolesContainer(this)
     private[server] val connectionsManager = new ConnectionsManager(this)
 
-    override val securityManager: RelayServerSecurityManager = configuration.securityManager
-    override val traffic: PacketTraffic = globalTraffic
-    override val relayVersion: Version = RelayServer.version
-    override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
-    override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler
-    override val properties: RelayProperties = new RelayProperties
-    override val packetTranslator: PacketTranslator = new PacketTranslator(this)
-    override val network: ServerNetwork = new ServerNetwork(this)(globalTraffic)
-    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
+    override val securityManager        : RelayServerSecurityManager = configuration.securityManager
+    override val traffic                : PacketTraffic = globalTraffic
+    override val relayVersion           : Version = RelayServer.version
+    override val extensionLoader        : RelayExtensionLoader      = new RelayExtensionLoader(this)
+    override val taskCompleterHandler   : TaskCompleterHandler      = new TaskCompleterHandler
+    override val properties             : RelayProperties           = new RelayProperties
+    override val packetTranslator       : PacketTranslator          = new PacketTranslator(this)
+    override val network                : ServerNetwork             = new ServerNetwork(this)(globalTraffic)
+    private val workerThread            : RelayWorkerThreadPool     = new RelayWorkerThreadPool()
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -97,7 +97,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     override def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
-        getConnection(targetID).openChannel(channelId, factory)
+        getConnection(targetID).getChannel(channelId, factory)
     }
 
     override def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C = {

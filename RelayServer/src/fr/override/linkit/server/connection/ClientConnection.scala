@@ -13,6 +13,7 @@ import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
 import org.jetbrains.annotations.NotNull
 
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends JustifiedCloseable {
@@ -67,10 +68,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
     def addConnectionStateListener(action: ConnectionState => Unit): Unit = session.addStateListener(action)
 
-    def openChannel[C <: PacketChannel](channelId: Int, factory: PacketChannelFactory[C]): C = {
-        val channel = factory.createNew(session.traffic, channelId, identifier)
-        session.traffic.register(channel)
-        channel
+    def getChannel[C <: PacketChannel : ClassTag](channelId: Int, factory: PacketChannelFactory[C]): C = {
+        session.traffic.openChannel(channelId, identifier, factory)
     }
 
     def runLater(callback: => Unit): Unit = {
@@ -134,7 +133,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
                 case PRINT_INFO => server.getConsoleOut(identifier).println(s"Connected to server ${server.relayVersion} (${Relay.ApiVersion})")
 
                 case _ => new UnexpectedPacketException(s"Could not complete order '$orderType', can't be handled by a server or unknown order")
-                    .printStackTrace(getConsoleErr)
+                        .printStackTrace(getConsoleErr)
             }
 
             def checkIDRegistered(target: String): Unit = {
@@ -143,6 +142,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
             }
         }
     }
+
 }
 
 object ClientConnection {
