@@ -4,14 +4,16 @@ import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.Relay.ServerIdentifier
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
 import fr.`override`.linkit.api.exception._
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet.fundamental._
+import fr.`override`.linkit.api.packet.traffic.PacketTraffic.SystemChannel
 import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
-import fr.`override`.linkit.api.packet.traffic.{DedicatedPacketTraffic, PacketReader}
+import fr.`override`.linkit.api.packet.traffic.{PacketReader, SocketPacketTraffic}
 import fr.`override`.linkit.api.packet.{PacketTranslator, _}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
@@ -29,21 +31,20 @@ object RelayPoint {
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
 
     @volatile private var open = false
-    override val relayVersion       : Version                   = RelayPoint.version
-    private var pointNetwork        : PointNetwork              = _ //will be instantiated once connected
-    override def network            : Network                   = pointNetwork
-    private val socket              : ClientDynamicSocket       = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
-    override val packetTranslator   : PacketTranslator          = new PacketTranslator(this)
-    override val traffic            : DedicatedPacketTraffic    = new DedicatedPacketTraffic(this, socket, identifier)
-    override val extensionLoader    : RelayExtensionLoader      = new RelayExtensionLoader(this)
-    override val properties         : RelayProperties           = new RelayProperties
-    private val workerThread        : RelayWorkerThreadPool     = new RelayWorkerThreadPool()
-    implicit val systemChannel      : SystemPacketChannel       = new SystemPacketChannel(Relay.ServerIdentifier, traffic)
-    private val tasksHandler        : ClientTasksHandler        = new ClientTasksHandler(systemChannel, this)
-    private val remoteConsoles      : RemoteConsolesContainer   = new RemoteConsolesContainer(this)
-
-    override val securityManager: RelaySecurityManager = configuration.securityManager
-    override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler()
+    override val relayVersion           : Version                   = RelayPoint.version
+    private var pointNetwork            : PointNetwork              = _ //will be instantiated once connected
+    override def network                : Network                   = pointNetwork
+    override val securityManager        : RelaySecurityManager      = configuration.securityManager
+    private val socket                  : ClientDynamicSocket       = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
+    override val packetTranslator       : PacketTranslator          = new PacketTranslator(this)
+    override val traffic                : SocketPacketTraffic       = new SocketPacketTraffic(this, socket)
+    override val extensionLoader        : RelayExtensionLoader      = new RelayExtensionLoader(this)
+    override val properties             : RelayProperties           = new RelayProperties()
+    private val workerThread            : RelayWorkerThreadPool     = new RelayWorkerThreadPool()
+    implicit val systemChannel          : SystemPacketChannel       = new SystemPacketChannel(traffic.newWriter(SystemChannel), ServerIdentifier)
+    private val tasksHandler            : ClientTasksHandler        = new ClientTasksHandler(systemChannel, this)
+    private val remoteConsoles          : RemoteConsolesContainer   = new RemoteConsolesContainer(this)
+    override val taskCompleterHandler   : TaskCompleterHandler      = new TaskCompleterHandler()
 
     override def start(): Unit = {
         RelayWorkerThreadPool.checkCurrentIsWorker("Must start relay point in a worker thread.")
