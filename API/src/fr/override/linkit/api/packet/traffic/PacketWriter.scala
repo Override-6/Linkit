@@ -10,6 +10,6 @@ trait PacketWriter {
 
     def writePacket(packet: Packet, targetID: String): Unit
 
-    def writeBroadcastPacket(packet: Packet): Unit
+    def writeBroadcastPacket(packet: Packet, discarded: Array[String] = Array()): Unit
 
 }

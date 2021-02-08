@@ -6,9 +6,8 @@ import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler.MockCache
 import fr.`override`.linkit.api.network.cache.map.SharedMap
 import fr.`override`.linkit.api.packet.fundamental.ValPacket
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
+import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.WrappedPacket
 
@@ -19,12 +18,14 @@ import scala.util.control.NonFatal
 
 class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: PacketTraffic) {
 
-    private val communicator: CommunicationPacketCollector = traffic.openCollector(11, CommunicationPacketCollector.providable)
-    private val broadcastChannel: CommunicationPacketChannel = communicator.subChannel("BROADCAST", CommunicationPacketChannel)
+    private val communicator = traffic.createInjectable(11, ChannelScope.broadcast, CommunicationPacketChannel.providable)
+    private val broadcastChannel = communicator.subInjectable(CommunicationPacketChannel, false)
+
     private val relayID = traffic.relayID
+    private val isHandlingSelf = ownerID == relayID
+
     private val cacheOwners: SharedMap[Int, String] = init()
     private val sharedObjects: SharedMap[Int, Any] = open(1, SharedMap[Int, Any])
-    private val isHandlingSelf = ownerID == relayID
 
     this.synchronized {
         notifyAll() //Releases all awaitReady locks, this action is marking this cache handler as ready.

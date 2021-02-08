@@ -32,7 +32,7 @@ class RemoteConsole private(@Nullable channel: AsyncPacketChannel,
             str = java.util.Arrays.deepToString(obj.asInstanceOf[Array[AnyRef]])
 
         if (channel != null)
-            channel.sendPacket(PairPacket(kind, String.valueOf(obj))) //prints to the linked console
+            channel.send(PairPacket(kind, String.valueOf(obj))) //prints to the linked console
     }
 
     override def print(x: Boolean): Unit = print(x: Any)

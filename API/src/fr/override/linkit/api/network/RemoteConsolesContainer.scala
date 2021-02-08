@@ -8,13 +8,12 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.fundamental.PairPacket
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.traffic.dedicated.AsyncPacketChannel
-import fr.`override`.linkit.api.packet.traffic.global.AsyncPacketCollector
+import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 
 class RemoteConsolesContainer(relay: Relay) {
 
-    private val printChannel = relay.openCollector(PacketTraffic.RemoteConsoles, AsyncPacketCollector)
+    private val printChannel = relay.createInjectable(PacketTraffic.RemoteConsoles, ChannelScope.broadcast, AsyncPacketChannel)
 
     private val outConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])
     private val errConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])
@@ -33,7 +32,7 @@ class RemoteConsolesContainer(relay: Relay) {
         if (consoles.containsKey(targetId))
             return consoles.get(targetId)
 
-        val channel = printChannel.subChannel(targetId, AsyncPacketChannel, true)
+        val channel = printChannel.subInjectable(targetId, AsyncPacketChannel, true)
         val console = supplier(channel)
         consoles.put(targetId, console)
 

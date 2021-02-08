@@ -20,5 +20,6 @@ class SocketPacketWriter(socket: DynamicSocket,
         socket.write(translator.fromPacketAndCoords(transformedPacket, coords))
     }
 
-    override def writeBroadcastPacket(packet: Packet): Unit = writePacket(packet, "BROADCAST")
+    //TODO add discarded identifiers list into the targetID
+    override def writeBroadcastPacket(packet: Packet, discarded: Array[String]): Unit = writePacket(packet, "BROADCAST")
 }

@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.`extension`.fragment
 
-trait ExtensionFragment {
+abstract class ExtensionFragment {
 
     def start(): Unit
 

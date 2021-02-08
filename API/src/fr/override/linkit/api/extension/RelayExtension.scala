@@ -3,7 +3,6 @@ package fr.`override`.linkit.api.`extension`
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.fragment.ExtensionFragment
 import fr.`override`.linkit.api.exception.RelayExtensionException
-import fr.`override`.linkit.api.packet.traffic.dedicated.DedicatedPacketSender
 
 abstract class RelayExtension(protected val relay: Relay) {
 
@@ -16,8 +15,8 @@ abstract class RelayExtension(protected val relay: Relay) {
 
     def onLoad(): Unit = ()
 
-    protected def putFragment(supplier: DedicatedPacketSender => ExtensionFragment): Unit = {
-        fragmentsManager.putFragment(supplier(null))
+    protected def putFragment(fragment: ExtensionFragment): Unit = {
+        fragmentsManager.putFragment(fragment)
     }
 
     protected def getFragment[F <: ExtensionFragment](extensionClass: Class[_ <: RelayExtension], fragmentClass: Class[F]): Option[F] = {

@@ -1,10 +1,7 @@
-package fr.`override`.linkit.api.packet.traffic.dedicated
+package fr.`override`.linkit.api.packet.traffic
 
-import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system.JustifiedCloseable
 
-//TODO Think about on creating an abstract class to implement this class as a trait
 /**
  * this class link two Relay between them. As a Channel, it can send packet, or wait until a packet was received
  *
@@ -15,8 +12,5 @@ trait PacketChannel extends JustifiedCloseable {
     val ownerID: String
     val traffic: PacketTraffic
     val identifier: Int
-
-    val connectedID: String
-    val coordinates: PacketCoordinates
 
 }

@@ -2,15 +2,14 @@ package fr.`override`.linkit.api.packet.traffic.dedicated
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
-import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
-import fr.`override`.linkit.api.packet.traffic.PacketWriter
+import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketInjectableFactory}
 import fr.`override`.linkit.api.packet.{Packet, PacketCompanion, PacketCoordinates}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
 
-class CommunicationPacketChannel(writer: PacketWriter,
-                                 connectedID: String,
+class CommunicationPacketChannel(scope: ChannelScope,
                                  providable: Boolean)
-        extends AbstractPacketChannel(writer, connectedID) {
+        extends AbstractPacketChannel(scope) {
 
     private val responses: BlockingQueue[Packet] = {
         if (!providable)
@@ -21,13 +20,10 @@ class CommunicationPacketChannel(writer: PacketWriter,
         }
     }
 
-
     private val requestListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
 
-    var enablePacketSending = true
-    var packetTransform: Packet => Packet = p => p
-
-    override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+    @relayWorkerExecution
+    override def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         packet match {
             case WrappedPacket(tag, subPacket) =>
                 tag match {
@@ -46,22 +42,29 @@ class CommunicationPacketChannel(writer: PacketWriter,
 
     def nextResponse(): Packet = responses.take()
 
-    def sendResponse(packet: Packet): Unit = if (enablePacketSending) {
-        writer.writePacket(WrappedPacket("res", packet), connectedID)
+    def sendResponse(packet: Packet): Unit = {
+        scope.sendToAll(WrappedPacket("res", packet))
     }
 
-    def sendRequest(packet: Packet): Unit = if (enablePacketSending) {
-        writer.writePacket(WrappedPacket("req", packet), connectedID)
+    def sendRequest(packet: Packet): Unit = {
+        scope.sendToAll(WrappedPacket("req", packet))
+    }
+
+    def sendResponse(packet: Packet, target: String): Unit =  {
+        scope.sendTo(target, WrappedPacket("res", packet))
+    }
+
+    def sendRequest(packet: Packet, target: String): Unit ={
+        scope.sendTo(target, WrappedPacket("req", packet))
     }
 
 }
 
-object CommunicationPacketChannel extends PacketChannelFactory[CommunicationPacketChannel] {
-    override def createNew(writer: PacketWriter,
-                           connectedID: String): CommunicationPacketChannel = {
-        new CommunicationPacketChannel(writer, connectedID, false)
+object CommunicationPacketChannel extends PacketInjectableFactory[CommunicationPacketChannel] {
+    override def createNew(scope: ChannelScope): CommunicationPacketChannel = {
+        new CommunicationPacketChannel(scope, false)
     }
 
-    def providable: PacketChannelFactory[CommunicationPacketChannel] = new CommunicationPacketChannel(_, _, true)
+    def providable: PacketInjectableFactory[CommunicationPacketChannel] = new CommunicationPacketChannel(_, true)
 
 }

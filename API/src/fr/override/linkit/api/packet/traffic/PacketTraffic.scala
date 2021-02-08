@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.packet.traffic
 
-import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
+import fr.`override`.linkit.api.concurrency.relayWorkerExecution
+import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.JustifiedCloseable
 
@@ -12,23 +12,24 @@ trait PacketTraffic extends JustifiedCloseable {
 
     val relayID: String
 
-    def register(dedicated: DedicatedPacketInjectable): Unit
+    def createInjectable[C <: PacketInjectable : ClassTag](id: Int,
+                                                           scopeFactory: ScopeFactory[_ <: ChannelScope],
+                                                           factory: PacketInjectableFactory[C]): C
+    
+    def createInjectableNoConflicts[C <: PacketInjectable : ClassTag](id: Int,
+                                                                      scopeFactory: ScopeFactory[_ <: ChannelScope],
+                                                                      factory: PacketInjectableFactory[C]): C
 
-    def register(global: GlobalPacketInjectable): Unit
+    @relayWorkerExecution
+    def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit
 
-    def openChannel[C <: PacketChannel : ClassTag](injectableID: Int, targetID: String, factory: PacketChannelFactory[C]): C
+    def canConflict(id: Int, scope: ChannelScope): Boolean
 
-    def openCollector[C <: PacketCollector : ClassTag](injectableID: Int, factory: PacketCollectorFactory[C]): C
-
-    def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit
-
-    def isRegistered(identifier: Int, boundTarget: String): Boolean
-
-    def newWriter(identifier: Int, transform: Packet => Packet = p => p): PacketWriter
+    def newWriter(id: Int, transform: Packet => Packet = p => p): PacketWriter
 
 }
 
 object PacketTraffic {
-    val SystemChannel = 1
+    val SystemChannelID = 1
     val RemoteConsoles = 2
 }

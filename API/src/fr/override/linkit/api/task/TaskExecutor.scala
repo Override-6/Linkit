@@ -2,7 +2,8 @@ package fr.`override`.linkit.api.task
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.packet.traffic.dedicated.{DedicatedPacketSender, DedicatedPacketSyncReceiver, SyncPacketChannel}
+import fr.`override`.linkit.api.packet.traffic.dedicated.SyncPacketChannel
+import fr.`override`.linkit.api.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.system.CloseReason
 
 /**
@@ -18,7 +19,7 @@ abstract class TaskExecutor {
 
     private var canCloseChannel: Boolean = true
     implicit protected var relay: Relay = _
-    implicit protected var channel: DedicatedPacketSyncReceiver with DedicatedPacketSender = _
+    implicit protected var channel: PacketSyncReceiver with PacketSender = _
 
 
     /**

@@ -6,9 +6,8 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.packet.fundamental.ValPacket
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
+import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.system.Version
 
 abstract class AbstractRemoteEntity(private val relay: Relay,
@@ -22,8 +21,8 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override val connectionDate: Timestamp = cache(2)
     private val remoteFragments = {
         val communicator = traffic
-                .openCollector(4, CommunicationPacketCollector.providable)
-                .subChannel(identifier, CommunicationPacketChannel.providable, true)
+                .createInjectable(4, ChannelScope.broadcast, CommunicationPacketChannel.providable)
+                .subInjectable(Array(identifier), CommunicationPacketChannel.providable, true)
 
         cache
                 .open(6, SharedCollection.set[String])

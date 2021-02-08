@@ -2,19 +2,17 @@ package fr.`override`.linkit.api.packet.traffic.dedicated
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
-import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.traffic.PacketWriter
-import fr.`override`.linkit.api.packet.traffic.dedicated.{AbstractPacketChannel, DedicatedPacketSender, DedicatedPacketSyncReceiver, PacketChannelFactory}
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.packet.traffic.dedicated.AbstractPacketChannel
+import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
 
 //TODO doc
-class SyncPacketChannel protected(writer: PacketWriter,
-                                  connectedID: String,
-                                  providable: Boolean) extends AbstractPacketChannel(writer, connectedID)
-        with DedicatedPacketSender with DedicatedPacketSyncReceiver {
+class SyncPacketChannel protected(scope: ChannelScope,
+                                  providable: Boolean) extends AbstractPacketChannel(scope)
+        with PacketSender with PacketSyncReceiver {
 
 
     /**
@@ -37,13 +35,16 @@ class SyncPacketChannel protected(writer: PacketWriter,
      *
      * @throws IllegalArgumentException if the packet coordinates does not match with this channel coordinates
      * */
-    override def injectPacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        if (coords.senderID != connectedID)
-            throw new UnexpectedPacketException("Attempted to inject a packet that comes from a relay that is not bound to this channel")
+    @relayWorkerExecution
+    override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         queue.add(packet)
     }
 
-    override def sendPacket(packet: Packet): Unit = writer.writePacket(packet, connectedID)
+    override def send(packet: Packet): Unit = scope.sendToAll(packet)
+
+    override def sendTo(target: String, packet: Packet): Unit = {
+        scope.sendTo(target, packet)
+    }
 
     override def close(reason: CloseReason): Unit = {
         super.close(reason)
@@ -68,13 +69,12 @@ class SyncPacketChannel protected(writer: PacketWriter,
 }
 
 
-object SyncPacketChannel extends PacketChannelFactory[SyncPacketChannel] {
+object SyncPacketChannel extends PacketInjectableFactory[SyncPacketChannel] {
 
-    override def createNew(writer: PacketWriter,
-                           connectedID: String): SyncPacketChannel = {
-        new SyncPacketChannel(writer, connectedID, false)
+    override def createNew(scope: ChannelScope): SyncPacketChannel = {
+        new SyncPacketChannel(scope, false)
     }
 
-    def providable: PacketChannelFactory[SyncPacketChannel] = new SyncPacketChannel(_, _, true)
+    def providable: PacketInjectableFactory[SyncPacketChannel] = new SyncPacketChannel(_, true)
 
 }

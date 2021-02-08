@@ -4,9 +4,8 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{LoadPhase, RelayExtension, RelayExtensionLoader}
 import fr.`override`.linkit.api.exception.ExtensionLoadException
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
-import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
-import fr.`override`.linkit.api.utils.WrappedPacket
+import fr.`override`.linkit.api.packet.traffic.ChannelScope
+import fr.`override`.linkit.api.packet.traffic.dedicated.{AsyncPacketChannel, PacketChannelCategories}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -16,7 +15,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
 
     private val fragmentMap: mutable.Map[Class[_ <: RelayExtension], ExtensionFragments] = mutable.Map.empty
 
-    private val communicator = relay.openCollector(4, CommunicationPacketCollector)
+    private val categories = relay.createInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
 
     private lazy val sharedRemoteFragments: SharedCollection[String] = {
         var ptn: SharedCollection[String] = null
@@ -29,9 +28,15 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
     }
 
 
+    def initRemote(remote: RemoteFragment): Unit = {
+        sharedRemoteFragments.add(remote.nameIdentifier)
+        val channel = categories.createCategory(remote.nameIdentifier, ChannelScope.broadcast, AsyncPacketChannel)
+        remote.setChannel(channel)
+    }
+
     def putFragment(fragment: ExtensionFragment)(implicit extension: RelayExtension): Unit = {
         if (extensionLoader.getPhase != LoadPhase.LOAD)
-            throw new IllegalStateException("Could not set fragment : fragmentMap can only be set during LOAD phase")
+            throw new IllegalStateException("Could not set fragment : fragment can only be put during LOAD phase")
 
         val extensionClass = extension.getClass
         val fragmentClass = fragment.getClass
@@ -43,7 +48,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
 
         fragment match {
             case remote: RemoteFragment =>
-                sharedRemoteFragments.add(remote.nameIdentifier)
+                initRemote(remote)
 
             case _ =>
         }
@@ -85,19 +90,6 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
     private[extension] def destroyFragments(): Unit = {
         fragmentMap.values.foreach(_.destroyAll())
     }
-
-    communicator.addRequestListener((pack, coords) => {
-        pack match {
-            case fragmentPacket: WrappedPacket =>
-                val fragmentName = fragmentPacket.tag
-                val packet = fragmentPacket.subPacket
-                val sender = coords.senderID
-                val subCommunicator = communicator.subChannel(sender, CommunicationPacketChannel)
-                listRemoteFragments()
-                        .find(_.nameIdentifier == fragmentName)
-                        .foreach(fragment => fragment.handleRequest(packet, subCommunicator))
-        }
-    })
 
     private class ExtensionFragments {
         private val fragments: mutable.Map[Class[_ <: ExtensionFragment], ExtensionFragment] = mutable.Map.empty

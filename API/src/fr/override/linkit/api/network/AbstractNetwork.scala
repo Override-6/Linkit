@@ -4,8 +4,8 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification, SharedCollection}
 import fr.`override`.linkit.api.packet.fundamental.ValPacket
+import fr.`override`.linkit.api.packet.traffic.ChannelScope
 import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.traffic.global.CommunicationPacketCollector
 
 abstract class AbstractNetwork(relay: Relay) extends Network {
 
@@ -18,7 +18,7 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
             .open(3, SharedCollection.set[String])
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
-    private val communicator = relay.openCollector(9, CommunicationPacketCollector.providable)
+    private val communicator = relay.createInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
@@ -41,7 +41,7 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
             return selfEntity
         }
 
-        val channel = communicator.subChannel(identifier, CommunicationPacketChannel.providable, true)
+        val channel = communicator.subInjectable(Array(identifier), CommunicationPacketChannel.providable, true)
         val ent = createRelayEntity(identifier, channel)
         ent
     }

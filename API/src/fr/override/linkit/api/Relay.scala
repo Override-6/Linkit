@@ -3,9 +3,8 @@ package fr.`override`.linkit.api
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, IllegalThreadException, RelayException}
 import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole}
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
-import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
+import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.packet.{Packet, PacketTranslator}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
@@ -129,9 +128,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * */
     def getConnectionState: ConnectionState
 
-    def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
-
-    def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C
+    def createInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C
 
     /**
      * @param targetId the targeted Relay identifier
