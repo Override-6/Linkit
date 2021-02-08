@@ -34,13 +34,24 @@ This way, the first number is always 0, any feature or irreversible change would
 No objectives are scheduled in order to exit the beta phase.
 
 ## The API
-The API is a bag of features and definitions of performance an implementation must support.  
+The API is a bag of features and definitions of behavior that a Relay implementation must support.  
 Some features are pre-implemented and handled by the api, such as the [extension](TODO), the [event handling system](TODO) or the [Packet handling](TODO) and [Task scheduling](TODO) which are partially implemented.  
-All of those features are accessible from the Relay interface. 
+All of those features are accessible from the Relay interface.  
 
-TODO continue this part
+(see [API README](https://github.com/Override-6/LinKit/tree/master/API) to get further details)  
 
-##The Client  
+### Packet handling
+
+Protocol Used : TCP
+
+[Packet](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/packet/Packet.scala) implementations are simply serialised / deserialised using ObjectOuput/InputStreams. (the serialisation method may change to JSON). Any packet is serialised/deserialised with the [PacketTranslator](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/packet/PacketTranslator.scala), that handles the byte seqence of packet content __and__ their coordinates.
+
+Here you can have a quick look to what the api is capable
+### Network package
+
+The network is represented into the package api.network, and ensures t
+
+## The Client  
 The Client, or RelayPoint, is one implementation of the Relay interface, which can connect to any server implementation.  
 In order to instantiate a RelayPoint, you need a RelayPointConfiguration.  
 The different option explications of a RelayPointConfiguration can be find in the [RelayPoint README](https://github.com/Override-6/LinKit/tree/master/RelayPoint), but here, we will focus on how to create a default RelayPoint by using its builder :  
@@ -53,10 +64,15 @@ val relayPoint: RelayPoint = new RelayPointBuilder {
 relayPoint.start() 
 ```
 
-Here you have the JavaBuilder version if you are using Java :
+Here you have the JavaBuilder version for Java users :
 ```java
 RelayPoint relayPoint = RelayPointBuilder
     .javaBuilder(serverAddress, relayPointIdentifier)
     .build();
 relayPoint.start();
 ```
+
+## The Server
+The Server, or RelayServer, is an implementation of the relay that handles multiple connections, it is meant to faciliate packet exchange between clients, and must make sure that it can behaves like a client.  
+A server implementation is the center of the [network](TODO). Even if its network entity does not provide a lot more features, the server must ensure that every thing works correctly, and handles the connection informations and packet sharing.  
+
