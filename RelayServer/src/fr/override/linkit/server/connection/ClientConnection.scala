@@ -8,12 +8,10 @@ import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketExcep
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental._
-import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
 import org.jetbrains.annotations.NotNull
 
-import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends JustifiedCloseable {
@@ -68,10 +66,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
     def addConnectionStateListener(action: ConnectionState => Unit): Unit = session.addStateListener(action)
 
-    def getChannel[C <: PacketChannel : ClassTag](channelId: Int, factory: PacketChannelFactory[C]): C = {
-        session.traffic.openChannel(channelId, identifier, factory)
-    }
-
     def runLater(callback: => Unit): Unit = {
         workerThread.runLater(callback)
     }
@@ -113,8 +107,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
                 case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
                 case init: TaskInitPacket => session.tasksHandler.handlePacket(init, coordinates)
                 case _: Packet =>
-                    if (server.preHandlePacket(packet, coordinates))
-                        session.traffic.injectPacket(packet, coordinates)
+                    session.serverTraffic.handlePacket(packet, coordinates)
             }
         }
 
@@ -138,7 +131,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
             def checkIDRegistered(target: String): Unit = {
                 val response = if (server.isConnected(target)) "OK" else "ERROR"
-                session.channel.sendPacket(ValPacket(response))
+                session.channel.send(ValPacket(response))
             }
         }
     }

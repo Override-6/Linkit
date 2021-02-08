@@ -14,14 +14,14 @@ class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWr
             return
         }
         if (targetID == server.identifier) {
-            traffic.injectPacket(packet, PacketCoordinates(identifier, targetID, relayID))
+            traffic.handlePacket(packet, PacketCoordinates(identifier, targetID, relayID))
             return
         }
         if (server.isConnected(targetID))
             server.getConnection(targetID).sendPacket(packet, identifier)
     }
 
-    override def writeBroadcastPacket(packet: Packet): Unit = {
+    override def writeBroadcastPacket(packet: Packet, discarded: Array[String]): Unit = {
         server.broadcastPacket(packet, identifier)
     }
 }

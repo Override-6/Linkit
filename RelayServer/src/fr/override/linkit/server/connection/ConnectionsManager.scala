@@ -57,7 +57,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connection = ClientConnection.open(connectionSession)
         connections.put(identifier, connection)
         println("Sending packet...")
-        connection.sendPacket(ValPacket("OK"), PacketTraffic.SystemChannel)
+        connection.sendPacket(ValPacket("OK"), PacketTraffic.SystemChannelID)
 
         val canConnect = server.securityManager.canConnect(connection)
         if (canConnect) {
@@ -89,10 +89,10 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @param broadcaster the client who broadcasts the bytes.
      *                    This way, the broadcaster will be ignored
      * */
-    def broadcastBytes(bytes: Array[Byte], broadcaster: String): Unit = {
+    def broadcastBytes(bytes: Array[Byte], discarded: Array[String] = Array()): Unit = {
         PacketWorkerThread.checkNotCurrent()
         connections.values
-                .filter(con => con.identifier != broadcaster && con.isConnected)
+                .filter(con => !discarded.contains(con.identifier) && con.isConnected)
                 .foreach(_.sendBytes(bytes))
     }
 

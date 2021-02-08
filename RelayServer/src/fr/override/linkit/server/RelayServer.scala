@@ -5,14 +5,13 @@ import java.nio.charset.Charset
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
+import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental.PairPacket
-import fr.`override`.linkit.api.packet.traffic.dedicated.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.traffic.global.{PacketCollector, PacketCollectorFactory}
-import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketTraffic}
+import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.server.RelayServer.Identifier
@@ -37,21 +36,20 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     override val identifier: String = Identifier
 
     private val serverSocket = new ServerSocket(configuration.port)
-    private val globalTraffic = new ServerPacketTraffic(this)
 
     @volatile private var open = false
-    private val remoteConsoles = new RemoteConsolesContainer(this)
     private[server] val connectionsManager = new ConnectionsManager(this)
 
-    override val securityManager        : RelayServerSecurityManager = configuration.securityManager
-    override val traffic                : PacketTraffic = globalTraffic
-    override val relayVersion           : Version = RelayServer.version
-    override val extensionLoader        : RelayExtensionLoader      = new RelayExtensionLoader(this)
-    override val taskCompleterHandler   : TaskCompleterHandler      = new TaskCompleterHandler
-    override val properties             : RelayProperties           = new RelayProperties
-    override val packetTranslator       : PacketTranslator          = new PacketTranslator(this)
-    override val network                : ServerNetwork             = new ServerNetwork(this)(globalTraffic)
-    private val workerThread            : RelayWorkerThreadPool     = new RelayWorkerThreadPool()
+    override val securityManager        : RelayServerSecurityManager    = configuration.securityManager
+    override val traffic                : PacketTraffic                 = new ServerPacketTraffic(this)
+    override val relayVersion           : Version                       = RelayServer.version
+    override val extensionLoader        : RelayExtensionLoader          = new RelayExtensionLoader(this)
+    override val taskCompleterHandler   : TaskCompleterHandler          = new TaskCompleterHandler
+    override val properties             : RelayProperties               = new RelayProperties
+    override val packetTranslator       : PacketTranslator              = new PacketTranslator(this)
+    override val network                : ServerNetwork                 = new ServerNetwork(this)(traffic)
+    private val workerThread            : RelayWorkerThreadPool         = new RelayWorkerThreadPool()
+    private val remoteConsoles          : RemoteConsolesContainer       = new RemoteConsolesContainer(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -96,12 +94,8 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.containsIdentifier(identifier)
     }
 
-    override def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C = {
-        getConnection(targetID).getChannel(channelId, factory)
-    }
-
-    override def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C = {
-        globalTraffic.openCollector(channelId, factory)
+    override def createInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
+        traffic.createInjectable(channelId, scopeFactory, factory)
     }
 
     override def getConsoleOut(targetId: String): RemoteConsole = {
@@ -137,9 +131,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.broadcastMessage(err, "(broadcast) " + msg)
     }
 
-    def broadcastPacket(packet: Packet, injectableID: Int): Unit = {
+    def broadcastPacket(packet: Packet, injectableID: Int, discarded: Array[String] = Array()): Unit = {
         val bytes = packetTranslator.fromPacketAndCoordsNoWrap(packet, PacketCoordinates(injectableID, "BROADCAST", identifier))
-        connectionsManager.broadcastBytes(bytes, identifier)
+        connectionsManager.broadcastBytes(bytes, discarded.appended(identifier))
     }
 
     /**
@@ -194,7 +188,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {
         val responsePacket = PairPacket(response, message)
-        val coordinates = PacketCoordinates(PacketTraffic.SystemChannel, "unknown", identifier)
+        val coordinates = PacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(responsePacket, coordinates))
     }
 
@@ -214,27 +208,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         thread.start()
 
         securityManager.checkRelay(this)
-    }
-
-    /**
-     * Pre handles a packet, if this packet is a global one, it will be injected into the global traffic.
-     *
-     * Any packet received by a [[ClientConnection]] will invoke this method before it could be handled by the connection.
-     * If the handled packet prove to be a global packet,
-     * the client connection that just received this packet will stop handling it.
-     * (that's why this method is named as 'preHandlePacket' !)
-     *
-     * @param packet the packet to inject whether his coordinates prove to be a global packet
-     * @param coordinates the packet coordinates to check. If the injectableID is registered in the global traffic,
-     *                    that's means the packet is global.
-     * @return true if the following handling int the client connection should stop, false instead
-     * */
-    private[server] def preHandlePacket(packet: Packet, coordinates: PacketCoordinates): Boolean = {
-        PacketWorkerThread.checkNotCurrent()
-        val isGlobalPacket = globalTraffic.isRegistered(coordinates.injectableID, coordinates.senderID)
-        if (isGlobalPacket)
-            globalTraffic.injectPacket(packet, coordinates)
-        !isGlobalPacket
     }
 
     private def handleRelayPointConnection(identifier: String,
