@@ -30,20 +30,21 @@ object RelayPoint {
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
 
     @volatile private var open = false
-    override val relayVersion           : Version                   = RelayPoint.version
-    private var pointNetwork            : PointNetwork              = _ //will be instantiated once connected
-    override def network                : Network                   = pointNetwork
-    override val securityManager        : RelaySecurityManager      = configuration.securityManager
-    private val socket                  : ClientDynamicSocket       = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
-    override val packetTranslator       : PacketTranslator          = new PacketTranslator(this)
-    override val traffic                : SocketPacketTraffic       = new SocketPacketTraffic(this, socket)
-    override val extensionLoader        : RelayExtensionLoader      = new RelayExtensionLoader(this)
-    override val properties             : RelayProperties           = new RelayProperties()
-    private val workerThread            : RelayWorkerThreadPool     = new RelayWorkerThreadPool()
-    implicit val systemChannel          : SystemPacketChannel       = traffic.createInjectable(SystemChannelID, ChannelScope.mutable(ServerIdentifier), SystemPacketChannel)
-    private val tasksHandler            : ClientTasksHandler        = new ClientTasksHandler(systemChannel, this)
-    private val remoteConsoles          : RemoteConsolesContainer   = new RemoteConsolesContainer(this)
-    override val taskCompleterHandler   : TaskCompleterHandler      = new TaskCompleterHandler()
+    override val relayVersion: Version = RelayPoint.version
+    private var pointNetwork: PointNetwork = _ //will be instantiated once connected
+    override def network: Network = pointNetwork
+
+    override val securityManager: RelaySecurityManager = configuration.securityManager
+    private val socket: ClientDynamicSocket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
+    override val packetTranslator: PacketTranslator = new PacketTranslator(this)
+    override val traffic: SocketPacketTraffic = new SocketPacketTraffic(this, socket)
+    override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
+    override val properties: RelayProperties = new RelayProperties()
+    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
+    implicit val systemChannel: SystemPacketChannel = traffic.createInjectable(SystemChannelID, ChannelScope.mutable(ServerIdentifier), SystemPacketChannel)
+    private val tasksHandler: ClientTasksHandler = new ClientTasksHandler(systemChannel, this)
+    private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
+    override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler()
 
     override def start(): Unit = {
         RelayWorkerThreadPool.checkCurrentIsWorker("Must start relay point in a worker thread.")
@@ -64,9 +65,12 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             loadRemote()
             loadUserFeatures()
         } catch {
+            case e: RelayInitialisationException =>
+                throw e
+
             case NonFatal(e) =>
-                e.printStackTrace()
                 runLater(close(CloseReason.INTERNAL_ERROR))
+                throw RelayInitialisationException(e.getMessage, e)
         }
         securityManager.checkRelay(this)
 
@@ -111,8 +115,8 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     override def isConnected(identifier: String): Boolean = {
         systemChannel.sendOrder(SystemOrder.CHECK_ID, CloseReason.INTERNAL, identifier.getBytes)
-        val response = systemChannel.nextPacket(ValPacket).value
-        response == "OK"
+        val response = systemChannel.nextPacket(IntPacket).value
+        response == 1
     }
 
     override def getConnectionState: ConnectionState = socket.getState
@@ -162,14 +166,18 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     private def loadRemote(): Unit = {
         println(s"Connecting to server with relay id '$identifier'")
         socket.start()
+        println(s"Socket accepted...")
 
         val welcomePacket = PacketUtils.wrap(identifier.getBytes)
         socket.write(welcomePacket)
         socket.addConnectionStateListener(state => if (state == ConnectionState.CONNECTED) socket.write(welcomePacket))
 
-        val response = systemChannel.nextPacket(ValPacket)
-        if (response.value == "ERROR")
-            throw RelayInitialisationException(response.casted)
+        val response = systemChannel.nextPacket(IntPacket)
+        val code = response.value
+        if (code != 1) {
+            val refusalMessage = systemChannel.nextPacket(StringPacket).value
+            throw RelayInitialisationException(refusalMessage)
+        }
 
         systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
         println("Connected !")
@@ -216,19 +224,22 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         throw new UnexpectedPacketException(msg)
     }
 
-    private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+    private def handlePacket(packet: Packet, coordinates: PacketCoordinates, number: Int): Unit = {
         packet match {
             case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
             case system: SystemPacket => handleSystemPacket(system, coordinates)
-            case _: Packet => traffic.handlePacket(packet, coordinates)
+            case _: Packet =>
+                val injection = PacketInjections.createInjection(packet, coordinates, number)
+                traffic.handleInjection(injection)
         }
     }
 
     object PointPacketWorkerThread extends PacketWorkerThread() {
 
         private val packetReader = new PacketReader(socket, securityManager)
+        @volatile private var packetsReceived = 0
 
-        override protected def readAndHandleOnePacket(): Unit = {
+        override protected def refresh(): Unit = {
             try {
                 listen()
             } catch {
@@ -254,14 +265,14 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             if (bytes == null)
                 return
             //NETWORK-DEBUG-MARK
-            println(s"received : ${new String(bytes)}")
+            //println(s"received : ${new String(bytes)}")
             val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
 
             if (configuration.checkReceivedPacketTargetID)
                 checkCoordinates(coordinates)
-
+            packetsReceived += 1
             runLater { //handles the packet in the worker thread pool
-                handlePacket(packet, coordinates)
+                handlePacket(packet, coordinates, packetsReceived)
             }
         }
 
