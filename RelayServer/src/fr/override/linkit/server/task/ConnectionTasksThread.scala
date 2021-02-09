@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.task
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.`override`.linkit.api.network.RemoteConsole
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.api.task.TaskTicket
 
@@ -13,7 +13,7 @@ import scala.util.control.NonFatal
 
 class ConnectionTasksThread private(consoleErr: RemoteConsole,
                                     ticketQueue: BlockingQueue[TaskTicket],
-                                    lostPackets: mutable.Map[Int, ListBuffer[(Packet, PacketCoordinates)]]) extends Thread with JustifiedCloseable {
+                                    lostInjections: mutable.Map[Int, ListBuffer[PacketInjection]]) extends Thread with JustifiedCloseable {
 
     @volatile private var open = false
     @volatile private var currentTicket: TaskTicket = _
@@ -46,14 +46,14 @@ class ConnectionTasksThread private(consoleErr: RemoteConsole,
         }
 
         ticketQueue.clear()
-        lostPackets.clear()
+        lostInjections.clear()
         open = false
 
         interrupt()
     }
 
     def copy(): ConnectionTasksThread =
-        new ConnectionTasksThread(consoleErr, ticketQueue, lostPackets)
+        new ConnectionTasksThread(consoleErr, ticketQueue, lostInjections)
 
     private[task] def addTicket(ticket: TaskTicket): Unit = {
         ticketQueue.add(ticket)
@@ -65,11 +65,11 @@ class ConnectionTasksThread private(consoleErr: RemoteConsole,
         val channel = ticket.channel
         val taskID = channel.identifier
         //Adding eventual lost packets to this task
-        if (lostPackets.contains(taskID)) {
-            val queue = lostPackets(taskID)
-            queue.foreach(element => channel.injectPacket(element._1, element._2))
+        if (lostInjections.contains(taskID)) {
+            val queue = lostInjections(taskID)
+            queue.foreach(channel.inject)
             queue.clear()
-            lostPackets.remove(taskID)
+            lostInjections.remove(taskID)
         }
         ticket.start()
     }

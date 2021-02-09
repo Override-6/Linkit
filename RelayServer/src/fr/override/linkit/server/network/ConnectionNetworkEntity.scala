@@ -2,7 +2,7 @@ package fr.`override`.linkit.server.network
 
 import fr.`override`.linkit.api.network.cache.SharedInstance
 import fr.`override`.linkit.api.network.{AbstractRemoteEntity, ConnectionState}
-import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.server.RelayServer
 
 class ConnectionNetworkEntity(server: RelayServer, identifier: String, communicator: CommunicationPacketChannel)

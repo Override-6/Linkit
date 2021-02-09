@@ -3,11 +3,12 @@ package fr.`override`.linkit.server.connection
 import java.net.Socket
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool, relayWorkerExecution}
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental._
+import fr.`override`.linkit.api.packet.traffic.PacketInjections
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
 import org.jetbrains.annotations.NotNull
@@ -82,12 +83,14 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     }
 
     object ConnectionPacketWorker extends PacketWorkerThread {
-        override protected def readAndHandleOnePacket(): Unit = {
+
+        @relayWorkerExecution
+        override protected def refresh(): Unit = {
             try {
                 session
                         .packetReader
-                        .nextPacket((packet, coordinates) => {
-                            runLater(handlePacket(packet, coordinates))
+                        .nextPacket((packet, coordinates, packetNumber) => {
+                            runLater(handlePacket(packet, coordinates, packetNumber))
                         })
             } catch {
                 case NonFatal(e) =>
@@ -99,15 +102,17 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
             }
         }
 
-        private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-            val containerID = coordinates.injectableID
+        @relayWorkerExecution
+        private def handlePacket(packet: Packet, coordinates: PacketCoordinates, number: Int): Unit = {
             if (closed)
                 return
+
             packet match {
                 case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
                 case init: TaskInitPacket => session.tasksHandler.handlePacket(init, coordinates)
                 case _: Packet =>
-                    session.serverTraffic.handlePacket(packet, coordinates)
+                    val injection = PacketInjections.createInjection(packet, coordinates, number)
+                    session.serverTraffic.handleInjection(injection)
             }
         }
 
@@ -130,8 +135,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
             }
 
             def checkIDRegistered(target: String): Unit = {
-                val response = if (server.isConnected(target)) "OK" else "ERROR"
-                session.channel.send(ValPacket(response))
+                val response = if (server.isConnected(target)) 1 else 2
+                session.channel.send(IntPacket(response))
             }
         }
     }

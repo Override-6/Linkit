@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.connection
 import java.net.SocketException
 
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketReader}
+import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketInjections, PacketReader}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
@@ -12,10 +12,11 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
     private val packetReader = new PacketReader(socket, server.securityManager)
     private val manager = server.connectionsManager
     private val packetTranslator = server.packetTranslator
+    @volatile private var concernedPacketsReceived = 0
 
-    def nextPacket(onPacketReceived: (Packet, PacketCoordinates) => Unit): Unit = {
+    def nextPacket(onPacketReceived: (Packet, PacketCoordinates, Int) => Unit): Unit = {
         try {
-            nextConcernedPacket(onPacketReceived)
+            nextConcernedPacket(onPacketReceived(_,_, concernedPacketsReceived))
         } catch {
             case e: SocketException if e.getMessage == "Connection reset" =>
                 val msg =
@@ -32,19 +33,22 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
         }
 
         //NETWORK-DEBUG-MARK
-        println(s"received : ${new String(bytes)}")
+        //println(s"received : ${new String(bytes)}")
         val target = getTargetID(bytes)
 
         target match {
             case server.identifier =>
+                concernedPacketsReceived += 1
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
                 event(packet, coordinates)
 
             case "BROADCAST" => server.runLater {
                 manager.broadcastBytes(bytes, Array(identifier))
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
+                concernedPacketsReceived += 1
+
                 //would inject the packet into registered injectables (if some are registered)
-                server.traffic.handlePacket(packet, coordinates)
+                server.traffic.handleInjection(PacketInjections.createInjection(packet, coordinates, concernedPacketsReceived))
             }
             case _ => manager.deflectTo(bytes, target)
         }

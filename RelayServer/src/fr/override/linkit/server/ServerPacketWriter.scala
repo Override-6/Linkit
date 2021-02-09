@@ -1,6 +1,6 @@
 package fr.`override`.linkit.server
 
-import fr.`override`.linkit.api.packet.traffic.{PacketTraffic, PacketWriter, WriterInfo}
+import fr.`override`.linkit.api.packet.traffic.{PacketInjections, PacketTraffic, PacketWriter, WriterInfo}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 
 class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWriter {
@@ -14,7 +14,7 @@ class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWr
             return
         }
         if (targetID == server.identifier) {
-            traffic.handlePacket(packet, PacketCoordinates(identifier, targetID, relayID))
+            traffic.handleInjection(PacketInjections.discovered(packet, PacketCoordinates(identifier, targetID, relayID)))
             return
         }
         if (server.isConnected(targetID))

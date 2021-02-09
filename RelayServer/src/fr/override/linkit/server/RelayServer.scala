@@ -9,7 +9,7 @@ import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.fundamental.PairPacket
+import fr.`override`.linkit.api.packet.fundamental.{IntPacket, StringPacket}
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.system._
@@ -40,16 +40,16 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     @volatile private var open = false
     private[server] val connectionsManager = new ConnectionsManager(this)
 
-    override val securityManager        : RelayServerSecurityManager    = configuration.securityManager
-    override val traffic                : PacketTraffic                 = new ServerPacketTraffic(this)
-    override val relayVersion           : Version                       = RelayServer.version
-    override val extensionLoader        : RelayExtensionLoader          = new RelayExtensionLoader(this)
-    override val taskCompleterHandler   : TaskCompleterHandler          = new TaskCompleterHandler
-    override val properties             : RelayProperties               = new RelayProperties
-    override val packetTranslator       : PacketTranslator              = new PacketTranslator(this)
-    override val network                : ServerNetwork                 = new ServerNetwork(this)(traffic)
-    private val workerThread            : RelayWorkerThreadPool         = new RelayWorkerThreadPool()
-    private val remoteConsoles          : RemoteConsolesContainer       = new RemoteConsolesContainer(this)
+    override val securityManager: RelayServerSecurityManager = configuration.securityManager
+    override val traffic: PacketTraffic = new ServerPacketTraffic(this)
+    override val relayVersion: Version = RelayServer.version
+    override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
+    override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler
+    override val properties: RelayProperties = new RelayProperties
+    override val packetTranslator: PacketTranslator = new PacketTranslator(this)
+    override val network: ServerNetwork = new ServerNetwork(this)(traffic)
+    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
+    private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
@@ -154,6 +154,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         val socketContainer = new SocketContainer(true)
         try {
             val clientSocket = serverSocket.accept()
+            println(s"Accepted socket $clientSocket...")
             socketContainer.set(clientSocket)
             runLater {
                 handleSocket(socketContainer)
@@ -171,7 +172,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
 
         def onException(e: Throwable): Unit = {
-            sendResponse(socketContainer, "ERROR", s"An exception occurred in server during client connection initialisation ($e)") //sends a negative response for the client initialisation handling
+            sendRefusedConnection(socketContainer, s"An exception occurred in server during client connection initialisation ($e)") //sends a negative response for the client initialisation handling
             close(CloseReason.INTERNAL_ERROR)
         }
     }
@@ -186,10 +187,17 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         handleRelayPointConnection(identifier, socket)
     }
 
-    private def sendResponse(socket: DynamicSocket, response: String, message: String = ""): Unit = {
-        val responsePacket = PairPacket(response, message)
+    private def sendAuthoriseConnection(socket: DynamicSocket): Unit = {
+        val responsePacket = IntPacket(1)
         val coordinates = PacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(responsePacket, coordinates))
+    }
+
+    private def sendRefusedConnection(socket: DynamicSocket, message: String): Unit = {
+        val codePacket = IntPacket(2)
+        val coordinates = PacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
+        socket.write(packetTranslator.fromPacketAndCoords(codePacket, coordinates))
+        socket.write(packetTranslator.fromPacketAndCoords(StringPacket(message), coordinates))
     }
 
     private def loadInternal(): Unit = {
@@ -226,7 +234,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
         if (!current.isConnected) {
             current.updateSocket(socket.get)
-            sendResponse(socket, "OK")
+            sendAuthoriseConnection(socket)
             return
         }
         val identifier = current.identifier
@@ -235,13 +243,13 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         import AmbiguityStrategy._
         configuration.relayIDAmbiguityStrategy match {
             case CLOSE_SERVER =>
-                sendResponse(socket, "ERROR", rejectMsg + " Consequences: Closing Server...")
+                sendRefusedConnection(socket, rejectMsg + " Consequences: Closing Server...")
                 broadcastMessage(true, "RelayServer will close your connection because of a critical error")
                 close(CloseReason.INTERNAL_ERROR)
 
             case REJECT_NEW =>
-                Console.err.println("Rejected connection of a client because he gave an already registered relay identifier.")
-                sendResponse(socket, "ERROR", rejectMsg)
+                Console.err.println("Rejected connection of a client because it gave an already registered relay identifier.")
+                sendRefusedConnection(socket, rejectMsg)
 
             case REPLACE =>
                 connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
@@ -249,7 +257,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
             case DISCONNECT_BOTH =>
                 connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
-                sendResponse(socket, "ERROR", rejectMsg + " Consequences : Disconnected both")
+                sendRefusedConnection(socket, rejectMsg + " Consequences : Disconnected both")
         }
     }
 
