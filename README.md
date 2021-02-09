@@ -86,8 +86,9 @@ Here is a list of features that are already supported
 * Schedulable tasks
 * Smart concurrency handling, with providable threads.
 
-TODO
+TODO List
 * Server Entity for Network accessor
 * Optimised big transfert channel for streaming
 * Enhance the shared cache feature
 * Optimised reactive and bindable channels for game networking
+* RMI
