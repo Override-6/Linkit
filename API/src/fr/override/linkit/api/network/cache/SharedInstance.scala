@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.network.cache
 
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.fundamental.ValPacket
-import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 

@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.packet.traffic.dedicated
+package fr.`override`.linkit.api.packet.traffic.channel
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 

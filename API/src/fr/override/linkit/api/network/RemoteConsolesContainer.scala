@@ -8,7 +8,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.fundamental.PairPacket
-import fr.`override`.linkit.api.packet.traffic.dedicated.AsyncPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 
 class RemoteConsolesContainer(relay: Relay) {

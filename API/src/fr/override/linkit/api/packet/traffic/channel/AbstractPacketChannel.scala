@@ -1,7 +1,8 @@
-package fr.`override`.linkit.api.packet.traffic.dedicated
+package fr.`override`.linkit.api.packet.traffic.channel
 
 import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.exception.ForbiddenIdentifierException
+import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
@@ -27,10 +28,12 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     override def isClosed: Boolean = closed
 
     @relayWorkerExecution
-    final override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
+    final override def inject(injection: PacketInjection): Unit = {
+        val coordinates = injection.coordinates
         scope.assertAuthorised(coordinates.senderID)
 
-        if (subInject(packet, coordinates))
+        val packet = injection.discoverPacket()
+        if (subInject(injection))
             handlePacket(packet, coordinates)
     }
 
@@ -69,12 +72,15 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
      *         if one injectable is injected and is not transparent, this method will return false, so
      *         the current injectable could not handle packets for it.
      * */
-    private def subInject(packet: Packet, coords: PacketCoordinates): Boolean = {
+    private def subInject(injection: PacketInjection): Boolean = {
+        val coords = injection.coordinates
+        val packet = injection.discoverPacket()
+
         val target = coords.targetID
         var authoriseInject = true
         for (container <- subChannels if container.subInjectable.canInjectFrom(target)) {
             val injectable = container.subInjectable
-            injectable.injectPacket(packet, coords)
+            injectable.inject(injection)
 
             authoriseInject = authoriseInject && !container.transparent
         }

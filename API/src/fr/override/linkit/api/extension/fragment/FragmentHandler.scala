@@ -5,7 +5,7 @@ import fr.`override`.linkit.api.`extension`.{LoadPhase, RelayExtension, RelayExt
 import fr.`override`.linkit.api.exception.ExtensionLoadException
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
-import fr.`override`.linkit.api.packet.traffic.dedicated.{AsyncPacketChannel, PacketChannelCategories}
+import fr.`override`.linkit.api.packet.traffic.channel.{AsyncPacketChannel, PacketChannelCategories}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

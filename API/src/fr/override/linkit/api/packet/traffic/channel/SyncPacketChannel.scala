@@ -1,10 +1,10 @@
-package fr.`override`.linkit.api.packet.traffic.dedicated
+package fr.`override`.linkit.api.packet.traffic.channel
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool, relayWorkerExecution}
-import fr.`override`.linkit.api.packet.traffic.dedicated.AbstractPacketChannel
 import fr.`override`.linkit.api.packet.traffic._
+import fr.`override`.linkit.api.packet.traffic.channel.AbstractPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
@@ -55,7 +55,6 @@ class SyncPacketChannel protected(scope: ChannelScope,
         if (queue.isEmpty)
             PacketWorkerThread.checkNotCurrent()
         val packet = queue.take()
-        //handler.notifyPacketUsed(packet, coordinates)
         packet
     }
 

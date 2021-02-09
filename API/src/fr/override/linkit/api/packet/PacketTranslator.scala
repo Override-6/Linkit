@@ -3,11 +3,12 @@ package fr.`override`.linkit.api.packet
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{PacketException, UnexpectedPacketException}
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
-import fr.`override`.linkit.api.packet.fundamental.{EmptyPacket, PairPacket, TaskInitPacket, ValPacket}
+import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.system.SystemPacket
 import fr.`override`.linkit.api.utils.{ScalaUtils, Utils, WrappedPacket}
 
 import scala.collection.mutable
+import scala.reflect.{ClassTag, classTag}
 
 
 object PacketTranslator {
@@ -36,7 +37,9 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
         if (packetClassOpt.isEmpty)
             throw new UnexpectedPacketException(s"Could not find packet factory of identifier $packetTypeInt")
 
-        Utils.deserialize(bytes.drop(4))
+        val packetContentBytes = bytes.drop(4)
+        PacketKindBag.getStrategy(packetTypeInt)
+                .fold(Utils.deserialize(packetContentBytes): Packet)(_.deserialize(packetContentBytes): Packet)
     }
 
     def fromPacketAndCoords(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
@@ -55,12 +58,24 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
         if (identifierOpt.isEmpty)
             throw PacketException(s"Could not serialize packet : $kind is not registered.")
 
-        ScalaUtils.fromInt(identifierOpt.get) ++ Utils.serialize(packet)
+        val identifier = identifierOpt.get
+        val serialized = PacketKindBag.getStrategy(identifier)
+                .fold(Utils.serialize(packet))(_.serialize(packet))
+
+        ScalaUtils.fromInt(identifier) ++ serialized
     }
 
-    def register[P <: Packet](packetCompanion: PacketCompanion[P]): Unit = {
-        register(packetCompanion.identifier, packetCompanion.packetClass)
+    def register[P <: Packet : ClassTag](packetCompanion: PacketCompanion[P]): Unit = {
+        val identifier = packetCompanion.identifier
+        register(identifier, classTag[P].runtimeClass.asInstanceOf[Class[P]])
+
+        packetCompanion match {
+            case strategy: PacketSerialisationStrategy[P] =>
+                PacketKindBag.putStrategy(identifier, strategy)
+            case _ =>
+        }
     }
+
 
     def register(identifier: Int, packetClass: Class[_ <: Packet]): Unit = {
         if (PacketKindBag.containsID(identifier))
@@ -76,11 +91,15 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
         register(WrappedPacket)
         register(ValPacket)
         register(PairPacket)
+        register(StringPacket)
+        register(IntPacket)
     }
 
+    //Not very calisthenic...
     object PacketKindBag {
-        private val classMap = mutable.LinkedHashMap.empty[Int, Class[_ <: Packet]]
-        private val idMap = mutable.LinkedHashMap.empty[Class[_ <: Packet], Int]
+        private val classMap = mutable.Map.empty[Int, Class[_ <: Packet]]
+        private val idMap = mutable.Map.empty[Class[_ <: Packet], Int]
+        private val strategyMap = mutable.Map.empty[Int, PacketSerialisationStrategy[Packet]]
 
         def add(identifier: Int, clazz: Class[_ <: Packet]): Unit = {
             classMap.put(identifier, clazz)
@@ -97,6 +116,14 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
 
         def containsID(identifier: Int): Boolean = {
             classMap.contains(identifier)
+        }
+
+        def putStrategy(identifier: Int, strategy: PacketSerialisationStrategy[_ <: Packet]): Unit = {
+            strategyMap.put(identifier, strategy.asInstanceOf[PacketSerialisationStrategy[Packet]])
+        }
+
+        def getStrategy(identifier: Int): Option[PacketSerialisationStrategy[Packet]] = {
+            strategyMap.get(identifier)
         }
 
     }

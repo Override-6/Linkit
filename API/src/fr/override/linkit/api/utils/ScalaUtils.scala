@@ -25,7 +25,7 @@ object ScalaUtils {
 
     def toInt(bytes: Array[Byte]): Int = {
         if (bytes == null || bytes.length != 4)
-            throw new IllegalArgumentException("Invalid serialized int")
+            throw new IllegalArgumentException("Invalid serialized int byte seq length")
 
         (0xff & bytes(0)) << 24 |
                 ((0xff & bytes(1)) << 16) |

@@ -22,7 +22,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             currentOutputStream.write(buff)
             currentOutputStream.flush()
             //NETWORK-DEBUG-MARK
-            println(s"written : ${new String(buff)}")
+            //println(s"written : ${new String(buff)}")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)

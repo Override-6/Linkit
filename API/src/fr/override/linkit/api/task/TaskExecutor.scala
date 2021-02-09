@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.task
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.packet.traffic.dedicated.SyncPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.SyncPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.system.CloseReason
 

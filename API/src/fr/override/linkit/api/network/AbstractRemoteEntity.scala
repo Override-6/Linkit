@@ -6,7 +6,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.packet.fundamental.ValPacket
-import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.system.Version
 

@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.`extension`.fragment
 
 import fr.`override`.linkit.api.packet.traffic.PacketSender
-import fr.`override`.linkit.api.packet.traffic.dedicated.AsyncPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import org.jetbrains.annotations.NotNull
 

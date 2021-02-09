@@ -6,7 +6,7 @@ import fr.`override`.linkit.api.network.cache.collection.SharedCollection.Collec
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
 import fr.`override`.linkit.api.packet.fundamental.ValPacket
-import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}

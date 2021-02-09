@@ -12,26 +12,30 @@ class RelayWorkerThreadPool() extends AutoCloseable {
     val factory: ThreadFactory = new WorkerThread(_, this)
     private val executor = Executors.newFixedThreadPool(3, factory)
 
-    //The different tasks to make
-    private val workQueue = extractWorkQueue()
+    private val workQueue = extractWorkQueue()    //The different tasks to execute
     private var closed = false
     private val providerLocks = new ProvidersLock
+    @volatile private var activeThreads = 0
 
     def runLater(action: => Unit): Unit = {
         if (!closed) {
-            executor.submit((() => {
+            var runnable: Runnable = null
+            runnable = () => {
+                activeThreads += 1
                 try {
                     action
                 } catch {
                     case NonFatal(e) => e.printStackTrace()
                 }
-            }): Runnable)
+                activeThreads -= 1
+            }
+            executor.submit(runnable)
             //if there is one provided thread that is waiting for a new task to be performed, it would instantly execute the current task.
             providerLocks.notifyOneProvider()
         }
     }
 
-
+    def workingThreads: Int = activeThreads
 
     def provideWhile(check: => Boolean): Unit = {
         checkCurrentIsWorker()

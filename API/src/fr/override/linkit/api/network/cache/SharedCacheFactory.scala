@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.network.cache
 
-import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 
 trait SharedCacheFactory[A <: SharedCache] {
 

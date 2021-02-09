@@ -5,7 +5,7 @@ import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification, SharedCollection}
 import fr.`override`.linkit.api.packet.fundamental.ValPacket
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
-import fr.`override`.linkit.api.packet.traffic.dedicated.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 
 abstract class AbstractNetwork(relay: Relay) extends Network {
 

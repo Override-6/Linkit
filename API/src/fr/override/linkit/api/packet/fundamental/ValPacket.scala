@@ -7,6 +7,5 @@ case class ValPacket(value: Serializable) extends Packet {
 }
 
 object ValPacket extends PacketCompanion[ValPacket] {
-    override val packetClass: Class[ValPacket] = classOf[ValPacket]
     override val identifier: Int = 6
 }

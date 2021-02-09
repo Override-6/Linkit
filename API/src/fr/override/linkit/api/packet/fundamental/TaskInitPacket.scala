@@ -24,6 +24,5 @@ case class TaskInitPacket(taskType: String,
 }
 
 object TaskInitPacket extends PacketCompanion[TaskInitPacket] {
-    override val packetClass: Class[TaskInitPacket] = classOf[TaskInitPacket]
     override val identifier: Int = 3
 }

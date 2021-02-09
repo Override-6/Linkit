@@ -14,7 +14,7 @@ trait PacketSyncReceiver extends PacketChannel {
 
     def nextPacket[P <: Packet](classOfP: Class[P]): P = nextPacketAsP()
 
-    def nextPacket[P <: Packet](factoryOfP: PacketCompanion[P]): P = nextPacket(factoryOfP.packetClass)
+    def nextPacket[P <: Packet](factoryOfP: PacketCompanion[P]): P = nextPacketAsP()
 
     /**
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait

@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.packet.traffic.dedicated
+package fr.`override`.linkit.api.packet.traffic.channel
 
 import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketAsyncReceiver, PacketInjectableFactory, PacketSender}

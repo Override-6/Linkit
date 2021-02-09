@@ -7,7 +7,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{TaskException, TaskOperationFailException}
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
-import fr.`override`.linkit.api.packet.traffic.dedicated.SyncPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.SyncPacketChannel
 import fr.`override`.linkit.api.system.CloseReason
 
 import scala.util.control.NonFatal

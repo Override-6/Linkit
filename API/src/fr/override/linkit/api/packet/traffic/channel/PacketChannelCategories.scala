@@ -1,9 +1,9 @@
-package fr.`override`.linkit.api.packet.traffic.dedicated
+package fr.`override`.linkit.api.packet.traffic.channel
 
 import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
-import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory}
+import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketInjections}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.WrappedPacket
 
@@ -17,7 +17,8 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
     override def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
         packet match {
             case WrappedPacket(category, subPacket) =>
-                categories.get(category).foreach(_.injectPacket(subPacket, coordinates))
+                val injection = PacketInjections.discovered(subPacket, coordinates)
+                categories.get(category).foreach(_.inject(injection))
 
             case _ => throw new UnexpectedPacketException(s"Received unexpected packet $packet")
         }

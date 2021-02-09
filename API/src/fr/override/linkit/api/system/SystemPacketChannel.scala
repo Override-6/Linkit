@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.system
 
-import fr.`override`.linkit.api.packet.traffic.dedicated.SyncPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.SyncPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketInjectableFactory}
 
 class SystemPacketChannel(scope: ChannelScope)

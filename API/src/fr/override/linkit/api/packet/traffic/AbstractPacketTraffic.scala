@@ -3,8 +3,8 @@ package fr.`override`.linkit.api.packet.traffic
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{ClosedException, ConflictException, RelayException}
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic.{PacketInjectable, PacketTraffic}
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import org.jetbrains.annotations.NotNull
@@ -21,8 +21,7 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
     private val scopes = mutable.Map.empty[Int, IdentifierScopes]
     @volatile private var closed = false
 
-    @deprecated("Find a better solution; cache every lost packets may be very heavy. (take a look at Relay.scala TODO list)")
-    private val lostPackets = mutable.Map.empty[Int, ListBuffer[(Packet, PacketCoordinates)]]
+    private val lostInjections = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
 
     override def createInjectable[A <: PacketInjectable : ClassTag](id: Int,
                                                                     scopeFactory: ScopeFactory[_ <: ChannelScope],
@@ -71,10 +70,10 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
         val id = injectable.identifier
 
         //Will inject every lost packets
-        lostPackets
+        lostInjections
                 .get(id)
-                .foreach(_.foreach(t => injectable.injectPacket(t._1, t._2)))
-        lostPackets.remove(id)
+                .foreach(_.foreach(injectable.inject))
+        lostInjections.remove(id)
     }
 
     private def getInjectables(identifier: Int, target: String): Iterable[PacketInjectable] = {
@@ -100,8 +99,8 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
             throw new ClosedException("This Traffic handler is closed")
     }
 
-    override def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        println(s"INJECTING PACKET : $packet With coordinates : $coordinates (${Thread.currentThread()})")
+    override def handleInjection(injection: PacketInjection): Unit = {
+        val coordinates = injection.coordinates
         PacketWorkerThread.checkNotCurrent()
         ensureOpen()
 
@@ -110,13 +109,11 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
         val sender = coordinates.senderID
         val injectables = getInjectables(id, sender)
 
-        println(s"injectables = ${injectables}")
-        println(s"scopes = ${scopes}")
         if (injectables.isEmpty) {
-            lostPackets.getOrElseUpdate(id, ListBuffer.empty) += ((packet, coordinates))
+            lostInjections.getOrElseUpdate(id, ListBuffer.empty) += injection
             return
         }
-        injectables.foreach(_.injectPacket(packet, coordinates))
+        injectables.foreach(_.inject(injection))
     }
 
     protected case class IdentifierScopes(identifier: Int) extends JustifiedCloseable {

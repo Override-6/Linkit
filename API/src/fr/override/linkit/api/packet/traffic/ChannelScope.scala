@@ -56,10 +56,6 @@ object ChannelScope {
         }
 
         override def isAuthorised(identifier: String): Boolean = {
-            println("Checking authorisation in immutable...")
-            println(s"tested identifier = ${identifier}")
-            println(s"authorisedIds = ${authorisedIds}")
-
             authorisedIds.contains(identifier)
         }
 
@@ -90,10 +86,6 @@ object ChannelScope {
         }
 
         override def isAuthorised(identifier: String): Boolean = {
-            println("Checking authorisation in mutable...")
-            println(s"tested identifier = ${identifier}")
-            println(s"authorisedIds = ${authorisedIds}")
-            println(s"reverseAuthorisation = ${reverseAuthorisation}")
 
             val authorised = authorisedIds.contains(identifier)
             (reverseAuthorisation && !authorised) || (!reverseAuthorisation && authorised)

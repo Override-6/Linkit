@@ -4,7 +4,7 @@ import java.io.PrintStream
 import java.security.AccessController
 
 import fr.`override`.linkit.api.packet.fundamental.PairPacket
-import fr.`override`.linkit.api.packet.traffic.dedicated.AsyncPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
 import sun.security.action.GetPropertyAction

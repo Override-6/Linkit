@@ -7,6 +7,5 @@ case class PairPacket(tag: String, value: Any) extends Packet {
 }
 
 object PairPacket extends PacketCompanion[PairPacket] {
-    override val packetClass: Class[PairPacket] = classOf[PairPacket]
     override val identifier: Int = 1
 }

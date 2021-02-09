@@ -1,8 +1,9 @@
 package fr.`override`.linkit.api.packet.traffic
 
 import fr.`override`.linkit.api.concurrency.relayWorkerExecution
+import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.system.JustifiedCloseable
 
 import scala.reflect.ClassTag
@@ -21,7 +22,7 @@ trait PacketTraffic extends JustifiedCloseable {
                                                                       factory: PacketInjectableFactory[C]): C
 
     @relayWorkerExecution
-    def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit
+    def handleInjection(injection: PacketInjection): Unit
 
     def canConflict(id: Int, scope: ChannelScope): Boolean
 

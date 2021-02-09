@@ -7,6 +7,5 @@ case class SystemPacket private(order: SystemOrder,
                                 content: Array[Byte] = Array()) extends Packet
 
 object SystemPacket extends PacketCompanion[SystemPacket] {
-    override val packetClass: Class[SystemPacket] = classOf[SystemPacket]
     override val identifier: Int = 4
 }
