@@ -7,8 +7,8 @@ The project is mainly write in scala, and some classes are write in Java.
 * [Notes and General information](https://github.com/Override-6/LinKit/#notes-and-general-information)
 * [The API](https://github.com/Override-6/LinKit/#the-api)
 * [The Client](https://github.com/Override-6/LinKit/#the-client)
-* The Server
-* Features
+* [The Server](https://github.com/Override-6/LinKit/#the-server)
+* [Features](https://github.com/Override-6/LinKit/#features)
 * How to extend
 * How to configure
 * Setup
@@ -76,3 +76,18 @@ relayPoint.start();
 The Server, or RelayServer, is an implementation of the relay that handles multiple connections, it is meant to faciliate packet exchange between clients, and must make sure that it can behaves like a client.  
 A server implementation is the center of the [network](TODO). Even if its network entity does not provide a lot more features, the server must ensure that every thing works correctly, and handles the connection informations and packet sharing.  
 
+## Features
+Here is a list of features that are already supported
+
+* Scoped Packet channels
+* Relay Extensions / Extension Fragments / Remote Fragments
+* Network accessors
+* Shared and synchronised cache
+* Schedulable tasks
+* Smart concurrency handling, with providable threads.
+
+TODO
+* Server Entity for Network accessor
+* Optimised big transfert channel for streaming
+* Enhance the shared cache feature
+* Optimised reactive and bindable channels for game networking
