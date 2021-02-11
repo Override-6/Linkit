@@ -1,9 +1,9 @@
 package fr.`override`.linkit.api.network.cache
 
+import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
-import fr.`override`.linkit.api.utils.WrappedPacket
 
 abstract class HandleableSharedCache(override val family: String,
                                      identifier: Int,

@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.packet
 
 import java.util
 
-import fr.`override`.linkit.api.packet.PacketTranslator.{ChannelIDSeparator, SenderSeparator, TargetSeparator}
+import fr.`override`.linkit.api.packet.serialization.PacketTranslator.{ChannelIDSeparator, SenderSeparator, TargetSeparator}
 import fr.`override`.linkit.api.utils.ScalaUtils
 
 object PacketUtils {
@@ -24,9 +24,9 @@ object PacketUtils {
         val identifier = coords.injectableID.toString.getBytes
         val targetID = coords.targetID.getBytes
         val senderID = coords.senderID.getBytes
-        identifier ++ PacketTranslator.ChannelIDSeparator ++
-                senderID ++ PacketTranslator.SenderSeparator ++
-                targetID ++ PacketTranslator.TargetSeparator
+        identifier ++ ChannelIDSeparator ++
+                senderID ++ SenderSeparator ++
+                targetID ++ TargetSeparator
     }
 
     def getCoordinates(bytes: Array[Byte]): (PacketCoordinates, Int) = {

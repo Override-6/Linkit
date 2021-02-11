@@ -1,6 +1,7 @@
 package fr.`override`.linkit.api.packet.traffic
 
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketTranslator}
+import fr.`override`.linkit.api.packet.serialization.PacketTranslator
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 
 import scala.collection.mutable
 

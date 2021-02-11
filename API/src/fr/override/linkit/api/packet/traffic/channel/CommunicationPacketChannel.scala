@@ -3,9 +3,10 @@ package fr.`override`.linkit.api.packet.traffic.channel
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketInjectableFactory}
 import fr.`override`.linkit.api.packet.{Packet, PacketCompanion, PacketCoordinates}
-import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
+import fr.`override`.linkit.api.utils.ConsumerContainer
 
 class CommunicationPacketChannel(scope: ChannelScope,
                                  providable: Boolean)

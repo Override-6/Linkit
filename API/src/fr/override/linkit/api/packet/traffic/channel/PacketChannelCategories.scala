@@ -2,10 +2,10 @@ package fr.`override`.linkit.api.packet.traffic.channel
 
 import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
+import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketInjections}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.utils.WrappedPacket
 
 import scala.collection.mutable
 

@@ -10,6 +10,7 @@ import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChanne
 abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override val globalCache: SharedCacheHandler = SharedCacheHandler.create("Global Shared Cache", Relay.ServerIdentifier)(relay.traffic)
+    relay.packetTranslator.completeInitialisation(globalCache)
 
     override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 

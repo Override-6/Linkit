@@ -1,18 +1,14 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-import fr.`override`.linkit.api.packet.{Packet, PacketCompanion, PacketSerialisationStrategy}
+import fr.`override`.linkit.api.packet.{Packet, PacketCompanion}
 
 object EmptyPacket extends Packet {
     type EmptyPacket = EmptyPacket.type
 
     override def toString: String = "EmptyPacket"
 
-    object Companion extends PacketCompanion[EmptyPacket] with PacketSerialisationStrategy[EmptyPacket] {
+    object Companion extends PacketCompanion[EmptyPacket] {
         override val identifier: Int = 2
-
-        override def serialize(packet: EmptyPacket): Array[Byte] = Array()
-
-        override def deserialize(bytes: Array[Byte]): EmptyPacket = EmptyPacket
     }
 
 }

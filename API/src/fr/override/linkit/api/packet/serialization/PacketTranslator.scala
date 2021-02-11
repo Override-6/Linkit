@@ -1,11 +1,15 @@
-package fr.`override`.linkit.api.packet
+package fr.`override`.linkit.api.packet.serialization
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.exception.{PacketException, UnexpectedPacketException}
+import fr.`override`.linkit.api.exception.PacketException
+import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
+import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental._
+import fr.`override`.linkit.api.packet.serialization.PacketSerializer
 import fr.`override`.linkit.api.system.SystemPacket
-import fr.`override`.linkit.api.utils.{ScalaUtils, Utils, WrappedPacket}
+import fr.`override`.linkit.api.utils.ScalaUtils
+import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
@@ -19,6 +23,8 @@ object PacketTranslator {
 
 class PacketTranslator(relay: Relay) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
+    private val rawSerializer = new RawPacketSerializer()
+    @Nullable private var cachedSerializer: PacketSerializer = _ //Will be instantiated once connection with the server is handled.
     registerDefaults()
 
     def toPacketAndCoords(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
@@ -31,15 +37,9 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     def toPacket(bytes: Array[Byte]): Packet = {
         if (bytes.length > relay.configuration.maxPacketLength)
             throw PacketException("Custom packet bytes length exceeded configuration limit")
-        val packetTypeInt = ScalaUtils.toInt(bytes.slice(0, 4))
-        val packetClassOpt = PacketKindBag.getKind(packetTypeInt)
-
-        if (packetClassOpt.isEmpty)
-            throw new UnexpectedPacketException(s"Could not find packet factory of identifier $packetTypeInt")
-
-        val packetContentBytes = bytes.drop(4)
-        PacketKindBag.getStrategy(packetTypeInt)
-                .fold(Utils.deserialize(packetContentBytes): Packet)(_.deserialize(packetContentBytes): Packet)
+        if (cachedSerializer.isSameSignature(bytes))
+            cachedSerializer.deserialize(bytes)
+        else rawSerializer.deserialize(bytes)
     }
 
     def fromPacketAndCoords(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
@@ -59,8 +59,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
             throw PacketException(s"Could not serialize packet : $kind is not registered.")
 
         val identifier = identifierOpt.get
-        val serialized = PacketKindBag.getStrategy(identifier)
-                .fold(Utils.serialize(packet))(_.serialize(packet))
+        val serialized = currentSerializer().serialize(packet)
 
         ScalaUtils.fromInt(identifier) ++ serialized
     }
@@ -68,12 +67,6 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     def register[P <: Packet : ClassTag](packetCompanion: PacketCompanion[P]): Unit = {
         val identifier = packetCompanion.identifier
         register(identifier, classTag[P].runtimeClass.asInstanceOf[Class[P]])
-
-        packetCompanion match {
-            case strategy: PacketSerialisationStrategy[P] =>
-                PacketKindBag.putStrategy(identifier, strategy)
-            case _ =>
-        }
     }
 
 
@@ -82,6 +75,13 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
             throw PacketException("This companion identifier is already registered !")
 
         PacketKindBag.add(identifier, packetClass)
+    }
+
+    def completeInitialisation(cache: SharedCacheHandler): Unit = {
+        if (cachedSerializer != null)
+            throw new IllegalStateException("This packet translator is already fully initialised !")
+        cachedSerializer = new CachedPacketSerializer(cache)
+        println("COMPLETED INITIALISATION")
     }
 
     private def registerDefaults(): Unit = {
@@ -95,11 +95,14 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
         register(IntPacket)
     }
 
+    private def currentSerializer(): PacketSerializer = {
+        if (cachedSerializer != null) cachedSerializer else rawSerializer
+    }
+
     //Not very calisthenic...
     object PacketKindBag {
         private val classMap = mutable.Map.empty[Int, Class[_ <: Packet]]
         private val idMap = mutable.Map.empty[Class[_ <: Packet], Int]
-        private val strategyMap = mutable.Map.empty[Int, PacketSerialisationStrategy[Packet]]
 
         def add(identifier: Int, clazz: Class[_ <: Packet]): Unit = {
             classMap.put(identifier, clazz)
@@ -116,14 +119,6 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
 
         def containsID(identifier: Int): Boolean = {
             classMap.contains(identifier)
-        }
-
-        def putStrategy(identifier: Int, strategy: PacketSerialisationStrategy[_ <: Packet]): Unit = {
-            strategyMap.put(identifier, strategy.asInstanceOf[PacketSerialisationStrategy[Packet]])
-        }
-
-        def getStrategy(identifier: Int): Option[PacketSerialisationStrategy[Packet]] = {
-            strategyMap.get(identifier)
         }
 
     }
