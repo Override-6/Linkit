@@ -11,7 +11,6 @@ object PacketInjections {
     private def factory = new util.PriorityQueue[(Int, Packet)]((o1: (Int, Packet), o2: (Int, Packet)) => Integer.compare(o1._1, o2._1))
 
     def createInjection(packet: Packet, coordinates: PacketCoordinates, number: Int): PacketInjection = this.synchronized {
-        println(s"CREATED INJECTION NUMBER $number FOR PACKET $packet")
         val id = coordinates.injectableID
         var queue = currentInjections.get(id)
         if (queue == null) {
@@ -20,8 +19,6 @@ object PacketInjections {
         }
 
         queue.add((number, packet))
-        println(s"currentInjections WOWO = ${currentInjections}")
-        println(s"queue for number $number = ${queue} (${System.identityHashCode(queue)})")
         new PacketInjection(coordinates)
     }
 
@@ -36,14 +33,11 @@ object PacketInjections {
 
         def discoverPacket(): Packet = {
             val queue = currentInjections.get(coordinates.injectableID)
-            val str = currentInjections.toString
             queue.synchronized {
                 if (discoveredPacket != null)
                     return discoveredPacket
 
-                println(s"currentInjections before = $str")
                 val tuple = queue.poll()
-                println(s"currentInjections after = $str")
                 discoveredPacket = tuple._2
                 discoveredPacket
             }

@@ -169,6 +169,8 @@ object SharedCollection {
         ofInsertFilter[A]((_, _) => true)
     }
 
+    def apply[A]: SharedCacheFactory[SharedCollection[A]] = buffer[A]
+
     /**
      * The insertFilter must be true in order to authorise the insertion
      * */

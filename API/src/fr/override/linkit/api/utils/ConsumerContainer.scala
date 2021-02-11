@@ -15,10 +15,18 @@ case class ConsumerContainer[T]() {
         this
     }
 
+    def remove(consumer: T => Unit): ConsumerContainer.this.type = {
+        consumers -= consumer
+        this
+    }
+
     /**
      * alias for [[add()]]
      * */
     def +=(consumer: T => Unit): this.type = add(consumer)
+
+
+    def -=(consumer: T => Unit): this.type = remove(consumer)
 
     def applyAllAsync(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
         Future {

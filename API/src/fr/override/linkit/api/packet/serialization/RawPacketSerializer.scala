@@ -10,8 +10,8 @@ class RawPacketSerializer extends PacketSerializer {
      * */
     override protected def deserializeType(bytes: Array[Byte]): (Class[_], Int) = {
         val length = bytes.indexOfSlice(";".getBytes)
-        val className = new String(bytes.slice(0, length))
-        (Class.forName(className), length + 1) //adding the ';' character
+        val className = new String(bytes.take(length))
+        (Class.forName(className), length + 1) //add the ';' character
     }
 
     override protected val signature: Array[Byte] = Array(1)

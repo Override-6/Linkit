@@ -16,7 +16,7 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
 
     protected val sharedIdentifiers: SharedCollection[String] = globalCache
-            .open(3, SharedCollection.set[String])
+            .get(3, SharedCollection.set[String])
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     private val communicator = relay.createInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)

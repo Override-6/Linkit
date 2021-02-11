@@ -24,7 +24,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
     private val isHandlingSelf = ownerID == relayID
 
     private val cacheOwners: SharedMap[Int, String] = init()
-    private val sharedObjects: SharedMap[Int, Any] = open(1, SharedMap[Int, Any])
+    private val sharedObjects: SharedMap[Int, Any] = get(1, SharedMap[Int, Any])
 
     this.synchronized {
         notifyAll() //Releases all awaitReady locks, this action is marking this cache handler as ready.
@@ -40,7 +40,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
     def apply[A](key: Int): A = sharedObjects.get(key).get.asInstanceOf[A]
 
 
-    def open[A <: HandleableSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A]): A = {
+    def get[A <: HandleableSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A]): A = {
         LocalCacheHandler
                 .findCache[A](cacheID)
                 .getOrElse {
@@ -121,7 +121,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
         def notReady: Boolean = cacheOwners == null || cacheOwners.isEmpty
 
         if (notReady) this.synchronized {
-            RelayWorkerThreadPool.smartWait(this, notReady)
+            RelayWorkerThreadPool.smartProvide(this, notReady)
         }
     }
 

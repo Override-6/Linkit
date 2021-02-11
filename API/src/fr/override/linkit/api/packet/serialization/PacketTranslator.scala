@@ -1,20 +1,12 @@
 package fr.`override`.linkit.api.packet.serialization
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.exception.PacketException
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
-import fr.`override`.linkit.api.network.cache.map.SharedMap
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.serialization.PacketSerializer
-import fr.`override`.linkit.api.system.SystemPacket
-import fr.`override`.linkit.api.utils.ScalaUtils
 import org.jetbrains.annotations.Nullable
-
-import scala.collection.mutable
-import scala.reflect.{ClassTag, classTag}
 
 
 object PacketTranslator {
@@ -25,24 +17,8 @@ object PacketTranslator {
 
 class PacketTranslator(relay: Relay) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
-    private val rawSerializer = new RawPacketSerializer()
-    @Nullable private var cachedSerializer: PacketSerializer = _ //Will be instantiated once connection with the server is handled.
-    @Nullable private var cachedSerializerWhitelist: SharedCollection[String] = _
-    registerDefaults()
-
     def toPacketAndCoords(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
-        val (coordinates, coordsLength) = PacketUtils.getCoordinates(bytes)
-
-        val customPacketBytes = bytes.slice(coordsLength, bytes.length)
-        (toPacket(customPacketBytes), coordinates)
-    }
-
-    def toPacket(bytes: Array[Byte]): Packet = {
-        if (bytes.length > relay.configuration.maxPacketLength)
-            throw PacketException("Custom packet bytes length exceeded configuration limit")
-        if (rawSerializer.isSameSignature(bytes))
-            rawSerializer.deserialize(bytes)
-        else cachedSerializer.deserialize(bytes)
+        SmartSerializer.deserialize(bytes).swap
     }
 
     def fromPacketAndCoords(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
@@ -50,86 +26,43 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     }
 
     def fromPacketAndCoordsNoWrap(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
-        val packetBytes = fromPacket(packet)
-        val bytes = PacketUtils.getCoordinatesBytes(coordinates) ++ packetBytes
+        val bytes = SmartSerializer.serialize(packet, coordinates)
         relay.securityManager.hashBytes(bytes)
-    }
-
-    def fromPacket(packet: Packet): Array[Byte] = {
-        val kind = packet.getClass
-        val identifierOpt = PacketKindBag.getIdentifier(kind)
-        if (identifierOpt.isEmpty)
-            throw PacketException(s"Could not serialize packet : $kind is not registered.")
-
-        val identifier = identifierOpt.get
-        val serialized = currentSerializer().serialize(packet)
-
-        ScalaUtils.fromInt(identifier) ++ serialized
-    }
-
-    def register[P <: Packet : ClassTag](packetCompanion: PacketCompanion[P]): Unit = {
-        val identifier = packetCompanion.identifier
-        register(identifier, classTag[P].runtimeClass.asInstanceOf[Class[P]])
-    }
-
-
-    def register(identifier: Int, packetClass: Class[_ <: Packet]): Unit = {
-        if (PacketKindBag.containsID(identifier))
-            throw PacketException("This companion identifier is already registered !")
-
-        PacketKindBag.add(identifier, packetClass)
     }
 
     def completeInitialisation(cache: SharedCacheHandler): Unit = {
         SmartSerializer.completeInitialisation(cache)
     }
 
-    private def registerDefaults(): Unit = {
-        register(EmptyPacket.Companion)
-        register(TaskInitPacket)
-        register(SystemPacket)
-        register(WrappedPacket)
-        register(ValPacket)
-        register(PairPacket)
-        register(StringPacket)
-        register(IntPacket)
-    }
-
-    private def currentSerializer(): PacketSerializer = {
-        if (cachedSerializer != null) cachedSerializer else rawSerializer
-    }
-
-    //Not very calisthenic...
-    object PacketKindBag {
-        private val classMap = mutable.Map.empty[Int, Class[_ <: Packet]]
-        private val idMap = mutable.Map.empty[Class[_ <: Packet], Int]
-
-        def add(identifier: Int, clazz: Class[_ <: Packet]): Unit = {
-            classMap.put(identifier, clazz)
-            idMap.put(clazz, identifier)
-        }
-
-        def getKind(identifier: Int): Option[Class[_ <: Packet]] = {
-            classMap.get(identifier)
-        }
-
-        def getIdentifier(kind: Class[_ <: Packet]): Option[Int] = {
-            idMap.get(kind)
-        }
-
-        def containsID(identifier: Int): Boolean = {
-            classMap.contains(identifier)
-        }
-
-    }
-
     private object SmartSerializer {
         private val rawSerializer = new RawPacketSerializer()
-        @Nullable private var cachedSerializer: PacketSerializer = _ //Will be instantiated once connection with the server is handled.
-        @Nullable private var cachedSerializerWhitelist: SharedCollection[String] = _
+        @Nullable @volatile private var cachedSerializer: PacketSerializer = _ //Will be instantiated once connection with the server is handled.
+        @Nullable @volatile private var cachedSerializerWhitelist: SharedCollection[String] = _
 
-        def serializeFor(packet: Packet, target: String): Array[Byte] = {
+        def serialize(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
+            println(s"SERIALIZING PACKET $packet WITH COORDINATES $coordinates")
+            //Thread.dumpStack()
+            val target = coordinates.targetID
+            val serializer = if (initialised && (target == "BROADCAST" || cachedSerializerWhitelist.contains(target))) {
+                cachedSerializer
+            } else {
+                rawSerializer
+            }
+            //println(s"cachedSerializerWhitelist = ${cachedSerializerWhitelist}")
+            //println(s"Serializer chosen = ${serializer.getClass.getSimpleName}")
+            serializer.serialize(Array(coordinates, packet))
+        }
 
+        def deserialize(bytes: Array[Byte]): (PacketCoordinates, Packet) = {
+            val serializer = if (rawSerializer.isSameSignature(bytes)) {
+                rawSerializer
+            } else if (!initialised) {
+                throw new IllegalStateException("Received cached serialisation signature but this packet translator is not ready to handle it.")
+            } else {
+                cachedSerializer
+            }
+            val array = serializer.deserializeAll(bytes)
+            (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
         }
 
         def completeInitialisation(cache: SharedCacheHandler): Unit = {
@@ -137,21 +70,14 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
                 throw new IllegalStateException("This packet translator is already fully initialised !")
 
             cachedSerializer = new CachedPacketSerializer(cache)
+            cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(relay.identifier)
             println("COMPLETED INITIALISATION")
         }
+
+        def initialised: Boolean = cachedSerializerWhitelist != null
     }
 
 }
-
-
-
-
-
-
-
-
-
-
 
 

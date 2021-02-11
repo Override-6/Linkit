@@ -1,5 +1,6 @@
 package fr.`override`.linkit.api.network.cache.map
 
+import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.network.cache.map.MapModification._
 import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
 import fr.`override`.linkit.api.packet.fundamental.ValPacket
@@ -36,12 +37,20 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
      * (_, K, _) : the key affected (may be null for mod kinds that does not specify any key such as CLEAR)
      * (_, _, V) : The value affected (may be null for mod kinds that does not specify any value such as CLEAR, or REMOVE)
      * */
-    def addListener(action: (MapModification, K, V) => Unit): this.type = {
-        networkListeners += (tuple3 => action.apply(tuple3._1, tuple3._2, tuple3._3))
+    def addListener(action: ((MapModification, K, V)) => Unit): this.type = {
+        networkListeners += action
+        println("Added listener !")
+        this
+    }
+
+    def removeListener(action: ((MapModification, K, V)) => Unit): this.type = {
+        networkListeners -= action
         this
     }
 
     def get(k: K): Option[V] = localMap.get(k)
+
+    def getOrWait(k: K): V = awaitPut(k)
 
     def apply(k: K): V = localMap(k)
 
@@ -93,6 +102,29 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
     def size: Int = iterator.size
 
     def isEmpty: Boolean = iterator.isEmpty
+
+    def awaitPut(k: K): V = {
+        if (contains(k))
+            return apply(k)
+
+        println(s"WAITING FOR ${k} TO BE SET. ${Thread.currentThread()}")
+        var found = false
+        val lock = new Object
+
+        val listener: ((MapModification, K, V)) => Unit = t => {
+            found = t._2 == k
+            if (found) lock.synchronized {
+                lock.notifyAll()
+            }
+        }
+
+        addListener(listener)                       //Due to hyper parallelized thread execution,
+                                                    //the awaited key could be added since the 'found' value has been created.
+        RelayWorkerThreadPool.smartProvide(lock, !(contains(k) || found))
+        println("DONE !")
+        removeListener(listener)
+        apply(k)
+    }
 
     override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {

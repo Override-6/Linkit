@@ -145,11 +145,11 @@ object RelayWorkerThreadPool {
         ifCurrentOrElse(_.provideWhile(asLongAs), ())
     }
 
-    def smartWait(lock: AnyRef, asLongAs: => Boolean): Unit = {
-        ifCurrentOrElse(_.provideAllWhileThenWait(lock, asLongAs), lock.synchronized(lock.wait()))
+    def smartProvide(lock: AnyRef, asLongAs: => Boolean): Unit = {
+        ifCurrentOrElse(_.provideAllWhileThenWait(lock, asLongAs), if (asLongAs) lock.synchronized(lock.wait()))
     }
 
-    def smartWait(lock: AnyRef, minTimeOut: Long): Unit = {
+    def smartProvide(lock: AnyRef, minTimeOut: Long): Unit = {
         ifCurrentOrElse(_.provide(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
     }
 

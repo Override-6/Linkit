@@ -17,7 +17,7 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
     cache.post(4, Relay.ApiVersion)
     cache.post(5, relay.relayVersion)
 
-    private val sharedState = cache.open(3, SharedInstance[ConnectionState])
+    private val sharedState = cache.get(3, SharedInstance[ConnectionState])
     addOnStateUpdate(sharedState.set)
 
     override val connectionDate: Timestamp = cache.post(2, new Timestamp(System.currentTimeMillis()))

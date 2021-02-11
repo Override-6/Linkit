@@ -22,7 +22,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
         ptn = relay.network
                 .selfEntity
                 .cache
-                .open(6, SharedCollection.set[String])
+                .get(6, SharedCollection.set[String])
 
         ptn
     }

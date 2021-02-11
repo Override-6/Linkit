@@ -25,7 +25,7 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
                 .subInjectable(Array(identifier), CommunicationPacketChannel.providable, true)
 
         cache
-                .open(6, SharedCollection.set[String])
+                .get(6, SharedCollection.set[String])
                 .mapped(new RemoteFragmentController(_, communicator))
     }
 
