@@ -9,10 +9,9 @@ The project is mainly write in scala, and some classes are written in Java.
 * [The Server](https://github.com/Override-6/LinKit/#the-server)
 * [Features](https://github.com/Override-6/LinKit/#features)
 * [How to extend](https://github.com/Override-6/LinKit/#how-to-extend)
-* How to configure
-* Setup
-* Inspiration
-* Acknowledgements
+* [How to configure](https://github.com/Override-6/LinKit/#how-to-configure)
+* [Setup](https://github.com/Override-6/LinKit/#setup)
+* [Acknowledgements](https://github.com/Override-6/LinKit/#acknowledgements)
 
 ## Notes and General information
 This Readme contains the general information to create your own project with this program  
@@ -55,7 +54,6 @@ val relayPoint: RelayPoint = new RelayPointBuilder {
     override var serverAddress: InetSocketAddress = serverAddress
     override var identifier: String = relayPointIdentifier
 } //No need to write .build() thanks to the scala implicits !
-relayPoint.start() 
 ```
 
 Here you have the JavaBuilder version for Java users :
@@ -112,5 +110,50 @@ class EasySharing(relay: Relay) extends RelayExtension(relay) {
 ```
 
 ## How to configure
-In order to quickly define some custom behaviour for the implementations, the Relay interface defines a RelayConfiguration value.
-This value must be asked for Relay's implementation constructors
+In order to quickly define some custom behaviour for the implementations, the Relay interface defines a configuration value.  
+This value must be present in Relay's implementation constructors.  
+The default RelayConfiguration interface defines basic parameters, and the implementation of this trait for RelayPoint and RelayServer defines more specific options to configure the implementations.
+
+Here is an exaustive list of options contained in the default RelayPointConfiguration
+
+* enable/disable Extensions Folder loading. (would not load plugins contained in the extension folder if disabled)
+* enable/disable task handling
+* enable/disable event handling (Note: This option does nothing because their is no event handling feature currently)
+* enable/disable Remote Consoles (nothing would be print on the current console, but this relay can still send prints)
+* checkReceivedPacketTargetID (FOR REMOVAL) if true, all packet will be scanned in order to ensure that the packet has been sent to the right relay.
+* taskQueueSize defines how many tasks can wait in the queue to be executed
+* maxPacketLength (FOR REMOVAL)
+* defaultContainerPacketCacheSize (FOR REMOVAL)
+* maxPacketContainerCacheSize (FOR REMOVAL)
+
+You can find the list of [RelayPoint](https://github.com/Override-6/LinKit/tree/master/RelayPoint) and [RelayServer](https://github.com/Override-6/LinKit/tree/master/RelayServer) configuration options in their respective readme.  
+
+## Setup
+The setup is very simple; you just have to download / compile the source code of RelayPoint or RelayServer, then create a RelayPoint/Server instance with a RelayPoint/ServerBuilder. In order to start your relay, you'll must call the Relay#start method in the [RelayWorkerThreadPool](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/concurrency/RelayWorkerThreadPool.scala) of the relay. In order to retrieve the thread pool execution, simply use Relay#runLater.
+
+Here is an example for setting up the client : 
+```scala
+val relayPoint: RelayPoint = new RelayPointBuilder {
+    override var serverAddress: InetSocketAddress = serverAddress
+    override var identifier: String = relayPointIdentifier
+    //setting other optional configuration options...
+}
+
+relayPoint.runLater {
+    relayPoint.start()
+    println("Client started !") 
+}
+```
+
+## Acknowledgements
+I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
+Here is a non-ordered list of different people that helped me writing the project, or helped me get more trained with programmation :
+
+- TheElectronWill
+- Akami
+- Hokkayado
+- Mesabloo
+- MinusKube
+- Emalios
+
+thanks for you <3
