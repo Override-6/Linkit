@@ -8,7 +8,7 @@ The project is mainly write in scala, and some classes are written in Java.
 * [The Client](https://github.com/Override-6/LinKit/#the-client)
 * [The Server](https://github.com/Override-6/LinKit/#the-server)
 * [Features](https://github.com/Override-6/LinKit/#features)
-* How to extend
+* [How to extend](https://github.com/Override-6/LinKit/#how-to-extend)
 * How to configure
 * Setup
 * Inspiration
@@ -96,7 +96,7 @@ Also, If you would like to have a fragment extension to be usable by other relay
 
 Here is a scala example for an extension plugin main class :
 ```scala
-    class EasySharing(relay: Relay) extends RelayExtension(relay) {
+class EasySharing(relay: Relay) extends RelayExtension(relay) {
 
     override def onLoad(): Unit = {
         //Putting remote fragment to let other relays manage this computer's clipboard
@@ -110,3 +110,7 @@ Here is a scala example for an extension plugin main class :
     }
 }
 ```
+
+## How to configure
+In order to quickly define some custom behaviour for the implementations, the Relay interface defines a RelayConfiguration value.
+This value must be asked for Relay's implementation constructors
