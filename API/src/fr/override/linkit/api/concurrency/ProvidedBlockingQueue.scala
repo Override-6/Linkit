@@ -10,6 +10,7 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
     private val list = ListBuffer.empty[A]
     private val lock = new Object
 
+
     override def add(e: A): Boolean = {
         list += e
         lock.synchronized {
@@ -42,12 +43,14 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
         head
     }
 
+    @relayWorkerExecution
     override def take(): A = {
         //println(s"PERFORMING TAKE ($list)")
         pool.provideAllWhileThenWait(lock, list.isEmpty)
         poll()
     }
 
+    @relayWorkerExecution
     override def poll(timeout: Long, unit: TimeUnit): A = {
         val toWait = unit.toMillis(timeout)
         var total: Long = 0

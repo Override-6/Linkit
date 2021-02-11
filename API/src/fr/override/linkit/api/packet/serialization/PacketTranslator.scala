@@ -3,6 +3,8 @@ package fr.`override`.linkit.api.packet.serialization
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.PacketException
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
+import fr.`override`.linkit.api.network.cache.collection.SharedCollection
+import fr.`override`.linkit.api.network.cache.map.SharedMap
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental._
@@ -25,6 +27,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
 
     private val rawSerializer = new RawPacketSerializer()
     @Nullable private var cachedSerializer: PacketSerializer = _ //Will be instantiated once connection with the server is handled.
+    @Nullable private var cachedSerializerWhitelist: SharedCollection[String] = _
     registerDefaults()
 
     def toPacketAndCoords(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
@@ -37,9 +40,9 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     def toPacket(bytes: Array[Byte]): Packet = {
         if (bytes.length > relay.configuration.maxPacketLength)
             throw PacketException("Custom packet bytes length exceeded configuration limit")
-        if (cachedSerializer.isSameSignature(bytes))
-            cachedSerializer.deserialize(bytes)
-        else rawSerializer.deserialize(bytes)
+        if (rawSerializer.isSameSignature(bytes))
+            rawSerializer.deserialize(bytes)
+        else cachedSerializer.deserialize(bytes)
     }
 
     def fromPacketAndCoords(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
@@ -78,10 +81,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     }
 
     def completeInitialisation(cache: SharedCacheHandler): Unit = {
-        if (cachedSerializer != null)
-            throw new IllegalStateException("This packet translator is already fully initialised !")
-        cachedSerializer = new CachedPacketSerializer(cache)
-        println("COMPLETED INITIALISATION")
+        SmartSerializer.completeInitialisation(cache)
     }
 
     private def registerDefaults(): Unit = {
@@ -121,6 +121,25 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
             classMap.contains(identifier)
         }
 
+    }
+
+    private object SmartSerializer {
+        private val rawSerializer = new RawPacketSerializer()
+        @Nullable private var cachedSerializer: PacketSerializer = _ //Will be instantiated once connection with the server is handled.
+        @Nullable private var cachedSerializerWhitelist: SharedCollection[String] = _
+
+        def serializeFor(packet: Packet, target: String): Array[Byte] = {
+
+        }
+
+        def completeInitialisation(cache: SharedCacheHandler): Unit = {
+            if (cachedSerializer != null)
+                throw new IllegalStateException("This packet translator is already fully initialised !")
+
+            cachedSerializer = new CachedPacketSerializer(cache)
+            cachedSerializerWhitelist.add(relay.identifier)
+            println("COMPLETED INITIALISATION")
+        }
     }
 
 }

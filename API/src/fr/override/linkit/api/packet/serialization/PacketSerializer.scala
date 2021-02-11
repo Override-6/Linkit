@@ -12,7 +12,10 @@ abstract class PacketSerializer {
     protected val signature: Array[Byte]
 
     def serialize(packet: Packet): Array[Byte] = {
+        val t0 = System.currentTimeMillis()
         val bytes = signature ++ serializeObject(packet)
+        val t1 = System.currentTimeMillis()
+        println(s"Serialisation took ${t1 - t0}")
         bytes
     }
 
@@ -20,8 +23,12 @@ abstract class PacketSerializer {
         if (!isSameSignature(bytes))
             throw new IllegalArgumentException("Those bytes does not come from this packet serializer !")
 
-        println("DESERIALIZING OBJECT")
-        deserializeObject(bytes.drop(signature.length)).asInstanceOf[Packet]
+        val t0 = System.currentTimeMillis()
+        val instance = deserializeObject(bytes.drop(signature.length)).asInstanceOf[Packet]
+        val t1 = System.currentTimeMillis()
+        println(s"Deserialization took ${t1 - t0}")
+        instance
+
     }
 
     def isSameSignature(bytes: Array[Byte]): Boolean = {
@@ -39,7 +46,6 @@ abstract class PacketSerializer {
     private def serializeObject(any: Any): Array[Byte] = {
         if (!any.isInstanceOf[Serializable])
             throw new IllegalArgumentException("Attempted to serialize a non-Serializable object !")
-        println(s"Serializing object '$any'...")
         val clazz = any.getClass
         val fields = listSerializableFields(clazz)
         val fieldsLength = fields.length
@@ -50,18 +56,16 @@ abstract class PacketSerializer {
             val field = fields(i)
             val value = field.get(any)
             val valueBytes = serializeValue(value)
-            println(s"Serialized value (of kind ${field.getType}): " + new String(valueBytes))
             bytes ++= valueBytes
             if (i != fieldsLength - 1) //ensure we don't hit the last field
                 lengths(i) = valueBytes.length
         }
-        println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
         val lengthsBytes = lengths.flatMap(serializeInt)
         val typeIdBytes = serializeType(clazz)
         typeIdBytes ++ lengthsBytes ++ bytes
     }
 
-    private def getAppropriateFlag(any: Array[Any]): Int = {
+    private def getAppropriateFlag(any: Array[_]): Int = {
         if (any.forall(n => n.isInstanceOf[Int] || n.isInstanceOf[Byte] || n.isInstanceOf[Short]))
             return IntArrayFlag
         if (any.forall(n => n.isInstanceOf[Double] || n.isInstanceOf[Long] || n.isInstanceOf[Float]))
@@ -69,8 +73,7 @@ abstract class PacketSerializer {
         AnyArrayFlag
     }
 
-    private def serializeArray(anyArray: Array[Any]): Array[Byte] = {
-        println(s"Serializing array : ${anyArray.mkString("Array(", ", ", ")")}")
+    private def serializeArray(anyArray: Array[_]): Array[Byte] = {
         val flag = getAppropriateFlag(anyArray)
         val flagBytes = serializeInt(flag)
         val content: Array[Byte] = flag match {
@@ -150,7 +153,7 @@ abstract class PacketSerializer {
         }
         val clazz = value.getClass
         if (clazz.isArray) {
-            serializeArray(value.asInstanceOf[Array[Any]])
+            serializeArray(value.asInstanceOf[Array[_]])
         } else {
             clazz match {
                 case JByte.TYPE | JShort.TYPE | JInt.TYPE => serializeInt(value.asInstanceOf[Int])
@@ -177,22 +180,21 @@ abstract class PacketSerializer {
     }
 
     protected def deserializeInt(bytes: Array[Byte], index: Int): Int = {
-        println("Deserializing Int of region : " + new String(bytes.slice(index, index + 4)))
         (0xff & bytes(index)) << 24 |
-                ((0xff & bytes(index + 1)) << 16) |
-                ((0xff & bytes(index + 2)) << 8) |
-                ((0xff & bytes(index + 3)) << 0)
+            ((0xff & bytes(index + 1)) << 16) |
+            ((0xff & bytes(index + 2)) << 8) |
+            ((0xff & bytes(index + 3)) << 0)
     }
 
     private def deserializeLong(bytes: Array[Byte], index: Int): Long = {
         (0xff & bytes(index)) << 52 |
-                (0xff & bytes(index + 1)) << 48 |
-                (0xff & bytes(index + 2)) << 40 |
-                (0xff & bytes(index + 3)) << 32 |
-                (0xff & bytes(index + 4)) << 24 |
-                ((0xff & bytes(index + 5)) << 16) |
-                ((0xff & bytes(index + 6)) << 8) |
-                ((0xff & bytes(index + 7)) << 0)
+            (0xff & bytes(index + 1)) << 48 |
+            (0xff & bytes(index + 2)) << 40 |
+            (0xff & bytes(index + 3)) << 32 |
+            (0xff & bytes(index + 4)) << 24 |
+            ((0xff & bytes(index + 5)) << 16) |
+            ((0xff & bytes(index + 6)) << 8) |
+            ((0xff & bytes(index + 7)) << 0)
     }
 
     private def readLengths(bytes: Array[Byte], from: Int, numOfLengths: Int, lastLengthReference: Int): Array[Int] = {
@@ -211,7 +213,6 @@ abstract class PacketSerializer {
     }
 
     private def deserializeObject(bytes: Array[Byte]): Any = {
-        println(s"deserialising object = ${new String(bytes)}")
         val (kindClass, kindClassLength) = deserializeType(bytes)
 
         val objectLength = bytes.length
@@ -220,25 +221,35 @@ abstract class PacketSerializer {
 
         //Reading Instance Sign...
         val valuesLengths = readLengths(bytes, kindClassLength, fieldsNumbers, objectLength)
-        println(s"valuesLengths = ${valuesLengths.mkString("Array(", ", ", ")")}")
 
         //Writing values to the empty instance
-        var currentValIndex = kindClassLength + 4//the sign length
+        var currentValIndex = kindClassLength + (valuesLengths.length - 1) * 4 //the sign length
         val instance = TheUnsafe.allocateInstance(kindClass)
         for (i <- 0 until fieldsNumbers) {
             val field = fields(i)
             val fieldType = field.getType
             val valueLength = valuesLengths(i)
-            println(s"valueLength = ${valueLength}")
-            println(s"currentValIndex = ${currentValIndex}")
-            println(s"fieldType = ${fieldType}")
             val value = deserializeValue(fieldType, bytes.slice(currentValIndex, currentValIndex + valueLength))
-            println(s"deserialized value = ${value}")
-            field.set(instance, value)
+            setValue(instance, field, value)
 
             currentValIndex += valueLength
         }
         instance
+    }
+
+    private def setValue(instance: Any, field: Field, value: Any): Unit = {
+        val fieldOffset = TheUnsafe.objectFieldOffset(field)
+        def casted[A]: A = value.asInstanceOf[A]
+        field.getType match {
+            case JInt.TYPE => TheUnsafe.putInt(instance, fieldOffset, casted[Int])
+            case JByte.TYPE => TheUnsafe.putByte(instance, fieldOffset, casted[Int].toByte)
+            case JShort.TYPE => TheUnsafe.putShort(instance, fieldOffset, casted[Int].toShort)
+            case JLong.TYPE => TheUnsafe.putLong(instance, fieldOffset, casted[Long])
+            case JDouble.TYPE => TheUnsafe.putDouble(instance, fieldOffset, casted[Double])
+            case JFloat.TYPE => TheUnsafe.putFloat(instance, fieldOffset, casted[Double].toFloat)
+            case JBoolean.TYPE => TheUnsafe.putBoolean(instance, fieldOffset, casted)
+            case _ => TheUnsafe.putObject(instance, fieldOffset, casted)
+        }
     }
 
     private def deserializeEnum[T <: Enum[T]](bytes: Array[Byte]): T = {
@@ -255,10 +266,11 @@ abstract class PacketSerializer {
             deserializeEnum(bytes)
         } else if (fieldType == classOf[String]) {
             new String(bytes)
-        }else {
+        } else {
             fieldType match {
                 case _@(JByte.TYPE | JShort.TYPE | JInt.TYPE) => deserializeInt(bytes, 0)
                 case _@(JFloat.TYPE | JDouble.TYPE | JLong.TYPE) => deserializeLong(bytes, 0) //FIXME would not work as expected for Float and Double
+                case JBoolean.TYPE => bytes(0) == 1
                 case _ => deserializeObject(bytes)
             }
         }
@@ -266,9 +278,9 @@ abstract class PacketSerializer {
 
     private def listSerializableFields(clazz: Class[_]): Array[Field] = {
         clazz.getDeclaredFields
-                .filterNot(p => Modifier.isTransient(p.getModifiers) || Modifier.isStatic(p.getModifiers))
-                .tapEach(_.setAccessible(true))
-                .toArray
+            .filterNot(p => Modifier.isTransient(p.getModifiers) || Modifier.isStatic(p.getModifiers))
+            .tapEach(_.setAccessible(true))
+            .toArray
     }
 
 }
