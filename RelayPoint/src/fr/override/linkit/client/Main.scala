@@ -4,7 +4,7 @@ import java.net.InetSocketAddress
 import java.nio.file.Paths
 import java.util.Scanner
 
-import fr.`override`.linkit.`extension`.easysharing.EasySharing
+
 import fr.`override`.linkit.api.system.CloseReason
 import fr.`override`.linkit.client.config.RelayPointBuilder
 
@@ -54,6 +54,7 @@ object Main {
 
             if (ideRun && relayPoint.isOpen) {
 
+                /*
                 import fr.`override`.linkit.`extension`.controller.ControllerExtension
                 import fr.`override`.linkit.`extension`.debug.DebugExtension
 
@@ -62,7 +63,7 @@ object Main {
                     classOf[ControllerExtension],
                     classOf[EasySharing],
                     classOf[DebugExtension]
-                )
+                )*/
             }
         }
     }

@@ -266,7 +266,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             if (bytes == null)
                 return
             //NETWORK-DEBUG-MARK
-            //println(s"received : ${new String(bytes)}")
+            println(s"received : ${new String(bytes)}")
             val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
 
             if (configuration.checkReceivedPacketTargetID)
