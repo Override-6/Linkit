@@ -22,7 +22,7 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
     }
     selfEntity
             .cache
-            .open(3, SharedInstance[ConnectionState])
+            .get(3, SharedInstance[ConnectionState])
             .set(ConnectionState.CONNECTED) //technically already connected
 
     override def createRelayEntity(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {

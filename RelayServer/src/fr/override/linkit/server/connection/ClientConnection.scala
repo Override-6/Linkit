@@ -50,9 +50,11 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         ConnectionPacketWorker.start()
     }
 
-    def sendPacket(packet: Packet, channelID: Int): Unit = runLater {
-        val bytes = packetTranslator.fromPacketAndCoords(packet, PacketCoordinates(channelID, identifier, server.identifier))
-        session.send(bytes)
+    def sendPacket(packet: Packet, channelID: Int): Unit = {
+        runLater {
+            val bytes = packetTranslator.fromPacketAndCoords(packet, PacketCoordinates(channelID, identifier, server.identifier))
+            session.send(bytes)
+        }
     }
 
     def isConnected: Boolean = getState == ConnectionState.CONNECTED
