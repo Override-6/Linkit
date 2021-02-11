@@ -3,6 +3,7 @@ package fr.`override`.linkit.server.connection
 import java.net.SocketException
 
 import fr.`override`.linkit.api.packet._
+import fr.`override`.linkit.api.packet.serialization.PacketTranslator.{SenderSeparator, TargetSeparator}
 import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketInjections, PacketReader}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
@@ -55,6 +56,6 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
     }
 
     private def getTargetID(bytes: Array[Byte]): String =
-        PacketUtils.stringBetween(PacketTranslator.SenderSeparator, PacketTranslator.TargetSeparator)(bytes)
+        PacketUtils.stringBetween(SenderSeparator, TargetSeparator)(bytes)
 
 }
