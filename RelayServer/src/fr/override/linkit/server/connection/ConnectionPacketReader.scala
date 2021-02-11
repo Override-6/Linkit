@@ -34,7 +34,7 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
         }
 
         //NETWORK-DEBUG-MARK
-        //println(s"received : ${new String(bytes)}")
+        println(s"received : ${new String(bytes)}")
         val target = getTargetID(bytes)
 
         target match {

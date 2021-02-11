@@ -114,6 +114,8 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * */
     @Nullable def getConnection(identifier: String): ClientConnection = connections.get(identifier).orNull
 
+    def countConnected: Int = connections.size
+
     /**
      * determines if the address is not registered
      *

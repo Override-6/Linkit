@@ -2,7 +2,6 @@ package fr.`override`.linkit.server
 
 import java.nio.file.Paths
 
-import fr.`override`.linkit.`extension`.easysharing.EasySharing
 import fr.`override`.linkit.api.system.CloseReason
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
 
@@ -20,14 +19,14 @@ object Main {
 
             if (ideRun) {
 
-                import fr.`override`.linkit.`extension`.controller.ControllerExtension
+                /*import fr.`override`.linkit.`extension`.controller.ControllerExtension
                 import fr.`override`.linkit.`extension`.debug.DebugExtension
 
                 relayServer.extensionLoader.loadExtensions(
                     classOf[ControllerExtension],
                     classOf[EasySharing],
                     classOf[DebugExtension]
-                )
+                )*/
             }
         }
         Runtime.getRuntime.addShutdownHook(new Thread(() => relayServer.runLater(relayServer.close(CloseReason.INTERNAL))))

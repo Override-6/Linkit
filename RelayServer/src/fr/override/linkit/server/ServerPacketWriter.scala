@@ -22,6 +22,6 @@ class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWr
     }
 
     override def writeBroadcastPacket(packet: Packet, discarded: Array[String]): Unit = {
-        server.broadcastPacket(packet, identifier)
+        server.broadcastPacketToConnections(packet, identifier)
     }
 }
