@@ -9,11 +9,12 @@ import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperti
 import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
 import fr.`override`.linkit.api.exception._
 import fr.`override`.linkit.api.network._
+import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental._
+import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic.SystemChannelID
 import fr.`override`.linkit.api.packet.traffic._
-import fr.`override`.linkit.api.packet.{PacketTranslator, _}
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
