@@ -1,35 +1,53 @@
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.api.packet.fundamental.{PairPacket, WrappedPacket}
+import fr.`override`.linkit.api.packet.fundamental.{ValPacket, WrappedPacket}
 import fr.`override`.linkit.api.packet.serialization.RawPacketSerializer
-import fr.`override`.linkit.api.system.Version
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketUtils}
 import fr.`override`.linkit.api.utils.Utils
 
 import scala.annotation.tailrec
+import scala.util.control.NonFatal
 
 object OtherTests {
 
-    def main(args: Array[String]): Unit = {
-        makeSomething(5)
-    }
+    private val serializer = new RawPacketSerializer
 
+    def main(args: Array[String]): Unit = try {
+        makeSomething(1)
+    } catch {
+        case NonFatal(e) => e.printStackTrace(Console.out)
+    }
 
     @tailrec
     def makeSomething(i: Int): Unit = {
-        val ref = new WrappedPacket("Heyyee", new WrappedPacket("Salutations", new PairPacket("15", Version("ABC", "25.12.24", true))))
-        val serializer = new RawPacketSerializer
+        import fr.`override`.linkit.api.network.cache.map.MapModification._
+        val packet = WrappedPacket("req", WrappedPacket("Global Shared Cache", WrappedPacket("14", ValPacket((PUT, 1624446167, "fr.override.linkit.api.packet.fundamental.ValPacket")))))
+        val coords = PacketCoordinates(11, "server", "a")
 
         println("SERIALIZING...")
-        val bytes = serializer.serialize(ref)
-        println(s"bytes = ${new String(bytes)}")
-        println("Standard Method : " + new String(Utils.serialize(ref)))
-        bytes
+        val bytes = serialize(packet, coords)
+        println(s"bytes = ${new String(bytes)} (length: ${bytes.length})")
+        val standardSerial = new String(PacketUtils.getCoordinatesBytes(coords)) + new String(Utils.serialize(packet))
+        println("Standard method : " + standardSerial + s" (length: ${standardSerial.length})")
+
         println("DESERIALIZING...")
-        val packet = serializer.deserialize(bytes)
-        println("packet = " + packet)
-        println(s"ref = ${ref}")
+        println()
+        println()
+        val (coords0, packet0) = deserialize(bytes)
+        println("packet, coords = " + (packet0, coords0))
+        println(s"ref = ${(packet, coords)}")
+
         if (i > 0)
             makeSomething(i - 1)
+    }
+
+    private def serialize(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
+        serializer.serialize(Array(coordinates, packet))
+    }
+
+    private def deserialize(bytes: Array[Byte]): (PacketCoordinates, Packet) = {
+        val array = serializer.deserializeAll(bytes)
+        (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
     }
 
 
