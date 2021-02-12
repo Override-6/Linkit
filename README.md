@@ -1,6 +1,7 @@
 # LinKit - A personal project to easily synchronise and link programs
-LinKit offers an entire networking library, that can be extended and controlled with a 'Relay'  
+LinKit offers an entire networking library, that can be extended and controlled from a 'Relay'  
 The project is mainly write in scala, and some classes are written in Java.  
+This project is designed to help the user write the network side of an application (for games, apps...) easily and quickly.
 
 ## Table of contents
 * [Notes and General information](https://github.com/Override-6/LinKit/#notes-and-general-information)
@@ -74,7 +75,7 @@ Here is a list of features that are already supported
 * Scoped Packet channels
 * Relay Extensions / Extension Fragments / Remote Fragments
 * Network accessors
-* Shared and synchronised cache
+* Shared cache (instance, collection, map) between connections
 * Schedulable tasks
 * Smart concurrency handling, with providable threads.
 
