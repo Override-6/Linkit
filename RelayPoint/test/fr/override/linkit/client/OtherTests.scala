@@ -2,7 +2,7 @@ package fr.`override`.linkit.client
 
 import fr.`override`.linkit.api.packet.fundamental.{ValPacket, WrappedPacket}
 import fr.`override`.linkit.api.packet.serialization.RawPacketSerializer
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketUtils}
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.Utils
 
 import scala.annotation.tailrec
@@ -27,7 +27,7 @@ object OtherTests {
         println("SERIALIZING...")
         val bytes = serialize(packet, coords)
         println(s"bytes = ${new String(bytes)} (length: ${bytes.length})")
-        val standardSerial = new String(PacketUtils.getCoordinatesBytes(coords)) + new String(Utils.serialize(packet))
+        val standardSerial = new String(Utils.serialize(packet))
         println("Standard method : " + standardSerial + s" (length: ${standardSerial.length})")
 
         println("DESERIALIZING...")

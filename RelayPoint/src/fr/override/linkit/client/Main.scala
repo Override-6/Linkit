@@ -54,16 +54,16 @@ object Main {
 
             if (ideRun && relayPoint.isOpen) {
 
-                /*
                 import fr.`override`.linkit.`extension`.controller.ControllerExtension
                 import fr.`override`.linkit.`extension`.debug.DebugExtension
+                import fr.`override`.linkit.`extension`.easysharing.EasySharing
 
                 val loader = relayPoint.extensionLoader
                 loader.loadExtensions(
                     classOf[ControllerExtension],
                     classOf[EasySharing],
                     classOf[DebugExtension]
-                )*/
+                )
             }
         }
     }

@@ -11,15 +11,15 @@ class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {
 
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
-                .addListener((_, _, _) => if (entities != null) () /*println("entities are now : " + entities)*/) //debug purposes
-                .mapped(createEntity)
+            .addListener((_, _, _) => if (entities != null) () /*println("entities are now : " + entities)*/) //debug purposes
+            .mapped(createEntity)
     }
+    override val startUpDate: Timestamp = globalCache(2)
+
     //Once all entities are initialized for this relay, add himself to the network
     sharedIdentifiers
-            .add(relay.identifier)
-            .flush()
-
-    override val startUpDate: Timestamp = globalCache(2)
+        .flush()
+        .add(relay.identifier)
 
     override def createRelayEntity(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {
         new RelayNetworkEntity(relay, identifier, communicator)

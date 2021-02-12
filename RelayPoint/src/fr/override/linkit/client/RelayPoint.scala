@@ -38,7 +38,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override val securityManager: RelaySecurityManager = configuration.securityManager
     private val socket: ClientDynamicSocket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
     override val packetTranslator: PacketTranslator = new PacketTranslator(this)
-    override val traffic: SocketPacketTraffic = new SocketPacketTraffic(this, socket)
+    override val traffic: SocketPacketTraffic = new SocketPacketTraffic(this, socket, identifier)
     override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
     override val properties: RelayProperties = new RelayProperties()
     private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
@@ -266,11 +266,14 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             if (bytes == null)
                 return
             //NETWORK-DEBUG-MARK
-            //println(s"received : ${new String(bytes).replace('\n',' ')} (l: ${bytes.length})")
+            println(s"received : ${new String(bytes).replace('\n',' ')} (l: ${bytes.length})")
             val packetNumber = packetsReceived + 1
             packetsReceived += 1
+
             runLater { //handles and deserializes the packet in the worker thread pool
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
+
+                //println(s"RECEIVED PACKET $packet WITH COORDINATES $coordinates. This packet will be handled in thread ${Thread.currentThread()}")
 
                 if (configuration.checkReceivedPacketTargetID)
                     checkCoordinates(coordinates)
