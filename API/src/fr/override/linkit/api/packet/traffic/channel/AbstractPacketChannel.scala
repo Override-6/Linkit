@@ -32,9 +32,9 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         val coordinates = injection.coordinates
         scope.assertAuthorised(coordinates.senderID)
 
-        val packet = injection.discoverPacket()
-        if (subInject(injection))
-            handlePacket(packet, coordinates)
+        if (subInject(injection)) {
+            handleInjection(injection)
+        }
     }
 
     override def canInjectFrom(identifier: String): Boolean = scope.isAuthorised(identifier)
@@ -62,7 +62,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     }
 
     @relayWorkerExecution
-    def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit
+    def handleInjection(injection: PacketInjection): Unit
 
     protected case class SubInjectableContainer(subInjectable: PacketInjectable, transparent: Boolean)
 
@@ -74,7 +74,6 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
      * */
     private def subInject(injection: PacketInjection): Boolean = {
         val coords = injection.coordinates
-        val packet = injection.discoverPacket()
 
         val target = coords.targetID
         var authoriseInject = true

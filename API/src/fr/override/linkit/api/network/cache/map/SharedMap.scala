@@ -39,7 +39,6 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
      * */
     def addListener(action: ((MapModification, K, V)) => Unit): this.type = {
         networkListeners += action
-        println("Added listener !")
         this
     }
 
@@ -107,7 +106,6 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         if (contains(k))
             return apply(k)
 
-        println(s"WAITING FOR ${k} TO BE SET. ${Thread.currentThread()}")
         var found = false
         val lock = new Object
 
@@ -121,7 +119,6 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         addListener(listener)                       //Due to hyper parallelized thread execution,
                                                     //the awaited key could be added since the 'found' value has been created.
         RelayWorkerThreadPool.smartProvide(lock, !(contains(k) || found))
-        println("DONE !")
         removeListener(listener)
         apply(k)
     }

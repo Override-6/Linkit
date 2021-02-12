@@ -41,8 +41,8 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
     override def canConflict(identifier: Int, scope: ChannelScope): Boolean = {
         scopes
-                .get(identifier)
-                .exists(_.canConflict(scope))
+            .get(identifier)
+            .exists(_.canConflict(scope))
     }
 
     private def completeCreation[C <: PacketInjectable](scope: ChannelScope, factory: PacketInjectableFactory[C]): C = {
@@ -71,8 +71,8 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
         //Will inject every lost packets
         lostInjections
-                .get(id)
-                .foreach(_.foreach(injectable.inject))
+            .get(id)
+            .foreach(_.foreach(injectable.inject))
         lostInjections.remove(id)
     }
 
@@ -87,7 +87,7 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
     override def close(reason: CloseReason): Unit = {
         scopes.values
-                .foreach(_.close(reason))
+            .foreach(_.close(reason))
         scopes.clear()
         closed = true
     }
@@ -100,6 +100,9 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
     }
 
     override def handleInjection(injection: PacketInjection): Unit = {
+        if (injection.mayNotHandle)
+            return
+
         val coordinates = injection.coordinates
         PacketWorkerThread.checkNotCurrent()
         ensureOpen()
@@ -143,9 +146,9 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
         def getInjectables(target: String): Seq[PacketInjectable] = {
             cache
-                    .filter(_._1.isAuthorised(target))
-                    .map(_._2)
-                    .toSeq
+                .filter(_._1.isAuthorised(target))
+                .map(_._2)
+                .toSeq
         }
 
         def register(scope: ChannelScope, injectable: PacketInjectable): Unit = {

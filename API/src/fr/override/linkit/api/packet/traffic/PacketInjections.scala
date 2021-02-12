@@ -1,50 +1,62 @@
 package fr.`override`.linkit.api.packet.traffic
 
-import java.util
 import java.util.concurrent.ConcurrentHashMap
 
+import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 
-object PacketInjections {
-    private val currentInjections = new ConcurrentHashMap[Int, util.Queue[(Int, Packet)]]
+import scala.collection.mutable.ListBuffer
 
-    private def factory = new util.PriorityQueue[(Int, Packet)]((o1: (Int, Packet), o2: (Int, Packet)) => Integer.compare(o1._1, o2._1))
+object PacketInjections {
+    private val currentInjections = new ConcurrentHashMap[Int, PacketInjection]
 
     def createInjection(packet: Packet, coordinates: PacketCoordinates, number: Int): PacketInjection = this.synchronized {
         val id = coordinates.injectableID
-        var queue = currentInjections.get(id)
-        if (queue == null) {
-            queue = factory
-            currentInjections.put(id, queue)
+        var injection = currentInjections.get(id)
+        if (injection == null) {
+            injection = new PacketInjection(coordinates)
+            currentInjections.put(id, injection)
         }
 
-        queue.add((number, packet))
-        new PacketInjection(coordinates)
+        injection.injections += ((number, packet))
+        injection
     }
 
-    def discovered(packet: Packet, coordinates: PacketCoordinates): PacketInjection = {
+    def unhandled(coordinates: PacketCoordinates, packets: Packet*): PacketInjection = {
         val injection = new PacketInjection(coordinates)
-        injection.discoveredPacket = packet
+        var i = 0
+        packets.foreach(packet => {
+            i += 1
+            injection.injections += ((i, packet))
+        })
         injection
     }
 
     class PacketInjection private[PacketInjections](val coordinates: PacketCoordinates) {
-        @volatile private[PacketInjections] var discoveredPacket: Packet = _
 
-        def discoverPacket(): Packet = {
-            val queue = currentInjections.get(coordinates.injectableID)
-            queue.synchronized {
-                if (discoveredPacket != null)
-                    return discoveredPacket
+        private[PacketInjections] val injections = ListBuffer.empty[(Int, Packet)]
+        private val injectableID = coordinates.injectableID
+        //The thread that created this object
+        //will be set as the handler of the injection
+        private val handlerThread = Thread.currentThread()
 
-                val tuple = queue.poll()
-                discoveredPacket = tuple._2
-                discoveredPacket
-            }
+        @relayWorkerExecution
+        def getPackets: Seq[Packet] = {
+            val packets = injections
+                .sorted((x: (Int, Packet), y: (Int, Packet)) => x._1 - y._1)
+                .toArray
+                .map(_._2)
+
+            currentInjections.remove(injectableID)
+            packets
+        }
+
+        @relayWorkerExecution
+        def mayNotHandle: Boolean = {
+            Thread.currentThread() != handlerThread
         }
     }
 
-    override def toString: String = currentInjections.toString
 
 }
 

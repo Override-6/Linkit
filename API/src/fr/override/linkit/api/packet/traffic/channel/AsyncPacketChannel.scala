@@ -1,6 +1,7 @@
 package fr.`override`.linkit.api.packet.traffic.channel
 
 import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketAsyncReceiver, PacketInjectableFactory, PacketSender}
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
@@ -13,11 +14,13 @@ class AsyncPacketChannel protected(scope: ChannelScope)
     private val packetReceivedContainer: ConsumerContainer[(Packet, PacketCoordinates)] = ConsumerContainer()
 
     @relayWorkerExecution
-    override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
+    override def handleInjection(injection: PacketInjection): Unit = {
         val pool = RelayWorkerThreadPool.currentThreadPool().get
         pool.runLater {
             try {
-                packetReceivedContainer.applyAll((packet, coords))
+                val packets = injection.getPackets
+                val coords = injection.coordinates
+                packets.foreach(packet => packetReceivedContainer.applyAll((packet, coords)))
             } catch {
                 case NonFatal(e) =>
                     e.printStackTrace()

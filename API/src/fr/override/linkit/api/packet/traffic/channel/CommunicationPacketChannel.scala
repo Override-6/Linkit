@@ -4,28 +4,31 @@ import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
 import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketInjectableFactory}
 import fr.`override`.linkit.api.packet.{Packet, PacketCompanion, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
 class CommunicationPacketChannel(scope: ChannelScope,
                                  providable: Boolean)
-        extends AbstractPacketChannel(scope) {
+    extends AbstractPacketChannel(scope) {
 
     private val responses: BlockingQueue[Packet] = {
         if (!providable)
             new LinkedBlockingQueue[Packet]()
         else {
             RelayWorkerThreadPool
-                    .ifCurrentOrElse(_.newProvidedQueue, new LinkedBlockingQueue[Packet]())
+                .ifCurrentOrElse(_.newProvidedQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 
     private val requestListeners = new ConsumerContainer[(Packet, PacketCoordinates)]
 
     @relayWorkerExecution
-    override def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        packet match {
+    override def handleInjection(injection: PacketInjection): Unit = {
+        val packets = injection.getPackets
+        val coordinates = injection.coordinates
+        packets.foreach(_ match {
             case WrappedPacket(tag, subPacket) =>
                 tag match {
                     case "res" => responses.add(subPacket)
@@ -33,7 +36,7 @@ class CommunicationPacketChannel(scope: ChannelScope,
                     case _ =>
                 }
             case _ =>
-        }
+        })
     }
 
     def addRequestListener(action: (Packet, PacketCoordinates) => Unit): Unit =
@@ -51,11 +54,11 @@ class CommunicationPacketChannel(scope: ChannelScope,
         scope.sendToAll(WrappedPacket("req", packet))
     }
 
-    def sendResponse(packet: Packet, target: String): Unit =  {
+    def sendResponse(packet: Packet, target: String): Unit = {
         scope.sendTo(target, WrappedPacket("res", packet))
     }
 
-    def sendRequest(packet: Packet, target: String): Unit ={
+    def sendRequest(packet: Packet, target: String): Unit = {
         scope.sendTo(target, WrappedPacket("req", packet))
     }
 

@@ -11,12 +11,15 @@ import sun.misc.Unsafe
 abstract class PacketSerializer {
 
     protected val signature: Array[Byte]
+    private var totalSerialTime: Long = 0
 
     def serialize(any: Any): Array[Byte] = {
         val t0 = System.currentTimeMillis()
         val bytes = signature ++ serializeObject(any)
         val t1 = System.currentTimeMillis()
         //println(s"Serialisation took ${t1 - t0}ms")
+        totalSerialTime += t1 - t0
+        //println(s"totalSerialTime = ${totalSerialTime}")
         bytes
     }
 
@@ -27,7 +30,9 @@ abstract class PacketSerializer {
         val t0 = System.currentTimeMillis()
         val instance = deserializeObject(bytes.drop(signature.length)).asInstanceOf[Packet]
         val t1 = System.currentTimeMillis()
-        //println(s"Deserialization took ${t1 - t0}ms")
+        println(s"Deserialization took ${t1 - t0}ms")
+        totalSerialTime += t1 - t0
+        println(s"totalSerialTime = ${totalSerialTime}")
         instance
     }
 

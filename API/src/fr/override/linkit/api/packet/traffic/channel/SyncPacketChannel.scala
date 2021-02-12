@@ -3,9 +3,10 @@ package fr.`override`.linkit.api.packet.traffic.channel
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.packet.Packet
+import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.packet.traffic.channel.AbstractPacketChannel
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
 
@@ -27,17 +28,11 @@ class SyncPacketChannel protected(scope: ChannelScope,
         }
     }
 
-    /**
-     * add a packet into the PacketChannel. the PacketChannel will stop waiting in [[PacketChannel#nextPacket]] if it where waiting for a packet
-     *
-     * @param packet the packet to add
-     * @param coords the packet coordinates
-     *
-     * @throws IllegalArgumentException if the packet coordinates does not match with this channel coordinates
-     * */
+
     @relayWorkerExecution
-    override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        queue.add(packet)
+    override def handleInjection(injection: PacketInjection): Unit = {
+        injection.getPackets.foreach(queue.add)
+        println(s"queue = $queue")
     }
 
     override def send(packet: Packet): Unit = scope.sendToAll(packet)

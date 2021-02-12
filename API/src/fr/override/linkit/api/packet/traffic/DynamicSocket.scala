@@ -13,21 +13,27 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream: InputStream = _
+    @volatile private var totalWriteTime: Long = 0
 
     def write(buff: Array[Byte]): Unit = {
+        val t0 = System.currentTimeMillis()
         SocketLocker.awaitConnected()
         ensureReady()
         SocketLocker.markAsWriting()
         try {
             currentOutputStream.write(buff)
             currentOutputStream.flush()
+            val t1 = System.currentTimeMillis()
+
+            totalWriteTime += t1 - t0
             //NETWORK-DEBUG-MARK
-            //println(s"written : ${new String(buff).replace('\n',' ')} (l: ${buff.length})")
+            //println(s"written : ${new String(buff).replace('\n', ' ')} (l: ${buff.length}) totalWriteTime: $totalWriteTime")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
                 if (isClosed || !autoReconnect)
                     return
+
                 SocketLocker.markDisconnected()
                 reconnect()
                 SocketLocker.markAsConnected()

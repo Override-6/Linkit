@@ -40,7 +40,6 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
         @Nullable @volatile private var cachedSerializerWhitelist: SharedCollection[String] = _
 
         def serialize(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
-            println(s"SERIALIZING PACKET $packet WITH COORDINATES $coordinates")
             //Thread.dumpStack()
             val target = coordinates.targetID
             val serializer = if (initialised && (target == "BROADCAST" || cachedSerializerWhitelist.contains(target))) {
