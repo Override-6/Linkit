@@ -14,7 +14,7 @@ class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWr
             return
         }
         if (targetID == server.identifier) {
-            traffic.handleInjection(PacketInjections.discovered(packet, PacketCoordinates(identifier, targetID, relayID)))
+            traffic.handleInjection(PacketInjections.unhandled(PacketCoordinates(identifier, targetID, relayID), packet))
             return
         }
         if (server.isConnected(targetID))

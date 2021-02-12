@@ -36,7 +36,7 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
         }
 
         //NETWORK-DEBUG-MARK
-        println(s"received : ${new String(bytes).replace('\n',' ')} (l: ${bytes.length})")
+        //println(s"received : ${new String(bytes).replace('\n',' ')} (l: ${bytes.length})")
         server.runLater {
             handleBytes(bytes, event)
         }
@@ -46,7 +46,6 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
 
     private def handleBytes(bytes: Array[Byte], event: (Packet, PacketCoordinates) => Unit): Unit = {
         val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
-        println(s"DESERIALIZED PACKET $packet WITH COORDINATES $coordinates")
 
         coordinates.targetID match {
             case server.identifier =>
