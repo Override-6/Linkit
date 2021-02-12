@@ -4,9 +4,11 @@ import fr.`override`.linkit.api.packet.traffic.{PacketInjections, PacketTraffic,
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 
 class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWriter {
+
     override val identifier: Int = info.identifier
     override val traffic: PacketTraffic = info.traffic
     override val relayID: String = traffic.relayID
+    override val ownerID: String = traffic.ownerID
 
     override def writePacket(packet: Packet, targetID: String): Unit = {
         if (targetID == "BROADCAST") {
@@ -22,6 +24,6 @@ class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWr
     }
 
     override def writeBroadcastPacket(packet: Packet, discarded: Array[String]): Unit = {
-        server.broadcastPacketToConnections(packet, identifier)
+        server.broadcastPacketToConnections(packet, ownerID, identifier, discarded)
     }
 }

@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.connection
 import java.net.SocketException
 
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.serialization.PacketTranslator.{SenderSeparator, TargetSeparator}
+import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketInjections, PacketReader}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
@@ -36,7 +36,7 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
         }
 
         //NETWORK-DEBUG-MARK
-        //println(s"received : ${new String(bytes).replace('\n',' ')} (l: ${bytes.length})")
+        println(s"received : ${new String(bytes).replace('\n', ' ')} (l: ${bytes.length})")
         server.runLater {
             handleBytes(bytes, event)
         }
@@ -46,25 +46,28 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
 
     private def handleBytes(bytes: Array[Byte], event: (Packet, PacketCoordinates) => Unit): Unit = {
         val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
+        //println(s"RECEIVED PACKET $packet WITH COORDINATES $coordinates. This packet will be handled in thread ${Thread.currentThread()}")
+
+        val target = coordinates.targetID
+        if (target.startsWith(PacketTranslator.BroadcastIdentifier)) {
+            //TODO optimise the packet deflection : only serialize the new coordinates, then send the packet bytes directly
+            val discards = PacketTranslator.listDiscarded(target)
+            manager.broadcastBytes(packet, coordinates.injectableID, identifier, discards ++ Array(identifier))
+            concernedPacketsReceived += 1
+
+            //would inject the packet into registered injectables (if some are registered)
+            val injection = PacketInjections.createInjection(packet, coordinates, concernedPacketsReceived)
+            server.traffic.handleInjection(injection)
+            return
+        }
 
         coordinates.targetID match {
             case server.identifier =>
                 concernedPacketsReceived += 1
                 event(packet, coordinates)
 
-            case "BROADCAST" =>
-                manager.broadcastBytes(bytes, Array(identifier))
-                concernedPacketsReceived += 1
-
-                //would inject the packet into registered injectables (if some are registered)
-                val injection = PacketInjections.createInjection(packet, coordinates, concernedPacketsReceived)
-                server.traffic.handleInjection(injection)
-
             case _ => manager.deflectTo(bytes, coordinates.targetID)
         }
     }
-
-    private def getTargetID(bytes: Array[Byte]): String =
-        PacketUtils.stringBetween(SenderSeparator, TargetSeparator)(bytes)
 
 }

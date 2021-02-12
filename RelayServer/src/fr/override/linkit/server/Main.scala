@@ -8,6 +8,7 @@ import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder
 
 object Main {
     def main(args: Array[String]): Unit = {
+        println(s"running server with arguments ${args.mkString("'", ", ", "'")}")
         val ideRun = args.contains("--ide-run")
         val relayServer: RelayServer = new RelayServerBuilder {
             relayIDAmbiguityStrategy = AmbiguityStrategy.REJECT_NEW
@@ -19,14 +20,16 @@ object Main {
 
             if (ideRun) {
 
-                /*import fr.`override`.linkit.`extension`.controller.ControllerExtension
+                import fr.`override`.linkit.`extension`.controller.ControllerExtension
                 import fr.`override`.linkit.`extension`.debug.DebugExtension
+                import fr.`override`.linkit.`extension`.easysharing.EasySharing
 
-                relayServer.extensionLoader.loadExtensions(
+                val loader = relayServer.extensionLoader
+                loader.loadExtensions(
                     classOf[ControllerExtension],
                     classOf[EasySharing],
                     classOf[DebugExtension]
-                )*/
+                )
             }
         }
         Runtime.getRuntime.addShutdownHook(new Thread(() => relayServer.runLater(relayServer.close(CloseReason.INTERNAL))))

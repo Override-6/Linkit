@@ -2,6 +2,7 @@ package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.packet.fundamental.IntPacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
@@ -85,15 +86,17 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
     /**
      * Broadcast bytes sequence to every connected clients
-     * @param bytes the bytes to broadcast
-     * @param broadcaster the client who broadcasts the bytes.
-     *                    This way, the broadcaster will be ignored
      * */
-    def broadcastBytes(bytes: Array[Byte], discarded: Array[String] = Array()): Unit = {
+    def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discarded: Array[String] = Array()): Unit = {
         PacketWorkerThread.checkNotCurrent()
+        val translator = server.packetTranslator
         connections.values
                 .filter(con => !discarded.contains(con.identifier) && con.isConnected)
-                .foreach(_.sendBytes(bytes))
+                .foreach(connection => {
+                    val coordinates = PacketCoordinates(injectableID, connection.identifier, senderID)
+                    val bytes = translator.fromPacketAndCoordsNoWrap(packet, coordinates)
+                    connection.sendBytes(bytes)
+                })
     }
 
     /**

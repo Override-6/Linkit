@@ -132,18 +132,18 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.broadcastMessage(err, "(broadcast) " + msg)
     }
 
-    def broadcastPacketToConnections(packet: Packet, injectableID: Int, discarded: Array[String] = Array()): Unit = {
+    def broadcastPacketToConnections(packet: Packet, sender: String, injectableID: Int, discarded: Array[String] = Array()): Unit = {
         if (connectionsManager.countConnected - discarded.length <= 0) {
             // There is nowere to send this packet.
             return
         }
-        val bytes = packetTranslator.fromPacketAndCoordsNoWrap(packet, PacketCoordinates(injectableID, "BROADCAST", identifier))
-        connectionsManager.broadcastBytes(bytes, discarded.appended(identifier))
+        connectionsManager.broadcastBytes(packet, injectableID, sender, discarded.appended(identifier))
     }
 
     /**
      * Reads a welcome packet from a relay
      * A Welcome packet is the first packet that a client must send in order to communicate his identifier.
+     *
      * @return the identifier bound with the socket
      * */
     private def readWelcomePacket(socket: SocketContainer): String = {
