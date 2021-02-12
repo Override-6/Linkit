@@ -12,6 +12,7 @@ import scala.reflect.ClassTag
 trait PacketTraffic extends JustifiedCloseable {
 
     val relayID: String
+    val ownerID: String
 
     def createInjectable[C <: PacketInjectable : ClassTag](id: Int,
                                                            scopeFactory: ScopeFactory[_ <: ChannelScope],

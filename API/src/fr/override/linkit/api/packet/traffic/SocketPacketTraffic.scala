@@ -5,7 +5,8 @@ import fr.`override`.linkit.api.packet.Packet
 import org.jetbrains.annotations.NotNull
 
 class SocketPacketTraffic(@NotNull relay: Relay,
-                          @NotNull socket: DynamicSocket) extends AbstractPacketTraffic(relay.configuration, relay.identifier) {
+                          @NotNull socket: DynamicSocket,
+                          @NotNull override val ownerID: String) extends AbstractPacketTraffic(relay.configuration, relay.identifier) {
 
     private val translator = relay.packetTranslator
 

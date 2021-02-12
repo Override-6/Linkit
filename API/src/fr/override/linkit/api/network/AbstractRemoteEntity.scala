@@ -17,6 +17,7 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     //println(s"CREATED REMOTE ENTITY NAMED '$identifier'")
     protected implicit val traffic: PacketTraffic = relay.traffic
 
+    println(s"Created entity $identifier")
     override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
     override val connectionDate: Timestamp = cache(2)
     private val remoteFragments = {

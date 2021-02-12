@@ -8,13 +8,6 @@ import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.serialization.PacketSerializer
 import org.jetbrains.annotations.Nullable
 
-
-object PacketTranslator {
-    val ChannelIDSeparator: Array[Byte] = "<channel>".getBytes
-    val SenderSeparator: Array[Byte] = "<sender>".getBytes
-    val TargetSeparator: Array[Byte] = "<target>".getBytes
-}
-
 class PacketTranslator(relay: Relay) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
     def toPacketAndCoords(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
@@ -47,8 +40,6 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
             } else {
                 rawSerializer
             }
-            //println(s"cachedSerializerWhitelist = ${cachedSerializerWhitelist}")
-            //println(s"Serializer chosen = ${serializer.getClass.getSimpleName}")
             serializer.serialize(Array(coordinates, packet))
         }
 
@@ -78,5 +69,18 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     }
 
 }
+object PacketTranslator {
+    val BroadcastIdentifier: String = "BROADCAST"
+    val IdentifierSeparator: String = ";"
 
+    def listDiscarded(broadcastTargets: String): Array[String] = {
+        val targets = broadcastTargets.drop(BroadcastIdentifier.length)
+        targets.split(IdentifierSeparator)
+    }
+
+    def broadcastIdentifier(discardedTargets: Array[String]): String = {
+        BroadcastIdentifier + discardedTargets.mkString(IdentifierSeparator)
+    }
+
+}
 

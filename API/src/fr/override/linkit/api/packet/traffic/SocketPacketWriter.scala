@@ -13,6 +13,7 @@ class SocketPacketWriter(socket: DynamicSocket,
 
     override val traffic    : PacketTraffic = info.traffic
     override val relayID    : String        = traffic.relayID
+    override val ownerID    : String        = traffic.ownerID
     override val identifier : Int           = info.identifier
 
     override def writePacket(packet: Packet, targetID: String): Unit = {
@@ -22,5 +23,8 @@ class SocketPacketWriter(socket: DynamicSocket,
     }
 
     //TODO add discarded identifiers list into the targetID
-    override def writeBroadcastPacket(packet: Packet, discarded: Array[String]): Unit = writePacket(packet, "BROADCAST")
+
+    override def writeBroadcastPacket(packet: Packet, discarded: Array[String]): Unit = {
+        writePacket(packet, PacketTranslator.broadcastIdentifier(discarded))
+    }
 }

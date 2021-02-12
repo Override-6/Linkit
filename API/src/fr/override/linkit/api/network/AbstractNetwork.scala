@@ -14,7 +14,6 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 
-
     protected val sharedIdentifiers: SharedCollection[String] = globalCache
             .get(3, SharedCollection.set[String])
 

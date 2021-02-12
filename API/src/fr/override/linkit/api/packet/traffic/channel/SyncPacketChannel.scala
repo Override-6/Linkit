@@ -32,7 +32,6 @@ class SyncPacketChannel protected(scope: ChannelScope,
     @relayWorkerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
         injection.getPackets.foreach(queue.add)
-        println(s"queue = $queue")
     }
 
     override def send(packet: Packet): Unit = scope.sendToAll(packet)

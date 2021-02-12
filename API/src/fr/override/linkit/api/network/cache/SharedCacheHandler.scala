@@ -25,6 +25,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
     private val cacheOwners: SharedMap[Int, String] = init()
     private val sharedObjects: SharedMap[Int, Any] = get(1, SharedMap[Int, Any])
+    println(s"<$family, $ownerID> sharedObjects = ${sharedObjects}")
 
     this.synchronized {
         notifyAll() //Releases all awaitReady locks, this action is marking this cache handler as ready.
@@ -38,7 +39,6 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
     def get[A](key: Int): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
 
     def apply[A](key: Int): A = sharedObjects.get(key).get.asInstanceOf[A]
-
 
     def get[A <: HandleableSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A]): A = {
         LocalCacheHandler
