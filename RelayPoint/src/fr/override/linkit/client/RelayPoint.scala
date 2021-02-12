@@ -267,15 +267,14 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
                 return
             //NETWORK-DEBUG-MARK
             //println(s"received : ${new String(bytes).replace('\n',' ')} (l: ${bytes.length})")
+            val packetNumber = packetsReceived + 1
             packetsReceived += 1
-
             runLater { //handles and deserializes the packet in the worker thread pool
                 val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
-                println(s"DESERIALIZED PACKET $packet WITH CORDINATES $coordinates")
 
                 if (configuration.checkReceivedPacketTargetID)
                     checkCoordinates(coordinates)
-                handlePacket(packet, coordinates, packetsReceived)
+                handlePacket(packet, coordinates, packetNumber)
             }
         }
 
