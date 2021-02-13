@@ -54,7 +54,7 @@ class RelayWorkerThreadPool() extends AutoCloseable {
             providerLocks.addProvidingLock(lock)
             while (check) {
                 lock.synchronized {
-                    if (check)// because of the synchronisation block, the check value may be true, so
+                    if (workQueue.isEmpty && check)// because of the synchronisation block, the check value may change
                         lock.wait()
                 }
                 provideWhile(check)

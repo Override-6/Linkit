@@ -2,12 +2,13 @@ package fr.`override`.linkit.api.packet.serialization
 
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.map.{MapModification, SharedMap}
-import fr.`override`.linkit.api.packet.PacketCoordinates
 import fr.`override`.linkit.api.packet.fundamental.{ValPacket, WrappedPacket}
+import fr.`override`.linkit.api.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 
 class CachedPacketSerializer(cache: SharedCacheHandler) extends PacketSerializer {
 
     private val objectMap = cache.get(14, SharedMap[Int, String])
+    //objectMap.addListener(_ => s"MODIFIED : $objectMap")
 
     override protected def serializeType(clazz: Class[_]): Array[Byte] = {
         val name = clazz.getName
@@ -30,18 +31,23 @@ class CachedPacketSerializer(cache: SharedCacheHandler) extends PacketSerializer
 
     override protected val signature: Array[Byte] = Array(0)
 
-
     /*
-    * Those 4 types are directly registered because they are used by the packet that
+    * Those types are directly registered because they are potentially used by the packet that
     * is used to notify to other relays that a new type has been registered.
-    * If these types are not directly registered, the serialisation/deserialization would block in order
+    * If these types are not directly registered, the serialisation/deserialization will logically block in order
     * to wait that one of these types are registered. But, they are used to notify that a new type has been registered.
-    * So, a sort of deadlock will occur.
+    * so, a sort of deadlock will occur.
     * */
     serializeType(classOf[PacketCoordinates])
+    serializeType(classOf[DedicatedPacketCoordinates])
+    serializeType(classOf[BroadcastPacketCoordinates])
     serializeType(classOf[WrappedPacket])
     serializeType(classOf[ValPacket])
     serializeType(classOf[MapModification])
     serializeType(classOf[(_, _, _)])
+
+    private val NilName = "scala.collection.immutable.Nil$" //This class is odd, could not find it from my IDE, but it still present at runtime.
+    if (!objectMap.contains(NilName.hashCode))
+        objectMap.put(NilName.hashCode, NilName)
 
 }

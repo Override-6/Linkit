@@ -37,8 +37,6 @@ class CommunicationPacketChannel(scope: ChannelScope,
                 }
             case _ =>
         }
-        println(s"Injected packet $packets")
-        println(s"Responses $responses")
     }
 
 

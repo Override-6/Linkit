@@ -11,7 +11,7 @@ object PacketInjections {
     private val currentInjections = new ConcurrentHashMap[(Int, String), PacketInjection]
 
     def createInjection(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): PacketInjection = this.synchronized {
-        println(s"CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates, $number")
+        //println(s"CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates, $number")
         val id = coordinates.injectableID
         val sender = coordinates.senderID
 

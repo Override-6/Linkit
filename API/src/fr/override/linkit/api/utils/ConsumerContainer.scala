@@ -46,4 +46,6 @@ case class ConsumerContainer[T]() {
         this
     }
 
+    override def toString: String = s"ConsumerContainer($consumers)"
+
 }

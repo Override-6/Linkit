@@ -8,18 +8,26 @@ import fr.`override`.linkit.api.packet.serialization.PacketSerializer._
 import org.jetbrains.annotations.Nullable
 import sun.misc.Unsafe
 
+//TODO use smart switch between bytes, shorts and ints serial/deserialization in order to save like 2 times more space.
 abstract class PacketSerializer {
 
     protected val signature: Array[Byte]
-    private var totalSerialTime: Long = 0
+    //private var totalSerialTime: Long = 0
+    //private var totalSerials: Float = 0F
+    //private var totalBytesCreated: Float = 0F
 
     def serialize(any: Any): Array[Byte] = {
-        val t0 = System.currentTimeMillis()
+        //val t0 = System.currentTimeMillis()
         val bytes = signature ++ serializeObject(any)
+        /*
         val t1 = System.currentTimeMillis()
-        //println(s"Serialisation took ${t1 - t0}ms")
+        println(s"Serialisation took ${t1 - t0}ms")
         totalSerialTime += t1 - t0
-        //println(s"totalSerialTime = ${totalSerialTime}")
+        println(s"totalSerialTime = ${totalSerialTime}")
+        totalSerials += 1
+        totalBytesCreated += bytes.length
+        println(s"${getClass.getSimpleName} have a serial length Average of ${totalBytesCreated / totalSerials} bytes)
+        */
         bytes
     }
 
@@ -27,12 +35,10 @@ abstract class PacketSerializer {
         if (!isSameSignature(bytes))
             throw new IllegalArgumentException("Those bytes does not come from this packet serializer !")
 
-        val t0 = System.currentTimeMillis()
+        //val t0 = System.currentTimeMillis()
         val instance = deserializeObject(bytes.drop(signature.length)).asInstanceOf[Packet]
-        val t1 = System.currentTimeMillis()
-        println(s"Deserialization took ${t1 - t0}ms")
-        totalSerialTime += t1 - t0
-        println(s"totalSerialTime = ${totalSerialTime}")
+        /*val t1 = System.currentTimeMillis()
+        totalSerialTime += t1 - t0*/
         instance
     }
 
@@ -229,6 +235,7 @@ abstract class PacketSerializer {
     }
 
     private def deserializeLong(bytes: Array[Byte], index: Int): Long = {
+        println("Deserializing int in zone " + new String(bytes.slice(index, index + 8)))
         (0xff & bytes(index)) << 52 |
                 (0xff & bytes(index + 1)) << 48 |
                 (0xff & bytes(index + 2)) << 40 |
@@ -361,17 +368,17 @@ object PacketSerializer {
     private val TheUnsafe = findUnsafe()
     private val EnumClass = classOf[Enum[_]]
 
-    private val IntArrayFlag: Byte = -2
-    private val LongArrayFlag: Byte = -3
-    private val AnyArrayFlag: Byte = -4
+    private val IntArrayFlag: Byte = -128
+    private val LongArrayFlag: Byte = -127
+    private val AnyArrayFlag: Byte = -126
 
-    private val IntegerFlag: Byte = -6
-    private val StringFlag: Byte = -7
-    private val NullFlag: Byte = -8
-    private val EmptyFlag: Byte = -9
-    private val FloatFlag: Byte = -10
-    private val DoubleFlag: Byte = -11
-    private val EnumFlag: Byte = -12
+    private val IntegerFlag: Byte = -125
+    private val StringFlag: Byte = -124
+    private val NullFlag: Byte = -123
+    private val EmptyFlag: Byte = -122
+    private val FloatFlag: Byte = -121
+    private val DoubleFlag: Byte = -120
+    private val EnumFlag: Byte = -119
 
     private val NumberFlagArray: Array[Byte] = Array(IntegerFlag)
     private val StringFlagArray: Array[Byte] = Array(StringFlag)

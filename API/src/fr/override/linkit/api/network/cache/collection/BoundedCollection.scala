@@ -64,9 +64,7 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
 
     private def safeMap(a: A): B = {
         val lastModCount = specificModCount
-        println(s"a = ${a}")
         val t: Any = map(a)
-        println(s"t = ${t}")
         val v = t.asInstanceOf[B]
         if (specificModCount != lastModCount)
             throw new ConcurrentModificationException("Bounded Collection got modified during mapping.")

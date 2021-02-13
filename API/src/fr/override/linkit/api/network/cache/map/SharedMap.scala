@@ -33,12 +33,13 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
     override def modificationCount(): Int = modCount
 
     /**
-     * (MapModification, _, _) : the kind of modification that were done
-     * (_, K, _) : the key affected (may be null for mod kinds that does not specify any key such as CLEAR)
-     * (_, _, V) : The value affected (may be null for mod kinds that does not specify any value such as CLEAR, or REMOVE)
+     * (MapModification, _, _) : the kind of modification that were done<p>
+     * (_, K, _) : the key affected (is null for mod kinds that does not specify any key such as CLEAR)<p>
+     * (_, _, V) : The value affected (is null for mod kinds that does not specify any value such as CLEAR, or REMOVE)<p>
      * */
     def addListener(action: ((MapModification, K, V)) => Unit): this.type = {
         networkListeners += action
+        println(s"networkListeners = ${networkListeners}")
         this
     }
 
@@ -105,9 +106,10 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
     def awaitPut(k: K): V = {
         if (contains(k))
             return apply(k)
+        println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
 
-        var found = false
         val lock = new Object
+        var found = false
 
         val listener: ((MapModification, K, V)) => Unit = t => {
             found = t._2 == k
@@ -116,10 +118,11 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
             }
         }
 
-        addListener(listener) //Due to hyper parallelized thread execution,
-        //the awaited key could be added since the 'found' value has been created.
+        addListener(listener)   //Due to hyper parallelized thread execution,
+                                //the awaited key could be added since the 'found' value has been created.
         RelayWorkerThreadPool.smartProvide(lock, !(contains(k) || found))
         removeListener(listener)
+        println("Done !")
         apply(k)
     }
 
@@ -141,7 +144,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         }
         action(localMap)
         modCount += 1
-
+        println(s"MUTATED MAP '$toString'")
         networkListeners.applyAll(mod)
     }
 

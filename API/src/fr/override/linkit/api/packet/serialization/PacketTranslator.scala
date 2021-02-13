@@ -1,12 +1,15 @@
 package fr.`override`.linkit.api.packet.serialization
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.exception.PacketException
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.serialization.PacketSerializer
 import org.jetbrains.annotations.Nullable
+
+import scala.util.control.NonFatal
 
 class PacketTranslator(relay: Relay) { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
@@ -38,11 +41,16 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
             //Thread.dumpStack()
             val serializer = if (initialised) {
                 val whiteListArray = cachedSerializerWhitelist.toArray
-                coordinates.determineSerializer(whiteListArray, rawSerializer, rawSerializer)
+                coordinates.determineSerializer(whiteListArray, rawSerializer, cachedSerializer)
             } else {
                 rawSerializer
             }
-            serializer.serialize(Array(coordinates, packet))
+            try {
+                serializer.serialize(Array(coordinates, packet))
+            } catch {
+                case NonFatal(e) =>
+                    throw PacketException(s"Could not serialize packet and coordinates $packet, $coordinates.", e)
+            }
         }
 
         def deserialize(bytes: Array[Byte]): (PacketCoordinates, Packet) = {
@@ -51,9 +59,15 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
             } else if (!initialised) {
                 throw new IllegalStateException("Received cached serialisation signature but this packet translator is not ready to handle it.")
             } else {
-                rawSerializer
+                cachedSerializer
             }
-            val array = serializer.deserializeAll(bytes)
+            val array = try {
+                serializer.deserializeAll(bytes)
+            } catch {
+                case NonFatal(e) =>
+                    throw PacketException(s"Could not deserialize bytes ${new String(bytes)} to packet.", e)
+
+            }
             (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
         }
 
@@ -71,19 +85,3 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     }
 
 }
-
-object PacketTranslator {
-    val BroadcastIdentifier: String = "BROADCAST"
-    val IdentifierSeparator: String = ";"
-
-    def listDiscarded(broadcastTargets: String): Array[String] = {
-        val targets = broadcastTargets.drop(BroadcastIdentifier.length)
-        targets.split(IdentifierSeparator)
-    }
-
-    def broadcastIdentifier(discardedTargets: Array[String]): String = {
-        BroadcastIdentifier + discardedTargets.mkString(IdentifierSeparator)
-    }
-
-}
-

@@ -195,9 +195,9 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
                 if (state == CLOSED)
                     throw new RelayCloseException("Attempted to wait this socket to be connected again, but it is now closed.")
 
-                println(s"WARNING : The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier is not fully initialised or disconnected.")
+                println(s"WARNING : The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier isn't ready or is disconnected.")
                 disconnectLock.wait()
-                println(s"The connection with $boundIdentifier is now fully initialised.")
+                println(s"The connection with $boundIdentifier is now ready.")
             } catch {
                 case _: InterruptedException =>
             }
