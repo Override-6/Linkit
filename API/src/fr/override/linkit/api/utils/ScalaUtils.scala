@@ -17,8 +17,8 @@ object ScalaUtils {
         } catch {
             case NonFatal(e) =>
                 println("Was Casting to " + classTag[A].runtimeClass)
-                println(s"origin = ${origin.mkString("Array(", ", ", ")")}")
-                println(s"Failed when casting ref : ${origin(i)}")
+                println(s"Origin = ${origin.mkString("Array(", ", ", ")")}")
+                println(s"Failed when casting ref : ${origin(i)} at index $i")
                 throw e
         }
     }

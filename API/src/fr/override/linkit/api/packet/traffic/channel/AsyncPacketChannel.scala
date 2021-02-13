@@ -3,7 +3,7 @@ package fr.`override`.linkit.api.packet.traffic.channel
 import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
 import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketAsyncReceiver, PacketInjectableFactory, PacketSender}
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
 import scala.util.control.NonFatal
@@ -11,7 +11,7 @@ import scala.util.control.NonFatal
 class AsyncPacketChannel protected(scope: ChannelScope)
         extends AbstractPacketChannel(scope) with PacketSender with PacketAsyncReceiver {
 
-    private val packetReceivedContainer: ConsumerContainer[(Packet, PacketCoordinates)] = ConsumerContainer()
+    private val packetReceivedContainer: ConsumerContainer[(Packet, DedicatedPacketCoordinates)] = ConsumerContainer()
 
     @relayWorkerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
@@ -32,11 +32,11 @@ class AsyncPacketChannel protected(scope: ChannelScope)
         scope.sendToAll(packet)
     }
 
-    override def sendTo(target: String, packet: Packet): Unit = {
-        scope.sendTo(target, packet)
+    override def sendTo(packet: Packet, targets: String*): Unit = {
+        scope.sendTo(packet, targets: _*)
     }
 
-    override def addOnPacketReceived(callback: (Packet, PacketCoordinates) => Unit): Unit = {
+    override def addOnPacketReceived(callback: (Packet, DedicatedPacketCoordinates) => Unit): Unit = {
         packetReceivedContainer += (tuple => callback(tuple._1, tuple._2))
     }
 }

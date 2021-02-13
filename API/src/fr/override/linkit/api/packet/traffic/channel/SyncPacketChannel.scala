@@ -36,8 +36,8 @@ class SyncPacketChannel protected(scope: ChannelScope,
 
     override def send(packet: Packet): Unit = scope.sendToAll(packet)
 
-    override def sendTo(target: String, packet: Packet): Unit = {
-        scope.sendTo(target, packet)
+    override def sendTo(packet: Packet, targets: String*): Unit = {
+        scope.sendTo(packet, targets:_*)
     }
 
     override def close(reason: CloseReason): Unit = {
@@ -45,11 +45,11 @@ class SyncPacketChannel protected(scope: ChannelScope,
         queue.clear()
     }
 
-    override def nextPacket(): Packet = {
+    override def nextPacket[P <: Packet]: P = {
         if (queue.isEmpty)
             PacketWorkerThread.checkNotCurrent()
         val packet = queue.take()
-        packet
+        packet.asInstanceOf[P]
     }
 
 

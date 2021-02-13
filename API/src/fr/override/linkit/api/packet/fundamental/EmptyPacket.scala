@@ -1,14 +1,10 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-import fr.`override`.linkit.api.packet.{Packet, PacketCompanion}
+import fr.`override`.linkit.api.packet.Packet
 
 object EmptyPacket extends Packet {
     type EmptyPacket = EmptyPacket.type
 
     override def toString: String = "EmptyPacket"
-
-    object Companion extends PacketCompanion[EmptyPacket] {
-        override val identifier: Int = 2
-    }
 
 }

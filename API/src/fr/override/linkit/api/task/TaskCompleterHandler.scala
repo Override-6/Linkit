@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.task
 
 import fr.`override`.linkit.api.exception.TaskException
-import fr.`override`.linkit.api.packet.PacketCoordinates
+import fr.`override`.linkit.api.packet.DedicatedPacketCoordinates
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
 
 import scala.collection.mutable
@@ -12,7 +12,7 @@ import scala.collection.mutable
  * */
 class TaskCompleterHandler {
 
-    private val completers: mutable.Map[String, (TaskInitPacket, PacketCoordinates) => TaskExecutor] = new mutable.HashMap()
+    private val completers: mutable.Map[String, (TaskInitPacket, DedicatedPacketCoordinates) => TaskExecutor] = new mutable.HashMap()
 
     /**
      * @param initPacket the initialization packet for completer.
@@ -21,7 +21,7 @@ class TaskCompleterHandler {
      *
      * @see [[TaskInitPacket]]
      * */
-    def handleCompleter(initPacket: TaskInitPacket, coords: PacketCoordinates, tasksHandler: TasksHandler): Unit = {
+    def handleCompleter(initPacket: TaskInitPacket, coords: DedicatedPacketCoordinates, tasksHandler: TasksHandler): Unit = {
         val taskType = initPacket.taskType
         val taskID = coords.injectableID
         val targetID = coords.senderID
@@ -40,7 +40,7 @@ class TaskCompleterHandler {
      * @param supplier this lambda takes a [[TaskInitPacket]] the Tasks Handler and the init packet sender identifier
      *                 and the task owner identifier
      * */
-    def register(taskType: String, supplier: (TaskInitPacket, PacketCoordinates) => TaskExecutor): Unit = {
+    def register(taskType: String, supplier: (TaskInitPacket, DedicatedPacketCoordinates) => TaskExecutor): Unit = {
         completers.put(taskType, supplier)
     }
 

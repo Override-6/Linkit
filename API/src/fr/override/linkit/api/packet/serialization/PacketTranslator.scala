@@ -29,14 +29,16 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
 
     private object SmartSerializer {
         private val rawSerializer = new RawPacketSerializer()
-        @Nullable @volatile private var cachedSerializer: PacketSerializer = _ //Will be instantiated once connection with the server is handled.
-        @Nullable @volatile private var cachedSerializerWhitelist: SharedCollection[String] = _
+        @Nullable
+        @volatile private var cachedSerializer: PacketSerializer = _ //Will be instantiated once connection with the server is handled.
+        @Nullable
+        @volatile private var cachedSerializerWhitelist: SharedCollection[String] = _
 
         def serialize(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
             //Thread.dumpStack()
-            val target = coordinates.targetID
-            val serializer = if (initialised && (target == "BROADCAST" || cachedSerializerWhitelist.contains(target))) {
-                cachedSerializer
+            val serializer = if (initialised) {
+                val whiteListArray = cachedSerializerWhitelist.toArray
+                coordinates.determineSerializer(whiteListArray, rawSerializer, rawSerializer)
             } else {
                 rawSerializer
             }
@@ -49,7 +51,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
             } else if (!initialised) {
                 throw new IllegalStateException("Received cached serialisation signature but this packet translator is not ready to handle it.")
             } else {
-                cachedSerializer
+                rawSerializer
             }
             val array = serializer.deserializeAll(bytes)
             (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
@@ -69,6 +71,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     }
 
 }
+
 object PacketTranslator {
     val BroadcastIdentifier: String = "BROADCAST"
     val IdentifierSeparator: String = ";"

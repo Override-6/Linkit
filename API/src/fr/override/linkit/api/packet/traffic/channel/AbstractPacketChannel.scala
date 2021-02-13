@@ -4,7 +4,6 @@ import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.exception.ForbiddenIdentifierException
 import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic._
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.system.CloseReason
 
 import scala.collection.mutable
@@ -37,15 +36,15 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         }
     }
 
-    override def canInjectFrom(identifier: String): Boolean = scope.isAuthorised(identifier)
+    override def canInjectFrom(identifier: String): Boolean = scope.areAuthorised(identifier)
 
     override def subInjectable[C <: PacketInjectable](scopes: Array[String],
                                                       factory: PacketInjectableFactory[C],
                                                       transparent: Boolean): C = {
-        if (scopes.exists(!scope.isAuthorised(_)))
+        if (scopes.exists(!scope.areAuthorised(_)))
             throw new ForbiddenIdentifierException("This sub injector requests to listen to an identifier that the parent does not support.")
 
-        val subScope = ChannelScope.immutable(scopes: _*).apply(writer)
+        val subScope = ChannelScope.reserved(scopes: _*).apply(writer)
         register(subScope, factory, transparent)
     }
 
@@ -78,6 +77,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         val target = coords.targetID
         var authoriseInject = true
         for (container <- subChannels if container.subInjectable.canInjectFrom(target)) {
+            //println(s"FOR container = ${container}")
             val injectable = container.subInjectable
             injectable.inject(injection)
 

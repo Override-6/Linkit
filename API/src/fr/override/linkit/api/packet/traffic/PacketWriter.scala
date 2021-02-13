@@ -9,8 +9,8 @@ trait PacketWriter {
     val identifier: Int
     val traffic: PacketTraffic
 
-    def writePacket(packet: Packet, targetID: String): Unit
+    def writePacket(packet: Packet, targetIDs: String*): Unit
 
-    def writeBroadcastPacket(packet: Packet, discarded: Array[String] = Array()): Unit
+    def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit
 
 }

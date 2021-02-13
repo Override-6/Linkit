@@ -12,19 +12,17 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
 
     private val collection: ListBuffer[B] = ListBuffer.empty
     private val listeners = ConsumerContainer[(CollectionModification, Int, Option[B])]()
-    @volatile private var modCount = 0;
+    @volatile private var specificModCount = 0;
 
     override def iterator: Iterator[B] = collection.iterator
 
     override def set(array: Array[A]): Unit = {
-        modCount += 1
-
+        specificModCount += 1
         collection.clear()
         array.foreach(add)
     }
 
     override def add(e: A): Unit = {
-        modCount += 1
 
         val el = safeMap(e)
         listeners.applyAll((ADD, size - 1, Option(el)))
@@ -32,7 +30,6 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
     }
 
     override def add(a: Int, e: A): Unit = {
-        modCount += 1
 
         val el = safeMap(e)
         listeners.applyAll((ADD, a, Option(el)))
@@ -40,14 +37,15 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
     }
 
     override def remove(i: Int): Unit = {
-        modCount += 1
+        specificModCount += 1
+
 
         val el = collection.remove(i)
         listeners.applyAll((REMOVE, i, Option(el)))
     }
 
     override def clear(): Unit = {
-        modCount += 1
+        specificModCount += 1
 
         listeners.applyAll((CLEAR, -1, None))
         collection.clear()
@@ -55,6 +53,7 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
 
     override def set(i: Int, a: A): Unit = {
         val el = safeMap(a)
+
         listeners.applyAll((SET, i, Option(el)))
         collection.update(i, el)
     }
@@ -64,12 +63,12 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
     }
 
     private def safeMap(a: A): B = {
-        val lastModCount = modCount
+        val lastModCount = specificModCount
         println(s"a = ${a}")
         val t: Any = map(a)
-        println(s"map result = ${t}")
+        println(s"t = ${t}")
         val v = t.asInstanceOf[B]
-        if (modCount != lastModCount)
+        if (specificModCount != lastModCount)
             throw new ConcurrentModificationException("Bounded Collection got modified during mapping.")
         v
     }

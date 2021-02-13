@@ -10,7 +10,6 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
     private val list = ListBuffer.empty[A]
     private val lock = new Object
 
-
     override def add(e: A): Boolean = {
         list += e
         lock.synchronized {
@@ -124,6 +123,8 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
         list.foreach(e => buff.addOne(e))
         buff.toArray.asInstanceOf[Array[AnyRef]]
     }
+
+    override def toString: String = list.toArray[Any].mkString("ProvidedBlockingQueue(", ", ", ")")
 
     override def toArray[T](a: Array[T with Object]): Array[T with Object] = {
         toArray.asInstanceOf[Array[T with Object]]

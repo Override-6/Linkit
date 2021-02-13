@@ -8,7 +8,7 @@ import fr.`override`.linkit.api.network.cache.map.SharedMap
 import fr.`override`.linkit.api.packet.fundamental.{ValPacket, WrappedPacket}
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
@@ -18,7 +18,7 @@ import scala.util.control.NonFatal
 class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: PacketTraffic) {
 
     private val communicator = traffic.createInjectable(11, ChannelScope.broadcast, CommunicationPacketChannel.providable)
-    private val broadcastChannel = communicator.subInjectable(CommunicationPacketChannel, false)
+    println(s"Damny communicator = ${communicator}")
 
     private val relayID = traffic.relayID
     private val isHandlingSelf = ownerID == relayID
@@ -38,25 +38,35 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
     def get[A](key: Int): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
 
-    def apply[A](key: Int): A = sharedObjects.get(key).get.asInstanceOf[A]
+    def apply[A](key: Int): A = {
+        println(s"<$family, $ownerID> getting shared instance for key $key")
+        get(key).get
+    }
 
     def get[A <: HandleableSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A]): A = {
         LocalCacheHandler
                 .findCache[A](cacheID)
                 .getOrElse {
+                    println(s"<$family, $ownerID> OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
                     val baseContent: Array[Any] = retrieveBaseContent(cacheID)
-                    val sharedCache = factory.createNew(family, cacheID, baseContent, broadcastChannel)
+                    println(s"<$family, $ownerID> CONTENT RECEIVED (${baseContent.mkString("Array(", ", ", ")")}) FOR CACHE $cacheID")
+                    val sharedCache = factory.createNew(family, cacheID, baseContent, communicator)
                     LocalCacheHandler.register(cacheID, sharedCache)
                     sharedCache
                 }
     }
 
     private def retrieveBaseContent(cacheID: Int): Array[Any] = {
+        println(s"<$family, $ownerID> RETRIEVING BASE CONTENT FOR CACHE num $cacheID")
+        println(s"<$family, $ownerID> cacheOwners = ${cacheOwners}")
         if (!cacheOwners.contains(cacheID)) {
+            println(s"<$family, $ownerID> Does not exists, setting current relay as owner of this cache.")
             cacheOwners.put(cacheID, relayID)
+            println(s"<$family, $ownerID> cacheOwners are now ${cacheOwners}")
             return Array()
         }
         val owner = cacheOwners(cacheID)
+        println(s"<$family, $ownerID> owner is $owner")
         val content = retrieveBaseContent(cacheID, owner)
         content
     }
@@ -64,8 +74,12 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
     private def retrieveBaseContent(cacheID: Int, owner: String): Array[Any] = LocalCacheHandler.synchronized {
         if (cacheID == -1 && isHandlingSelf)
             return Array()
+        println(s"<$family, $ownerID> Sending request to owner $owner in order to retrieve content of cache number $cacheID")
         communicator.sendRequest(WrappedPacket(family, ValPacket(cacheID)), owner)
-        communicator.nextResponse(ValPacket).casted[Array[Any]] //The request will return the cache content
+        println(s"<$family, $ownerID> request sent !")
+        val content = communicator.nextResponse[ValPacket].casted[Array[Any]] //The request will return the cache content
+        println(s"<$family, $ownerID> Content received ! (${content.mkString("Array(", ", ", ")")})")
+        content
     }
 
     private def init(): SharedMap[Int, String] = {
@@ -76,7 +90,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
         val content = retrieveBaseContent(-1, ownerID)
 
-        val cacheOwners = SharedMap[Int, String].createNew(family, -1, content, broadcastChannel)
+        val cacheOwners = SharedMap[Int, String].createNew(family, -1, content, communicator)
         LocalCacheHandler.register(-1, cacheOwners)
         cacheOwners
                 .foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
@@ -86,25 +100,28 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
     private def initPacketHandling(): Unit = {
         communicator.addRequestListener((packet, coords) => {
             packet match {
-                case WrappedPacket(tag, subPacket) => if (tag == family)
-                    handlePacket(subPacket, coords)
+                case WrappedPacket(tag, subPacket) =>
+                    if (tag == family)
+                        handlePacket(subPacket, coords)
             }
         })
     }
 
 
-    private def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
+    private def handlePacket(packet: Packet, coords: DedicatedPacketCoordinates): Unit = {
+        println(s"<$family, $ownerID> HANDLING PACKET ${packet}, $coords")
+
+        awaitReady()
         packet match {
             //Normal packet
             case WrappedPacket(key, subPacket) =>
-                awaitReady()
                 LocalCacheHandler.injectPacket(key.toInt, subPacket, coords)
 
             //Cache initialisation packet
             case ValPacket(value) =>
                 val cacheID = value.asInstanceOf[Int]
                 val senderID: String = coords.senderID
-
+                println(s"<$family, $ownerID> RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
                 val content = if (cacheID == -1) {
                     if (cacheOwners == null) {
                         Array[Any]()
@@ -112,8 +129,9 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
                     else cacheOwners.currentContent
                 }
                 else LocalCacheHandler.getContent(cacheID)
-
+                println(s"<$family, $ownerID> Content = ${content.mkString("Array(", ", ", ")")}")
                 communicator.sendResponse(ValPacket(content), senderID)
+                println("Packet sent :D")
         }
     }
 
@@ -173,7 +191,10 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 object SharedCacheHandler {
 
     def create(identifier: String, ownerID: String)(implicit traffic: PacketTraffic): SharedCacheHandler = {
-        new SharedCacheHandler(identifier, ownerID)(traffic)
+        println(s"--> CREATING SHARED CACHE HANDLER <$identifier, $ownerID>")
+        val cache = new SharedCacheHandler(identifier, ownerID)(traffic)
+        println(s"--> SHARED CACHE HANDLER CREATED <$identifier, $ownerID>")
+        cache
     }
 
     object MockCache extends HandleableSharedCache("", -1, null) {

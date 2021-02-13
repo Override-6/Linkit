@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.`extension`.fragment
 
 import fr.`override`.linkit.api.packet.traffic.PacketSender
 import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
 import org.jetbrains.annotations.NotNull
 
 abstract class RemoteFragment extends ExtensionFragment {
@@ -10,7 +10,7 @@ abstract class RemoteFragment extends ExtensionFragment {
 
     val nameIdentifier: String
 
-    def handleRequest(packet: Packet, coords: PacketCoordinates): Unit
+    def handleRequest(packet: Packet, coords: DedicatedPacketCoordinates): Unit
 
     @NotNull
     protected def packetSender(): PacketSender = {

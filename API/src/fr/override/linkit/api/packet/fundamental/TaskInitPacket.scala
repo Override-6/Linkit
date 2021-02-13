@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-import fr.`override`.linkit.api.packet.{Packet, PacketCompanion}
+import fr.`override`.linkit.api.packet.Packet
 
 //TODO doc parameters
 /**
@@ -23,6 +23,3 @@ case class TaskInitPacket(taskType: String,
     lazy val haveContent: Boolean = !content.isEmpty
 }
 
-object TaskInitPacket extends PacketCompanion[TaskInitPacket] {
-    override val identifier: Int = 3
-}

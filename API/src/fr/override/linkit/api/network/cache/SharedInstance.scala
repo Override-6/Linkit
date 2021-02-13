@@ -68,14 +68,10 @@ class SharedInstance[A <: Serializable] private(family: String,
 object SharedInstance {
 
     def apply[A <: Serializable]: SharedCacheFactory[SharedInstance[A]] = {
-        new SharedCacheFactory[SharedInstance[A]] {
-            override def createNew(family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel): SharedInstance[A] = {
-                if (baseContent.isEmpty)
-                    new SharedInstance[A](family, identifier, channel)
-                else new SharedInstance[A](family, identifier, channel, baseContent(0).asInstanceOf[A])
-            }
-
-            override def sharedCacheClass: Class[SharedInstance[A]] = classOf[SharedInstance[A]]
+        (family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+            if (baseContent.isEmpty)
+                new SharedInstance[A](family, identifier, channel)
+            else new SharedInstance[A](family, identifier, channel, baseContent(0).asInstanceOf[A])
         }
     }
 

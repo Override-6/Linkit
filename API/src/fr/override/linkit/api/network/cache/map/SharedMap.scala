@@ -116,8 +116,8 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
             }
         }
 
-        addListener(listener)                       //Due to hyper parallelized thread execution,
-                                                    //the awaited key could be added since the 'found' value has been created.
+        addListener(listener) //Due to hyper parallelized thread execution,
+        //the awaited key could be added since the 'found' value has been created.
         RelayWorkerThreadPool.smartProvide(lock, !(contains(k) || found))
         removeListener(listener)
         apply(k)
@@ -239,13 +239,8 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
 
 object SharedMap {
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        new SharedCacheFactory[SharedMap[K, V]] {
-
-            override def createNew(family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel): SharedMap[K, V] = {
-                new SharedMap[K, V](family, identifier, ScalaUtils.slowCopy(baseContent), channel)
-            }
-
-            override def sharedCacheClass: Class[SharedMap[K, V]] = classOf[SharedMap[K, V]]
+        (family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+            new SharedMap[K, V](family, identifier, ScalaUtils.slowCopy(baseContent), channel)
         }
     }
 

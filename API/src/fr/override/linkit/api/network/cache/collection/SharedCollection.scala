@@ -175,16 +175,11 @@ object SharedCollection {
      * The insertFilter must be true in order to authorise the insertion
      * */
     def ofInsertFilter[A](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
-        new SharedCacheFactory[SharedCollection[A]] {
+        (family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+            var adapter: CollectionAdapter[A] = null
+            adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
 
-            override def createNew(family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel): SharedCollection[A] = {
-                var adapter: CollectionAdapter[A] = null
-                adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
-
-                new SharedCollection[A](family, identifier, adapter, channel)
-            }
-
-            override def sharedCacheClass: Class[SharedCollection[A]] = classOf[SharedCollection[A]]
+            new SharedCollection[A](family, identifier, adapter, channel)
         }
     }
 

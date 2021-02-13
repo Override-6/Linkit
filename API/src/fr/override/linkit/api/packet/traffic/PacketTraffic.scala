@@ -17,10 +17,6 @@ trait PacketTraffic extends JustifiedCloseable {
     def createInjectable[C <: PacketInjectable : ClassTag](id: Int,
                                                            scopeFactory: ScopeFactory[_ <: ChannelScope],
                                                            factory: PacketInjectableFactory[C]): C
-    
-    def createInjectableNoConflicts[C <: PacketInjectable : ClassTag](id: Int,
-                                                                      scopeFactory: ScopeFactory[_ <: ChannelScope],
-                                                                      factory: PacketInjectableFactory[C]): C
 
     @relayWorkerExecution
     def handleInjection(injection: PacketInjection): Unit

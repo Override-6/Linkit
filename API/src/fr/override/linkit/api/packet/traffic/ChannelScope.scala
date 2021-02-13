@@ -3,25 +3,25 @@ package fr.`override`.linkit.api.packet.traffic
 import fr.`override`.linkit.api.exception.ForbiddenIdentifierException
 import fr.`override`.linkit.api.packet.Packet
 
-import scala.collection.mutable.{Set => MSet}
-
 trait ChannelScope {
     val writer: PacketWriter
 
     def sendToAll(packet: Packet): Unit
 
-    def sendTo(targetID: String, packet: Packet): Unit
+    def sendTo(packet: Packet, targetIDs: String*): Unit
 
-    def isAuthorised(identifier: String): Boolean
+    def areAuthorised(identifiers: String*): Boolean
 
     def copyFromWriter(writer: PacketWriter): ChannelScope
 
     def canConflictWith(scope: ChannelScope): Boolean
 
-    def assertAuthorised(identifier: String): Unit = {
-        if (!isAuthorised(identifier))
-            throw new ForbiddenIdentifierException(s"this identifier '${identifier}' is not authorised by this scope.")
+    def assertAuthorised(identifiers: String*): Unit = {
+        if (!areAuthorised(identifiers: _*))
+            throw new ForbiddenIdentifierException(s"this identifier '${identifiers}' is not authorised by this scope.")
     }
+
+    def equals(obj: Any): Boolean
 
 }
 
@@ -30,11 +30,11 @@ object ChannelScope {
     final case class BroadcastScope private(override val writer: PacketWriter) extends ChannelScope {
         override def sendToAll(packet: Packet): Unit = writer.writeBroadcastPacket(packet)
 
-        override def sendTo(targetID: String, packet: Packet): Unit = {
-            writer.writePacket(packet, targetID)
+        override def sendTo(packet: Packet, targetIDs: String*): Unit = {
+            writer.writePacket(packet, targetIDs: _*)
         }
 
-        override def isAuthorised(identifier: String): Boolean = true //everyone is authorised in a BroadcastScope
+        override def areAuthorised(identifiers: String*): Boolean = true //everyone is authorised in a BroadcastScope
 
         override def canConflictWith(scope: ChannelScope): Boolean = {
             //As Long As everyone is authorised by a BroadcastScope,
@@ -43,77 +43,37 @@ object ChannelScope {
         }
 
         override def copyFromWriter(writer: PacketWriter): BroadcastScope = BroadcastScope(writer)
+
+        override def equals(obj: Any): Boolean = {
+            obj.isInstanceOf[BroadcastScope]
+        }
     }
 
-    final case class ImmutableScope private(override val writer: PacketWriter, authorisedIds: String*) extends ChannelScope {
+    final case class ReservedScope private(override val writer: PacketWriter, authorisedIds: String*) extends ChannelScope {
         override def sendToAll(packet: Packet): Unit = {
             authorisedIds.foreach(writer.writePacket(packet, _))
         }
 
-        override def sendTo(targetID: String, packet: Packet): Unit = {
-            assertAuthorised(targetID)
-            writer.writePacket(packet, targetID)
+        override def sendTo(packet: Packet, targetIDs: String*): Unit = {
+            assertAuthorised(targetIDs:_*)
+            writer.writePacket(packet, targetIDs:_*)
         }
 
-        override def isAuthorised(identifier: String): Boolean = {
-            authorisedIds.contains(identifier)
+        override def areAuthorised(identifier: String*): Boolean = {
+            authorisedIds.containsSlice(identifier)
         }
 
-        override def copyFromWriter(writer: PacketWriter): ImmutableScope = ImmutableScope(writer, authorisedIds: _*)
+        override def copyFromWriter(writer: PacketWriter): ReservedScope = ReservedScope(writer, authorisedIds: _*)
 
         override def canConflictWith(scope: ChannelScope): Boolean = {
-            authorisedIds.exists(scope.isAuthorised)
+            scope.areAuthorised(authorisedIds: _*)
         }
-    }
 
-    final case class MutableScope private(override val writer: PacketWriter) extends ChannelScope {
-        private val authorisedIds = MSet.empty[String]
-        @volatile private var reverseAuthorisation = false
-
-        override def sendToAll(packet: Packet): Unit = {
-            if (reverseAuthorisation) {
-                //NOTE: This array represent the DISCARDED identifiers that will NOT receive any packet
-                val discarded = authorisedIds.toArray
-                writer.writeBroadcastPacket(packet, discarded)
-            } else {
-                authorisedIds.foreach(writer.writePacket(packet, _))
+        override def equals(obj: Any): Boolean = {
+            obj match {
+                case ReservedScope(authorisedIds) => authorisedIds == this.authorisedIds
+                case _ => false
             }
-        }
-
-        override def sendTo(targetID: String, packet: Packet): Unit = {
-            assertAuthorised(targetID)
-            writer.writePacket(packet, targetID)
-        }
-
-        override def isAuthorised(identifier: String): Boolean = {
-
-            val authorised = authorisedIds.contains(identifier)
-            (reverseAuthorisation && !authorised) || (!reverseAuthorisation && authorised)
-        }
-
-        override def copyFromWriter(writer: PacketWriter): MutableScope = {
-            val scope = MutableScope(writer)
-            scope.authorisedIds.addAll(authorisedIds)
-            scope.reverseAuthorisation = reverseAuthorisation
-            scope
-        }
-
-        def authorise(identifier: String): Unit = authorisedIds += identifier
-
-        def prohibit(identifier: String): Unit = authorisedIds -= identifier
-
-        def authoriseAll(): Unit = {
-            reverseAuthorisation = true
-            authorisedIds.clear()
-        }
-
-        def prohibitAll(): Unit = {
-            reverseAuthorisation = false
-            authorisedIds.clear()
-        }
-
-        override def canConflictWith(scope: ChannelScope): Boolean = {
-            authorisedIds.exists(scope.isAuthorised)
         }
     }
 
@@ -123,12 +83,6 @@ object ChannelScope {
 
     def broadcast: ScopeFactory[BroadcastScope] = BroadcastScope(_)
 
-    def immutable(default: String*): ScopeFactory[ImmutableScope] = ImmutableScope(_, default: _*)
-
-    def mutable(default: String*): ScopeFactory[MutableScope] = writer => {
-        val scope = MutableScope(writer)
-        default.foreach(scope.authorise)
-        scope
-    }
+    def reserved(authorised: String*): ScopeFactory[ReservedScope] = ReservedScope(_, authorised: _*)
 
 }

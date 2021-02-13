@@ -6,7 +6,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.packet.fundamental.ValPacket
-import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.system.Version
 
@@ -22,12 +22,12 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override val connectionDate: Timestamp = cache(2)
     private val remoteFragments = {
         val communicator = traffic
-                .createInjectable(4, ChannelScope.broadcast, CommunicationPacketChannel.providable)
-                .subInjectable(Array(identifier), CommunicationPacketChannel.providable, true)
+                .createInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
+                .subInjectable(Array(identifier), PacketChannelCategories, true)
 
         cache
                 .get(6, SharedCollection.set[String])
-                .mapped(new RemoteFragmentController(_, communicator))
+                .mapped(name => new RemoteFragmentController(name, communicator.createCategory(name, ChannelScope.broadcast, CommunicationPacketChannel)))
     }
 
     override def addOnStateUpdate(action: ConnectionState => Unit): Unit
@@ -36,7 +36,7 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
 
     override def getProperty(name: String): Serializable = {
         communicator.sendRequest(ValPacket(("getProp", name)))
-        communicator.nextResponse(ValPacket).casted
+        communicator.nextResponse[ValPacket].casted
     }
 
     override def setProperty(name: String, value: Serializable): Unit = {

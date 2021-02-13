@@ -11,38 +11,42 @@ import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
 abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
                                      @NotNull private val ownerId: String) extends PacketTraffic {
 
     override val relayID: String = ownerId
-    private val scopes = mutable.Map.empty[Int, IdentifierScopes]
+    private val holders = mutable.Map.empty[Int, ScopesHolder]
     @volatile private var closed = false
 
     private val lostInjections = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
 
-    override def createInjectable[A <: PacketInjectable : ClassTag](id: Int,
+    override def createInjectable[C <: PacketInjectable : ClassTag](id: Int,
                                                                     scopeFactory: ScopeFactory[_ <: ChannelScope],
-                                                                    factory: PacketInjectableFactory[A]): A = {
-        completeCreation(scopeFactory(newWriter(id)), factory)
-    }
-
-    override def createInjectableNoConflicts[C <: PacketInjectable : ClassTag](id: Int,
-                                                                               scopeFactory: ScopeFactory[_ <: ChannelScope],
-                                                                               factory: PacketInjectableFactory[C]): C = {
+                                                                    factory: PacketInjectableFactory[C]): C = {
         val scope = scopeFactory(newWriter(id))
-        if (canConflict(id, scope)) {
-            throw new ConflictException("This scope can conflict with other scopes that are registered within this injectable identifier")
+        val holderOpt = holders.get(id)
+        if (holderOpt.isDefined) {
+            val holder = holderOpt.get
+            val attempt = holder.tryRetrieveInjectable(scope)
+            if (attempt.isDefined) {
+                return attempt.get
+            }
+
+            if (holder.canConflict(scope)) {
+                throw new ConflictException("This scope can conflict with other scopes that are registered within this injectable identifier")
+            }
         }
+
         completeCreation(scope, factory)
     }
 
     override def canConflict(identifier: Int, scope: ChannelScope): Boolean = {
-        scopes
-            .get(identifier)
-            .exists(_.canConflict(scope))
+        holders
+                .get(identifier)
+                .exists(_.canConflict(scope))
     }
 
     private def completeCreation[C <: PacketInjectable](scope: ChannelScope, factory: PacketInjectableFactory[C]): C = {
@@ -55,15 +59,14 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
         ensureOpen()
 
         val id = dedicated.identifier
-
         init(dedicated)
 
-        scopes.getOrElseUpdate(id, IdentifierScopes(id)).register(scope, dedicated)
+        holders.getOrElseUpdate(id, ScopesHolder(id)).register(scope, dedicated)
     }
 
     private def init(injectable: PacketInjectable): Unit = {
 
-        if (scopes.size > config.maxPacketContainerCacheSize) {
+        if (holders.size > config.maxPacketContainerCacheSize) {
             throw new RelayException("Maximum registered packet containers limit exceeded")
         }
 
@@ -71,13 +74,13 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
         //Will inject every lost packets
         lostInjections
-            .get(id)
-            .foreach(_.foreach(injectable.inject))
+                .get(id)
+                .foreach(_.foreach(injectable.inject))
         lostInjections.remove(id)
     }
 
     private def getInjectables(identifier: Int, target: String): Iterable[PacketInjectable] = {
-        val opt = scopes.get(identifier)
+        val opt = holders.get(identifier)
 
         if (opt.isEmpty)
             return Iterable()
@@ -86,9 +89,9 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
     }
 
     override def close(reason: CloseReason): Unit = {
-        scopes.values
-            .foreach(_.close(reason))
-        scopes.clear()
+        holders.values
+                .foreach(_.close(reason))
+        holders.clear()
         closed = true
     }
 
@@ -100,8 +103,12 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
     }
 
     override def handleInjection(injection: PacketInjection): Unit = {
-        if (injection.mayNotHandle)
+        if (injection.mayNotHandle) {
+            println(s"Injection handling has been rejected for thread ${Thread.currentThread()}")
+            println(s"The injection is already handled by thread ${injection.handlerThread}")
+            injection.handlerThread.getStackTrace.foreach(println)
             return
+        }
 
         val coordinates = injection.coordinates
         PacketWorkerThread.checkNotCurrent()
@@ -119,7 +126,7 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
         injectables.foreach(_.inject(injection))
     }
 
-    protected case class IdentifierScopes(identifier: Int) extends JustifiedCloseable {
+    protected case class ScopesHolder(identifier: Int) extends JustifiedCloseable {
 
         private val cache = mutable.Set.empty[(ChannelScope, PacketInjectable)]
         private var closed = false
@@ -141,14 +148,21 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
         }
 
         def isAuthorised(targetID: String): Boolean = {
-            cache.exists(_._1.isAuthorised(targetID))
+            cache.exists(_._1.areAuthorised(targetID))
         }
 
         def getInjectables(target: String): Seq[PacketInjectable] = {
             cache
-                .filter(_._1.isAuthorised(target))
-                .map(_._2)
-                .toSeq
+                    .filter(_._1.areAuthorised(target))
+                    .map(_._2)
+                    .toSeq
+        }
+
+        def tryRetrieveInjectable[I <: PacketInjectable : ClassTag](scope: ChannelScope): Option[I] = {
+            val injectableClass = classTag[I].runtimeClass
+            cache.find(tuple => tuple._1 == scope && tuple._2.getClass == injectableClass)
+                    .map(_._2)
+                    .asInstanceOf[Option[I]]
         }
 
         def register(scope: ChannelScope, injectable: PacketInjectable): Unit = {
