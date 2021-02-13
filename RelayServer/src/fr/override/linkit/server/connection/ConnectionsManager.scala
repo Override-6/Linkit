@@ -2,9 +2,9 @@ package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.packet.fundamental.IntPacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
@@ -87,13 +87,13 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
     /**
      * Broadcast bytes sequence to every connected clients
      * */
-    def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discarded: Array[String] = Array()): Unit = {
+    def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
         PacketWorkerThread.checkNotCurrent()
         val translator = server.packetTranslator
         connections.values
-                .filter(con => !discarded.contains(con.identifier) && con.isConnected)
+                .filter(con => !discardedIDs.contains(con.identifier) && con.isConnected)
                 .foreach(connection => {
-                    val coordinates = PacketCoordinates(injectableID, connection.identifier, senderID)
+                    val coordinates = DedicatedPacketCoordinates(injectableID, connection.identifier, senderID)
                     val bytes = translator.fromPacketAndCoordsNoWrap(packet, coordinates)
                     connection.sendBytes(bytes)
                 })
@@ -115,9 +115,12 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @param identifier the identifier linked [[ClientConnection]]
      * @return the found [[ClientConnection]] bound with the identifier
      * */
-    @Nullable def getConnection(identifier: String): ClientConnection = connections.get(identifier).orNull
+    @Nullable
+    def getConnection(identifier: String): ClientConnection = connections.get(identifier).orNull
 
     def countConnected: Int = connections.size
+
+    def listIdentifiers: Seq[String] = connections.keys.toSeq
 
     /**
      * determines if the address is not registered

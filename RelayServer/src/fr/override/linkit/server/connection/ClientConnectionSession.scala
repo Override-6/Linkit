@@ -2,7 +2,7 @@ package fr.`override`.linkit.server.connection
 
 import java.net.Socket
 
-import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity, RemoteConsole}
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic.SystemChannelID
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
@@ -13,12 +13,13 @@ import fr.`override`.linkit.server.task.ConnectionTasksHandler
 case class ClientConnectionSession private(identifier: String,
                                            private val socket: SocketContainer,
                                            server: RelayServer) extends JustifiedCloseable {
-    val serverTraffic     : PacketTraffic             = server.traffic
-    val channel     : SystemPacketChannel       = serverTraffic.createInjectable(SystemChannelID, ChannelScope.immutable(identifier), SystemPacketChannel)
-    val packetReader: ConnectionPacketReader    = new ConnectionPacketReader(socket, server, identifier)
-    val tasksHandler: ConnectionTasksHandler    = new ConnectionTasksHandler(this)
-    val outConsole  : RemoteConsole             = server.getConsoleOut(identifier)
-    val errConsole  : RemoteConsole             = server.getConsoleErr(identifier)
+
+    val serverTraffic: PacketTraffic             = server traffic
+    val channel      : SystemPacketChannel       = serverTraffic.createInjectable(SystemChannelID, ChannelScope.reserved(identifier), SystemPacketChannel)
+    val packetReader : ConnectionPacketReader    = new ConnectionPacketReader(socket, server, identifier)
+    val tasksHandler : ConnectionTasksHandler    = new ConnectionTasksHandler(this)
+    val outConsole   : RemoteConsole             = server.getConsoleOut(identifier)
+    val errConsole   : RemoteConsole             = server.getConsoleErr(identifier)
 
     @relayWorkerExecution
     override def close(reason: CloseReason): Unit = {

@@ -132,12 +132,12 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.broadcastMessage(err, "(broadcast) " + msg)
     }
 
-    def broadcastPacketToConnections(packet: Packet, sender: String, injectableID: Int, discarded: Array[String] = Array()): Unit = {
+    def broadcastPacketToConnections(packet: Packet, sender: String, injectableID: Int, discarded: String*): Unit = {
         if (connectionsManager.countConnected - discarded.length <= 0) {
-            // There is nowere to send this packet.
+            // There is nowhere to send this packet.
             return
         }
-        connectionsManager.broadcastBytes(packet, injectableID, sender, discarded.appended(identifier))
+        connectionsManager.broadcastBytes(packet, injectableID, sender, discarded.appended(identifier): _*)
     }
 
     /**
@@ -194,13 +194,13 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     private def sendAuthoriseConnection(socket: DynamicSocket): Unit = {
         val responsePacket = IntPacket(1)
-        val coordinates = PacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
+        val coordinates = DedicatedPacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(responsePacket, coordinates))
     }
 
     private def sendRefusedConnection(socket: DynamicSocket, message: String): Unit = {
         val codePacket = IntPacket(2)
-        val coordinates = PacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
+        val coordinates = DedicatedPacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(codePacket, coordinates))
         socket.write(packetTranslator.fromPacketAndCoords(StringPacket(message), coordinates))
     }

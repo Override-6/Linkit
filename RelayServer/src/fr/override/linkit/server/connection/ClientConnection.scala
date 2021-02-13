@@ -52,7 +52,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
     def sendPacket(packet: Packet, channelID: Int): Unit = {
         runLater {
-            val bytes = packetTranslator.fromPacketAndCoords(packet, PacketCoordinates(channelID, identifier, server.identifier))
+            val bytes = packetTranslator.fromPacketAndCoords(packet, DedicatedPacketCoordinates(channelID, identifier, server.identifier))
             session.send(bytes)
         }
     }
@@ -105,7 +105,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         }
 
         @relayWorkerExecution
-        private def handlePacket(packet: Packet, coordinates: PacketCoordinates, number: Int): Unit = {
+        private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): Unit = {
             if (closed)
                 return
 
