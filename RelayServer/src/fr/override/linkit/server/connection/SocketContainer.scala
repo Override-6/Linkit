@@ -10,7 +10,7 @@ class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnec
     override def boundIdentifier: String = identifier
     var identifier: String = "$NOT SET$"
 
-    def set(socket: Socket): Unit = synchronized {
+    def set(socket: Socket): Unit = this.synchronized {
         if (currentSocket != null && !autoReconnect)
             closeCurrentStreams()
 
@@ -24,11 +24,11 @@ class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnec
     def get: Socket = currentSocket
 
     override protected def handleReconnection(): Unit = {
-        synchronized {
+        this.synchronized {
             try {
                 wait()
             } catch {
-                case e:InterruptedException => //thrown when the reconnection is brutally stopped (ex: server stopped, critical error...)
+                case _:InterruptedException => //thrown when the reconnection is brutally stopped (ex: server stopped, critical error...)
             }
         }
     }

@@ -61,7 +61,6 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
                 //TODO optimise packet deflection : only serialize the new coordinates, then concat the packet bytes
                 val connectionsManager = server.connectionsManager
                 val identifiers = broadcast.listDiscarded(connectionsManager.listIdentifiers) ++ Array(identifier)
-                println(s"coordinates: $broadcast, packet will NOT be sent to $identifiers")
                 manager.broadcastBytes(packet, broadcast.injectableID, identifier, identifiers: _*)
 
                 //would inject into the server too
