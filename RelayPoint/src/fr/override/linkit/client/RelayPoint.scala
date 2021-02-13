@@ -42,7 +42,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
     override val properties: RelayProperties = new RelayProperties()
     private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
-    implicit val systemChannel: SystemPacketChannel = traffic.createInjectable(SystemChannelID, ChannelScope.mutable(ServerIdentifier), SystemPacketChannel)
+    implicit val systemChannel: SystemPacketChannel = traffic.createInjectable(SystemChannelID, ChannelScope.reserved(ServerIdentifier), SystemPacketChannel)
     private val tasksHandler: ClientTasksHandler = new ClientTasksHandler(systemChannel, this)
     private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler()
@@ -116,7 +116,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     override def isConnected(identifier: String): Boolean = {
         systemChannel.sendOrder(SystemOrder.CHECK_ID, CloseReason.INTERNAL, identifier.getBytes)
-        val response = systemChannel.nextPacket(IntPacket).value
+        val response = systemChannel.nextPacket[IntPacket].value
         response == 1
     }
 
@@ -144,7 +144,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         RelayTaskAction.of(task)
     }
 
-    private def handleSystemPacket(system: SystemPacket, coords: PacketCoordinates): Unit = {
+    private def handleSystemPacket(system: SystemPacket, coords: DedicatedPacketCoordinates): Unit = {
         val order = system.order
         val reason = system.reason.reversedPOV()
         val sender = coords.senderID
@@ -173,10 +173,10 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         socket.write(welcomePacket)
         socket.addConnectionStateListener(state => if (state == ConnectionState.CONNECTED) socket.write(welcomePacket))
 
-        val response = systemChannel.nextPacket(IntPacket)
+        val response = systemChannel.nextPacket[IntPacket]
         val code = response.value
         if (code != 1) {
-            val refusalMessage = systemChannel.nextPacket(StringPacket).value
+            val refusalMessage = systemChannel.nextPacket[StringPacket].value
             throw RelayInitialisationException(refusalMessage)
         }
 
@@ -213,7 +213,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             throw new RelayException(s"Target '$targetID' does not exists !")
     }
 
-    private def checkCoordinates(coordinates: PacketCoordinates): Unit = {
+    private def checkCoordinates(coordinates: DedicatedPacketCoordinates): Unit = {
         val targetID = coordinates.targetID
         if (targetID == identifier || targetID == "unknown")
             return
@@ -225,13 +225,15 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         throw new UnexpectedPacketException(msg)
     }
 
-    private def handlePacket(packet: Packet, coordinates: PacketCoordinates, number: Int): Unit = {
+    private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): Unit = {
         packet match {
             case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
             case system: SystemPacket => handleSystemPacket(system, coordinates)
             case _: Packet =>
                 val injection = PacketInjections.createInjection(packet, coordinates, number)
+                println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
                 traffic.handleInjection(injection)
+                println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }
 
@@ -266,7 +268,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             if (bytes == null)
                 return
             //NETWORK-DEBUG-MARK
-            println(s"received : ${new String(bytes).replace('\n',' ')} (l: ${bytes.length})")
+            println(s"received : ${new String(bytes).replace('\n', ' ').replace('\r', ' ')} (l: ${bytes.length})")
             val packetNumber = packetsReceived + 1
             packetsReceived += 1
 
@@ -275,9 +277,13 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
                 //println(s"RECEIVED PACKET $packet WITH COORDINATES $coordinates. This packet will be handled in thread ${Thread.currentThread()}")
 
-                if (configuration.checkReceivedPacketTargetID)
-                    checkCoordinates(coordinates)
-                handlePacket(packet, coordinates, packetNumber)
+                coordinates match {
+                    case dedicated: DedicatedPacketCoordinates =>
+                        if (configuration.checkReceivedPacketTargetID)
+                            checkCoordinates(dedicated)
+                        handlePacket(packet, dedicated, packetNumber)
+                    case other => throw new UnexpectedPacketException(s"Only DedicatedPacketCoordinates can be handled by a RelayPoint. Received : ${other.getClass.getName}")
+                }
             }
         }
 

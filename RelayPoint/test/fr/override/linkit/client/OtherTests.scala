@@ -2,7 +2,7 @@ package fr.`override`.linkit.client
 
 import fr.`override`.linkit.api.packet.fundamental.{ValPacket, WrappedPacket}
 import fr.`override`.linkit.api.packet.serialization.RawPacketSerializer
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.Utils
 
 import scala.annotation.tailrec
@@ -13,16 +13,18 @@ object OtherTests {
     private val serializer = new RawPacketSerializer
 
     def main(args: Array[String]): Unit = try {
-        makeSomething(1)
+        // makeSomething(1)
+        for (i <- 0 to 50000)
+            println(i)
     } catch {
         case NonFatal(e) => e.printStackTrace(Console.out)
     }
 
     @tailrec
-    def makeSomething(i: Int): Unit = {
+    def makeSomething(times: Int): Unit = {
         import fr.`override`.linkit.api.network.cache.map.MapModification._
         val packet = WrappedPacket("req", WrappedPacket("Global Shared Cache", WrappedPacket("14", ValPacket((PUT, 1624446167, "fr.override.linkit.api.packet.fundamental.ValPacket")))))
-        val coords = PacketCoordinates(11, "server", "a")
+        val coords = DedicatedPacketCoordinates(11, "server", "a")
 
         println("SERIALIZING...")
         val bytes = serialize(packet, coords)
@@ -37,8 +39,8 @@ object OtherTests {
         println("packet, coords = " + (packet0, coords0))
         println(s"ref = ${(packet, coords)}")
 
-        if (i > 0)
-            makeSomething(i - 1)
+        if (times > 0)
+            makeSomething(times - 1)
     }
 
     private def serialize(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
