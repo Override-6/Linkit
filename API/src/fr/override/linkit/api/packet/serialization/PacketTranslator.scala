@@ -39,6 +39,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
 
         def serialize(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
             //Thread.dumpStack()
+            println(s"Serializing packet $packet, $coordinates")
             val serializer = if (initialised) {
                 val whiteListArray = cachedSerializerWhitelist.toArray
                 coordinates.determineSerializer(whiteListArray, rawSerializer, cachedSerializer)

@@ -3,12 +3,13 @@ package fr.`override`.linkit.api.network.cache.map
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.network.cache.map.MapModification._
 import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
-import fr.`override`.linkit.api.packet.fundamental.ValPacket
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
+import java.io.Serializable
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -118,8 +119,8 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
             }
         }
 
-        addListener(listener)   //Due to hyper parallelized thread execution,
-                                //the awaited key could be added since the 'found' value has been created.
+        addListener(listener) //Due to hyper parallelized thread execution,
+        //the awaited key could be added since the 'found' value has been created.
         RelayWorkerThreadPool.smartProvide(lock, !(contains(k) || found))
         removeListener(listener)
         println("Done !")
@@ -128,7 +129,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
 
     override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case ValPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
+            case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
         }
     }
 
@@ -144,7 +145,6 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         }
         action(localMap)
         modCount += 1
-        println(s"MUTATED MAP '$toString'")
         networkListeners.applyAll(mod)
     }
 
@@ -162,7 +162,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
     }
 
     private def flushModification(mod: (MapModification, Any, Any)): Unit = {
-        sendRequest(ValPacket(mod))
+        sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
         modCount += 1
     }
@@ -225,7 +225,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
 
         def contains(key: K): Boolean = mainMap.contains(key)
 
-        def toArray: Array[Any] = mainMap.toArray
+        def toArray: Array[Serializable] = mainMap.toArray
 
         def iterator: Iterator[(K, V)] = mainMap.iterator
 
@@ -237,7 +237,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         override def toString: String = mainMap.toString()
     }
 
-    override def currentContent: Array[Any] = localMap.toArray
+    override def currentContent: Array[Serializable] = localMap.toArray
 }
 
 object SharedMap {

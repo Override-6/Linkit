@@ -5,7 +5,7 @@ import fr.`override`.linkit.api.network.cache.collection.CollectionModification.
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
-import fr.`override`.linkit.api.packet.fundamental.ValPacket
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
@@ -15,10 +15,10 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class SharedCollection[A](family: String,
-                          identifier: Int,
-                          adapter: CollectionAdapter[A],
-                          channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) with mutable.Iterable[A] {
+class SharedCollection[A <: Serializable](family: String,
+                                          identifier: Int,
+                                          adapter: CollectionAdapter[A],
+                                          channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
     private val networkListeners = ConsumerContainer[(CollectionModification, Int, A)]()
@@ -36,7 +36,7 @@ class SharedCollection[A](family: String,
 
     override def toString: String = adapter.toString
 
-    override def currentContent: Array[Any] = adapter.get().toArray
+    override def currentContent: Array[Serializable] = adapter.get().toArray
 
     override def iterator: Iterator[A] = adapter.iterator
 
@@ -119,7 +119,7 @@ class SharedCollection[A](family: String,
     }
 
     private def flushModification(mod: (CollectionModification, Int, Any)): Unit = {
-        sendRequest(ValPacket(mod))
+        sendRequest(ObjectPacket(mod))
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
         //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
@@ -127,13 +127,13 @@ class SharedCollection[A](family: String,
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case modPacket: ValPacket => RelayWorkerThreadPool.smartRun {
+            case modPacket: ObjectPacket => RelayWorkerThreadPool.smartRun {
                 handleNetworkModRequest(modPacket)
             }
         }
     }
 
-    private def handleNetworkModRequest(packet: ValPacket): Unit = {
+    private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
         val mod: (CollectionModification, Int, Any) = packet.casted
         val modKind: CollectionModification = mod._1
         val index: Int = mod._2
@@ -161,20 +161,20 @@ object SharedCollection {
 
     private type S[A] = mutable.Seq[A] with mutable.Growable[A] with mutable.Buffer[A]
 
-    def set[A]: SharedCacheFactory[SharedCollection[A]] = {
+    def set[A <: Serializable]: SharedCacheFactory[SharedCollection[A]] = {
         ofInsertFilter[A]((coll, it) => !coll.contains(it))
     }
 
-    def buffer[A]: SharedCacheFactory[SharedCollection[A]] = {
+    def buffer[A  <: Serializable]: SharedCacheFactory[SharedCollection[A]] = {
         ofInsertFilter[A]((_, _) => true)
     }
 
-    def apply[A]: SharedCacheFactory[SharedCollection[A]] = buffer[A]
+    def apply[A  <: Serializable]: SharedCacheFactory[SharedCollection[A]] = buffer[A]
 
     /**
      * The insertFilter must be true in order to authorise the insertion
      * */
-    def ofInsertFilter[A](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
+    def ofInsertFilter[A  <: Serializable](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
         (family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))

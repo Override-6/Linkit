@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.network.cache
 
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
-import fr.`override`.linkit.api.packet.fundamental.ValPacket
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
@@ -28,7 +28,7 @@ class SharedInstance[A <: Serializable] private(family: String,
     override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         //println(s"<$family> Handling packet $packet")
         packet match {
-            case ValPacket(remoteInstance: A) =>
+            case ObjectPacket(remoteInstance: A) =>
                 this.instance = remoteInstance
                 modCount += 1
                 listeners.applyAll(remoteInstance)
@@ -53,7 +53,7 @@ class SharedInstance[A <: Serializable] private(family: String,
     }
 
     override def flush(): this.type = {
-        sendRequest(ValPacket(instance))
+        sendRequest(ObjectPacket(instance))
         this
     }
 
@@ -62,7 +62,7 @@ class SharedInstance[A <: Serializable] private(family: String,
         this
     }
 
-    override def currentContent: Array[Any] = Array(instance)
+    override def currentContent: Array[Serializable] = Array(instance)
 }
 
 object SharedInstance {

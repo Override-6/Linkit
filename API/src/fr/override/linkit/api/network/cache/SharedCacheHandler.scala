@@ -1,21 +1,22 @@
 package fr.`override`.linkit.api.network.cache
 
-import java.util.NoSuchElementException
-
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler.MockCache
 import fr.`override`.linkit.api.network.cache.map.SharedMap
-import fr.`override`.linkit.api.packet.fundamental.{ValPacket, WrappedPacket}
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.{ArrayPacket, ObjectPacket}
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.IntPacket
+import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
 
+import java.util.NoSuchElementException
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
 //FIXME: Critical bug occurred when a lot of clients are connecting to the server,
-// the packets begin to shift, they are injected multiple times (maybe due to packet coordinates(id/senderID) ambiguity into the PacketInjections class)
+// packets begin to shift, they are injected multiple times (maybe due to packet coordinates(id/senderID) ambiguity into the PacketInjections class)
 // and this is a big problem for this class to initialise completely, which is a big problem for the network's initialisation,
 // which is a big problem for the relay's initialisation....
 class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: PacketTraffic) {
@@ -27,21 +28,21 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
     private val isHandlingSelf = ownerID == relayID
 
     private val cacheOwners: SharedMap[Int, String] = init()
-    private val sharedObjects: SharedMap[Int, Any] = get(1, SharedMap[Int, Any])
+    private val sharedObjects: SharedMap[Int, Serializable] = get(1, SharedMap[Int, Serializable])
     //println(s"<$family, $ownerID> sharedObjects = ${sharedObjects}")
 
     this.synchronized {
         notifyAll() //Releases all awaitReady locks, this action is marking this cache handler as ready.
     }
 
-    def post[A](key: Int, value: A): A = {
+    def post[A <: Serializable](key: Int, value: A): A = {
         sharedObjects.put(key, value)
         value
     }
 
-    def get[A](key: Int): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
+    def get[A <: Serializable](key: Int): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
 
-    def apply[A](key: Int): A = {
+    def apply[A <: Serializable](key: Int): A = {
         //println(s"<$family, $ownerID> getting shared instance for key $key")
         get(key).get
     }
@@ -79,9 +80,9 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
             return Array((1, ownerID))
 
         //println(s"<$family, $ownerID> Sending request to owner $owner in order to retrieve content of cache number $cacheID")
-        communicator.sendRequest(WrappedPacket(family, ValPacket(cacheID)), owner)
+        communicator.sendRequest(WrappedPacket(family, IntPacket(cacheID)), owner)
         //println(s"<$family, $ownerID> request sent !")
-        val content = communicator.nextResponse[ValPacket].casted[Array[Any]] //The request will return the cache content
+        val content = communicator.nextResponse[ObjectPacket].casted[Array[Any]] //The request will return the cache content
         //println(s"<$family, $ownerID> Content received ! (${content.mkString("Array(", ", ", ")")})")
         content
     }
@@ -122,19 +123,18 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
                 LocalCacheHandler.injectPacket(key.toInt, subPacket, coords)
 
             //Cache initialisation packet
-            case ValPacket(value) =>
-                val cacheID = value.asInstanceOf[Int]
+            case IntPacket(cacheID) =>
                 val senderID: String = coords.senderID
                 //println(s"<$family, $ownerID> RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
                 val content = if (cacheID == -1) {
                     if (cacheOwners == null) {
-                        Array[Any]()
+                        Array[Serializable]()
                     }
                     else cacheOwners.currentContent
                 }
                 else LocalCacheHandler.getContent(cacheID)
                 //println(s"<$family, $ownerID> Content = ${content.mkString("Array(", ", ", ")")}")
-                communicator.sendResponse(ValPacket(content), senderID)
+                communicator.sendResponse(ArrayPacket[Serializable](content), senderID)
                 //println("Packet sent :D")
         }
     }
@@ -149,7 +149,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
     protected object LocalCacheHandler {
 
-        private val localRegisteredCaches = mutable.Map.empty[Int, HandleableSharedCache]
+        private val localRegisteredCaches = mutable.Map.empty[Long, HandleableSharedCache]
 
         def register(identifier: Int, cache: HandleableSharedCache): Unit = {
             localRegisteredCaches.put(identifier, cache)
@@ -167,7 +167,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
             localRegisteredCaches.put(identifier, MockCache)
         }
 
-        def getContent(cacheID: Int): Array[Any] = {
+        def getContent(cacheID: Long): Array[Serializable] = {
             localRegisteredCaches(cacheID).currentContent
         }
 
@@ -204,7 +204,7 @@ object SharedCacheHandler {
     object MockCache extends HandleableSharedCache("", -1, null) {
         override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = ()
 
-        override def currentContent: Array[Any] = Array()
+        override def currentContent: Array[Serializable] = Array()
 
         override var autoFlush: Boolean = false
 

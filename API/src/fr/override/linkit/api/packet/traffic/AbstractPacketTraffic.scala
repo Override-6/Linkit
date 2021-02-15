@@ -81,9 +81,12 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
     private def getInjectables(identifier: Int, target: String): Iterable[PacketInjectable] = {
         val opt = holders.get(identifier)
+        println(s"opt = ${opt}")
+        println(s"holders = ${holders}")
 
         if (opt.isEmpty)
             return Iterable()
+
 
         opt.get.getInjectables(target)
     }
@@ -104,9 +107,9 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
     override def handleInjection(injection: PacketInjection): Unit = {
         if (injection.mayNotHandle) {
-            //println(s"Injection handling has been rejected for thread ${Thread.currentThread()}")
-            //println(s"The injection is already handled by thread ${injection.handlerThread}")
-            //injection.handlerThread.getStackTrace.foreach(println)
+            println(s"Injection handling has been rejected for thread ${Thread.currentThread()}")
+            println(s"The injection is already handled by thread ${injection.handlerThread}")
+            injection.handlerThread.getStackTrace.foreach(println)
             return
         }
 
@@ -118,6 +121,7 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
         val sender = coordinates.senderID
         val injectables = getInjectables(id, sender)
+        println(s"injectables = ${injectables}")
 
         if (injectables.isEmpty) {
             lostInjections.getOrElseUpdate(id, ListBuffer.empty) += injection

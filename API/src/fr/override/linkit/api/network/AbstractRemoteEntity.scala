@@ -1,14 +1,14 @@
 package fr.`override`.linkit.api.network
 
-import java.sql.Timestamp
-
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
-import fr.`override`.linkit.api.packet.fundamental.ValPacket
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.system.Version
+
+import java.sql.Timestamp
 
 abstract class AbstractRemoteEntity(private val relay: Relay,
                                     override val identifier: String,
@@ -35,12 +35,12 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override def getConnectionState: ConnectionState
 
     override def getProperty(name: String): Serializable = {
-        communicator.sendRequest(ValPacket(("getProp", name)))
-        communicator.nextResponse[ValPacket].casted
+        communicator.sendRequest(ObjectPacket(("getProp", name)))
+        communicator.nextResponse[ObjectPacket].casted
     }
 
     override def setProperty(name: String, value: Serializable): Unit = {
-        communicator.sendRequest(ValPacket(("setProp", name, value)))
+        communicator.sendRequest(ObjectPacket(("setProp", name, value)))
     }
 
     override def getRemoteConsole: RemoteConsole = relay.getConsoleOut(identifier)

@@ -2,7 +2,8 @@ package fr.`override`.linkit.api.packet.serialization
 
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.map.{MapModification, SharedMap}
-import fr.`override`.linkit.api.packet.fundamental.{ValPacket, WrappedPacket}
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.api.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 
 class CachedPacketSerializer(cache: SharedCacheHandler) extends PacketSerializer {
@@ -10,6 +11,10 @@ class CachedPacketSerializer(cache: SharedCacheHandler) extends PacketSerializer
     private val objectMap = cache.get(14, SharedMap[Int, String])
     //objectMap.addListener(_ => s"MODIFIED : $objectMap")
 
+    /**
+     * @return the hashcode of the class name under a byte sequences
+     *         If the class name is not registered into the cache, it will be added
+     * */
     override protected def serializeType(clazz: Class[_]): Array[Byte] = {
         val name = clazz.getName
         val key = name.hashCode
@@ -26,7 +31,7 @@ class CachedPacketSerializer(cache: SharedCacheHandler) extends PacketSerializer
      * @return a tuple with the Class and his value length into the array
      * */
     override protected def deserializeType(bytes: Array[Byte]): (Class[_], Int) = {
-        (Class.forName(objectMap.getOrWait(deserializeInt(bytes, 0))), 4) //4 is the byte length of one integer
+        (Class.forName(objectMap.getOrWait(deserializeNumber(bytes, 0, 4).toInt)), 4) //4 is the byte length of one integer
     }
 
     override protected val signature: Array[Byte] = Array(0)
@@ -42,7 +47,7 @@ class CachedPacketSerializer(cache: SharedCacheHandler) extends PacketSerializer
     serializeType(classOf[DedicatedPacketCoordinates])
     serializeType(classOf[BroadcastPacketCoordinates])
     serializeType(classOf[WrappedPacket])
-    serializeType(classOf[ValPacket])
+    serializeType(classOf[ObjectPacket])
     serializeType(classOf[MapModification])
     serializeType(classOf[(_, _, _)])
 
