@@ -1,8 +1,5 @@
 package fr.`override`.linkit.client
 
-import java.nio.channels.AsynchronousCloseException
-import java.nio.charset.Charset
-
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.Relay.ServerIdentifier
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
@@ -10,6 +7,8 @@ import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThre
 import fr.`override`.linkit.api.exception._
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.StringPacket
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
@@ -21,6 +20,8 @@ import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.client.config.RelayPointConfiguration
 import fr.`override`.linkit.client.network.PointNetwork
 
+import java.nio.channels.AsynchronousCloseException
+import java.nio.charset.Charset
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -116,8 +117,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     override def isConnected(identifier: String): Boolean = {
         systemChannel.sendOrder(SystemOrder.CHECK_ID, CloseReason.INTERNAL, identifier.getBytes)
-        val response = systemChannel.nextPacket[IntPacket].value
-        response == 1
+        systemChannel.nextPacket[BooleanPacket]
     }
 
     override def getConnectionState: ConnectionState = socket.getState
@@ -173,15 +173,14 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         socket.write(welcomePacket)
         socket.addConnectionStateListener(state => if (state == ConnectionState.CONNECTED) socket.write(welcomePacket))
 
-        val response = systemChannel.nextPacket[IntPacket]
-        val code = response.value
-        if (code != 1) {
+        val accepted = systemChannel.nextPacket[BooleanPacket]
+        if (!accepted) {
             val refusalMessage = systemChannel.nextPacket[StringPacket].value
             throw RelayInitialisationException(refusalMessage)
         }
-
+        println("Bhap ?")
         systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
-        println("Connected !")
+        println("Connection accepted !")
 
         println("Initialising Network...")
         this.pointNetwork = new PointNetwork(this)
@@ -231,9 +230,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             case system: SystemPacket => handleSystemPacket(system, coordinates)
             case _: Packet =>
                 val injection = PacketInjections.createInjection(packet, coordinates, number)
-                //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
+                println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
                 traffic.handleInjection(injection)
-                //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
+                println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }
 
@@ -268,7 +267,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             if (bytes == null)
                 return
             //NETWORK-DEBUG-MARK
-            println(s"received : ${new String(bytes).replace('\n', ' ').replace('\r', ' ')} (l: ${bytes.length})")
+            //println(s"received : ${new String(bytes).replace('\n', ' ').replace('\r', ' ')} (l: ${bytes.length})")
             val packetNumber = packetsReceived + 1
             packetsReceived += 1
 
