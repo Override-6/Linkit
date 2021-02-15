@@ -1,15 +1,13 @@
 package fr.`override`.linkit.server
 
-import java.net.{ServerSocket, SocketException}
-import java.nio.charset.Charset
-
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.fundamental.{IntPacket, StringPacket}
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.StringPacket
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic._
@@ -22,6 +20,8 @@ import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
 import fr.`override`.linkit.server.network.ServerNetwork
 import fr.`override`.linkit.server.security.RelayServerSecurityManager
 
+import java.net.{ServerSocket, SocketException}
+import java.nio.charset.Charset
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -192,14 +192,14 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         handleRelayPointConnection(identifier, socket)
     }
 
-    private def sendAuthoriseConnection(socket: DynamicSocket): Unit = {
-        val responsePacket = IntPacket(1)
+    private def sendAuthorisedConnection(socket: DynamicSocket): Unit = {
+        val responsePacket = BooleanPacket(true)
         val coordinates = DedicatedPacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(responsePacket, coordinates))
     }
 
     private def sendRefusedConnection(socket: DynamicSocket, message: String): Unit = {
-        val codePacket = IntPacket(2)
+        val codePacket = BooleanPacket(false)
         val coordinates = DedicatedPacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(codePacket, coordinates))
         socket.write(packetTranslator.fromPacketAndCoords(StringPacket(message), coordinates))
@@ -231,15 +231,15 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
             return
         }
 
-        handleConnectionIDAmbiguity(getConnection(identifier), socket)
+        handleConnectionIdAmbiguity(getConnection(identifier), socket)
     }
 
-    private def handleConnectionIDAmbiguity(current: ClientConnection,
+    private def handleConnectionIdAmbiguity(current: ClientConnection,
                                             socket: SocketContainer): Unit = {
 
         if (!current.isConnected) {
             current.updateSocket(socket.get)
-            sendAuthoriseConnection(socket)
+            sendAuthorisedConnection(socket)
             return
         }
         val identifier = current.identifier
@@ -259,6 +259,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
             case REPLACE =>
                 connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
                 connectionsManager.registerConnection(identifier, socket)
+                sendAuthorisedConnection(socket)
 
             case DISCONNECT_BOTH =>
                 connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)

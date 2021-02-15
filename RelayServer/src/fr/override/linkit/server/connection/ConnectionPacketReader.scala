@@ -1,12 +1,11 @@
 package fr.`override`.linkit.server.connection
 
-import java.net.SocketException
-
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketInjections, PacketReader}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
+import java.net.SocketException
 import scala.util.control.NonFatal
 
 class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullable identifier: String) {
@@ -47,6 +46,8 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
 
     private def handleBytes(bytes: Array[Byte], event: (Packet, DedicatedPacketCoordinates) => Unit): Unit = {
         val (packet, coordinates) = packetTranslator.toPacketAndCoords(bytes)
+        println(s"packet = ${packet}")
+        println(s"coordinates = ${coordinates}")
         coordinates match {
             case dedicated: DedicatedPacketCoordinates =>
                 if (dedicated.targetID == server.identifier) {

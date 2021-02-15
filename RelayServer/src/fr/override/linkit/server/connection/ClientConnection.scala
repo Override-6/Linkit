@@ -1,18 +1,18 @@
 package fr.`override`.linkit.server.connection
 
-import java.net.Socket
-
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool, relayWorkerExecution}
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.traffic.PacketInjections
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
 import org.jetbrains.annotations.NotNull
 
+import java.net.Socket
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends JustifiedCloseable {
@@ -137,8 +137,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
             }
 
             def checkIDRegistered(target: String): Unit = {
-                val response = if (server.isConnected(target)) 1 else 2
-                session.channel.send(IntPacket(response))
+                session.channel.send(BooleanPacket(server.isConnected(target)))
             }
         }
     }
