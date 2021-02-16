@@ -9,11 +9,10 @@ import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
-import java.io.Serializable
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
+class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V)], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
 
     private val localMap = LocalMap()
     private val networkListeners = ConsumerContainer[(MapModification, K, V)]()
@@ -40,7 +39,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
      * */
     def addListener(action: ((MapModification, K, V)) => Unit): this.type = {
         networkListeners += action
-        println(s"networkListeners = ${networkListeners}")
+        //println(s"networkListeners = ${networkListeners}")
         this
     }
 
@@ -107,14 +106,18 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
     def awaitPut(k: K): V = {
         if (contains(k))
             return apply(k)
-        println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
+        //println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
 
         val lock = new Object
         var found = false
 
         val listener: ((MapModification, K, V)) => Unit = t => {
             found = t._2 == k
+            //println(s"k = ${k}")
+            //println(s"t._2 = ${t._2}")
+            //println(s"found = ${found}")
             if (found) lock.synchronized {
+                //println(s"Notified lock $lock")
                 lock.notifyAll()
             }
         }
@@ -123,7 +126,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         //the awaited key could be added since the 'found' value has been created.
         RelayWorkerThreadPool.smartProvide(lock, !(contains(k) || found))
         removeListener(listener)
-        println("Done !")
+        //println("Done !")
         apply(k)
     }
 
@@ -144,6 +147,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
             case REMOVE => _.remove(key)
         }
         action(localMap)
+
         modCount += 1
         networkListeners.applyAll(mod)
     }
@@ -225,7 +229,7 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
 
         def contains(key: K): Boolean = mainMap.contains(key)
 
-        def toArray: Array[Serializable] = mainMap.toArray
+        def toArray: Array[Any] = mainMap.toArray
 
         def iterator: Iterator[(K, V)] = mainMap.iterator
 
@@ -237,12 +241,12 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         override def toString: String = mainMap.toString()
     }
 
-    override def currentContent: Array[Serializable] = localMap.toArray
+    override def currentContent: Array[Any] = localMap.toArray
 }
 
 object SharedMap {
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        (family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+        (family: String, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
             new SharedMap[K, V](family, identifier, ScalaUtils.slowCopy(baseContent), channel)
         }
     }

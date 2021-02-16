@@ -16,12 +16,12 @@ import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 class SharedCollection[A <: Serializable](family: String,
-                                          identifier: Int,
+                                          identifier: Long,
                                           adapter: CollectionAdapter[A],
                                           channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) with mutable.Iterable[A] {
 
-    private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
-    private val networkListeners = ConsumerContainer[(CollectionModification, Int, A)]()
+    private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
+    private val networkListeners = ConsumerContainer[(CollectionModification, Long, A)]()
 
     @volatile private var modCount = 0
     @volatile override var autoFlush: Boolean = true
@@ -36,7 +36,7 @@ class SharedCollection[A <: Serializable](family: String,
 
     override def toString: String = adapter.toString
 
-    override def currentContent: Array[Serializable] = adapter.get().toArray
+    override def currentContent: Array[Any] = adapter.get().toArray
 
     override def iterator: Iterator[A] = adapter.iterator
 
@@ -99,7 +99,7 @@ class SharedCollection[A <: Serializable](family: String,
      * (_, Int, _) : the index affected (may be -1 for mod kinds that does not specify any index such as CLEAR)
      * (_, _, T) : The object affected (may be null for mod kinds that does not specify any object such as CLEAR, or REMOVE)
      * */
-    def addListener(action: (CollectionModification, Int, A) => Unit): this.type = {
+    def addListener(action: (CollectionModification, Long, A) => Unit): this.type = {
         networkListeners += (tuple3 => action(tuple3._1, tuple3._2, tuple3._3))
         this
     }
@@ -118,9 +118,9 @@ class SharedCollection[A <: Serializable](family: String,
         collectionModifications += ((kind, index, value))
     }
 
-    private def flushModification(mod: (CollectionModification, Int, Any)): Unit = {
+    private def flushModification(mod: (CollectionModification, Long, Any)): Unit = {
         sendRequest(ObjectPacket(mod))
-        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
+        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
         modCount += 1
         //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
     }
@@ -134,9 +134,9 @@ class SharedCollection[A <: Serializable](family: String,
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
-        val mod: (CollectionModification, Int, Any) = packet.casted
+        val mod: (CollectionModification, Long, Any) = packet.casted
         val modKind: CollectionModification = mod._1
-        val index: Int = mod._2
+        val index = mod._2.toInt
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed
         val action: CollectionAdapter[A] => Unit = modKind match {
             case CLEAR => _.clear()
@@ -152,7 +152,7 @@ class SharedCollection[A <: Serializable](family: String,
         }
         modCount += 1
 
-        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Int, A)])
+        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
     }
 
 }
@@ -175,7 +175,7 @@ object SharedCollection {
      * The insertFilter must be true in order to authorise the insertion
      * */
     def ofInsertFilter[A  <: Serializable](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
-        (family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+        (family: String, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
 

@@ -6,7 +6,7 @@ import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.packet.PacketUtils.wrap
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.serialization.PacketSerializer
+import fr.`override`.linkit.api.packet.serialization.ObjectSerializer
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
@@ -31,15 +31,14 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     }
 
     private object SmartSerializer {
-        private val rawSerializer = new RawPacketSerializer()
+        private val rawSerializer = RawObjectSerializer
         @Nullable
-        @volatile private var cachedSerializer: PacketSerializer = _ //Will be instantiated once connection with the server is handled.
+        @volatile private var cachedSerializer: ObjectSerializer = _ //Will be instantiated once connection with the server is handled.
         @Nullable
         @volatile private var cachedSerializerWhitelist: SharedCollection[String] = _
 
         def serialize(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
             //Thread.dumpStack()
-            println(s"Serializing packet $packet, $coordinates")
             val serializer = if (initialised) {
                 val whiteListArray = cachedSerializerWhitelist.toArray
                 coordinates.determineSerializer(whiteListArray, rawSerializer, cachedSerializer)
@@ -47,6 +46,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
                 rawSerializer
             }
             try {
+                println(s"Serializing $packet, $coordinates in thread ${Thread.currentThread()} with serializer ${serializer.getClass.getSimpleName}")
                 serializer.serialize(Array(coordinates, packet))
             } catch {
                 case NonFatal(e) =>
@@ -69,6 +69,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
                     throw PacketException(s"Could not deserialize bytes ${new String(bytes)} to packet.", e)
 
             }
+            println(s"Deserialized ${array.mkString("Array(", ", ", ")")}")
             (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
         }
 
@@ -76,10 +77,10 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
             if (cachedSerializer != null)
                 throw new IllegalStateException("This packet translator is already fully initialised !")
 
-            cachedSerializer = new CachedPacketSerializer(cache)
+            cachedSerializer = new CachedObjectSerializer(cache)
             cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(relay.identifier)
-            println("COMPLETED INITIALISATION")
+            println("COMPLETED PACKET TRANSLATOR INITIALISATION")
         }
 
         def initialised: Boolean = cachedSerializerWhitelist != null

@@ -7,7 +7,7 @@ import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
 class SharedInstance[A <: Serializable] private(family: String,
-                                                identifier: Int,
+                                                identifier: Long,
                                                 channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
 
     override var autoFlush: Boolean = true
@@ -18,7 +18,7 @@ class SharedInstance[A <: Serializable] private(family: String,
     @volatile private var instance: A = _
 
     def this(family: String,
-             identifier: Int,
+             identifier: Long,
              channel: CommunicationPacketChannel,
              value: A = null) = {
         this(family, identifier, channel)
@@ -62,13 +62,13 @@ class SharedInstance[A <: Serializable] private(family: String,
         this
     }
 
-    override def currentContent: Array[Serializable] = Array(instance)
+    override def currentContent: Array[Any] = Array(instance)
 }
 
 object SharedInstance {
 
     def apply[A <: Serializable]: SharedCacheFactory[SharedInstance[A]] = {
-        (family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+        (family: String, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
             if (baseContent.isEmpty)
                 new SharedInstance[A](family, identifier, channel)
             else new SharedInstance[A](family, identifier, channel, baseContent(0).asInstanceOf[A])

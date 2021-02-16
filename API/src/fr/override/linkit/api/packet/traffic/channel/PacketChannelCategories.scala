@@ -6,7 +6,6 @@ import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketInjections}
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 
 import scala.collection.mutable
 
@@ -18,13 +17,13 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
     override def handleInjection(injection: PacketInjection): Unit = {
         val packets = injection.getPackets
         val coordinates = injection.coordinates
-        packets.foreach(packet => packet match {
+        packets.foreach {
             case WrappedPacket(category, subPacket) =>
-                val injection = PacketInjections.unhandled(coordinates, packet)
+                val injection = PacketInjections.unhandled(coordinates, subPacket)
                 categories.get(category).foreach(_.inject(injection))
 
-            case _ => throw new UnexpectedPacketException(s"Received unexpected packet $packet")
-        })
+            case packet => throw new UnexpectedPacketException(s"Received unexpected packet $packet")
+        }
     }
 
     def createCategory[C <: PacketInjectable](name: String, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {

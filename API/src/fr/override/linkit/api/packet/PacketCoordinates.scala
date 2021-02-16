@@ -1,9 +1,9 @@
 package fr.`override`.linkit.api.packet
 
-import fr.`override`.linkit.api.packet.serialization.PacketSerializer
+import fr.`override`.linkit.api.packet.serialization.ObjectSerializer
 
-trait PacketCoordinates {
+trait PacketCoordinates extends Serializable {
 
-    def determineSerializer(array: Array[String], raw: PacketSerializer, cached: PacketSerializer): PacketSerializer
+    def determineSerializer(array: Array[String], raw: ObjectSerializer, cached: ObjectSerializer): ObjectSerializer
 
 }

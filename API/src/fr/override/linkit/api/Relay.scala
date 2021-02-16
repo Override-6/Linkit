@@ -31,9 +31,8 @@ import scala.reflect.ClassTag
  */
 //TODO Recap :
 //TODO Rewrite/write Doc and README of API, RelayServer and RelayPoint
+//TODO Automatically inject packet if it targets the current relay.
 //TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
-//TODO Replace every "OK" and "ERROR" by 0 or 1
-//TODO Design a brand new and optimised packet protocol
 //TODO Find a solution about packets that are send into a non-registered channel : if an exception is thrown, this can cause some problems, and if not, this can cause other problems. SOLUTION : Looking for "RemoteActionDescription" that can control and get some information about an action that where made over the network.
 object Relay {
     val ApiVersion: Version = Version(name = "Api", version = "0.19.0", stable = false)

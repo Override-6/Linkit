@@ -5,7 +5,7 @@ import scala.util.control.NonFatal
 
 object ScalaUtils {
 
-    def slowCopy[A: ClassTag](origin: Array[Any]): Array[A] = {
+    def slowCopy[A: ClassTag](origin: Array[_ <: Any]): Array[A] = {
         val buff = new Array[A](origin.length)
         var i = 0
         try {

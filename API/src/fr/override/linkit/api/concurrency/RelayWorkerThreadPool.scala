@@ -1,10 +1,9 @@
 package fr.`override`.linkit.api.concurrency
 
-import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory}
-
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool.{WorkerThread, checkCurrentIsWorker}
 import fr.`override`.linkit.api.exception.IllegalThreadException
 
+import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory}
 import scala.util.control.NonFatal
 
 class RelayWorkerThreadPool() extends AutoCloseable {
@@ -19,15 +18,18 @@ class RelayWorkerThreadPool() extends AutoCloseable {
 
     def runLater(action: => Unit): Unit = {
         if (!closed) {
+            //println(s"Submitted action from thread $currentThread, active threads: $activeThreads")
             var runnable: Runnable = null
             runnable = () => {
                 activeThreads += 1
+                //println(s"Action taken by thread $currentThread")
                 try {
                     action
                 } catch {
                     case NonFatal(e) => e.printStackTrace()
                 }
                 activeThreads -= 1
+               // println(s"Action terminated by thread $currentThread, $activeThreads are currently running.")
             }
             executor.submit(runnable)
             //if there is one provided thread that is waiting for a new task to be performed, it would instantly execute the current task.
@@ -54,8 +56,9 @@ class RelayWorkerThreadPool() extends AutoCloseable {
             providerLocks.addProvidingLock(lock)
             while (check) {
                 lock.synchronized {
-                    if (workQueue.isEmpty && check)// because of the synchronisation block, the check value may change
+                    if (workQueue.isEmpty && check) {// because of the synchronisation block, the check value may change
                         lock.wait()
+                    }
                 }
                 provideWhile(check)
             }

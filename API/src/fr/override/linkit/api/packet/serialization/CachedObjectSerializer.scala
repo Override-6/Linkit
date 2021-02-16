@@ -4,9 +4,10 @@ import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.map.{MapModification, SharedMap}
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.api.packet.serialization.NumberSerializer.serializeInt
 import fr.`override`.linkit.api.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 
-class CachedPacketSerializer(cache: SharedCacheHandler) extends PacketSerializer {
+class CachedObjectSerializer(cache: SharedCacheHandler) extends ObjectSerializer {
 
     private val objectMap = cache.get(14, SharedMap[Int, String])
     //objectMap.addListener(_ => s"MODIFIED : $objectMap")
@@ -17,14 +18,14 @@ class CachedPacketSerializer(cache: SharedCacheHandler) extends PacketSerializer
      * */
     override protected def serializeType(clazz: Class[_]): Array[Byte] = {
         val name = clazz.getName
-        val key = name.hashCode
+        val hash = name.hashCode
 
-        val keyBytes = serializeInt(key)
-        if (objectMap.contains(key))
-            return keyBytes //The type is already registered.
+        val hashBytes = serializeInt(hash)
+        if (objectMap.contains(hash))
+            return hashBytes //The type is already registered.
 
-        objectMap.put(key, name)
-        keyBytes
+        objectMap.put(hash, name)
+        hashBytes
     }
 
     /**
