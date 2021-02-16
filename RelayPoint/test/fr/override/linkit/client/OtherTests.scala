@@ -1,10 +1,9 @@
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.IntPacket
-import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
-import fr.`override`.linkit.api.packet.serialization.RawPacketSerializer
-import fr.`override`.linkit.api.packet.{BroadcastPacketCoordinates, Packet, PacketCoordinates}
-import fr.`override`.linkit.api.utils.Utils
+import com.sun.glass.ui.Application
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayRefPacket
+import fr.`override`.linkit.api.packet.serialization.RawObjectSerializer
+import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
 
 import java.util.concurrent.ThreadLocalRandom
 import scala.annotation.tailrec
@@ -12,11 +11,13 @@ import scala.util.control.NonFatal
 
 object OtherTests {
 
-    private val serializer = new RawPacketSerializer
+    private val serializer = RawObjectSerializer
     private val randomizer = ThreadLocalRandom.current()
 
     def main(args: Array[String]): Unit = try {
-        makeSomething(1)
+        Application.run(() => {
+            makeSomething(1)
+        })
     } catch {
         case NonFatal(e) => e.printStackTrace()
     }
@@ -25,26 +26,35 @@ object OtherTests {
     @tailrec
     def makeSomething(times: Int): Unit = {
 
-        val buffer = new Array[Byte](1000)
-        randomizer.nextBytes(buffer)
+        /*val region = new Rectangle2D(0, 0, 1920, 1080)
+        val robot = new Robot()
+        val writable = new WritableImage(1920, 1080)
+        val reader = writable.getPixelReader
+        val buffer = new Array[Int](1920 * 1080)
 
+        robot.getScreenCapture(writable, region)
+        println("Capture created !")
+        reader.getPixels(0, 0, 1920, 1080, PixelFormat.getIntArgbInstance, buffer, 0, region.getWidth.toInt)*/
 
-        val packet = WrappedPacket("req",WrappedPacket("Global Shared Cache",IntPacket(-1)))
-        val coords = BroadcastPacketCoordinates(444445, "bhap525252525245252852", true, "Bamboo", "koala")
+        val packet = ArrayRefPacket(Array("3" -> 3, "1" -> 1, "4" -> 4, "9" -> 9, ("15", "16", "17")))
+        val coords = DedicatedPacketCoordinates(11, "a", "a")
 
-        println("SERIALIZING...")
+        println(s"SERIALIZING... ($packet & $coords)")
+        val t0 = System.currentTimeMillis()
         val bytes = serialize(packet, coords)
+        val t1 = System.currentTimeMillis()
         println()
         println()
         println()
-        println(s"bytes = ${new String(bytes).replace('\r', ' ')} (length: ${bytes.length})")
+        println(s"bytes = ${new String(bytes).replace('\r', ' ')} (length: ${bytes.length}) took ${t1 - t0}ms")
         println()
         println()
         println()
 
-        val sBytes = Utils.serialize(Array(packet, coords))
-        val standardSerial = new String(sBytes).replace('\r', ' ')
-        println("Standard method : " + standardSerial + s" (length: ${sBytes.length})")
+        //val sBytes = Utils.serialize(Array(packet, coords))
+        //val standardSerial = new String(sBytes).replace('\r', ' ')
+        //println("Standard method : " + standardSerial + s" (length: ${sBytes.length})")
+        //println("GSON method : " + new Gson().toJson(Array(coords, packet)) + s" (length: ${sBytes.length})")
 
         println("DESERIALIZING...")
         println()
@@ -58,6 +68,16 @@ object OtherTests {
 
         if (times > 1)
             makeSomething(times - 1)
+
+    }
+
+    protected def serializeInt(value: Int): Array[Byte] = {
+        Array[Byte](
+            ((value >> 24) & 0xff).toByte,
+            ((value >> 16) & 0xff).toByte,
+            ((value >> 8) & 0xff).toByte,
+            ((value >> 0) & 0xff).toByte
+        )
     }
 
     private def serialize(packet: Packet, coordinates: PacketCoordinates): Array[Byte] = {
@@ -70,7 +90,6 @@ object OtherTests {
     }
 
 
-    case class StreamPacket(buffer: Array[Byte]) extends Packet
-
+    case class StreamPacket(buffer: Array[Int]) extends Packet
 
 }

@@ -230,9 +230,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             case system: SystemPacket => handleSystemPacket(system, coordinates)
             case _: Packet =>
                 val injection = PacketInjections.createInjection(packet, coordinates, number)
-                println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
+                //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
                 traffic.handleInjection(injection)
-                println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
+                //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }
 
@@ -267,7 +267,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             if (bytes == null)
                 return
             //NETWORK-DEBUG-MARK
-            //println(s"received : ${new String(bytes).replace('\n', ' ').replace('\r', ' ')} (l: ${bytes.length})")
+            println(s"received : ${new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${bytes.length})")
             val packetNumber = packetsReceived + 1
             packetsReceived += 1
 
