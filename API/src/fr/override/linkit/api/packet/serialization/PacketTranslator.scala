@@ -46,7 +46,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
                 rawSerializer
             }
             try {
-                println(s"Serializing $packet, $coordinates in thread ${Thread.currentThread()} with serializer ${serializer.getClass.getSimpleName}")
+                //println(s"Serializing $packet, $coordinates in thread ${Thread.currentThread()} with serializer ${serializer.getClass.getSimpleName}")
                 serializer.serialize(Array(coordinates, packet))
             } catch {
                 case NonFatal(e) =>
@@ -69,7 +69,7 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
                     throw PacketException(s"Could not deserialize bytes ${new String(bytes)} to packet.", e)
 
             }
-            println(s"Deserialized ${array.mkString("Array(", ", ", ")")}")
+            //println(s"Deserialized ${array.mkString("Array(", ", ", ")")}")
             (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
         }
 

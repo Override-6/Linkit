@@ -8,12 +8,14 @@ import sun.misc.Unsafe
 
 import java.lang.reflect.{Field, Modifier}
 import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Short => JShort}
+import java.nio.ByteBuffer
 import scala.util.control.NonFatal
 
 
 //TODO Work with all primitives integer types instead of using longs.
 //TODO Optimize arrays; The item kind is repeated in front of each elements of the array, where the type of the array could only be specified once (Be sure that all the elements are the same !)
 //TODO Deducting number types from their lengths instead of putting a flag MIGHT BE NOT POSSIBLE EVERYWHERE
+//TODO work with byte buffers.
 abstract class ObjectSerializer {
 
     protected val signature: Array[Byte]
@@ -72,6 +74,7 @@ abstract class ObjectSerializer {
         if (!any.isInstanceOf[Serializable])
             throw new IllegalArgumentException("Attempted to serialize a non-Serializable object !")
         val clazz = any.getClass
+
         if (clazz.isArray)
             return serializeArray(any.asInstanceOf[Array[_]])
 
@@ -110,24 +113,6 @@ abstract class ObjectSerializer {
     }
 
     private def getAppropriateFlag(any: Array[_]): Byte = {
-        /*def casted[T](x: Any): T = x.asInstanceOf[T]
-
-        def isNumber(x: Any): Boolean = x.isInstanceOf[Byte] || x.isInstanceOf[Short] || x.isInstanceOf[Int] || x.isInstanceOf[Long]
-
-        def risky(c: => Boolean): Boolean = try c catch {
-            case _: ClassCastException => false
-        }
-
-        if (any.forall(isNumber) && risky(any.forall(a => Byte.MinValue <= casted(a) && Byte.MaxValue >= casted[Byte](a))))
-            return ByteArrayFlag
-        if (any.forall(isNumber) && risky(any.forall(a => Short.MinValue <= casted(a) && Short.MaxValue >= casted[Short](a))))
-            return ShortArrayFlag
-        if (any.forall(isNumber) && risky(any.forall(a => Int.MinValue <= casted(a) && Int.MaxValue >= casted[Long](a))))
-            return IntArrayFlag
-        if (any.forall(n => n.isInstanceOf[Double] || n.isInstanceOf[Long] || n.isInstanceOf[Float]))
-            return LongArrayFlag
-        AnyArrayFlag*/
-
         any match {
             case _: Array[Byte] => ByteArrayFlag
             case _: Array[Short] => ShortArrayFlag
@@ -149,27 +134,31 @@ abstract class ObjectSerializer {
         //println(s"flag = ${flag}")
         val content: Array[Byte] = flag match {
             case ByteArrayFlag =>
-                //println("THIS IS A BYTE ARRAY")
                 anyArray.asInstanceOf[Array[Byte]]
             case ShortArrayFlag =>
-                anyArray.flatMap(n => serializeShort(n.asInstanceOf[Short]))
+                val buff = ByteBuffer.allocate(anyArray.length * 2)
+                anyArray.foreach(s => buff.putShort(s.asInstanceOf[Short]))
+                buff.array()
             case IntArrayFlag =>
-                anyArray.flatMap(n => serializeInt(n.asInstanceOf[Int]))
+                val buff = ByteBuffer.allocate(anyArray.length * 4)
+                anyArray.foreach(s => buff.putInt(s.asInstanceOf[Int]))
+                buff.array()
             case LongArrayFlag =>
-                anyArray.flatMap(n => serializeLong(n.asInstanceOf[Long]))
+                val buff = ByteBuffer.allocate(anyArray.length * 8)
+                anyArray.foreach(s => buff.putLong(s.asInstanceOf[Long]))
+                buff.array()
             case AnyArrayFlag =>
                 val lengths = new Array[Int](anyArray.length - 1) //discard the last element length, because it can be deducted from the total length
                 var buff = Array[Byte]()
-                var lastClass: Class[_] = null
+                //TODO var lastClass: Class[_] = null
 
                 for (i <- anyArray.indices) {
                     val any = anyArray(i)
-                    val currentClass = any.getClass
                     //println(s"serializing = ${any}")
-                    val bytes = serializeValue(lastClass, currentClass != lastClass, any)
+                    val bytes = serializeValue(null, true, any)
                     //println(s"serialized $any as ${new String(bytes).replace('\r', ' ')}")
                     if (i < lengths.length) lengths(i) = bytes.length //Add the length only if it is not the last item
-                    lastClass = currentClass
+                    //lastClass = currentClass
                     buff ++= bytes
                 }
                 val numOfLength = serializeNumber(anyArray.length, true)
@@ -214,22 +203,16 @@ abstract class ObjectSerializer {
                 var currentItIndex = signBytesLength + numBytesLength //the total sign length
                 //println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
                 //println(s"signBytesLength = ${signBytesLength}")
-                var lastType: Class[_] = null
+                //TODO var lastType: Class[_] = null
                 var typeStreak = false
                 for (itLength <- lengths) {
                     //--println(s"currentItIndex = ${currentItIndex}")
                     val itemBytes = content.slice(currentItIndex, currentItIndex + itLength)
                     //--println(s"Deserializing ${new String(itemBytes)}")
-                    val forceObj = (typeStreak && !determineForceObjDeserial(lastType)) || (!typeStreak && determineForceObjDeserial(lastType))
-                    val value = deserializeValue(lastType, forceObj, itemBytes)
+                    //TODO val forceObj = (typeStreak && !determineForceObjDeserial(lastType)) || (!typeStreak && determineForceObjDeserial(lastType))
+                    val value = deserializeValue(null, false, itemBytes)
                     //--println(s"value = ${value}")
                     buff = buff.appended(value)
-                    val valType = value.getClass
-                    typeStreak = lastType == null || valType == lastType
-                    //--println(s"typeStreak = ${typeStreak}")
-                    //--println(s"valType = ${valType}")
-                    lastType = valType
-                    //--println(s"lastType = ${lastType}")
 
                     currentItIndex += itLength
                 }
