@@ -1,9 +1,12 @@
 package fr.`override`.linkit.client
 
 import com.sun.glass.ui.Application
-import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayRefPacket
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayValPacket
 import fr.`override`.linkit.api.packet.serialization.RawObjectSerializer
 import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
+import javafx.geometry.Rectangle2D
+import javafx.scene.image.{PixelFormat, WritableImage}
+import javafx.scene.robot.Robot
 
 import java.util.concurrent.ThreadLocalRandom
 import scala.annotation.tailrec
@@ -26,7 +29,7 @@ object OtherTests {
     @tailrec
     def makeSomething(times: Int): Unit = {
 
-        /*val region = new Rectangle2D(0, 0, 1920, 1080)
+        val region = new Rectangle2D(0, 0, 1920, 1080)
         val robot = new Robot()
         val writable = new WritableImage(1920, 1080)
         val reader = writable.getPixelReader
@@ -34,9 +37,9 @@ object OtherTests {
 
         robot.getScreenCapture(writable, region)
         println("Capture created !")
-        reader.getPixels(0, 0, 1920, 1080, PixelFormat.getIntArgbInstance, buffer, 0, region.getWidth.toInt)*/
+        reader.getPixels(0, 0, 1920, 1080, PixelFormat.getIntArgbInstance, buffer, 0, region.getWidth.toInt)
 
-        val packet = ArrayRefPacket(Array("3" -> 3, "1" -> 1, "4" -> 4, "9" -> 9, ("15", "16", "17")))
+        val packet = ArrayValPacket(buffer)
         val coords = DedicatedPacketCoordinates(11, "a", "a")
 
         println(s"SERIALIZING... ($packet & $coords)")

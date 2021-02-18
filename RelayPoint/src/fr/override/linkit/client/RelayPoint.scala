@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 object RelayPoint {
-    val version: Version = Version(name = "RelayPoint", version = "0.13.0", stable = false)
+    val version: Version = Version(name = "RelayPoint", version = "0.14.0", stable = false)
 }
 
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
