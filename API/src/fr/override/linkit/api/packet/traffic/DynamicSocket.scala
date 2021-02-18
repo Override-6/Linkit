@@ -3,8 +3,9 @@ package fr.`override`.linkit.api.packet.traffic
 import fr.`override`.linkit.api.exception.{RelayCloseException, RelayException}
 import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.network.ConnectionState.CLOSED
+import fr.`override`.linkit.api.packet.serialization.NumberSerializer
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
-import fr.`override`.linkit.api.utils.{ConsumerContainer, ScalaUtils}
+import fr.`override`.linkit.api.utils.ConsumerContainer
 
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket}
@@ -27,7 +28,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
             totalWriteTime += t1 - t0
             //NETWORK-DEBUG-MARK
-            println(s"written : ${new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${buff.length}) totalWriteTime: $totalWriteTime")
+            //println(s"written : ${new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${buff.length}) totalWriteTime: $totalWriteTime")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
@@ -77,7 +78,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     }
 
     def readInt(): Int = {
-        ScalaUtils.toInt(read(4))
+        NumberSerializer.deserializeInt(read(4), 0)
     }
 
     def read(buff: Array[Byte], pos: Int): Int = {

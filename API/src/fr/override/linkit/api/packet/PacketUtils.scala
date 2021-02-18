@@ -1,8 +1,8 @@
 package fr.`override`.linkit.api.packet
 
-import java.util
+import fr.`override`.linkit.api.packet.serialization.NumberSerializer
 
-import fr.`override`.linkit.api.utils.ScalaUtils
+import java.util
 
 object PacketUtils {
 
@@ -19,7 +19,7 @@ object PacketUtils {
         util.Arrays.copyOfRange(src, src.indexOfSlice(a) + a.length, src.indexOfSlice(b))
 
     def wrap(bytes: Array[Byte]): Array[Byte] = {
-        ScalaUtils.fromInt(bytes.length) ++ bytes
+        NumberSerializer.serializeInt(bytes.length) ++ bytes
     }
 
 }

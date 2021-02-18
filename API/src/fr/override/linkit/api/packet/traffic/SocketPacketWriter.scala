@@ -15,10 +15,20 @@ class SocketPacketWriter(socket: DynamicSocket,
     override def writePacket(packet: Packet, targetIDs: String*): Unit = {
         val transformedPacket = info.transform(packet)
 
-        val coords = if (targetIDs.length == 1)
-            DedicatedPacketCoordinates(identifier, targetIDs(0), ownerID)
-        else
-            BroadcastPacketCoordinates(identifier, ownerID, false, targetIDs: _*)
+        val coords = if (targetIDs.length == 1) {
+            val target = targetIDs.head
+            val dedicated = DedicatedPacketCoordinates(identifier, targetIDs(0), ownerID)
+            if (target == relayID) {
+                traffic.handleInjection(PacketInjections.unhandled(dedicated, packet))
+                return
+            }
+            dedicated
+        } else {
+            if (targetIDs.contains(relayID))
+                traffic.handleInjection(PacketInjections.unhandled(DedicatedPacketCoordinates(identifier, relayID, ownerID), packet))
+
+            BroadcastPacketCoordinates(identifier, ownerID, false, targetIDs.filter(_ != relayID): _*)
+        }
 
         //println(s"WRITING COORDS & PACKETS ($coords, $transformedPacket)")
         socket.write(translator.fromPacketAndCoords(transformedPacket, coords))

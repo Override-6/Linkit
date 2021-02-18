@@ -23,23 +23,4 @@ object ScalaUtils {
         }
     }
 
-    def toInt(bytes: Array[Byte]): Int = {
-        if (bytes == null || bytes.length != 4)
-            throw new IllegalArgumentException("Invalid serialized int byte seq length")
-
-        (0xff & bytes(0)) << 24 |
-                ((0xff & bytes(1)) << 16) |
-                ((0xff & bytes(2)) << 8) |
-                ((0xff & bytes(3)) << 0)
-    }
-
-    def fromInt(value: Int): Array[Byte] = {
-        Array[Byte](
-            ((value >> 24) & 0xff).toByte,
-            ((value >> 16) & 0xff).toByte,
-            ((value >> 8) & 0xff).toByte,
-            ((value >> 0) & 0xff).toByte
-        )
-    }
-
 }
