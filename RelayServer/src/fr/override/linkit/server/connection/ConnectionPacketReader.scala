@@ -34,7 +34,7 @@ class ConnectionPacketReader(socket: DynamicSocket, server: RelayServer, @Nullab
         }
 
         //NETWORK-DEBUG-MARK
-        println(s"received ($identifier): ${new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${bytes.length})")
+        //println(s"received ($identifier): ${new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${bytes.length})")
         concernedPacketsReceived += 1 //let's suppose that the received packet is sent to the server.
         val packetNumber = concernedPacketsReceived
         server.runLater {
