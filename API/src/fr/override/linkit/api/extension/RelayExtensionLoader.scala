@@ -126,7 +126,7 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
                 case _: NoSuchMethodException =>
                     throw new RelayException(s"Could not load '${clazz.getSimpleName}' : Constructor(Relay) is missing !")
             }
-        }).to(ListBuffer)
+        }) to ListBuffer
 
         def perform(action: RelayExtension => Unit): Unit = {
             for (i <- ListBuffer.from(instances).indices) {

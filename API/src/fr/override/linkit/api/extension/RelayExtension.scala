@@ -11,11 +11,12 @@ abstract class RelayExtension(protected val relay: Relay) {
 
     private val extensionLoader = relay.extensionLoader
     private val fragmentsManager = extensionLoader.fragmentHandler
+    //private val fragsChannel = relay.openChannel(4, )
 
     def onLoad(): Unit = ()
 
     protected def putFragment(fragment: ExtensionFragment): Unit = {
-        fragmentsManager.setFragment(fragment)
+        fragmentsManager.putFragment(fragment)
     }
 
     protected def getFragment[F <: ExtensionFragment](extensionClass: Class[_ <: RelayExtension], fragmentClass: Class[F]): Option[F] = {

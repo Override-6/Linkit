@@ -1,23 +1,24 @@
 package fr.`override`.linkit.api.network
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification, SharedCollection}
-import fr.`override`.linkit.api.network.cache.{ObjectPacket, SharedCacheHandler}
-import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.packet.traffic.ChannelScope
+import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 
 abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override val globalCache: SharedCacheHandler = SharedCacheHandler.create("Global Shared Cache", Relay.ServerIdentifier)(relay.traffic)
+    relay.packetTranslator.completeInitialisation(globalCache)
 
     override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 
-
     protected val sharedIdentifiers: SharedCollection[String] = globalCache
-            .open(3, SharedCollection.set[String])
+            .get(3, SharedCollection.set[String])
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
-    private val communicator = relay.openCollector(9, CommunicationPacketCollector.providable)
+    private val communicator = relay.createInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
@@ -40,8 +41,9 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
             return selfEntity
         }
 
-        val channel = communicator.subChannel(identifier, CommunicationPacketChannel.providable, true)
-        createRelayEntity(identifier, channel)
+        val channel = communicator.subInjectable(Array(identifier), CommunicationPacketChannel.providable, true)
+        val ent = createRelayEntity(identifier, channel)
+        ent
     }
 
     def createRelayEntity(identifier: String, communicationChannel: CommunicationPacketChannel): NetworkEntity

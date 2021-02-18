@@ -5,7 +5,7 @@ import scala.util.control.NonFatal
 
 object ScalaUtils {
 
-    def slowCopy[A: ClassTag](origin: Array[Any]): Array[A] = {
+    def slowCopy[A: ClassTag](origin: Array[_ <: Any]): Array[A] = {
         val buff = new Array[A](origin.length)
         var i = 0
         try {
@@ -17,9 +17,10 @@ object ScalaUtils {
         } catch {
             case NonFatal(e) =>
                 println("Was Casting to " + classTag[A].runtimeClass)
-                println(s"origin = ${origin.mkString("Array(", ", ", ")")}")
-                println(s"Failed when casting ref : ${origin(i)}")
+                println(s"Origin = ${origin.mkString("Array(", ", ", ")")}")
+                println(s"Failed when casting ref : ${origin(i)} at index $i")
                 throw e
         }
     }
+
 }

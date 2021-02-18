@@ -42,12 +42,14 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
         head
     }
 
+    @relayWorkerExecution
     override def take(): A = {
         //println(s"PERFORMING TAKE ($list)")
         pool.provideAllWhileThenWait(lock, list.isEmpty)
         poll()
     }
 
+    @relayWorkerExecution
     override def poll(timeout: Long, unit: TimeUnit): A = {
         val toWait = unit.toMillis(timeout)
         var total: Long = 0
@@ -121,6 +123,8 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
         list.foreach(e => buff.addOne(e))
         buff.toArray.asInstanceOf[Array[AnyRef]]
     }
+
+    override def toString: String = list.toArray[Any].mkString("ProvidedBlockingQueue(", ", ", ")")
 
     override def toArray[T](a: Array[T with Object]): Array[T with Object] = {
         toArray.asInstanceOf[Array[T with Object]]

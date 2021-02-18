@@ -2,8 +2,9 @@ package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.packet.fundamental.DataPacket
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
@@ -56,7 +57,8 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connectionSession = ClientConnectionSession(identifier, socket, server)
         val connection = ClientConnection.open(connectionSession)
         connections.put(identifier, connection)
-        connection.sendPacket(DataPacket("OK"), PacketTraffic.SystemChannel)
+        println("Sending authorisation packet...")
+        connection.sendPacket(BooleanPacket(true), PacketTraffic.SystemChannelID)
 
         val canConnect = server.securityManager.canConnect(connection)
         if (canConnect) {
@@ -84,15 +86,17 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
     /**
      * Broadcast bytes sequence to every connected clients
-     * @param bytes the bytes to broadcast
-     * @param broadcaster the client who broadcasts the bytes.
-     *                    This way, the broadcaster will be ignored
      * */
-    def broadcastBytes(bytes: Array[Byte], broadcaster: String): Unit = {
+    def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
         PacketWorkerThread.checkNotCurrent()
+        val translator = server.packetTranslator
         connections.values
-                .filter(con => con.identifier != broadcaster && con.isConnected)
-                .foreach(_.sendBytes(bytes))
+                .filter(con => !discardedIDs.contains(con.identifier) && con.isConnected)
+                .foreach(connection => {
+                    val coordinates = DedicatedPacketCoordinates(injectableID, connection.identifier, senderID)
+                    val bytes = translator.fromPacketAndCoordsNoWrap(packet, coordinates)
+                    connection.sendBytes(bytes)
+                })
     }
 
     /**
@@ -111,7 +115,12 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @param identifier the identifier linked [[ClientConnection]]
      * @return the found [[ClientConnection]] bound with the identifier
      * */
-    @Nullable def getConnection(identifier: String): ClientConnection = connections.get(identifier).orNull
+    @Nullable
+    def getConnection(identifier: String): ClientConnection = connections.get(identifier).orNull
+
+    def countConnected: Int = connections.size
+
+    def listIdentifiers: Seq[String] = connections.keys.toSeq
 
     /**
      * determines if the address is not registered

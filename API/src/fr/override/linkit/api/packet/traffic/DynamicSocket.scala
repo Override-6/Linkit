@@ -1,33 +1,40 @@
 package fr.`override`.linkit.api.packet.traffic
 
-import java.io._
-import java.net.{ConnectException, InetSocketAddress, Socket}
-
 import fr.`override`.linkit.api.exception.{RelayCloseException, RelayException}
 import fr.`override`.linkit.api.network.ConnectionState
 import fr.`override`.linkit.api.network.ConnectionState.CLOSED
+import fr.`override`.linkit.api.packet.serialization.NumberSerializer
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.api.utils.ConsumerContainer
+
+import java.io._
+import java.net.{ConnectException, InetSocketAddress, Socket}
 
 abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream: InputStream = _
+    @volatile private var totalWriteTime: Long = 0
 
     def write(buff: Array[Byte]): Unit = {
+        val t0 = System.currentTimeMillis()
         SocketLocker.awaitConnected()
         ensureReady()
         SocketLocker.markAsWriting()
         try {
             currentOutputStream.write(buff)
             currentOutputStream.flush()
+            val t1 = System.currentTimeMillis()
+
+            totalWriteTime += t1 - t0
             //NETWORK-DEBUG-MARK
-            //println(s"written : ${new String(buff)}")
+            //println(s"written : ${new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${buff.length}) totalWriteTime: $totalWriteTime")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
                 System.err.println(e.getMessage)
                 if (isClosed || !autoReconnect)
                     return
+
                 SocketLocker.markDisconnected()
                 reconnect()
                 SocketLocker.markAsConnected()
@@ -68,6 +75,10 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             totalRead += bytesRead
         }
         buff
+    }
+
+    def readInt(): Int = {
+        NumberSerializer.deserializeInt(read(4), 0)
     }
 
     def read(buff: Array[Byte], pos: Int): Int = {
@@ -185,9 +196,9 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
                 if (state == CLOSED)
                     throw new RelayCloseException("Attempted to wait this socket to be connected again, but it is now closed.")
 
-                println(s"WARNING : The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier is not fully initialised or disconnected.")
+                println(s"WARNING : The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier isn't ready or is disconnected.")
                 disconnectLock.wait()
-                println(s"The connection with $boundIdentifier is now fully initialised.")
+                println(s"The connection with $boundIdentifier is now ready.")
             } catch {
                 case _: InterruptedException =>
             }

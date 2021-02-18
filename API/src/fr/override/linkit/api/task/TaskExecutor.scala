@@ -1,8 +1,9 @@
 package fr.`override`.linkit.api.task
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, SyncPacketChannel}
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
+import fr.`override`.linkit.api.packet.traffic.channel.SyncPacketChannel
+import fr.`override`.linkit.api.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.system.CloseReason
 
 /**
@@ -18,7 +19,7 @@ abstract class TaskExecutor {
 
     private var canCloseChannel: Boolean = true
     implicit protected var relay: Relay = _
-    implicit protected var channel: PacketChannel.Sync = _
+    implicit protected var channel: PacketSyncReceiver with PacketSender = _
 
 
     /**
@@ -35,7 +36,7 @@ abstract class TaskExecutor {
      * */
     def execute(): Unit
 
-    final def init(relay: Relay, packetChannel: PacketChannel.Sync): Unit = {
+    final def init(relay: Relay, packetChannel: SyncPacketChannel): Unit = {
         if (relay == null || packetChannel == null)
             throw new NullPointerException
         this.channel = packetChannel

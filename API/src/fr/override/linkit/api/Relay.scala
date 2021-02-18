@@ -1,15 +1,16 @@
 package fr.`override`.linkit.api
 
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
+import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, IllegalThreadException, RelayException}
 import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole}
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
-import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
+import fr.`override`.linkit.api.packet.Packet
+import fr.`override`.linkit.api.packet.serialization.PacketTranslator
+import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.api.system.{JustifiedCloseable, Version}
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
 import org.jetbrains.annotations.Nullable
 
@@ -30,12 +31,11 @@ import scala.reflect.ClassTag
  */
 //TODO Recap :
 //TODO Rewrite/write Doc and README of API, RelayServer and RelayPoint
+//TODO Automatically inject packet if it targets the current relay.
 //TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
-//TODO Replace every "OK" and "ERROR" by 0 or 1
-//TODO Design a brand new and optimised packet protocol
 //TODO Find a solution about packets that are send into a non-registered channel : if an exception is thrown, this can cause some problems, and if not, this can cause other problems. SOLUTION : Looking for "RemoteActionDescription" that can control and get some information about an action that where made over the network.
 object Relay {
-    val ApiVersion: Version = Version(name = "Api", version = "0.19.0", stable = false)
+    val ApiVersion: Version = Version(name = "Api", version = "0.20.0", stable = false)
     val ServerIdentifier: String = "server"
 }
 
@@ -63,7 +63,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     /**
      * The Packet Manager used by this relay.
      * A packetTranslator can register a [[Packet]]
-     * then build or decompose a packet using [[PacketFactory]]
+     * then build or decompose a packet using [[PacketCompanion]]
      *
      * @see packetTranslator on how to register and use a customised packet kind
      * */
@@ -105,7 +105,14 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * @throws IllegalThreadException if this method is not executed in one of the RelayWorkerThreadPool threads.
      *
      * */
+    @relayWorkerExecution
     def start(): Unit
+
+    @relayWorkerExecution
+    override def close(): Unit = super.close()
+
+    @relayWorkerExecution
+    override def close(reason: CloseReason): Unit
 
     /**
      * Will run this callback in a worker thread.
@@ -129,9 +136,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * */
     def getConnectionState: ConnectionState
 
-    def openChannel[C <: PacketChannel : ClassTag](channelId: Int, targetID: String, factory: PacketChannelFactory[C]): C
-
-    def openCollector[C <: PacketCollector : ClassTag](channelId: Int, factory: PacketCollectorFactory[C]): C
+    def createInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C
 
     /**
      * @param targetId the targeted Relay identifier

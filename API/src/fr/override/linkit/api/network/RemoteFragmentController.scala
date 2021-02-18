@@ -1,8 +1,9 @@
 package fr.`override`.linkit.api.network
 
-import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates, PacketFactory}
-import fr.`override`.linkit.api.utils.{ConsumerContainer, WrappedPacket}
+import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.utils.ConsumerContainer
 
 class RemoteFragmentController(val nameIdentifier: String, val channel: CommunicationPacketChannel) {
 
@@ -27,11 +28,7 @@ class RemoteFragmentController(val nameIdentifier: String, val channel: Communic
         channel.sendResponse(packet)
     }
 
-    def nextResponse[P <: Packet](factory: PacketFactory[P]): P = nextResponse().asInstanceOf[P]
-
-    def nextResponse(): Packet = {
-        channel.nextResponse()
-    }
+    def nextResponse[P <: Packet]: P = channel.nextResponse.asInstanceOf[P]
 
     override def toString: String = s"RemoteFragmentController($nameIdentifier)"
 

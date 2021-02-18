@@ -1,19 +1,18 @@
 package fr.`override`.linkit.server.connection
 
-import java.net.Socket
-
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool}
-import fr.`override`.linkit.api.exception.RelayException
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.api.packet.fundamental._
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.traffic.PacketInjections
 import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TasksHandler
 import org.jetbrains.annotations.NotNull
 
+import java.net.Socket
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends JustifiedCloseable {
@@ -27,13 +26,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     private val workerThread = new RelayWorkerThreadPool()
 
     @volatile private var closed = false
-
-    def start(): Unit = {
-        if (closed) {
-            throw new RelayException("This Connection was already used and is now definitely closed.")
-        }
-        ConnectionPacketWorker.start()
-    }
 
     override def close(reason: CloseReason): Unit = {
         RelayWorkerThreadPool.checkCurrentIsWorker()
@@ -51,9 +43,18 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         println(s"Connection closed for $identifier")
     }
 
-    def sendPacket(packet: Packet, channelID: Int): Unit = runLater {
-        val bytes = packetTranslator.fromPacketAndCoords(packet, PacketCoordinates(channelID, identifier, server.identifier))
-        session.send(bytes)
+    def start(): Unit = {
+        if (closed) {
+            throw new RelayException("This Connection was already used and is now definitely closed.")
+        }
+        ConnectionPacketWorker.start()
+    }
+
+    def sendPacket(packet: Packet, channelID: Int): Unit = {
+        runLater {
+            val bytes = packetTranslator.fromPacketAndCoords(packet, DedicatedPacketCoordinates(channelID, identifier, server.identifier))
+            session.send(bytes)
+        }
     }
 
     def isConnected: Boolean = getState == ConnectionState.CONNECTED
@@ -68,14 +69,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
     def addConnectionStateListener(action: ConnectionState => Unit): Unit = session.addStateListener(action)
 
-    def openChannel[C <: PacketChannel](channelId: Int, factory: PacketChannelFactory[C]): C = {
-        val channel = factory.createNew(session.traffic, channelId, identifier)
-        session.traffic.register(channel)
-        channel
-    }
-
     def runLater(callback: => Unit): Unit = {
-        workerThread.runLater(_ => callback)
+        workerThread.runLater(callback)
     }
 
     override def isClosed: Boolean = closed
@@ -90,12 +85,14 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     }
 
     object ConnectionPacketWorker extends PacketWorkerThread {
-        override protected def readAndHandleOnePacket(): Unit = {
+
+        @relayWorkerExecution
+        override protected def refresh(): Unit = {
             try {
                 session
                         .packetReader
-                        .nextPacket((packet, coordinates) => {
-                            runLater(handlePacket(packet, coordinates))
+                        .nextPacket((packet, coordinates, packetNumber) => {
+                            runLater(handlePacket(packet, coordinates, packetNumber))
                         })
             } catch {
                 case NonFatal(e) =>
@@ -107,17 +104,17 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
             }
         }
 
-        private def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-            val containerID = coordinates.injectableID
+        @relayWorkerExecution
+        private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): Unit = {
             if (closed)
                 return
+
             packet match {
-                case systemError: ErrorPacket if containerID == PacketTraffic.SystemChannel => systemError.printError()
                 case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
                 case init: TaskInitPacket => session.tasksHandler.handlePacket(init, coordinates)
                 case _: Packet =>
-                    if (server.preHandlePacket(packet, coordinates))
-                        session.traffic.injectPacket(packet, coordinates)
+                    val injection = PacketInjections.createInjection(packet, coordinates, number)
+                    session.serverTraffic.handleInjection(injection)
             }
         }
 
@@ -135,15 +132,14 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
                 case CHECK_ID => checkIDRegistered(new String(content))
                 case PRINT_INFO => server.getConsoleOut(identifier).println(s"Connected to server ${server.relayVersion} (${Relay.ApiVersion})")
 
-                case _ => session.channel.sendPacket(ErrorPacket("Forbidden order", s"Could not complete order '$orderType', can't be handled by a server or unknown order"))
+                case _ => new UnexpectedPacketException(s"Could not complete order '$orderType', can't be handled by a server or unknown order")
+                        .printStackTrace(getConsoleErr)
             }
 
             def checkIDRegistered(target: String): Unit = {
-                val response = if (server.isConnected(target)) "OK" else "ERROR"
-                session.channel.sendPacket(DataPacket(response))
+                session.channel.send(BooleanPacket(server.isConnected(target)))
             }
         }
-
     }
 
 }

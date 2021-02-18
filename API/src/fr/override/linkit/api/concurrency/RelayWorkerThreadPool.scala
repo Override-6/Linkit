@@ -1,10 +1,9 @@
 package fr.`override`.linkit.api.concurrency
 
-import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory}
-
-import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool.{WorkerThread, checkCurrentIsWorker, providers}
+import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool.{WorkerThread, checkCurrentIsWorker}
 import fr.`override`.linkit.api.exception.IllegalThreadException
 
+import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory}
 import scala.util.control.NonFatal
 
 class RelayWorkerThreadPool() extends AutoCloseable {
@@ -12,63 +11,55 @@ class RelayWorkerThreadPool() extends AutoCloseable {
     val factory: ThreadFactory = new WorkerThread(_, this)
     private val executor = Executors.newFixedThreadPool(3, factory)
 
-    //The different tasks to make
-    private val workQueue = extractWorkQueue()
+    private val workQueue = extractWorkQueue()    //The different tasks to execute
     private var closed = false
     private val providerLocks = new ProvidersLock
+    @volatile private var activeThreads = 0
 
     def runLater(action: => Unit): Unit = {
-        runLater(_ => action)
-    }
-
-    def runLater(action: Unit => Unit): Unit = {
         if (!closed) {
-            executor.submit((() => {
+            //println(s"Submitted action from thread $currentThread, active threads: $activeThreads")
+            var runnable: Runnable = null
+            runnable = () => {
+                activeThreads += 1
+                //println(s"Action taken by thread $currentThread")
                 try {
-                    //println(s"Making action...($currentThread)")
-                    action(null)
-                    //println(s"Action made ! (queueLength: ${workQueue.size()}, current: $currentThread)")
+                    action
                 } catch {
                     case NonFatal(e) => e.printStackTrace()
                 }
-            }): Runnable)
+                activeThreads -= 1
+               // println(s"Action terminated by thread $currentThread, $activeThreads are currently running.")
+            }
+            executor.submit(runnable)
             //if there is one provided thread that is waiting for a new task to be performed, it would instantly execute the current task.
             providerLocks.notifyOneProvider()
         }
-        //println(s"RunLater submitted ! (queueLength: ${workQueue.size()}, current: $currentThread)")
     }
 
+    def workingThreads: Int = activeThreads
 
     def provideWhile(check: => Boolean): Unit = {
         checkCurrentIsWorker()
 
-        //println(s"Providing in $currentThread")
-        providers += 1
-        //println(s"Total providers are : $providers")
         while (!workQueue.isEmpty && check) {
             val task = workQueue.poll()
             if (task != null)
                 task.run()
         }
-        providers -= 1
-        //println(s"End Of Provide $currentThread")
-        //println(s"Total providers are now : $providers")
     }
 
     def provideAllWhileThenWait(lock: AnyRef, check: => Boolean): Unit = {
-        //println(s"Providing on lock ($lock) and condition")
         provideWhile(check)
 
         if (check) { //we may still need to provide
             providerLocks.addProvidingLock(lock)
             while (check) {
-                //println(s"CONTINUING... ($lock, $currentThread)")
                 lock.synchronized {
-                    //println(s"WAiTING ($lock, $currentThread)")
-                    if (check)// because of the synchronisation block, the check value may be true, so
+                    if (workQueue.isEmpty && check) {// because of the synchronisation block, the check value may change
                         lock.wait()
+                    }
                 }
-                //println(s"CONTINUED ! ($lock, $currentThread)")
                 provideWhile(check)
             }
             providerLocks.removeProvidingLock()
@@ -114,7 +105,6 @@ object RelayWorkerThreadPool {
 
     val workerThreadGroup: ThreadGroup = new ThreadGroup("Relay Worker")
     private var activeCount = 1
-    @volatile var providers = 0
 
     /**
      * This method may execute the given action into the current thread pool.
@@ -158,13 +148,11 @@ object RelayWorkerThreadPool {
         ifCurrentOrElse(_.provideWhile(asLongAs), ())
     }
 
-    def smartWait(lock: AnyRef, asLongAs: => Boolean): Unit = {
-        //println("Performing smart wait...")
-        ifCurrentOrElse(_ => s"Providing ${Thread.currentThread()}", s"Waiting ${Thread.currentThread()}")
-        ifCurrentOrElse(_.provideAllWhileThenWait(lock, asLongAs), lock.synchronized(lock.wait()))
+    def smartProvide(lock: AnyRef, asLongAs: => Boolean): Unit = {
+        ifCurrentOrElse(_.provideAllWhileThenWait(lock, asLongAs), if (asLongAs) lock.synchronized(lock.wait()))
     }
 
-    def smartWait(lock: AnyRef, minTimeOut: Long): Unit = {
+    def smartProvide(lock: AnyRef, minTimeOut: Long): Unit = {
         ifCurrentOrElse(_.provide(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
     }
 

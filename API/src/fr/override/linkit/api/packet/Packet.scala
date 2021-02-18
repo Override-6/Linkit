@@ -1,8 +1,8 @@
 package fr.`override`.linkit.api.packet
 
 //TODO Doc
-trait Packet {
+trait Packet extends Serializable {
 
-    final lazy val className: String = getClass.getSimpleName
+    def className: String = getClass.getSimpleName
 
 }

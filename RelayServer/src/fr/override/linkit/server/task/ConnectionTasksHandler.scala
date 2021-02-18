@@ -1,7 +1,7 @@
 package fr.`override`.linkit.server.task
 
 import fr.`override`.linkit.api.exception.TaskException
-import fr.`override`.linkit.api.packet.PacketCoordinates
+import fr.`override`.linkit.api.packet.DedicatedPacketCoordinates
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
 import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
 import fr.`override`.linkit.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
@@ -23,7 +23,7 @@ class ConnectionTasksHandler(session: ClientConnectionSession) extends TasksHand
    * @param packet packet to handle
    * @throws TaskException if the handling went wrong
    * */
-  override def handlePacket(packet: TaskInitPacket, coordinates: PacketCoordinates): Unit = {
+  override def handlePacket(packet: TaskInitPacket, coordinates: DedicatedPacketCoordinates): Unit = {
     try {
       tasksCompleterHandler.handleCompleter(packet, coordinates, this)
     } catch {

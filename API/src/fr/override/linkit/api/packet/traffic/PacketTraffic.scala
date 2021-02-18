@@ -1,30 +1,33 @@
 package fr.`override`.linkit.api.packet.traffic
 
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.concurrency.relayWorkerExecution
+import fr.`override`.linkit.api.packet.Packet
+import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.system.JustifiedCloseable
 
 import scala.reflect.ClassTag
 
 
-trait PacketTraffic extends PacketWriter with JustifiedCloseable {
+trait PacketTraffic extends JustifiedCloseable {
 
-    def register(dedicated: DedicatedPacketInjectable): Unit
+    val relayID: String
+    val ownerID: String
 
-    def register(global: GlobalPacketInjectable): Unit
+    def createInjectable[C <: PacketInjectable : ClassTag](id: Int,
+                                                           scopeFactory: ScopeFactory[_ <: ChannelScope],
+                                                           factory: PacketInjectableFactory[C]): C
 
-    def openChannel[C <: PacketChannel : ClassTag](injectableID: Int, targetID: String, factory: PacketChannelFactory[C]): C
+    @relayWorkerExecution
+    def handleInjection(injection: PacketInjection): Unit
 
-    def openCollector[C <: PacketCollector : ClassTag](injectableID: Int, factory: PacketCollectorFactory[C]): C
+    def canConflict(id: Int, scope: ChannelScope): Boolean
 
-    def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit
-
-    def isRegistered(identifier: Int, boundTarget: String): Boolean
+    def newWriter(id: Int, transform: Packet => Packet = p => p): PacketWriter
 
 }
 
 object PacketTraffic {
-    val SystemChannel = 1
+    val SystemChannelID = 1
     val RemoteConsoles = 2
 }

@@ -1,10 +1,9 @@
 package fr.`override`.linkit.api.packet
 
-//TODO optimised PacketCoordinates by caching every possibility
-case class PacketCoordinates(injectableID: Int, targetID: String, senderID: String) {
+import fr.`override`.linkit.api.packet.serialization.ObjectSerializer
 
-    override def toString: String = s"PacketCoordinates(channelId: $injectableID, targetID: $targetID, senderID: $senderID)"
+trait PacketCoordinates extends Serializable {
 
-    def reversed(): PacketCoordinates = PacketCoordinates(injectableID, senderID, targetID)
+    def determineSerializer(array: Array[String], raw: ObjectSerializer, cached: ObjectSerializer): ObjectSerializer
 
 }

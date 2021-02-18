@@ -18,7 +18,7 @@ import org.jetbrains.annotations.Nullable
  *     TasksCompleters, are the tasks which completes the self-executable tasks.
  *      @example
  *          in [[CreateFileTask]], the self-executable (the class that directly extends from [[Task]]) will ask to the targeted Relay
- *          if he could creates a file located on the specified path.
+ *          if it could creates a file located on the specified path.
  *          The targeted Relay will instantiate / execute the Completer of [[CreateFileTask]], in which the file will be created.
  * </p>
  * <p>

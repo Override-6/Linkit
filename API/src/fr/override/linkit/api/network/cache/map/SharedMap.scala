@@ -1,8 +1,10 @@
 package fr.`override`.linkit.api.network.cache.map
 
+import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.network.cache.map.MapModification._
-import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, ObjectPacket, SharedCacheFactory}
-import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
@@ -10,7 +12,7 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
+class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V)], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
 
     private val localMap = LocalMap()
     private val networkListeners = ConsumerContainer[(MapModification, K, V)]()
@@ -31,16 +33,24 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
     override def modificationCount(): Int = modCount
 
     /**
-     * (MapModification, _, _) : the kind of modification that were done
-     * (_, K, _) : the key affected (may be null for mod kinds that does not specify any key such as CLEAR)
-     * (_, _, V) : The value affected (may be null for mod kinds that does not specify any value such as CLEAR, or REMOVE)
+     * (MapModification, _, _) : the kind of modification that were done<p>
+     * (_, K, _) : the key affected (is null for mod kinds that does not specify any key such as CLEAR)<p>
+     * (_, _, V) : The value affected (is null for mod kinds that does not specify any value such as CLEAR, or REMOVE)<p>
      * */
-    def addListener(action: (MapModification, K, V) => Unit): this.type = {
-        networkListeners += (tuple3 => action.apply(tuple3._1, tuple3._2, tuple3._3))
+    def addListener(action: ((MapModification, K, V)) => Unit): this.type = {
+        networkListeners += action
+        //println(s"networkListeners = ${networkListeners}")
+        this
+    }
+
+    def removeListener(action: ((MapModification, K, V)) => Unit): this.type = {
+        networkListeners -= action
         this
     }
 
     def get(k: K): Option[V] = localMap.get(k)
+
+    def getOrWait(k: K): V = awaitPut(k)
 
     def apply(k: K): V = localMap(k)
 
@@ -93,6 +103,33 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
 
     def isEmpty: Boolean = iterator.isEmpty
 
+    def awaitPut(k: K): V = {
+        if (contains(k))
+            return apply(k)
+        //println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
+
+        val lock = new Object
+        var found = false
+
+        val listener: ((MapModification, K, V)) => Unit = t => {
+            found = t._2 == k
+            //println(s"k = ${k}")
+            //println(s"t._2 = ${t._2}")
+            //println(s"found = ${found}")
+            if (found) lock.synchronized {
+                //println(s"Notified lock $lock")
+                lock.notifyAll()
+            }
+        }
+
+        addListener(listener) //Due to hyper parallelized thread execution,
+        //the awaited key could be added since the 'found' value has been created.
+        RelayWorkerThreadPool.smartProvide(lock, !(contains(k) || found))
+        removeListener(listener)
+        //println("Done !")
+        apply(k)
+    }
+
     override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
             case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
@@ -110,10 +147,9 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
             case REMOVE => _.remove(key)
         }
         action(localMap)
-        modCount += 1
 
+        modCount += 1
         networkListeners.applyAll(mod)
-        //println(s"<$family> MAP IS NOW (network): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     private def addLocalModification(@NotNull kind: MapModification, @Nullable key: Any, @Nullable value: Any): Unit = {
@@ -133,7 +169,6 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
         modCount += 1
-        //println(s"<$family> MAP IS NOW (local): " + localMap + " IDENTIFIER : " + identifier)
     }
 
     case class LocalMap() {
@@ -211,13 +246,8 @@ class SharedMap[K, V](family: String, identifier: Int, baseContent: Array[(K, V)
 
 object SharedMap {
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        new SharedCacheFactory[SharedMap[K, V]] {
-
-            override def createNew(family: String, identifier: Int, baseContent: Array[Any], channel: CommunicationPacketChannel): SharedMap[K, V] = {
-                new SharedMap[K, V](family, identifier, ScalaUtils.slowCopy(baseContent), channel)
-            }
-
-            override def sharedCacheClass: Class[SharedMap[K, V]] = classOf[SharedMap[K, V]]
+        (family: String, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+            new SharedMap[K, V](family, identifier, ScalaUtils.slowCopy(baseContent), channel)
         }
     }
 

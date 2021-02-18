@@ -1,14 +1,14 @@
 package fr.`override`.linkit.api.network
 
-import java.sql.Timestamp
-
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
-import fr.`override`.linkit.api.network.cache.{ObjectPacket, SharedCacheHandler}
-import fr.`override`.linkit.api.packet.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.packet.collector.CommunicationPacketCollector
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
+import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.system.Version
+
+import java.sql.Timestamp
 
 abstract class AbstractRemoteEntity(private val relay: Relay,
                                     override val identifier: String,
@@ -17,16 +17,17 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     //println(s"CREATED REMOTE ENTITY NAMED '$identifier'")
     protected implicit val traffic: PacketTraffic = relay.traffic
 
+    println(s"Created entity $identifier")
     override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
     override val connectionDate: Timestamp = cache(2)
     private val remoteFragments = {
         val communicator = traffic
-                .openCollector(4, CommunicationPacketCollector.providable)
-                .subChannel(identifier, CommunicationPacketChannel.providable, true)
+                .createInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
+                .subInjectable(Array(identifier), PacketChannelCategories, true)
 
         cache
-                .open(6, SharedCollection.set[String])
-                .mapped(new RemoteFragmentController(_, communicator))
+                .get(6, SharedCollection.set[String])
+                .mapped(name => new RemoteFragmentController(name, communicator.createCategory(name, ChannelScope.broadcast, CommunicationPacketChannel)))
     }
 
     override def addOnStateUpdate(action: ConnectionState => Unit): Unit
@@ -35,7 +36,7 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
 
     override def getProperty(name: String): Serializable = {
         communicator.sendRequest(ObjectPacket(("getProp", name)))
-        communicator.nextResponse(ObjectPacket).obj
+        communicator.nextResponse[ObjectPacket].casted
     }
 
     override def setProperty(name: String, value: Serializable): Unit = {
@@ -54,7 +55,6 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override def listRemoteFragmentControllers: List[RemoteFragmentController] = remoteFragments.toList
 
     override def getFragmentController(nameIdentifier: String): Option[RemoteFragmentController] = {
-        println(s"remoteFragments = $remoteFragments")
         remoteFragments.find(_.nameIdentifier == nameIdentifier)
     }
 

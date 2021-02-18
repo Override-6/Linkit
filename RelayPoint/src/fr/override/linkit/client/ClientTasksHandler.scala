@@ -3,7 +3,7 @@ package fr.`override`.linkit.client
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
 import fr.`override`.linkit.api.exception.TaskException
-import fr.`override`.linkit.api.packet.PacketCoordinates
+import fr.`override`.linkit.api.packet.DedicatedPacketCoordinates
 import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
 import fr.`override`.linkit.api.system.{CloseReason, SystemOrder, SystemPacketChannel}
 import fr.`override`.linkit.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
@@ -30,7 +30,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
         queue.offer(ticket)
     }
 
-    override def handlePacket(packet: TaskInitPacket, coordinates: PacketCoordinates): Unit = {
+    override def handlePacket(packet: TaskInitPacket, coordinates: DedicatedPacketCoordinates): Unit = {
         try {
             tasksCompleterHandler.handleCompleter(packet, coordinates, this)
         } catch {
@@ -39,7 +39,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
                 systemChannel.sendOrder(SystemOrder.ABORT_TASK, CloseReason.INTERNAL_ERROR)
 
                 val errConsole = relay.getConsoleErr(coordinates.senderID)
-                    errConsole.print(e)
+                errConsole.print(e)
         }
     }
 
@@ -50,7 +50,8 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
             currentTicket = null
         }
         open = false
-        tasksThread.interrupt()
+        if (tasksThread != null)
+            tasksThread.interrupt()
     }
 
     override def skipCurrent(reason: CloseReason): Unit = {

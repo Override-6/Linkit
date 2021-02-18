@@ -28,6 +28,7 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
                 Thread.sleep(reconnectionPeriod)
                 handleReconnection()
         }
+        markAsConnected()
     }
 
     def start(): Unit = {

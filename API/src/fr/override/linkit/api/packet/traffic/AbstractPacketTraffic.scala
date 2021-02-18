@@ -1,116 +1,98 @@
 package fr.`override`.linkit.api.packet.traffic
 
-import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
-import fr.`override`.linkit.api.exception.{ClosedException, RelayException}
-import fr.`override`.linkit.api.packet.channel.{PacketChannel, PacketChannelFactory}
-import fr.`override`.linkit.api.packet.collector.{PacketCollector, PacketCollectorFactory}
+import fr.`override`.linkit.api.exception.{ClosedException, ConflictException, RelayException}
+import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic.{PacketInjectable, PacketTraffic}
-import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
+import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
-abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) extends PacketTraffic {
+abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
+                                     @NotNull private val ownerId: String) extends PacketTraffic {
 
-    override val ownerID: String = ownerId
-    private val registeredInjectables = mutable.Map.empty[Int, InjectableGroup]
+    override val relayID: String = ownerId
+    private val holders = mutable.Map.empty[Int, ScopesHolder]
     @volatile private var closed = false
 
-    @deprecated("Find a better solution; cache every lost packets may be very heavy. (take a look at Relay.scala TODO list)")
-    private val lostPackets = mutable.Map.empty[(Int, String), ListBuffer[(Packet, PacketCoordinates)]]
+    private val lostInjections = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
 
-    override def openChannel[A <: PacketChannel : ClassTag](injectableID: Int, targetID: String, factory: PacketChannelFactory[A]): A = {
-        if (isRegistered(injectableID, targetID)) {
-            return getInjectableOfType[A](injectableID, targetID)
+    override def createInjectable[C <: PacketInjectable : ClassTag](id: Int,
+                                                                    scopeFactory: ScopeFactory[_ <: ChannelScope],
+                                                                    factory: PacketInjectableFactory[C]): C = {
+        val scope = scopeFactory(newWriter(id))
+        val holderOpt = holders.get(id)
+        if (holderOpt.isDefined) {
+            val holder = holderOpt.get
+            val attempt = holder.tryRetrieveInjectable(scope)
+            if (attempt.isDefined) {
+                return attempt.get
+            }
+
+            if (holder.canConflict(scope)) {
+                throw new ConflictException("This scope can conflict with other scopes that are registered within this injectable identifier")
+            }
         }
-        val channel = factory.createNew(this, injectableID, targetID)
-        register(channel)
+
+        completeCreation(scope, factory)
+    }
+
+    override def canConflict(identifier: Int, scope: ChannelScope): Boolean = {
+        holders
+                .get(identifier)
+                .exists(_.canConflict(scope))
+    }
+
+    private def completeCreation[C <: PacketInjectable](scope: ChannelScope, factory: PacketInjectableFactory[C]): C = {
+        val channel = factory.createNew(scope)
+        register(scope, channel)
         channel
     }
 
-    override def register(dedicated: DedicatedPacketInjectable): Unit = {
+    private def register(scope: ChannelScope, dedicated: PacketInjectable): Unit = {
         ensureOpen()
 
         val id = dedicated.identifier
-        val dedicatedTarget = dedicated.connectedID
+        init(dedicated)
 
-        init(dedicated, dedicatedTarget)
-
-        registeredInjectables.getOrElseUpdate(id, InjectableGroup(id)).put(dedicated)
+        holders.getOrElseUpdate(id, ScopesHolder(id)).register(scope, dedicated)
     }
 
-    private def init(injectable: PacketInjectable, target: String): Unit = {
+    private def init(injectable: PacketInjectable): Unit = {
 
-        if (registeredInjectables.size > relay.configuration.maxPacketContainerCacheSize) {
+        if (holders.size > config.maxPacketContainerCacheSize) {
             throw new RelayException("Maximum registered packet containers limit exceeded")
         }
 
         val id = injectable.identifier
 
-        //Does work as expected; this is the entire port that is tested and/or removed, where this is the old closed injectable that MUST be replaced
-        if (isRegistered(id, target)) {
-            val injectable = registeredInjectables(id)
-            if (injectable.isClosed)
-                registeredInjectables.remove(id)
-            else {
-                throw new IllegalArgumentException(s"A packet injectable with id '$id' is already registered to this traffic handler")
-            }
-        }
-
         //Will inject every lost packets
-        lostPackets.get((id, target))
-                .foreach(_.foreach(t => injectable.injectPacket(t._1, t._2)))
-        lostPackets.remove((id, target))
+        lostInjections
+                .get(id)
+                .foreach(_.foreach(injectable.inject))
+        lostInjections.remove(id)
     }
 
-    private def getInjectableOfType[A <: PacketInjectable : ClassTag](identifier: Int, target: String): A = {
-        getInjectable(identifier, target).orNull match {
-            case registeredInjectable: A => registeredInjectable
-            case other => throw new UnsupportedOperationException(s"Attempted to retrieve injectable (id: $identifier) with requested kind : ${classTag[A].runtimeClass}, but found ${other.getClass}")
-        }
-    }
+    private def getInjectables(identifier: Int, target: String): Iterable[PacketInjectable] = {
+        val opt = holders.get(identifier)
 
-    private def getInjectable(identifier: Int, target: String): Option[PacketInjectable] = {
-        registeredInjectables
-                .get(identifier)
-                .flatMap(_.getInjectable(target))
-    }
-
-    override def openCollector[A <: PacketCollector : ClassTag](injectableID: Int, factory: PacketCollectorFactory[A]): A = {
-        if (isRegistered(injectableID, null)) {
-            return getInjectableOfType[A](injectableID, null)
-        }
-
-        val channel = factory.createNew(this, injectableID)
-        register(channel)
-        channel
-    }
-
-    override def writePacket(packet: Packet, identifier: Int, targetID: String): Unit = {
-        ensureOpen()
-        writePacket(packet, PacketCoordinates(identifier, targetID, relay.identifier))
-    }
+        if (opt.isEmpty)
+            return Iterable()
 
 
-    override def writePacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        //println("SENDING PACKET " + packet + " WITH COORDINATES " + coordinates + s"(${Thread.currentThread()})")
-        if (coordinates.targetID == relay.identifier)
-            injectPacket(packet, coordinates)
-        else send(packet, coordinates)
-    }
-
-    override def isRegistered(identifier: Int, boundTarget: String): Boolean = {
-        registeredInjectables.get(identifier).exists(_.isRegistered(boundTarget))
+        opt.get.getInjectables(target)
     }
 
     override def close(reason: CloseReason): Unit = {
-        registeredInjectables.values
+        holders.values
                 .foreach(_.close(reason))
-        registeredInjectables.clear()
+        holders.clear()
         closed = true
     }
 
@@ -121,41 +103,38 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
             throw new ClosedException("This Traffic handler is closed")
     }
 
-    protected def send(packet: Packet, coordinates: PacketCoordinates): Unit
+    override def handleInjection(injection: PacketInjection): Unit = {
+        if (injection.mayNotHandle) {
+            //println(s"Injection handling has been rejected for thread ${Thread.currentThread()}")
+            //println(s"The injection is already handled by thread ${injection.handlerThread}")
+            //injection.handlerThread.getStackTrace.foreach(println)
+            return
+        }
 
-    override def register(global: GlobalPacketInjectable): Unit = {
-        ensureOpen()
-
-        val id = global.identifier
-
-        init(global, null)
-
-        registeredInjectables.getOrElseUpdate(id, InjectableGroup(id)).put(global)
-    }
-
-    override def injectPacket(packet: Packet, coordinates: PacketCoordinates): Unit = {
-        //println(s"INJECTING PACKET : $packet With coordinate : $coordinates (${Thread.currentThread()})")
+        val coordinates = injection.coordinates
         PacketWorkerThread.checkNotCurrent()
         ensureOpen()
 
         val id = coordinates.injectableID
+
         val sender = coordinates.senderID
-        if (!isRegistered(id, sender)) {
-            lostPackets.getOrElseUpdate((id, sender), ListBuffer.empty) += ((packet, coordinates))
+        val injectables = getInjectables(id, sender)
+
+        if (injectables.isEmpty) {
+            lostInjections.getOrElseUpdate(id, ListBuffer.empty) += injection
             return
         }
-        registeredInjectables(id)
-                .inject(packet, coordinates)
+        injectables.foreach(_.inject(injection))
     }
 
-    protected case class InjectableGroup(identifier: Int) extends JustifiedCloseable {
-        private val cache = mutable.Map.empty[String, PacketInjectable]
-        private var isGlobal = false
+    protected case class ScopesHolder(identifier: Int) extends JustifiedCloseable {
+
+        private val cache = mutable.Set.empty[(ChannelScope, PacketInjectable)]
         private var closed = false
 
         override def close(reason: CloseReason): Unit = {
-            for (injectable <- cache.values if injectable.isOpen) try {
-                injectable.close()
+            for (tuple <- cache if tuple._2.isOpen) try {
+                tuple._2.close()
             } catch {
                 case NonFatal(e) => e.printStackTrace()
             }
@@ -165,40 +144,32 @@ abstract class AbstractPacketTraffic(relay: Relay, private val ownerId: String) 
 
         override def isClosed: Boolean = closed
 
-        def getInjectable(target: String): Option[PacketInjectable] = {
-            if (isGlobal)
-                Option(cache.values.head)
-            else Option(cache.get(target).orNull)
+        def canConflict(scope: ChannelScope): Boolean = {
+            cache.exists(_._1.canConflictWith(scope))
         }
 
-        def isRegistered(target: String): Boolean = {
-            isGlobal || cache.contains(target)
+        def isAuthorised(targetID: String): Boolean = {
+            cache.exists(_._1.areAuthorised(targetID))
         }
 
-        def put(global: GlobalPacketInjectable): Unit = {
-            ensureNotGlobal()
-            cache.clear()
-            isGlobal = true
-            cache += ((null, global))
+        def getInjectables(target: String): Seq[PacketInjectable] = {
+            cache
+                    .filter(_._1.areAuthorised(target))
+                    .map(_._2)
+                    .toSeq
         }
 
-        def put(dedicated: DedicatedPacketInjectable): Unit = {
-            ensureNotGlobal()
-            cache += ((dedicated.connectedID, dedicated))
+        def tryRetrieveInjectable[I <: PacketInjectable : ClassTag](scope: ChannelScope): Option[I] = {
+            val injectableClass = classTag[I].runtimeClass
+            cache.find(tuple => tuple._1 == scope && tuple._2.getClass == injectableClass)
+                    .map(_._2)
+                    .asInstanceOf[Option[I]]
         }
 
-        private def ensureNotGlobal(): Unit = {
-            if (isGlobal)
-                throw new IllegalStateException(s"Attempted to register a PacketInjectable into a global context")
-        }
-
-        def inject(packet: Packet, coords: PacketCoordinates): Unit = {
-            if (isGlobal)
-                if (cache.size == 1)
-                    cache.values.head.injectPacket(packet, coords)
-                else throw new IllegalStateException("Attempted to inject a packet into a global packet injectable but multiples injectable where found.")
-            else cache.get(coords.senderID).foreach(_.injectPacket(packet, coords))
+        def register(scope: ChannelScope, injectable: PacketInjectable): Unit = {
+            cache += ((scope, injectable))
         }
     }
+
 
 }

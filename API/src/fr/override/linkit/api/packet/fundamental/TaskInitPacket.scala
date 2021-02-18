@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-import fr.`override`.linkit.api.packet.{Packet, PacketFactory, PacketTranslator}
+import fr.`override`.linkit.api.packet.Packet
 
 //TODO doc parameters
 /**
@@ -23,27 +23,3 @@ case class TaskInitPacket(taskType: String,
     lazy val haveContent: Boolean = !content.isEmpty
 }
 
-object TaskInitPacket extends PacketFactory[TaskInitPacket] {
-
-    import fr.`override`.linkit.api.packet.PacketUtils._
-
-    private val TYPE = "[task_init]".getBytes
-    private val CONTENT = "<content>".getBytes
-
-    override def decompose(translator: PacketTranslator)(implicit packet: TaskInitPacket): Array[Byte] = {
-        val typeBytes = packet.taskType.getBytes
-        TYPE ++ typeBytes ++
-            CONTENT ++ packet.content
-    }
-
-    override def canTransform(translator: PacketTranslator)(implicit bytes: Array[Byte]): Boolean =
-        bytes.startsWith(TYPE)
-
-    override def build(translator: PacketTranslator)(implicit bytes: Array[Byte]): TaskInitPacket = {
-        val taskType = stringBetween(TYPE, CONTENT)
-        val content = untilEnd(CONTENT)
-        TaskInitPacket(taskType, content)
-    }
-
-    override val packetClass: Class[TaskInitPacket] = classOf[TaskInitPacket]
-}

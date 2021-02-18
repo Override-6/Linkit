@@ -16,7 +16,7 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
         try {
             while (open) {
                 //println("Waiting for next packet...")
-                readAndHandleOnePacket()
+                refresh()
             }
         } catch {
             case NonFatal(e) =>
@@ -37,7 +37,8 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
      * The method may not throw any exception. if it is, this packet worker thread will
      * stop !
      * */
-    protected def readAndHandleOnePacket(): Unit
+    @relayWorkerExecution
+    protected def refresh(): Unit
 
 }
 
