@@ -1,4 +1,4 @@
-![Cover](Cover.png)
+![Cover](RCover.png)
  A personal project to easily synchronise and link programs.  
 
 This project is designed to help the user to quickly write the network side of an application (for games, apps...).
