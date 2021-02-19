@@ -2,15 +2,16 @@ package fr.`override`.linkit.api
 
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.concurrency.relayWorkerExecution
-import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, IllegalThreadException, RelayException}
+import fr.`override`.linkit.api.exception.{IllegalThreadException, RelayException}
 import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole}
 import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.system.config.RelayConfiguration
+import fr.`override`.linkit.api.system.event.EventNotifier
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, Version}
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RelayState, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
 import org.jetbrains.annotations.Nullable
 
@@ -31,7 +32,6 @@ import scala.reflect.ClassTag
  */
 //TODO Recap :
 //TODO Rewrite/write Doc and README of API, RelayServer and RelayPoint
-//TODO Automatically inject packet if it targets the current relay.
 //TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
 //TODO Find a solution about packets that are send into a non-registered channel : if an exception is thrown, this can cause some problems, and if not, this can cause other problems. SOLUTION : Looking for "RemoteActionDescription" that can control and get some information about an action that where made over the network.
 object Relay {
@@ -80,21 +80,15 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      */
     val properties: RelayProperties
 
-    /**
-     * Packet Worker Threads have to be registered in this ThreadGroup in order to throw an exception when a relay worker thread
-     * is about to be locked by a monitor, that concern packet reception (example: lockers of BlockingQueues in PacketChannels)
-     *
-     * @see [[IllegalPacketWorkerLockException]]
-     * */
-    val packetWorkerThreadGroup: ThreadGroup = new ThreadGroup("Relay Packet Workers")
+    val traffic: PacketTraffic
+
+    val notifier: EventNotifier
 
     /**
      * The network object of this relay, this object is such a [[fr.`override`.linkit.api.network.NetworkEntity]] container
      * with some getters. No network interaction can be done through object.
      * */
     def network: Network
-
-    val traffic: PacketTraffic
 
     /**
      * Will Start the Relay in the current thread.
@@ -113,6 +107,8 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
 
     @relayWorkerExecution
     override def close(reason: CloseReason): Unit
+
+    def state(): RelayState
 
     /**
      * Will run this callback in a worker thread.

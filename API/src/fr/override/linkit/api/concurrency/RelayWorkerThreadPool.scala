@@ -6,15 +6,20 @@ import fr.`override`.linkit.api.exception.IllegalThreadException
 import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory}
 import scala.util.control.NonFatal
 
-class RelayWorkerThreadPool() extends AutoCloseable {
+class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseable {
 
-    val factory: ThreadFactory = new WorkerThread(_, this)
-    private val executor = Executors.newFixedThreadPool(3, factory)
+    val factory: ThreadFactory = new WorkerThread(_, prefix, this)
+    private val executor = Executors.newFixedThreadPool(nThreads, factory)
 
-    private val workQueue = extractWorkQueue()    //The different tasks to execute
+    private val workQueue = extractWorkQueue() //The different tasks to execute
     private var closed = false
     private val providerLocks = new ProvidersLock
     @volatile private var activeThreads = 0
+
+    override def close(): Unit = {
+        closed = true
+        executor.shutdownNow()
+    }
 
     def runLater(action: => Unit): Unit = {
         if (!closed) {
@@ -29,7 +34,7 @@ class RelayWorkerThreadPool() extends AutoCloseable {
                     case NonFatal(e) => e.printStackTrace()
                 }
                 activeThreads -= 1
-               // println(s"Action terminated by thread $currentThread, $activeThreads are currently running.")
+                // println(s"Action terminated by thread $currentThread, $activeThreads are currently running.")
             }
             executor.submit(runnable)
             //if there is one provided thread that is waiting for a new task to be performed, it would instantly execute the current task.
@@ -56,7 +61,7 @@ class RelayWorkerThreadPool() extends AutoCloseable {
             providerLocks.addProvidingLock(lock)
             while (check) {
                 lock.synchronized {
-                    if (workQueue.isEmpty && check) {// because of the synchronisation block, the check value may change
+                    if (workQueue.isEmpty && check) { // because of the synchronisation block, the check value may change
                         lock.wait()
                     }
                 }
@@ -84,12 +89,7 @@ class RelayWorkerThreadPool() extends AutoCloseable {
         }
     }
 
-    override def close(): Unit = {
-        closed = true
-        executor.shutdownNow()
-    }
-
-    def extractWorkQueue(): BlockingQueue[Runnable] = {
+    private def extractWorkQueue(): BlockingQueue[Runnable] = {
         val clazz = executor.getClass
         val field = clazz.getDeclaredField("workQueue")
         field.setAccessible(true)
@@ -141,7 +141,7 @@ object RelayWorkerThreadPool {
     }
 
     def isCurrentWorkerThread: Boolean = {
-        Thread.currentThread().getThreadGroup == workerThreadGroup
+        currentThread.getThreadGroup == workerThreadGroup
     }
 
     def smartProvide(asLongAs: => Boolean): Unit = {
@@ -157,7 +157,7 @@ object RelayWorkerThreadPool {
     }
 
     def ifCurrentOrElse[A](ifCurrent: RelayWorkerThreadPool => A, orElse: => A): A = {
-        val pool = RelayWorkerThreadPool.currentThreadPool()
+        val pool = currentThreadPool()
 
         if (pool.isDefined) {
             ifCurrent(pool.get)
@@ -167,7 +167,7 @@ object RelayWorkerThreadPool {
     }
 
     def currentThreadPool(): Option[RelayWorkerThreadPool] = {
-        Thread.currentThread() match {
+        currentThread match {
             case worker: WorkerThread => Some(worker.owner)
             case _ => None
         }
@@ -177,9 +177,9 @@ object RelayWorkerThreadPool {
         ifCurrentOrElse(_.provide(millis), lock.synchronized(lock.wait(millis)))
     }
 
-    class WorkerThread private[RelayWorkerThreadPool](target: Runnable,
+    class WorkerThread private[RelayWorkerThreadPool](target: Runnable, prefix: String,
                                                       private[RelayWorkerThreadPool] val owner: RelayWorkerThreadPool)
-            extends Thread(workerThreadGroup, target, "Relay Worker Thread-" + activeCount) {
+            extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
         activeCount += 1
     }
 
