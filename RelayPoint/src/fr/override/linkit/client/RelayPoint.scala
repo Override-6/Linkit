@@ -14,7 +14,10 @@ import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic.SystemChannelID
 import fr.`override`.linkit.api.packet.traffic._
+import fr.`override`.linkit.api.system.RelayState._
 import fr.`override`.linkit.api.system._
+import fr.`override`.linkit.api.system.event.EventNotifier
+import fr.`override`.linkit.api.system.event.relay.RelayEvents
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.client.config.RelayPointConfiguration
@@ -32,17 +35,20 @@ object RelayPoint {
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
 
     @volatile private var open = false
+
+    private var currentState: RelayState = RelayState.INACTIVE
     override val relayVersion: Version = RelayPoint.version
     private var pointNetwork: PointNetwork = _ //will be instantiated once connected
     override def network: Network = pointNetwork
 
     override val securityManager: RelaySecurityManager = configuration.securityManager
+    override val notifier: EventNotifier = new EventNotifier
     private val socket: ClientDynamicSocket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
     override val packetTranslator: PacketTranslator = new PacketTranslator(this)
     override val traffic: SocketPacketTraffic = new SocketPacketTraffic(this, socket, identifier)
     override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
     override val properties: RelayProperties = new RelayProperties()
-    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
+    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool("Packet Handling & Extension", 3)
     implicit val systemChannel: SystemPacketChannel = traffic.createInjectable(SystemChannelID, ChannelScope.reserved(ServerIdentifier), SystemPacketChannel)
     private val tasksHandler: ClientTasksHandler = new ClientTasksHandler(systemChannel, this)
     private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
@@ -50,6 +56,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     override def start(): Unit = {
         RelayWorkerThreadPool.checkCurrentIsWorker("Must start relay point in a worker thread.")
+        setState(ENABLING)
 
         val t0 = System.currentTimeMillis()
         open = true
@@ -68,21 +75,25 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             loadUserFeatures()
         } catch {
             case e: RelayInitialisationException =>
+                setState(CRASHED)
                 throw e
 
             case NonFatal(e) =>
-                runLater(close(CloseReason.INTERNAL_ERROR))
+                close(CloseReason.INTERNAL_ERROR) //state 'CRASHED' will be set into the close method.
                 throw RelayInitialisationException(e.getMessage, e)
         }
         securityManager.checkRelay(this)
 
         val t1 = System.currentTimeMillis()
         println(s"Ready ! (took ${t1 - t0}ms)")
+        setState(ENABLED)
     }
 
     override def runLater(callback: => Unit): Unit = {
         workerThread.runLater(callback)
     }
+
+    override def state(): RelayState = currentState
 
     override def close(reason: CloseReason): Unit = {
         RelayWorkerThreadPool.checkCurrentIsWorker()
@@ -109,7 +120,11 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         //Closing socket
         socket.close(reason)
 
+        //Concluding close
         open = false
+        if (reason == CloseReason.INTERNAL_ERROR) setState(CRASHED)
+        else setState(CLOSED)
+
         println("closed !")
     }
 
@@ -155,6 +170,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             case ABORT_TASK => tasksHandler.skipCurrent(reason)
             case PRINT_INFO => getConsoleOut(sender).println(s"$relayVersion (${Relay.ApiVersion})")
 
+            //FIXME weird use of exceptions/remote print
             case _@(SERVER_CLOSE | CHECK_ID) =>
                 new UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this RelayPoint : Received forbidden order")
                         .printStackTrace(getConsoleErr(sender))
@@ -166,6 +182,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     private def loadRemote(): Unit = {
         println(s"Connecting to server with relay id '$identifier'")
+        setState(CONNECTING)
         socket.start()
         println(s"Socket accepted...")
 
@@ -178,9 +195,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             val refusalMessage = systemChannel.nextPacket[StringPacket].value
             throw RelayInitialisationException(refusalMessage)
         }
-        println("Bhap ?")
         systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
         println("Connection accepted !")
+        setState(ENABLING)
 
         println("Initialising Network...")
         this.pointNetwork = new PointNetwork(this)
@@ -203,6 +220,10 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             throw new RelayCloseException("Relay Point have to be started !")
     }
 
+    private def setState(state: RelayState): Unit = {
+        notifier.notifyEvent(RelayEvents.stateChange(state))
+        this.currentState = state
+    }
 
     private def ensureTargetValid(targetID: String): Unit = {
         if (targetID == identifier)
@@ -232,7 +253,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
                 val injection = PacketInjections.createInjection(packet, coordinates, number)
                 //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
                 traffic.handleInjection(injection)
-                //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
+            //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }
 
