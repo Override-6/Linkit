@@ -23,7 +23,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     private val packetTranslator = server.packetTranslator
     private val manager: ConnectionsManager = server.connectionsManager
 
-    private val workerThread = new RelayWorkerThreadPool()
+    private val workerThread = new RelayWorkerThreadPool("Packet Handling & Extension", 3)
 
     @volatile private var closed = false
 

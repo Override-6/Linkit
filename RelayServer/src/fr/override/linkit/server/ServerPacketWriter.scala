@@ -16,7 +16,7 @@ class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWr
             traffic.handleInjection(PacketInjections.unhandled(DedicatedPacketCoordinates(identifier, targetID, relayID), packet))
             return
         }
-        println(s"WRITING PACKETS $packet TO $targetID")
+        //println(s"WRITING PACKETS $packet TO $targetID")
         if (server.isConnected(targetID)) {
             server.getConnection(targetID).sendPacket(packet, identifier)
         } else {

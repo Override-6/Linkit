@@ -3,7 +3,7 @@ package fr.`override`.linkit.server
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
-import fr.`override`.linkit.api.exception.RelayCloseException
+import fr.`override`.linkit.api.exception.{RelayCloseException, RelayInitialisationException}
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.StringPacket
@@ -11,7 +11,10 @@ import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic._
+import fr.`override`.linkit.api.system.RelayState.{CLOSED, CRASHED, ENABLED, ENABLING}
 import fr.`override`.linkit.api.system._
+import fr.`override`.linkit.api.system.event.EventNotifier
+import fr.`override`.linkit.api.system.event.relay.RelayEvents
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
 import fr.`override`.linkit.server.RelayServer.Identifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
@@ -31,7 +34,7 @@ object RelayServer {
     val Identifier = "server"
 }
 
-//TODO Create a connection helper for this poor class which swims into bad practices.
+
 class RelayServer private[server](override val configuration: RelayServerConfiguration) extends Relay {
 
     override val identifier: String = Identifier
@@ -41,6 +44,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     @volatile private var open = false
     private[server] val connectionsManager = new ConnectionsManager(this)
 
+    private var currentState: RelayState = RelayState.INACTIVE
+    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool("Packet Handling & Extension", 3)
+    override val notifier: EventNotifier = new EventNotifier
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
     override val relayVersion: Version = RelayServer.version
@@ -49,7 +55,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     override val properties: RelayProperties = new RelayProperties
     override val packetTranslator: PacketTranslator = new PacketTranslator(this)
     override val network: ServerNetwork = new ServerNetwork(this)(traffic)
-    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool()
     private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -67,6 +72,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     override def start(): Unit = {
         RelayWorkerThreadPool.checkCurrentIsWorker("Must start server in a worker thread.")
+        setState(ENABLING)
 
         println("Current encoding is " + Charset.defaultCharset().name())
         println("Listening on port " + configuration.port)
@@ -82,8 +88,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
             case NonFatal(e) =>
                 e.printStackTrace()
                 close(CloseReason.INTERNAL_ERROR)
+                throw RelayInitialisationException(e.getMessage, e)
         }
-
+        setState(ENABLED)
         println("Ready !")
     }
 
@@ -118,6 +125,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         serverSocket.close()
 
         open = false
+        if (reason == CloseReason.INTERNAL_ERROR) setState(CRASHED)
+        else setState(CLOSED)
+
         println("server closed !")
     }
 
@@ -185,6 +195,8 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     override def runLater(callback: => Unit): Unit = {
         workerThread.runLater(callback)
     }
+
+    override def state(): RelayState = currentState
 
     private def handleSocket(socket: SocketContainer): Unit = {
         val identifier = readWelcomePacket(socket)
@@ -272,4 +284,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
             throw new RelayCloseException("Relay Server have to be started !")
     }
 
+
+    private def setState(state: RelayState): Unit = {
+        notifier.notifyEvent(RelayEvents.stateChange(state))
+        this.currentState = state
+    }
 }
