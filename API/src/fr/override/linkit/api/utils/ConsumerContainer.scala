@@ -1,44 +1,64 @@
 package fr.`override`.linkit.api.utils
 
-import fr.`override`.linkit.api.concurrency.AsyncExecutionContext
+import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
 import scala.util.control.NonFatal
 
 case class ConsumerContainer[T]() {
 
-    private val consumers = ListBuffer.empty[T => Unit]
+    private val consumers = ListBuffer.empty[ConsumerExecutor]
 
     def add(consumer: T => Unit): this.type = {
-        consumers += consumer
-        this
-    }
-
-    def remove(consumer: T => Unit): ConsumerContainer.this.type = {
-        consumers -= consumer
+        consumers += new ConsumerExecutor(consumer, false)
         this
     }
 
     /**
-     * alias for [[add()]]
+     * Will add the consumer in the list, and remove it once it was executed.
+     * @param consumer the action to perform
+     * */
+    def addOnce(consumer: T => Unit): this.type = {
+        consumers += new ConsumerExecutor(consumer, true)
+        this
+    }
+
+    def remove(consumer: T => Unit): this.type = {
+        consumers.filterInPlace(_.isSameConsumer(consumer))
+        this
+    }
+
+    def clear(): this.type = {
+        consumers.clear()
+        this
+    }
+
+    /**
+     * alias for [[ConsumerContainer#add()]]
      * */
     def +=(consumer: T => Unit): this.type = add(consumer)
 
+    /**
+     * alias for [[ConsumerContainer#addOnce()]]
+     * */
+    def +:+=(consumer: T => Unit): this.type = addOnce(consumer)
 
+    /**
+     * alias for [[ConsumerContainer#remove()]]
+     * */
     def -=(consumer: T => Unit): this.type = remove(consumer)
 
     def applyAllAsync(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        Future {
+        RelayWorkerThreadPool.smartRunLater {
             applyAll(t, onException)
-        }(AsyncExecutionContext)
+        }
         this
     }
 
     def applyAll(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
         consumers.clone().foreach(consumer => {
             try {
-                consumer(t)
+                consumer.execute(t)
             } catch {
                 case NonFatal(e) => onException(e)
             }
@@ -48,4 +68,21 @@ case class ConsumerContainer[T]() {
 
     override def toString: String = s"ConsumerContainer($consumers)"
 
+    private class ConsumerExecutor(consumer: T => Unit, executeOnce: Boolean) {
+        def execute(t: T): Unit = {
+            if (executeOnce) consumer.synchronized {
+                consumer(t)
+                remove(consumer)
+                return
+            }
+            consumer(t)
+        }
+
+        def isSameConsumer(consumer: T => Unit): Boolean = this.consumer == consumer
+    }
+
+}
+
+object ConsumerContainer {
+    def apply[T]: ConsumerContainer[T] = new ConsumerContainer()
 }

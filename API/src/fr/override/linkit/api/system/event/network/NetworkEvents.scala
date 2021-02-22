@@ -5,17 +5,17 @@ import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 object NetworkEvents {
 
     case class EntityAddedEvent(override val entity: NetworkEntity) extends NetworkEvent {
-        override def notifyListener(listener: NetworkEventListener): Unit = listener.onEntityAdded(this)
+        override def notifyHooks(listener: NetworkEventListener): Unit = listener.onEntityAdded(this)
     }
 
     case class EntityRemovedEvent(override val entity: NetworkEntity) extends NetworkEvent {
-        override def notifyListener(listener: NetworkEventListener): Unit = listener.onEntityRemoved(this)
+        override def notifyHooks(listener: NetworkEventListener): Unit = listener.onEntityRemoved(this)
     }
 
     case class EntityStateChangeEvent(override val entity: NetworkEntity,
                                       newState: ConnectionState,
                                       oldState: ConnectionState) extends NetworkEvent {
-        override def notifyListener(listener: NetworkEventListener): Unit = listener.onEntityStateChange(this)
+        override def notifyHooks(listener: NetworkEventListener): Unit = listener.onEntityStateChange(this)
     }
 
     case class RemotePropertyChangeEvent(override val entity: NetworkEntity,
@@ -23,7 +23,7 @@ object NetworkEvents {
                                          newProperty: Serializable,
                                          oldProperty: Serializable,
                                          private val currentChanged: Boolean) extends NetworkEvent {
-        override def notifyListener(listener: NetworkEventListener): Unit = {
+        override def notifyHooks(listener: NetworkEventListener): Unit = {
             if (currentChanged)
                 listener.onEntityEditCurrentProperties(this)
             else
@@ -34,7 +34,7 @@ object NetworkEvents {
     case class RemotePrintEvent(override val entity: NetworkEntity,
                                 print: String,
                                 private val received: Boolean) extends NetworkEvent {
-        override def notifyListener(listener: NetworkEventListener): Unit = {
+        override def notifyHooks(listener: NetworkEventListener): Unit = {
             if (received)
                 listener.onRemotePrintReceived(this)
             else

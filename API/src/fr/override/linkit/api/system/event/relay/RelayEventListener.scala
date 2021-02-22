@@ -5,22 +5,22 @@ import fr.`override`.linkit.api.system.event.relay.RelayEvents.{OrderReceivedEve
 
 abstract class RelayEventListener extends EventListener {
 
-    def onConnected(): Unit
+    def onConnected(): Unit= ()
 
-    def onDisconnected(): Unit
+    def onDisconnected(): Unit= ()
 
-    def onConnecting(): Unit
+    def onConnecting(): Unit= ()
 
-    def onCrashed(): Unit
+    def onCrashed(): Unit= ()
 
-    def onReady(): Unit
+    def onReady(): Unit= ()
 
-    def onClosed(): Unit
+    def onClosed(): Unit= ()
 
-    def onStart(): Unit
+    def onStart(): Unit= ()
 
-    def onStateChange(event: RelayStateEvent): Unit
+    def onStateChange(event: RelayStateEvent): Unit= ()
 
-    def onOrderReceived(event: OrderReceivedEvent): Unit
+    def onOrderReceived(event: OrderReceivedEvent): Unit= ()
 
 }

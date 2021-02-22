@@ -14,6 +14,7 @@ class EventNotifier {
         for (listener <- listeners) {
             listener.handleEvent(event)
         }
+        event.getHooks.executeEvent(event)
     }
 
 }

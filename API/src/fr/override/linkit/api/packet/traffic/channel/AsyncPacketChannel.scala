@@ -15,7 +15,7 @@ class AsyncPacketChannel protected(scope: ChannelScope)
 
     @relayWorkerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val pool = RelayWorkerThreadPool.currentThreadPool().get
+        val pool = RelayWorkerThreadPool.currentPool().get
         pool.runLater {
             try {
                 val packets = injection.getPackets

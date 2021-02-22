@@ -3,6 +3,7 @@ package fr.`override`.linkit.api.system.event.extension
 import fr.`override`.linkit.api.`extension`.fragment.{ExtensionFragment, RemoteFragment}
 import fr.`override`.linkit.api.`extension`.{RelayExtension, RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.extension.LoadPhase
+import fr.`override`.linkit.api.system.event.EventHook
 import org.jetbrains.annotations.Nullable
 
 object ExtensionEvents {
@@ -11,6 +12,8 @@ object ExtensionEvents {
                                     exceptions: Array[(RelayExtension, Throwable)],
                                     state: LoadPhase) extends ExtensionEvent {
 
+
+
         override def notifyListener(listener: ExtensionEventListener): Unit = {
             listener.onExtensionsStateChange(this)
             state match {
@@ -18,6 +21,15 @@ object ExtensionEvents {
                 case LoadPhase.ENABLE => listener.onExtensionsEnable(this)
                 case LoadPhase.DISABLE => listener.onExtensionsDisable(this)
             }
+        }
+
+        override def getHooks: Array[EventHook[ExtensionsStateEvent.this.type]] = {
+            val phaseHook = state match {
+                case LoadPhase.LOAD => ExtensionEventHooks.ExtensionsLoad
+                case LoadPhase.ENABLE => ExtensionEventHooks.ExtensionsEnable
+                case LoadPhase.DISABLE => ExtensionEventHooks.ExtensionsDisable
+            }
+            Array(phaseHook, ExtensionEventHooks.ExtensionsStateChange)
         }
     }
 

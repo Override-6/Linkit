@@ -8,7 +8,6 @@ import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCach
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.api.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable
@@ -127,7 +126,7 @@ class SharedCollection[A <: Serializable](family: String,
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case modPacket: ObjectPacket => RelayWorkerThreadPool.smartRun {
+            case modPacket: ObjectPacket => RelayWorkerThreadPool.smartRunLater {
                 handleNetworkModRequest(modPacket)
             }
         }
@@ -251,7 +250,7 @@ object SharedCollection {
         private[SharedCollection] def get(): S[A] = mainCollection
 
         private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit =
-            RelayWorkerThreadPool.smartRun {
+            RelayWorkerThreadPool.smartRunLater {
                 boundedCollections.foreach(action)
             }
     }

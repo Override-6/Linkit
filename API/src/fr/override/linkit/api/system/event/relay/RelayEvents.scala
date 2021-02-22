@@ -5,7 +5,7 @@ import fr.`override`.linkit.api.system.{RelayState, SystemOrder}
 object RelayEvents {
 
     case class RelayStateEvent(state: RelayState) extends RelayEvent {
-        override def notifyListener(listener: RelayEventListener): Unit = {
+        override def notifyHooks(listener: RelayEventListener): Unit = {
             import RelayState._
             state match {
                 case CRASHED => listener.onCrashed()
@@ -22,7 +22,7 @@ object RelayEvents {
     }
 
     case class OrderReceivedEvent(order: SystemOrder) extends RelayEvent {
-        override def notifyListener(listener: RelayEventListener): Unit = {
+        override def notifyHooks(listener: RelayEventListener): Unit = {
             listener.onOrderReceived(this)
         }
     }

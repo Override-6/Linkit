@@ -9,7 +9,7 @@ object PacketEvents {
     abstract sealed class PacketSentEvent extends PacketEvent {
         val coordinates: PacketCoordinates
 
-        override def notifyListener(listener: PacketEventListener): Unit = {
+        override def notifyHooks(listener: PacketEventListener): Unit = {
             listener.onPacketSent(this)
         }
     }
@@ -17,8 +17,8 @@ object PacketEvents {
     case class DedicatedPacketSentEvent(override val packet: Packet, override val coordinates: DedicatedPacketCoordinates)
             extends PacketSentEvent {
 
-        override def notifyListener(listener: PacketEventListener): Unit = {
-            super.notifyListener(listener)
+        override def notifyHooks(listener: PacketEventListener): Unit = {
+            super.notifyHooks(listener)
             listener.onDedicatedPacketSent(this)
         }
     }
@@ -27,8 +27,8 @@ object PacketEvents {
     case class BroadcastPacketSentEvent(override val packet: Packet, override val coordinates: BroadcastPacketCoordinates)
             extends PacketSentEvent {
 
-        override def notifyListener(listener: PacketEventListener): Unit = {
-            super.notifyListener(listener)
+        override def notifyHooks(listener: PacketEventListener): Unit = {
+            super.notifyHooks(listener)
             listener.onBroadcastPacketSent(this)
         }
     }
@@ -37,20 +37,20 @@ object PacketEvents {
                                   serializer: Class[_ <: ObjectSerializer],
                                   bytes: Array[Byte]) extends PacketEvent {
 
-        override def notifyListener(listener: PacketEventListener): Unit = listener.onPacketWritten(this)
+        override def notifyHooks(listener: PacketEventListener): Unit = listener.onPacketWritten(this)
     }
 
     case class PacketReceivedEvent(override val packet: Packet,
                                    serializer: Class[_ <: ObjectSerializer],
                                    bytes: Array[Byte]) extends PacketEvent {
 
-        override def notifyListener(listener: PacketEventListener): Unit = listener.onPacketReceived(this)
+        override def notifyHooks(listener: PacketEventListener): Unit = listener.onPacketReceived(this)
     }
 
     case class PacketInjectedEvent(override val packet: Packet,
                                    injectable: PacketInjectable) extends PacketEvent {
 
-        override def notifyListener(listener: PacketEventListener): Unit = listener.onPacketInjected(this)
+        override def notifyHooks(listener: PacketEventListener): Unit = listener.onPacketInjected(this)
     }
 
     def packedSent(packet: Packet, coordinates: PacketCoordinates): PacketSentEvent = {
