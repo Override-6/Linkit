@@ -139,7 +139,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     override def isClosed: Boolean = !open
 
-    override def createInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
+    override def getInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
         traffic.createInjectable(channelId, scopeFactory, factory)
     }
 
