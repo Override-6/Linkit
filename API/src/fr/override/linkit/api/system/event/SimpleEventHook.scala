@@ -5,7 +5,7 @@ import fr.`override`.linkit.api.system.event.EventHook
 import fr.`override`.linkit.api.utils.ConsumerContainer
 import org.jetbrains.annotations.NotNull
 
-class SimpleEventHook[E] extends EventHook[E] {
+class SimpleEventHook[L <: EventListener, E <: Event[L]](listenerMethods: ((L, E) => Unit)*) extends EventHook[L, E] {
     private val providedLock = new ProvidedLock()
     private val consumers = ConsumerContainer[E]
 
@@ -30,13 +30,14 @@ class SimpleEventHook[E] extends EventHook[E] {
 
     override def addOnce(action: => Unit): Unit = addOnce(_ => action)
 
-    override def executeEvent(t: E): Unit = consumers.applyAll(t)
+    override def executeEvent(event: E, listeners: Array[L]): Unit = {
+        listeners.foreach(listener => listenerMethods.foreach(_ (listener, event)))
+        consumers.applyAll(event)
+    }
 }
 
 object SimpleEventHook {
-    def apply[E](methods: E => Unit*): SimpleEventHook[E] = {
-        val hook = new SimpleEventHook[E]()
-        methods.foreach(hook.add)
-        hook
+    def apply[L <: EventListener, E <: Event[L]](methods: (L, E) => Unit*): SimpleEventHook[L, E] = {
+        new SimpleEventHook[L, E](methods: _*)
     }
 }

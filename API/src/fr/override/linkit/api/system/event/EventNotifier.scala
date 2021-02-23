@@ -10,11 +10,11 @@ class EventNotifier {
 
     def unregister(listener: EventListener): Unit = listeners -= listener
 
-    def notifyEvent(event: Event[_]): Unit = {
-        for (listener <- listeners) {
-            listener.handleEvent(event)
-        }
-        event.getHooks.executeEvent(event)
+    def notifyEvent[L <: EventListener](event: Event[L]): Unit = {
+        val eventListeners = listeners
+            .filter(_.isInstanceOf[L])
+            .map(_.asInstanceOf[L])
+        event.getHooks.foreach(_.executeEvent(event, eventListeners.toSeq))
     }
 
 }

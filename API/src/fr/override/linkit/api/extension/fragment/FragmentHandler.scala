@@ -15,7 +15,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
 
     private val fragmentMap: mutable.Map[Class[_ <: RelayExtension], ExtensionFragments] = mutable.Map.empty
 
-    private val categories = relay.createInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
+    private val categories = relay.getInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
 
     private lazy val sharedRemoteFragments: SharedCollection[String] = {
         var ptn: SharedCollection[String] = null

@@ -13,7 +13,7 @@ import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 
 class RemoteConsolesContainer(relay: Relay) {
 
-    private val printChannel = relay.createInjectable(PacketTraffic.RemoteConsoles, ChannelScope.broadcast, AsyncPacketChannel)
+    private val printChannel = relay.getInjectable(PacketTraffic.RemoteConsoles, ChannelScope.broadcast, AsyncPacketChannel)
 
     private val outConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])
     private val errConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, RemoteConsole])

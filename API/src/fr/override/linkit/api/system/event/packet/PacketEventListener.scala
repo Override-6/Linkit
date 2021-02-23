@@ -5,16 +5,16 @@ import fr.`override`.linkit.api.system.event.packet.PacketEvents._
 
 abstract class PacketEventListener extends EventListener {
 
-    def onPacketWritten(event: PacketWrittenEvent): Unit= ()
+    def onPacketWritten(event: PacketWrittenEvent): Unit = ()
 
-    def onPacketSent(event: PacketSentEvent): Unit= ()
+    def onPacketSent(event: PacketSentEvent): Unit = ()
 
-    def onDedicatedPacketSent(event: DedicatedPacketSentEvent): Unit= ()
+    def onDedicatedPacketSent(event: DedicatedPacketSentEvent): Unit = ()
 
-    def onBroadcastPacketSent(event: BroadcastPacketSentEvent): Unit= ()
+    def onBroadcastPacketSent(event: BroadcastPacketSentEvent): Unit = ()
 
-    def onPacketReceived(event: PacketReceivedEvent): Unit= ()
+    def onPacketReceived(event: PacketReceivedEvent): Unit = ()
 
-    def onPacketInjected(event: PacketInjectedEvent): Unit= ()
+    def onPacketInjected(event: PacketInjectedEvent): Unit = ()
 
 }

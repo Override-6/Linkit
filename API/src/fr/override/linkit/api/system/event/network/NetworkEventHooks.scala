@@ -1,22 +1,25 @@
 package fr.`override`.linkit.api.system.event.network
 
+import fr.`override`.linkit.api.system.event.SimpleEventHook
 import fr.`override`.linkit.api.system.event.network.NetworkEvents._
-import fr.`override`.linkit.api.system.event.{EventHook, SimpleEventHook}
 
+//noinspection TypeAnnotation
 object NetworkEventHooks {
 
-    def EntityAdded: EventHook[EntityAddedEvent] = SimpleEventHook()
+    type L <: NetworkEventListener
 
-    def EntityRemoved: EventHook[EntityRemovedEvent] = SimpleEventHook()
+    val EntityAdded = SimpleEventHook[L, EntityAddedEvent](_.onEntityAdded(_))
 
-    def EntityStateChange: EventHook[EntityStateChangeEvent] = SimpleEventHook()
+    val EntityRemoved = SimpleEventHook[L, EntityRemovedEvent](_.onEntityRemoved(_))
 
-    def EntityEditCurrentProperties: EventHook[RemotePropertyChangeEvent] = SimpleEventHook()
+    val EntityStateChange = SimpleEventHook[L, EntityStateChangeEvent](_.onEntityStateChange(_))
 
-    def EditEntityProperties: EventHook[RemotePropertyChangeEvent] = SimpleEventHook()
+    val EntityEditCurrentProperties = SimpleEventHook[L, RemotePropertyChangeEvent](_.onEntityEditCurrentProperties(_))
 
-    def RemotePrintReceived: EventHook[RemotePrintEvent] = SimpleEventHook()
+    val EditEntityProperties = SimpleEventHook[L, RemotePropertyChangeEvent](_.onEditEntityProperties(_))
 
-    def RemotePrintSent: EventHook[RemotePrintEvent] = SimpleEventHook()
+    val RemotePrintReceived = SimpleEventHook[L, RemotePrintEvent](_.onRemotePrintReceived(_))
+
+    val RemotePrintSent = SimpleEventHook[L, RemotePrintEvent](_.onRemotePrintSent(_))
 
 }

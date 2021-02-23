@@ -6,7 +6,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.{SharedCacheHandler, SharedInstance}
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
-import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
 import fr.`override`.linkit.api.system.Version
 
 class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
@@ -40,7 +40,7 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     override def listRemoteFragmentControllers: List[RemoteFragmentController] = {
         val communicator = relay
-                .createInjectable(4, ChannelScope.broadcast, CommunicationPacketChannel.providable)
+                .getInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
                 .subInjectable(identifier, CommunicationPacketChannel.providable, true)
 
         val fragmentHandler = relay.extensionLoader.fragmentHandler

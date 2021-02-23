@@ -8,66 +8,54 @@ import org.jetbrains.annotations.Nullable
 
 object ExtensionEvents {
 
+    import ExtensionEventHooks._
+
     case class ExtensionsStateEvent(extensions: Array[RelayExtension],
                                     exceptions: Array[(RelayExtension, Throwable)],
                                     state: LoadPhase) extends ExtensionEvent {
 
 
-
-        override def notifyListener(listener: ExtensionEventListener): Unit = {
-            listener.onExtensionsStateChange(this)
-            state match {
-                case LoadPhase.LOAD => listener.onExtensionsLoad(this)
-                case LoadPhase.ENABLE => listener.onExtensionsEnable(this)
-                case LoadPhase.DISABLE => listener.onExtensionsDisable(this)
-            }
-        }
-
-        override def getHooks: Array[EventHook[ExtensionsStateEvent.this.type]] = {
+        override def getHooks: Array[EventHook[ExtensionEventListener, this.type]] = {
             val phaseHook = state match {
-                case LoadPhase.LOAD => ExtensionEventHooks.ExtensionsLoad
-                case LoadPhase.ENABLE => ExtensionEventHooks.ExtensionsEnable
-                case LoadPhase.DISABLE => ExtensionEventHooks.ExtensionsDisable
+                case LoadPhase.LOAD => ExtensionsLoad
+                case LoadPhase.ENABLE => ExtensionsEnable
+                case LoadPhase.DISABLE => ExtensionsDisable
             }
-            Array(phaseHook, ExtensionEventHooks.ExtensionsStateChange)
+            Array(phaseHook, ExtensionsStateChange)
         }
     }
 
     case class FragmentEvent(fragment: ExtensionFragment,
                              exception: Option[Throwable],
                              private val isEnabledEvent: Boolean) extends ExtensionEvent {
-        override def notifyListener(listener: ExtensionEventListener): Unit = {
+        override def getHooks: Array[EventHook[ExtensionEventListener, this.type]] = {
             if (isEnabledEvent)
-                listener.onFragmentEnabled(this)
+                Array(FragmentEnabled)
             else
-                listener.onFragmentDestroyed(this)
+                Array(FragmentDestroyed)
         }
     }
 
     case class RemoteFragmentEvent(fragment: RemoteFragment,
                                    exception: Option[Throwable],
                                    private val isEnabledEvent: Boolean) extends ExtensionEvent {
-        override def notifyListener(listener: ExtensionEventListener): Unit = {
+        override def getHooks: Array[EventHook[ExtensionEventListener, this.type]] = {
             if (isEnabledEvent)
-                listener.onRemoteFragmentEnable(this)
+                Array(RemoteFragmentEnable)
             else
-                listener.onRemoteFragmentDestroy(this)
+                Array(RemoteFragmentDestroy)
         }
     }
 
     case class LoaderPhaseChangeEvent(extensionsLoader: RelayExtensionLoader,
                                       newPhase: LoadPhase, oldPhase: LoadPhase) extends ExtensionEvent {
-        override def notifyListener(listener: ExtensionEventListener): Unit = {
-            listener.onLoaderPhaseChange(this)
-        }
+        override def getHooks: Array[EventHook[ExtensionEventListener, this.type]] = Array(LoaderPhaseChange)
     }
 
     case class RelayPropertyChangeEvent(properties: RelayProperties,
                                         name: String,
                                         @Nullable newValue: Any, @Nullable oldValue: Any) extends ExtensionEvent {
-        override def notifyListener(listener: ExtensionEventListener): Unit = {
-            listener.onPropertyChange(this)
-        }
+        override def getHooks: Array[EventHook[ExtensionEventListener, this.type]] = Array(PropertyChange)
     }
 
     def extensionsState(extensions: Array[RelayExtension],

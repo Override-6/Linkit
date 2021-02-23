@@ -132,7 +132,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
      * */
     def getConnectionState: ConnectionState
 
-    def createInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C
+    def getInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C
 
     /**
      * @param targetId the targeted Relay identifier

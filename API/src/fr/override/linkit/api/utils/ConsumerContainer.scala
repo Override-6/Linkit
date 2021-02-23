@@ -5,7 +5,7 @@ import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-case class ConsumerContainer[T]() {
+class ConsumerContainer[T]() {
 
     private val consumers = ListBuffer.empty[ConsumerExecutor]
 
@@ -16,6 +16,7 @@ case class ConsumerContainer[T]() {
 
     /**
      * Will add the consumer in the list, and remove it once it was executed.
+     *
      * @param consumer the action to perform
      * */
     def addOnce(consumer: T => Unit): this.type = {
@@ -85,4 +86,6 @@ case class ConsumerContainer[T]() {
 
 object ConsumerContainer {
     def apply[T]: ConsumerContainer[T] = new ConsumerContainer()
+
+    def apply[T](): ConsumerContainer[T] = new ConsumerContainer()
 }

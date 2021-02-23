@@ -1,29 +1,29 @@
 package fr.`override`.linkit.api.system.event.relay
 
+import fr.`override`.linkit.api.system.event.relay.RelayEventHooks._
 import fr.`override`.linkit.api.system.{RelayState, SystemOrder}
 
 object RelayEvents {
 
     case class RelayStateEvent(state: RelayState) extends RelayEvent {
-        override def notifyHooks(listener: RelayEventListener): Unit = {
+        override def getHooks: Array[RelayEventHook] = {
             import RelayState._
-            state match {
-                case CRASHED => listener.onCrashed()
-                case CLOSED => listener.onClosed()
-                case ENABLED => listener.onReady()
-                case ENABLING => listener.onStart()
-                case CONNECTING => listener.onConnecting()
-                case DISCONNECTED => listener.onDisconnected()
+            val hook = state match {
+                case CRASHED => Crashed
+                case CLOSED => Closed
+                case ENABLED => Ready
+                case ENABLING => Start
+                case CONNECTING => Connecting
+                case DISCONNECTED => Disconnected
                 case _ => throw new IllegalArgumentException(s"$state is not a state that can trigger an event.")
             }
-            listener.onStateChange(this)
-
+            Array(StateChange, hook)
         }
     }
 
     case class OrderReceivedEvent(order: SystemOrder) extends RelayEvent {
-        override def notifyHooks(listener: RelayEventListener): Unit = {
-            listener.onOrderReceived(this)
+        override def getHooks: Array[RelayEventHook] = {
+            Array(OrderReceived)
         }
     }
 
@@ -32,7 +32,6 @@ object RelayEvents {
     }
 
     def orderReceived(order: SystemOrder): OrderReceivedEvent = OrderReceivedEvent(order)
-
 
 
 }

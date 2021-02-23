@@ -19,7 +19,7 @@ class ProvidedLock(condition: => Boolean = true) {
         locks.put(currentThread, ticket)
         ticket.markProviding()
 
-        pool.provideWhileOrWait(ticket.mustContinue && condition, lock)
+        pool.provideWhileOrWait(lock, ticket.mustContinue && condition)
         locks.remove(currentThread)
     }
 

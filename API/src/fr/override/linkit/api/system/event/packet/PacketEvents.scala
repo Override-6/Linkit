@@ -3,33 +3,28 @@ package fr.`override`.linkit.api.system.event.packet
 import fr.`override`.linkit.api.packet.serialization.ObjectSerializer
 import fr.`override`.linkit.api.packet.traffic.PacketInjectable
 import fr.`override`.linkit.api.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
+import fr.`override`.linkit.api.system.event.packet.PacketEventHooks._
 
 object PacketEvents {
 
     abstract sealed class PacketSentEvent extends PacketEvent {
         val coordinates: PacketCoordinates
-
-        override def notifyHooks(listener: PacketEventListener): Unit = {
-            listener.onPacketSent(this)
-        }
     }
 
     case class DedicatedPacketSentEvent(override val packet: Packet, override val coordinates: DedicatedPacketCoordinates)
-            extends PacketSentEvent {
+        extends PacketSentEvent {
 
-        override def notifyHooks(listener: PacketEventListener): Unit = {
-            super.notifyHooks(listener)
-            listener.onDedicatedPacketSent(this)
+        override def getHooks: Array[PacketEventHook] = {
+            Array(DedicatedPacketSent)
         }
     }
 
 
     case class BroadcastPacketSentEvent(override val packet: Packet, override val coordinates: BroadcastPacketCoordinates)
-            extends PacketSentEvent {
+        extends PacketSentEvent {
 
-        override def notifyHooks(listener: PacketEventListener): Unit = {
-            super.notifyHooks(listener)
-            listener.onBroadcastPacketSent(this)
+        override def getHooks: Array[PacketEventHook] = {
+            Array(BroadcastPacketSent)
         }
     }
 
@@ -37,20 +32,20 @@ object PacketEvents {
                                   serializer: Class[_ <: ObjectSerializer],
                                   bytes: Array[Byte]) extends PacketEvent {
 
-        override def notifyHooks(listener: PacketEventListener): Unit = listener.onPacketWritten(this)
+        override def getHooks: Array[PacketEventHook] = Array(PacketWritten)
     }
 
     case class PacketReceivedEvent(override val packet: Packet,
                                    serializer: Class[_ <: ObjectSerializer],
                                    bytes: Array[Byte]) extends PacketEvent {
 
-        override def notifyHooks(listener: PacketEventListener): Unit = listener.onPacketReceived(this)
+        override def getHooks: Array[PacketEventHook] = Array(PacketReceived)
     }
 
     case class PacketInjectedEvent(override val packet: Packet,
                                    injectable: PacketInjectable) extends PacketEvent {
 
-        override def notifyHooks(listener: PacketEventListener): Unit = listener.onPacketInjected(this)
+        override def getHooks: Array[PacketEventHook] = Array(PacketInjected)
     }
 
     def packedSent(packet: Packet, coordinates: PacketCoordinates): PacketSentEvent = {
