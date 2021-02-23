@@ -1,37 +1,37 @@
 package fr.`override`.linkit.api.system.event.relay
 
-import fr.`override`.linkit.api.system.event.relay.RelayEventHooks._
 import fr.`override`.linkit.api.system.{RelayState, SystemOrder}
 
 object RelayEvents {
 
     case class RelayStateEvent(state: RelayState) extends RelayEvent {
-        override def getHooks: Array[RelayEventHook] = {
+        override def getHooks(category: RelayEventHooks): Array[RelayEventHook] = {
             import RelayState._
             val hook = state match {
-                case CRASHED => Crashed
-                case CLOSED => Closed
-                case ENABLED => Ready
-                case ENABLING => Start
-                case CONNECTING => Connecting
-                case DISCONNECTED => Disconnected
+                case CRASHED => category.crashed
+                case CLOSED => category.closed
+                case ENABLED => category.ready
+                case ENABLING => category.start
+                case CONNECTING => category.connecting
+                case DISCONNECTED => category.disconnected
                 case _ => throw new IllegalArgumentException(s"$state is not a state that can trigger an event.")
             }
-            Array(StateChange, hook)
+            !!(Array(category.stateChange, hook))
         }
     }
 
     case class OrderReceivedEvent(order: SystemOrder) extends RelayEvent {
-        override def getHooks: Array[RelayEventHook] = {
-            Array(OrderReceived)
+        override def getHooks(category: RelayEventHooks): Array[RelayEventHook] = {
+            !!(Array(category.orderReceived))
         }
     }
 
     def stateChange(state: RelayState): RelayStateEvent = {
-        RelayStateEvent(state)
+        !!(RelayStateEvent(state))
     }
 
     def orderReceived(order: SystemOrder): OrderReceivedEvent = OrderReceivedEvent(order)
 
+    private def !![A](any: Any): A = any.asInstanceOf[A]
 
 }

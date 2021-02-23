@@ -1,20 +1,20 @@
 package fr.`override`.linkit.api.system.event.packet
 
-import fr.`override`.linkit.api.system.event.SimpleEventHook
 import fr.`override`.linkit.api.system.event.packet.PacketEvents._
+import fr.`override`.linkit.api.system.event.{EventHookCategory, SimpleEventHook}
 
 //noinspection TypeAnnotation
-object PacketEventHooks {
+class PacketEventHooks extends EventHookCategory {
     type L = PacketEventListener
-    val PacketWritten = SimpleEventHook[L, PacketWrittenEvent](_.onPacketWritten(_))
+    val packetWritten = SimpleEventHook[L, PacketWrittenEvent](_.onPacketWritten(_))
 
-    val PacketSent: Unit = SimpleEventHook[L, PacketSentEvent](_.onPacketSent(_))
+    val packetSent: Unit = SimpleEventHook[L, PacketSentEvent](_.onPacketSent(_))
 
-    val DedicatedPacketSent = SimpleEventHook[L, DedicatedPacketSentEvent](_.onDedicatedPacketSent(_))
+    val dedicatedPacketSent = SimpleEventHook[L, DedicatedPacketSentEvent](_.onDedicatedPacketSent(_))
 
-    val BroadcastPacketSent = SimpleEventHook[L, BroadcastPacketSentEvent](_.onBroadcastPacketSent(_))
+    val broadcastPacketSent = SimpleEventHook[L, BroadcastPacketSentEvent](_.onBroadcastPacketSent(_))
 
-    val PacketReceived = SimpleEventHook[L, PacketReceivedEvent](_.onPacketReceived(_))
+    val packetReceived = SimpleEventHook[L, PacketReceivedEvent](_.onPacketReceived(_))
 
-    val PacketInjected = SimpleEventHook[L, PacketInjectedEvent](_.onPacketInjected(_))
+    val packetInjected = SimpleEventHook[L, PacketInjectedEvent](_.onPacketInjected(_))
 }

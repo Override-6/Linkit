@@ -1,10 +1,11 @@
 package fr.`override`.linkit.api.system.event.extension
 
-import fr.`override`.linkit.api.system.event.{Event, EventHook}
 import fr.`override`.linkit.api.system.event.`extension`.ExtensionEventListener
+import fr.`override`.linkit.api.system.event.{Event, EventHook}
 
-trait ExtensionEvent extends Event[ExtensionEventListener] {
+trait ExtensionEvent extends Event[ExtensionEventHooks, ExtensionEventListener] {
 
-    override def getHooks: Array[EventHook[ExtensionEventListener, this.type]]
+    protected type ExtensionEventHook = EventHook[ExtensionEventListener, _ <: Event[ExtensionEventHooks, ExtensionEventListener]]
 
+    override def getHooks(category: ExtensionEventHooks): Array[ExtensionEventHook]
 }

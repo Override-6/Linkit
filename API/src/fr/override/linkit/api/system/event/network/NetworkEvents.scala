@@ -1,22 +1,21 @@
 package fr.`override`.linkit.api.system.event.network
 
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
-import fr.`override`.linkit.api.system.event.network.NetworkEventHooks._
 
 object NetworkEvents {
 
     case class EntityAddedEvent(override val entity: NetworkEntity) extends NetworkEvent {
-        override def getHooks: Array[NetworkEventHook] = Array(EntityAdded)
+        override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityAdded))
     }
 
     case class EntityRemovedEvent(override val entity: NetworkEntity) extends NetworkEvent {
-        override def getHooks: Array[NetworkEventHook] = Array(EntityRemoved)
+        override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityRemoved))
     }
 
     case class EntityStateChangeEvent(override val entity: NetworkEntity,
                                       newState: ConnectionState,
                                       oldState: ConnectionState) extends NetworkEvent {
-        override def getHooks: Array[NetworkEventHook] = Array(EntityStateChange)
+        override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityStateChange))
     }
 
     case class RemotePropertyChangeEvent(override val entity: NetworkEntity,
@@ -24,22 +23,22 @@ object NetworkEvents {
                                          newProperty: Serializable,
                                          oldProperty: Serializable,
                                          private val currentChanged: Boolean) extends NetworkEvent {
-        override def getHooks: Array[NetworkEventHook] = {
+        override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = {
             if (currentChanged)
-                Array(EntityEditCurrentProperties)
+                !!(Array(category.entityEditCurrentProperties))
             else
-                Array(EditEntityProperties)
+                !!(Array(category.editEntityProperties))
         }
     }
 
     case class RemotePrintEvent(override val entity: NetworkEntity,
                                 print: String,
                                 private val received: Boolean) extends NetworkEvent {
-        override def getHooks: Array[NetworkEventHook] = {
+        override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = {
             if (received)
-                Array(RemotePrintReceived)
+                !!(Array(category.remotePrintReceived))
             else
-                Array(RemotePrintSent)
+                !!(Array(category.remotePrintSent))
         }
     }
 
@@ -73,5 +72,8 @@ object NetworkEvents {
     def remotePrintReceivedEvent(entity: NetworkEntity, print: String): RemotePrintEvent = {
         RemotePrintEvent(entity, print, true)
     }
+
+    private def !![A](any: Any): A = any.asInstanceOf[A]
+
 
 }

@@ -14,10 +14,10 @@ class ProvidedLock(condition: => Boolean = true) {
         RelayWorkerThreadPool.checkCurrentIsWorker("Could not perform a provided lock in a non relay thread.")
         val pool = RelayWorkerThreadPool.currentPool().get
 
-        val ticket = locks.getOrElseUpdate(currentThread, ProvideTicket(lock))
+        val ticket = locks.getOrElseUpdate(currentThread, ProvideTicket())
 
         locks.put(currentThread, ticket)
-        ticket.markProviding()
+        ticket.markProviding(lock)
 
         pool.provideWhileOrWait(lock, ticket.mustContinue && condition)
         locks.remove(currentThread)
@@ -28,11 +28,12 @@ class ProvidedLock(condition: => Boolean = true) {
     }
 
     def cancelCurrentProviding(): Unit = {
-        locks.get(currentThread).tapEach(_.unmarkProviding())
+        locks.get(currentThread).tapEach(_.stopProviding())
     }
 
     def cancelAllProviding(): Unit = {
-        locks.remove(currentThread)
+        locks.foreachEntry((_, t) => t.stopAllProviding())
+        locks.clear()
     }
 
 
@@ -42,12 +43,25 @@ class ProvidedLock(condition: => Boolean = true) {
         RelayWorkerThreadPool.currentPool().get
     }
 
-    case class ProvideTicket(lock: AnyRef) {
-        private val depths = mutable.HashSet.empty[Int]
+    case class ProvideTicket() {
+        private val depths = mutable.HashMap.empty[Int, AnyRef]
 
-        def unmarkProviding(): Unit = depths -= currentPool.currentProvidingDepth
+        def stopProviding(): Unit = {
+            val depth = currentPool.currentProvidingDepth
+            val lock = depths(depth)
+            lock.synchronized {
+                lock.notifyAll()
+            }
+            depths -= depth
+        }
 
-        def markProviding(): Unit = depths += currentPool.currentProvidingDepth
+        def stopAllProviding(): Unit = depths.clone().foreach {
+            _ => stopProviding()
+        }
+
+        def markProviding(lock: AnyRef): Unit = {
+            depths.put(currentPool.currentProvidingDepth, lock)
+        }
 
         def mustContinue: Boolean = {
             depths.contains(currentPool.currentProvidingDepth)

@@ -57,8 +57,9 @@ class ConsumerContainer[T]() {
     }
 
     def applyAll(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        consumers.clone().foreach(consumer => {
+        consumers.indices.foreach(i => {
             try {
+                val consumer = consumers(i)
                 consumer.execute(t)
             } catch {
                 case NonFatal(e) => onException(e)
@@ -72,6 +73,8 @@ class ConsumerContainer[T]() {
     private class ConsumerExecutor(consumer: T => Unit, executeOnce: Boolean) {
         def execute(t: T): Unit = {
             if (executeOnce) consumer.synchronized {
+                //synchronise in order to be sure that another thread would not start to execute the
+                //consumer again when the first thread is removing it from the queue.
                 consumer(t)
                 remove(consumer)
                 return
@@ -85,7 +88,5 @@ class ConsumerContainer[T]() {
 }
 
 object ConsumerContainer {
-    def apply[T]: ConsumerContainer[T] = new ConsumerContainer()
-
     def apply[T](): ConsumerContainer[T] = new ConsumerContainer()
 }

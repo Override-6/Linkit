@@ -1,7 +1,7 @@
 package fr.`override`.linkit.api.system.event
 
-trait Event[L <: EventListener] {
+trait Event[C <: EventHookCategory, L <: EventListener] {
 
-    def getHooks: Array[_ <: EventHook[L, this.type]]
+    def getHooks(category: C): Array[_ <: EventHook[_ <: L, _ <: Event[_ <: C, _ <: L]]]
 
 }

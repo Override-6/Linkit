@@ -1,31 +1,31 @@
 package fr.`override`.linkit.api.system.event.extension
 
-import fr.`override`.linkit.api.system.event.SimpleEventHook
 import fr.`override`.linkit.api.system.event.extension.ExtensionEvents._
+import fr.`override`.linkit.api.system.event.{EventHookCategory, SimpleEventHook}
 
 //noinspection TypeAnnotation
-object ExtensionEventHooks {
+class ExtensionEventHooks extends EventHookCategory {
 
     type L = ExtensionEventListener
 
-    val ExtensionsLoad = SimpleEventHook[ExtensionEventListener, ExtensionsStateEvent](_.onExtensionsLoad(_))
+    val extensionsLoad = SimpleEventHook[ExtensionEventListener, ExtensionsStateEvent](_.onExtensionsLoad(_))
 
-    val ExtensionsEnable = SimpleEventHook[ExtensionEventListener, ExtensionsStateEvent](_.onExtensionsEnable(_))
+    val extensionsEnable = SimpleEventHook[ExtensionEventListener, ExtensionsStateEvent](_.onExtensionsEnable(_))
 
-    val ExtensionsDisable = SimpleEventHook[ExtensionEventListener, ExtensionsStateEvent](_.onExtensionsDisable(_))
+    val extensionsDisable = SimpleEventHook[ExtensionEventListener, ExtensionsStateEvent](_.onExtensionsDisable(_))
 
-    val ExtensionsStateChange = SimpleEventHook[ExtensionEventListener, ExtensionsStateEvent](_.onExtensionsStateChange(_))
+    val extensionsStateChange = SimpleEventHook[ExtensionEventListener, ExtensionsStateEvent](_.onExtensionsStateChange(_))
 
-    val FragmentEnabled = SimpleEventHook[ExtensionEventListener, FragmentEvent](_.onFragmentEnabled(_))
+    val fragmentEnabled = SimpleEventHook[ExtensionEventListener, FragmentEvent](_.onFragmentEnabled(_))
 
-    val FragmentDestroyed = SimpleEventHook[ExtensionEventListener, FragmentEvent](_.onFragmentDestroyed(_))
+    val fragmentDestroyed = SimpleEventHook[ExtensionEventListener, FragmentEvent](_.onFragmentDestroyed(_))
 
-    val RemoteFragmentEnable = SimpleEventHook[ExtensionEventListener, RemoteFragmentEvent](_.onRemoteFragmentEnable(_))
+    val remoteFragmentEnable = SimpleEventHook[ExtensionEventListener, RemoteFragmentEvent](_.onRemoteFragmentEnable(_))
 
-    val RemoteFragmentDestroy = SimpleEventHook[ExtensionEventListener, RemoteFragmentEvent](_.onRemoteFragmentDestroy(_))
+    val remoteFragmentDestroy = SimpleEventHook[ExtensionEventListener, RemoteFragmentEvent](_.onRemoteFragmentDestroy(_))
 
-    val LoaderPhaseChange = SimpleEventHook[ExtensionEventListener, LoaderPhaseChangeEvent](_.onLoaderPhaseChange(_))
+    val loaderPhaseChange = SimpleEventHook[ExtensionEventListener, LoaderPhaseChangeEvent](_.onLoaderPhaseChange(_))
 
-    val PropertyChange = SimpleEventHook[ExtensionEventListener, RelayPropertyChangeEvent](_.onPropertyChange(_))
+    val propertyChange = SimpleEventHook[ExtensionEventListener, RelayPropertyChangeEvent](_.onPropertyChange(_))
 
 }

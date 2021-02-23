@@ -11,7 +11,7 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
     val factory: ThreadFactory = new RelayThread(_, prefix, this)
     private val executor = Executors.newFixedThreadPool(nThreads, factory)
 
-    private val workQueue = extractWorkQueue() //The different tasks to execute
+    private val workQueue = extractWorkQueue() //The pool tasks to execute
     private var closed = false
     private val providerLocks = new ProvidersLock
     @volatile private var activeThreads = 0
@@ -44,10 +44,10 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
 
     def workingThreads: Int = activeThreads
 
-    def provideWhile(check: => Boolean): Unit = {
+    def provideWhile(condition: => Boolean): Unit = {
         checkCurrentIsWorker()
 
-        while (!workQueue.isEmpty && check) {
+        while (!workQueue.isEmpty && condition) {
             val task = workQueue.poll()
             if (task != null) {
                 currentWorker.currentProvidingDepth += 1
@@ -58,31 +58,32 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
         }
     }
 
-    def provideAllWhileThenWait(lock: AnyRef, check: => Boolean): Unit = {
-        provideWhile(check)
+    def provideAllWhileThenWait(lock: AnyRef, condition: => Boolean): Unit = {
+        provideWhile(condition)
 
-        if (check) { //we may still need to provide
+        if (condition) { //we may still need to provide
             providerLocks.addProvidingLock(lock)
-            while (check) {
+            while (condition) {
                 lock.synchronized {
-                    if (check) { // because of the synchronisation block, the check value may change
+                    if (condition) { // because of the synchronisation block, the condition value may change
                         lock.wait()
                     }
                 }
-                provideWhile(check)
+                provideWhile(condition)
             }
             providerLocks.removeProvidingLock()
         }
     }
 
-    def provideWhileOrWait(lock: AnyRef, check: => Boolean): Unit = {
-        provideWhile(check)
-        synchronized {
-            if (check) {
+    def provideWhileOrWait(lock: AnyRef, condition: => Boolean): Unit = {
+        provideWhile(condition)
+        lock.synchronized {
+            if (condition) {
                 lock.wait()
             }
         }
-        provideWhileOrWait(lock, check)
+        if (condition) //We still need to provide
+            provideWhileOrWait(lock, condition)
     }
 
     def provide(millis: Long): Unit = {

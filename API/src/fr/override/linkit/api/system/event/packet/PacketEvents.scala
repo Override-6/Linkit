@@ -3,7 +3,6 @@ package fr.`override`.linkit.api.system.event.packet
 import fr.`override`.linkit.api.packet.serialization.ObjectSerializer
 import fr.`override`.linkit.api.packet.traffic.PacketInjectable
 import fr.`override`.linkit.api.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
-import fr.`override`.linkit.api.system.event.packet.PacketEventHooks._
 
 object PacketEvents {
 
@@ -12,19 +11,19 @@ object PacketEvents {
     }
 
     case class DedicatedPacketSentEvent(override val packet: Packet, override val coordinates: DedicatedPacketCoordinates)
-        extends PacketSentEvent {
+            extends PacketSentEvent {
 
-        override def getHooks: Array[PacketEventHook] = {
-            Array(DedicatedPacketSent)
+        override def getHooks(category: PacketEventHooks): Array[PacketEventHook] = {
+            !!(Array(category.dedicatedPacketSent))
         }
     }
 
 
     case class BroadcastPacketSentEvent(override val packet: Packet, override val coordinates: BroadcastPacketCoordinates)
-        extends PacketSentEvent {
+            extends PacketSentEvent {
 
-        override def getHooks: Array[PacketEventHook] = {
-            Array(BroadcastPacketSent)
+        override def getHooks(category: PacketEventHooks): Array[PacketEventHook] = {
+            !!(Array(category.broadcastPacketSent))
         }
     }
 
@@ -32,20 +31,20 @@ object PacketEvents {
                                   serializer: Class[_ <: ObjectSerializer],
                                   bytes: Array[Byte]) extends PacketEvent {
 
-        override def getHooks: Array[PacketEventHook] = Array(PacketWritten)
+        override def getHooks(category: PacketEventHooks): Array[PacketEventHook] = !!(Array(category.packetWritten))
     }
 
     case class PacketReceivedEvent(override val packet: Packet,
                                    serializer: Class[_ <: ObjectSerializer],
                                    bytes: Array[Byte]) extends PacketEvent {
 
-        override def getHooks: Array[PacketEventHook] = Array(PacketReceived)
+        override def getHooks(category: PacketEventHooks): Array[PacketEventHook] = !!(Array(category.packetReceived))
     }
 
     case class PacketInjectedEvent(override val packet: Packet,
                                    injectable: PacketInjectable) extends PacketEvent {
 
-        override def getHooks: Array[PacketEventHook] = Array(PacketInjected)
+        override def getHooks(category: PacketEventHooks): Array[PacketEventHook] = !!(Array(category.packetInjected))
     }
 
     def packedSent(packet: Packet, coordinates: PacketCoordinates): PacketSentEvent = {
@@ -67,5 +66,6 @@ object PacketEvents {
         PacketInjectedEvent(packet, injectable)
     }
 
+    private def !![A](any: Any): A = any.asInstanceOf[A]
 
 }

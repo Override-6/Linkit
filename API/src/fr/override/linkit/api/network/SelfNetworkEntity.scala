@@ -1,13 +1,13 @@
 package fr.`override`.linkit.api.network
 
-import java.sql.Timestamp
-
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.{SharedCacheHandler, SharedInstance}
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
 import fr.`override`.linkit.api.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
 import fr.`override`.linkit.api.system.Version
+
+import java.sql.Timestamp
 
 class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
@@ -19,6 +19,10 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 
     private val sharedState = cache.get(3, SharedInstance[ConnectionState])
     addOnStateUpdate(sharedState.set)
+
+    override val apiVersion: Version = Relay.ApiVersion
+
+    override val relayVersion: Version = relay.relayVersion
 
     override val connectionDate: Timestamp = cache.post(2, new Timestamp(System.currentTimeMillis()))
 
@@ -33,10 +37,6 @@ class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
     override def getRemoteConsole: RemoteConsole = throw new UnsupportedOperationException("Attempted to get a remote console of the current relay")
 
     override def getRemoteErrConsole: RemoteConsole = throw new UnsupportedOperationException("Attempted to get a remote console of the current relay")
-
-    override def getApiVersion: Version = Relay.ApiVersion
-
-    override def getRelayVersion: Version = relay.relayVersion
 
     override def listRemoteFragmentControllers: List[RemoteFragmentController] = {
         val communicator = relay

@@ -10,9 +10,14 @@ import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.event.EventNotifier
+import fr.`override`.linkit.api.system.event.extension.ExtensionEventHooks
+import fr.`override`.linkit.api.system.event.network.NetworkEventHooks
+import fr.`override`.linkit.api.system.event.packet.PacketEventHooks
+import fr.`override`.linkit.api.system.event.relay.RelayEventHooks
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RelayState, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
+import org.apache.log4j.Logger
 import org.jetbrains.annotations.Nullable
 
 import scala.reflect.ClassTag
@@ -35,11 +40,13 @@ import scala.reflect.ClassTag
 //TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
 //TODO Find a solution about packets that are send into a non-registered channel : if an exception is thrown, this can cause some problems, and if not, this can cause other problems. SOLUTION : Looking for "RemoteActionDescription" that can control and get some information about an action that where made over the network.
 object Relay {
-    val ApiVersion: Version = Version(name = "Api", version = "0.20.0", stable = false)
-    val ServerIdentifier: String = "server"
+    val ApiVersion      : Version   = Version(name = "Api", version = "0.20.0", stable = false)
+    val ServerIdentifier: String    = "server"
+    val Log             : Logger    = Logger.getLogger(classOf[Relay])
 }
 
 trait Relay extends JustifiedCloseable with TaskScheduler {
+
     /**
      * The currently used Configuration of this relay.
      * @see [[RelayConfiguration]]
@@ -84,6 +91,14 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
 
     val notifier: EventNotifier
 
+    implicit val relayHooks: RelayEventHooks = new RelayEventHooks
+
+    implicit val extensionHooks: ExtensionEventHooks = new ExtensionEventHooks
+
+    implicit val packetHooks: PacketEventHooks = new PacketEventHooks
+
+    implicit val networkHooks: NetworkEventHooks = new NetworkEventHooks
+
     /**
      * The network object of this relay, this object is such a [[fr.`override`.linkit.api.network.NetworkEntity]] container
      * with some getters. No network interaction can be done through object.
@@ -113,7 +128,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler {
     /**
      * Will run this callback in a worker thread.
      * */
-    def runLater(callback: => Unit): Unit
+    def runLater(callback: => Unit): this.type
 
     /**
      * @param identifier the relay identifier to check

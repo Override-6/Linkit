@@ -19,7 +19,6 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
 
     println(s"Created entity $identifier")
     override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
-    override val connectionDate: Timestamp = cache(2)
     private val remoteFragments = {
         val communicator = traffic
                 .createInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
@@ -29,6 +28,12 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
                 .get(6, SharedCollection.set[String])
                 .mapped(name => new RemoteFragmentController(name, communicator.createCategory(name, ChannelScope.broadcast, CommunicationPacketChannel)))
     }
+
+    override val connectionDate: Timestamp = cache(2)
+
+    override val apiVersion: Version = cache(4)
+
+    override val relayVersion: Version = cache(5)
 
     override def addOnStateUpdate(action: ConnectionState => Unit): Unit
 
@@ -46,10 +51,6 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override def getRemoteConsole: RemoteConsole = relay.getConsoleOut(identifier)
 
     override def getRemoteErrConsole: RemoteConsole = relay.getConsoleErr(identifier)
-
-    override def getApiVersion: Version = cache(4)
-
-    override def getRelayVersion: Version = cache(5)
 
 
     override def listRemoteFragmentControllers: List[RemoteFragmentController] = remoteFragments.toList

@@ -1,9 +1,9 @@
 package fr.`override`.linkit.api.network
 
-import java.sql.Timestamp
-
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler
 import fr.`override`.linkit.api.system.Version
+
+import java.sql.Timestamp
 
 trait NetworkEntity {
 
@@ -12,6 +12,10 @@ trait NetworkEntity {
     val cache: SharedCacheHandler
 
     val connectionDate: Timestamp
+
+    val apiVersion: Version
+
+    val relayVersion: Version
 
     def addOnStateUpdate(action: ConnectionState => Unit): Unit
 
@@ -24,10 +28,6 @@ trait NetworkEntity {
     def getRemoteConsole: RemoteConsole
 
     def getRemoteErrConsole: RemoteConsole
-
-    def getApiVersion: Version
-
-    def getRelayVersion: Version
 
     def listRemoteFragmentControllers: List[RemoteFragmentController]
 
