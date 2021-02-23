@@ -1,12 +1,12 @@
 package fr.`override`.linkit.client
 
+import fr.`override`.linkit.api.concurrency.relayWorkerExecution
+import fr.`override`.linkit.api.system.CloseReason
+import fr.`override`.linkit.client.config.RelayPointBuilder
+
 import java.net.InetSocketAddress
 import java.nio.file.Paths
 import java.util.Scanner
-
-
-import fr.`override`.linkit.api.system.CloseReason
-import fr.`override`.linkit.client.config.RelayPointBuilder
 
 object Main {
 
@@ -47,24 +47,37 @@ object Main {
             override var identifier: String = identifier0
         }
 
-        relayPoint.runLater {
-            relayPoint.start()
+        relayPoint runLater {
+            println("Waiting RelayPoint to connecting...")
+            val hooks = relayPoint.relayHooks
+            hooks.connecting.await()
+            println("connecting ! :D")
+            println("Waiting to be ready...")
+            hooks.ready.await()
+            println("Dayum :0:0:0")
+        } runLater {
+            startRelay(relayPoint, ideRun)
+        }
+    }
 
-            Runtime.getRuntime.addShutdownHook(new Thread(() => relayPoint.runLater(relayPoint.close(CloseReason.INTERNAL))))
+    @relayWorkerExecution
+    private def startRelay(relayPoint: RelayPoint, ideRun: Boolean): Unit = {
+        relayPoint.start()
 
-            if (ideRun && relayPoint.isOpen) {
+        Runtime.getRuntime.addShutdownHook(new Thread(() => relayPoint.runLater(relayPoint.close(CloseReason.INTERNAL))))
 
-                import fr.`override`.linkit.`extension`.controller.ControllerExtension
-                import fr.`override`.linkit.`extension`.debug.DebugExtension
-                import fr.`override`.linkit.`extension`.easysharing.EasySharing
+        if (ideRun && relayPoint.isOpen) {
 
-                val loader = relayPoint.extensionLoader
-                loader.loadExtensions(
-                    classOf[ControllerExtension],
-                    classOf[EasySharing],
-                    classOf[DebugExtension]
-                )
-            }
+            import fr.`override`.linkit.`extension`.controller.ControllerExtension
+            import fr.`override`.linkit.`extension`.debug.DebugExtension
+            import fr.`override`.linkit.`extension`.easysharing.EasySharing
+
+            val loader = relayPoint.extensionLoader
+            loader.loadExtensions(
+                classOf[ControllerExtension],
+                classOf[EasySharing],
+                classOf[DebugExtension]
+            )
         }
     }
 

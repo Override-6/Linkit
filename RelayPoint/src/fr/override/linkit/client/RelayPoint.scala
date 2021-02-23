@@ -48,7 +48,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override val traffic: SocketPacketTraffic = new SocketPacketTraffic(this, socket, identifier)
     override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
     override val properties: RelayProperties = new RelayProperties()
-    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool("Packet Handling & Extension", 3)
+    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool("Packet Handling & Extension", 3) //TODO add nThreads to configurationgvh,n
     implicit val systemChannel: SystemPacketChannel = traffic.createInjectable(SystemChannelID, ChannelScope.reserved(ServerIdentifier), SystemPacketChannel)
     private val tasksHandler: ClientTasksHandler = new ClientTasksHandler(systemChannel, this)
     private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
@@ -72,6 +72,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         try {
             PointPacketWorkerThread.start()
             loadRemote()
+            concludeRemoteLoad()
             loadUserFeatures()
         } catch {
             case e: RelayInitialisationException =>
@@ -89,8 +90,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         setState(ENABLED)
     }
 
-    override def runLater(callback: => Unit): Unit = {
+    override def runLater(callback: => Unit): this.type = {
         workerThread.runLater(callback)
+        this
     }
 
     override def state(): RelayState = currentState
@@ -168,7 +170,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         order match {
             case CLIENT_CLOSE => close(reason)
             case ABORT_TASK => tasksHandler.skipCurrent(reason)
-            case PRINT_INFO => getConsoleOut(sender).println(s"$relayVersion (${Relay.ApiVersion})")
 
             //FIXME weird use of exceptions/remote print
             case _@(SERVER_CLOSE | CHECK_ID) =>
@@ -195,13 +196,13 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             val refusalMessage = systemChannel.nextPacket[StringPacket].value
             throw RelayInitialisationException(refusalMessage)
         }
-        systemChannel.sendOrder(SystemOrder.PRINT_INFO, CloseReason.INTERNAL)
         println("Connection accepted !")
         setState(ENABLING)
 
         println("Initialising Network...")
         this.pointNetwork = new PointNetwork(this)
         println("Network initialised !")
+
     }
 
     private def loadUserFeatures(): Unit = {
@@ -255,6 +256,20 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
                 traffic.handleInjection(injection)
             //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
+    }
+
+
+    private def concludeRemoteLoad(): Unit = {
+        println(s"Connected as $identifier on the server")
+        val entityCount = network.listEntities.size
+        val serverEntity = network.serverEntity
+        val serverApiVersion = serverEntity.apiVersion
+        val serverVersion = serverEntity.relayVersion
+        println(s"$entityCount entities are already connected.")
+        println(s"$serverVersion ($serverApiVersion)")
+
+        if (serverApiVersion != Relay.ApiVersion)
+            Console.err.println("The api version of this relay differs from the api version of the server, some connectivity problems could occur")
     }
 
     object PointPacketWorkerThread extends PacketWorkerThread() {
