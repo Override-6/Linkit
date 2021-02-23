@@ -102,7 +102,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.containsIdentifier(identifier)
     }
 
-    override def createInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
+    override def getInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
         traffic.createInjectable(channelId, scopeFactory, factory)
     }
 
