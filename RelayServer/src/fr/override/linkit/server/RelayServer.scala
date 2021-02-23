@@ -1,6 +1,7 @@
 package fr.`override`.linkit.server
 
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.Relay.Log
 import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.exception.{RelayCloseException, RelayInitialisationException}
@@ -31,7 +32,7 @@ import scala.util.control.NonFatal
 object RelayServer {
     val version: Version = Version("RelayServer", "0.18.0", stable = false)
 
-    val Identifier = "server"
+    val Identifier: String = Relay.ServerIdentifier
 }
 
 
@@ -74,12 +75,12 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         RelayWorkerThreadPool.checkCurrentIsWorker("Must start server in a worker thread.")
         setState(ENABLING)
 
-        println("Current encoding is " + Charset.defaultCharset().name())
-        println("Listening on port " + configuration.port)
-        println("Computer name is " + System.getenv().get("COMPUTERNAME"))
-        println("Relay Identifier Ambiguity Strategy : " + configuration.relayIDAmbiguityStrategy)
-        println(relayVersion)
-        println(Relay.ApiVersion)
+        Log.info("Current encoding is " + Charset.defaultCharset().name())
+        Log.info("Listening on port " + configuration.port)
+        Log.info("Computer name is " + System.getenv().get("COMPUTERNAME"))
+        Log.info("Relay Identifier Ambiguity Strategy : " + configuration.relayIDAmbiguityStrategy)
+        Log.info(relayVersion)
+        Log.info(Relay.ApiVersion)
 
         try {
             loadInternal()
@@ -91,7 +92,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
                 throw RelayInitialisationException(e.getMessage, e)
         }
         setState(ENABLED)
-        println("Ready !")
+        Log.info("Ready !")
     }
 
     override def addConnectionListener(action: ConnectionState => Unit): Unit = () //the connection of the server would never be updated
@@ -192,8 +193,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
     }
 
-    override def runLater(callback: => Unit): Unit = {
+    override def runLater(callback: => Unit): this.type = {
         workerThread.runLater(callback)
+        this
     }
 
     override def state(): RelayState = currentState

@@ -1,7 +1,5 @@
 package fr.`override`.linkit.server.connection
 
-import java.net.Socket
-
 import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity, RemoteConsole}
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic.SystemChannelID
@@ -9,6 +7,8 @@ import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, SystemPacketChannel}
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.server.task.ConnectionTasksHandler
+
+import java.net.Socket
 
 case class ClientConnectionSession private(identifier: String,
                                            private val socket: SocketContainer,
@@ -28,7 +28,6 @@ case class ClientConnectionSession private(identifier: String,
         server.network.removeEntity(identifier)
         serverTraffic.close(reason)
     }
-
     def getSocketState: ConnectionState = socket.getState
 
     def addStateListener(action: ConnectionState => Unit): Unit = socket.addConnectionStateListener(action)

@@ -73,6 +73,14 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         workerThread.runLater(callback)
     }
 
+    private[server] def concludeInitialisation(): Unit = {
+        val entity = server.network.getEntity(identifier).get
+        val connectionApiVersion = entity.apiVersion
+
+        if (connectionApiVersion != Relay.ApiVersion)
+            Console.err.println("The api version of this relay differs from the api version of the server, some connectivity problems could occur")
+    }
+
     override def isClosed: Boolean = closed
 
     private[server] def updateSocket(socket: Socket): Unit = {
@@ -130,7 +138,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
                 case SERVER_CLOSE => server.close(reason)
                 case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
                 case CHECK_ID => checkIDRegistered(new String(content))
-                case PRINT_INFO => server.getConsoleOut(identifier).println(s"Connected to server ${server.relayVersion} (${Relay.ApiVersion})")
 
                 case _ => new UnexpectedPacketException(s"Could not complete order '$orderType', can't be handled by a server or unknown order")
                         .printStackTrace(getConsoleErr)
