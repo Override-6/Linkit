@@ -1,7 +1,9 @@
 ![Cover](RCover.png)
  A personal project to easily synchronise and link programs.  
 
-This project is designed to help the user to quickly write the network side of an application (for games, apps...).
+This project is designed to help the user to quickly write the network side of an application (for games, apps...). 
+But it is also designed to be used for simple domotic, such as linking your phones with all of your computers, in order to take control or retrieve some files quickly from them...
+(An application for phones would be developped in order to define behaviour between your electronic stuff)
 LinKit offers an entire networking library, that can be extended and controlled from a 'Relay'  
 The project is mainly write in scala, and some classes are written in Java.  
 
