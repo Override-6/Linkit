@@ -1,0 +1,11 @@
+include 'API'
+include 'Examples-Prototypes'
+include 'RelayPoint'
+include 'RelayServer'
+include 'LinKitExtensions:DebugExtension'
+findProject(':LinKitExtensions:DebugExtension')?.name = 'DebugExtension'
+include 'LinKitExtensions:EasySharing'
+findProject(':LinKitExtensions:EasySharing')?.name = 'EasySharing'
+include 'LinKitExtensions:RelayController'
+findProject(':LinKitExtensions:RelayController')?.name = 'RelayController'
+
