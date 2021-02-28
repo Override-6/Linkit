@@ -5,7 +5,7 @@ import java.util.concurrent.{BlockingQueue, TimeUnit}
 
 import scala.collection.mutable.ListBuffer
 
-class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) extends BlockingQueue[A] {
+class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) extends BlockingQueue[A] {
 
     private val list = ListBuffer.empty[A]
     private val lock = new Object
@@ -45,7 +45,7 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
     @relayWorkerExecution
     override def take(): A = {
         //println(s"PERFORMING TAKE ($list)")
-        pool.provideAllWhileThenWait(lock, list.isEmpty)
+        pool.keepBusyWhileOrWait(lock, list.isEmpty)
         poll()
     }
 
@@ -56,7 +56,7 @@ class ProvidedBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool)
         var last = now()
 
         //println(s"PERFORMING TIMED POLL ($list)")
-        pool.provideAllWhileThenWait(lock, {
+        pool.keepBusyWhileOrWait(lock, {
             val n = now()
             total += n - last
             last = n

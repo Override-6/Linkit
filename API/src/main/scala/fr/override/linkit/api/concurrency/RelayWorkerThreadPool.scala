@@ -8,12 +8,12 @@ import scala.util.control.NonFatal
 
 class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseable {
 
-    val factory: ThreadFactory = new RelayThread(_, prefix, this)
+    private val factory: ThreadFactory = new RelayThread(_, prefix, this)
     private val executor = Executors.newFixedThreadPool(nThreads, factory)
 
     private val workQueue = extractWorkQueue() //The pool tasks to execute
     private var closed = false
-    private val providerLocks = new ProvidersLock
+    private val workersLocks = new WorkersLock
     @volatile private var activeThreads = 0
 
     override def close(): Unit = {
@@ -37,14 +37,14 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
                 // println(s"Action terminated by thread $currentThread, $activeThreads are currently running.")
             }
             executor.submit(runnable)
-            //if there is one provided thread that is waiting for a new task to be performed, it would instantly execute the current task.
-            providerLocks.notifyOneProvider()
+            //if there is one busy thread that is waiting for a new task to be performed, it would instantly execute the current task.
+            workersLocks.notifyOneBusyThread()
         }
     }
 
-    def workingThreads: Int = activeThreads
+    def busyThreads: Int = activeThreads
 
-    def provideWhile(condition: => Boolean): Unit = {
+    def keepBusyWhile(condition: => Boolean): Unit = {
         checkCurrentIsWorker()
 
         while (!workQueue.isEmpty && condition) {
@@ -58,35 +58,33 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
         }
     }
 
-    def provideAllWhileThenWait(lock: AnyRef, condition: => Boolean): Unit = {
-        provideWhile(condition)
+    def keepBusyWhileThenWait(lock: AnyRef, condition: => Boolean): Unit = {
+        keepBusyWhile(condition)
 
-        if (condition) { //we may still need to provide
-            providerLocks.addProvidingLock(lock)
-            while (condition) {
-                lock.synchronized {
-                    if (condition) { // because of the synchronisation block, the condition value may change
-                        lock.wait()
-                    }
+        if (condition) { //we may still need to be busy
+            workersLocks.addWorkLock(lock)
+            lock.synchronized {
+                if (condition) { // because of the synchronisation block, the condition value may change
+                    lock.wait()
                 }
-                provideWhile(condition)
             }
-            providerLocks.removeProvidingLock()
+            workersLocks.releaseWorkLock()
         }
     }
 
-    def provideWhileOrWait(lock: AnyRef, condition: => Boolean): Unit = {
-        provideWhile(condition)
+    def keepBusyWhileOrWait(lock: AnyRef, condition: => Boolean): Unit = {
+        keepBusyWhile(condition)
         lock.synchronized {
             if (condition) {
                 lock.wait()
             }
         }
-        if (condition) //We still need to provide
-            provideWhileOrWait(lock, condition)
+        if (condition) //We still need to be busy
+            keepBusyWhileOrWait(lock, condition)
     }
 
-    def provide(millis: Long): Unit = {
+    //FIXME StackOverflowError if workQueue is empty
+    def keepBusy(millis: Long): Unit = {
         checkCurrentIsWorker()
 
         var totalProvided: Long = 0
@@ -100,19 +98,12 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
         if (toWait > 0) {
             val waited = timedWait(getClass, toWait)
             if (waited < toWait)
-                provide(millis)
+                keepBusy(millis)
         }
     }
 
-    private def extractWorkQueue(): BlockingQueue[Runnable] = {
-        val clazz = executor.getClass
-        val field = clazz.getDeclaredField("workQueue")
-        field.setAccessible(true)
-        field.get(executor).asInstanceOf[BlockingQueue[Runnable]]
-    }
-
-    def newProvidedQueue[A]: BlockingQueue[A] = {
-        new ProvidedBlockingQueue[A](this)
+    def newBusyQueue[A]: BlockingQueue[A] = {
+        new BusyBlockingQueue[A](this)
     }
 
     @relayWorkerExecution
@@ -123,6 +114,13 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
 
     private def currentWorker: RelayThread = {
         currentThread.asInstanceOf[RelayThread]
+    }
+
+    private def extractWorkQueue(): BlockingQueue[Runnable] = {
+        val clazz = executor.getClass
+        val field = clazz.getDeclaredField("workQueue")
+        field.setAccessible(true)
+        field.get(executor).asInstanceOf[BlockingQueue[Runnable]]
     }
 }
 
@@ -140,7 +138,7 @@ object RelayWorkerThreadPool {
      * @param action the action to perform
      * */
     def smartRunLater(action: => Unit): Unit = {
-        ifCurrentOrElse(_.runLater(action), action)
+        ifCurrentWorkerOrElse(_.runLater(action), action)
     }
 
     def checkCurrentIsWorker(): Unit = {
@@ -167,19 +165,23 @@ object RelayWorkerThreadPool {
         currentThread.getThreadGroup == workerThreadGroup
     }
 
-    def smartProvide(asLongAs: => Boolean): Unit = {
-        ifCurrentOrElse(_.provideWhile(asLongAs), ())
+    def smartKeepBusy(asLongAs: => Boolean): Unit = {
+        ifCurrentWorkerOrElse(_.keepBusyWhile(asLongAs), ())
     }
 
-    def smartProvide(lock: AnyRef, asLongAs: => Boolean): Unit = {
-        ifCurrentOrElse(_.provideAllWhileThenWait(lock, asLongAs), if (asLongAs) lock.synchronized(lock.wait()))
+    def smartKeepBusy(lock: AnyRef, asLongAs: => Boolean): Unit = {
+        ifCurrentWorkerOrElse(_.keepBusyWhileOrWait(lock, asLongAs), if (asLongAs) lock.synchronized(lock.wait()))
     }
 
-    def smartProvide(lock: AnyRef, minTimeOut: Long): Unit = {
-        ifCurrentOrElse(_.provide(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
+    def smartKeepBusy(lock: AnyRef, minTimeOut: Long): Unit = {
+        ifCurrentWorkerOrElse(_.keepBusy(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
     }
 
-    def ifCurrentOrElse[A](ifCurrent: RelayWorkerThreadPool => A, orElse: => A): A = {
+    def smartWait(lock: AnyRef, millis: Int): Unit = {
+        ifCurrentWorkerOrElse(_.keepBusy(millis), lock.synchronized(lock.wait(millis)))
+    }
+
+    def ifCurrentWorkerOrElse[A](ifCurrent: RelayWorkerThreadPool => A, orElse: => A): A = {
         val pool = currentPool()
 
         if (pool.isDefined) {
@@ -196,13 +198,9 @@ object RelayWorkerThreadPool {
         }
     }
 
-    def smartWait(lock: AnyRef, millis: Int): Unit = {
-        ifCurrentOrElse(_.provide(millis), lock.synchronized(lock.wait(millis)))
-    }
-
     private class RelayThread private[RelayWorkerThreadPool](target: Runnable, prefix: String,
                                                              private[RelayWorkerThreadPool] val owner: RelayWorkerThreadPool)
-            extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
+        extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
         activeCount += 1
 
         var currentProvidingDepth = 0

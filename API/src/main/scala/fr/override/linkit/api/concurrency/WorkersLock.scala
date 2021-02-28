@@ -13,18 +13,18 @@ import scala.collection.mutable
  *     This class only notifies locks once a task is submitted to the thread pool.
  *     The notified thread will then execute the submitted task, or stop providing if it has to.
  * */
-class ProvidersLock {
+class WorkersLock {
 
-    private val providers = mutable.Map.empty[Thread, ThreadLocks]
+    private val busyThread = mutable.Map.empty[Thread, ThreadLocks]
 
-    def addProvidingLock(lock: AnyRef): Unit = {
-        val locks = providers.getOrElseUpdate(currentThread, new ThreadLocks(currentThread))
+    def addWorkLock(lock: AnyRef): Unit = {
+        val locks = busyThread.getOrElseUpdate(currentThread, new ThreadLocks(currentThread))
         locks.addLock(lock)
         //println(s"locks = ${locks} ($currentThread) - ADDED")
     }
 
-    def removeProvidingLock(): AnyRef = {
-        val locksOpt = providers.get(currentThread)
+    def releaseWorkLock(): AnyRef = {
+        val locksOpt = busyThread.get(currentThread)
         if (locksOpt.isEmpty)
             return null
 
@@ -32,22 +32,22 @@ class ProvidersLock {
         val lock = locks.removeLock()
 
         if (locks.isEmpty) {
-            providers.remove(currentThread) //will unregister this lock.
+            busyThread.remove(currentThread) //will unregister this lock.
         }
         lock
     }
 
-    def notifyOneProvider(): Unit = {
-        if (providers.isEmpty)
+    def notifyOneBusyThread(): Unit = {
+        if (busyThread.isEmpty)
             return
-        providers
+        busyThread
                 .values
                 .find(_.owner.getState == Thread.State.WAITING)
                 .foreach(_.notifyLock())
     }
 
-    def isProviding: Boolean = {
-        providers.contains(currentThread)
+    def isCurrentThreadBusy: Boolean = {
+        busyThread.contains(currentThread)
     }
 
     private class ThreadLocks(val owner: Thread) {
