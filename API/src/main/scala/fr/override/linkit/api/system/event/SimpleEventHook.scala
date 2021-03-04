@@ -14,7 +14,7 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
         addOnce {
             busyLock.releaseAll()
         }
-        busyLock.keepBusy(lock)
+        busyLock.keepBusyUntilRelease(lock)
     }
 
     override def add(action: E => Unit): Unit = consumers += action

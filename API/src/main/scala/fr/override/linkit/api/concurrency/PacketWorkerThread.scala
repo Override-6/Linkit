@@ -1,17 +1,26 @@
 package fr.`override`.linkit.api.concurrency
 
+import fr.`override`.linkit.api
+import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread.packetReaderThreadGroup
 import fr.`override`.linkit.api.exception.{IllegalPacketWorkerLockException, IllegalThreadException}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 
 import scala.util.control.NonFatal
 
+/**
+ * A simple abstract class to easily handle packet reading.
+ * */
 abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packet Read Worker") with JustifiedCloseable {
 
     private var open = true
 
     override def isClosed: Boolean = open
 
+    /**
+     * Simply calls the refresh method while the thread is open. <br>
+     * The thread can only stop
+     * */
     override def run(): Unit = {
         try {
             while (open) {
@@ -20,7 +29,7 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
             }
         } catch {
             case NonFatal(e) =>
-                e.printStackTrace()
+                Relay.Log.error("Packet reading threw an error", e)
                 open = false
         } finally {
             //println("STOPPED PACKET WORKER")
@@ -33,12 +42,14 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
     }
 
     /**
-     * This methods reads and handle any packet that comes from a socket.
+     * This method must read and handle any packet that comes from a socket.
      * The method may not throw any exception. if it is, this packet worker thread will
      * stop !
      * */
     @relayWorkerExecution
     protected def refresh(): Unit
+
+    setDaemon(true)
 
 }
 
@@ -52,16 +63,27 @@ object PacketWorkerThread {
      * */
     val packetReaderThreadGroup: ThreadGroup = new ThreadGroup("Relay Packet Worker")
 
+    /**
+     * ensures that the current thread is a [[PacketWorkerThread]]
+     * @throws IllegalThreadException if the current thread is not a [[PacketWorkerThread]]
+     * */
     def checkCurrent(): Unit = {
         if (!isCurrentWorkerThread)
             throw new IllegalThreadException("This action must be performed in a Packet Worker thread !")
     }
 
+    /**
+     * ensures that the current thread is not a [[PacketWorkerThread]]
+     * @throws IllegalThreadException if the current thread is a [[PacketWorkerThread]]
+     * */
     def checkNotCurrent(): Unit = {
         if (isCurrentWorkerThread)
             throw new IllegalThreadException("This action must not be performed in a Packet Worker thread !")
     }
 
+    /**
+     * @return an optional filled if the current thread is an instance of [[PacketWorkerThread]]
+     * */
     def currentThread(): Option[PacketWorkerThread] = {
         Thread.currentThread() match {
             case worker: PacketWorkerThread => Some(worker)
@@ -69,10 +91,17 @@ object PacketWorkerThread {
         }
     }
 
+    /**
+     * @return true if the current thread is an instance of [[PacketWorkerThread]]
+     * */
     def isCurrentWorkerThread: Boolean = {
         currentThread().isDefined
     }
 
+    /**
+     * Handles a lock if the current thread is a [[PacketWorkerThread]], otherwise, throw an [[IllegalThreadException]]
+     * @throws IllegalThreadException
+     * */
     def safeLock(anyRef: AnyRef, timeout: Long = 0): Unit = {
         checkNotCurrent()
         anyRef.synchronized {

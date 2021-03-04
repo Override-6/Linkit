@@ -21,7 +21,7 @@ import scala.util.control.NonFatal
 // which is a big problem for the relay's initialisation....
 class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: PacketTraffic) {
 
-    private val communicator = traffic.createInjectable(11, ChannelScope.broadcast, CommunicationPacketChannel.providable)
+    private val communicator = traffic.getInjectable(11, ChannelScope.broadcast, CommunicationPacketChannel.providable)
     ////println(s"Damny communicator = ${communicator}")
 
     private val relayID = traffic.relayID

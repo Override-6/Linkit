@@ -3,19 +3,25 @@ package fr.`override`.linkit.api.concurrency
 import java.util
 import java.util.concurrent.{BlockingQueue, TimeUnit}
 
+import sun.reflect.generics.reflectiveObjects.NotImplementedException
+
 import scala.collection.mutable.ListBuffer
 
+/**
+ * This queue works like a FIFO queue, excepted that blocking operations are replaced with
+ * 'busy operations'.
+ *
+ * @see [[RelayWorkerThreadPool]] for more details on the 'busy operations' (or called 'busy thread system' in the doc).
+ * @param pool the pool that created this blocking queue, at wich will be used by the queue to handle busy locks.
+ * */
 class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) extends BlockingQueue[A] {
 
     private val list = ListBuffer.empty[A]
-    private val lock = new Object
+    private val lock = new BusyLock(list.isEmpty)
 
     override def add(e: A): Boolean = {
         list += e
-        lock.synchronized {
-            lock.notifyAll()
-            //println("NOTIFIED :D")
-        }
+        lock.release()
         true
     }
 
@@ -37,6 +43,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) ext
     override def poll(): A = {
         if (list.isEmpty)
             return _: A
+
         val head = list.head
         list.remove(0)
         head
@@ -44,8 +51,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) ext
 
     @relayWorkerExecution
     override def take(): A = {
-        //println(s"PERFORMING TAKE ($list)")
-        pool.keepBusyWhileOrWait(lock, list.isEmpty)
+        lock.keepBusyUntilRelease() //will be released once the queue is empty
         poll()
     }
 
@@ -55,14 +61,14 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) ext
         var total: Long = 0
         var last = now()
 
-        //println(s"PERFORMING TIMED POLL ($list)")
-        pool.keepBusyWhileOrWait(lock, {
+        //the lock object will be notified if an object has been inserted in the list.
+        pool.keepBusyOrWaitWhile(lock, {
             val n = now()
             total += n - last
             last = n
             total <= toWait
         })
-
+        //will return the current head or null if the list is empty
         poll()
     }
 
@@ -93,9 +99,9 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) ext
 
     override def remainingCapacity(): Int = -1 //Provided queue does not have defined capacity
 
-    override def drainTo(c: util.Collection[_ >: A]): Int = throw new UnsupportedOperationException()
+    override def drainTo(c: util.Collection[_ >: A]): Int = throw new NotImplementedException() //TODO
 
-    override def drainTo(c: util.Collection[_ >: A], maxElements: Int): Int = throw new UnsupportedOperationException()
+    override def drainTo(c: util.Collection[_ >: A], maxElements: Int): Int = throw new NotImplementedException() //TODO
 
     override def isEmpty: Boolean = list.isEmpty
 

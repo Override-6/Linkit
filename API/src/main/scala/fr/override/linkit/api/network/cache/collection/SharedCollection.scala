@@ -127,7 +127,7 @@ class SharedCollection[A <: Serializable](family: String,
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case modPacket: ObjectPacket => RelayWorkerThreadPool.smartRunLater {
+            case modPacket: ObjectPacket => RelayWorkerThreadPool.runLaterOrHere {
                 handleNetworkModRequest(modPacket)
             }
         }
@@ -251,7 +251,7 @@ object SharedCollection {
         private[SharedCollection] def get(): S[A] = mainCollection
 
         private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit =
-            RelayWorkerThreadPool.smartRunLater {
+            RelayWorkerThreadPool.runLaterOrHere {
                 boundedCollections.foreach(action)
             }
     }
