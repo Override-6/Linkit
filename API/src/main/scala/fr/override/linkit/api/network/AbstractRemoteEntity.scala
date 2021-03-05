@@ -17,7 +17,6 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     //println(s"CREATED REMOTE ENTITY NAMED '$identifier'")
     protected implicit val traffic: PacketTraffic = relay.traffic
 
-    println(s"Created entity $identifier")
     override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
     private val remoteFragments = {
         val communicator = traffic
@@ -28,7 +27,6 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
                 .get(6, SharedCollection.set[String])
                 .mapped(name => new RemoteFragmentController(name, communicator.createCategory(name, ChannelScope.broadcast, CommunicationPacketChannel)))
     }
-
     override val connectionDate: Timestamp = cache(2)
 
     override val apiVersion: Version = cache(4)

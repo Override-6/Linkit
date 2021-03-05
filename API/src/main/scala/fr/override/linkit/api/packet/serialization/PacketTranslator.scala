@@ -80,7 +80,6 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
             cachedSerializer = new CachedObjectSerializer(cache)
             cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(relay.identifier)
-            println("COMPLETED PACKET TRANSLATOR INITIALISATION")
         }
 
         def initialised: Boolean = cachedSerializerWhitelist != null
