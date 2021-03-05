@@ -50,7 +50,7 @@ class ConsumerContainer[T]() {
     def -=(consumer: T => Unit): this.type = remove(consumer)
 
     def applyAllAsync(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        RelayWorkerThreadPool.smartRunLater {
+        RelayWorkerThreadPool.runLaterOrHere {
             applyAll(t, onException)
         }
         this

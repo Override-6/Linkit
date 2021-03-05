@@ -2,18 +2,77 @@ package fr.`override`.linkit.api.concurrency
 
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool.{RelayThread, checkCurrentIsWorker}
 import fr.`override`.linkit.api.exception.IllegalThreadException
-
 import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory}
+
 import scala.util.control.NonFatal
 
+/**
+ * This class handles a FixedThreadPool from Java executors, excepted that the used threads can be busy about
+ * executing other tasks contained in the pool instead of stupidly waiting in an object monitor
+ * <h2> Problem </h2>
+ * <p>
+ * Let's say that we have a pool of 3 threads that handle deserialization and packet injections. <br>
+ * (see [[fr.`override`.linkit.api.packet.traffic.PacketInjectable]] for further details about injection
+ * Then suddenly, for a reason that can often appear, every threads of the pool are waiting to receipt another packet.<br>
+ * The waited packet will effectively be downloaded by the [[PacketWorkerThread]],
+ * but it could not be deserialized and injected because all the thread are currently waiting for an injection.<br>
+ * This way, a kind of deadlock will occur because each threads are waiting for their packet to be injected,
+ * and there is no free thread that would process the packets in order to notify other threads that their packet has been effectively received.<br>
+ * </p>
+ *
+ * <h3> Pseudo code : </h3>
+ *
+ * Here is an illustration of a normal execution, where a thread is waiting for a packet to be received,
+ * and where a second thread is injecting the packet and notifying the first thread that a packet has been received.
+ *
+ * <u>Thread 1 : waiting for a packet to be received</p>
+ * {{{
+ *      val channel = relay.getInjectable(x, ChannelScope.y, SyncPacketChannel)
+ *      val nextPacket = channel.nextPacket()
+ *      println("A new packet has been received !")
+ *      // Process nextPacket....
+ * }}}
+ *
+ * <u>Thread 2 : injecting the next packet that concerns the channel, handled by the thread 1.</u><br>
+ * (see [[fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection]])
+ * {{{
+ *      val injectable = //Retrieves the needed injectable, stored with 'x' identifier
+ *      val packetInjection = //Get the concerned injection object
+ *      injectable.injectPacket(packetInjection) //The injection will notify the first thread.
+ *      println("Another packet injection has been performed !")
+ * }}}
+ *
+ * <h2> Solution </h2>
+ * <p>
+ * In a normal execution, where a second thread is free to notify the first thread,
+ * the two prints would be done at same time
+ * </p>
+ * <p>
+ * Therefore, if the second thread were not able to handle the injection, because it would be busy to
+ * execute another task submitted to thread pool, the first thread could not be
+ * notified, and will wait until a thread is free to process the injection.<br>
+ * But we have to rely on the fact that the first thread is doing noting.<br>
+ * So, we have a thread that is waiting for a packet to be provided, and will do
+ * absolutely nothing until he does not received his wants,
+ * where he can take the time he is sleeping for executing other
+ * tasks in the pool ? What a lazy thread !
+ * </p>
+ * <p>
+ * The Busy thread system will save this lost time in order to fluidify task execution,
+ * and make one thread able to handle multiple tasks when a task need to wait something.
+ *
+ * @see [[BusyBlockingQueue]] for busy waitings example.
+ * @param prefix   The prefix of the threads names created for the pool.
+ * @param nThreads The number of threads the pool will contain.
+ * */
 class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseable {
-
-    val factory: ThreadFactory = new RelayThread(_, prefix, this)
+    private val factory: ThreadFactory = new RelayThread(_, prefix, this)
     private val executor = Executors.newFixedThreadPool(nThreads, factory)
 
-    private val workQueue = extractWorkQueue() //The pool tasks to execute
+    //The extracted workQueue of the executor which contains all the tasks to execute
+    private val workQueue = extractWorkQueue()
     private var closed = false
-    private val providerLocks = new ProvidersLock
+    private val workersLocks = new WorkersLock
     @volatile private var activeThreads = 0
 
     override def close(): Unit = {
@@ -21,72 +80,96 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
         executor.shutdownNow()
     }
 
-    def runLater(action: => Unit): Unit = {
-        if (!closed) {
-            //println(s"Submitted action from thread $currentThread, active threads: $activeThreads")
-            var runnable: Runnable = null
-            runnable = () => {
-                activeThreads += 1
-                //println(s"Action taken by thread $currentThread")
-                try {
-                    action
-                } catch {
-                    case NonFatal(e) => e.printStackTrace()
-                }
-                activeThreads -= 1
-                // println(s"Action terminated by thread $currentThread, $activeThreads are currently running.")
+    /**
+     * Submits a task to the executor thread pool.
+     * The task will then be handled directly or right after a thread is looking for other task to schedule.
+     *
+     * @throws IllegalStateException if the pool is closed
+     * @param task the task to execute in the thread pool
+     * */
+    def runLater(task: => Unit): Unit = {
+        if (closed)
+            throw new IllegalStateException("Attempted to submit a task in a closed thread pool !")
+        var runnable: Runnable = null
+        runnable = () => {
+            activeThreads += 1
+            try {
+                task
+            } catch {
+                case NonFatal(e) => e.printStackTrace()
             }
-            executor.submit(runnable)
-            //if there is one provided thread that is waiting for a new task to be performed, it would instantly execute the current task.
-            providerLocks.notifyOneProvider()
+            activeThreads -= 1
         }
+        executor.submit(runnable)
+        //If there is one busy thread that is waiting for a new task to be performed,
+        //It would instantly execute the current task.
+        workersLocks.notifyOneBusyThread()
     }
 
-    def workingThreads: Int = activeThreads
+    /**
+     * @return the number of threads that are currently executing a task.
+     * */
+    def busyThreads: Int = activeThreads
 
-    def provideWhile(condition: => Boolean): Unit = {
+    /**
+     * Executes tasks contained in the workQueue
+     * until the queue is empty or the condition returns false
+     *
+     * @throws IllegalThreadException if the current thread is not a [[RelayThread]]
+     * @param condition the condition to check, the thread will continue to be busy with tasks
+     *                  while the condition is true. (and while the thread have tasks to execute)
+     * */
+    def keepBusyWhile(condition: => Boolean): Unit = {
         checkCurrentIsWorker()
 
         while (!workQueue.isEmpty && condition) {
             val task = workQueue.poll()
             if (task != null) {
-                currentWorker.currentProvidingDepth += 1
+                currentWorker.currentTaskExecutionDepth += 1
                 task.run()
-                currentWorker.currentProvidingDepth -= 1
+                currentWorker.currentTaskExecutionDepth -= 1
             }
 
         }
     }
 
-    def provideAllWhileThenWait(lock: AnyRef, condition: => Boolean): Unit = {
-        provideWhile(condition)
-
-        if (condition) { //we may still need to provide
-            providerLocks.addProvidingLock(lock)
-            while (condition) {
-                lock.synchronized {
-                    if (condition) { // because of the synchronisation block, the condition value may change
-                        lock.wait()
-                    }
-                }
-                provideWhile(condition)
-            }
-            providerLocks.removeProvidingLock()
-        }
-    }
-
-    def provideWhileOrWait(lock: AnyRef, condition: => Boolean): Unit = {
-        provideWhile(condition)
+    /**
+     * Keep executing tasks contained in the workQueue while it is full and the provided condition is true.
+     * If the condition keeps being true, but there is no task that can be processed, the thread will wait
+     * on the lock until he gets notified by the user or by the [[runLater()]] method.
+     *
+     * in plain language, this method will make the thread execute tasks while the provided condition is true;
+     * or, if the thread can't process other tasks, will wait until a task get submitted.
+     *
+     * Using a [[BusyLock]] is highly recommended to keep a thread busy
+     *
+     * @param lock      the reference to link a monitor lock if needed
+     * @param condition the condition
+     * @throws [[ IllegalThreadException]] if the current thread is not a [[RelayThread]]
+     * @see [[BusyLock]]
+     * */
+    def keepBusyOrWaitWhile(lock: AnyRef = new Object, condition: => Boolean): Unit = {
+        keepBusyWhile(condition)
         lock.synchronized {
             if (condition) {
+                workersLocks.addBusyLock(lock)
                 lock.wait()
+                workersLocks.removeLastBusyLock()
             }
         }
-        if (condition) //We still need to provide
-            provideWhileOrWait(lock, condition)
+        if (condition) //We still need to be busy
+            keepBusyOrWaitWhile(lock, condition)
     }
 
-    def provide(millis: Long): Unit = {
+    /**
+     * Keep the current thread busy with task execution for at least
+     * x milliseconds.
+     *
+     * @param lock   the lock that will handle monotirs
+     * @param millis the number of milliseconds the thread must be busy.
+     * @throws IllegalThreadException if the current thread is not a [[RelayThread]]
+     * */
+    def keepBusy(lock: AnyRef = new Object, millis: Long): Unit = {
         checkCurrentIsWorker()
 
         var totalProvided: Long = 0
@@ -98,31 +181,60 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
         }
         val toWait = millis - totalProvided
         if (toWait > 0) {
-            val waited = timedWait(getClass, toWait)
+            workersLocks.addBusyLock(lock)
+            val waited = timedWait(lock, toWait)
+            workersLocks.removeLastBusyLock()
             if (waited < toWait)
-                provide(millis)
+                keepBusy(millis)
         }
     }
 
+    /**
+     * Creates a blocking queue that keep busy his thread instead of make it waiting
+     * the provided queue will use the busy threading system for concurrent operations such as
+     * [[BlockingQueue#take()]]
+     *
+     * @tparam A the type of element the queue will contains
+     * @return a [[BusyBlockingQueue]]
+     */
+    def newBusyQueue[A]: BlockingQueue[A] = {
+        new BusyBlockingQueue[A](this)
+    }
+
+    /**
+     * The Task Execution Depth is an int value that determines the number of tasks
+     * a thread is consequently executing.
+     *
+     * @return the task execution depth of the current thread
+     * @throws IllegalThreadException if the current thread is not a [[RelayThread]]
+     * */
+    @relayWorkerExecution
+    def currentTaskExecutionDepth: Int = {
+        checkCurrentIsWorker("This action is only permitted to relay threads")
+        currentWorker.currentTaskExecutionDepth
+    }
+
+    /**
+     * Casts the current thread as a [[RelayThread]]
+     *
+     * @return the instance of the current relay thread
+     * @throws IllegalThreadException if the current thread is not a [[RelayThread]]
+     * */
+    @relayWorkerExecution
+    private def currentWorker: RelayThread = {
+        checkCurrentIsWorker()
+        //After the check, we are sure that the current thread is a RelayThread
+        currentThread.asInstanceOf[RelayThread]
+    }
+
+    /*
+    * Uses Reflection to extract the 'workQueue' field of the executor
+    * */
     private def extractWorkQueue(): BlockingQueue[Runnable] = {
         val clazz = executor.getClass
         val field = clazz.getDeclaredField("workQueue")
         field.setAccessible(true)
         field.get(executor).asInstanceOf[BlockingQueue[Runnable]]
-    }
-
-    def newProvidedQueue[A]: BlockingQueue[A] = {
-        new ProvidedBlockingQueue[A](this)
-    }
-
-    @relayWorkerExecution
-    def currentProvidingDepth: Int = {
-        checkCurrentIsWorker("This action is only permitted to relay threads")
-        currentWorker.currentProvidingDepth
-    }
-
-    private def currentWorker: RelayThread = {
-        currentThread.asInstanceOf[RelayThread]
     }
 }
 
@@ -133,53 +245,103 @@ object RelayWorkerThreadPool {
 
     /**
      * This method may execute the given action into the current thread pool.
-     * If the current execution thread does not extends from [[RelayThread]], this would mean that,
+     * If the current execution thread is not a relay worker thread, this would mean that
      * we are not running into a thread that is owned by the Relay concurrency system. Therefore, the action
-     * may be performed as a synchronized action.
+     * may be performed in the current thread
      *
      * @param action the action to perform
      * */
-    def smartRunLater(action: => Unit): Unit = {
-        ifCurrentOrElse(_.runLater(action), action)
+    def runLaterOrHere(action: => Unit): Unit = {
+        ifCurrentWorkerOrElse(_.runLater(action), action)
     }
 
+    /**
+     * @throws IllegalThreadException if the current thread is a [[RelayThread]]
+     * */
     def checkCurrentIsWorker(): Unit = {
         if (!isCurrentWorkerThread)
             throw new IllegalThreadException("This action must be performed in a Packet Worker thread !")
     }
 
+    /**
+     * @throws IllegalThreadException if the current thread is a [[RelayThread]]
+     * @param msg the message to complain with the exception
+     * */
     def checkCurrentIsWorker(msg: String): Unit = {
         if (!isCurrentWorkerThread)
             throw new IllegalThreadException(s"This action must be performed in a Packet Worker thread ! ($msg)")
     }
 
+    /**
+     * @throws IllegalThreadException if the current thread is not a [[RelayThread]]
+     * */
     def checkCurrentIsNotWorker(): Unit = {
         if (isCurrentWorkerThread)
             throw new IllegalThreadException("This action must not be performed in a Packet Worker thread !")
     }
 
+    /**
+     * @throws IllegalThreadException if the current thread is not a [[RelayThread]]
+     * @param msg the message to complain with the exception
+     * */
     def checkCurrentIsNotWorker(msg: String): Unit = {
         if (isCurrentWorkerThread)
             throw new IllegalThreadException(s"This action must not be performed in a Packet Worker thread ! ($msg)")
     }
 
+    /**
+     * @return {{{true}}} if and only if the current thread is an instance of [[RelayThread]]
+     * */
     def isCurrentWorkerThread: Boolean = {
-        currentThread.getThreadGroup == workerThreadGroup
+        currentThread.isInstanceOf[RelayThread]
     }
 
-    def smartProvide(asLongAs: => Boolean): Unit = {
-        ifCurrentOrElse(_.provideWhile(asLongAs), ())
+    /**
+     * if the current thread is a relay thread, it would be busy with task execution while the provided
+     * execution is true.
+     * If the current thread is not a relay thread, it would do nothing.
+     *
+     * @param condition the condition to test
+     * */
+    def smartKeepBusyWhile(condition: => Boolean): Unit = {
+        ifCurrentWorkerOrElse(_.keepBusyWhile(condition), ())
     }
 
-    def smartProvide(lock: AnyRef, asLongAs: => Boolean): Unit = {
-        ifCurrentOrElse(_.provideAllWhileThenWait(lock, asLongAs), if (asLongAs) lock.synchronized(lock.wait()))
+    /**
+     * if the current thread is a relay thread, it would be busy with task execution while the provided
+     * execution is true.
+     * If the current thread is not a relay thread, it would do nothing.
+     *
+     * @param condition the condition to test
+     * @param lock      the lock to handle
+     * @see [[RelayWorkerThreadPool.keepBusyOrWaitWhile()]] for further details about the busy system.
+     * */
+    def smartKeepBusy(lock: AnyRef, condition: => Boolean): Unit = {
+        ifCurrentWorkerOrElse(_.keepBusyOrWaitWhile(lock, condition), if (condition) lock.synchronized(lock.wait()))
     }
 
-    def smartProvide(lock: AnyRef, minTimeOut: Long): Unit = {
-        ifCurrentOrElse(_.provide(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
+    /**
+     * if the current thread is a relay thread, it would be busy with task execution while the time
+     * elapsed during the task execution is under the minTimeOut
+     * If the current thread is not a relay thread, it would do nothing.
+     *
+     * @param minTimeOut the minimum time to keep busy
+     * @param lock       the lock to handle
+     * @see [[RelayWorkerThreadPool.keepBusyOrWaitWhile]] for further details about the busy system.
+     * */
+    def smartKeepBusy(lock: AnyRef, minTimeOut: Long): Unit = {
+        ifCurrentWorkerOrElse(_.keepBusy(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
     }
 
-    def ifCurrentOrElse[A](ifCurrent: RelayWorkerThreadPool => A, orElse: => A): A = {
+    /**
+     * Toggles between two actions if the current thread is an instance of [[RelayThread]]
+     *
+     * @param ifCurrent The action to process if the current thread is a relay worker thread.
+     *                  The given entry is the current thread pool
+     * @param orElse the action to process if the current thread is not a relay worker thread.
+     *
+     * */
+    def ifCurrentWorkerOrElse[A](ifCurrent: RelayWorkerThreadPool => A, orElse: => A): A = {
         val pool = currentPool()
 
         if (pool.isDefined) {
@@ -189,23 +351,28 @@ object RelayWorkerThreadPool {
         }
     }
 
+    /**
+     * @return Some if the current thread is a member of a [[RelayWorkerThreadPool]], None instead
+     * */
     def currentPool(): Option[RelayWorkerThreadPool] = {
         currentThread match {
-            case worker: RelayThread => Some(worker.owner)
+            case worker: RelayThread => Some(worker.ownerPool)
             case _ => None
         }
     }
 
-    def smartWait(lock: AnyRef, millis: Int): Unit = {
-        ifCurrentOrElse(_.provide(millis), lock.synchronized(lock.wait(millis)))
-    }
-
-    private class RelayThread private[RelayWorkerThreadPool](target: Runnable, prefix: String,
-                                                             private[RelayWorkerThreadPool] val owner: RelayWorkerThreadPool)
-            extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
+    /**
+     * The representation of a java thread, extending from [[Thread]].
+     * This class contains information that need to be stored into a specific thread class.
+     * */
+    private final class RelayThread private[RelayWorkerThreadPool](target: Runnable, prefix: String,
+                                                                   private[RelayWorkerThreadPool] val ownerPool: RelayWorkerThreadPool)
+        extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
         activeCount += 1
 
-        var currentProvidingDepth = 0
+        var currentTaskExecutionDepth = 0
+
+        setDaemon(true) //TODO mhhmhmhmhmhmh
 
     }
 

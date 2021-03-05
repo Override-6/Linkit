@@ -8,17 +8,17 @@ public enum LoadPhase {
      * Defines the loader to be in "loading" phase.
      * "loading" phase is set when all extensions are enabling ({@link RelayExtension#onLoad()})
      */
-    LOAD,
+    LOADING,
     /**
      * Defines the loader to be in "Enabling" phase.
      * "enable" phase is set when extensions and fragments are enabling ({@link RelayExtension#onEnable()} & {@link ExtensionFragment#start()})
      */
-    ENABLE,
+    ENABLING,
     /**
      * Defines the loader to be in "Disabling" phase.
      * "disable" phase is set when extensions and fragments are disabling ({@link RelayExtension#onDisable()} & {@link ExtensionFragment#destroy()})
      */
-    DISABLE,
+    DISABLING,
     /**
      * Defines the loader to be in "Inactive" phase.
      * The Inactive phase is set when no extensions and fragments are running.

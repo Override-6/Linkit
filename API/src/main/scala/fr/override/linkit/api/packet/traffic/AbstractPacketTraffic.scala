@@ -23,7 +23,7 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
     private val lostInjections = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
 
-    override def createInjectable[C <: PacketInjectable : ClassTag](id: Int,
+    override def getInjectable[C <: PacketInjectable : ClassTag](id: Int,
                                                                     scopeFactory: ScopeFactory[_ <: ChannelScope],
                                                                     factory: PacketInjectableFactory[C]): C = {
         val scope = scopeFactory(newWriter(id))

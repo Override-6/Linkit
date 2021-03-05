@@ -18,7 +18,7 @@ class CommunicationPacketChannel(scope: ChannelScope,
             new LinkedBlockingQueue[Packet]()
         else {
             RelayWorkerThreadPool
-                    .ifCurrentOrElse(_.newProvidedQueue, new LinkedBlockingQueue[Packet]())
+                    .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 

@@ -3,7 +3,7 @@ package fr.`override`.linkit.api.network
 import java.io.PrintStream
 import java.security.AccessController
 
-import fr.`override`.linkit.api.packet.fundamental.PairPacket
+import fr.`override`.linkit.api.packet.fundamental.TaggedObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
@@ -32,7 +32,7 @@ class RemoteConsole private(@Nullable channel: AsyncPacketChannel,
             str = java.util.Arrays.deepToString(obj.asInstanceOf[Array[AnyRef]])
 
         if (channel != null)
-            channel.send(PairPacket(kind, String.valueOf(obj))) //prints to the linked console
+            channel.send(TaggedObjectPacket(kind, String.valueOf(obj))) //prints to the linked console
     }
 
     override def print(x: Boolean): Unit = print(x: Any)

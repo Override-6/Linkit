@@ -20,7 +20,7 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
     private val remoteFragments = {
         val communicator = traffic
-                .createInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
+                .getInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
                 .subInjectable(Array(identifier), PacketChannelCategories, true)
 
         cache

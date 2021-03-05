@@ -1,20 +1,20 @@
 package fr.`override`.linkit.api.system.event
 
-import fr.`override`.linkit.api.concurrency.{ProvidedLock, relayWorkerExecution}
+import fr.`override`.linkit.api.concurrency.{BusyLock, relayWorkerExecution}
 import fr.`override`.linkit.api.system.event.EventHook
 import fr.`override`.linkit.api.utils.ConsumerContainer
 import org.jetbrains.annotations.NotNull
 
 class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L, E) => Unit)*) extends EventHook[L, E] {
-    private val providedLock = new ProvidedLock()
+    private val busyLock = new BusyLock()
     private val consumers = ConsumerContainer[E]()
 
     @relayWorkerExecution
     override def await(@NotNull lock: AnyRef = new Object): Unit = {
         addOnce {
-            providedLock.cancelAllProviding()
+            busyLock.releaseAll()
         }
-        providedLock.provide(lock)
+        busyLock.keepBusyUntilRelease(lock)
     }
 
     override def add(action: E => Unit): Unit = consumers += action
@@ -23,7 +23,7 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
 
     override def cancel(): Unit = {
         consumers.clear()
-        providedLock.cancelAllProviding()
+        busyLock.releaseAll()
     }
 
     override def add(action: => Unit): Unit = add(_ => action)

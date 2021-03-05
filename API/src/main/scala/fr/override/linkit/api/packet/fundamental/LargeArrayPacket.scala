@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-case class LargeArrayPacket private(ranges: Array[Int], patterns: Array[AnyVal]) {
+/*case class LargeArrayPacket private(ranges: Array[Int], patterns: Array[AnyVal]) {
 
 }
 
