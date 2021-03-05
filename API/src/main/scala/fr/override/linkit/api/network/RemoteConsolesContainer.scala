@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.packet.Packet
-import fr.`override`.linkit.api.packet.fundamental.PairPacket
+import fr.`override`.linkit.api.packet.fundamental.TaggedObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 
@@ -44,7 +44,7 @@ class RemoteConsolesContainer(relay: Relay) {
     protected def init() {
         printChannel.addOnPacketReceived((packet, coords) => {
             packet match {
-                case PairPacket(header, msg: String) =>
+                case TaggedObjectPacket(header, msg: String) =>
                     val output = if (header == "err") System.err else System.out
                     output.println(s"[${coords.senderID}]: $msg")
                 case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")

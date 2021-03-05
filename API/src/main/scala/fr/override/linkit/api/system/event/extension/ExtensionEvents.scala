@@ -14,9 +14,9 @@ object ExtensionEvents {
 
         override def getHooks(category: ExtensionEventHooks): Array[ExtensionEventHook] = {
             val phaseHook = state match {
-                case LoadPhase.LOAD => category.extensionsLoad
-                case LoadPhase.ENABLE => category.extensionsEnable
-                case LoadPhase.DISABLE => category.extensionsDisable
+                case LoadPhase.LOADING => category.extensionsLoad
+                case LoadPhase.ENABLING => category.extensionsEnable
+                case LoadPhase.DISABLING => category.extensionsDisable
             }
             Array(phaseHook, category.extensionsStateChange)
         }

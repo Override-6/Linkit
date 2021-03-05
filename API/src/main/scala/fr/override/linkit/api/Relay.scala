@@ -193,7 +193,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
     @throws[IllegalThreadException]("If the current thread is not one of a RelayWorkerThreadPool")
     override def close(reason: CloseReason): Unit
 
-//////////////////////////// NETWORK ACCESSORS ///////////////////////////////////
+    //////////////////////////// NETWORK ACCESSORS ///////////////////////////////////
 
     /**
      * Accessor for the Network instance that contains all the [[fr.`override`.linkit.api.network.NetworkEntity]]
@@ -204,7 +204,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
     def network: Network
 
     /**
-     * The current state of the relay
+     * The current state of the relay, the default state is set to [[RelayState.INACTIVE]]
      *
      * @return the state enum
      * @see [[RelayState]] for further details

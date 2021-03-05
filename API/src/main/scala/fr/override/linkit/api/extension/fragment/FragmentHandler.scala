@@ -35,7 +35,7 @@ class FragmentHandler(relay: Relay, extensionLoader: RelayExtensionLoader) {
     }
 
     def putFragment(fragment: ExtensionFragment)(implicit extension: RelayExtension): Unit = {
-        if (extensionLoader.getPhase != LoadPhase.LOAD)
+        if (extensionLoader.getPhase != LoadPhase.LOADING)
             throw new IllegalStateException("Could not set fragment : fragment can only be put during LOAD phase")
 
         val extensionClass = extension.getClass
