@@ -29,10 +29,16 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
             totalWriteTime += t1 - t0
             //NETWORK-DEBUG-MARK
-            //println(s"written : ${new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${buff.length}) totalWriteTime: $totalWriteTime")
+            println(s"written : ${new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${buff.length}) totalWriteTime: $totalWriteTime")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
-                System.err.println(e.getMessage)
+
+                if (e.getMessage.contains("socket write error")) {
+                    e.printStackTrace()
+                } else {
+                    System.err.println(e)
+                }
+
                 if (isClosed || !autoReconnect)
                     return
 
@@ -51,7 +57,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         if (!currentSocket.isClosed)
             closeCurrentStreams()
         SocketLocker.releaseAllMonitors()
-        println(s"INFO : All monitors that were waiting the socket that belongs to '$boundIdentifier' were been released")
+        Log.trace(s"All monitors that were waiting the socket that belongs to '$boundIdentifier' were been released")
     }
 
     override def isClosed: Boolean = SocketLocker.state == CLOSED
@@ -144,9 +150,9 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     }
 
     private def reconnect(): Unit = {
-        println(s"WARNING : The connection with $boundIdentifier has been lost. Currently trying to reconnect...")
+        Log.warn(s"The connection with $boundIdentifier has been lost. Currently trying to reconnect...")
         handleReconnection()
-        println(s"The connection with $boundIdentifier has been reestablished.")
+        Log.trace(s"The connection with $boundIdentifier has been reestablished.")
     }
 
     import ConnectionState._
@@ -199,7 +205,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
                 Log.warn(s"The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier isn't ready or is disconnected.")
                 disconnectLock.wait()
-                Log.info(s"The connection with $boundIdentifier is now ready.")
+                Log.trace(s"The connection with $boundIdentifier is now ready.")
             } catch {
                 case _: InterruptedException =>
             }

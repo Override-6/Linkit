@@ -1,7 +1,7 @@
 package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayThreadPool, relayWorkerExecution}
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
@@ -23,12 +23,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     private val packetTranslator = server.packetTranslator
     private val manager: ConnectionsManager = server.connectionsManager
 
-    private val workerThread = new RelayWorkerThreadPool("Packet Handling & Extension", 3)
+    private val workerThread = new RelayThreadPool("Packet Handling & Extension", 3)
 
     @volatile private var closed = false
 
     override def close(reason: CloseReason): Unit = {
-        RelayWorkerThreadPool.checkCurrentIsWorker()
+        RelayThreadPool.checkCurrentIsWorker()
         closed = true
         if (reason.isInternal && isConnected) {
             val sysChannel = session.channel
@@ -40,7 +40,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
         manager.unregister(identifier)
         workerThread.close()
-        println(s"Connection closed for $identifier")
+        Relay.Log.trace(s"Connection closed for $identifier")
     }
 
     def start(): Unit = {
@@ -84,7 +84,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     override def isClosed: Boolean = closed
 
     private[server] def updateSocket(socket: Socket): Unit = {
-        RelayWorkerThreadPool.checkCurrentIsWorker()
+        RelayThreadPool.checkCurrentIsWorker()
         session.updateSocket(socket)
     }
 

@@ -119,7 +119,6 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
         val sender = coordinates.senderID
         val injectables = getInjectables(id, sender)
-
         if (injectables.isEmpty) {
             lostInjections.getOrElseUpdate(id, ListBuffer.empty) += injection
             return

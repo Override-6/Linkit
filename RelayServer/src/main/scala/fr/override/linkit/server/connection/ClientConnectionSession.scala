@@ -15,7 +15,7 @@ case class ClientConnectionSession private(identifier: String,
                                            server: RelayServer) extends JustifiedCloseable {
 
     val serverTraffic: PacketTraffic             = server traffic
-    val channel      : SystemPacketChannel       = serverTraffic.createInjectable(SystemChannelID, ChannelScope.reserved(identifier), SystemPacketChannel)
+    val channel      : SystemPacketChannel       = serverTraffic.getInjectable(SystemChannelID, ChannelScope.reserved(identifier), SystemPacketChannel)
     val packetReader : ConnectionPacketReader    = new ConnectionPacketReader(socket, server, identifier)
     val tasksHandler : ConnectionTasksHandler    = new ConnectionTasksHandler(this)
     val outConsole   : RemoteConsole             = server.getConsoleOut(identifier)

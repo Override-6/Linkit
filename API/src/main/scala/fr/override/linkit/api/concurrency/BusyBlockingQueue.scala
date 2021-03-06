@@ -1,27 +1,28 @@
 package fr.`override`.linkit.api.concurrency
 
-import java.util
-import java.util.concurrent.{BlockingQueue, TimeUnit}
-
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
+import java.util
+import java.util.concurrent.{BlockingQueue, TimeUnit}
 import scala.collection.mutable.ListBuffer
 
 /**
  * This queue works like a FIFO queue, excepted that blocking operations are replaced with
  * 'busy operations'.
  *
- * @see [[RelayWorkerThreadPool]] for more details on the 'busy operations' (or called 'busy thread system' in the doc).
- * @param pool the pool that created this blocking queue, at wich will be used by the queue to handle busy locks.
+ * @see [[RelayThreadPool]] for more details on the 'busy operations' (or called 'busy thread system' in the doc).
+ * @param pool the pool that created this blocking queue, at which will be used by the queue to handle busy locks.
  * */
-class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) extends BlockingQueue[A] {
+class BusyBlockingQueue[A] private[concurrency](pool: RelayThreadPool) extends BlockingQueue[A] {
 
-    private val list = ListBuffer.empty[A]
-    private val lock = new BusyLock(list.isEmpty)
+    private val content = ListBuffer.empty[A]
+    private val lock = new Object
 
     override def add(e: A): Boolean = {
-        list += e
-        lock.release()
+        content += e
+        lock.synchronized {
+            lock.notify()
+        }
         true
     }
 
@@ -32,26 +33,26 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) ext
     override def offer(e: A, timeout: Long, unit: TimeUnit): Boolean = add(e)
 
     override def remove(): A = {
-        if (list.isEmpty)
+        if (content.isEmpty)
             throw new NoSuchElementException()
 
-        val head = list.head
-        list.remove(0)
+        val head = content.head
+        content.remove(0)
         head
     }
 
     override def poll(): A = {
-        if (list.isEmpty)
+        if (content.isEmpty)
             return _: A
 
-        val head = list.head
-        list.remove(0)
+        val head = content.head
+        content.remove(0)
         head
     }
 
     @relayWorkerExecution
     override def take(): A = {
-        lock.keepBusyUntilRelease() //will be released once the queue is empty
+        pool.keepBusyOrWaitWhile(lock, content.isEmpty) //will be released once the queue is empty
         poll()
     }
 
@@ -73,24 +74,24 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) ext
     }
 
     override def element(): A = {
-        val head = list.head
+        val head = content.head
         if (head == null)
             throw new NoSuchElementException
         head
     }
 
     override def peek(): A = {
-        list.head
+        content.head
     }
 
-    override def remove(o: Any): Boolean = list.remove(list.indexOf(o)) != null
+    override def remove(o: Any): Boolean = content.remove(content.indexOf(o)) != null
 
-    override def contains(o: Any): Boolean = list.contains(o)
+    override def contains(o: Any): Boolean = content.contains(o)
 
-    override def size(): Int = list.size
+    override def size(): Int = content.size
 
     override def iterator(): util.Iterator[A] = new util.Iterator[A] {
-        private val iterator = list.iterator
+        private val iterator = content.iterator
 
         override def hasNext: Boolean = iterator.hasNext
 
@@ -103,9 +104,9 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) ext
 
     override def drainTo(c: util.Collection[_ >: A], maxElements: Int): Int = throw new NotImplementedException() //TODO
 
-    override def isEmpty: Boolean = list.isEmpty
+    override def isEmpty: Boolean = content.isEmpty
 
-    override def containsAll(c: util.Collection[_]): Boolean = list.containsSlice(c.toArray)
+    override def containsAll(c: util.Collection[_]): Boolean = content.containsSlice(c.toArray)
 
     override def addAll(c: util.Collection[_ <: A]): Boolean = {
         c.forEach(add)
@@ -118,19 +119,19 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayWorkerThreadPool) ext
     }
 
     override def retainAll(c: util.Collection[_]): Boolean = {
-        list.filterInPlace(c.contains)
+        content.filterInPlace(c.contains)
         true
     }
 
-    override def clear(): Unit = list.clear()
+    override def clear(): Unit = content.clear()
 
     override def toArray: Array[AnyRef] = {
         val buff = ListBuffer.empty[Any]
-        list.foreach(e => buff.addOne(e))
+        content.foreach(e => buff.addOne(e))
         buff.toArray.asInstanceOf[Array[AnyRef]]
     }
 
-    override def toString: String = list.toArray[Any].mkString("ProvidedBlockingQueue(", ", ", ")")
+    override def toString: String = content.toArray[Any].mkString("ProvidedBlockingQueue(", ", ", ")")
 
     override def toArray[T](a: Array[T with Object]): Array[T with Object] = {
         toArray.asInstanceOf[Array[T with Object]]

@@ -1,9 +1,9 @@
 package fr.`override`.linkit.server
 
-import java.nio.file.Paths
-
 import fr.`override`.linkit.api.system.CloseReason
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
+
+import java.nio.file.Paths
 
 
 object Main {
@@ -15,14 +15,15 @@ object Main {
             enableExtensionsFolderLoad = !ideRun
             extensionsFolder = getExtensionFolderPath
         }
+
         relayServer.runLater {
             relayServer.start()
 
             if (ideRun) {
 
-                import fr.`override`.linkit.`extension`.controller.ControllerExtension
-                import fr.`override`.linkit.`extension`.debug.DebugExtension
-                import fr.`override`.linkit.`extension`.easysharing.EasySharing
+                import fr.`override`.linkit.extension.controller.ControllerExtension
+                import fr.`override`.linkit.extension.debug.DebugExtension
+                import fr.`override`.linkit.extension.easysharing.EasySharing
 
                 val loader = relayServer.extensionLoader
                 loader.loadExtensions(

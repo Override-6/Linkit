@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.network.cache.collection
 
-import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
+import fr.`override`.linkit.api.concurrency.RelayThreadPool
 import fr.`override`.linkit.api.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
@@ -21,7 +21,7 @@ class SharedCollection[A <: Serializable](family: String,
                                           channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
-    private val networkListeners = ConsumerContainer[(CollectionModification, Long, A)]
+    private val networkListeners = ConsumerContainer[(CollectionModification, Long, A)]()
 
     @volatile private var modCount = 0
     @volatile override var autoFlush: Boolean = true
@@ -127,7 +127,7 @@ class SharedCollection[A <: Serializable](family: String,
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case modPacket: ObjectPacket => RelayWorkerThreadPool.runLaterOrHere {
+            case modPacket: ObjectPacket => RelayThreadPool.runLaterOrHere {
                 handleNetworkModRequest(modPacket)
             }
         }
@@ -251,7 +251,7 @@ object SharedCollection {
         private[SharedCollection] def get(): S[A] = mainCollection
 
         private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit =
-            RelayWorkerThreadPool.runLaterOrHere {
+            RelayThreadPool.runLaterOrHere {
                 boundedCollections.foreach(action)
             }
     }

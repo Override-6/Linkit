@@ -1,9 +1,9 @@
 package fr.`override`.linkit.api.network.cache
 
-import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
+import fr.`override`.linkit.api.concurrency.RelayThreadPool
 import fr.`override`.linkit.api.network.cache.SharedCacheHandler.MockCache
 import fr.`override`.linkit.api.network.cache.map.SharedMap
-import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayRefPacket
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayObjectPacket
 import fr.`override`.linkit.api.packet.fundamental.ValPacket.LongPacket
 import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
@@ -19,17 +19,19 @@ import scala.util.control.NonFatal
 // packets begin to shift, they are injected multiple times (maybe due to packet coordinates(id/senderID) ambiguity into the PacketInjections class)
 // and this is a big problem for this class to initialise completely, which is a big problem for the network's initialisation,
 // which is a big problem for the relay's initialisation....
+
+//TODO Use Array[Serializable] instead of Array[Any] for shared contents
 class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: PacketTraffic) {
 
     private val communicator = traffic.getInjectable(11, ChannelScope.broadcast, CommunicationPacketChannel.providable)
-    ////println(s"Damny communicator = ${communicator}")
+    //println(s"Damny communicator = ${communicator}")
 
     private val relayID = traffic.relayID
     private val isHandlingSelf = ownerID == relayID
 
     private val cacheOwners: SharedMap[Long, String] = init()
     private val sharedObjects: SharedMap[Long, Serializable] = get(1, SharedMap[Long, Serializable])
-    ////println(s"<$family, $ownerID> sharedObjects = ${sharedObjects}")
+    //println(s"<$family, $ownerID> sharedObjects = ${sharedObjects}")
 
     this.synchronized {
         notifyAll() //Releases all awaitReady locks, this action is marking this cache handler as ready.
@@ -43,7 +45,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
     def get[A <: Serializable](key: Long): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
 
     def apply[A <: Serializable](key: Long): A = {
-        ////println(s"<$family, $ownerID> getting shared instance for key $key")
+        //println(s"<$family, $ownerID> getting shared instance for key $key")
         get(key).get
     }
 
@@ -82,9 +84,9 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
         //println(s"<$family, $ownerID> Sending request to owner $owner in order to retrieve content of cache number $cacheID")
         communicator.sendRequest(WrappedPacket(family, LongPacket(cacheID)), owner)
         //println(s"<$family, $ownerID> request sent !")
-        val content = communicator.nextResponse[ArrayRefPacket].value //The request will return the cache content
+        val content = communicator.nextResponse[ArrayObjectPacket].value //The request will return the cache content
         //println(s"<$family, $ownerID> Content received ! (${content.mkString("Array(", ", ", ")")})")
-        content
+        content.asInstanceOf[Array[Any]]
     }
 
     private def init(): SharedMap[Long, String] = {
@@ -135,7 +137,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
                 }
                 else LocalCacheHandler.getContent(cacheID)
                 //println(s"<$family, $ownerID> Content = ${content.mkString("Array(", ", ", ")")}")
-                communicator.sendResponse(ArrayRefPacket(content), senderID)
+                communicator.sendResponse(ArrayObjectPacket(content), senderID)
                 //println("Packet sent :D")
         }
     }
@@ -144,7 +146,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
         def notReady: Boolean = cacheOwners == null || cacheOwners.isEmpty
 
         if (notReady) this.synchronized {
-            RelayWorkerThreadPool.smartKeepBusy(this, notReady)
+            RelayThreadPool.smartKeepBusy(this, notReady)
         }
     }
 

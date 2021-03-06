@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.`extension`.fragment
+package fr.`override`.linkit.api.extension.fragment
 
 import fr.`override`.linkit.api.packet.traffic.PacketSender
 import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel

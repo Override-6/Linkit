@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.`extension`
+package fr.`override`.linkit.api.extension
 
 import scala.collection.mutable
 

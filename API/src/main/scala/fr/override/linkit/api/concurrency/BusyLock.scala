@@ -1,5 +1,6 @@
 package fr.`override`.linkit.api.concurrency
 
+import fr.`override`.linkit.api.concurrency.RelayThreadPool
 import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
@@ -8,6 +9,7 @@ import scala.collection.mutable
  * Helper for busy locks operations, this class allows you to
  * keep your current relay worker thread busy and stop it easily.
  * */
+@deprecated("Still in development...")
 class BusyLock(releaseCondition: => Boolean = true) {
     /**
      * A Map containing the busy lock tickets wich are associated to a thread
@@ -17,12 +19,12 @@ class BusyLock(releaseCondition: => Boolean = true) {
     /**
      * Keeps the current thread busy with task execution
      *
-     * @see [[RelayWorkerThreadPool]]
+     * @see [[RelayThreadPool]]
      * */
     @relayWorkerExecution
     def keepBusyUntilRelease(@NotNull lock: AnyRef = new Object): Unit = {
-        RelayWorkerThreadPool.checkCurrentIsWorker("Could not perform an occuped lock in a non relay thread.")
-        val pool = RelayWorkerThreadPool.currentPool().get
+        RelayThreadPool.checkCurrentIsWorker("Could not perform a busy lock in a non relay thread.")
+        val pool = RelayThreadPool.currentPool().get
 
         val repertory = locks.getOrElseUpdate(currentThread, ThreadLocksRepertory())
 
@@ -64,9 +66,9 @@ class BusyLock(releaseCondition: => Boolean = true) {
     }
 
     @relayWorkerExecution
-    private def currentPool: RelayWorkerThreadPool = {
-        RelayWorkerThreadPool.checkCurrentIsWorker("Could not perform this action in a non relay thread.")
-        RelayWorkerThreadPool.currentPool().get
+    private def currentPool: RelayThreadPool = {
+        RelayThreadPool.checkCurrentIsWorker("Could not perform this action in a non relay thread.")
+        RelayThreadPool.currentPool().get
     }
 
     /**

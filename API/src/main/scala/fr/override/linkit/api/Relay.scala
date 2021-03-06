@@ -1,15 +1,14 @@
 package fr.`override`.linkit.api
 
-import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.concurrency.relayWorkerExecution
 import fr.`override`.linkit.api.exception.{IllegalThreadException, RelayException}
+import fr.`override`.linkit.api.extension.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole}
 import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
-import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.system.config.RelayConfiguration
-import fr.`override`.linkit.api.system.event.{EventHookCategory, EventNotifier}
+import fr.`override`.linkit.api.system.event.EventNotifier
 import fr.`override`.linkit.api.system.event.extension.ExtensionEventHooks
 import fr.`override`.linkit.api.system.event.network.NetworkEventHooks
 import fr.`override`.linkit.api.system.event.packet.PacketEventHooks
@@ -19,8 +18,6 @@ import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RelaySt
 import fr.`override`.linkit.api.task.TaskScheduler
 import org.apache.log4j.Logger
 import org.jetbrains.annotations.Nullable
-
-import scala.reflect.ClassTag
 
 /**
  * The Relay trait is the core of this program.
@@ -168,11 +165,11 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
      * This method will load every local and remote feature,
      * enable everything that needs to be enabled, and perform some security checks before logging to the server.
      *
-     * @throws RelayException         if something went wrong, In Local, during the client-to-server, or client-to-network initialisation.
-     * @throws IllegalThreadException if this method is not executed in one of the [[RelayWorkerThreadPool]] threads.
+     * @throws RelayException         if something went wrong, In Local, during the fr.override.linkit.client-to-server, or fr.override.linkit.client-to-network initialisation.
+     * @throws IllegalThreadException if this method is not executed in one of the [[RelayThreadPool]] threads.
      * */
     @relayWorkerExecution
-    @throws[IllegalThreadException]("If the current thread is not one of a RelayWorkerThreadPool")
+    @throws[IllegalThreadException]("If the current thread is not one of a RelayThreadPool")
     @throws[RelayException]("If the startup went wrong")
     def start(): Unit
 
@@ -180,7 +177,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
      * Closes this relay, disconnects from the network then shutdowns the thread pools
      */
     @relayWorkerExecution
-    @throws[IllegalThreadException]("If the current thread is not one of a RelayWorkerThreadPool")
+    @throws[IllegalThreadException]("If the current thread is not one of a RelayThreadPool")
     override def close(): Unit = super.close()
 
     /**
@@ -190,7 +187,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
      *               the close behaviour can vary if the reason is either internal or external
      * */
     @relayWorkerExecution
-    @throws[IllegalThreadException]("If the current thread is not one of a RelayWorkerThreadPool")
+    @throws[IllegalThreadException]("If the current thread is not one of a RelayThreadPool")
     override def close(reason: CloseReason): Unit
 
     //////////////////////////// NETWORK ACCESSORS ///////////////////////////////////
@@ -215,7 +212,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
      * Will run this callback in a worker thread,
      * owned by the thread pool of this relay.
      *
-     * @see [[fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool]]
+     * @see [[fr.`override`.linkit.api.concurrency.RelayThreadPool]]
      * */
     def runLater(callback: => Unit): this.type
 

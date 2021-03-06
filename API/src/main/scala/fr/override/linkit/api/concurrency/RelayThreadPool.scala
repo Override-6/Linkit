@@ -1,9 +1,9 @@
 package fr.`override`.linkit.api.concurrency
 
-import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool.{RelayThread, checkCurrentIsWorker}
+import fr.`override`.linkit.api.concurrency.RelayThreadPool.{RelayThread, checkCurrentIsWorker}
 import fr.`override`.linkit.api.exception.IllegalThreadException
-import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory}
 
+import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
 import scala.util.control.NonFatal
 
 /**
@@ -65,12 +65,12 @@ import scala.util.control.NonFatal
  * @param prefix   The prefix of the threads names created for the pool.
  * @param nThreads The number of threads the pool will contain.
  * */
-class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseable {
+class RelayThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseable {
     private val factory: ThreadFactory = new RelayThread(_, prefix, this)
-    private val executor = Executors.newFixedThreadPool(nThreads, factory)
+    private val executor = Executors.newFixedThreadPool(nThreads, factory).asInstanceOf[ThreadPoolExecutor]
 
     //The extracted workQueue of the executor which contains all the tasks to execute
-    private val workQueue = extractWorkQueue()
+    private val workQueue = executor.getQueue
     private var closed = false
     private val workersLocks = new WorkersLock
     @volatile private var activeThreads = 0
@@ -90,6 +90,7 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
     def runLater(task: => Unit): Unit = {
         if (closed)
             throw new IllegalStateException("Attempted to submit a task in a closed thread pool !")
+
         var runnable: Runnable = null
         runnable = () => {
             activeThreads += 1
@@ -129,7 +130,6 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
                 task.run()
                 currentWorker.currentTaskExecutionDepth -= 1
             }
-
         }
     }
 
@@ -145,11 +145,13 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
      *
      * @param lock      the reference to link a monitor lock if needed
      * @param condition the condition
-     * @throws [[ IllegalThreadException]] if the current thread is not a [[RelayThread]]
+     * @throws [[       IllegalThreadException]] if the current thread is not a [[RelayThread]]
      * @see [[BusyLock]]
      * */
     def keepBusyOrWaitWhile(lock: AnyRef = new Object, condition: => Boolean): Unit = {
         keepBusyWhile(condition)
+        if (!condition)
+            return
         lock.synchronized {
             if (condition) {
                 workersLocks.addBusyLock(lock)
@@ -157,7 +159,7 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
                 workersLocks.removeLastBusyLock()
             }
         }
-        if (condition) //We still need to be busy
+        if (condition) //We may still need to be busy
             keepBusyOrWaitWhile(lock, condition)
     }
 
@@ -169,7 +171,7 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
      * @param millis the number of milliseconds the thread must be busy.
      * @throws IllegalThreadException if the current thread is not a [[RelayThread]]
      * */
-    def keepBusy(lock: AnyRef = new Object, millis: Long): Unit = {
+    def keepBusy(millis: Long, lock: AnyRef = new Object): Unit = {
         checkCurrentIsWorker()
 
         var totalProvided: Long = 0
@@ -226,19 +228,9 @@ class RelayWorkerThreadPool(val prefix: String, val nThreads: Int) extends AutoC
         //After the check, we are sure that the current thread is a RelayThread
         currentThread.asInstanceOf[RelayThread]
     }
-
-    /*
-    * Uses Reflection to extract the 'workQueue' field of the executor
-    * */
-    private def extractWorkQueue(): BlockingQueue[Runnable] = {
-        val clazz = executor.getClass
-        val field = clazz.getDeclaredField("workQueue")
-        field.setAccessible(true)
-        field.get(executor).asInstanceOf[BlockingQueue[Runnable]]
-    }
 }
 
-object RelayWorkerThreadPool {
+object RelayThreadPool {
 
     val workerThreadGroup: ThreadGroup = new ThreadGroup("Relay Worker")
     private var activeCount = 1
@@ -314,7 +306,7 @@ object RelayWorkerThreadPool {
      *
      * @param condition the condition to test
      * @param lock      the lock to handle
-     * @see [[RelayWorkerThreadPool.keepBusyOrWaitWhile()]] for further details about the busy system.
+     * @see [[RelayThreadPool.keepBusyOrWaitWhile()]] for further details about the busy system.
      * */
     def smartKeepBusy(lock: AnyRef, condition: => Boolean): Unit = {
         ifCurrentWorkerOrElse(_.keepBusyOrWaitWhile(lock, condition), if (condition) lock.synchronized(lock.wait()))
@@ -327,7 +319,7 @@ object RelayWorkerThreadPool {
      *
      * @param minTimeOut the minimum time to keep busy
      * @param lock       the lock to handle
-     * @see [[RelayWorkerThreadPool.keepBusyOrWaitWhile]] for further details about the busy system.
+     * @see [[RelayThreadPool.keepBusyOrWaitWhile]] for further details about the busy system.
      * */
     def smartKeepBusy(lock: AnyRef, minTimeOut: Long): Unit = {
         ifCurrentWorkerOrElse(_.keepBusy(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
@@ -341,7 +333,7 @@ object RelayWorkerThreadPool {
      * @param orElse the action to process if the current thread is not a relay worker thread.
      *
      * */
-    def ifCurrentWorkerOrElse[A](ifCurrent: RelayWorkerThreadPool => A, orElse: => A): A = {
+    def ifCurrentWorkerOrElse[A](ifCurrent: RelayThreadPool => A, orElse: => A): A = {
         val pool = currentPool()
 
         if (pool.isDefined) {
@@ -352,9 +344,9 @@ object RelayWorkerThreadPool {
     }
 
     /**
-     * @return Some if the current thread is a member of a [[RelayWorkerThreadPool]], None instead
+     * @return Some if the current thread is a member of a [[RelayThreadPool]], None instead
      * */
-    def currentPool(): Option[RelayWorkerThreadPool] = {
+    def currentPool(): Option[RelayThreadPool] = {
         currentThread match {
             case worker: RelayThread => Some(worker.ownerPool)
             case _ => None
@@ -365,14 +357,14 @@ object RelayWorkerThreadPool {
      * The representation of a java thread, extending from [[Thread]].
      * This class contains information that need to be stored into a specific thread class.
      * */
-    private final class RelayThread private[RelayWorkerThreadPool](target: Runnable, prefix: String,
-                                                                   private[RelayWorkerThreadPool] val ownerPool: RelayWorkerThreadPool)
-        extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
+    private final class RelayThread private[RelayThreadPool](target: Runnable, prefix: String,
+                                                                   private[RelayThreadPool] val ownerPool: RelayThreadPool)
+            extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
         activeCount += 1
 
         var currentTaskExecutionDepth = 0
 
-        setDaemon(true) //TODO mhhmhmhmhmhmh
+        //setDaemon(true) //TODO mhhmhmhmhmhmh
 
     }
 

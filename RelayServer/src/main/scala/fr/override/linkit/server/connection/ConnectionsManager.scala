@@ -1,5 +1,6 @@
 package fr.`override`.linkit.server.connection
 
+import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
 import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
@@ -29,7 +30,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
     override def close(reason: CloseReason): Unit = {
         for ((_, connection) <- connections) try {
-            println(s"Closing '${connection.identifier}'...")
+            Relay.Log.trace(s"Closing '${connection.identifier}'...")
             connection.close(reason)
         } catch {
             case NonFatal(e) => e.printStackTrace()

@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.packet.traffic.channel
 
-import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.concurrency.{RelayThreadPool, relayWorkerExecution}
 import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketAsyncReceiver, PacketInjectableFactory, PacketSender}
 import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
@@ -15,7 +15,7 @@ class AsyncPacketChannel protected(scope: ChannelScope)
 
     @relayWorkerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val pool = RelayWorkerThreadPool.currentPool().get
+        val pool = RelayThreadPool.currentPool().get
         pool.runLater {
             try {
                 val packets = injection.getPackets

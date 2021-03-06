@@ -1,8 +1,8 @@
-package fr.`override`.linkit.api.`extension`
+package fr.`override`.linkit.api.extension
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.`extension`.fragment.ExtensionFragment
 import fr.`override`.linkit.api.exception.RelayExtensionException
+import fr.`override`.linkit.api.extension.fragment.ExtensionFragment
 
 abstract class RelayExtension(protected val relay: Relay) {
 

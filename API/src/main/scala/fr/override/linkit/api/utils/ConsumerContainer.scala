@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.utils
 
-import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
+import fr.`override`.linkit.api.concurrency.RelayThreadPool
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
@@ -50,7 +50,7 @@ class ConsumerContainer[T]() {
     def -=(consumer: T => Unit): this.type = remove(consumer)
 
     def applyAllAsync(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        RelayWorkerThreadPool.runLaterOrHere {
+        RelayThreadPool.runLaterOrHere {
             applyAll(t, onException)
         }
         this

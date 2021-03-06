@@ -1,6 +1,6 @@
 package fr.`override`.linkit.api.network.cache.map
 
-import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
+import fr.`override`.linkit.api.concurrency.RelayThreadPool
 import fr.`override`.linkit.api.network.cache.map.MapModification._
 import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
@@ -124,7 +124,7 @@ class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V
 
         addListener(listener) //Due to hyper parallelized thread execution,
         //the awaited key could be added since the 'found' value has been created.
-        RelayWorkerThreadPool.smartKeepBusy(lock, !(contains(k) || found))
+        RelayThreadPool.smartKeepBusy(lock, !(contains(k) || found))
         removeListener(listener)
         //println("Done !")
         apply(k)

@@ -1,13 +1,13 @@
 package fr.`override`.linkit.api.packet.traffic.channel
 
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
-
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayThreadPool, relayWorkerExecution}
 import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.packet.traffic.channel.AbstractPacketChannel
 import fr.`override`.linkit.api.system.CloseReason
+
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 
 //TODO doc
@@ -23,7 +23,7 @@ class SyncPacketChannel protected(scope: ChannelScope,
         if (!providable)
             new LinkedBlockingQueue[Packet]()
         else {
-            RelayWorkerThreadPool
+            RelayThreadPool
                     .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }

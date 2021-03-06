@@ -1,17 +1,16 @@
 package fr.`override`.linkit.api.extension
 
+import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.exception.{ExtensionLoadException, RelayException}
+import fr.`override`.linkit.api.extension.LoadPhase._
+import fr.`override`.linkit.api.extension.RelayExtensionLoader.{MainClassField, PropertyName}
+import fr.`override`.linkit.api.extension.fragment.FragmentHandler
+import fr.`override`.linkit.api.system.fsa.FileAdapter
+
 import java.io.Closeable
 import java.net.URLClassLoader
 import java.util.Properties
 import java.util.zip.ZipFile
-
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.`extension`.LoadPhase._
-import fr.`override`.linkit.api.`extension`.RelayExtensionLoader.{MainClassField, PropertyName}
-import fr.`override`.linkit.api.`extension`.fragment.FragmentHandler
-import fr.`override`.linkit.api.exception.{ExtensionLoadException, RelayException}
-import fr.`override`.linkit.api.system.fsa.FileAdapter
-
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
@@ -23,9 +22,9 @@ import scala.util.control.NonFatal
  * informs the class path of the main [[RelayExtension]] class of a plugin.
  * </p>
  * <p>
- * An extension can add multiple [[fr.`override`.linkit.api.`extension`.fragment.ExtensionFragment]]
+ * An extension can add multiple [[fr.`override`.linkit.api.extension.fragment.ExtensionFragment]]
  * in order to provide some of its aspects to other relay's extension, or even to other connected relays
- * if the added extension fragment is an instance of [[fr.`override`.linkit.api.`extension`.fragment.RemoteFragment]]
+ * if the added extension fragment is an instance of [[fr.`override`.linkit.api.extension.fragment.RemoteFragment]]
  * </p>
  *
  * @see [[RelayExtension]]
@@ -124,7 +123,7 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
             extension.onEnable()
             phase = ACTIVE
 
-            println(s"Relay extension $name loaded successfully !")
+            Relay.Log.info(s"Relay extension $name loaded successfully !")
             loadedExtensions.addOne(extension)
 
             extension
@@ -154,7 +153,7 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
                     val extension = instances(i)
                     action(extension)
                     if (phase == ENABLING)
-                        println(`extension`.name + " Enabled successfully !")
+                        Relay.Log.info(extension.name + " Enabled successfully !")
                 } catch {
                     case NonFatal(e) =>
                         instances.remove(i)
@@ -163,12 +162,12 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
             }
         }
 
-        phase = LOAD
+        phase = LOADING
         perform(e => e.onLoad())
-        phase = ENABLE
-        println("Starting all fragments...")
+        phase = ENABLING
+        Relay.Log.info("Starting all fragments...")
         val count = fragmentHandler.startFragments()
-        println(s"$count Fragment started !")
+        Relay.Log.info(s"$count Fragment started !")
         perform(e => e.onEnable())
         phase = ACTIVE
 

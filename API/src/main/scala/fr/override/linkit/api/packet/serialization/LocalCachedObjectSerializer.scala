@@ -7,7 +7,7 @@ import scala.collection.mutable
 /**
  * Used for tests only.
  * */
-class LocalCachedObjectSerializer extends ObjectSerializer {
+object LocalCachedObjectSerializer extends ObjectSerializer {
     private val cache = new mutable.HashMap[Int, String]()
 
     override protected val signature: Array[Byte] = Array(0)

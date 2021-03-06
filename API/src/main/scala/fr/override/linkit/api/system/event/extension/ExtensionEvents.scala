@@ -1,8 +1,7 @@
 package fr.`override`.linkit.api.system.event.extension
 
-import fr.`override`.linkit.api.`extension`.fragment.{ExtensionFragment, RemoteFragment}
-import fr.`override`.linkit.api.`extension`.{RelayExtension, RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.extension.LoadPhase
+import fr.`override`.linkit.api.extension.fragment.{ExtensionFragment, RemoteFragment}
+import fr.`override`.linkit.api.extension.{LoadPhase, RelayExtension, RelayExtensionLoader, RelayProperties}
 import org.jetbrains.annotations.Nullable
 
 object ExtensionEvents {

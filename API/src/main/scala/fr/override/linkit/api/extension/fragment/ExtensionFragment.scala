@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.`extension`.fragment
+package fr.`override`.linkit.api.extension.fragment
 
 abstract class ExtensionFragment {
 

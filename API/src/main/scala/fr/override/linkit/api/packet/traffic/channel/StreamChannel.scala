@@ -1,13 +1,13 @@
 package fr.`override`.linkit.api.packet.traffic.channel
 
-import java.io.{DataInputStream, DataOutputStream}
-
-import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
+import fr.`override`.linkit.api.concurrency.RelayThreadPool
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
 import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import org.jetbrains.annotations.Nullable
+
+import java.io.{DataInputStream, DataOutputStream}
 
 class StreamChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
     @Nullable private var input: DataInputStream = _
@@ -31,7 +31,7 @@ class StreamChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
     }
 
     def startConstantTransfer(): Unit = {
-        RelayWorkerThreadPool.checkCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
+        RelayThreadPool.checkCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
         transferConstantly = true
         while (transferConstantly) {
             transferAll()

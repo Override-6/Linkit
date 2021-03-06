@@ -1,13 +1,13 @@
 package fr.`override`.linkit.api.packet.traffic.channel
 
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
-
-import fr.`override`.linkit.api.concurrency.{RelayWorkerThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.api.concurrency.{RelayThreadPool, relayWorkerExecution}
 import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketInjectableFactory}
 import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.utils.ConsumerContainer
+
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 class CommunicationPacketChannel(scope: ChannelScope,
                                  providable: Boolean)
@@ -17,7 +17,7 @@ class CommunicationPacketChannel(scope: ChannelScope,
         if (!providable)
             new LinkedBlockingQueue[Packet]()
         else {
-            RelayWorkerThreadPool
+            RelayThreadPool
                     .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
@@ -37,6 +37,7 @@ class CommunicationPacketChannel(scope: ChannelScope,
                 }
             case _ =>
         }
+        //println(s"<$identifier> responses = ${responses}")
     }
 
 

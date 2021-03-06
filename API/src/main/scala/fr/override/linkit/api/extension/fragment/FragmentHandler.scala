@@ -1,8 +1,8 @@
-package fr.`override`.linkit.api.`extension`.fragment
+package fr.`override`.linkit.api.extension.fragment
 
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.`extension`.{LoadPhase, RelayExtension, RelayExtensionLoader}
 import fr.`override`.linkit.api.exception.ExtensionLoadException
+import fr.`override`.linkit.api.extension.{LoadPhase, RelayExtension, RelayExtensionLoader}
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
 import fr.`override`.linkit.api.packet.traffic.channel.{AsyncPacketChannel, PacketChannelCategories}

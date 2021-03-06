@@ -1,4 +1,5 @@
 package fr.`override`.linkit.api.packet
+
 import fr.`override`.linkit.api.packet.serialization.ObjectSerializer
 
 case class DedicatedPacketCoordinates(injectableID: Int, targetID: String, senderID: String) extends PacketCoordinates {

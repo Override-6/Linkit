@@ -2,9 +2,9 @@ package fr.`override`.linkit.server
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.Relay.Log
-import fr.`override`.linkit.api.`extension`.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
+import fr.`override`.linkit.api.concurrency.RelayThreadPool
 import fr.`override`.linkit.api.exception.{RelayCloseException, RelayInitialisationException}
+import fr.`override`.linkit.api.extension.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.StringPacket
@@ -46,7 +46,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     private[server] val connectionsManager = new ConnectionsManager(this)
 
     private var currentState: RelayState = RelayState.INACTIVE
-    private val workerThread: RelayWorkerThreadPool = new RelayWorkerThreadPool("Packet Handling & Extension", 3)
+    private val workerThread: RelayThreadPool = new RelayThreadPool("\b", 3)
     override val notifier: EventNotifier = new EventNotifier
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
@@ -72,7 +72,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
 
     override def start(): Unit = {
-        RelayWorkerThreadPool.checkCurrentIsWorker("Must start server in a worker thread.")
+        RelayThreadPool.checkCurrentIsWorker("Must start server in a worker thread.")
         setState(ENABLING)
 
         Log.info("Current encoding is " + Charset.defaultCharset().name())
@@ -104,7 +104,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     override def getInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
-        traffic.createInjectable(channelId, scopeFactory, factory)
+        traffic.getInjectable(channelId, scopeFactory, factory)
     }
 
     override def getConsoleOut(targetId: String): RemoteConsole = {
@@ -116,7 +116,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     override def close(reason: CloseReason): Unit = {
-        println("closing server...")
+        Log.warn("Closing server...")
 
         if (reason == CloseReason.INTERNAL_ERROR)
             broadcastMessage(true, "RelayServer will close your connection because of a critical error")
@@ -129,7 +129,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         if (reason == CloseReason.INTERNAL_ERROR) setState(CRASHED)
         else setState(CLOSED)
 
-        println("server closed !")
+        Log.warn("Server closed !")
     }
 
     override def isClosed: Boolean = !open
@@ -170,7 +170,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         val socketContainer = new SocketContainer(true)
         try {
             val clientSocket = serverSocket.accept()
-            println(s"Accepted socket $clientSocket...")
+            //println(s"Accepted socket $clientSocket...")
             socketContainer.set(clientSocket)
             runLater {
                 handleSocket(socketContainer)
@@ -188,7 +188,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
 
         def onException(e: Throwable): Unit = {
-            sendRefusedConnection(socketContainer, s"An exception occurred in server during client connection initialisation ($e)") //sends a negative response for the client initialisation handling
+            sendRefusedConnection(socketContainer, s"An exception occurred in server during client connection initialisation ($e)") //sends a negative response for the fr.override.linkit.client initialisation handling
             close(CloseReason.INTERNAL_ERROR)
         }
     }
@@ -256,9 +256,9 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
             sendAuthorisedConnection(socket)
             return
         }
+
         val identifier = current.identifier
         val rejectMsg = s"Another relay point with id '$identifier' is currently connected on the targeted network."
-
         import AmbiguityStrategy._
         configuration.relayIDAmbiguityStrategy match {
             case CLOSE_SERVER =>

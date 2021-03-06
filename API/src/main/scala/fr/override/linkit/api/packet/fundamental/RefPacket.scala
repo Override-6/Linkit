@@ -1,8 +1,8 @@
 package fr.`override`.linkit.api.packet.fundamental
 
-import java.io.Serializable
-
 import fr.`override`.linkit.api.packet.Packet
+
+import java.io.Serializable
 /**
  * This trait is used to transport a packet for specific ref serializable types
  * such as strings or arrays.
@@ -35,24 +35,32 @@ object RefPacket {
      * Represents a packet that contains an array of serialized values of a specified type.
      * */
     //TODO Fix Array[Serializable] and Array[Any] cast exception
-    case class ArrayRefPacket[A <: Serializable](override val value: Array[A]) extends RefPacket[Array[A]] {
+    case class ArrayRefPacket[A <: Any](override val value: Array[A]) extends RefPacket[Array[A]] {
 
         def apply(i: Int): Any = value(i)
 
         def isEmpty: Boolean = value.isEmpty
 
-        def contains(a: Any): Boolean = value.contains(a)
+        def contains(a: Any): Boolean = {
+            a match {
+                case s: A => value.contains(s)
+                case _ => false
+            }
+        }
 
         def length: Int = value.length
 
-        override def toString: String = s"ArrayRefPacket(${value.mkString(",")})"
+        override def toString: String = s"ArrayRefPacket(${if (value == null) "null" else value.mkString(",")})"
     }
 
     /**
      * Represents a packet that contains an array of serializable values
      * */
     //TODO Fix Array[Serializable] and Array[Any] cast exception
-    case class ArrayObjectPacket(array: Array[Serializable]) extends ArrayRefPacket[Serializable](array)
+    class ArrayObjectPacket(array: Array[Any]) extends ArrayRefPacket[Any](array)
+    object ArrayObjectPacket {
+        def apply(array: Array[Any]): ArrayObjectPacket = new ArrayObjectPacket(array)
+    }
 
     /**
      * Represents a packet that contains an array of primitive values

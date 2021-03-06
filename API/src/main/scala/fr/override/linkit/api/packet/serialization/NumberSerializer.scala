@@ -43,7 +43,7 @@ object NumberSerializer {
     }
 
     def deserializeLong(bytes: Array[Byte], index: Int): Long = {
-        println("Deserializing int in zone " + new String(bytes.slice(index, index + 8)))
+        //println("Deserializing int in zone " + new String(bytes.slice(index, index + 8)))
         (0xff & bytes(index)) << 52 |
                 (0xff & bytes(index + 1)) << 48 |
                 (0xff & bytes(index + 2)) << 40 |
