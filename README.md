@@ -10,7 +10,7 @@ The project is mainly write in scala, and some classes in Java.
 ## Table of contents
 * [Notes and General information](https://github.com/Override-6/LinKit/#notes-and-general-information)
 * [The API](https://github.com/Override-6/LinKit/#the-api)
-* [The Client](https://github.com/Override-6/LinKit/#the-client)
+* [The Client](https://github.com/Override-6/LinKit/#the-fr.override.linkit.client)
 * [The Server](https://github.com/Override-6/LinKit/#the-server)
 * [Features](https://github.com/Override-6/LinKit/#features)
 * [How to extend](https://github.com/Override-6/LinKit/#how-to-extend)
@@ -70,7 +70,7 @@ relayPoint.start();
 ```
 
 ## The Server
-The Server, or RelayServer, is an implementation of the library that handles multiple connections, it is meant to faciliate packet exchange between clients, but must still capable that it can behaves like a client.  
+The Server, or RelayServer, is an implementation of the library that handles multiple connections, it is meant to faciliate packet exchange between clients, but must still capable that it can behaves like a fr.override.linkit.client.  
 A server implementation is the center of the [network](TODO). Even if its network entity does not provide a lot more features, the server must ensure that every thing works correctly, and handles the connection informations and packet sharing.  
 
 ## Features
@@ -134,9 +134,9 @@ Here is an exaustive list of options contained in the default RelayPointConfigur
 You can find the list of [RelayPoint](https://github.com/Override-6/LinKit/tree/master/RelayPoint) and [RelayServer](https://github.com/Override-6/LinKit/tree/master/RelayServer) configuration options in their respective readme.  
 
 ## Setup
-The setup is very simple; you just have to download / compile the source code of RelayPoint or RelayServer, then create a RelayPoint/Server instance with a RelayPoint/ServerBuilder. In order to start your relay, you'll must call the Relay#start method in the [RelayWorkerThreadPool](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/concurrency/RelayWorkerThreadPool.scala) of the relay. In order to retrieve the thread pool execution, simply use Relay#runLater.
+The setup is very simple; you just have to download / compile the source code of RelayPoint or RelayServer, then create a RelayPoint/Server instance with a RelayPoint/ServerBuilder. In order to start your relay, you'll must call the Relay#start method in the [RelayThreadPool](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/concurrency/RelayThreadPool.scala) of the relay. In order to retrieve the thread pool execution, simply use Relay#runLater.
 
-Here is an example for setting up the client : 
+Here is an example for setting up the fr.override.linkit.client : 
 ```scala
 val relayPoint: RelayPoint = new RelayPointBuilder {
     override var serverAddress: InetSocketAddress = serverAddress
