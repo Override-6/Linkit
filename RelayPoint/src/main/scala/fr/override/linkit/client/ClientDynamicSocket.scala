@@ -1,10 +1,10 @@
 package fr.`override`.linkit.client
 
-import java.io._
-import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
-
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.traffic.DynamicSocket
+
+import java.io._
+import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
 
 class ClientDynamicSocket(boundAddress: InetSocketAddress,
                           reconnectionPeriod: Int) extends DynamicSocket(true) {
@@ -23,8 +23,8 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
             newSocket()
         } catch {
             case _@(_: SocketException | _: ConnectException) =>
-                println("Unable to connect to server.")
-                println(s"Waiting for $reconnectionPeriod ms before another try...")
+                Relay.Log.warn("Unable to connect to server.")
+                Relay.Log.warn(s"Waiting for $reconnectionPeriod ms before another try...")
                 Thread.sleep(reconnectionPeriod)
                 handleReconnection()
         }

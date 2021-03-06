@@ -48,13 +48,9 @@ object Main {
         }
 
         relayPoint runLater {
-            println("Waiting RelayPoint to connecting...")
             val hooks = relayPoint.relayHooks
             hooks.connecting.await()
-            println("connecting ! :D")
-            println("Waiting to be ready...")
             hooks.ready.await()
-            println("Dayum :0:0:0")
         } runLater {
             startRelay(relayPoint, ideRun)
         }
@@ -68,9 +64,9 @@ object Main {
 
         if (ideRun && relayPoint.isOpen) {
 
-            import fr.`override`.linkit.`extension`.controller.ControllerExtension
-            import fr.`override`.linkit.`extension`.debug.DebugExtension
-            import fr.`override`.linkit.`extension`.easysharing.EasySharing
+            import fr.`override`.linkit.extension.controller.ControllerExtension
+            import fr.`override`.linkit.extension.debug.DebugExtension
+            import fr.`override`.linkit.extension.easysharing.EasySharing
 
             val loader = relayPoint.extensionLoader
             loader.loadExtensions(

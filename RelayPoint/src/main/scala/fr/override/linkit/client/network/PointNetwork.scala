@@ -1,11 +1,11 @@
 package fr.`override`.linkit.client.network
 
-import java.sql.Timestamp
-
 import fr.`override`.linkit.api.network.cache.collection.BoundedCollection
 import fr.`override`.linkit.api.network.{AbstractNetwork, NetworkEntity}
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.client.RelayPoint
+
+import java.sql.Timestamp
 
 class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {
 

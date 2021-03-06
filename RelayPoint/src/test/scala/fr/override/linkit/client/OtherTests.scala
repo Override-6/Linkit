@@ -1,12 +1,10 @@
 package fr.`override`.linkit.client
 
 import com.sun.glass.ui.Application
-import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayValPacket
-import fr.`override`.linkit.api.packet.serialization.RawObjectSerializer
+import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayRefPacket
+import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.api.packet.serialization.LocalCachedObjectSerializer
 import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
-import javafx.geometry.Rectangle2D
-import javafx.scene.image.{PixelFormat, WritableImage}
-import javafx.scene.robot.Robot
 
 import java.util.concurrent.ThreadLocalRandom
 import scala.annotation.tailrec
@@ -14,7 +12,7 @@ import scala.util.control.NonFatal
 
 object OtherTests {
 
-    private val serializer = RawObjectSerializer
+    private val serializer = LocalCachedObjectSerializer
     private val randomizer = ThreadLocalRandom.current()
 
     def main(args: Array[String]): Unit = try {
@@ -28,19 +26,8 @@ object OtherTests {
 
     @tailrec
     def makeSomething(times: Int): Unit = {
-
-        val region = new Rectangle2D(0, 0, 1920, 1080)
-        val robot = new Robot()
-        val writable = new WritableImage(1920, 1080)
-        val reader = writable.getPixelReader
-        val buffer = new Array[Int](1920 * 1080)
-
-        robot.getScreenCapture(writable, region)
-        println("Capture created !")
-        reader.getPixels(0, 0, 1920, 1080, PixelFormat.getIntArgbInstance, buffer, 0, region.getWidth.toInt)
-
-        val packet = ArrayValPacket(buffer)
-        val coords = DedicatedPacketCoordinates(11, "a", "a")
+        val packet = WrappedPacket("res", ArrayRefPacket(Array("server")))
+        val coords = DedicatedPacketCoordinates(11, "a", "server")
 
         println(s"SERIALIZING... ($packet & $coords)")
         val t0 = System.currentTimeMillis()
