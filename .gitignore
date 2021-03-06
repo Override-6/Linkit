@@ -3,8 +3,8 @@
 /target/
 /target/idea_output/
 */build/
+.gradle
 .idea
 .idea_modules
 *.iml
 *.log
-.gradle
