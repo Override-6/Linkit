@@ -8,7 +8,7 @@ import java.net.InetSocketAddress
 import java.nio.file.Paths
 import java.util.Scanner
 
-object Main {
+object PointLauncher {
 
     val PORT = 48484
     val SERVER_ADDRESS = new InetSocketAddress("192.168.1.19", PORT)

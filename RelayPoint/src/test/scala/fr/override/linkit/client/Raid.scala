@@ -15,7 +15,7 @@ object Raid {
             println(s"Connecting $i...")
             println()
             println()
-            Main.launch(true, false, Main.LOCALHOST, i.toString)
+            PointLauncher.launch(true, false, PointLauncher.LOCALHOST, i.toString)
         }
 
         println("RAID TERMINATED !!!")

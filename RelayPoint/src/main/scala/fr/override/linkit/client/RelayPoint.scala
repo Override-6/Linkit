@@ -8,7 +8,7 @@ import fr.`override`.linkit.api.extension.{RelayExtensionLoader, RelayProperties
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.StringPacket
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.BytePacket
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
@@ -16,10 +16,11 @@ import fr.`override`.linkit.api.packet.traffic.PacketTraffic.SystemChannelID
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.system.RelayState._
 import fr.`override`.linkit.api.system._
-import fr.`override`.linkit.api.system.event.EventNotifier
-import fr.`override`.linkit.api.system.event.relay.RelayEvents
+import fr.`override`.linkit.api.system.evente.EventNotifier
+import fr.`override`.linkit.api.system.evente.relay.RelayEvents
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
+import fr.`override`.linkit.client.RelayPoint.{ConnectionCreated, ConnectionRefused}
 import fr.`override`.linkit.client.config.RelayPointConfiguration
 import fr.`override`.linkit.client.network.PointNetwork
 
@@ -30,6 +31,10 @@ import scala.util.control.NonFatal
 
 object RelayPoint {
     val version: Version = Version(name = "RelayPoint", version = "0.14.0", stable = false)
+
+    val ConnectionRefused = 0
+    val ConnectionCreated = 1
+    val ConnectionResumed = 2
 }
 
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
@@ -132,11 +137,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     def isConnected: Boolean = socket.getState == ConnectionState.CONNECTED
 
-    override def isConnected(identifier: String): Boolean = {
-        systemChannel.sendOrder(SystemOrder.CHECK_ID, CloseReason.INTERNAL, identifier.getBytes)
-        systemChannel.nextPacket[BooleanPacket]
-    }
-
     override def getConnectionState: ConnectionState = socket.getState
 
     override def isClosed: Boolean = !open
@@ -149,8 +149,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     override def getConsoleErr(targetId: String): RemoteConsole = remoteConsoles.getErr(targetId)
 
-    override def addConnectionListener(action: ConnectionState => Unit): Unit = socket.addConnectionStateListener(action)
-
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
         ensureOpen()
         ensureTargetValid(task.targetID)
@@ -160,6 +158,8 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         task.preInit(tasksHandler)
         RelayTaskAction.of(task)
     }
+
+    override def isConnected(identifier: String): Boolean = network.isConnected(identifier)
 
     private def handleSystemPacket(system: SystemPacket, coords: DedicatedPacketCoordinates): Unit = {
         val order = system.order
@@ -172,7 +172,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             case ABORT_TASK => tasksHandler.skipCurrent(reason)
 
             //FIXME weird use of exceptions/remote print
-            case _@(SERVER_CLOSE | CHECK_ID) =>
+            case SERVER_CLOSE =>
                 new UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this RelayPoint : Received forbidden order")
                         .printStackTrace(getConsoleErr(sender))
 
@@ -183,26 +183,41 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     private def loadRemote(): Unit = {
         Log.trace(s"Connecting to server with relay id '$identifier'")
-        setState(CONNECTING)
         socket.start()
         Log.info(s"Socket accepted...")
 
         val welcomePacket = PacketUtils.wrap(identifier.getBytes)
         socket.write(welcomePacket)
-        socket.addConnectionStateListener(state => if (state == ConnectionState.CONNECTED) socket.write(welcomePacket))
 
-        val accepted = systemChannel.nextPacket[BooleanPacket]
-        if (!accepted) {
+        val code = systemChannel.nextPacket[BytePacket].value
+        if (code == ConnectionRefused) {
             val refusalMessage = systemChannel.nextPacket[StringPacket].value
             throw RelayInitialisationException(refusalMessage)
         }
         Log.info("Connection accepted !")
-        setState(ENABLING)
+
+        /*
+         * Hook an event in order to automatically trigger the reconnection
+         * procedure between the server / clients by sending the welcomePacket
+         * */
+        socket.addConnectionStateListener(tryReconnect(_, welcomePacket))
 
         Log.info("Initialising Network...")
         this.pointNetwork = new PointNetwork(this)
         Log.info("Network initialised !")
 
+    }
+
+    private def tryReconnect(state: ConnectionState, welcomePacket: Array[Byte]): Unit = {
+        if (state == ConnectionState.CONNECTED) {
+            socket.write(welcomePacket) //The welcome packet will let the server continue his socket handling
+            val code = systemChannel.nextPacket[BytePacket].value
+            code match {
+                case ConnectionCreated => //We are new for the server
+                    pointNetwork.
+                    pointNetwork = new PointNetwork(this) //Purge the current
+            }
+        }
     }
 
     private def loadUserFeatures(): Unit = {
@@ -212,7 +227,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         }
         if (configuration.enableExtensionsFolderLoad) {
             Log.info("Loading Relay extensions from folder " + configuration.extensionsFolder)
-            extensionLoader.launch()
+            extensionLoader.loadMainFolder()
         }
     }
 
@@ -230,7 +245,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         if (targetID == identifier)
             throw new RelayException("Can't start any task with oneself !")
 
-        if (!isConnected(targetID))
+        if (network.getEntity(targetID).isEmpty)
             throw new RelayException(s"Target '$targetID' does not exists !")
     }
 
@@ -238,7 +253,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         val targetID = coordinates.targetID
         if (targetID == identifier || targetID == "unknown")
             return
-
         val sender = coordinates.senderID
         val consoleErr = getConsoleErr(sender)
         val msg = s"Could not handle packet : targetID ($targetID) isn't equals to this relay identifier !"

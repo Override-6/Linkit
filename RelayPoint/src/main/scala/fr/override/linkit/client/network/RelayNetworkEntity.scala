@@ -4,7 +4,7 @@ import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.network.cache.SharedInstance
 import fr.`override`.linkit.api.network.{AbstractRemoteEntity, ConnectionState}
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.system.event.network.NetworkEvents
+import fr.`override`.linkit.api.system.evente.network.NetworkEvents
 
 class RelayNetworkEntity(relay: Relay, identifier: String, communicator: CommunicationPacketChannel)
     extends AbstractRemoteEntity(relay, identifier, communicator) {
@@ -15,7 +15,7 @@ class RelayNetworkEntity(relay: Relay, identifier: String, communicator: Communi
 
     stateInstance.addListener(newState => {
         val event = NetworkEvents.entityStateChange(this, newState, getConnectionState)
-        relay.eventNotifier.notifyEvent(event, relay.networkHooks)
+        relay.eventNotifier.notifyEvent(relay.networkHooks, event)
     })
 
 }
