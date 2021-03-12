@@ -1,13 +1,14 @@
 package fr.`override`.linkit.server.network
 
-import java.sql.Timestamp
-
 import fr.`override`.linkit.api.network.cache.SharedInstance
-import fr.`override`.linkit.api.network.cache.collection.BoundedCollection
+import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.`override`.linkit.api.network.{AbstractNetwork, ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.system.evente.network.NetworkEvents
 import fr.`override`.linkit.server.RelayServer
+
+import java.sql.Timestamp
 
 class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extends AbstractNetwork(server) {
 
@@ -19,6 +20,7 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
                 .add(server.identifier)
                 .flush()
                 .mapped(createEntity)
+                .addListener(handleTraffic)
     }
     selfEntity
             .cache
@@ -36,5 +38,16 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
                         throw new IllegalStateException(s"Could not remove entity '$identifier' from network as long as it still open")
                     sharedIdentifiers.remove(identifier)
                 })
+    }
+
+    private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
+        import CollectionModification._
+        lazy val entity = entityOpt.get
+        val event = mod match {
+            case ADD => NetworkEvents.entityAdded(entity)
+            case REMOVE => NetworkEvents.entityRemoved(entity)
+            case _ => return
+        }
+        server.eventNotifier.notifyEvent(server.networkHooks, event)
     }
 }

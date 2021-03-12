@@ -8,23 +8,23 @@ import fr.`override`.linkit.api.extension.{RelayExtensionLoader, RelayProperties
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.StringPacket
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.BytePacket
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.system.RelayState.{CLOSED, CRASHED, ENABLED, ENABLING}
 import fr.`override`.linkit.api.system._
-import fr.`override`.linkit.api.system.event.EventNotifier
-import fr.`override`.linkit.api.system.event.relay.RelayEvents
+import fr.`override`.linkit.api.system.evente.EventNotifier
+import fr.`override`.linkit.api.system.evente.relay.RelayEvents
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
-import fr.`override`.linkit.server.RelayServer.Identifier
+import fr.`override`.linkit.server.RelayServer.{ConnectionCreated, ConnectionRefused, ConnectionResumed, Identifier}
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
 import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
 import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
 import fr.`override`.linkit.server.network.ServerNetwork
 import fr.`override`.linkit.server.security.RelayServerSecurityManager
 
-import java.net.{ServerSocket, SocketException}
+import java.net.{ServerSocket, Socket, SocketException}
 import java.nio.charset.Charset
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
@@ -33,6 +33,10 @@ object RelayServer {
     val version: Version = Version("RelayServer", "0.18.0", stable = false)
 
     val Identifier: String = Relay.ServerIdentifier
+
+    val ConnectionRefused: Byte = 0
+    val ConnectionCreated: Byte = 1
+    val ConnectionResumed: Byte = 2
 }
 
 
@@ -95,13 +99,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         Log.info("Ready !")
     }
 
-    override def addConnectionListener(action: ConnectionState => Unit): Unit = () //the connection of the server would never be updated
-
     override def getConnectionState: ConnectionState = ConnectionState.CONNECTED //The server is always connected to itself !
-
-    override def isConnected(identifier: String): Boolean = {
-        connectionsManager.containsIdentifier(identifier)
-    }
 
     override def getInjectable[C <: PacketInjectable : ClassTag](channelId: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
         traffic.getInjectable(channelId, scopeFactory, factory)
@@ -132,7 +130,29 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         Log.warn("Server closed !")
     }
 
+    /**
+     * Tests if the identifier is registered into the connectionsManager
+     * @param identifier, a string that represent the identifier of an eventual relay connection
+     * @return true if an instance of [[ClientConnection]] bound to the provided identifier was found in the connectionsManager.
+     * */
+    override def isConnected(identifier: String): Boolean = connectionsManager.isRegistered(identifier)
+
+    /*
+    * Difference between isConnected and isFullyConnected is that this method will return true
+    * if the identifier is registered into the network. if the identifier is registered in the network,
+    * this means that the relay under the provided identifier is completely initialised.
+    * */
+    def isFullyConnected(identifier: String): Boolean = network.isConnected(identifier)
+
+    override def runLater(callback: => Unit): this.type = {
+        workerThread.runLater(callback)
+        this
+    }
+
+    override def state(): RelayState = currentState
+
     override def isClosed: Boolean = !open
+
 
     def getConnection(relayIdentifier: String): ClientConnection = {
         ensureOpen()
@@ -151,9 +171,28 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         connectionsManager.broadcastBytes(packet, injectableID, sender, discarded.appended(identifier): _*)
     }
 
+    private def ensureOpen(): Unit = {
+        if (!open)
+            throw new RelayCloseException("Relay Server have to be started !")
+    }
+
+
+    private def setState(state: RelayState): Unit = {
+        eventNotifier.notifyEvent(RelayEvents.stateChange(state))
+        this.currentState = state
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ////////////////////////////////  C L I E N T  I N I T I A L I S A T I O N  H A N D L I N G  ////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+    //TODO Documentation
+
     /**
-     * Reads a welcome packet from a relay
-     * A Welcome packet is the first packet that a client must send in order to communicate his identifier.
+     * Reads a welcome packet from a relay.<br>
+     * The Welcome packet is the first packet that a client must send in order to provide his identifier to the server.
      *
      * @return the identifier bound with the socket
      * */
@@ -170,8 +209,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         val socketContainer = new SocketContainer(true)
         try {
             val clientSocket = serverSocket.accept()
-            //println(s"Accepted socket $clientSocket...")
-            socketContainer.set(clientSocket)
+            prepareSocket(clientSocket, socketContainer)
             runLater {
                 handleSocket(socketContainer)
             }
@@ -193,27 +231,33 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
     }
 
-    override def runLater(callback: => Unit): this.type = {
-        workerThread.runLater(callback)
-        this
+    private def prepareSocket(clientSocket: Socket, container: SocketContainer): Unit = {
+        //Log.info(s"Accepted socket $clientSocket...")
+        container.set(clientSocket)
+        container.addConnectionStateListener {
+            case ConnectionState.CONNECTED =>
+            case ConnectionState.DISCONNECTED | ConnectionState.CLOSED => runLater {
+                packetTranslator.blackListFromCachedSerializer(container.boundIdentifier)
+            }
+        }
     }
-
-    override def state(): RelayState = currentState
 
     private def handleSocket(socket: SocketContainer): Unit = {
         val identifier = readWelcomePacket(socket)
         socket.identifier = identifier
-        handleRelayPointConnection(identifier, socket)
+        handleRelayConnection(identifier, socket)
     }
 
-    private def sendAuthorisedConnection(socket: DynamicSocket): Unit = {
-        val responsePacket = BooleanPacket(true)
+    private def sendAuthorisedConnection(socket: DynamicSocket, code: Byte): Unit = {
+        code.ensuring(code == ConnectionCreated || code == ConnectionResumed, "Illegal connection initialisation code")
+
+        val responsePacket = BytePacket(code)
         val coordinates = DedicatedPacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(responsePacket, coordinates))
     }
 
     private def sendRefusedConnection(socket: DynamicSocket, message: String): Unit = {
-        val codePacket = BooleanPacket(false)
+        val codePacket = BytePacket(ConnectionRefused)
         val coordinates = DedicatedPacketCoordinates(PacketTraffic.SystemChannelID, "unknown", identifier)
         socket.write(packetTranslator.fromPacketAndCoords(codePacket, coordinates))
         socket.write(packetTranslator.fromPacketAndCoords(StringPacket(message), coordinates))
@@ -221,7 +265,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     private def loadInternal(): Unit = {
         if (configuration.enableExtensionsFolderLoad)
-            extensionLoader.launch()
+            extensionLoader.loadMainFolder()
     }
 
     private def loadSocketListener(): Unit = {
@@ -237,8 +281,8 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         securityManager.checkRelay(this)
     }
 
-    private def handleRelayPointConnection(identifier: String,
-                                           socket: SocketContainer): Unit = {
+    private def handleRelayConnection(identifier: String,
+                                      socket: SocketContainer): Unit = {
 
         if (connectionsManager.isNotRegistered(identifier)) {
             connectionsManager.registerConnection(identifier, socket)
@@ -253,7 +297,8 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
         if (!current.isConnected) {
             current.updateSocket(socket.get)
-            sendAuthorisedConnection(socket)
+            sendAuthorisedConnection(socket, ConnectionResumed)
+            println(s"The connection of ${current.identifier} has been resumed.")
             return
         }
 
@@ -273,7 +318,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
             case REPLACE =>
                 connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
                 connectionsManager.registerConnection(identifier, socket)
-                sendAuthorisedConnection(socket)
+                //The connection initialisation packet isn't sent here because it is send into the registerConnection method.
 
             case DISCONNECT_BOTH =>
                 connectionsManager.unregister(identifier).get.close(CloseReason.INTERNAL_ERROR)
@@ -281,14 +326,4 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         }
     }
 
-    private def ensureOpen(): Unit = {
-        if (!open)
-            throw new RelayCloseException("Relay Server have to be started !")
-    }
-
-
-    private def setState(state: RelayState): Unit = {
-        eventNotifier.notifyEvent(RelayEvents.stateChange(state))
-        this.currentState = state
-    }
 }

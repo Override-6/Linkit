@@ -3,7 +3,7 @@ package fr.`override`.linkit.server.connection
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.BytePacket
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
@@ -58,8 +58,9 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connectionSession = ClientConnectionSession(identifier, socket, server)
         val connection = ClientConnection.open(connectionSession)
         connections.put(identifier, connection)
-        println("Sending authorisation packet...")
-        connection.sendPacket(BooleanPacket(true), PacketTraffic.SystemChannelID)
+
+        println("Sending authorisation packet of value '...")
+        connection.sendPacket(BytePacket(RelayServer.ConnectionCreated), PacketTraffic.SystemChannelID)
 
         val canConnect = server.securityManager.canConnect(connection)
         if (canConnect) {
@@ -137,7 +138,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * @param identifier the identifier to test
      * @return true if any connected Relay have the specified identifier
      * */
-    def containsIdentifier(identifier: String): Boolean = {
+    def isRegistered(identifier: String): Boolean = {
         identifier == server.identifier || connections.contains(identifier) //reserved server identifier
     }
 

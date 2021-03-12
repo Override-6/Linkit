@@ -5,7 +5,6 @@ import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayThreadPool
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.traffic.PacketInjections
 import fr.`override`.linkit.api.system._
@@ -50,7 +49,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         ConnectionPacketWorker.start()
     }
 
-    def sendPacket(packet: Packet, channelID: Int): Unit = {
+    def sendPacket(packet: Packet, channelID: Int): Unit =  {
         runLater {
             val bytes = packetTranslator.fromPacketAndCoords(packet, DedicatedPacketCoordinates(channelID, identifier, server.identifier))
             session.send(bytes)
@@ -130,21 +129,15 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         private def handleSystemOrder(packet: SystemPacket): Unit = {
             val orderType = packet.order
             val reason = packet.reason.reversedPOV()
-            val content = packet.content
 
             import SystemOrder._
             orderType match {
                 case CLIENT_CLOSE => runLater(ClientConnection.this.close(reason))
                 case SERVER_CLOSE => server.close(reason)
                 case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
-                case CHECK_ID => checkIDRegistered(new String(content))
 
                 case _ => new UnexpectedPacketException(s"Could not complete order '$orderType', can't be handled by a server or unknown order")
                         .printStackTrace(getConsoleErr)
-            }
-
-            def checkIDRegistered(target: String): Unit = {
-                session.channel.send(BooleanPacket(server.isConnected(target)))
             }
         }
     }

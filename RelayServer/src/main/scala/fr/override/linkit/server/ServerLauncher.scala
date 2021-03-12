@@ -6,7 +6,7 @@ import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder
 import java.nio.file.Paths
 
 
-object Main {
+object ServerLauncher {
     def main(args: Array[String]): Unit = {
         println(s"running server with arguments ${args.mkString("'", ", ", "'")}")
         val ideRun = args.contains("--ide-run")

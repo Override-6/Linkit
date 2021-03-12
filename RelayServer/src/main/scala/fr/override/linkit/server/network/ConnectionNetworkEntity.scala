@@ -15,6 +15,6 @@ class ConnectionNetworkEntity(server: RelayServer, identifier: String, communica
 
     override def getConnectionState: ConnectionState = connection.getState
 
-    addOnStateUpdate(state => server.runLater(sharedState.set(state)))
+    connection.addConnectionStateListener(state => server.runLater(sharedState.set(state)))
 
 }
