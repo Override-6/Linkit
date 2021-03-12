@@ -42,7 +42,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     override def network: Network = pointNetwork
 
     override val securityManager: RelaySecurityManager = configuration.securityManager
-    override val notifier: EventNotifier = new EventNotifier
+    override val eventNotifier: EventNotifier = new EventNotifier
     private val socket: ClientDynamicSocket = new ClientDynamicSocket(configuration.serverAddress, configuration.reconnectionPeriod)
     override val packetTranslator: PacketTranslator = new PacketTranslator(this)
     override val traffic: SocketPacketTraffic = new SocketPacketTraffic(this, socket, identifier)
@@ -182,7 +182,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     }
 
     private def loadRemote(): Unit = {
-        Log.info(s"Connecting to server with relay id '$identifier'")
+        Log.trace(s"Connecting to server with relay id '$identifier'")
         setState(CONNECTING)
         socket.start()
         Log.info(s"Socket accepted...")
@@ -222,7 +222,7 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
     }
 
     private def setState(state: RelayState): Unit = {
-        notifier.notifyEvent(RelayEvents.stateChange(state))
+        eventNotifier.notifyEvent(RelayEvents.stateChange(state))
         this.currentState = state
     }
 

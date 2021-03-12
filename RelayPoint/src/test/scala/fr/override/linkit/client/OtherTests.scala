@@ -16,9 +16,10 @@ object OtherTests {
     private val randomizer = ThreadLocalRandom.current()
 
     def main(args: Array[String]): Unit = try {
-        Application.run(() => {
+        /*Application.run(() => {
             makeSomething(1)
-        })
+        })*/
+        println(Console.RED + "HELLO")
     } catch {
         case NonFatal(e) => e.printStackTrace()
     }
