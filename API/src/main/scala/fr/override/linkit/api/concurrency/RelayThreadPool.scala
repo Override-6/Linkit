@@ -120,7 +120,7 @@ class RelayThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseab
      * @param condition the condition to check, the thread will continue to be busy with tasks
      *                  while the condition is true. (and while the thread have tasks to execute)
      * */
-    def keepBusyWhile(condition: => Boolean): Unit = {
+    def executeRemainingTasksWhile(condition: => Boolean): Unit = {
         checkCurrentIsWorker()
 
         while (!workQueue.isEmpty && condition) {
@@ -134,22 +134,25 @@ class RelayThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseab
     }
 
     /**
-     * Keep executing tasks contained in the workQueue while it is full and the provided condition is true.
-     * If the condition keeps being true, but there is no task that can be processed, the thread will wait
+     * Keep executing tasks contained in the workQueue while
+     * it is full and the provided condition is true.
+     * If the condition keeps being true,
+     * but there is no task that can be processed, the thread will wait
      * on the lock until he gets notified by the user or by the [[runLater()]] method.
      *
-     * in plain language, this method will make the thread execute tasks while the provided condition is true;
+     * in plain language, this method will make the thread execute tasks
+     * while the provided condition is true.
      * or, if the thread can't process other tasks, will wait until a task get submitted.
      *
      * Using a [[BusyLock]] is highly recommended to keep a thread busy
      *
      * @param lock      the reference to link a monitor lock if needed
      * @param condition the condition
-     * @throws [[       IllegalThreadException]] if the current thread is not a [[RelayThread]]
+     * @throws IllegalThreadException if the current thread is not a [[RelayThread]]
      * @see [[BusyLock]]
      * */
-    def keepBusyOrWaitWhile(lock: AnyRef = new Object, condition: => Boolean): Unit = {
-        keepBusyWhile(condition)
+    def executeRemainingTasks(lock: AnyRef = new Object, condition: => Boolean): Unit = {
+        executeRemainingTasksWhile(condition)
         if (!condition)
             return
         lock.synchronized {
@@ -160,7 +163,7 @@ class RelayThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseab
             }
         }
         if (condition) //We may still need to be busy
-            keepBusyOrWaitWhile(lock, condition)
+            executeRemainingTasks(lock, condition)
     }
 
     /**
@@ -171,7 +174,7 @@ class RelayThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseab
      * @param millis the number of milliseconds the thread must be busy.
      * @throws IllegalThreadException if the current thread is not a [[RelayThread]]
      * */
-    def keepBusy(millis: Long, lock: AnyRef = new Object): Unit = {
+    def executeRemaingTasks(millis: Long, lock: AnyRef = new Object): Unit = {
         checkCurrentIsWorker()
 
         var totalProvided: Long = 0
@@ -187,7 +190,7 @@ class RelayThreadPool(val prefix: String, val nThreads: Int) extends AutoCloseab
             val waited = timedWait(lock, toWait)
             workersLocks.removeLastBusyLock()
             if (waited < toWait)
-                keepBusy(millis)
+                executeRemaingTasks(millis)
         }
     }
 
@@ -295,8 +298,8 @@ object RelayThreadPool {
      *
      * @param condition the condition to test
      * */
-    def smartKeepBusyWhile(condition: => Boolean): Unit = {
-        ifCurrentWorkerOrElse(_.keepBusyWhile(condition), ())
+    def executeRemainingTasksWhile(condition: => Boolean): Unit = {
+        ifCurrentWorkerOrElse(_.executeRemainingTasksWhile(condition), ())
     }
 
     /**
@@ -306,10 +309,10 @@ object RelayThreadPool {
      *
      * @param condition the condition to test
      * @param lock      the lock to handle
-     * @see [[RelayThreadPool.keepBusyOrWaitWhile()]] for further details about the busy system.
+     * @see [[RelayThreadPool.executeRemainingTasks()]] for further details about the busy system.
      * */
-    def smartKeepBusy(lock: AnyRef, condition: => Boolean): Unit = {
-        ifCurrentWorkerOrElse(_.keepBusyOrWaitWhile(lock, condition), if (condition) lock.synchronized(lock.wait()))
+    def executeRemainingTasks(lock: AnyRef, condition: => Boolean): Unit = {
+        ifCurrentWorkerOrElse(_.executeRemainingTasks(lock, condition), if (condition) lock.synchronized(lock.wait()))
     }
 
     /**
@@ -319,10 +322,10 @@ object RelayThreadPool {
      *
      * @param minTimeOut the minimum time to keep busy
      * @param lock       the lock to handle
-     * @see [[RelayThreadPool.keepBusyOrWaitWhile]] for further details about the busy system.
+     * @see [[RelayThreadPool.executeRemainingTasks]] for further details about the busy system.
      * */
     def smartKeepBusy(lock: AnyRef, minTimeOut: Long): Unit = {
-        ifCurrentWorkerOrElse(_.keepBusy(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
+        ifCurrentWorkerOrElse(_.executeRemaingTasks(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
     }
 
     /**
@@ -330,7 +333,7 @@ object RelayThreadPool {
      *
      * @param ifCurrent The action to process if the current thread is a relay worker thread.
      *                  The given entry is the current thread pool
-     * @param orElse the action to process if the current thread is not a relay worker thread.
+     * @param orElse    the action to process if the current thread is not a relay worker thread.
      *
      * */
     def ifCurrentWorkerOrElse[A](ifCurrent: RelayThreadPool => A, orElse: => A): A = {
@@ -358,8 +361,8 @@ object RelayThreadPool {
      * This class contains information that need to be stored into a specific thread class.
      * */
     private final class RelayThread private[RelayThreadPool](target: Runnable, prefix: String,
-                                                                   private[RelayThreadPool] val ownerPool: RelayThreadPool)
-            extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
+                                                             private[RelayThreadPool] val ownerPool: RelayThreadPool)
+        extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
         activeCount += 1
 
         var currentTaskExecutionDepth = 0

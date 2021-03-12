@@ -10,7 +10,7 @@ class EventNotifier {
 
     def unregister(listener: EventListener): Unit = listeners -= listener
 
-    def notifyEvent[C <: EventHookCategory, L <: EventListener](hookCategory: C, event: Event[C, L]): Unit = {
+    def notifyEvent[C <: EventHookCategory, L <: EventListener](event: Event[C, L], hookCategory: C): Unit = {
         val eventListeners = listeners
                 .filter(_.isInstanceOf[L])
                 .map(_.asInstanceOf[L])

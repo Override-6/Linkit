@@ -21,7 +21,7 @@ object NetworkEvents {
     case class RemotePropertyChangeEvent(override val entity: NetworkEntity,
                                          name: String,
                                          newProperty: Serializable,
-                                         oldProperty: Serializable,
+                                         oldProperty: Any,
                                          private val currentChanged: Boolean) extends NetworkEvent {
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = {
             if (currentChanged)
@@ -54,14 +54,14 @@ object NetworkEvents {
     def remotelyCurrentPropertyChange(entity: NetworkEntity,
                                       name: String,
                                       newProperty: Serializable,
-                                      oldProperty: Serializable): RemotePropertyChangeEvent = {
+                                      oldProperty: Any): RemotePropertyChangeEvent = {
         RemotePropertyChangeEvent(entity, name, newProperty, oldProperty, true)
     }
 
-    def remotelyChangeProperty(entity: NetworkEntity,
-                               name: String,
-                               newProperty: Serializable,
-                               oldProperty: Serializable): RemotePropertyChangeEvent = {
+    def remotePropertyChange(entity: NetworkEntity,
+                             name: String,
+                             newProperty: Serializable,
+                             oldProperty: Serializable): RemotePropertyChangeEvent = {
         RemotePropertyChangeEvent(entity, name, newProperty, oldProperty, false)
     }
 
@@ -73,7 +73,7 @@ object NetworkEvents {
         RemotePrintEvent(entity, print, true)
     }
 
-    private def !![A](any: Any): A = any.asInstanceOf[A]
+    private def !![A](any: Any): A = any.asInstanceOf[A] //FIXME REMOVE THIS
 
 
 }

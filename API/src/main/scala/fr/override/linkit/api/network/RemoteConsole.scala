@@ -3,14 +3,19 @@ package fr.`override`.linkit.api.network
 import java.io.PrintStream
 import java.security.AccessController
 
+import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.fundamental.TaggedObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
+import fr.`override`.linkit.api.system.event.EventNotifier
+import fr.`override`.linkit.api.system.event.network.NetworkEvents
 import fr.`override`.linkit.api.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
 import sun.security.action.GetPropertyAction
 
 
 class RemoteConsole private(@Nullable channel: AsyncPacketChannel,
+                            relay: Relay,
+                            owner: String,
                             kind: String) extends PrintStream(InactiveOutputStream, true) {
 
     override def write(b: Array[Byte]): Unit = {
@@ -32,7 +37,11 @@ class RemoteConsole private(@Nullable channel: AsyncPacketChannel,
             str = java.util.Arrays.deepToString(obj.asInstanceOf[Array[AnyRef]])
 
         if (channel != null)
-            channel.send(TaggedObjectPacket(kind, String.valueOf(obj))) //prints to the linked console
+            channel.send(TaggedObjectPacket(kind, String.valueOf(obj))) //send the print to the linked console
+
+        val entity = relay.network.getEntity(owner).get
+        val event = NetworkEvents.remotePrintSentEvent(entity, str)
+        relay.eventNotifier.notifyEvent(event, relay.networkHooks)
     }
 
     override def print(x: Boolean): Unit = print(x: Any)
@@ -60,10 +69,10 @@ class RemoteConsole private(@Nullable channel: AsyncPacketChannel,
 
 object RemoteConsole {
 
-    def err(channel: AsyncPacketChannel): RemoteConsole = new RemoteConsole(channel, "err")
+    def err(channel: AsyncPacketChannel, relay: Relay, owner: String): RemoteConsole = new RemoteConsole(channel, relay, owner, "err")
 
-    def out(channel: AsyncPacketChannel): RemoteConsole = new RemoteConsole(channel, "out")
+    def out(channel: AsyncPacketChannel, relay: Relay, owner: String): RemoteConsole = new RemoteConsole(channel, relay, owner, "out")
 
-    val Mock: RemoteConsole = new RemoteConsole(null, "mock")
+    val Mock: RemoteConsole = new RemoteConsole(null, null, null, "mock")
 
 }

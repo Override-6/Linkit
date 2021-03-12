@@ -1,15 +1,17 @@
 package fr.`override`.linkit.api.network
 
+import java.util
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
+
 import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.Relay.Log
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
 import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.fundamental.TaggedObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
-
-import java.util
-import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
+import fr.`override`.linkit.api.system.event.network.NetworkEvents
 
 class RemoteConsolesContainer(relay: Relay) {
 
@@ -22,7 +24,7 @@ class RemoteConsolesContainer(relay: Relay) {
 
     def getErr(targetId: String): RemoteConsole = get(targetId, RemoteConsole.err, errConsoles)
 
-    private def get(targetId: String, supplier: AsyncPacketChannel => RemoteConsole, consoles: util.Map[String, RemoteConsole]): RemoteConsole = {
+    private def get(targetId: String, supplier: (AsyncPacketChannel, Relay, String) => RemoteConsole, consoles: util.Map[String, RemoteConsole]): RemoteConsole = {
         if (!relay.configuration.enableRemoteConsoles)
             return RemoteConsole.Mock
 
@@ -33,7 +35,7 @@ class RemoteConsolesContainer(relay: Relay) {
             return consoles.get(targetId)
 
         val channel = printChannel.subInjectable(targetId, AsyncPacketChannel, true)
-        val console = supplier(channel)
+        val console = supplier(channel, relay, targetId)
         consoles.put(targetId, console)
 
         console
@@ -45,8 +47,13 @@ class RemoteConsolesContainer(relay: Relay) {
         printChannel.addOnPacketReceived((packet, coords) => {
             packet match {
                 case TaggedObjectPacket(header, msg: String) =>
-                    val output = if (header == "err") System.err else System.out
-                    Relay.Log.info(s"[${coords.senderID}]: $msg")
+                    val log: String => Unit = if (header == "err") Log.error else Log.info
+                    log(s"[${coords.senderID}]: $msg")
+
+                    import relay.networkHooks
+                    val entity = relay.network.getEntity(coords.senderID).get
+                    val event = NetworkEvents.remotePrintReceivedEvent(entity, msg)
+                    relay.eventNotifier.notifyEvent(event)
                 case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")
             }
         })

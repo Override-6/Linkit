@@ -124,7 +124,7 @@ class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V
 
         addListener(listener) //Due to hyper parallelized thread execution,
         //the awaited key could be added since the 'found' value has been created.
-        RelayThreadPool.smartKeepBusy(lock, !(contains(k) || found))
+        RelayThreadPool.executeRemainingTasks(lock, !(contains(k) || found))
         removeListener(listener)
         //println("Done !")
         apply(k)

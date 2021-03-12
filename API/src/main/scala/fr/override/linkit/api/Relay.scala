@@ -14,7 +14,7 @@ import fr.`override`.linkit.api.system.event.network.NetworkEventHooks
 import fr.`override`.linkit.api.system.event.packet.PacketEventHooks
 import fr.`override`.linkit.api.system.event.relay.RelayEventHooks
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RelayState, Version}
+import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RelayLogger, RelayState, Version}
 import fr.`override`.linkit.api.task.TaskScheduler
 import org.apache.log4j.Logger
 import org.jetbrains.annotations.Nullable
@@ -40,7 +40,7 @@ import org.jetbrains.annotations.Nullable
 object Relay {
     val ApiVersion: Version = Version(name = "Api", version = "0.20.0", stable = false)
     val ServerIdentifier: String = "server"
-    val Log: Logger = Logger.getLogger(classOf[Relay])
+    val Log: Logger = Logger.getLogger("Relay", new RelayLogger(_))
 }
 
 trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableContainer {
@@ -128,7 +128,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
      * the package [[fr.`override`.linkit.api.system.event]] is designed to
      * use the busy threading system, and be extensible
      */
-    val notifier: EventNotifier
+    val eventNotifier: EventNotifier
 
     /*
      * The 4 fields are a set of event that are categorised into EventHookCategory classes

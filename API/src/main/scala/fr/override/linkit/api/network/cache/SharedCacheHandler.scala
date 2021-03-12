@@ -146,7 +146,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
         def notReady: Boolean = cacheOwners == null || cacheOwners.isEmpty
 
         if (notReady) this.synchronized {
-            RelayThreadPool.smartKeepBusy(this, notReady)
+            RelayThreadPool.executeRemainingTasks(this, notReady)
         }
     }
 

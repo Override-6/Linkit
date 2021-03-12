@@ -7,8 +7,9 @@ import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.system.Version
-
 import java.sql.Timestamp
+
+import fr.`override`.linkit.api.system.event.network.NetworkEvents
 
 abstract class AbstractRemoteEntity(private val relay: Relay,
                                     override val identifier: String,
@@ -20,20 +21,18 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
     private val remoteFragments = {
         val communicator = traffic
-                .getInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
-                .subInjectable(Array(identifier), PacketChannelCategories, true)
+            .getInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
+            .subInjectable(Array(identifier), PacketChannelCategories, true)
 
         cache
-                .get(6, SharedCollection.set[String])
-                .mapped(name => new RemoteFragmentController(name, communicator.createCategory(name, ChannelScope.broadcast, CommunicationPacketChannel)))
+            .get(6, SharedCollection.set[String])
+            .mapped(name => new RemoteFragmentController(name, communicator.createCategory(name, ChannelScope.broadcast, CommunicationPacketChannel)))
     }
     override val connectionDate: Timestamp = cache(2)
 
     override val apiVersion: Version = cache(4)
 
     override val relayVersion: Version = cache(5)
-
-    override def addOnStateUpdate(action: ConnectionState => Unit): Unit
 
     override def getConnectionState: ConnectionState
 
@@ -42,14 +41,27 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
         communicator.nextResponse[ObjectPacket].casted
     }
 
-    override def setProperty(name: String, value: Serializable): Unit = {
-        communicator.sendRequest(ObjectPacket(("setProp", name, value)))
+    override def setProperty(name: String, newValue: Serializable): Unit = {
+        val eventHandlingEnabled = relay.configuration.enableEventHandling
+
+        def update(): Unit = communicator.sendRequest(ObjectPacket(("setProp", name, newValue)))
+
+        if (!eventHandlingEnabled) {
+            update()
+            return
+        }
+        val oldValue = getProperty(name)
+        update()
+        if (!eventHandlingEnabled)
+            return
+
+        val event = NetworkEvents.remotePropertyChange(this, name, newValue, oldValue)
+        relay.eventNotifier.notifyEvent(event, relay.networkHooks)
     }
 
     override def getRemoteConsole: RemoteConsole = relay.getConsoleOut(identifier)
 
     override def getRemoteErrConsole: RemoteConsole = relay.getConsoleErr(identifier)
-
 
     override def listRemoteFragmentControllers: List[RemoteFragmentController] = remoteFragments.toList
 

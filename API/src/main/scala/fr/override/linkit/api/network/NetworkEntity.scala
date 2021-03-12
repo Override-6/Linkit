@@ -17,8 +17,6 @@ trait NetworkEntity {
 
     val relayVersion: Version
 
-    def addOnStateUpdate(action: ConnectionState => Unit): Unit
-
     def getConnectionState: ConnectionState
 
     def getProperty(name: String): Serializable

@@ -58,8 +58,9 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
         collection.update(i, el)
     }
 
-    override def addListener(callback: (CollectionModification, Int, Option[B]) => Unit): Unit = {
+    override def addListener(callback: (CollectionModification, Int, Option[B]) => Unit): this.type= {
         listeners += (tuple3 => callback(tuple3._1, tuple3._2, tuple3._3))
+        this
     }
 
     private def safeMap(a: A): B = {
@@ -92,7 +93,7 @@ object BoundedCollection {
     trait Immutable[A] extends Iterable[A] {
         override def iterator: Iterator[A]
 
-        def addListener(callback: (CollectionModification, Int, Option[A]) => Unit): Unit
+        def addListener(callback: (CollectionModification, Int, Option[A]) => Unit): this.type
     }
 
 }

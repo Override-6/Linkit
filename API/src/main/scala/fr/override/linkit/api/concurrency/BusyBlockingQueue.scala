@@ -52,7 +52,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayThreadPool) extends B
 
     @relayWorkerExecution
     override def take(): A = {
-        pool.keepBusyOrWaitWhile(lock, content.isEmpty) //will be released once the queue is empty
+        pool.executeRemainingTasks(lock, content.isEmpty) //will be released once the queue is empty
         poll()
     }
 
@@ -63,7 +63,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: RelayThreadPool) extends B
         var last = now()
 
         //the lock object will be notified if an object has been inserted in the list.
-        pool.keepBusyOrWaitWhile(lock, {
+        pool.executeRemainingTasks(lock, {
             val n = now()
             total += n - last
             last = n
