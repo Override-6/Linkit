@@ -6,9 +6,8 @@ import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
 import fr.`override`.linkit.api.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
 import fr.`override`.linkit.api.system.Version
-import java.sql.Timestamp
 
-import fr.`override`.linkit.api.system.event.network.NetworkEvents
+import java.sql.Timestamp
 
 class SelfNetworkEntity(relay: Relay) extends NetworkEntity {
 

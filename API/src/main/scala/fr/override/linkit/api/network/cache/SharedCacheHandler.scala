@@ -21,6 +21,7 @@ import scala.util.control.NonFatal
 // which is a big problem for the relay's initialisation....
 
 //TODO Use Array[Serializable] instead of Array[Any] for shared contents
+//TODO replace Longs with Ints (be aware that, with the current serialization algorithm, primitives integers are all converted to Long, so it would cause cast problems)
 class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: PacketTraffic) {
 
     private val communicator = traffic.getInjectable(11, ChannelScope.broadcast, CommunicationPacketChannel.providable)
@@ -60,6 +61,15 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
                     LocalCacheHandler.register(cacheID, sharedCache)
                     sharedCache
                 }
+    }
+
+    def getUpToDate[A <: HandleableSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
+        forget(cacheID)
+        get(cacheID, factory)
+    }
+
+    def forget(cacheID: Long): Unit = {
+        LocalCacheHandler.unregister(cacheID)
     }
 
     private def retrieveBaseContent(cacheID: Long): Array[Any] = {
@@ -138,7 +148,7 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
                 else LocalCacheHandler.getContent(cacheID)
                 //println(s"<$family, $ownerID> Content = ${content.mkString("Array(", ", ", ")")}")
                 communicator.sendResponse(ArrayObjectPacket(content), senderID)
-                //println("Packet sent :D")
+            //println("Packet sent :D")
         }
     }
 
@@ -156,6 +166,10 @@ class SharedCacheHandler(family: String, ownerID: String)(implicit traffic: Pack
 
         def register(identifier: Long, cache: HandleableSharedCache): Unit = {
             localRegisteredCaches.put(identifier, cache)
+        }
+
+        def unregister(identifier: Long): Unit = {
+            localRegisteredCaches.remove(identifier)
         }
 
         def injectPacket(key: Long, packet: Packet, coords: PacketCoordinates): Unit = try {

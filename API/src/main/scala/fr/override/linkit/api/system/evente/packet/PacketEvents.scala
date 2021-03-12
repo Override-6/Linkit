@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.system.event.packet
+package fr.`override`.linkit.api.system.evente.packet
 
 import fr.`override`.linkit.api.packet.serialization.ObjectSerializer
 import fr.`override`.linkit.api.packet.traffic.PacketInjectable

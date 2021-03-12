@@ -1,7 +1,7 @@
-package fr.`override`.linkit.api.system.event.network
+package fr.`override`.linkit.api.system.evente.network
 
-import fr.`override`.linkit.api.system.event.EventListener
-import fr.`override`.linkit.api.system.event.network.NetworkEvents._
+import fr.`override`.linkit.api.system.evente.EventListener
+import fr.`override`.linkit.api.system.evente.network.NetworkEvents._
 
 abstract class NetworkEventListener extends EventListener {
 

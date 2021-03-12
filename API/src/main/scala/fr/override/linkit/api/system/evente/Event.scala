@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.system.event
+package fr.`override`.linkit.api.system.evente
 
 trait Event[C <: EventHookCategory, L <: EventListener] {
 

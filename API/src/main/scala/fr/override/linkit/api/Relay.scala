@@ -8,13 +8,13 @@ import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic._
 import fr.`override`.linkit.api.system.config.RelayConfiguration
-import fr.`override`.linkit.api.system.event.EventNotifier
-import fr.`override`.linkit.api.system.event.extension.ExtensionEventHooks
-import fr.`override`.linkit.api.system.event.network.NetworkEventHooks
-import fr.`override`.linkit.api.system.event.packet.PacketEventHooks
-import fr.`override`.linkit.api.system.event.relay.RelayEventHooks
+import fr.`override`.linkit.api.system.evente.EventNotifier
+import fr.`override`.linkit.api.system.evente.extension.ExtensionEventHooks
+import fr.`override`.linkit.api.system.evente.network.NetworkEventHooks
+import fr.`override`.linkit.api.system.evente.packet.PacketEventHooks
+import fr.`override`.linkit.api.system.evente.relay.RelayEventHooks
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, RelayLogger, RelayState, Version}
+import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TaskScheduler
 import org.apache.log4j.Logger
 import org.jetbrains.annotations.Nullable
@@ -125,7 +125,7 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
 
     /**
      * [[EventNotifier]] is used to trigger an event that concern this relay.
-     * the package [[fr.`override`.linkit.api.system.event]] is designed to
+     * the package [[fr.`override`.linkit.api.system.evente]] is designed to
      * use the busy threading system, and be extensible
      */
     val eventNotifier: EventNotifier
@@ -217,12 +217,6 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
     def runLater(callback: => Unit): this.type
 
     /**
-     * Adds a callback called when the relay's connection is updated
-     * */
-    @deprecated(message = "use #relayHooks instead", since = "0.21.0")
-    def addConnectionListener(action: ConnectionState => Unit)
-
-    /**
      * @return the connection state of this relay
      * @see [[ConnectionState]]
      * */
@@ -232,7 +226,6 @@ trait Relay extends JustifiedCloseable with TaskScheduler with PacketInjectableC
      * @param identifier the relay identifier to check
      * @return true if the given relay identifier is connected on the network
      * */
-    @deprecated(message = "use api.network.Network instead", since = "0.21.0")
     def isConnected(identifier: String): Boolean
 
     /**

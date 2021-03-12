@@ -1,16 +1,15 @@
 package fr.`override`.linkit.api.network
 
-import java.io.PrintStream
-import java.security.AccessController
-
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.fundamental.TaggedObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
-import fr.`override`.linkit.api.system.event.EventNotifier
-import fr.`override`.linkit.api.system.event.network.NetworkEvents
+import fr.`override`.linkit.api.system.evente.network.NetworkEvents
 import fr.`override`.linkit.api.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
 import sun.security.action.GetPropertyAction
+
+import java.io.PrintStream
+import java.security.AccessController
 
 
 class RemoteConsole private(@Nullable channel: AsyncPacketChannel,
@@ -41,7 +40,7 @@ class RemoteConsole private(@Nullable channel: AsyncPacketChannel,
 
         val entity = relay.network.getEntity(owner).get
         val event = NetworkEvents.remotePrintSentEvent(entity, str)
-        relay.eventNotifier.notifyEvent(event, relay.networkHooks)
+        relay.eventNotifier.notifyEvent(relay.networkHooks, event)
     }
 
     override def print(x: Boolean): Unit = print(x: Any)

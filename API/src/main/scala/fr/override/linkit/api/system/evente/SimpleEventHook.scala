@@ -1,7 +1,7 @@
-package fr.`override`.linkit.api.system.event
+package fr.`override`.linkit.api.system.evente
 
 import fr.`override`.linkit.api.concurrency.RelayThreadPool
-import fr.`override`.linkit.api.system.event.EventHook
+import fr.`override`.linkit.api.system.evente.EventHook
 import fr.`override`.linkit.api.utils.ConsumerContainer
 import org.jetbrains.annotations.NotNull
 

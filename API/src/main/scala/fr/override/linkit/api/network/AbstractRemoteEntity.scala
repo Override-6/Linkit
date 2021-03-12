@@ -7,9 +7,9 @@ import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.system.Version
-import java.sql.Timestamp
+import fr.`override`.linkit.api.system.evente.network.NetworkEvents
 
-import fr.`override`.linkit.api.system.event.network.NetworkEvents
+import java.sql.Timestamp
 
 abstract class AbstractRemoteEntity(private val relay: Relay,
                                     override val identifier: String,
@@ -21,12 +21,12 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
     private val remoteFragments = {
         val communicator = traffic
-            .getInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
-            .subInjectable(Array(identifier), PacketChannelCategories, true)
+                .getInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
+                .subInjectable(Array(identifier), PacketChannelCategories, true)
 
         cache
-            .get(6, SharedCollection.set[String])
-            .mapped(name => new RemoteFragmentController(name, communicator.createCategory(name, ChannelScope.broadcast, CommunicationPacketChannel)))
+                .get(6, SharedCollection.set[String])
+                .mapped(name => new RemoteFragmentController(name, communicator.createCategory(name, ChannelScope.broadcast, CommunicationPacketChannel)))
     }
     override val connectionDate: Timestamp = cache(2)
 
@@ -56,7 +56,7 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
             return
 
         val event = NetworkEvents.remotePropertyChange(this, name, newValue, oldValue)
-        relay.eventNotifier.notifyEvent(event, relay.networkHooks)
+        relay.eventNotifier.notifyEvent(relay.networkHooks, event)
     }
 
     override def getRemoteConsole: RemoteConsole = relay.getConsoleOut(identifier)
@@ -69,5 +69,5 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
         remoteFragments.find(_.nameIdentifier == nameIdentifier)
     }
 
-    override def toString: String = s"${getClass.getSimpleName}(identifier: $identifier, state: $getConnectionState)"
+    override def toString: String = s"${getClass.getSimpleName}(identifier: $identifier, state: $getConnectionState, api: $apiVersion, impl: $relayVersion)"
 }

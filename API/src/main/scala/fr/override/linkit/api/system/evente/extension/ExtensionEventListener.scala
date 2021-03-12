@@ -1,7 +1,7 @@
-package fr.`override`.linkit.api.system.event.extension
+package fr.`override`.linkit.api.system.evente.extension
 
-import fr.`override`.linkit.api.system.event.EventListener
-import fr.`override`.linkit.api.system.event.extension.ExtensionEvents._
+import fr.`override`.linkit.api.system.evente.EventListener
+import fr.`override`.linkit.api.system.evente.extension.ExtensionEvents._
 
 abstract class ExtensionEventListener extends EventListener {
 

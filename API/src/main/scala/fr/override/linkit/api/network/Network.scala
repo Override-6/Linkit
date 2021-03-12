@@ -18,6 +18,8 @@ trait Network {
 
     def serverEntity: NetworkEntity = getEntity(Relay.ServerIdentifier).get
 
+    def isConnected(identifier: String): Boolean
+
     val globalCache: SharedCacheHandler
 
 }

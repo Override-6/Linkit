@@ -6,16 +6,17 @@ import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, Sha
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.system.event.network.NetworkEvents
+import fr.`override`.linkit.api.system.evente.network.NetworkEvents
 
 abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override val globalCache: SharedCacheHandler = SharedCacheHandler.create("Global Shared Cache", Relay.ServerIdentifier)(relay.traffic)
+    relay.packetTranslator.completeInitialisation(globalCache)
 
     override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 
     protected val sharedIdentifiers: SharedCollection[String] = globalCache
-            .get(3, SharedCollection.set[String])
+            .getUpToDate(3, SharedCollection.set[String])
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     private val communicator = relay.getInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)
@@ -28,6 +29,8 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
             entities.find(_.identifier == identifier)
         else None
     }
+
+    override def isConnected(identifier: String): Boolean = getEntity(identifier).isDefined
 
     //Will replace the entity if the identifier is already present in the network's entities cache.
     protected def createEntity(identifier: String): NetworkEntity = {
@@ -49,7 +52,7 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
                 val prop = relay.properties.get(name).orNull
                 communicator.sendResponse(ObjectPacket(prop), sender)
 
-            case ObjectPacket(("setProp", name: String, newValue)) =>
+            case ObjectPacket(("setProp", name: String, newValue: Serializable)) =>
                 val oldValue = relay.properties.putProperty(name, newValue)
                 val entity = getEntity(sender).get
                 val event = NetworkEvents.remotelyCurrentPropertyChange(entity, name, newValue, oldValue)

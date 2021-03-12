@@ -188,6 +188,9 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
 
         def markAsConnected(): Unit = disconnectLock.synchronized {
+            if (state == CONNECTED)
+                return
+
             updateState(CONNECTED)
 
             disconnectLock.notifyAll()

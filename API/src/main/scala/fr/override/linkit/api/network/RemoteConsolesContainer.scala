@@ -1,9 +1,5 @@
 package fr.`override`.linkit.api.network
 
-import java.util
-import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
-
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.Relay.Log
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
@@ -11,7 +7,11 @@ import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.fundamental.TaggedObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
-import fr.`override`.linkit.api.system.event.network.NetworkEvents
+import fr.`override`.linkit.api.system.evente.network.NetworkEvents
+
+import java.util
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 
 class RemoteConsolesContainer(relay: Relay) {
 

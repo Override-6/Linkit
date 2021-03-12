@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.system.event.extension
+package fr.`override`.linkit.api.system.evente.extension
 
 import fr.`override`.linkit.api.extension.fragment.{ExtensionFragment, RemoteFragment}
 import fr.`override`.linkit.api.extension.{LoadPhase, RelayExtension, RelayExtensionLoader, RelayProperties}

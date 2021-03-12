@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.system.event.network
+package fr.`override`.linkit.api.system.evente.network
 
 import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity}
 

@@ -1,4 +1,4 @@
-package fr.`override`.linkit.api.system.event.relay
+package fr.`override`.linkit.api.system.evente.relay
 
 import fr.`override`.linkit.api.system.{RelayState, SystemOrder}
 

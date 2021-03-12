@@ -27,7 +27,12 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
     }
 
     def completeInitialisation(cache: SharedCacheHandler): Unit = {
+        //return
         SmartSerializer.completeInitialisation(cache)
+    }
+
+    def blackListFromCachedSerializer(target: String): Unit = {
+        SmartSerializer.blackListFromCachedSerializer(target)
     }
 
     private object SmartSerializer {
@@ -83,6 +88,10 @@ class PacketTranslator(relay: Relay) { //Notifier is accessible from api to redu
         }
 
         def initialised: Boolean = cachedSerializerWhitelist != null
+
+        def blackListFromCachedSerializer(target: String): Unit = {
+            cachedSerializerWhitelist.remove(target)
+        }
     }
 
 }

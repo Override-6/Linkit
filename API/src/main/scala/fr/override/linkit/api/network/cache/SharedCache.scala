@@ -10,4 +10,6 @@ trait SharedCache {
 
     def modificationCount(): Int
 
+    def update(): this.type //Will rebase/sync again the content from the cache owner
+
 }

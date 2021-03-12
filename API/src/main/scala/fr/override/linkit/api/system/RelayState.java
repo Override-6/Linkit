@@ -6,8 +6,6 @@ public enum RelayState {
     CRASHED,
     CLOSED,
     ENABLED,
-    ENABLING,
-    CONNECTING,
-    DISCONNECTED
+    ENABLING
 
 }

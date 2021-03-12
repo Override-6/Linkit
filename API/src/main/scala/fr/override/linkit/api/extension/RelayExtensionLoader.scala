@@ -54,7 +54,7 @@ class RelayExtensionLoader(relay: Relay) extends Closeable {
         phase = CLOSE
     }
 
-    def launch(): Unit = {
+    def loadMainFolder(): Unit = {
         if (phase != INACTIVE)
             throw new IllegalStateException("Extension loader is currently working")
 

@@ -1,7 +1,7 @@
-package fr.`override`.linkit.api.system.event.packet
+package fr.`override`.linkit.api.system.evente.packet
 
-import fr.`override`.linkit.api.system.event.packet.PacketEvents._
-import fr.`override`.linkit.api.system.event.{EventHookCategory, SimpleEventHook}
+import fr.`override`.linkit.api.system.evente.packet.PacketEvents._
+import fr.`override`.linkit.api.system.evente.{EventHookCategory, SimpleEventHook}
 
 //noinspection TypeAnnotation
 class PacketEventHooks extends EventHookCategory {

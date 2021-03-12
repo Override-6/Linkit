@@ -31,4 +31,6 @@ trait NetworkEntity {
 
     def getFragmentController(nameIdentifier: String): Option[RemoteFragmentController]
 
+    def toString: String
+
 }
