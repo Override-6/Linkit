@@ -12,7 +12,6 @@ class ConnectionNetworkEntity(server: RelayServer, identifier: String, communica
     private val sharedState = cache.get(3, SharedInstance[ConnectionState])
             .set(ConnectionState.CONNECTED) //technically already connected
 
-    override def addOnStateUpdate(action: ConnectionState => Unit): Unit = connection.addConnectionStateListener(action)
 
     override def getConnectionState: ConnectionState = connection.getState
 

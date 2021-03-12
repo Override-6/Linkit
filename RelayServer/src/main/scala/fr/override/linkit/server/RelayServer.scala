@@ -47,7 +47,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
     private var currentState: RelayState = RelayState.INACTIVE
     private val workerThread: RelayThreadPool = new RelayThreadPool("\b", 3)
-    override val notifier: EventNotifier = new EventNotifier
+    override val eventNotifier: EventNotifier = new EventNotifier
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
     override val relayVersion: Version = RelayServer.version
@@ -288,7 +288,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
 
 
     private def setState(state: RelayState): Unit = {
-        notifier.notifyEvent(RelayEvents.stateChange(state))
+        eventNotifier.notifyEvent(RelayEvents.stateChange(state))
         this.currentState = state
     }
 }
