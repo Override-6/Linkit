@@ -76,7 +76,7 @@ Here is a list of features that are already supported
 
 * Scoped Packet channels
 * Relay Extensions / Extension Fragments / Remote Fragments
-* Network accessors
+* Automatic reconnection
 * Shared cache (instance, collection, map) between connections
 * Schedulable tasks
 * Smart concurrency handling, with providable threads.
