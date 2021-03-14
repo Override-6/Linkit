@@ -1,8 +1,8 @@
 package fr.`override`.linkit.server.network
 
-import fr.`override`.linkit.api.network.cache.SharedInstance
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.api.network.{AbstractNetwork, ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.network.cache.{SharedCacheHandler, SharedInstance}
+import fr.`override`.linkit.api.network.{AbstractNetwork, ConnectionState, NetworkEntity, SelfNetworkEntity}
 import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.system.evente.network.NetworkEvents
@@ -11,7 +11,14 @@ import fr.`override`.linkit.server.connection.ClientConnection
 
 import java.sql.Timestamp
 
-class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extends AbstractNetwork(server) {
+class ServerNetwork private(server: RelayServer, globalCache: SharedCacheHandler)(implicit traffic: PacketTraffic) extends AbstractNetwork(server, globalCache) {
+
+    def this(server: RelayServer, traffic: PacketTraffic) = {
+        this(server, SharedCacheHandler.get("Global Shared Cache", ServerSharedCacheHandler())(traffic))(traffic)
+    }
+
+    override val selfEntity: SelfNetworkEntity =
+        new SelfNetworkEntity(server, SharedCacheHandler.get(server.identifier, ServerSharedCacheHandler()))
 
     override val startUpDate: Timestamp = globalCache.post(2, new Timestamp(System.currentTimeMillis()))
 
@@ -27,6 +34,12 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
             .cache
             .get(3, SharedInstance[ConnectionState])
             .set(ConnectionState.CONNECTED) //technically always connected
+
+    override protected def createEntity(identifier: String): NetworkEntity = {
+        //TODO Create remote breakpoints
+        //FIXME Could return an unexpected if another packet (ex: setProperty) is received into this communicator.
+        super.createEntity(identifier)
+    }
 
     override def createRelayEntity(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {
         new ConnectionNetworkEntity(server, identifier, communicator)
@@ -47,7 +60,10 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
         import CollectionModification._
-        lazy val entity = entityOpt.get
+        lazy val entity = entityOpt.orNull//get
+        println(s"mod = ${mod}")
+        println(s"index = ${index}")
+        println(s"entity = ${entity}")
         val event = mod match {
             case ADD => NetworkEvents.entityAdded(entity)
             case REMOVE => NetworkEvents.entityRemoved(entity)
@@ -55,4 +71,5 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
         }
         server.eventNotifier.notifyEvent(server.networkHooks, event)
     }
+
 }

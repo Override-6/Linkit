@@ -55,7 +55,7 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler
     override val properties: RelayProperties = new RelayProperties
     override val packetTranslator: PacketTranslator = new PacketTranslator(this)
-    override val network: ServerNetwork = new ServerNetwork(this)(traffic)
+    override val network: ServerNetwork = new ServerNetwork(this, traffic)
     private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
 
     override def scheduleTask[R](task: Task[R]): RelayTaskAction[R] = {
@@ -204,10 +204,14 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     private def listenSocketConnection(): Unit = {
         val socketContainer = new SocketContainer(true)
         try {
+            println("LISTENING SOCKETS")
             val clientSocket = serverSocket.accept()
+            println(s"clientSocket = ${clientSocket}")
             prepareSocket(clientSocket, socketContainer)
+            println(s"socketContainer = ${socketContainer}")
             runLater {
                 handleSocket(socketContainer)
+                println("Done.")
             }
         } catch {
             case e: SocketException =>
