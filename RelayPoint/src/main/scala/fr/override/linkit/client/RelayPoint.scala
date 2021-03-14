@@ -2,13 +2,13 @@ package fr.`override`.linkit.client
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.Relay.{Log, ServerIdentifier}
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayThreadPool}
+import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayThreadPool, packetWorkerExecution}
 import fr.`override`.linkit.api.exception._
 import fr.`override`.linkit.api.extension.{RelayExtensionLoader, RelayProperties}
 import fr.`override`.linkit.api.network._
 import fr.`override`.linkit.api.packet._
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.StringPacket
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.BytePacket
+import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.api.packet.fundamental._
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
@@ -20,7 +20,6 @@ import fr.`override`.linkit.api.system.evente.EventNotifier
 import fr.`override`.linkit.api.system.evente.relay.RelayEvents
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
 import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
-import fr.`override`.linkit.client.RelayPoint.{ConnectionCreated, ConnectionRefused}
 import fr.`override`.linkit.client.config.RelayPointConfiguration
 import fr.`override`.linkit.client.network.PointNetwork
 
@@ -31,10 +30,6 @@ import scala.util.control.NonFatal
 
 object RelayPoint {
     val version: Version = Version(name = "RelayPoint", version = "0.14.0", stable = false)
-
-    val ConnectionRefused = 0
-    val ConnectionCreated = 1
-    val ConnectionResumed = 2
 }
 
 class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
@@ -72,7 +67,6 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         Log.info("Computer name is " + System.getenv().get("COMPUTERNAME"))
         Log.info(relayVersion)
         Log.info(Relay.ApiVersion)
-
 
         try {
             PointPacketWorkerThread.start()
@@ -189,8 +183,8 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         val welcomePacket = PacketUtils.wrap(identifier.getBytes)
         socket.write(welcomePacket)
 
-        val code = systemChannel.nextPacket[BytePacket].value
-        if (code == ConnectionRefused) {
+        val accepted = systemChannel.nextPacket[BooleanPacket]
+        if (!accepted) {
             val refusalMessage = systemChannel.nextPacket[StringPacket].value
             throw RelayInitialisationException(refusalMessage)
         }
@@ -208,15 +202,13 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
 
     }
 
-    private def tryReconnect(state: ConnectionState, welcomePacket: Array[Byte]): Unit = {
+    @packetWorkerExecution //So the runLater must be specified in order to perform network operations
+    private def tryReconnect(state: ConnectionState, welcomePacket: Array[Byte]): Unit = runLater {
         if (state == ConnectionState.CONNECTED) {
             socket.write(welcomePacket) //The welcome packet will let the server continue his socket handling
-            val code = systemChannel.nextPacket[BytePacket].value
-            code match {
-                case ConnectionCreated => //We are new for the server
-                    pointNetwork.
-                    pointNetwork = new PointNetwork(this) //Purge the current
-            }
+            systemChannel.nextPacket[BooleanPacket]
+            pointNetwork.update()
+            packetTranslator.completeInitialisation(pointNetwork.globalCache)
         }
     }
 

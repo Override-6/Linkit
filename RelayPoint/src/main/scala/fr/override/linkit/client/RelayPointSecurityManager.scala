@@ -21,7 +21,7 @@ class RelayPointSecurityManager extends RelaySecurityManager {
             throw RelaySecurityException("Relay Identifier can't be empty")
         }
 
-        val blacklistedIdentifiers = Array(Relay.ServerIdentifier, "unknown", "BROADCAST")
+        val blacklistedIdentifiers = Array(Relay.ServerIdentifier, "unknown")
         if (blacklistedIdentifiers.contains(identifier)) {
             throw RelaySecurityException(s"'$identifier' is a blacklisted identifier !")
         }

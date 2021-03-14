@@ -17,19 +17,14 @@ class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {
                 .addListener(handleTraffic)
     }
 
-    override val startUpDate: Timestamp = globalCache(2)
-
-    //Once all entities are initialized for this relay, add himself to the network
-    sharedIdentifiers
-            .flush()
-            .add(relay.identifier)
+    override def startUpDate: Timestamp = globalCache(2)
 
     override def createRelayEntity(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {
         new RelayNetworkEntity(relay, identifier, communicator)
     }
 
     def update(): Unit = {
-        sharedIdentifiers.update()
+        globalCache.update()
     }
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
@@ -42,6 +37,5 @@ class PointNetwork(relay: RelayPoint) extends AbstractNetwork(relay) {
         }
         relay.eventNotifier.notifyEvent(relay.networkHooks, event)
     }
-
 
 }
