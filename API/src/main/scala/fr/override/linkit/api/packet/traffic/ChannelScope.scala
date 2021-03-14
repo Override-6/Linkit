@@ -55,8 +55,8 @@ object ChannelScope {
         }
 
         override def sendTo(packet: Packet, targetIDs: String*): Unit = {
-            assertAuthorised(targetIDs:_*)
-            writer.writePacket(packet, targetIDs:_*)
+            assertAuthorised(targetIDs: _*)
+            writer.writePacket(packet, targetIDs: _*)
         }
 
         override def areAuthorised(identifier: String*): Boolean = {
@@ -71,7 +71,7 @@ object ChannelScope {
 
         override def equals(obj: Any): Boolean = {
             obj match {
-                case ReservedScope(authorisedIds) => authorisedIds == this.authorisedIds
+                case s: ReservedScope => s.authorisedIds == this.authorisedIds
                 case _ => false
             }
         }

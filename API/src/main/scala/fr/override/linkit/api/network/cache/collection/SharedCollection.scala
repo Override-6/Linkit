@@ -4,7 +4,7 @@ import fr.`override`.linkit.api.concurrency.RelayThreadPool
 import fr.`override`.linkit.api.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
+import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory, SharedCacheHandler}
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
@@ -13,12 +13,14 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class SharedCollection[A <: Serializable](family: String,
+class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheHandler,
                                           identifier: Long,
                                           adapter: CollectionAdapter[A],
-                                          channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) with mutable.Iterable[A] {
+                                          channel: CommunicationPacketChannel)
+        extends HandleableSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
     private val networkListeners = ConsumerContainer[(CollectionModification, Long, A)]()
@@ -155,31 +157,36 @@ class SharedCollection[A <: Serializable](family: String,
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
     }
 
+    override protected def setCurrentContent(content: Array[A]): Unit = set(content)
 }
 
 object SharedCollection {
 
     private type S[A] = mutable.Seq[A] with mutable.Growable[A] with mutable.Buffer[A]
 
-    def set[A <: Serializable]: SharedCacheFactory[SharedCollection[A]] = {
-        ofInsertFilter[A]((coll, it) => !coll.contains(it))
+    def set[A <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = {
+        ofInsertFilter[A]((coll, it) => {
+            val b = !coll.contains(it)
+            println(s"Insert filter result : ${b} (collection: $coll, it: $it)")
+            b
+        })
     }
 
-    def buffer[A  <: Serializable]: SharedCacheFactory[SharedCollection[A]] = {
+    def buffer[A  <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = {
         ofInsertFilter[A]((_, _) => true)
     }
 
-    def apply[A  <: Serializable]: SharedCacheFactory[SharedCollection[A]] = buffer[A]
+    def apply[A  <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = buffer[A]
 
     /**
      * The insertFilter must be true in order to authorise the insertion
      * */
-    def ofInsertFilter[A  <: Serializable](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
-        (family: String, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+    def ofInsertFilter[A  <: Serializable : ClassTag](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
+        (handler: SharedCacheHandler, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
 
-            new SharedCollection[A](family, identifier, adapter, channel)
+            new SharedCollection[A](handler, identifier, adapter, channel)
         }
     }
 

@@ -7,6 +7,7 @@ import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.api.packet.traffic.{PacketInjectable, PacketTraffic}
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
+import fr.`override`.linkit.api.utils.JavaUtils
 import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
@@ -105,9 +106,10 @@ abstract class AbstractPacketTraffic(@NotNull config: RelayConfiguration,
 
     override def handleInjection(injection: PacketInjection): Unit = {
         if (injection.mayNotHandle) {
-            //println(s"Injection handling has been rejected for thread ${Thread.currentThread()}")
-            //println(s"The injection is already handled by thread ${injection.handlerThread}")
-            //injection.handlerThread.getStackTrace.foreach(println)
+            println(s"Injection handling has been rejected for thread ${Thread.currentThread()}")
+            println(s"The injection is already handled by thread ${injection.handlerThread}")
+            val trace = injection.handlerThread.getStackTrace
+            JavaUtils.printStackTrace(trace, Console.out)
             return
         }
 

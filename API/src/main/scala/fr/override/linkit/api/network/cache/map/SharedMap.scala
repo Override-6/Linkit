@@ -2,7 +2,7 @@ package fr.`override`.linkit.api.network.cache.map
 
 import fr.`override`.linkit.api.concurrency.RelayThreadPool
 import fr.`override`.linkit.api.network.cache.map.MapModification._
-import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory}
+import fr.`override`.linkit.api.network.cache.{HandleableSharedCache, SharedCacheFactory, SharedCacheHandler}
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
@@ -12,9 +12,9 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V)], channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
+class SharedMap[K, V](handler: SharedCacheHandler, identifier: Long, baseContent: Array[(K, V)], channel: CommunicationPacketChannel)
+        extends HandleableSharedCache[(K, V)](handler, identifier, channel) {
 
-    private val localMap = LocalMap()
     private val networkListeners = ConsumerContainer[(MapModification, K, V)]()
     private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]
 
@@ -22,7 +22,7 @@ class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V
 
     override var autoFlush: Boolean = true
 
-    override def toString: String = localMap.toString
+    override def toString: String = LocalMap.toString
 
     override def flush(): SharedMap.this.type = {
         collectionModifications.foreach(flushModification)
@@ -48,34 +48,34 @@ class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V
         this
     }
 
-    def get(k: K): Option[V] = localMap.get(k)
+    def get(k: K): Option[V] = LocalMap.get(k)
 
     def getOrWait(k: K): V = awaitPut(k)
 
-    def apply(k: K): V = localMap(k)
+    def apply(k: K): V = LocalMap(k)
 
     def clear(): Unit = {
-        localMap.clear()
+        LocalMap.clear()
         addLocalModification(CLEAR, null, null)
     }
 
     def put(k: K, v: V): Unit = {
-        localMap.put(k, v)
+        LocalMap.put(k, v)
         addLocalModification(PUT, k, v)
     }
 
-    def contains(k: K): Boolean = localMap.contains(k)
+    def contains(k: K): Boolean = LocalMap.contains(k)
 
     def remove(k: K): Unit = {
-        addLocalModification(REMOVE, k, localMap.remove(k))
+        addLocalModification(REMOVE, k, LocalMap.remove(k))
     }
 
     def mapped[nK, nV](map: (K, V) => (nK, nV)): BoundedMap.Immutable[nK, nV] = {
-        localMap.createBoundedMap(map)
+        LocalMap.createBoundedMap(map)
     }
 
     def foreach(action: (K, V) => Unit): this.type = {
-        localMap.foreach(action)
+        LocalMap.foreach(action)
         this
     }
 
@@ -90,14 +90,14 @@ class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V
     }
 
     def values: Iterable[V] = {
-        localMap.values
+        LocalMap.values
     }
 
     def keys: Iterable[K] = {
-        localMap.keys
+        LocalMap.keys
     }
 
-    def iterator: Iterator[(K, V)] = localMap.iterator
+    def iterator: Iterator[(K, V)] = LocalMap.iterator
 
     def size: Int = iterator.size
 
@@ -141,12 +141,12 @@ class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V
         val key = mod._2
         val value = mod._3
 
-        val action: LocalMap => Unit = modKind match {
+        val action: LocalMap.type => Unit = modKind match {
             case CLEAR => _.clear()
             case PUT => _.put(key, value)
             case REMOVE => _.remove(key)
         }
-        action(localMap)
+        action(LocalMap)
 
         modCount += 1
         networkListeners.applyAll(mod)
@@ -171,11 +171,14 @@ class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V
         modCount += 1
     }
 
-    case class LocalMap() {
+    override def currentContent: Array[Any] = LocalMap.toArray
+
+    override protected def setCurrentContent(content: Array[(K, V)]): Unit = LocalMap.set(content)
+
+    private object LocalMap {
 
         type nK
         type nV
-
 
         private val mainMap = {
             mutable.Map.from[K, V](baseContent)
@@ -240,14 +243,12 @@ class SharedMap[K, V](family: String, identifier: Long, baseContent: Array[(K, V
         //Only for debug purpose
         override def toString: String = mainMap.toString()
     }
-
-    override def currentContent: Array[Any] = localMap.toArray
 }
 
 object SharedMap {
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        (family: String, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
-            new SharedMap[K, V](family, identifier, ScalaUtils.slowCopy(baseContent), channel)
+        (handler: SharedCacheHandler, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+            new SharedMap[K, V](handler, identifier, ScalaUtils.slowCopy(baseContent), channel)
         }
     }
 

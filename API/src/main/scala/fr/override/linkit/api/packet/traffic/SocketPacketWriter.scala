@@ -30,7 +30,6 @@ class SocketPacketWriter(socket: DynamicSocket,
             BroadcastPacketCoordinates(identifier, ownerID, false, targetIDs.filter(_ != relayID): _*)
         }
 
-        //println(s"WRITING COORDS & PACKETS ($coords, $transformedPacket)")
         socket.write(translator.fromPacketAndCoords(transformedPacket, coords))
     }
 

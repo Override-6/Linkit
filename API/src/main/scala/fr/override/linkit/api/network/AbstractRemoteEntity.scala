@@ -15,10 +15,11 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
                                     override val identifier: String,
                                     private val communicator: CommunicationPacketChannel) extends NetworkEntity {
 
-    //println(s"CREATED REMOTE ENTITY NAMED '$identifier'")
+    println(s"CREATING REMOTE ENTITY NAMED '$identifier'")
     protected implicit val traffic: PacketTraffic = relay.traffic
 
-    override val cache: SharedCacheHandler = SharedCacheHandler.create(identifier, identifier)
+    override val cache: SharedCacheHandler = SharedCacheHandler.get(identifier, identifier)
+    println("Cache created !")
     private val remoteFragments = {
         val communicator = traffic
                 .getInjectable(4, ChannelScope.broadcast, PacketChannelCategories)
@@ -28,11 +29,15 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
                 .get(6, SharedCollection.set[String])
                 .mapped(name => new RemoteFragmentController(name, communicator.createCategory(name, ChannelScope.broadcast, CommunicationPacketChannel)))
     }
+    println("RemoteFragment created !")
+
     override val connectionDate: Timestamp = cache(2)
 
     override val apiVersion: Version = cache(4)
 
     override val relayVersion: Version = cache(5)
+
+    println("Versions and connection dates created !")
 
     override def getConnectionState: ConnectionState
 

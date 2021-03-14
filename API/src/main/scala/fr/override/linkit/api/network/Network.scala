@@ -8,9 +8,9 @@ import java.sql.Timestamp
 
 trait Network {
 
-    val startUpDate: Timestamp
-
     val selfEntity: SelfNetworkEntity
+
+    val globalCache: SharedCacheHandler
 
     def listEntities: List[NetworkEntity]
 
@@ -20,6 +20,6 @@ trait Network {
 
     def isConnected(identifier: String): Boolean
 
-    val globalCache: SharedCacheHandler
+    def startUpDate: Timestamp
 
 }

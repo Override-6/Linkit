@@ -7,6 +7,7 @@ import fr.`override`.linkit.api.network.{ConnectionState, Network, RemoteConsole
 import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.packet.traffic._
+import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.system.config.RelayConfiguration
 import fr.`override`.linkit.api.system.evente.EventNotifier
 import fr.`override`.linkit.api.system.evente.extension.ExtensionEventHooks
@@ -14,7 +15,6 @@ import fr.`override`.linkit.api.system.evente.network.NetworkEventHooks
 import fr.`override`.linkit.api.system.evente.packet.PacketEventHooks
 import fr.`override`.linkit.api.system.evente.relay.RelayEventHooks
 import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.api.system._
 import fr.`override`.linkit.api.task.TaskScheduler
 import org.apache.log4j.Logger
 import org.jetbrains.annotations.Nullable
@@ -37,6 +37,7 @@ import org.jetbrains.annotations.Nullable
 //TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
 //TODO Find a solution about packets that are send into a non-registered channel : if an exception is thrown, this can cause some problems, and if not, this can cause other problems. SOLUTION : Looking for "RemoteActionDescription" that can control and get some information about an action that where made over the network.
 //TODO Create a PacketTree that can let the RelaySecurityManager know the content and the structure of a packet without casting it or making weird reflection stuff.
+//TODO Replace all Any types by Serializable types in network.cache
 object Relay {
     val ApiVersion: Version = Version(name = "Api", version = "0.20.0", stable = false)
     val ServerIdentifier: String = "server"

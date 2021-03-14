@@ -43,7 +43,7 @@ class RemoteConsolesContainer(relay: Relay) {
 
     init()
 
-    protected def init() {
+    protected def init(): Unit = {
         printChannel.addOnPacketReceived((packet, coords) => {
             packet match {
                 case TaggedObjectPacket(header, msg: String) =>

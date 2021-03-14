@@ -10,13 +10,13 @@ import fr.`override`.linkit.api.system.evente.network.NetworkEvents
 
 abstract class AbstractNetwork(relay: Relay) extends Network {
 
-    override val globalCache: SharedCacheHandler = SharedCacheHandler.create("Global Shared Cache", Relay.ServerIdentifier)(relay.traffic)
+    override val globalCache: SharedCacheHandler = SharedCacheHandler.get("Global Shared Cache", Relay.ServerIdentifier)(relay.traffic)
     relay.packetTranslator.completeInitialisation(globalCache)
 
     override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 
     protected val sharedIdentifiers: SharedCollection[String] = globalCache
-            .getUpToDate(3, SharedCollection.set[String])
+            .get(3, SharedCollection.set[String])
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     private val communicator = relay.getInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)
@@ -32,12 +32,12 @@ abstract class AbstractNetwork(relay: Relay) extends Network {
 
     override def isConnected(identifier: String): Boolean = getEntity(identifier).isDefined
 
-    //Will replace the entity if the identifier is already present in the network's entities cache.
     protected def createEntity(identifier: String): NetworkEntity = {
         if (identifier == relay.identifier) {
             return selfEntity
         }
 
+        println(s"Creating entity $identifier")
         val channel = communicator.subInjectable(Array(identifier), CommunicationPacketChannel.providable, true)
         val ent = createRelayEntity(identifier, channel)
         ent

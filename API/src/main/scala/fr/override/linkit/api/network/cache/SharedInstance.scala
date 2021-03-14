@@ -6,9 +6,12 @@ import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChanne
 import fr.`override`.linkit.api.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
-class SharedInstance[A <: Serializable] private(family: String,
-                                                identifier: Long,
-                                                channel: CommunicationPacketChannel) extends HandleableSharedCache(family, identifier, channel) {
+import scala.reflect.ClassTag
+
+class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheHandler,
+                                                           identifier: Long,
+                                                           channel: CommunicationPacketChannel)
+        extends HandleableSharedCache[A](handler, identifier, channel) {
 
     override var autoFlush: Boolean = true
 
@@ -17,11 +20,11 @@ class SharedInstance[A <: Serializable] private(family: String,
     @volatile private var modCount = 0
     @volatile private var instance: A = _
 
-    def this(family: String,
+    def this(handler: SharedCacheHandler,
              identifier: Long,
              channel: CommunicationPacketChannel,
              value: A = null) = {
-        this(family, identifier, channel)
+        this(handler, identifier, channel)
         instance = value
     }
 
@@ -32,13 +35,20 @@ class SharedInstance[A <: Serializable] private(family: String,
                 this.instance = remoteInstance
                 modCount += 1
                 listeners.applyAll(remoteInstance)
-                //println(s"<$family> INSTANCE IS NOW (network): $instance")
+            //println(s"<$family> INSTANCE IS NOW (network): $instance")
 
             case _ => throw new UnexpectedPacketException("Unable to handle a non-ObjectPacket into SharedInstance")
         }
     }
 
     override def modificationCount(): Int = modCount
+
+    override def currentContent: Array[Any] = Array(instance)
+
+    override protected def setCurrentContent(content: Array[A]): Unit = {
+        content.ensuring(_.length == 1)
+        set(content(0))
+    }
 
     def get: A = instance
 
@@ -48,7 +58,7 @@ class SharedInstance[A <: Serializable] private(family: String,
         listeners.applyAll(t)
         //println(s"INSTANCE IS NOW (local) : $instance $autoFlush")
         if (autoFlush)
-            flush()
+        flush()
         this
     }
 
@@ -61,17 +71,15 @@ class SharedInstance[A <: Serializable] private(family: String,
         listeners += callback
         this
     }
-
-    override def currentContent: Array[Any] = Array(instance)
 }
 
 object SharedInstance {
 
-    def apply[A <: Serializable]: SharedCacheFactory[SharedInstance[A]] = {
-        (family: String, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
+    def apply[A <: Serializable : ClassTag]: SharedCacheFactory[SharedInstance[A]] = {
+        (handler: SharedCacheHandler, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel) => {
             if (baseContent.isEmpty)
-                new SharedInstance[A](family, identifier, channel)
-            else new SharedInstance[A](family, identifier, channel, baseContent(0).asInstanceOf[A])
+                new SharedInstance[A](handler, identifier, channel)
+            else new SharedInstance[A](handler, identifier, channel, baseContent(0).asInstanceOf[A])
         }
     }
 

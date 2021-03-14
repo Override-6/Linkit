@@ -4,7 +4,7 @@ import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChanne
 
 trait SharedCacheFactory[A <: SharedCache] {
 
-    def createNew(family: String, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel): A
+    def createNew(handler: SharedCacheHandler, identifier: Long, baseContent: Array[Any], channel: CommunicationPacketChannel): A
 
     final def factory: this.type = this //for Java users
 

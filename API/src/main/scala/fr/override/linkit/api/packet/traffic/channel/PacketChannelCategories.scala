@@ -27,13 +27,15 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
     }
 
     def createCategory[C <: PacketInjectable](name: String, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
-        if (categories.contains(name))
-            throw new IllegalArgumentException(s"The category '$name' already exists for this categorised channel")
+        //TODO if (categories.contains(name)) <- Has need to be removed due to the client/server reconnection.
+        //         throw new IllegalArgumentException(s"The category '$name' already exists for this categorised channel")
 
-        val writer = traffic.newWriter(identifier, WrappedPacket(name, _))
-        val channel = factory.createNew(scopeFactory(writer))
-        categories.put(name, channel)
-        channel
+        categories.getOrElseUpdate(name, {
+            val writer = traffic.newWriter(identifier, WrappedPacket(name, _))
+            val channel = factory.createNew(scopeFactory(writer))
+            categories.put(name, channel)
+            channel
+        }).asInstanceOf[C]
     }
 
 }
