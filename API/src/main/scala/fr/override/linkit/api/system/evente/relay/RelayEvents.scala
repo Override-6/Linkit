@@ -12,8 +12,8 @@ object RelayEvents {
                 case CLOSED => category.closed
                 case ENABLED => category.ready
                 case ENABLING => category.start
-                case CONNECTING => category.connecting
-                case DISCONNECTED => category.disconnected
+                //TODO case CONNECTING => category.connecting
+                //TODO case DISCONNECTED => category.disconnected
                 case _ => throw new IllegalArgumentException(s"$state is not a state that can trigger an event.")
             }
             !!(Array(category.stateChange, hook))

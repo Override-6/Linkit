@@ -1,5 +1,6 @@
 package fr.`override`.linkit.api.network.cache
 
+import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayObjectPacket
 import fr.`override`.linkit.api.packet.fundamental.ValPacket.LongPacket
 import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
@@ -25,10 +26,11 @@ abstract class HandleableSharedCache[A <: Serializable : ClassTag](@Nullable han
         if (handler == null)
             return this
 
-        val owner = handler.getOwner(identifier)
-        //Simulating an handler content retrieval request
-        channel.sendRequest(WrappedPacket(family, LongPacket(identifier)), owner)
+        //asking server to give us his content version of our cache
+        println(s"<$family> UPDATING CACHE $identifier")
+        channel.sendRequest(WrappedPacket(family, LongPacket(identifier)), Relay.ServerIdentifier)
         val content = channel.nextResponse[ArrayObjectPacket].value
+        println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
 
         setCurrentContent(ScalaUtils.slowCopy(content))
         this

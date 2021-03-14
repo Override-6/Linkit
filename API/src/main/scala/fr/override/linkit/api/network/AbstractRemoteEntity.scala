@@ -13,12 +13,12 @@ import java.sql.Timestamp
 
 abstract class AbstractRemoteEntity(private val relay: Relay,
                                     override val identifier: String,
+                                    override val cache: SharedCacheHandler,
                                     private val communicator: CommunicationPacketChannel) extends NetworkEntity {
 
     println(s"CREATING REMOTE ENTITY NAMED '$identifier'")
     protected implicit val traffic: PacketTraffic = relay.traffic
 
-    override val cache: SharedCacheHandler = SharedCacheHandler.get(identifier, identifier)
     println("Cache created !")
     private val remoteFragments = {
         val communicator = traffic
@@ -31,13 +31,16 @@ abstract class AbstractRemoteEntity(private val relay: Relay,
     }
     println("RemoteFragment created !")
 
-    override val connectionDate: Timestamp = cache(2)
+    override def connectionDate: Timestamp = cache.getOrWait(2)
 
-    override val apiVersion: Version = cache(4)
+    override def apiVersion: Version = cache.getOrWait(4)
 
-    override val relayVersion: Version = cache(5)
+    override def relayVersion: Version = cache.getOrWait(5)
 
-    println("Versions and connection dates created !")
+    override def update(): this.type = {
+        cache.update()
+        this
+    }
 
     override def getConnectionState: ConnectionState
 

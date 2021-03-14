@@ -5,17 +5,17 @@ import fr.`override`.linkit.api.system.Version
 
 import java.sql.Timestamp
 
-trait NetworkEntity {
+trait NetworkEntity extends Updatable {
 
     val identifier: String
 
     val cache: SharedCacheHandler
 
-    val connectionDate: Timestamp
+    def connectionDate: Timestamp
 
-    val apiVersion: Version
+    def apiVersion: Version
 
-    val relayVersion: Version
+    def relayVersion: Version
 
     def getConnectionState: ConnectionState
 

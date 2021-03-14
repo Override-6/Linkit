@@ -17,9 +17,9 @@ import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheHandler,
-                                          identifier: Long,
-                                          adapter: CollectionAdapter[A],
-                                          channel: CommunicationPacketChannel)
+                                                     identifier: Long,
+                                                     adapter: CollectionAdapter[A],
+                                                     channel: CommunicationPacketChannel)
         extends HandleableSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
@@ -42,6 +42,16 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheHandler
 
     override def iterator: Iterator[A] = adapter.iterator
 
+    override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
+        packet match {
+            case modPacket: ObjectPacket => RelayThreadPool.runLaterOrHere {
+                handleNetworkModRequest(modPacket)
+            }
+        }
+    }
+
+    override protected def setCurrentContent(content: Array[A]): Unit = set(content)
+
     def contains(a: Any): Boolean = adapter.contains(a)
 
     def add(t: A): this.type = {
@@ -49,6 +59,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheHandler
         addLocalModification(ADD, -1, t)
         this
     }
+
 
     def foreach(action: A => Unit): this.type = {
         adapter.get().foreach(action)
@@ -60,7 +71,6 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheHandler
         addLocalModification(ADD, i, t)
         this
     }
-
 
     def set(i: Int, t: A): this.type = {
         addLocalModification(SET, i, adapter.set(i, t))
@@ -127,14 +137,6 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheHandler
         //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
     }
 
-    override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        packet match {
-            case modPacket: ObjectPacket => RelayThreadPool.runLaterOrHere {
-                handleNetworkModRequest(modPacket)
-            }
-        }
-    }
-
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
         val mod: (CollectionModification, Long, Any) = packet.casted
         val modKind: CollectionModification = mod._1
@@ -156,8 +158,6 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheHandler
 
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
     }
-
-    override protected def setCurrentContent(content: Array[A]): Unit = set(content)
 }
 
 object SharedCollection {
@@ -259,7 +259,7 @@ object SharedCollection {
 
         private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit =
             RelayThreadPool.runLaterOrHere {
-                boundedCollections.foreach(action)
+                boundedCollections.clone.foreach(action)
             }
     }
 

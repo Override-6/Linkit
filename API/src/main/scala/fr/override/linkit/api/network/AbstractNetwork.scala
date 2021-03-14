@@ -8,18 +8,15 @@ import fr.`override`.linkit.api.packet.traffic.ChannelScope
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.system.evente.network.NetworkEvents
 
-abstract class AbstractNetwork(relay: Relay) extends Network {
+abstract class AbstractNetwork(relay: Relay, override val globalCache: SharedCacheHandler) extends Network {
 
-    override val globalCache: SharedCacheHandler = SharedCacheHandler.get("Global Shared Cache", Relay.ServerIdentifier)(relay.traffic)
     relay.packetTranslator.completeInitialisation(globalCache)
-
-    override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay)
 
     protected val sharedIdentifiers: SharedCollection[String] = globalCache
             .get(3, SharedCollection.set[String])
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
-    private val communicator = relay.getInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)
+    protected val communicator: CommunicationPacketChannel = relay.getInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)
     private val notifier = relay.eventNotifier
 
     override def listEntities: List[NetworkEntity] = entities.to(List)

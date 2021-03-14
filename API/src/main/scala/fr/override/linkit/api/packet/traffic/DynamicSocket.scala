@@ -8,7 +8,7 @@ import fr.`override`.linkit.api.packet.serialization.NumberSerializer
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
-import java.io._
+import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
 abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
@@ -29,7 +29,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
             totalWriteTime += t1 - t0
             //NETWORK-DEBUG-MARK
-            println(s"written : ${new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${buff.length}) totalWriteTime: $totalWriteTime")
+            println(s"${Console.YELLOW}written : ${new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${buff.length}) totalWriteTime: $totalWriteTime ${Console.RESET}")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
 
