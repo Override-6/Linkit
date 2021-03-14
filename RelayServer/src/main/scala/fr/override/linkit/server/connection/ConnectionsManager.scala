@@ -3,8 +3,6 @@ package fr.`override`.linkit.server.connection
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.concurrency.PacketWorkerThread
 import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.BytePacket
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.server.RelayServer
@@ -47,7 +45,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      * */
     def registerConnection(identifier: String,
                            socket: SocketContainer): Unit = {
-        println(s"Registering connection of '$identifier'...")
+        println(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
         if (connections.contains(identifier))
             throw RelayInitialisationException(s"This relay id is already registered ! ('$identifier')")
 
@@ -59,8 +57,8 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connection = ClientConnection.open(connectionSession)
         connections.put(identifier, connection)
 
-        println("Sending authorisation packet of value '...")
-        connection.sendPacket(BytePacket(RelayServer.ConnectionCreated), PacketTraffic.SystemChannelID)
+        println("Sending authorisation packet...")
+        server.sendAuthorisedConnection(socket)
 
         val canConnect = server.securityManager.canConnect(connection)
         if (canConnect) {
@@ -74,7 +72,6 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
         connections.remove(identifier)
         connection.close(CloseReason.SECURITY_CHECK)
-        println(s"Connection with $identifier successfully handled !")
     }
 
     def broadcastMessage(err: Boolean, msg: String): Unit = {

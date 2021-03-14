@@ -11,18 +11,19 @@ class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWr
     override val relayID: String = traffic.relayID
     override val ownerID: String = traffic.ownerID
 
-    override def writePacket(packet: Packet, targetIDs: String*): Unit = targetIDs.foreach(targetID => {
-        if (targetID == server.identifier) {
-            traffic.handleInjection(PacketInjections.unhandled(DedicatedPacketCoordinates(identifier, targetID, relayID), packet))
-            return
-        }
-        //println(s"WRITING PACKETS $packet TO $targetID")
-        if (server.isConnected(targetID)) {
-            server.getConnection(targetID).sendPacket(packet, identifier)
-        } else {
-            throw ConnectionException(s"Attempted to send a packet to target $targetID, but this target is not connected.")
-        }
-    })
+    override def writePacket(packet: Packet, targetIDs: String*): Unit = {
+        targetIDs.foreach(targetID => {
+            if (targetID == server.identifier) {
+                traffic.handleInjection(PacketInjections.unhandled(DedicatedPacketCoordinates(identifier, targetID, relayID), packet))
+                return
+            }
+            if (server.isConnected(targetID)) {
+                server.getConnection(targetID).get.sendPacket(packet, identifier)
+            } else {
+                throw ConnectionException(s"Attempted to send a packet to target $targetID, but this target is not connected.")
+            }
+        })
+    }
 
     override def writeBroadcastPacket(packet: Packet, discarded: String*): Unit = {
         server.broadcastPacketToConnections(packet, ownerID, identifier, discarded: _*)

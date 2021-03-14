@@ -7,6 +7,7 @@ import fr.`override`.linkit.api.packet.traffic.PacketTraffic
 import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.system.evente.network.NetworkEvents
 import fr.`override`.linkit.server.RelayServer
+import fr.`override`.linkit.server.connection.ClientConnection
 
 import java.sql.Timestamp
 
@@ -16,7 +17,7 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
 
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
-                .addListener((_, _, _) => if (entities != null) () /*println("entities are now : " + entities)*/) //debug purposes
+                .addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
                 .add(server.identifier)
                 .flush()
                 .mapped(createEntity)
@@ -25,7 +26,7 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
     selfEntity
             .cache
             .get(3, SharedInstance[ConnectionState])
-            .set(ConnectionState.CONNECTED) //technically already connected
+            .set(ConnectionState.CONNECTED) //technically always connected
 
     override def createRelayEntity(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {
         new ConnectionNetworkEntity(server, identifier, communicator)
@@ -38,6 +39,10 @@ class ServerNetwork(server: RelayServer)(implicit traffic: PacketTraffic) extend
                         throw new IllegalStateException(s"Could not remove entity '$identifier' from network as long as it still open")
                     sharedIdentifiers.remove(identifier)
                 })
+    }
+
+    private[server] def addEntity(connection: ClientConnection): Unit = {
+        sharedIdentifiers.add(connection.identifier)
     }
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {

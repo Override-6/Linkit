@@ -8,7 +8,7 @@ import fr.`override`.linkit.server.RelayServer
 class ConnectionNetworkEntity(server: RelayServer, identifier: String, communicator: CommunicationPacketChannel)
         extends AbstractRemoteEntity(server, identifier, communicator) {
 
-    private val connection = server.getConnection(identifier)
+    private val connection = server.getConnection(identifier).get
     private val sharedState = cache.get(3, SharedInstance[ConnectionState])
             .set(ConnectionState.CONNECTED) //technically already connected
 

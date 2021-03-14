@@ -49,7 +49,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         ConnectionPacketWorker.start()
     }
 
-    def sendPacket(packet: Packet, channelID: Int): Unit =  {
+    def sendPacket(packet: Packet, channelID: Int): Unit = {
         runLater {
             val bytes = packetTranslator.fromPacketAndCoords(packet, DedicatedPacketCoordinates(channelID, identifier, server.identifier))
             session.send(bytes)
@@ -70,14 +70,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
     def runLater(callback: => Unit): Unit = {
         workerThread.runLater(callback)
-    }
-
-    private[server] def concludeInitialisation(): Unit = {
-        val entity = server.network.getEntity(identifier).get
-        val connectionApiVersion = entity.apiVersion
-
-        if (connectionApiVersion != Relay.ApiVersion)
-            Console.err.println("The api version of this relay differs from the api version of the server, some connectivity problems could occur")
     }
 
     override def isClosed: Boolean = closed
