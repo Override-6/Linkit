@@ -1,0 +1,15 @@
+package fr.`override`.linkit.skull.internal.system
+
+import fr.`override`.linkit.skull.internal.system.CloseReason.NOT_SPECIFIED
+
+trait JustifiedCloseable extends AutoCloseable {
+
+    def close(reason: CloseReason): Unit
+
+    def isClosed: Boolean
+
+    def isOpen: Boolean = !isClosed
+
+    override def close(): Unit = close(NOT_SPECIFIED)
+
+}

@@ -1,10 +1,8 @@
 package fr.`override`.linkit.server.task
 
-import fr.`override`.linkit.api.exception.TaskException
-import fr.`override`.linkit.api.packet.DedicatedPacketCoordinates
-import fr.`override`.linkit.api.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.system.{CloseReason, SystemOrder}
-import fr.`override`.linkit.api.task.{TaskCompleterHandler, TaskExecutor, TaskTicket, TasksHandler}
+import fr.`override`.linkit.skull.connection.packet.fundamental.TaskInitPacket
+import fr.`override`.linkit.skull.internal.system.{CloseReason, SystemOrder}
+import fr.`override`.linkit.skull.connection.task.{TaskException, TaskExecutor, TasksHandler}
 import fr.`override`.linkit.server.connection.ClientConnectionSession
 
 class ConnectionTasksHandler(session: ClientConnectionSession) extends TasksHandler {

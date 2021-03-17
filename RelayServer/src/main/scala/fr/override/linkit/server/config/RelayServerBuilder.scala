@@ -1,6 +1,6 @@
 package fr.`override`.linkit.server.config
 
-import fr.`override`.linkit.api.system.fsa.{FileSystemAdapter, JDKFileSystemAdapters}
+import fr.`override`.linkit.skull.internal.system.fsa.FileSystemAdapter
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.server.security.RelayServerSecurityManager
 
@@ -27,7 +27,7 @@ class RelayServerBuilder {
 
     def build(): RelayServer = {
         val builder = this
-        val configuration = new RelayServerConfiguration {
+        val configuration = new ServerConnectionConfiguration {
             override val enableExtensionsFolderLoad: Boolean = builder.enableExtensionsFolderLoad
             override val enableTasks: Boolean = builder.enableTasks
             override val enableEventHandling: Boolean = builder.enableEventHandling
@@ -46,7 +46,7 @@ class RelayServerBuilder {
             override val maxConnection: Int = builder.maxConnection
             override val relayIDAmbiguityStrategy: AmbiguityStrategy = builder.relayIDAmbiguityStrategy
             override val extensionsFolder: String = builder.extensionsFolder
-        }: RelayServerConfiguration
+        }: ServerConnectionConfiguration
         new RelayServer(configuration)
     }
 

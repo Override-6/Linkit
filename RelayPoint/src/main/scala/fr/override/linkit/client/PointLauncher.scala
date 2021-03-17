@@ -1,7 +1,7 @@
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.api.concurrency.relayWorkerExecution
-import fr.`override`.linkit.api.system.CloseReason
+import fr.`override`.linkit.internal.concurrency.relayWorkerExecution
+import fr.`override`.linkit.skull.internal.system.CloseReason
 import fr.`override`.linkit.client.config.RelayPointBuilder
 
 import java.net.InetSocketAddress
@@ -49,7 +49,7 @@ object PointLauncher {
 
         relayPoint runLater {
             val hooks = relayPoint.relayHooks
-            hooks.connecting.await()
+            hooks.connected.await()
             hooks.ready.await()
         } runLater {
             startRelay(relayPoint, ideRun)

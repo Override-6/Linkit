@@ -1,30 +1,28 @@
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.Relay.{Log, ServerIdentifier}
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayThreadPool, packetWorkerExecution}
-import fr.`override`.linkit.api.exception._
-import fr.`override`.linkit.api.extension.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.network._
-import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.fundamental.RefPacket.StringPacket
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
-import fr.`override`.linkit.api.packet.fundamental._
-import fr.`override`.linkit.api.packet.serialization.PacketTranslator
-import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic.SystemChannelID
-import fr.`override`.linkit.api.packet.traffic._
-import fr.`override`.linkit.api.system.RelayState._
-import fr.`override`.linkit.api.system._
-import fr.`override`.linkit.api.system.evente.EventNotifier
-import fr.`override`.linkit.api.system.evente.relay.RelayEvents
-import fr.`override`.linkit.api.system.security.RelaySecurityManager
-import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
-import fr.`override`.linkit.client.config.RelayPointConfiguration
+import fr.`override`.linkit.skull.Relay
+import fr.`override`.linkit.skull.Relay.{Log, ServerIdentifier}
+import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, RelayThreadPool, packetWorkerExecution}
+import fr.`override`.linkit.skull.exception._
+import fr.`override`.linkit.skull.internal.plugin.RelayExtensionLoader
+import fr.`override`.linkit.skull.connection.network._
+import fr.`override`.linkit.skull.connection.packet._
+import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.StringPacket
+import fr.`override`.linkit.skull.connection.packet.fundamental.ValPacket.BooleanPacket
+import fr.`override`.linkit.skull.connection.packet.fundamental._
+import fr.`override`.linkit.skull.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.skull.connection.packet.traffic.PacketTraffic.SystemChannelID
+import fr.`override`.linkit.skull.connection.packet.traffic._
+import fr.`override`.linkit.skull.internal.system.RelayState._
+import fr.`override`.linkit.skull.internal.system._
+import fr.`override`.linkit.skull.internal.system.event.relay.RelayEvents
+import fr.`override`.linkit.skull.internal.system.security.RelaySecurityManager
+import fr.`override`.linkit.skull.connection.task.{Task, TaskException}
+import fr.`override`.linkit.client.config.ClientConnectionConfiguration
 import fr.`override`.linkit.client.network.PointNetwork
-
 import java.nio.channels.AsynchronousCloseException
 import java.nio.charset.Charset
+
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -32,7 +30,7 @@ object RelayPoint {
     val version: Version = Version(name = "RelayPoint", version = "0.14.0", stable = false)
 }
 
-class RelayPoint private[client](override val configuration: RelayPointConfiguration) extends Relay {
+class RelayPoint private[client](override val configuration: ClientConnectionConfiguration) extends Relay {
 
     @volatile private var open = false
 
@@ -199,12 +197,11 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
         Log.info("Initialising Network...")
         this.pointNetwork = new PointNetwork(this)
         Log.info("Network initialised !")
-
     }
 
     @packetWorkerExecution //So the runLater must be specified in order to perform network operations
-    private def tryReconnect(state: ConnectionState, welcomePacket: Array[Byte]): Unit = runLater {
-        if (state == ConnectionState.CONNECTED) {
+    private def tryReconnect(state: ConnectionState, welcomePacket: Array[Byte]): Unit = {
+        if (state == ConnectionState.CONNECTED && socket.isOpen) runLater {
             socket.write(welcomePacket) //The welcome packet will let the server continue his socket handling
             systemChannel.nextPacket[BooleanPacket]
             pointNetwork.update()
@@ -228,9 +225,9 @@ class RelayPoint private[client](override val configuration: RelayPointConfigura
             throw new RelayCloseException("Relay Point have to be started !")
     }
 
-    private def setState(state: RelayState): Unit = {
-        eventNotifier.notifyEvent(RelayEvents.stateChange(state))
-        this.currentState = state
+    private def setState(newState: RelayState): Unit = {
+        eventNotifier.notifyEvent(RelayEvents.stateChange(newState))
+        this.currentState = newState
     }
 
     private def ensureTargetValid(targetID: String): Unit = {

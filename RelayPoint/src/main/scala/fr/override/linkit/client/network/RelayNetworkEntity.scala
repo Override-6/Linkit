@@ -1,10 +1,10 @@
 package fr.`override`.linkit.client.network
 
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.network.cache.{SharedCacheHandler, SharedInstance}
-import fr.`override`.linkit.api.network.{AbstractRemoteEntity, ConnectionState}
-import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.system.evente.network.NetworkEvents
+import fr.`override`.linkit.skull.Relay
+import fr.`override`.linkit.skull.connection.network.cache.{SharedCacheHandler, SharedInstance}
+import fr.`override`.linkit.skull.connection.network.ConnectionState
+import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.skull.internal.system.event.network.NetworkEvents
 
 class RelayNetworkEntity private(relay: Relay,
                                  identifier: String,

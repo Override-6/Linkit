@@ -2,8 +2,8 @@ package fr.`override`.linkit.client.config
 
 import java.net.InetSocketAddress
 
-import fr.`override`.linkit.api.system.fsa.{FileSystemAdapter, JDKFileSystemAdapters}
-import fr.`override`.linkit.api.system.security.RelaySecurityManager
+import fr.`override`.linkit.skull.internal.system.fsa.FileSystemAdapter
+import fr.`override`.linkit.skull.internal.system.security.RelaySecurityManager
 import fr.`override`.linkit.client.{RelayPoint, RelayPointSecurityManager}
 
 abstract class RelayPointBuilder {
@@ -35,9 +35,9 @@ abstract class RelayPointBuilder {
     /**
      * @return a RelayPointConfiguration based the current settings
      * */
-    def genConfig: RelayPointConfiguration = {
+    def genConfig: ClientConnectionConfiguration = {
         val builder = this
-        new RelayPointConfiguration {
+        new ClientConnectionConfiguration {
             override val serverAddress: InetSocketAddress = builder.serverAddress
 
             override val enableExtensionsFolderLoad: Boolean = builder.enableExtensionsFolderLoad

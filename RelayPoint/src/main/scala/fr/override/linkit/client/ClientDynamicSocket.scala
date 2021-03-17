@@ -1,7 +1,6 @@
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.packet.traffic.DynamicSocket
+import fr.`override`.linkit.skull.Relay
 
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}

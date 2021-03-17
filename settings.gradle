@@ -1,4 +1,4 @@
-include 'API'
+include 'Skull'
 include 'Examples-Prototypes'
 include 'RelayPoint'
 include 'RelayServer'
@@ -8,4 +8,5 @@ include 'LinKitExtensions:EasySharing'
 findProject(':LinKitExtensions:EasySharing')?.name = 'EasySharing'
 include 'LinKitExtensions:RelayController'
 findProject(':LinKitExtensions:RelayController')?.name = 'RelayController'
+include 'AbstractCore'
 

@@ -3,8 +3,6 @@ package fr.`override`.linkit.server.connection
 import java.io._
 import java.net.Socket
 
-import fr.`override`.linkit.api.packet.traffic.DynamicSocket
-
 class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnect) {
 
     override def boundIdentifier: String = identifier

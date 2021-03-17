@@ -1,10 +1,9 @@
 package fr.`override`.linkit.client
 
 import com.sun.glass.ui.Application
-import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayRefPacket
-import fr.`override`.linkit.api.packet.fundamental.WrappedPacket
-import fr.`override`.linkit.api.packet.serialization.LocalCachedObjectSerializer
-import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
+import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ArrayRefPacket
+import fr.`override`.linkit.skull.connection.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.skull.connection.packet.{Packet, PacketCoordinates}
 
 import java.util.concurrent.ThreadLocalRandom
 import scala.annotation.tailrec

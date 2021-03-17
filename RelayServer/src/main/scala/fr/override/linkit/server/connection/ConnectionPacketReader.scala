@@ -1,7 +1,6 @@
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.traffic.{DynamicSocket, PacketInjections, PacketReader}
+import fr.`override`.linkit.skull.connection.packet._
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
 

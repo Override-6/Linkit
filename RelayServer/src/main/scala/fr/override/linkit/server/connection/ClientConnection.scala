@@ -1,17 +1,16 @@
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.concurrency.{PacketWorkerThread, RelayThreadPool, relayWorkerExecution}
-import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
-import fr.`override`.linkit.api.network.{ConnectionState, RemoteConsole}
-import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.fundamental._
-import fr.`override`.linkit.api.packet.traffic.PacketInjections
-import fr.`override`.linkit.api.system._
-import fr.`override`.linkit.api.task.TasksHandler
+import fr.`override`.linkit.skull.Relay
+import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, RelayThreadPool, relayWorkerExecution}
+import fr.`override`.linkit.skull.connection.network.{ConnectionState, RemoteConsole}
+import fr.`override`.linkit.skull.connection.packet._
+import fr.`override`.linkit.skull.connection.packet.fundamental._
+import fr.`override`.linkit.skull.internal.system.{RelayException, _}
+import fr.`override`.linkit.skull.connection.task.TasksHandler
 import org.jetbrains.annotations.NotNull
-
 import java.net.Socket
+import fr.`override`.linkit.skull.internal.system.event.packet.PacketEvents
+
 import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends JustifiedCloseable {
@@ -51,8 +50,9 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
     def sendPacket(packet: Packet, channelID: Int): Unit = {
         runLater {
-            val bytes = packetTranslator.fromPacketAndCoords(packet, DedicatedPacketCoordinates(channelID, identifier, server.identifier))
-            session.send(bytes)
+            val coords = DedicatedPacketCoordinates(channelID, identifier, server.identifier)
+            val result = packetTranslator.fromPacketAndCoords(packet, coords)
+            session.send(result)
         }
     }
 
@@ -66,8 +66,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
     def getState: ConnectionState = session.getSocketState
 
-    def addConnectionStateListener(action: ConnectionState => Unit): Unit = session.addStateListener(action)
-
     def runLater(callback: => Unit): Unit = {
         workerThread.runLater(callback)
     }
@@ -79,8 +77,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         session.updateSocket(socket)
     }
 
-    private[connection] def sendBytes(bytes: Array[Byte]): Unit = {
-        session.send(PacketUtils.wrap(bytes))
+    def send(result: PacketSerializationResult): Unit = {
+        session.send(result)
+    }
+
+    private[connection] def send(bytes: Array[Byte]): Unit = {
+        session.send(bytes)
     }
 
     object ConnectionPacketWorker extends PacketWorkerThread {

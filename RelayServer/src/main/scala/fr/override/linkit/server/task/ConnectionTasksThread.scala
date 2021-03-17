@@ -2,10 +2,9 @@ package fr.`override`.linkit.server.task
 
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 
-import fr.`override`.linkit.api.network.RemoteConsole
-import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
-import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
-import fr.`override`.linkit.api.task.TaskTicket
+import fr.`override`.linkit.skull.connection.network.RemoteConsole
+import .PacketInjection
+import fr.`override`.linkit.skull.internal.system.{CloseReason, JustifiedCloseable}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

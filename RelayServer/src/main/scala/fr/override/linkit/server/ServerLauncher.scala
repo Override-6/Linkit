@@ -1,6 +1,6 @@
 package fr.`override`.linkit.server
 
-import fr.`override`.linkit.api.system.CloseReason
+import fr.`override`.linkit.skull.internal.system.CloseReason
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
 
 import java.nio.file.Paths

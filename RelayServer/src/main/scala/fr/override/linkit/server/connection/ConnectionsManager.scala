@@ -1,10 +1,10 @@
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.concurrency.PacketWorkerThread
-import fr.`override`.linkit.api.exception.{RelayException, RelayInitialisationException}
-import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
-import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable}
+import fr.`override`.linkit.skull.Relay
+import fr.`override`.linkit.internal.concurrency.PacketWorkerThread
+import fr.`override`.linkit.skull.exception.RelayInitialisationException
+import fr.`override`.linkit.skull.connection.packet.Packet
+import fr.`override`.linkit.skull.internal.system.{CloseReason, JustifiedCloseable, RelayException, RelayInitialisationException}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
@@ -93,8 +93,8 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
                 .filter(con => !discardedIDs.contains(con.identifier) && con.isConnected)
                 .foreach(connection => {
                     val coordinates = DedicatedPacketCoordinates(injectableID, connection.identifier, senderID)
-                    val bytes = translator.fromPacketAndCoordsNoWrap(packet, coordinates)
-                    connection.sendBytes(bytes)
+                    val result = translator.fromPacketAndCoords(packet, coordinates)
+                    connection.send(result)
                 })
     }
 
@@ -151,6 +151,6 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
         val connection = getConnection(target)
         if (connection == null)
             throw new RelayException(s"unknown ID '$target' to deflect packet")
-        connection.sendBytes(bytes)
+        connection.send(bytes)
     }
 }

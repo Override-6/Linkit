@@ -1,24 +1,22 @@
 package fr.`override`.linkit.server
 
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.Relay.Log
-import fr.`override`.linkit.api.concurrency.RelayThreadPool
-import fr.`override`.linkit.api.exception.{RelayCloseException, RelayInitialisationException}
-import fr.`override`.linkit.api.extension.{RelayExtensionLoader, RelayProperties}
-import fr.`override`.linkit.api.network._
-import fr.`override`.linkit.api.packet._
-import fr.`override`.linkit.api.packet.fundamental.RefPacket.StringPacket
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.BooleanPacket
-import fr.`override`.linkit.api.packet.serialization.PacketTranslator
-import fr.`override`.linkit.api.packet.traffic.ChannelScope.ScopeFactory
-import fr.`override`.linkit.api.packet.traffic._
-import fr.`override`.linkit.api.system.RelayState.{CLOSED, CRASHED, ENABLED, ENABLING}
-import fr.`override`.linkit.api.system._
-import fr.`override`.linkit.api.system.evente.EventNotifier
-import fr.`override`.linkit.api.system.evente.relay.RelayEvents
-import fr.`override`.linkit.api.task.{Task, TaskCompleterHandler}
+import fr.`override`.linkit.skull.Relay
+import fr.`override`.linkit.skull.Relay.Log
+import fr.`override`.linkit.internal.concurrency.RelayThreadPool
+import fr.`override`.linkit.skull.exception.RelayCloseException
+import fr.`override`.linkit.skull.internal.plugin.RelayExtensionLoader
+import fr.`override`.linkit.skull.connection.network._
+import fr.`override`.linkit.skull.connection.packet._
+import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.StringPacket
+import fr.`override`.linkit.skull.connection.packet.fundamental.ValPacket.BooleanPacket
+import fr.`override`.linkit.skull.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.skull.connection.packet.traffic._
+import fr.`override`.linkit.skull.internal.system.RelayState.{CLOSED, CRASHED, ENABLED, ENABLING}
+import fr.`override`.linkit.skull.internal.system._
+import fr.`override`.linkit.skull.internal.system.event.relay.RelayEvents
+import fr.`override`.linkit.skull.connection.task.Task
 import fr.`override`.linkit.server.RelayServer.Identifier
-import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerConfiguration}
+import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
 import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
 import fr.`override`.linkit.server.network.ServerNetwork
@@ -36,7 +34,7 @@ object RelayServer {
 }
 
 
-class RelayServer private[server](override val configuration: RelayServerConfiguration) extends Relay {
+class RelayServer private[server](override val configuration: ServerConnectionConfiguration) extends Relay {
 
     override val identifier: String = Identifier
 
@@ -160,10 +158,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
     }
 
     def broadcastPacketToConnections(packet: Packet, sender: String, injectableID: Int, discarded: String*): Unit = {
-        if (connectionsManager.countConnected - discarded.length <= 0) {
-            // There is nowhere to send this packet.
-            return
-        }
         connectionsManager.broadcastBytes(packet, injectableID, sender, discarded.appended(identifier): _*)
     }
 
@@ -171,7 +165,6 @@ class RelayServer private[server](override val configuration: RelayServerConfigu
         if (!open)
             throw new RelayCloseException("Relay Server have to be started !")
     }
-
 
     private def setState(state: RelayState): Unit = {
         eventNotifier.notifyEvent(RelayEvents.stateChange(state))

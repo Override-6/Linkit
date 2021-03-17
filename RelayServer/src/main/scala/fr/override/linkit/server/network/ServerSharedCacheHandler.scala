@@ -1,10 +1,10 @@
 package fr.`override`.linkit.server.network
 
-import fr.`override`.linkit.api.network.cache.SharedCacheHandler
-import fr.`override`.linkit.api.packet.fundamental.RefPacket.ArrayObjectPacket
-import fr.`override`.linkit.api.packet.fundamental.ValPacket.LongPacket
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
-import fr.`override`.linkit.api.packet.{DedicatedPacketCoordinates, Packet}
+import fr.`override`.linkit.skull.connection.network.cache.SharedCacheHandler
+import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ArrayObjectPacket
+import fr.`override`.linkit.skull.connection.packet.fundamental.ValPacket.LongPacket
+import fr.`override`.linkit.skull.connection.packet.traffic.PacketTraffic
+import fr.`override`.linkit.skull.connection.packet.Packet
 
 class ServerSharedCacheHandler(family: String, traffic: PacketTraffic) extends SharedCacheHandler(family, traffic) {
     override def continuePacketHandling(packet: Packet, coords: DedicatedPacketCoordinates): Unit = packet match {

@@ -1,14 +1,14 @@
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.concurrency.relayWorkerExecution
-import fr.`override`.linkit.api.network.{ConnectionState, NetworkEntity, RemoteConsole}
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic.SystemChannelID
-import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
-import fr.`override`.linkit.api.system.{CloseReason, JustifiedCloseable, SystemPacketChannel}
+import fr.`override`.linkit.internal.concurrency.relayWorkerExecution
+import fr.`override`.linkit.skull.connection.network.{ConnectionState, NetworkEntity, RemoteConsole}
+import fr.`override`.linkit.skull.connection.packet.traffic.PacketTraffic.SystemChannelID
+import fr.`override`.linkit.skull.connection.packet.traffic.{ChannelScope, PacketTraffic}
+import fr.`override`.linkit.skull.internal.system.{CloseReason, JustifiedCloseable, SystemPacketChannel}
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.server.task.ConnectionTasksHandler
-
 import java.net.Socket
+import fr.`override`.linkit.skull.internal.system.event.packet.PacketEvents
 
 case class ClientConnectionSession private(identifier: String,
                                            private val socket: SocketContainer,
@@ -30,9 +30,15 @@ case class ClientConnectionSession private(identifier: String,
     }
     def getSocketState: ConnectionState = socket.getState
 
-    def addStateListener(action: ConnectionState => Unit): Unit = socket.addConnectionStateListener(action)
+    def send(result: PacketSerializationResult): Unit = {
+        socket.write(result.writableBytes())
+        val event = PacketEvents.packetWritten(result)
+        server.eventNotifier.notifyEvent(server.packetHooks, event)
+    }
 
-    def send(bytes: Array[Byte]): Unit = socket.write(bytes)
+    def send(bytes: Array[Byte]): Unit = {
+        socket.write(NumberSerializer.serializeInt(bytes.length) ++ bytes)
+    }
 
     def updateSocket(socket: Socket): Unit = this.socket.set(socket)
 

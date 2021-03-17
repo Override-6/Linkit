@@ -1,8 +1,8 @@
 package fr.`override`.linkit.server.security
 
 import fr.`override`.linkit.server.connection.ClientConnection
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.system.security.RelaySecurityManager
+import fr.`override`.linkit.skull.Relay
+import fr.`override`.linkit.skull.internal.system.security.RelaySecurityManager
 
 trait RelayServerSecurityManager extends RelaySecurityManager {
 

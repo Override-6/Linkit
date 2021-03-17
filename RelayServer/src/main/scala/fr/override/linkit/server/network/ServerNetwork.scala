@@ -1,11 +1,11 @@
 package fr.`override`.linkit.server.network
 
-import fr.`override`.linkit.api.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.api.network.cache.{SharedCacheHandler, SharedInstance}
-import fr.`override`.linkit.api.network.{AbstractNetwork, ConnectionState, NetworkEntity, SelfNetworkEntity}
-import fr.`override`.linkit.api.packet.traffic.PacketTraffic
-import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.system.evente.network.NetworkEvents
+import fr.`override`.linkit.skull.connection.network.cache.collection.{BoundedCollection, CollectionModification}
+import fr.`override`.linkit.skull.connection.network.cache.{SharedCacheHandler, SharedInstance}
+import fr.`override`.linkit.skull.connection.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.skull.connection.packet.traffic.PacketTraffic
+import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.skull.internal.system.event.network.NetworkEvents
 import fr.`override`.linkit.server.RelayServer
 import fr.`override`.linkit.server.connection.ClientConnection
 

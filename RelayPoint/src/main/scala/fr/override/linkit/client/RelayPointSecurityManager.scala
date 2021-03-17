@@ -1,7 +1,7 @@
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.system.security.{RelaySecurityException, RelaySecurityManager}
+import fr.`override`.linkit.skull.Relay
+import fr.`override`.linkit.skull.internal.system.security.{RelaySecurityException, RelaySecurityManager}
 
 class RelayPointSecurityManager extends RelaySecurityManager {
 

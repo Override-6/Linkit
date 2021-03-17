@@ -1,8 +1,8 @@
 package fr.`override`.linkit.server.network
 
-import fr.`override`.linkit.api.network.cache.{SharedCacheHandler, SharedInstance}
-import fr.`override`.linkit.api.network.{AbstractRemoteEntity, ConnectionState}
-import fr.`override`.linkit.api.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.skull.connection.network.cache.{SharedCacheHandler, SharedInstance}
+import fr.`override`.linkit.skull.connection.network.ConnectionState
+import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.server.RelayServer
 
 class ConnectionNetworkEntity private(server: RelayServer,
