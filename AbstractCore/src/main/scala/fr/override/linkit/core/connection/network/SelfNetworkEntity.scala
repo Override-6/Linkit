@@ -1,11 +1,11 @@
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.connection.network.cache.SharedCacheHandler
-import fr.`override`.linkit.skull.connection.network.{ConnectionState, NetworkEntity}
-import fr.`override`.linkit.skull.connection.packet.traffic.ChannelScope
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
-import fr.`override`.linkit.skull.internal.system.Version
+import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler
+import fr.`override`.linkit.api.connection.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope
+import fr.`override`.linkit.api.connection.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
+import fr.`override`.linkit.api.local.system.Version
 import java.sql.Timestamp
 
 import fr.`override`.linkit.core.connection.network

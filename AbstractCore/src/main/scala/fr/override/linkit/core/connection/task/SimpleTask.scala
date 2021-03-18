@@ -2,7 +2,7 @@ package fr.`override`.linkit.core.connection.task
 
 import java.util.concurrent.atomic.AtomicReference
 
-import fr.`override`.linkit.skull.connection.task.Task
+import fr.`override`.linkit.api.connection.task.Task
 import org.jetbrains.annotations.Nullable
 
 

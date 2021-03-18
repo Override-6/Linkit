@@ -1,13 +1,13 @@
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.connection.network.cache.SharedCacheHandler
-import fr.`override`.linkit.skull.connection.network.cache.collection.SharedCollection
-import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
-import fr.`override`.linkit.skull.connection.packet.traffic.{ChannelScope, PacketTraffic}
-import fr.`override`.linkit.skull.internal.system.Version
-import fr.`override`.linkit.skull.internal.system.event.network.NetworkEvents
+import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler
+import fr.`override`.linkit.api.connection.network.cache.collection.SharedCollection
+import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.connection.packet.traffic.channel.{CommunicationPacketChannel, PacketChannelCategories}
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
+import fr.`override`.linkit.api.local.system.Version
+import fr.`override`.linkit.api.local.system.event.network.NetworkEvents
 import java.sql.Timestamp
 
 import fr.`override`.linkit.core.connection.network.cache.collection

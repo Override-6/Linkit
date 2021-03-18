@@ -1,6 +1,6 @@
 package fr.`override`.linkit.core.connection.task
 
-import fr.`override`.linkit.skull.connection.packet.fundamental.TaskInitPacket
+import fr.`override`.linkit.api.connection.packet.fundamental.TaskInitPacket
 
 import scala.collection.mutable
 

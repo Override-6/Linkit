@@ -1,6 +1,6 @@
 package fr.`override`.linkit.core.connection.packet.fundamental
 
-import fr.`override`.linkit.skull.connection.packet.Packet
+import fr.`override`.linkit.api.connection.packet.Packet
 /**
  * Represents a packet with no specific data.
  * */

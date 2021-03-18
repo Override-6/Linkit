@@ -2,10 +2,10 @@ package fr.`override`.linkit.core.connection.task
 
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
-import fr.`override`.linkit.skull.connection.task.TaskExecutor
-import fr.`override`.linkit.skull.internal.system.CloseReason
+import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
+import fr.`override`.linkit.api.connection.task.TaskExecutor
+import fr.`override`.linkit.api.local.system.CloseReason
 
 /**
  * The class that will execute the Task.

@@ -1,9 +1,9 @@
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.connection.packet.fundamental.TaggedObjectPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.AsyncPacketChannel
-import fr.`override`.linkit.skull.internal.system.event.network.NetworkEvents
+import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.connection.packet.fundamental.TaggedObjectPacket
+import fr.`override`.linkit.api.connection.packet.traffic.channel.AsyncPacketChannel
+import fr.`override`.linkit.api.local.system.event.network.NetworkEvents
 import fr.`override`.linkit.internal.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
 import sun.security.action.GetPropertyAction

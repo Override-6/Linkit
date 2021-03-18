@@ -8,7 +8,7 @@ import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float =
 import java.nio.ByteBuffer
 
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer._
-import fr.`override`.linkit.skull.connection.packet.serialization.Serializer
+import fr.`override`.linkit.api.connection.packet.serialization.Serializer
 
 import scala.util.control.NonFatal
 

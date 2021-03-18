@@ -1,9 +1,9 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.internal.concurrency.relayWorkerExecution
+import fr.`override`.linkit.internal.concurrency.workerExecution
 import .PacketInjection
-import fr.`override`.linkit.skull.connection.packet.traffic._
-import fr.`override`.linkit.skull.internal.system.{CloseReason, ForbiddenIdentifierException}
+import fr.`override`.linkit.api.connection.packet.traffic._
+import fr.`override`.linkit.api.local.system.{CloseReason, ForbiddenIdentifierException}
 
 import scala.collection.mutable
 
@@ -25,7 +25,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
 
     override def isClosed: Boolean = closed
 
-    @relayWorkerExecution
+    @workerExecution
     final override def inject(injection: PacketInjection): Unit = {
         val coordinates = injection.coordinates
         scope.assertAuthorised(coordinates.senderID)
@@ -59,7 +59,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         channel
     }
 
-    @relayWorkerExecution
+    @workerExecution
     def handleInjection(injection: PacketInjection): Unit
 
     protected case class SubInjectableContainer(subInjectable: PacketInjectable, transparent: Boolean)

@@ -1,6 +1,6 @@
 package fr.`override`.linkit.core.connection.packet.fundamental
 
-import fr.`override`.linkit.skull.connection.packet.Packet
+import fr.`override`.linkit.api.connection.packet.Packet
 
 sealed trait ValPacket[A <: AnyVal] extends Packet {
     val value: A

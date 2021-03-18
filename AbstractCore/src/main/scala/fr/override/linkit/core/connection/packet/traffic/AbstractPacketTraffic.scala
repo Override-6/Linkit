@@ -1,12 +1,10 @@
 package fr.`override`.linkit.core.connection.packet.traffic
 
-import fr.`override`.linkit.internal.concurrency.PacketWorkerThread
-import fr.`override`.linkit.skull.connection.packet.traffic.ChannelScope.ScopeFactory
-import .PacketInjection
-import fr.`override`.linkit.skull.connection.packet.traffic.{PacketInjectable, PacketTraffic}
-import fr.`override`.linkit.skull.internal.system.config.ConnectionConfiguration
-import fr.`override`.linkit.skull.internal.system.{CloseReason, ClosedException, JustifiedCloseable, RelayException}
-import fr.`override`.linkit.internal.utils.JavaUtils
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.connection.packet.traffic._
+import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
+import fr.`override`.linkit.api.local.system.{CloseReason, ClosedException, JustifiedCloseable}
+import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread
 import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
@@ -65,11 +63,6 @@ abstract class AbstractPacketTraffic(@NotNull config: ConnectionConfiguration,
     }
 
     private def init(injectable: PacketInjectable): Unit = {
-
-        if (holders.size > config.maxPacketContainerCacheSize) {
-            throw new RelayException("Maximum registered packet containers limit exceeded")
-        }
-
         val id = injectable.identifier
 
         //Will inject every lost packets
@@ -105,10 +98,6 @@ abstract class AbstractPacketTraffic(@NotNull config: ConnectionConfiguration,
 
     override def handleInjection(injection: PacketInjection): Unit = {
         if (injection.mayNotHandle) {
-            println(s"Injection handling has been rejected for thread ${Thread.currentThread()}")
-            println(s"The injection is already handled by thread ${injection.handlerThread}")
-            val trace = injection.handlerThread.getStackTrace
-            JavaUtils.printStackTrace(trace, Console.out)
             return
         }
 

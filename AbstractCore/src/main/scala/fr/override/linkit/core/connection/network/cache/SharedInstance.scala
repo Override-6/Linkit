@@ -3,9 +3,9 @@ package fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.packet
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.skull.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.internal.utils.ConsumerContainer
 
 import scala.reflect.ClassTag

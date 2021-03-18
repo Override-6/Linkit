@@ -28,7 +28,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
     override def close(reason: CloseReason): Unit = {
         for ((_, connection) <- connections) try {
-            Relay.Log.trace(s"Closing '${connection.identifier}'...")
+            ContextLogger.trace(s"Closing '${connection.identifier}'...")
             connection.close(reason)
         } catch {
             case NonFatal(e) => e.printStackTrace()

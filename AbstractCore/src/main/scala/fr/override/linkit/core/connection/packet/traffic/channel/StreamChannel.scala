@@ -1,8 +1,8 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.internal.concurrency.RelayThreadPool
-import fr.`override`.linkit.skull.connection.packet.Packet
-import fr.`override`.linkit.skull.connection.packet.traffic.ChannelScope
+import fr.`override`.linkit.internal.concurrency.BusyWorkerThread
+import fr.`override`.linkit.api.connection.packet.Packet
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope
 import .PacketInjection
 import org.jetbrains.annotations.Nullable
 
@@ -30,7 +30,7 @@ class StreamChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
     }
 
     def startConstantTransfer(): Unit = {
-        RelayThreadPool.checkCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
+        BusyWorkerThread.checkCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
         transferConstantly = true
         while (transferConstantly) {
             transferAll()

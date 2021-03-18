@@ -1,15 +1,15 @@
 package fr.`override`.linkit.core.connection.network.cache
 
-import fr.`override`.linkit.skull.Relay.ServerIdentifier
-import fr.`override`.linkit.skull.connection.network.Updatable
-import fr.`override`.linkit.skull.connection.network.cache.SharedCacheHandler.MockCache
-import fr.`override`.linkit.skull.connection.network.cache.map.SharedMap
-import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ArrayObjectPacket
-import fr.`override`.linkit.skull.connection.packet.fundamental.ValPacket.LongPacket
-import fr.`override`.linkit.skull.connection.packet.fundamental.WrappedPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.skull.connection.packet.traffic.{ChannelScope, PacketTraffic}
-import fr.`override`.linkit.skull.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.Relay.ServerIdentifier
+import fr.`override`.linkit.api.connection.network.Updatable
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler.MockCache
+import fr.`override`.linkit.api.connection.network.cache.map.SharedMap
+import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ArrayObjectPacket
+import fr.`override`.linkit.api.connection.packet.fundamental.ValPacket.LongPacket
+import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
+import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import java.util.NoSuchElementException
 
 import fr.`override`.linkit.core.connection.packet

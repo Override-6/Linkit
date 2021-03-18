@@ -17,7 +17,7 @@ dependencies {
     implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.5'
     implementation group: 'log4j', name: 'log4j', version: '1.2.17'
     implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
-    implementation project(':Skull')
+    implementation project(':AbstractCore')
     implementation project(':LinKitExtensions:RelayController')
     implementation project(':LinKitExtensions:EasySharing')
     implementation project(':LinKitExtensions:DebugExtension')

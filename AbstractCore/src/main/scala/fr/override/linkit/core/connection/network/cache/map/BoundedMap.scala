@@ -1,7 +1,7 @@
 package fr.`override`.linkit.core.connection.network.cache.map
 
-import fr.`override`.linkit.skull.connection.network.cache.map.BoundedMap.{Immutable, Mutator}
-import fr.`override`.linkit.skull.connection.network.cache.map.MapModification._
+import fr.`override`.linkit.api.connection.network.cache.map.BoundedMap.{Immutable, Mutator}
+import fr.`override`.linkit.api.connection.network.cache.map.MapModification._
 import fr.`override`.linkit.internal.utils.ConsumerContainer
 
 import scala.collection.mutable

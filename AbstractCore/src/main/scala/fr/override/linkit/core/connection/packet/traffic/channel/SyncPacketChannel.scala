@@ -1,11 +1,11 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, RelayThreadPool, relayWorkerExecution}
-import fr.`override`.linkit.skull.connection.packet.Packet
+import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, BusyWorkerThread, workerExecution}
+import fr.`override`.linkit.api.connection.packet.Packet
 import .PacketInjection
-import fr.`override`.linkit.skull.connection.packet.traffic._
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.AbstractPacketChannel
-import fr.`override`.linkit.skull.internal.system.CloseReason
+import fr.`override`.linkit.api.connection.packet.traffic._
+import fr.`override`.linkit.api.connection.packet.traffic.channel.AbstractPacketChannel
+import fr.`override`.linkit.api.local.system.CloseReason
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import fr.`override`.linkit.core.connection.packet.traffic
@@ -24,13 +24,13 @@ class SyncPacketChannel protected(scope: ChannelScope,
         if (!providable)
             new LinkedBlockingQueue[Packet]()
         else {
-            RelayThreadPool
+            BusyWorkerThread
                     .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 
 
-    @relayWorkerExecution
+    @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
         injection.getPackets.foreach(queue.add)
     }

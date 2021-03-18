@@ -1,7 +1,6 @@
 package fr.`override`.linkit.core.connection.packet.traffic
 
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.connection.packet.Packet
+import fr.`override`.linkit.api.connection.packet.Packet
 import org.jetbrains.annotations.NotNull
 
 class SocketPacketTraffic(@NotNull relay: Relay,

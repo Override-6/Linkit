@@ -1,10 +1,12 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.internal.concurrency.{RelayThreadPool, relayWorkerExecution}
-import .PacketInjection
-import fr.`override`.linkit.skull.connection.packet.traffic.{ChannelScope, PacketAsyncReceiver, PacketInjectableFactory, PacketSender}
-import fr.`override`.linkit.skull.connection.packet.Packet
-import fr.`override`.linkit.internal.utils.ConsumerContainer
+import fr.`override`.linkit.api.connection.packet.DedicatedPacketCoordinates
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerThread
+import fr.`override`.linkit.core.local.utils.ConsumerContainer
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketAsyncReceiver, PacketInjectableFactory, PacketSender}
+import fr.`override`.linkit.api.connection.packet.Packet
+import fr.`override`.linkit.core.connection.packet.traffic.PacketInjections.PacketInjection
+import fr.`override`.linkit.core.local.utils.ConsumerContainer
 
 import scala.util.control.NonFatal
 
@@ -13,9 +15,9 @@ class AsyncPacketChannel protected(scope: ChannelScope)
 
     private val packetReceivedContainer: ConsumerContainer[(Packet, DedicatedPacketCoordinates)] = ConsumerContainer()
 
-    @relayWorkerExecution
+    @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val pool = RelayThreadPool.currentPool().get
+        val pool = BusyWorkerThread.currentPool().get
         pool.runLater {
             try {
                 val packets = injection.getPackets

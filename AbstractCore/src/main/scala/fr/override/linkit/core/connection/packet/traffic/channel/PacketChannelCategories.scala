@@ -1,10 +1,10 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.internal.concurrency.relayWorkerExecution
-import fr.`override`.linkit.skull.connection.packet.fundamental.WrappedPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.internal.concurrency.workerExecution
+import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import .PacketInjection
-import fr.`override`.linkit.skull.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory}
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory}
 
 import scala.collection.mutable
 
@@ -12,7 +12,7 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
 
     private val categories = mutable.Map.empty[String, PacketInjectable]
 
-    @relayWorkerExecution
+    @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
         val packets = injection.getPackets
         val coordinates = injection.coordinates

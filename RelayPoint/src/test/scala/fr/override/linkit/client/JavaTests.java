@@ -6,4 +6,8 @@ public class JavaTests {
 
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return JavaTests.super.equals(obj);
+    }
 }

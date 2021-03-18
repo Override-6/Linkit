@@ -1,6 +1,6 @@
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.internal.concurrency.relayWorkerExecution
+import fr.`override`.linkit.internal.concurrency.workerExecution
 import fr.`override`.linkit.skull.connection.network.{ConnectionState, NetworkEntity, RemoteConsole}
 import fr.`override`.linkit.skull.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.`override`.linkit.skull.connection.packet.traffic.{ChannelScope, PacketTraffic}
@@ -21,7 +21,7 @@ case class ClientConnectionSession private(identifier: String,
     val outConsole   : RemoteConsole             = server.getConsoleOut(identifier)
     val errConsole   : RemoteConsole             = server.getConsoleErr(identifier)
 
-    @relayWorkerExecution
+    @workerExecution
     override def close(reason: CloseReason): Unit = {
         socket.close(reason)
         tasksHandler.close(reason)

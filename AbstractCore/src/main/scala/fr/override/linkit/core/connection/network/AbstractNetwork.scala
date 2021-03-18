@@ -5,13 +5,13 @@ import fr.`override`.linkit.core.connection.network.cache.collection
 import fr.`override`.linkit.core.connection.packet
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.connection.network.cache.SharedCacheHandler
-import fr.`override`.linkit.skull.connection.network.cache.collection.{BoundedCollection, SharedCollection}
-import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.ChannelScope
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.skull.internal.system.event.network.NetworkEvents
+import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler
+import fr.`override`.linkit.api.connection.network.cache.collection.{BoundedCollection, SharedCollection}
+import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope
+import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.local.system.event.network.NetworkEvents
 
 abstract class AbstractNetwork(relay: Relay, override val globalCache: cache.SharedCacheHandler) extends Network {
 

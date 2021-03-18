@@ -1,13 +1,13 @@
 package fr.`override`.linkit.core.connection.network.cache
 
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ArrayObjectPacket
-import fr.`override`.linkit.skull.connection.packet.fundamental.ValPacket.LongPacket
-import fr.`override`.linkit.skull.connection.packet.fundamental.WrappedPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.skull.connection.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.skull.internal.system.{CloseReason, JustifiedCloseable}
+import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ArrayObjectPacket
+import fr.`override`.linkit.api.connection.packet.fundamental.ValPacket.LongPacket
+import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.local.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.internal.utils.ScalaUtils
 import org.jetbrains.annotations.Nullable
 

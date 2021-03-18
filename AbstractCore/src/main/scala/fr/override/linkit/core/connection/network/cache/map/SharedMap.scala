@@ -5,12 +5,12 @@ import fr.`override`.linkit.core.connection.network
 import fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.internal.concurrency.RelayThreadPool
-import fr.`override`.linkit.skull.connection.network.cache.map.MapModification._
-import fr.`override`.linkit.skull.connection.network.cache.{SharedCacheFactory, SharedCacheHandler}
-import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.skull.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.internal.concurrency.BusyWorkerThread
+import fr.`override`.linkit.api.connection.network.cache.map.MapModification._
+import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheHandler}
+import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.internal.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -129,7 +129,7 @@ class SharedMap[K, V](handler: connection.network.cache.SharedCacheHandler, iden
 
         addListener(listener) //Due to hyper parallelized thread execution,
         //the awaited key could be added since the 'found' value has been created.
-        RelayThreadPool.executeRemainingTasks(lock, !(contains(k) || found))
+        BusyWorkerThread.executeRemainingTasks(lock, !(contains(k) || found))
         removeListener(listener)
         //println("Done !")
         apply(k)

@@ -5,11 +5,11 @@ import java.lang.reflect.InvocationTargetException
 
 import fr.`override`.linkit.core.connection.packet
 import fr.`override`.linkit.core.connection.packet.traffic
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.connection.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.ChannelScope
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.SyncPacketChannel
-import fr.`override`.linkit.skull.internal.system.CloseReason
+import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.connection.packet.fundamental.TaskInitPacket
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope
+import fr.`override`.linkit.api.connection.packet.traffic.channel.SyncPacketChannel
+import fr.`override`.linkit.api.local.system.CloseReason
 
 import scala.util.control.NonFatal
 

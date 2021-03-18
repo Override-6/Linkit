@@ -1,8 +1,8 @@
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.skull.connection.packet.fundamental.WrappedPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.skull.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.internal.utils.ConsumerContainer
 
 class RemoteFragmentController(val nameIdentifier: String, val channel: CommunicationPacketChannel) {

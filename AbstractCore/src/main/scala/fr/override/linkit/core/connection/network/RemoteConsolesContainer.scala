@@ -1,12 +1,12 @@
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.Relay.Log
-import fr.`override`.linkit.skull.connection.packet.Packet
-import fr.`override`.linkit.skull.connection.packet.fundamental.TaggedObjectPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.AsyncPacketChannel
-import fr.`override`.linkit.skull.connection.packet.traffic.{ChannelScope, PacketTraffic}
-import fr.`override`.linkit.skull.internal.system.event.network.NetworkEvents
+import fr.`override`.linkit.api.Relay
+import fr.`override`.linkit.api.ContextLogger
+import fr.`override`.linkit.api.connection.packet.Packet
+import fr.`override`.linkit.api.connection.packet.fundamental.TaggedObjectPacket
+import fr.`override`.linkit.api.connection.packet.traffic.channel.AsyncPacketChannel
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
+import fr.`override`.linkit.api.local.system.event.network.NetworkEvents
 import java.util
 import java.util.Collections
 import java.util.concurrent.ConcurrentHashMap
@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
 import fr.`override`.linkit.core.connection.packet
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.skull.internal.system.RelayException
+import fr.`override`.linkit.api.local.system.RelayException
 
 class RemoteConsolesContainer(relay: Relay) {
 

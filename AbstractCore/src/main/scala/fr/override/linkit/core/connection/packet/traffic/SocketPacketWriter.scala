@@ -1,10 +1,11 @@
 package fr.`override`.linkit.core.connection.packet.traffic
 
 import fr.`override`.linkit.core.connection.packet.serialization
-import fr.`override`.linkit.skull.connection.packet.Packet
+import fr.`override`.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet}
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 
 class SocketPacketWriter(socket: DynamicSocket,
-                         translator: serialization.PacketTranslator,
+                         translator: serialization.CompactedPacketTranslator,
                          info: WriterInfo) extends PacketWriter {
 
     override val traffic: PacketTraffic = info.traffic

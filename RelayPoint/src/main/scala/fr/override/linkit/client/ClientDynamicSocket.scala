@@ -22,8 +22,8 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
             newSocket()
         } catch {
             case _@(_: SocketException | _: ConnectException) =>
-                Relay.Log.warn("Unable to connect to server.")
-                Relay.Log.warn(s"Waiting for $reconnectionPeriod ms before another try...")
+                ContextLogger.warn("Unable to connect to server.")
+                ContextLogger.warn(s"Waiting for $reconnectionPeriod ms before another try...")
                 Thread.sleep(reconnectionPeriod)
                 handleReconnection()
         }

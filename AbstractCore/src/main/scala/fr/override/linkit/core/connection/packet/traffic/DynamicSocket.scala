@@ -1,16 +1,16 @@
 package fr.`override`.linkit.core.connection.packet.traffic
 
-import fr.`override`.linkit.skull.Relay.Log
-import fr.`override`.linkit.skull.exception.RelayCloseException
-import fr.`override`.linkit.skull.connection.network.ConnectionState
-import fr.`override`.linkit.skull.connection.network.ConnectionState.CLOSED
-import fr.`override`.linkit.skull.internal.system.{CloseReason, JustifiedCloseable, RelayCloseException, RelayException}
+import fr.`override`.linkit.api.ContextLogger
+import fr.`override`.linkit.api.exception.RelayCloseException
+import fr.`override`.linkit.api.connection.network.ConnectionState
+import fr.`override`.linkit.api.connection.network.ConnectionState.CLOSED
+import fr.`override`.linkit.api.local.system.{CloseReason, JustifiedCloseable, RelayCloseException, RelayException}
 import fr.`override`.linkit.internal.utils.ConsumerContainer
 import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
 import fr.`override`.linkit.core.connection.network
-import fr.`override`.linkit.skull.internal.system.event.relay.{RelayEventHooks, RelayEvents}
+import fr.`override`.linkit.api.local.system.event.relay.{RelayEventHooks, RelayEvents}
 
 abstract class DynamicSocket(autoReconnect: Boolean = true, relayHooks: RelayEventHooks, notifier: EventNotifier) extends JustifiedCloseable {
     @volatile protected var currentSocket: Socket = _

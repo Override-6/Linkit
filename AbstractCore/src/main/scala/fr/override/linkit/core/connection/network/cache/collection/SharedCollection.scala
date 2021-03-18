@@ -9,14 +9,14 @@ import fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.network.cache.collection
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.internal.concurrency.RelayThreadPool
-import fr.`override`.linkit.skull.connection.network.cache.collection.CollectionModification._
-import fr.`override`.linkit.skull.connection.network.cache.collection.SharedCollection.CollectionAdapter
-import fr.`override`.linkit.skull.connection.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.skull.connection.network.cache.{SharedCacheFactory, SharedCacheHandler}
-import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.skull.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.internal.concurrency.BusyWorkerThread
+import fr.`override`.linkit.api.connection.network.cache.collection.CollectionModification._
+import fr.`override`.linkit.api.connection.network.cache.collection.SharedCollection.CollectionAdapter
+import fr.`override`.linkit.api.connection.network.cache.collection.{BoundedCollection, CollectionModification}
+import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheHandler}
+import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.internal.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -53,7 +53,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: network.cache.Shar
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case modPacket: ObjectPacket => RelayThreadPool.runLaterOrHere {
+            case modPacket: ObjectPacket => BusyWorkerThread.runLaterOrHere {
                 handleNetworkModRequest(modPacket)
             }
         }
@@ -267,7 +267,7 @@ object SharedCollection {
         private[SharedCollection] def get(): S[A] = mainCollection
 
         private def foreachCollection(action: core.connection.network.cache.collection.BoundedCollection.Mutator[A] => Unit): Unit =
-            RelayThreadPool.runLaterOrHere {
+            BusyWorkerThread.runLaterOrHere {
                 boundedCollections.clone.foreach(action)
             }
     }

@@ -1,6 +1,6 @@
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.internal.concurrency.relayWorkerExecution
+import fr.`override`.linkit.internal.concurrency.workerExecution
 import fr.`override`.linkit.skull.internal.system.CloseReason
 import fr.`override`.linkit.client.config.RelayPointBuilder
 
@@ -56,7 +56,7 @@ object PointLauncher {
         }
     }
 
-    @relayWorkerExecution
+    @workerExecution
     private def startRelay(relayPoint: RelayPoint, ideRun: Boolean): Unit = {
         relayPoint.start()
 

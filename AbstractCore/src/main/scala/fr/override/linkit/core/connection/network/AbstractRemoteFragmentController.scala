@@ -1,6 +1,6 @@
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.skull.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 
 abstract class AbstractRemoteFragmentController(controller: RemoteFragmentController) {
 

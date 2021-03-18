@@ -2,12 +2,12 @@ package fr.`override`.linkit.core.connection.packet.serialization
 
 import fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.network.cache.map
-import fr.`override`.linkit.skull.connection.network.cache.SharedCacheHandler
-import fr.`override`.linkit.skull.connection.network.cache.map.{MapModification, SharedMap}
-import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.`override`.linkit.skull.connection.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler
+import fr.`override`.linkit.api.connection.network.cache.map.{MapModification, SharedMap}
+import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
 import .serializeInt
-import fr.`override`.linkit.skull.connection.packet.PacketCoordinates
+import fr.`override`.linkit.api.connection.packet.PacketCoordinates
 
 class CachedObjectSerializer(cache: cache.SharedCacheHandler) extends ObjectSerializer {
 

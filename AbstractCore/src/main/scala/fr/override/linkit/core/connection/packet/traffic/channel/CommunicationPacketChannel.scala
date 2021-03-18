@@ -1,10 +1,10 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.internal.concurrency.{RelayThreadPool, relayWorkerExecution}
-import fr.`override`.linkit.skull.connection.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.internal.concurrency.{BusyWorkerThread, workerExecution}
+import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
 import .PacketInjection
-import fr.`override`.linkit.skull.connection.packet.traffic.{ChannelScope, PacketInjectableFactory}
-import fr.`override`.linkit.skull.connection.packet.Packet
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory}
+import fr.`override`.linkit.api.connection.packet.Packet
 import fr.`override`.linkit.internal.utils.ConsumerContainer
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
@@ -17,14 +17,14 @@ class CommunicationPacketChannel(scope: ChannelScope,
         if (!providable)
             new LinkedBlockingQueue[Packet]()
         else {
-            RelayThreadPool
+            BusyWorkerThread
                     .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 
     private val requestListeners = new ConsumerContainer[(Packet, DedicatedPacketCoordinates)]
 
-    @relayWorkerExecution
+    @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
         val packets = injection.getPackets
         val coordinates = injection.coordinates
