@@ -2,7 +2,7 @@ package fr.`override`.linkit.client
 
 import fr.`override`.linkit.skull.Relay
 import fr.`override`.linkit.skull.Relay.{Log, ServerIdentifier}
-import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, BusyWorkerThread, packetWorkerExecution}
+import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, BusyWorkerPool, packetWorkerExecution}
 import fr.`override`.linkit.skull.exception._
 import fr.`override`.linkit.skull.internal.plugin.RelayExtensionLoader
 import fr.`override`.linkit.skull.connection.network._
@@ -46,14 +46,14 @@ class RelayPoint private[client](override val configuration: ClientConnectionCon
     override val traffic: SocketPacketTraffic = new SocketPacketTraffic(this, socket, identifier)
     override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
     override val properties: RelayProperties = new RelayProperties()
-    private val workerThread: BusyWorkerThread = new BusyWorkerThread("Packet Handling & Extension", 3) //TODO add nThreads to configurationgvh,n
+    private val workerThread: BusyWorkerPool = new BusyWorkerPool("Packet Handling & Extension", 3) //TODO add nThreads to configurationgvh,n
     implicit val systemChannel: SystemPacketChannel = traffic.getInjectable(SystemChannelID, ChannelScope.reserved(ServerIdentifier), SystemPacketChannel)
     private val tasksHandler: ClientTasksHandler = new ClientTasksHandler(systemChannel, this)
     private val remoteConsoles: RemoteConsolesContainer = new RemoteConsolesContainer(this)
     override val taskCompleterHandler: TaskCompleterHandler = new TaskCompleterHandler()
 
     override def start(): Unit = {
-        BusyWorkerThread.checkCurrentIsWorker("Must start relay point in a worker thread.")
+        BusyWorkerPool.checkCurrentIsWorker("Must start relay point in a worker thread.")
         setState(ENABLING)
 
         val t0 = System.currentTimeMillis()
@@ -95,7 +95,7 @@ class RelayPoint private[client](override val configuration: ClientConnectionCon
     override def state(): RelayState = currentState
 
     override def close(reason: CloseReason): Unit = {
-        BusyWorkerThread.checkCurrentIsWorker()
+        BusyWorkerPool.checkCurrentIsWorker()
 
         if (!open)
             return //already closed

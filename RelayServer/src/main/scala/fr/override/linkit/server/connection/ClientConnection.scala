@@ -1,7 +1,7 @@
 package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, BusyWorkerThread, workerExecution}
+import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, BusyWorkerPool, workerExecution}
 import fr.`override`.linkit.skull.connection.network.{ConnectionState, RemoteConsole}
 import fr.`override`.linkit.skull.connection.packet._
 import fr.`override`.linkit.skull.connection.packet.fundamental._
@@ -21,12 +21,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     private val packetTranslator = server.packetTranslator
     private val manager: ConnectionsManager = server.connectionsManager
 
-    private val workerThread = new BusyWorkerThread("Packet Handling & Extension", 3)
+    private val workerThread = new BusyWorkerPool("Packet Handling & Extension", 3)
 
     @volatile private var closed = false
 
     override def close(reason: CloseReason): Unit = {
-        BusyWorkerThread.checkCurrentIsWorker()
+        BusyWorkerPool.checkCurrentIsWorker()
         closed = true
         if (reason.isInternal && isConnected) {
             val sysChannel = session.channel
@@ -73,7 +73,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
     override def isClosed: Boolean = closed
 
     private[server] def updateSocket(socket: Socket): Unit = {
-        BusyWorkerThread.checkCurrentIsWorker()
+        BusyWorkerPool.checkCurrentIsWorker()
         session.updateSocket(socket)
     }
 

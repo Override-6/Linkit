@@ -1,6 +1,6 @@
 package fr.`override`.linkit.core.local.system.event
 
-import fr.`override`.linkit.internal.concurrency.BusyWorkerThread
+import fr.`override`.linkit.internal.concurrency.BusyWorkerPool
 import fr.`override`.linkit.api.local.system.event.EventHook
 import fr.`override`.linkit.internal.utils.ConsumerContainer
 import org.jetbrains.annotations.NotNull
@@ -16,7 +16,7 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
                 lock.notifyAll()
             }
         }
-        BusyWorkerThread.executeRemainingTasks(lock, stillBusy)
+        BusyWorkerPool.executeRemainingTasks(lock, stillBusy)
     }
 
     override def add(action: E => Unit): Unit = consumers += action

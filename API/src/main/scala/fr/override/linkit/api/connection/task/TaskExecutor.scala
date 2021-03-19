@@ -3,7 +3,7 @@ package fr.`override`.linkit.api.connection.task
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.connection.packet.fundamental.TaskInitPacket
 import fr.`override`.linkit.api.connection.packet.traffic.channel.SyncPacketChannel
-import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketReceiver}
 import fr.`override`.linkit.api.local.system.CloseReason
 
 /**

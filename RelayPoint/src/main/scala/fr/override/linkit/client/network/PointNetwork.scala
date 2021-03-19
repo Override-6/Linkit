@@ -1,23 +1,19 @@
 package fr.`override`.linkit.client.network
 
-import fr.`override`.linkit.skull.connection.network.cache.SharedCacheHandler
-import fr.`override`.linkit.skull.connection.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.skull.connection.network.NetworkEntity
-import fr.`override`.linkit.skull.connection.packet.traffic.PacketTraffic
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.skull.internal.system.event.network.NetworkEvents
-import fr.`override`.linkit.client.RelayPoint
-
 import java.sql.Timestamp
 
-class PointNetwork private(relay: RelayPoint, globalCache: SharedCacheHandler) extends AbstractNetwork(relay, globalCache) {
-    private implicit val traffic: PacketTraffic = relay.traffic
+import fr.`override`.linkit.api.connection.network.NetworkEntity
+import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic
+import fr.`override`.linkit.client.ClientConnection
+import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager
+import fr.`override`.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
+import fr.`override`.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
+import fr.`override`.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
 
-    def this(relay: RelayPoint) = {
-        this(relay, SharedCacheHandler.get("Global Shared Cache")(relay.traffic))
-    }
+class PointNetwork(connection: ClientConnection, globalCache: AbstractSharedCacheManager) extends AbstractNetwork(connection, globalCache) {
+    private implicit val traffic: PacketTraffic = connection.traffic
 
-    override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay, SharedCacheHandler.get(relay.identifier))
+    override val selfEntity: SelfNetworkEntity = new SelfNetworkEntity(relay, AbstractSharedCacheManager.get(relay.identifier))
 
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
@@ -38,7 +34,6 @@ class PointNetwork private(relay: RelayPoint, globalCache: SharedCacheHandler) e
     }
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
-        import CollectionModification._
         lazy val entity = entityOpt.get
         val event = mod match {
             case ADD => NetworkEvents.entityAdded(entity)

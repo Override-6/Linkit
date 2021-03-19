@@ -9,7 +9,7 @@ import fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.network.cache.collection
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.internal.concurrency.BusyWorkerThread
+import fr.`override`.linkit.internal.concurrency.BusyWorkerPool
 import fr.`override`.linkit.api.connection.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.connection.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.`override`.linkit.api.connection.network.cache.collection.{BoundedCollection, CollectionModification}
@@ -17,6 +17,7 @@ import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, Sh
 import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.core.connection.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.`override`.linkit.internal.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -25,7 +26,7 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class SharedCollection[A <: Serializable : ClassTag](handler: network.cache.SharedCacheHandler,
+class SharedCollection[A <: Serializable : ClassTag](handler: network.cache.AbstractSharedCacheManager,
                                                      identifier: Long,
                                                      adapter: CollectionAdapter[A],
                                                      channel: channel.CommunicationPacketChannel)
@@ -53,7 +54,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: network.cache.Shar
 
     override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         packet match {
-            case modPacket: ObjectPacket => BusyWorkerThread.runLaterOrHere {
+            case modPacket: ObjectPacket => BusyWorkerPool.runLaterOrHere {
                 handleNetworkModRequest(modPacket)
             }
         }
@@ -191,7 +192,7 @@ object SharedCollection {
      * The insertFilter must be true in order to authorise the insertion
      * */
     def ofInsertFilter[A  <: Serializable : ClassTag](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
-        (handler: fr.`override`.linkit.core.connection.network.cache.SharedCacheHandler, identifier: Long, baseContent: Array[Any], channel: traffic.channel.CommunicationPacketChannel) => {
+        (handler: fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager, identifier: Long, baseContent: Array[Any], channel: traffic.channel.CommunicationPacketChannel) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
 
@@ -267,7 +268,7 @@ object SharedCollection {
         private[SharedCollection] def get(): S[A] = mainCollection
 
         private def foreachCollection(action: core.connection.network.cache.collection.BoundedCollection.Mutator[A] => Unit): Unit =
-            BusyWorkerThread.runLaterOrHere {
+            BusyWorkerPool.runLaterOrHere {
                 boundedCollections.clone.foreach(action)
             }
     }

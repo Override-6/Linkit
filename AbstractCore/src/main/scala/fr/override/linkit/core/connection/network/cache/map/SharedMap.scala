@@ -5,7 +5,7 @@ import fr.`override`.linkit.core.connection.network
 import fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.internal.concurrency.BusyWorkerThread
+import fr.`override`.linkit.internal.concurrency.BusyWorkerPool
 import fr.`override`.linkit.api.connection.network.cache.map.MapModification._
 import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheHandler}
 import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
@@ -17,7 +17,7 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](handler: connection.network.cache.SharedCacheHandler, identifier: Long, baseContent: Array[(K, V)], channel: traffic.channel.CommunicationPacketChannel)
+class SharedMap[K, V](handler: connection.network.cache.AbstractSharedCacheManager, identifier: Long, baseContent: Array[(K, V)], channel: traffic.channel.CommunicationPacketChannel)
         extends network.cache.HandleableSharedCache[(K, V)](handler, identifier, channel) {
 
     private val networkListeners = ConsumerContainer[(MapModification, K, V)]()
@@ -129,7 +129,7 @@ class SharedMap[K, V](handler: connection.network.cache.SharedCacheHandler, iden
 
         addListener(listener) //Due to hyper parallelized thread execution,
         //the awaited key could be added since the 'found' value has been created.
-        BusyWorkerThread.executeRemainingTasks(lock, !(contains(k) || found))
+        BusyWorkerPool.executeRemainingTasks(lock, !(contains(k) || found))
         removeListener(listener)
         //println("Done !")
         apply(k)
@@ -252,7 +252,7 @@ class SharedMap[K, V](handler: connection.network.cache.SharedCacheHandler, iden
 
 object SharedMap {
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        (handler: cache.SharedCacheHandler, identifier: Long, baseContent: Array[Any], channel: channel.CommunicationPacketChannel) => {
+        (handler: cache.AbstractSharedCacheManager, identifier: Long, baseContent: Array[Any], channel: channel.CommunicationPacketChannel) => {
             new SharedMap[K, V](handler, identifier, ScalaUtils.slowCopy(baseContent), channel)
         }
     }

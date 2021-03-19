@@ -9,7 +9,7 @@ import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
 import .serializeInt
 import fr.`override`.linkit.api.connection.packet.PacketCoordinates
 
-class CachedObjectSerializer(cache: cache.SharedCacheHandler) extends ObjectSerializer {
+class CachedObjectSerializer(cache: cache.AbstractSharedCacheManager) extends ObjectSerializer {
 
     private val objectMap = cache.get(14, map.SharedMap[Int, String])
     //objectMap.addListener(_ => s"MODIFIED : $objectMap")

@@ -25,7 +25,7 @@ class CompactedPacketTranslator(relay: Relay) extends PacketTranslator { //Notif
         result
     }
 
-    def completeInitialisation(cache: cache.SharedCacheHandler): Unit = {
+    def completeInitialisation(cache: cache.AbstractSharedCacheManager): Unit = {
         return
         SmartSerializer.completeInitialisation(cache)
     }
@@ -78,7 +78,7 @@ class CompactedPacketTranslator(relay: Relay) extends PacketTranslator { //Notif
             (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
         }
 
-        def completeInitialisation(cache: network.cache.SharedCacheHandler): Unit = {
+        def completeInitialisation(cache: network.cache.AbstractSharedCacheManager): Unit = {
             if (cachedSerializer != null)
                 throw new IllegalStateException("This packet translator is already fully initialised !")
 

@@ -2,11 +2,7 @@ package fr.`override`.linkit.api.connection.packet.traffic
 
 import fr.`override`.linkit.api.connection.packet.Packet
 
-trait PacketAsyncReceiver extends PacketChannel {
-    def addOnPacketReceived(callback: (Packet, DedicatedPacketCoordinates) => Unit): Unit
-}
-
-trait PacketSyncReceiver extends PacketChannel {
+trait PacketReceiver extends PacketChannel {
 
     def nextPacket[P <: Packet]: P
 

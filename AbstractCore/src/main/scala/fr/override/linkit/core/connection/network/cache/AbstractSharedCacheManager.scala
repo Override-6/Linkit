@@ -1,18 +1,17 @@
 package fr.`override`.linkit.core.connection.network.cache
 
-import fr.`override`.linkit.api.Relay.ServerIdentifier
-import fr.`override`.linkit.api.connection.network.Updatable
-import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler.MockCache
-import fr.`override`.linkit.api.connection.network.cache.map.SharedMap
-import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ArrayObjectPacket
-import fr.`override`.linkit.api.connection.packet.fundamental.ValPacket.LongPacket
-import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
-import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
-import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import java.util.NoSuchElementException
 
+import fr.`override`.linkit.api.connection.network.Updatable
+import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
+import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
+import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager.MockCache
 import fr.`override`.linkit.core.connection.packet
+import fr.`override`.linkit.core.connection.packet.UnexpectedPacketException
+import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
+import fr.`override`.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
+import fr.`override`.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.core.connection.packet.traffic.channel
 
 import scala.collection.mutable
@@ -27,7 +26,7 @@ import scala.util.control.NonFatal
 //TODO Use Array[Serializable] instead of Array[Any] for shared contents
 //TODO replace Longs with Ints (be aware that, with the current serialization algorithm,
 // primitives integers are all converted to Long, so it would cause cast problems until the algorithm is modified)
-abstract class SharedCacheHandler(val family: String, traffic: PacketTraffic) extends Updatable {
+abstract class AbstractSharedCacheManager(val family: String, traffic: PacketTraffic) extends SharedCacheManager {
 
     protected val communicator: packet.traffic.channel.CommunicationPacketChannel =
         traffic.getInjectable(11, ChannelScope.broadcast, channel.CommunicationPacketChannel.providable)
@@ -35,16 +34,16 @@ abstract class SharedCacheHandler(val family: String, traffic: PacketTraffic) ex
     private val sharedObjects: map.SharedMap[Long, Serializable] = init()
     println(s"sharedObjects = ${sharedObjects}")
 
-    def post[A <: Serializable](key: Long, value: A): A = {
+    override def post[A <: Serializable](key: Long, value: A): A = {
         sharedObjects.put(key, value)
         value
     }
 
-    def get[A <: Serializable](key: Long): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
-    def getOrWait[A <: Serializable](key: Long): A = sharedObjects.getOrWait(key).asInstanceOf[A]
-    def apply[A <: Serializable](key: Long): A = sharedObjects(key).asInstanceOf[A]
+    override def get[A <: Serializable](key: Long): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
+    override def getOrWait[A <: Serializable](key: Long): A = sharedObjects.getOrWait(key).asInstanceOf[A]
+    override def apply[A <: Serializable](key: Long): A = sharedObjects(key).asInstanceOf[A]
 
-    def get[A <: HandleableSharedCache[_] : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
+    override def get[A <: HandleableSharedCache[_] : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
         LocalCacheHandler
                 .findCache[A](cacheID)
                 .fold {
@@ -195,13 +194,13 @@ abstract class SharedCacheHandler(val family: String, traffic: PacketTraffic) ex
 
 }
 
-object SharedCacheHandler {
+object AbstractSharedCacheManager {
 
-    private val caches = mutable.HashMap.empty[(String, PacketTraffic), SharedCacheHandler]
+    private val caches = mutable.HashMap.empty[(String, PacketTraffic), AbstractSharedCacheManager]
 
     def get(identifier: String,
-            factory: (String, PacketTraffic) => SharedCacheHandler = new SimpleSharedCacheHandler(_, _))
-           (implicit traffic: PacketTraffic): SharedCacheHandler = {
+            factory: (String, PacketTraffic) => AbstractSharedCacheManager = new SimpleSharedCacheHandler(_, _))
+           (implicit traffic: PacketTraffic): AbstractSharedCacheManager = {
 
         caches.get((identifier, traffic))
                 .fold {
@@ -218,11 +217,11 @@ object SharedCacheHandler {
                 })
     }
 
-    class SimpleSharedCacheHandler private[SharedCacheHandler](family: String, traffic: PacketTraffic)
-            extends SharedCacheHandler(family, traffic) {
+    class SimpleSharedCacheHandler private[AbstractSharedCacheManager](family: String, traffic: PacketTraffic)
+            extends AbstractSharedCacheManager(family, traffic) {
 
         override def continuePacketHandling(packet: Packet, coords: DedicatedPacketCoordinates): Unit = {
-            throw new UnexpectedPacketException("Received forbidden/not handleable packet for this simple shared cache handler")
+            throw UnexpectedPacketException("Received forbidden/not handleable packet for this simple shared cache handler")
         }
     }
 

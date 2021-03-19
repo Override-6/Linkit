@@ -1,28 +1,21 @@
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.core.connection
-import fr.`override`.linkit.core.connection.network.cache.collection
-import fr.`override`.linkit.core.connection.packet
-import fr.`override`.linkit.core.connection.packet.traffic
-import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler
-import fr.`override`.linkit.api.connection.network.cache.collection.{BoundedCollection, SharedCollection}
-import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.api.connection.ConnectionContext
+import fr.`override`.linkit.api.connection.network.{Network, NetworkEntity}
 import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope
-import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.local.system.event.network.NetworkEvents
+import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager
+import fr.`override`.linkit.core.connection.network.cache.collection.BoundedCollection
+import fr.`override`.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
 
-abstract class AbstractNetwork(relay: Relay, override val globalCache: cache.SharedCacheHandler) extends Network {
 
-    relay.packetTranslator.completeInitialisation(globalCache)
+abstract class AbstractNetwork(connection: ConnectionContext, override val globalCache: AbstractSharedCacheManager) extends Network {
 
     protected val sharedIdentifiers: cache.collection.SharedCollection[String] = globalCache
             .get(3, cache.collection.SharedCollection.set[String])
 
-    protected val entities: collection.BoundedCollection.Immutable[NetworkEntity]
-    protected val communicator: packet.traffic.channel.CommunicationPacketChannel = relay.getInjectable(9, ChannelScope.broadcast, channel.CommunicationPacketChannel.providable)
-    private val notifier = relay.eventNotifier
+    protected val entities: BoundedCollection.Immutable[NetworkEntity]
+    protected val communicator: CommunicationPacketChannel = connection.getInjectable(9, ChannelScope.broadcast, channel.CommunicationPacketChannel.providable)
+    private val notifier = connection.eventNotifier
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
@@ -58,7 +51,6 @@ abstract class AbstractNetwork(relay: Relay, override val globalCache: cache.Sha
                 val oldValue = relay.properties.putProperty(name, newValue)
                 val entity = getEntity(sender).get
                 val event = NetworkEvents.remotelyCurrentPropertyChange(entity, name, newValue, oldValue)
-                import relay.networkHooks
                 notifier.notifyEvent(event)
         }
     })

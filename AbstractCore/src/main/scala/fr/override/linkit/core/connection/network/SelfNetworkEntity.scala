@@ -12,7 +12,7 @@ import fr.`override`.linkit.core.connection.network
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
 
-class SelfNetworkEntity(relay: Relay, override val cache: cache.SharedCacheHandler) extends NetworkEntity {
+class SelfNetworkEntity(relay: Relay, override val cache: cache.AbstractSharedCacheManager) extends NetworkEntity {
 
     override val identifier: String = relay.identifier
 

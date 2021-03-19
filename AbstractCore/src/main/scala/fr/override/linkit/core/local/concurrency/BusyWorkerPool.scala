@@ -3,7 +3,7 @@ package fr.`override`.linkit.core.local.concurrency
 import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
 
 import fr.`override`.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, workerExecution}
-import fr.`override`.linkit.core.local.concurrency.BusyWorkerThread.{RelayThread, checkCurrentIsWorker}
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool.{RelayThread, checkCurrentIsWorker}
 
 import scala.util.control.NonFatal
 
@@ -62,11 +62,10 @@ import scala.util.control.NonFatal
  * and make one thread able to handle multiple tasks when a task need to wait something.
  *
  * @see [[BusyBlockingQueue]] for busy waitings example.
- * @param prefix   The prefix of the threads names created for the pool.
  * @param nThreads The number of threads the pool will contain.
  * */
-class BusyWorkerThread(val prefix: String, val nThreads: Int) extends AutoCloseable with Procrastinator {
-    private val factory: ThreadFactory = new RelayThread(_, prefix, this)
+class BusyWorkerPool(val nThreads: Int) extends AutoCloseable with Procrastinator {
+    private val factory: ThreadFactory = new RelayThread(_, this)
     private val executor = Executors.newFixedThreadPool(nThreads, factory).asInstanceOf[ThreadPoolExecutor]
 
     //The extracted workQueue of the executor which contains all the tasks to execute
@@ -111,6 +110,8 @@ class BusyWorkerThread(val prefix: String, val nThreads: Int) extends AutoClosea
      * @return the number of threads that are currently executing a task.
      * */
     def busyThreads: Int = activeThreads
+
+    def setThreadCount(newCount: Int): Unit = executor.setCorePoolSize(newCount)
 
     /**
      * Executes tasks contained in the workQueue
@@ -233,7 +234,7 @@ class BusyWorkerThread(val prefix: String, val nThreads: Int) extends AutoClosea
     }
 }
 
-object BusyWorkerThread {
+object BusyWorkerPool {
 
     val workerThreadGroup: ThreadGroup = new ThreadGroup("Relay Worker")
     private var activeCount = 1
@@ -309,7 +310,7 @@ object BusyWorkerThread {
      *
      * @param condition the condition to test
      * @param lock      the lock to handle
-     * @see [[BusyWorkerThread.executeRemainingTasks()]] for further details about the busy system.
+     * @see [[BusyWorkerPool.executeRemainingTasks()]] for further details about the busy system.
      * */
     def executeRemainingTasks(lock: AnyRef, condition: => Boolean): Unit = {
         ifCurrentWorkerOrElse(_.executeRemainingTasks(lock, condition), if (condition) lock.synchronized(lock.wait()))
@@ -322,7 +323,7 @@ object BusyWorkerThread {
      *
      * @param minTimeOut the minimum time to keep busy
      * @param lock       the lock to handle
-     * @see [[BusyWorkerThread.executeRemainingTasks]] for further details about the busy system.
+     * @see [[BusyWorkerPool.executeRemainingTasks]] for further details about the busy system.
      * */
     def smartKeepBusy(lock: AnyRef, minTimeOut: Long): Unit = {
         ifCurrentWorkerOrElse(_.executeRemaingTasks(minTimeOut), lock.synchronized(lock.wait(minTimeOut)))
@@ -336,7 +337,7 @@ object BusyWorkerThread {
      * @param orElse    the action to process if the current thread is not a relay worker thread.
      *
      * */
-    def ifCurrentWorkerOrElse[A](ifCurrent: BusyWorkerThread => A, orElse: => A): A = {
+    def ifCurrentWorkerOrElse[A](ifCurrent: BusyWorkerPool => A, orElse: => A): A = {
         val pool = currentPool()
 
         if (pool.isDefined) {
@@ -347,9 +348,9 @@ object BusyWorkerThread {
     }
 
     /**
-     * @return Some if the current thread is a member of a [[BusyWorkerThread]], None instead
+     * @return Some if the current thread is a member of a [[BusyWorkerPool]], None instead
      * */
-    def currentPool(): Option[BusyWorkerThread] = {
+    def currentPool(): Option[BusyWorkerPool] = {
         currentThread match {
             case worker: RelayThread => Some(worker.ownerPool)
             case _ => None
@@ -360,9 +361,9 @@ object BusyWorkerThread {
      * The representation of a java thread, extending from [[Thread]].
      * This class contains information that need to be stored into a specific thread class.
      * */
-    private final class RelayThread private[BusyWorkerThread](target: Runnable, prefix: String,
-                                                             private[BusyWorkerThread] val ownerPool: BusyWorkerThread)
-        extends Thread(workerThreadGroup, target, s"$prefix Relay Worker Thread-" + activeCount) {
+    private final class RelayThread private[BusyWorkerPool](target: Runnable,
+                                                            private[BusyWorkerPool] val ownerPool: BusyWorkerPool)
+        extends Thread(workerThreadGroup, target, s"Relay Worker Thread-" + activeCount) {
         activeCount += 1
 
         var currentTaskExecutionDepth = 0

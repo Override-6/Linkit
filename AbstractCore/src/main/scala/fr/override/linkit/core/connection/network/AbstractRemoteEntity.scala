@@ -17,7 +17,7 @@ import fr.`override`.linkit.core.connection.packet.traffic.channel
 
 abstract class AbstractRemoteEntity(private val relay: Relay,
                                     override val identifier: String,
-                                    override val cache: cache.SharedCacheHandler,
+                                    override val cache: cache.AbstractSharedCacheManager,
                                     private val communicator: packet.traffic.channel.CommunicationPacketChannel) extends NetworkEntity {
 
     println(s"CREATING REMOTE ENTITY NAMED '$identifier'")

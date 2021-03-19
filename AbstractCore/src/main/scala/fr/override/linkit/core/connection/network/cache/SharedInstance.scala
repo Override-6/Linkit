@@ -10,7 +10,7 @@ import fr.`override`.linkit.internal.utils.ConsumerContainer
 
 import scala.reflect.ClassTag
 
-class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheHandler,
+class SharedInstance[A <: Serializable : ClassTag] private(handler: AbstractSharedCacheManager,
                                                            identifier: Long,
                                                            channel: traffic.channel.CommunicationPacketChannel)
         extends HandleableSharedCache[A](handler, identifier, channel) {
@@ -22,7 +22,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheH
     @volatile private var modCount = 0
     @volatile private var instance: A = _
 
-    def this(handler: SharedCacheHandler,
+    def this(handler: AbstractSharedCacheManager,
              identifier: Long,
              channel: packet.traffic.channel.CommunicationPacketChannel,
              value: A = null) = {
@@ -78,7 +78,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheH
 object SharedInstance {
 
     def apply[A <: Serializable : ClassTag]: SharedCacheFactory[SharedInstance[A]] = {
-        (handler: SharedCacheHandler, identifier: Long, baseContent: Array[Any], channel: channel.CommunicationPacketChannel) => {
+        (handler: AbstractSharedCacheManager, identifier: Long, baseContent: Array[Any], channel: channel.CommunicationPacketChannel) => {
             if (baseContent.isEmpty)
                 new SharedInstance[A](handler, identifier, channel)
             else new SharedInstance[A](handler, identifier, channel, baseContent(0).asInstanceOf[A])

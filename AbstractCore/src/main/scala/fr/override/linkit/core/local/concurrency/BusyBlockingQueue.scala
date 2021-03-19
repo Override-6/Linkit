@@ -12,10 +12,10 @@ import scala.collection.mutable.ListBuffer
  * This queue works like a FIFO queue, excepted that blocking operations are replaced with
  * 'busy operations'.
  *
- * @see [[BusyWorkerThread]] for more details on the 'busy operations' (or called 'busy thread system' in the doc).
+ * @see [[BusyWorkerPool]] for more details on the 'busy operations' (or called 'busy thread system' in the doc).
  * @param pool the pool that created this blocking queue, at which will be used by the queue to handle busy locks.
  * */
-class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerThread) extends BlockingQueue[A] {
+class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
 
     private val content = ListBuffer.empty[A]
     private val lock = new Object

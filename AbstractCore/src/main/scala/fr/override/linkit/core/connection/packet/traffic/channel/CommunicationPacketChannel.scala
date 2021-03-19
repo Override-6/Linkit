@@ -1,6 +1,6 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.internal.concurrency.{BusyWorkerThread, workerExecution}
+import fr.`override`.linkit.internal.concurrency.{BusyWorkerPool, workerExecution}
 import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
 import .PacketInjection
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory}
@@ -17,7 +17,7 @@ class CommunicationPacketChannel(scope: ChannelScope,
         if (!providable)
             new LinkedBlockingQueue[Packet]()
         else {
-            BusyWorkerThread
+            BusyWorkerPool
                     .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }

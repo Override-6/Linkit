@@ -1,20 +1,19 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, BusyWorkerThread, workerExecution}
 import fr.`override`.linkit.api.connection.packet.Packet
-import .PacketInjection
-import fr.`override`.linkit.api.connection.packet.traffic._
-import fr.`override`.linkit.api.connection.packet.traffic.channel.AbstractPacketChannel
-import fr.`override`.linkit.api.local.system.CloseReason
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
+import fr.`override`.linkit.api.connection.packet.traffic._
+import fr.`override`.linkit.api.local.concurrency.workerExecution
+import fr.`override`.linkit.api.local.system.CloseReason
 import fr.`override`.linkit.core.connection.packet.traffic
+import fr.`override`.linkit.core.local.concurrency.{BusyWorkerPool, PacketWorkerThread}
 
 
 //TODO doc
 class SyncPacketChannel protected(scope: ChannelScope,
                                   providable: Boolean) extends traffic.channel.AbstractPacketChannel(scope)
-        with PacketSender with PacketSyncReceiver {
+        with PacketSender with PacketReceiver {
 
 
     /**
@@ -24,7 +23,7 @@ class SyncPacketChannel protected(scope: ChannelScope,
         if (!providable)
             new LinkedBlockingQueue[Packet]()
         else {
-            BusyWorkerThread
+            BusyWorkerPool
                     .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
@@ -49,6 +48,7 @@ class SyncPacketChannel protected(scope: ChannelScope,
     override def nextPacket[P <: Packet]: P = {
         if (queue.isEmpty)
             PacketWorkerThread.checkNotCurrent()
+
         val packet = queue.take()
         packet.asInstanceOf[P]
     }

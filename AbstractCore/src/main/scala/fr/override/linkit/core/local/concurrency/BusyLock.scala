@@ -18,12 +18,12 @@ class BusyLock(releaseCondition: => Boolean = true) {
     /**
      * Keeps the current thread busy with task execution
      *
-     * @see [[BusyWorkerThread]]
+     * @see [[BusyWorkerPool]]
      * */
     @workerExecution
     def keepBusyUntilRelease(@NotNull lock: AnyRef = new Object): Unit = {
-        BusyWorkerThread.checkCurrentIsWorker("Could not perform a busy lock in a non relay thread.")
-        val pool = BusyWorkerThread.currentPool().get
+        BusyWorkerPool.checkCurrentIsWorker("Could not perform a busy lock in a non relay thread.")
+        val pool = BusyWorkerPool.currentPool().get
 
         val repertory = locks.getOrElseUpdate(currentThread, ThreadLocksRepertory())
 
@@ -65,9 +65,9 @@ class BusyLock(releaseCondition: => Boolean = true) {
     }
 
     @workerExecution
-    private def currentPool: BusyWorkerThread = {
-        BusyWorkerThread.checkCurrentIsWorker("Could not perform this action in a non relay thread.")
-        BusyWorkerThread.currentPool().get
+    private def currentPool: BusyWorkerPool = {
+        BusyWorkerPool.checkCurrentIsWorker("Could not perform this action in a non relay thread.")
+        BusyWorkerPool.currentPool().get
     }
 
     /**

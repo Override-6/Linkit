@@ -2,7 +2,7 @@ package fr.`override`.linkit.server
 
 import fr.`override`.linkit.skull.Relay
 import fr.`override`.linkit.skull.ContextLogger
-import fr.`override`.linkit.internal.concurrency.BusyWorkerThread
+import fr.`override`.linkit.internal.concurrency.BusyWorkerPool
 import fr.`override`.linkit.skull.exception.RelayCloseException
 import fr.`override`.linkit.skull.internal.plugin.RelayExtensionLoader
 import fr.`override`.linkit.skull.connection.network._
@@ -44,7 +44,7 @@ class RelayServer private[server](override val configuration: ServerConnectionCo
     private[server] val connectionsManager = new ConnectionsManager(this)
 
     private var currentState: RelayState = RelayState.INACTIVE
-    private val workerThread: BusyWorkerThread = new BusyWorkerThread("\b", 3)
+    private val workerThread: BusyWorkerPool = new BusyWorkerPool("\b", 3)
     override val eventNotifier: EventNotifier = new EventNotifier
     override val securityManager: RelayServerSecurityManager = configuration.securityManager
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
@@ -70,7 +70,7 @@ class RelayServer private[server](override val configuration: ServerConnectionCo
 
 
     override def start(): Unit = {
-        BusyWorkerThread.checkCurrentIsWorker("Must start server in a worker thread.")
+        BusyWorkerPool.checkCurrentIsWorker("Must start server in a worker thread.")
         setState(ENABLING)
 
         Log.info("Current encoding is " + Charset.defaultCharset().name())

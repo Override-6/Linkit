@@ -5,7 +5,7 @@ import scala.collection.mutable
 
 /**
  * This class handles a list of lock objects per threads. <br>
- * Each [[BusyWorkerThread.RelayThread]] is linked to a [[ThreadLocks]] object, that contains a list of
+ * Each [[BusyWorkerPool.RelayThread]] is linked to a [[ThreadLocks]] object, that contains a list of
  * objects ordered by their providing order.
  * <p>
  *     The locks are removed once the current relay thread stopped execute all the tasks it has do do during providing.

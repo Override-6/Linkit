@@ -3,7 +3,7 @@ package fr.`override`.linkit.core.connection.task
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
 import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketReceiver}
 import fr.`override`.linkit.api.connection.task.TaskExecutor
 import fr.`override`.linkit.api.local.system.CloseReason
 
@@ -19,7 +19,7 @@ abstract class SimpleTaskExecutor extends TaskExecutor {
 
     private var canCloseChannel: Boolean = true
     implicit protected var relay: Relay = _
-    implicit protected var channel: PacketSyncReceiver with PacketSender = _
+    implicit protected var channel: PacketReceiver with PacketSender = _
 
 
     final def init(relay: Relay, packetChannel: traffic.channel.SyncPacketChannel): Unit = {

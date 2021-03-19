@@ -1,6 +1,6 @@
 package fr.`override`.linkit.core.local.utils
 
-import fr.`override`.linkit.internal.concurrency.BusyWorkerThread
+import fr.`override`.linkit.internal.concurrency.BusyWorkerPool
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
@@ -50,7 +50,7 @@ class ConsumerContainer[T]() {
     def -=(consumer: T => Unit): this.type = remove(consumer)
 
     def applyAllAsync(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        BusyWorkerThread.runLaterOrHere {
+        BusyWorkerPool.runLaterOrHere {
             applyAll(t, onException)
         }
         this
