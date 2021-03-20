@@ -1,11 +1,22 @@
-package fr.`override`.linkit.api.network.cache.collection
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ * Please contact maximebatista18@gmail.com if you need additional information or have any
+ * questions.
+ */
 
-import java.util.ConcurrentModificationException
+package fr.`override`.linkit.api.network.cache.collection
 
 import fr.`override`.linkit.api.network.cache.collection.BoundedCollection.{Immutable, Mutator}
 import fr.`override`.linkit.api.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.api.utils.ConsumerContainer
 
+import java.util.ConcurrentModificationException
 import scala.collection.mutable.ListBuffer
 
 class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] {
