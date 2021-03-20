@@ -1,15 +1,26 @@
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ * Please contact maximebatista18@gmail.com if you need additional information or have any
+ * questions.
+ */
+
 package fr.`override`.linkit.core.connection.packet.serialization
 
+import fr.`override`.linkit.api.connection.packet.serialization.Serializer
+import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer._
 import fr.`override`.linkit.core.connection.packet.serialization.ObjectSerializer._
 import org.jetbrains.annotations.Nullable
 import sun.misc.Unsafe
+
 import java.lang.reflect.{Field, Modifier}
 import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Short => JShort}
 import java.nio.ByteBuffer
-
-import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer._
-import fr.`override`.linkit.api.connection.packet.serialization.Serializer
-
 import scala.util.control.NonFatal
 
 

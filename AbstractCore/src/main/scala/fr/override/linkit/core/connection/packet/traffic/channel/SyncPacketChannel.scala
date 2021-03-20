@@ -1,13 +1,25 @@
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ * Please contact maximebatista18@gmail.com if you need additional information or have any
+ * questions.
+ */
+
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
 import fr.`override`.linkit.api.connection.packet.Packet
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
-
 import fr.`override`.linkit.api.connection.packet.traffic._
 import fr.`override`.linkit.api.local.concurrency.workerExecution
 import fr.`override`.linkit.api.local.system.CloseReason
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.local.concurrency.{BusyWorkerPool, PacketWorkerThread}
+
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 
 //TODO doc

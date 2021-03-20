@@ -1,12 +1,21 @@
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ * Please contact maximebatista18@gmail.com if you need additional information or have any
+ * questions.
+ */
+
 package fr.`override`.linkit.core.connection.network.cache
 
+import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.core.connection.packet
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.internal.utils.ConsumerContainer
 
 import scala.reflect.ClassTag
 

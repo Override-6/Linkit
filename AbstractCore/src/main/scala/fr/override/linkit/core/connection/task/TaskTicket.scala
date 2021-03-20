@@ -1,16 +1,24 @@
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ * Please contact maximebatista18@gmail.com if you need additional information or have any
+ * questions.
+ */
+
 package fr.`override`.linkit.core.connection.task
+
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope
+import fr.`override`.linkit.api.local.system.CloseReason
+import fr.`override`.linkit.core.connection.packet
+import fr.`override`.linkit.core.connection.packet.traffic
 
 import java.io.IOException
 import java.lang.reflect.InvocationTargetException
-
-import fr.`override`.linkit.core.connection.packet
-import fr.`override`.linkit.core.connection.packet.traffic
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.connection.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope
-import fr.`override`.linkit.api.connection.packet.traffic.channel.SyncPacketChannel
-import fr.`override`.linkit.api.local.system.CloseReason
-
 import scala.util.control.NonFatal
 
 class TaskTicket(executor: SimpleTaskExecutor,

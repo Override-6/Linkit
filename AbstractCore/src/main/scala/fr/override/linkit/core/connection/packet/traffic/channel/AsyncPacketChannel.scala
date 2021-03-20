@@ -1,11 +1,20 @@
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ * Please contact maximebatista18@gmail.com if you need additional information or have any
+ * questions.
+ */
+
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.api.connection.packet.DedicatedPacketCoordinates
+import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, PacketSender}
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
-import fr.`override`.linkit.core.local.utils.ConsumerContainer
-import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketAsyncReceiver, PacketInjectableFactory, PacketSender}
-import fr.`override`.linkit.api.connection.packet.Packet
-import fr.`override`.linkit.core.connection.packet.traffic.PacketInjections.PacketInjection
 import fr.`override`.linkit.core.local.utils.ConsumerContainer
 
 import scala.util.control.NonFatal
