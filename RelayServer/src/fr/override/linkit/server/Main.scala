@@ -1,9 +1,21 @@
-package fr.`override`.linkit.server
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ * Please contact maximebatista18@gmail.com if you need additional information or have any
+ * questions.
+ */
 
-import java.nio.file.Paths
+package fr.`override`.linkit.server
 
 import fr.`override`.linkit.api.system.CloseReason
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, RelayServerBuilder}
+
+import java.nio.file.Paths
 
 
 object Main {
@@ -19,10 +31,6 @@ object Main {
             relayServer.start()
 
             if (ideRun) {
-
-                import fr.`override`.linkit.`extension`.controller.ControllerExtension
-                import fr.`override`.linkit.`extension`.debug.DebugExtension
-                import fr.`override`.linkit.`extension`.easysharing.EasySharing
 
                 val loader = relayServer.extensionLoader
                 loader.loadExtensions(

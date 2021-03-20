@@ -1,8 +1,16 @@
-package fr.`override`.linkit.api.network
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ * Please contact maximebatista18@gmail.com if you need additional information or have any
+ * questions.
+ */
 
-import java.util
-import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
+package fr.`override`.linkit.api.network
 
 import fr.`override`.linkit.api.Relay
 import fr.`override`.linkit.api.exception.{RelayException, UnexpectedPacketException}
@@ -10,6 +18,10 @@ import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.fundamental.PairPacket
 import fr.`override`.linkit.api.packet.traffic.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.packet.traffic.{ChannelScope, PacketTraffic}
+
+import java.util
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 
 class RemoteConsolesContainer(relay: Relay) {
 

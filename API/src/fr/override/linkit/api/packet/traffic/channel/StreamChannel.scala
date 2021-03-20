@@ -1,13 +1,24 @@
-package fr.`override`.linkit.api.packet.traffic.channel
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ * Please contact maximebatista18@gmail.com if you need additional information or have any
+ * questions.
+ */
 
-import java.io.{DataInputStream, DataOutputStream}
+package fr.`override`.linkit.api.packet.traffic.channel
 
 import fr.`override`.linkit.api.concurrency.RelayWorkerThreadPool
 import fr.`override`.linkit.api.exception.UnexpectedPacketException
 import fr.`override`.linkit.api.packet.Packet
 import fr.`override`.linkit.api.packet.traffic.ChannelScope
 import fr.`override`.linkit.api.packet.traffic.PacketInjections.PacketInjection
-import org.jetbrains.annotations.Nullable
+
+import java.io.{DataInputStream, DataOutputStream}
 
 class StreamChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
     @Nullable private var input: DataInputStream = _
