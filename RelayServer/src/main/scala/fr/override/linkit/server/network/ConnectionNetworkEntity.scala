@@ -1,18 +1,15 @@
 package fr.`override`.linkit.server.network
 
-import fr.`override`.linkit.skull.connection.network.cache.{SharedCacheHandler, SharedInstance}
-import fr.`override`.linkit.skull.connection.network.ConnectionState
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.server.RelayServer
 
 class ConnectionNetworkEntity private(server: RelayServer,
                                       identifier: String,
-                                      cacheHandler: SharedCacheHandler,
+                                      cacheHandler: SharedCacheManager,
                                       communicator: CommunicationPacketChannel)
         extends AbstractRemoteEntity(server, identifier, cacheHandler, communicator) {
 
     def this(server: RelayServer, identifier: String, communicator: CommunicationPacketChannel) = {
-        this(server, identifier, SharedCacheHandler.get(identifier, ServerSharedCacheHandler())(server.traffic), communicator)
+        this(server, identifier, SharedCacheManager.get(identifier, ServerSharedCacheManager())(server.traffic), communicator)
     }
 
     private val connection = server.getConnection(identifier).get

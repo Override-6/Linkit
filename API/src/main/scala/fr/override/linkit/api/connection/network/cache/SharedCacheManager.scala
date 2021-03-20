@@ -1,8 +1,10 @@
 package fr.`override`.linkit.api.connection.network.cache
 
+import fr.`override`.linkit.api.connection.network.Updatable
+
 import scala.reflect.ClassTag
 
-trait SharedCacheManager {
+trait SharedCacheManager extends Updatable {
 
     def post[A <: Serializable](key: Long, value: A): A
 

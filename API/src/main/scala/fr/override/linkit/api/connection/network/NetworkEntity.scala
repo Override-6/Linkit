@@ -1,7 +1,6 @@
 package fr.`override`.linkit.api.connection.network
 
-import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler
-import fr.`override`.linkit.api.local.system.Version
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 
 import java.sql.Timestamp
 
@@ -9,27 +8,25 @@ trait NetworkEntity extends Updatable {
 
     val identifier: String
 
-    val cache: SharedCacheHandler
+    val cache: SharedCacheManager
+
+    val network: Network
 
     def connectionDate: Timestamp
 
-    def apiVersion: Version
+    //def apiVersion: Version
 
-    def relayVersion: Version
+    //def relayVersion: Version
 
     def getConnectionState: ConnectionState
 
-    def getProperty(name: String): Serializable
+    //def getRemoteConsole: RemoteConsole
 
-    def setProperty(name: String, value: Serializable): Unit
+    //def getRemoteErrConsole: RemoteConsole
 
-    def getRemoteConsole: RemoteConsole
+    //def listRemoteFragmentControllers: List[RemoteFragmentController]
 
-    def getRemoteErrConsole: RemoteConsole
-
-    def listRemoteFragmentControllers: List[RemoteFragmentController]
-
-    def getFragmentController(nameIdentifier: String): Option[RemoteFragmentController]
+    //def getFragmentController(nameIdentifier: String): Option[RemoteFragmentController]
 
     def toString: String
 

@@ -1,9 +1,6 @@
 package fr.`override`.linkit.server
 
-import fr.`override`.linkit.skull.connection.packet.traffic.{PacketTraffic, PacketWriter}
-import fr.`override`.linkit.skull.connection.packet.Packet
-import fr.`override`.linkit.skull.internal.system.event.packet.PacketEvents
-import fr.`override`.linkit.server.exceptions.ConnectionException
+import fr.`override`.linkit.server.connection.ConnectionException
 
 class ServerPacketWriter(server: RelayServer, info: WriterInfo) extends PacketWriter {
 

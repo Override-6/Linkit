@@ -1,11 +1,11 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 
-import fr.`override`.linkit.internal.concurrency.{BusyWorkerPool, workerExecution}
-import fr.`override`.linkit.api.connection.packet.fundamental.WrappedPacket
-import .PacketInjection
-import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory}
-import fr.`override`.linkit.api.connection.packet.Packet
-import fr.`override`.linkit.internal.utils.ConsumerContainer
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, PacketInjection}
+import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.`override`.linkit.api.local.concurrency.workerExecution
+import fr.`override`.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
+import fr.`override`.linkit.core.local.utils.ConsumerContainer
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 

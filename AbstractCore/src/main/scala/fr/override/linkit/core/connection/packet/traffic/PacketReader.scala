@@ -1,9 +1,9 @@
 package fr.`override`.linkit.core.connection.packet.traffic
 
-import fr.`override`.linkit.api.local.system.security.ConnectionSecurityManager
+import fr.`override`.linkit.api.local.system.security.BytesHasher
 
 
-class PacketReader(socket: DynamicSocket, securityManager: ConnectionSecurityManager) {
+class PacketReader(socket: DynamicSocket, securityManager: BytesHasher) {
 
     def readNextPacketBytes(): Array[Byte] = synchronized {
         val nextLength = socket.readInt()

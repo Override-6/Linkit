@@ -1,10 +1,9 @@
 package fr.`override`.linkit.core.local.concurrency
 
-import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
-
 import fr.`override`.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, workerExecution}
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool.{RelayThread, checkCurrentIsWorker}
 
+import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
 import scala.util.control.NonFatal
 
 /**
@@ -65,6 +64,9 @@ import scala.util.control.NonFatal
  * @param nThreads The number of threads the pool will contain.
  * */
 class BusyWorkerPool(val nThreads: Int) extends AutoCloseable with Procrastinator {
+    if (nThreads <= 0)
+        throw new IllegalArgumentException(s"Worker pool must contain at least 1 thread, provided: '$nThreads'")
+
     private val factory: ThreadFactory = new RelayThread(_, this)
     private val executor = Executors.newFixedThreadPool(nThreads, factory).asInstanceOf[ThreadPoolExecutor]
 

@@ -1,9 +1,9 @@
 package fr.`override`.linkit.core.connection.task
 
-import java.util.concurrent.atomic.AtomicReference
-
 import fr.`override`.linkit.api.connection.task.Task
 import org.jetbrains.annotations.Nullable
+
+import java.util.concurrent.atomic.AtomicReference
 
 
 //TODO reedit the DOC
@@ -14,7 +14,7 @@ import org.jetbrains.annotations.Nullable
  * </p>
  * <p>
  *     TasksCompleters does not have specific Class or Trait to extends, they just have to extend the TaskExecutor.
- *     TasksCompleters are created by the [[TaskCompleterHandler]], and are normally not instantiable from other classes.
+ *     TasksCompleters are created by the [[SimpleCompleterHandler]], and are normally not instantiable from other classes.
  *     TasksCompleters, are the tasks which completes the self-executable tasks.
  *
  *      @example
@@ -31,7 +31,7 @@ import org.jetbrains.annotations.Nullable
  * @param targetID the targeted / concerned Relay identifier
  * @tparam T the return type of this Task when successfully executed
  * @see [[TasksHandler]]
- * @see [[TaskCompleterHandler]]
+ * @see [[SimpleCompleterHandler]]
  * @see [[TaskAction]]
  * @see [[SimpleTaskExecutor]]
  * */

@@ -1,6 +1,7 @@
 package fr.`override`.linkit.core.local.utils
 
-import fr.`override`.linkit.internal.concurrency.BusyWorkerPool
+import fr.`override`.linkit.api.local.concurrency.workerExecution
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
@@ -49,10 +50,15 @@ class ConsumerContainer[T]() {
      * */
     def -=(consumer: T => Unit): this.type = remove(consumer)
 
+    @workerExecution
     def applyAllAsync(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        BusyWorkerPool.runLaterOrHere {
-            applyAll(t, onException)
-        }
+        BusyWorkerPool.checkCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
+        //Will be
+        BusyWorkerPool.currentPool()
+                .get
+                .runLater {
+                    applyAll(t, onException)
+                }
         this
     }
 

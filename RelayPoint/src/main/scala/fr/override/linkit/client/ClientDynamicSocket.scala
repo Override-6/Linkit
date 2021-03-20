@@ -1,18 +1,21 @@
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.skull.Relay
+import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
+import fr.`override`.linkit.core.local.system.ContextLogger
 
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
 
 class ClientDynamicSocket(boundAddress: InetSocketAddress,
-                          reconnectionPeriod: Int) extends DynamicSocket(true) {
+                          socketFactory: InetSocketAddress => Socket) extends DynamicSocket(true, ) {
 
     override val boundIdentifier: String = Relay.ServerIdentifier
 
+    var reconnectionPeriod: Int = 5000
+
     private def newSocket(): Unit = {
         closeCurrentStreams()
-        currentSocket = new Socket(boundAddress.getAddress, boundAddress.getPort)
+        currentSocket = socketFactory(boundAddress)
         currentOutputStream = new BufferedOutputStream(currentSocket.getOutputStream)
         currentInputStream = new BufferedInputStream(currentSocket.getInputStream)
     }

@@ -1,22 +1,21 @@
 package fr.`override`.linkit.api.connection.network
 
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 
 import java.sql.Timestamp
 
 
 trait Network {
 
-    val selfEntity: SelfNetworkEntity
+    val connectionEntity: NetworkEntity
 
-    val globalCache: SharedCacheHandler
+    val globalCache: SharedCacheManager
 
     def listEntities: List[NetworkEntity]
 
     def getEntity(identifier: String): Option[NetworkEntity]
 
-    def serverEntity: NetworkEntity = getEntity(Relay.ServerIdentifier).get
+    def serverEntity: NetworkEntity
 
     def isConnected(identifier: String): Boolean
 

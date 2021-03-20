@@ -1,6 +1,7 @@
 package fr.`override`.linkit.core.local.system.event.relay
 
-import fr.`override`.linkit.api.local.system.event.relay.RelayEvents.{ConnectionStateEvent, OrderReceivedEvent, RelayStateEvent}
+import fr.`override`.linkit.api.local.system.event.EventListener
+import fr.`override`.linkit.core.local.system.event.relay.RelayEvents._
 
 abstract class RelayEventListener extends EventListener {
 

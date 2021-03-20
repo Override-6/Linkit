@@ -1,12 +1,13 @@
 package fr.`override`.linkit.server
 
-import fr.`override`.linkit.skull.connection.packet.Packet
-import fr.`override`.linkit.skull.connection.packet.traffic.PacketWriter
+import fr.`override`.linkit.api.connection.packet.Packet
+import fr.`override`.linkit.api.connection.packet.traffic.PacketWriter
+import fr.`override`.linkit.core.connection.packet.traffic.{AbstractPacketTraffic, WriterInfo}
 
-class ServerPacketTraffic(server: RelayServer) extends AbstractPacketTraffic(server.configuration, server.identifier) {
-    override val ownerID: String = server.identifier
+class ServerPacketTraffic(serverContext: ServerApplicationContext) extends AbstractPacketTraffic(server.identifier) {
+    override val ownerID: String = serverContext.identifier
 
     override def newWriter(identifier: Int, transform: Packet => Packet): PacketWriter = {
-        new ServerPacketWriter(server, WriterInfo(this, identifier, transform))
+        new ServerPacketWriter(serverContext, WriterInfo(this, identifier, transform))
     }
 }

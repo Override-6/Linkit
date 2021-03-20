@@ -1,18 +1,18 @@
 package fr.`override`.linkit.client
 
-import java.net.InetSocketAddress
-
 import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.local.ApplicationContext
 import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.api.local.system.config.ApplicationConfiguration
-import fr.`override`.linkit.client.config.ClientApplicationConfiguration
+import fr.`override`.linkit.client.config.ClientConnectionConfiguration
+import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
 import fr.`override`.linkit.core.local.plugin.LinkitPluginManager
+import fr.`override`.linkit.core.local.system.ContextLogger
 
 import scala.collection.mutable
 
-class ClientApplicationContext(override val configuration: ClientApplicationConfiguration) extends ApplicationContext {
+class ClientApplicationContext(override val configuration: ApplicationConfiguration) extends ApplicationContext {
 
     private val workerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0))
     private val connections = mutable.HashMap.empty[String, ConnectionContext]
@@ -26,10 +26,27 @@ class ClientApplicationContext(override val configuration: ClientApplicationConf
         opt.get
     }
 
-    def newConnection(port: Int, address: InetSocketAddress): ConnectionContext = {
-        val socket = configuration.socketFactory(port, address)
+    override def runLater(task: => Unit): Unit = workerPool.runLater(task)
 
+    def newConnection(config: ClientConnectionConfiguration): ConnectionContext = {
+        val address = config.remoteAddress
+        val dynamicSocket = new ClientDynamicSocket(address, config.socketFactory)
+        dynamicSocket.reconnectionPeriod = config.reconnectionPeriod
+        openConnection(dynamicSocket, config)
     }
 
-    override def runLater(task: => Unit): Unit = workerPool.runLater(task)
+    def unregister(connectionContext: ConnectionContext): Unit = {
+        import connectionContext.identifier
+
+        connections.remove(identifier)
+
+        val newThreadCount = configuration.nWorkerThreadFunction(connections.size)
+        workerPool.setThreadCount(newThreadCount)
+
+        ContextLogger.info(s"connection '$identifier' bound to $boundIdentifier was detached from application.")
+    }
+
+    private def openConnection(socket: DynamicSocket, config: ClientConnectionConfiguration): ConnectionContext = {
+
+    }
 }

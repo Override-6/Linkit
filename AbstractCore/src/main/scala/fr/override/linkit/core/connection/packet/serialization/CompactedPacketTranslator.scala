@@ -1,27 +1,26 @@
 package fr.`override`.linkit.core.connection.packet.serialization
 
+import fr.`override`.linkit.api.connection.packet._
+import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
+import fr.`override`.linkit.api.local.system.security.BytesHasher
 import fr.`override`.linkit.core.connection
 import fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.network.cache.collection
 import fr.`override`.linkit.core.connection.{network, packet}
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.connection.network.cache.SharedCacheHandler
-import fr.`override`.linkit.api.connection.network.cache.collection.SharedCollection
-import fr.`override`.linkit.api.connection.packet._
-import fr.`override`.linkit.api.connection.packet.serialization.{ObjectSerializer, PacketSerializationResult, PacketTranslator}
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
 
-class CompactedPacketTranslator(relay: Relay) extends PacketTranslator { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
+class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesHasher) extends PacketTranslator { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
 
-    def toPacketAndCoords(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
+    override def translate(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
+        securityManager.deHashBytes(bytes)
         SmartSerializer.deserialize(bytes).swap
     }
 
-    def fromPacketAndCoords(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
+    override def translate(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
         val result = SmartSerializer.serialize(packet, coordinates)
-        relay.securityManager.hashBytes(result.bytes)
+        securityManager.hashBytes(result.bytes)
         result
     }
 
@@ -84,7 +83,7 @@ class CompactedPacketTranslator(relay: Relay) extends PacketTranslator { //Notif
 
             cachedSerializer = new CachedObjectSerializer(cache)
             cachedSerializerWhitelist = cache.get(15, connection.network.cache.collection.SharedCollection[String])
-            cachedSerializerWhitelist.add(relay.identifier)
+            cachedSerializerWhitelist.add(ownerIdentifier)
         }
 
         def initialised: Boolean = cachedSerializerWhitelist != null

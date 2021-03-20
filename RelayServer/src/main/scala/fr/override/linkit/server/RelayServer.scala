@@ -1,26 +1,18 @@
 package fr.`override`.linkit.server
 
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.skull.ContextLogger
-import fr.`override`.linkit.internal.concurrency.BusyWorkerPool
-import fr.`override`.linkit.skull.exception.RelayCloseException
-import fr.`override`.linkit.skull.internal.plugin.RelayExtensionLoader
-import fr.`override`.linkit.skull.connection.network._
-import fr.`override`.linkit.skull.connection.packet._
-import fr.`override`.linkit.skull.connection.packet.fundamental.RefPacket.StringPacket
-import fr.`override`.linkit.skull.connection.packet.fundamental.ValPacket.BooleanPacket
-import fr.`override`.linkit.skull.connection.packet.traffic.ChannelScope.ScopeFactory
-import fr.`override`.linkit.skull.connection.packet.traffic._
-import fr.`override`.linkit.skull.internal.system.RelayState.{CLOSED, CRASHED, ENABLED, ENABLING}
-import fr.`override`.linkit.skull.internal.system._
-import fr.`override`.linkit.skull.internal.system.event.relay.RelayEvents
-import fr.`override`.linkit.skull.connection.task.Task
-import fr.`override`.linkit.server.RelayServer.Identifier
+import fr.`override`.linkit.api.connection.network._
+import fr.`override`.linkit.api.connection.packet._
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.connection.packet.traffic._
+import fr.`override`.linkit.api.connection.task.Task
+import fr.`override`.linkit.api.local.system.RelayState.{CLOSED, CRASHED, ENABLED, ENABLING}
+import fr.`override`.linkit.api.local.system._
+import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.StringPacket
+import fr.`override`.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
-import fr.`override`.linkit.server.connection.{ClientConnection, ConnectionsManager, SocketContainer}
-import fr.`override`.linkit.server.exceptions.ConnectionInitialisationException
+import fr.`override`.linkit.server.connection.{ConnectionInitialisationException, ConnectionsManager, ServerExternalConnection, SocketContainer}
 import fr.`override`.linkit.server.network.ServerNetwork
-import fr.`override`.linkit.server.security.RelayServerSecurityManager
+import fr.`override`.linkit.server.security.ServerSecurityManager
 
 import java.net.{ServerSocket, Socket, SocketException}
 import java.nio.charset.Charset
@@ -30,7 +22,6 @@ import scala.util.control.NonFatal
 object RelayServer {
     val version: Version = Version("RelayServer", "0.18.0", stable = false)
 
-    val Identifier: String = Relay.ServerIdentifier
 }
 
 
@@ -46,7 +37,7 @@ class RelayServer private[server](override val configuration: ServerConnectionCo
     private var currentState: RelayState = RelayState.INACTIVE
     private val workerThread: BusyWorkerPool = new BusyWorkerPool("\b", 3)
     override val eventNotifier: EventNotifier = new EventNotifier
-    override val securityManager: RelayServerSecurityManager = configuration.securityManager
+    override val securityManager: ServerSecurityManager = configuration.securityManager
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
     override val relayVersion: Version = RelayServer.version
     override val extensionLoader: RelayExtensionLoader = new RelayExtensionLoader(this)
@@ -87,7 +78,7 @@ class RelayServer private[server](override val configuration: ServerConnectionCo
             case NonFatal(e) =>
                 e.printStackTrace()
                 close(CloseReason.INTERNAL_ERROR)
-                throw RelayInitialisationException(e.getMessage, e)
+                throw AppInitialisationException(e.getMessage, e)
         }
         setState(ENABLED)
         Log.info("Ready !")
@@ -127,7 +118,7 @@ class RelayServer private[server](override val configuration: ServerConnectionCo
     /**
      * Tests if the identifier is registered into the connectionsManager
      * @param identifier, a string that represent the identifier of an eventual relay connection
-     * @return true if an instance of [[ClientConnection]] bound to the provided identifier was found in the connectionsManager.
+     * @return true if an instance of [[ServerExternalConnection]] bound to the provided identifier was found in the connectionsManager.
      * */
     override def isConnected(identifier: String): Boolean = connectionsManager.isRegistered(identifier)
 
@@ -148,7 +139,7 @@ class RelayServer private[server](override val configuration: ServerConnectionCo
     override def isClosed: Boolean = !open
 
 
-    def getConnection(relayIdentifier: String): Option[ClientConnection] = {
+    def getConnection(relayIdentifier: String): Option[ServerExternalConnection] = {
         ensureOpen()
         Option(connectionsManager.getConnection(relayIdentifier))
     }
@@ -163,7 +154,7 @@ class RelayServer private[server](override val configuration: ServerConnectionCo
 
     private def ensureOpen(): Unit = {
         if (!open)
-            throw new RelayCloseException("Relay Server have to be started !")
+            throw new IllegalCloseException("Relay Server have to be started !")
     }
 
     private def setState(state: RelayState): Unit = {
@@ -276,7 +267,7 @@ class RelayServer private[server](override val configuration: ServerConnectionCo
         handleConnectionIdAmbiguity(currentConnection.get, socket)
     }
 
-    private def handleConnectionIdAmbiguity(current: ClientConnection,
+    private def handleConnectionIdAmbiguity(current: ServerExternalConnection,
                                             socket: SocketContainer): Unit = {
 
         if (!current.isConnected) {

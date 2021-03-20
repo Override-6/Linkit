@@ -1,10 +1,10 @@
 package fr.`override`.linkit.api.local
 
-import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.local.concurrency.Procrastinator
 import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.api.local.system.Version
 import fr.`override`.linkit.api.local.system.config.ApplicationConfiguration
+import fr.`override`.linkit.api.local.system.security.ApplicationSecurityManager
 
 
 //TODO Recap :
@@ -21,8 +21,9 @@ trait ApplicationContext extends Procrastinator {
 
     val configuration: ApplicationConfiguration
 
-    def pluginManager(): PluginManager
+    val securityManager: ApplicationSecurityManager = configuration.securityManager
 
-    def getConnection(identifier: String): ConnectionContext
+    def pluginManager: PluginManager
+
 
 }

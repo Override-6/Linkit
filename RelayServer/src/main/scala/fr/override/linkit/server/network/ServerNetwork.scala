@@ -1,24 +1,23 @@
 package fr.`override`.linkit.server.network
 
-import fr.`override`.linkit.skull.connection.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.skull.connection.network.cache.{SharedCacheHandler, SharedInstance}
-import fr.`override`.linkit.skull.connection.network.{ConnectionState, NetworkEntity}
-import fr.`override`.linkit.skull.connection.packet.traffic.PacketTraffic
-import fr.`override`.linkit.skull.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.skull.internal.system.event.network.NetworkEvents
-import fr.`override`.linkit.server.RelayServer
-import fr.`override`.linkit.server.connection.ClientConnection
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
+import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic
+import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager
+import fr.`override`.linkit.core.connection.network.cache.collection.BoundedCollection
+import fr.`override`.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
+import fr.`override`.linkit.server.ServerApplicationContext
+import fr.`override`.linkit.server.connection.ServerExternalConnection
 
 import java.sql.Timestamp
 
-class ServerNetwork private(server: RelayServer, globalCache: SharedCacheHandler)(implicit traffic: PacketTraffic) extends AbstractNetwork(server, globalCache) {
+class ServerNetwork private(serverContext: ServerApplicationContext, globalCache: SharedCacheManager)(implicit traffic: PacketTraffic) extends AbstractNetwork(serverContext, serverContext.identifier, globalCache) {
 
-    def this(server: RelayServer, traffic: PacketTraffic) = {
-        this(server, SharedCacheHandler.get("Global Shared Cache", ServerSharedCacheHandler())(traffic))(traffic)
+    def this(server: ServerApplicationContext, traffic: PacketTraffic) = {
+        this(server, AbstractSharedCacheManager.get("Global Shared Cache", server.identifier, ServerSharedCacheManager())(traffic))(traffic)
     }
 
     override val selfEntity: SelfNetworkEntity =
-        new SelfNetworkEntity(server, SharedCacheHandler.get(server.identifier, ServerSharedCacheHandler()))
+        new SelfNetworkEntity(server, SharedCacheManager.get(server.identifier, ServerSharedCacheManager()))
 
     override val startUpDate: Timestamp = globalCache.post(2, new Timestamp(System.currentTimeMillis()))
 
@@ -54,13 +53,12 @@ class ServerNetwork private(server: RelayServer, globalCache: SharedCacheHandler
                 })
     }
 
-    private[server] def addEntity(connection: ClientConnection): Unit = {
+    private[server] def addEntity(connection: ServerExternalConnection): Unit = {
         sharedIdentifiers.add(connection.identifier)
     }
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
-        import CollectionModification._
-        lazy val entity = entityOpt.orNull//get
+        lazy val entity = entityOpt.orNull //get
         println(s"mod = ${mod}")
         println(s"index = ${index}")
         println(s"entity = ${entity}")

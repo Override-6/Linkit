@@ -1,20 +1,15 @@
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.api.Relay
-import fr.`override`.linkit.api.ContextLogger
 import fr.`override`.linkit.api.connection.packet.Packet
-import fr.`override`.linkit.api.connection.packet.fundamental.TaggedObjectPacket
-import fr.`override`.linkit.api.connection.packet.traffic.channel.AsyncPacketChannel
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
-import fr.`override`.linkit.api.local.system.event.network.NetworkEvents
-import java.util
-import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
-
+import fr.`override`.linkit.api.local.system.AppException
 import fr.`override`.linkit.core.connection.packet
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.api.local.system.RelayException
+
+import java.util
+import java.util.Collections
+import java.util.concurrent.ConcurrentHashMap
 
 class RemoteConsolesContainer(relay: Relay) {
 
@@ -32,7 +27,7 @@ class RemoteConsolesContainer(relay: Relay) {
             return SimpleRemoteConsole.Mock
 
         if (targetId == relay.identifier)
-            throw new RelayException("Attempted to get remote console of this current relay")
+            throw new AppException("Attempted to get remote console of this current relay")
 
         if (consoles.containsKey(targetId))
             return consoles.get(targetId)
@@ -52,8 +47,6 @@ class RemoteConsolesContainer(relay: Relay) {
                 case TaggedObjectPacket(header, msg: String) =>
                     val log: String => Unit = if (header == "err") Log.error else Log.info
                     log(s"[${coords.senderID}]: $msg")
-
-                    import relay.networkHooks
                     val entity = relay.network.getEntity(coords.senderID).get
                     val event = NetworkEvents.remotePrintReceivedEvent(entity, msg)
                     relay.eventNotifier.notifyEvent(event)

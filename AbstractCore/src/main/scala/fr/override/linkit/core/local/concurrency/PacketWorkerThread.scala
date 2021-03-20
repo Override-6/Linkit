@@ -1,6 +1,6 @@
 package fr.`override`.linkit.core.local.concurrency
 
-import fr.`override`.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, workerExecution}
+import fr.`override`.linkit.api.local.concurrency.{IllegalThreadException, workerExecution}
 import fr.`override`.linkit.api.local.system.{CloseReason, JustifiedCloseable}
 import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread.packetReaderThreadGroup
 import fr.`override`.linkit.core.local.system.ContextLogger
@@ -10,7 +10,7 @@ import scala.util.control.NonFatal
 /**
  * A simple abstract class to easily handle packet reading.
  * */
-abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packet Read Worker") with Procrastinator with JustifiedCloseable {
+abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packet Read Worker") with JustifiedCloseable {
 
     private var open = true
 
@@ -97,7 +97,6 @@ object PacketWorkerThread {
 
     /**
      * Handles a lock if the current thread is a [[PacketWorkerThread]], otherwise, throw an [[IllegalThreadException]]
-     * @throws IllegalThreadException
      * */
     def safeLock(anyRef: AnyRef, timeout: Long = 0): Unit = {
         checkNotCurrent()

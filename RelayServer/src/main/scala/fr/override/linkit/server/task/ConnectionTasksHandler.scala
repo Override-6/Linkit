@@ -1,11 +1,8 @@
 package fr.`override`.linkit.server.task
 
-import fr.`override`.linkit.skull.connection.packet.fundamental.TaskInitPacket
-import fr.`override`.linkit.skull.internal.system.{CloseReason, SystemOrder}
-import fr.`override`.linkit.skull.connection.task.{TaskException, TaskExecutor, TasksHandler}
-import fr.`override`.linkit.server.connection.ClientConnectionSession
+import fr.`override`.linkit.server.connection.ConnectionSession
 
-class ConnectionTasksHandler(session: ClientConnectionSession) extends TasksHandler {
+class ConnectionTasksHandler(session: ConnectionSession) extends TasksHandler {
 
   private val server = session.server
   private val systemChannel = session.channel

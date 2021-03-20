@@ -1,8 +1,6 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
-
-import fr.`override`.linkit.internal.concurrency.workerExecution
-import .PacketInjection
 import fr.`override`.linkit.api.connection.packet.traffic._
+import fr.`override`.linkit.api.local.concurrency.workerExecution
 import fr.`override`.linkit.api.local.system.{CloseReason, ForbiddenIdentifierException}
 
 import scala.collection.mutable
@@ -15,7 +13,6 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     override val ownerID: String = writer.relayID
     override val identifier: Int = writer.identifier
     override val traffic: PacketTraffic = writer.traffic
-
 
     private val subChannels = mutable.Set.empty[SubInjectableContainer]
 

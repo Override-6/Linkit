@@ -1,10 +1,5 @@
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.internal.concurrency.PacketWorkerThread
-import fr.`override`.linkit.skull.exception.RelayInitialisationException
-import fr.`override`.linkit.skull.connection.packet.Packet
-import fr.`override`.linkit.skull.internal.system.{CloseReason, JustifiedCloseable, RelayException, RelayInitialisationException}
 import fr.`override`.linkit.server.RelayServer
 import org.jetbrains.annotations.Nullable
 
@@ -15,14 +10,14 @@ import scala.util.control.NonFatal
  * TeamMate of RelayServer, handles the RelayPoint Connections.
  *
  * @see [[RelayServer]]
- * @see [[ClientConnection]]
+ * @see [[ServerExternalConnection]]
  * */
 class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
     /**
      * java map containing all RelayPointConnection instances
      * */
-    private val connections: mutable.Map[String, ClientConnection] = mutable.Map.empty
+    private val connections: mutable.Map[String, ServerExternalConnection] = mutable.Map.empty
     @volatile private var closed = false
 
 
@@ -54,13 +49,13 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
 
         //Opening ClientConnection and finalizing registration
         val connectionSession = ClientConnectionSession(identifier, socket, server)
-        val connection = ClientConnection.open(connectionSession)
+        val connection = ServerExternalConnection.open(connectionSession)
         connections.put(identifier, connection)
 
         println("Sending authorisation packet...")
         server.sendAuthorisedConnection(socket)
 
-        val canConnect = server.securityManager.canConnect(connection)
+        val canConnect = server.securityManager.checkConnection(connection)
         if (canConnect) {
             println(s"Connection of '$identifier' was successfully registered !")
             return
@@ -103,7 +98,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
      *
      * @param identifier the identifier to disconnect
      * */
-    def unregister(identifier: String): Option[ClientConnection] = {
+    def unregister(identifier: String): Option[ServerExternalConnection] = {
         connections.remove(identifier)
     }
 
@@ -111,11 +106,11 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
     /**
      * retrieves a RelayPointConnection based on the address
      *
-     * @param identifier the identifier linked [[ClientConnection]]
-     * @return the found [[ClientConnection]] bound with the identifier
+     * @param identifier the identifier linked [[ServerExternalConnection]]
+     * @return the found [[ServerExternalConnection]] bound with the identifier
      * */
     @Nullable
-    def getConnection(identifier: String): ClientConnection = connections.get(identifier).orNull
+    def getConnection(identifier: String): ServerExternalConnection = connections.get(identifier).orNull
 
     def countConnected: Int = connections.size
 
@@ -142,7 +137,7 @@ class ConnectionsManager(server: RelayServer) extends JustifiedCloseable {
     override def isClosed: Boolean = closed
 
     /**
-     * Deflects a packet to his associated [[ClientConnection]]
+     * Deflects a packet to his associated [[ServerExternalConnection]]
      *
      * @throws RelayException if no connection where found for this packet.
      * @param bytes the packet bytes to deflect

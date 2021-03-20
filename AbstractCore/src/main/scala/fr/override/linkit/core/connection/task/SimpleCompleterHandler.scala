@@ -1,6 +1,8 @@
 package fr.`override`.linkit.core.connection.task
 
-import fr.`override`.linkit.api.connection.packet.fundamental.TaskInitPacket
+import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.`override`.linkit.api.connection.task.{TaskCompleterHandler, TaskException}
+import fr.`override`.linkit.core.connection.packet.fundamental.TaskInitPacket
 
 import scala.collection.mutable
 
@@ -8,9 +10,10 @@ import scala.collection.mutable
  * handles TaskCompleters from
  * an initialization DataPacket
  * */
-class TaskCompleterHandler {
-
-    private val completers: mutable.Map[String, (TaskInitPacket, DedicatedPacketCoordinates) => SimpleTaskExecutor] = new mutable.HashMap()
+//TODO -------------------------------------------------- MAINTAINED --------------------------------------------------
+class SimpleCompleterHandler extends TaskCompleterHandler {
+    private type P <: Packet
+    private val completers: mutable.Map[String, (P, DedicatedPacketCoordinates) => SimpleTaskExecutor] = new mutable.HashMap()
 
     /**
      * @param initPacket the initialization packet for completer.
@@ -19,7 +22,7 @@ class TaskCompleterHandler {
      *
      * @see [[TaskInitPacket]]
      * */
-    def handleCompleter(initPacket: TaskInitPacket, coords: DedicatedPacketCoordinates, tasksHandler: TasksHandler): Unit = {
+    /*def handleCompleter(initPacket: TaskInitPacket, coords: DedicatedPacketCoordinates, tasksHandler: TasksHandler): Unit = {
         val taskType = initPacket.taskType
         val taskID = coords.injectableID
         val targetID = coords.senderID
@@ -38,12 +41,12 @@ class TaskCompleterHandler {
      * @param supplier this lambda takes a [[TaskInitPacket]] the Tasks Handler and the init packet sender identifier
      *                 and the task owner identifier
      * */
-    def register(taskType: String, supplier: (TaskInitPacket, DedicatedPacketCoordinates) => SimpleTaskExecutor): Unit = {
+    def register[P <: Packet](taskType: String, supplier: (P, DedicatedPacketCoordinates) => SimpleTaskExecutor): Unit = {
         completers.put(taskType, supplier)
     }
 
-    def isRegistered(taskType: String): Boolean =
+    override def isRegistered(taskType: String): Boolean =
         completers.contains(taskType)
-
+     */
 
 }

@@ -1,7 +1,8 @@
 package fr.`override`.linkit.core.local.system.event.relay
 
 import fr.`override`.linkit.api.connection.network.ConnectionState
-import fr.`override`.linkit.api.local.system.{RelayState, SystemOrder}
+import fr.`override`.linkit.api.local.system.RelayState
+import fr.`override`.linkit.core.local.system.SystemOrder
 
 object RelayEvents {
 

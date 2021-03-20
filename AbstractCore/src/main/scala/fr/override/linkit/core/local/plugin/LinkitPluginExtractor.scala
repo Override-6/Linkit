@@ -1,17 +1,15 @@
 package fr.`override`.linkit.core.local.plugin
 
+import fr.`override`.linkit.api.local.plugin._
+import fr.`override`.linkit.api.local.system.AppException
+import fr.`override`.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
+import fr.`override`.linkit.core.local.plugin.LinkitPluginExtractor.{MainClassField, PropertyName}
+import fr.`override`.linkit.core.local.plugin.fragment.{LinkitPluginFragment, LinkitRemoteFragment}
+
 import java.net.URLClassLoader
 import java.nio.file.NoSuchFileException
 import java.util.Properties
 import java.util.zip.ZipFile
-
-import fr.`override`.linkit.core.local.plugin.LinkitPluginExtractor.{MainClassField, PropertyName}
-import fr.`override`.linkit.core.local.plugin.fragment.{LinkitPluginFragment, LinkitRemoteFragment, SimpleFragmentManager}
-import fr.`override`.linkit.core.local.system.ContextLogger
-import fr.`override`.linkit.api.local.plugin.LoadPhase._
-import fr.`override`.linkit.api.local.plugin.{LinkitPlugin, LoadPhase, Plugin, PluginExtractor, PluginLoadException, PluginLoader}
-import fr.`override`.linkit.api.local.system.RelayException
-import fr.`override`.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 
 /**
  * <p>
@@ -56,7 +54,7 @@ class LinkitPluginExtractor(fsa: FileSystemAdapter) extends PluginExtractor {
             try {
                 extensions += loadJar(classLoader, path)
             } catch {
-                case e: RelayException => e.printStackTrace()
+                case e: AppException => e.printStackTrace()
             }
         }
         extractAll(extensions: _*)
@@ -87,7 +85,7 @@ class LinkitPluginExtractor(fsa: FileSystemAdapter) extends PluginExtractor {
 
     private def loadClass(clazz: Class[_]): Class[_ <: LinkitPlugin] = {
         if (!classOf[LinkitPlugin].isAssignableFrom(clazz)) {
-            throw new RelayException(s"Class '$clazz' must extends '${classOf[LinkitPlugin]}' to be loaded as a Relay extension.")
+            throw new AppException(s"Class '$clazz' must extends '${classOf[LinkitPlugin]}' to be loaded as a Relay extension.")
         }
         clazz.asInstanceOf[Class[_ <: LinkitPlugin]]
     }

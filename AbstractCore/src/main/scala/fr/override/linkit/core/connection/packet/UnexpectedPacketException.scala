@@ -1,5 +1,7 @@
 package fr.`override`.linkit.core.connection.packet
 
-case class UnexpectedPacketException(msg: String, cause: Throwable = null) extends Exception(msg, cause){
+import fr.`override`.linkit.api.connection.packet.PacketException
+
+case class UnexpectedPacketException(msg: String, cause: Throwable = null) extends PacketException(msg, cause){
 
 }

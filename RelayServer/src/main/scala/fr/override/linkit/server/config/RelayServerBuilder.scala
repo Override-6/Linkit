@@ -1,8 +1,7 @@
 package fr.`override`.linkit.server.config
 
-import fr.`override`.linkit.skull.internal.system.fsa.FileSystemAdapter
 import fr.`override`.linkit.server.RelayServer
-import fr.`override`.linkit.server.security.RelayServerSecurityManager
+import fr.`override`.linkit.server.security.ServerSecurityManager
 
 class RelayServerBuilder {
 
@@ -17,7 +16,7 @@ class RelayServerBuilder {
     var maxPacketContainerCacheLength: Int = 1024
     var packetCacheLength: Int = 8192
 
-    var securityManager: RelayServerSecurityManager = RelayServerSecurityManager.default()
+    var securityManager: ServerSecurityManager = ServerSecurityManager.default()
     var fsAdapter: FileSystemAdapter = JDKFileSystemAdapters.Nio
 
     var port: Int = 48484
@@ -39,7 +38,7 @@ class RelayServerBuilder {
             override val defaultContainerPacketCacheSize: Int = builder.maxPacketContainerCacheLength
             override val maxPacketContainerCacheSize: Int = builder.maxPacketContainerCacheLength
 
-            override val securityManager: RelayServerSecurityManager = builder.securityManager
+            override val securityManager: ServerSecurityManager = builder.securityManager
             override val fsAdapter: FileSystemAdapter = builder.fsAdapter
 
             override val port: Int = builder.port

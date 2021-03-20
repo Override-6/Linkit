@@ -2,7 +2,6 @@ package fr.`override`.linkit.core.connection.packet.traffic
 
 import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.connection.packet.traffic._
-import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
 import fr.`override`.linkit.api.local.system.{CloseReason, ClosedException, JustifiedCloseable}
 import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread
 import org.jetbrains.annotations.NotNull
@@ -12,8 +11,7 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
-abstract class AbstractPacketTraffic(@NotNull config: ConnectionConfiguration,
-                                     @NotNull private val ownerId: String) extends PacketTraffic {
+abstract class AbstractPacketTraffic(@NotNull private val ownerId: String) extends PacketTraffic {
 
     override val relayID: String = ownerId
     private val holders = mutable.Map.empty[Int, ScopesHolder]

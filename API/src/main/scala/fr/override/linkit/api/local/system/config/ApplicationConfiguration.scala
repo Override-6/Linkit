@@ -1,6 +1,7 @@
 package fr.`override`.linkit.api.local.system.config
 
 import fr.`override`.linkit.api.local.system.fsa.FileSystemAdapter
+import fr.`override`.linkit.api.local.system.security.ApplicationSecurityManager
 
 trait ApplicationConfiguration {
 
@@ -10,5 +11,6 @@ trait ApplicationConfiguration {
 
     val fsAdapter: FileSystemAdapter
     val checker: Checker
+    val securityManager: ApplicationSecurityManager
 
 }

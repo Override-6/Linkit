@@ -3,9 +3,9 @@ package fr.override.linkit.api.local.system;
 /**
  * thrown to report an internal incident in the Relays
  * */
-public class RelayCloseException extends RelayException {
+public class IllegalCloseException extends AppException {
 
-    public RelayCloseException(String msg) {
+    public IllegalCloseException(String msg) {
         super(msg);
     }
 

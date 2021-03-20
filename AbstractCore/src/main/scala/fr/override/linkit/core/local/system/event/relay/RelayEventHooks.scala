@@ -1,7 +1,8 @@
 package fr.`override`.linkit.core.local.system.event.relay
 
-import fr.`override`.linkit.api.local.system.event.relay.RelayEvents.{ConnectionStateEvent, OrderReceivedEvent, RelayStateEvent}
-import fr.`override`.linkit.api.local.system.event.{EventHookCategory, SimpleEventHook}
+import fr.`override`.linkit.api.local.system.event.EventHookCategory
+import fr.`override`.linkit.core.local.system.event.SimpleEventHook
+import fr.`override`.linkit.core.local.system.event.relay.RelayEvents._
 
 //noinspection TypeAnnotation
 class RelayEventHooks extends EventHookCategory {

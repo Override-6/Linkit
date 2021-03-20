@@ -1,27 +1,20 @@
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.skull.Relay
-import fr.`override`.linkit.internal.concurrency.{PacketWorkerThread, BusyWorkerPool, workerExecution}
-import fr.`override`.linkit.skull.connection.network.{ConnectionState, RemoteConsole}
-import fr.`override`.linkit.skull.connection.packet._
-import fr.`override`.linkit.skull.connection.packet.fundamental._
-import fr.`override`.linkit.skull.internal.system.{RelayException, _}
-import fr.`override`.linkit.skull.connection.task.TasksHandler
+import fr.`override`.linkit.api.connection.ExternalConnection
 import org.jetbrains.annotations.NotNull
-import java.net.Socket
-import fr.`override`.linkit.skull.internal.system.event.packet.PacketEvents
 
+import java.net.Socket
 import scala.util.control.NonFatal
 
-class ClientConnection private(session: ClientConnectionSession) extends JustifiedCloseable {
+class ServerExternalConnection private(session: ConnectionSession) extends ExternalConnection {
 
-    val identifier: String = session.identifier
+    override val identifier: String = session.server.identifier
+    override val
 
     private val server = session.server
     private val packetTranslator = server.packetTranslator
     private val manager: ConnectionsManager = server.connectionsManager
 
-    private val workerThread = new BusyWorkerPool("Packet Handling & Extension", 3)
 
     @volatile private var closed = false
 
@@ -100,7 +93,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
                     e.printStackTrace()
                     e.printStackTrace(session.errConsole)
                     runLater {
-                        ClientConnection.this.close(CloseReason.INTERNAL_ERROR)
+                        ServerExternalConnection.this.close(CloseReason.INTERNAL_ERROR)
                     }
             }
         }
@@ -123,10 +116,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
         private def handleSystemOrder(packet: SystemPacket): Unit = {
             val orderType = packet.order
             val reason = packet.reason.reversedPOV()
-
-            import SystemOrder._
             orderType match {
-                case CLIENT_CLOSE => runLater(ClientConnection.this.close(reason))
+                case CLIENT_CLOSE => runLater(ServerExternalConnection.this.close(reason))
                 case SERVER_CLOSE => server.close(reason)
                 case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
 
@@ -138,7 +129,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Justifi
 
 }
 
-object ClientConnection {
+object ServerExternalConnection {
 
     /**
      * Constructs a ClientConnection without starting it.
@@ -147,11 +138,11 @@ object ClientConnection {
      * @return a started ClientConnection.
      * @see [[SocketContainer]]
      * */
-    def open(@NotNull session: ClientConnectionSession): ClientConnection = {
+    def open(@NotNull session: ConnectionSession): ServerExternalConnection = {
         if (session == null) {
             throw new NullPointerException("Unable to construct ClientConnection : session cant be null")
         }
-        val connection = new ClientConnection(session)
+        val connection = new ServerExternalConnection(session)
         connection.start()
         connection
     }

@@ -1,17 +1,12 @@
 package fr.`override`.linkit.core.connection.network.cache.map
 
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheFactory
+import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.core.connection
 import fr.`override`.linkit.core.connection.network
 import fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.connection.packet.traffic.channel
-import fr.`override`.linkit.internal.concurrency.BusyWorkerPool
-import fr.`override`.linkit.api.connection.network.cache.map.MapModification._
-import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheHandler}
-import fr.`override`.linkit.api.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.`override`.linkit.api.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.internal.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable

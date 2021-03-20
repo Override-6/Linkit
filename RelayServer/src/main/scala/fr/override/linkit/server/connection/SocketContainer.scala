@@ -1,5 +1,7 @@
 package fr.`override`.linkit.server.connection
 
+import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
+
 import java.io._
 import java.net.Socket
 

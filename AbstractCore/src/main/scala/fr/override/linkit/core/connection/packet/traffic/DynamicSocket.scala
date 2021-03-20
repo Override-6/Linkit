@@ -1,18 +1,15 @@
 package fr.`override`.linkit.core.connection.packet.traffic
 
-import fr.`override`.linkit.api.ContextLogger
-import fr.`override`.linkit.api.exception.RelayCloseException
 import fr.`override`.linkit.api.connection.network.ConnectionState
 import fr.`override`.linkit.api.connection.network.ConnectionState.CLOSED
-import fr.`override`.linkit.api.local.system.{CloseReason, JustifiedCloseable, RelayCloseException, RelayException}
-import fr.`override`.linkit.internal.utils.ConsumerContainer
+import fr.`override`.linkit.api.local.system.{AppException, CloseReason, IllegalCloseException, JustifiedCloseable}
+import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
+import fr.`override`.linkit.core.local.system.ContextLogger
+
 import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
-import fr.`override`.linkit.core.connection.network
-import fr.`override`.linkit.api.local.system.event.relay.{RelayEventHooks, RelayEvents}
-
-abstract class DynamicSocket(autoReconnect: Boolean = true, relayHooks: RelayEventHooks, notifier: EventNotifier) extends JustifiedCloseable {
+abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream: InputStream = _
@@ -58,7 +55,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true, relayHooks: RelayEve
         if (!currentSocket.isClosed)
             closeCurrentStreams()
         SocketLocker.releaseAllMonitors()
-        Log.trace(s"All monitors that were waiting the socket that belongs to '$boundIdentifier' were been released")
+        ContextLogger.info(s"All monitors that were waiting the socket that belongs to '$boundIdentifier' were been released")
     }
 
     override def isClosed: Boolean = SocketLocker.state == CLOSED
@@ -120,7 +117,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true, relayHooks: RelayEve
 
     @volatile protected def boundIdentifier: String
 
-    def getState: network.ConnectionState = SocketLocker.state
+    def getState: ConnectionState = SocketLocker.state
 
     def remoteSocketAddress(): InetSocketAddress = {
         val inet = currentSocket.getInetAddress
@@ -140,16 +137,16 @@ abstract class DynamicSocket(autoReconnect: Boolean = true, relayHooks: RelayEve
 
     private def ensureReady(): Unit = {
         if (currentInputStream == null || currentOutputStream == null) {
-            throw new RelayException("Streams are not ready")
+            throw new AppException("Streams are not ready")
         }
 
     }
 
     private def reconnect(): Unit = {
-        Log.warn(s"The connection with $boundIdentifier has been lost. Currently trying to reconnect...")
+        ContextLogger.warn(s"The connection with $boundIdentifier has been lost. Currently trying to reconnect...")
         SocketLocker.markAsConnecting()
         handleReconnection()
-        Log.trace(s"The connection with $boundIdentifier has been reestablished.")
+        ContextLogger.info(s"The connection with $boundIdentifier has been reestablished.")
     }
 
     import ConnectionState._
@@ -195,19 +192,20 @@ abstract class DynamicSocket(autoReconnect: Boolean = true, relayHooks: RelayEve
                 return
             if (isClosed)
                 throw new IllegalStateException("This socket is definitely closed.")
-            val event = RelayEvents.connectionStateChange(boundIdentifier, state)
-            notifier.notifyEvent(relayHooks, event)
+
+            //val event = RelayEvents.connectionStateChange(boundIdentifier, state)
+            //notifier.notifyEvent(relayHooks, event)
             state = newState
         }
 
         def awaitConnected(): Unit = disconnectLock.synchronized {
             if (state != CONNECTED) try {
                 if (state == CLOSED)
-                    throw new RelayCloseException("Attempted to wait this socket to be connected again, but it is now closed.")
+                    throw new IllegalCloseException("Attempted to wait this socket to be connected again, but it is now closed.")
 
-                Log.warn(s"The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier isn't ready or is disconnected.")
+                ContextLogger.warn(s"The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier isn't ready or is disconnected.")
                 disconnectLock.wait()
-                Log.trace(s"The connection with $boundIdentifier is now ready.")
+                ContextLogger.trace(s"The connection with $boundIdentifier is now ready.")
             } catch {
                 case _: InterruptedException =>
             }
