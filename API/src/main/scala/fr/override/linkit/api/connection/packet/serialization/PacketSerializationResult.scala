@@ -16,7 +16,7 @@ import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 
 case class PacketSerializationResult(packet: Packet, coords: PacketCoordinates, serializer: Serializer, bytes: Array[Byte]) {
 
-    def writableBytes(): Array[Byte] = {
+    def writableBytes: Array[Byte] = {
         val length = bytes.length
         Array[Byte](
             ((length >> 24) & 0xff).toByte,

@@ -12,6 +12,9 @@
 
 package fr.`override`.linkit.core.local.system.event.packet
 
+import fr.`override`.linkit.api.local.system.event.EventListener
+import fr.`override`.linkit.core.local.system.event.packet.PacketEvents._
+
 abstract class PacketEventListener extends EventListener {
 
     def onPacketWritten(event: PacketWrittenEvent): Unit = ()

@@ -12,11 +12,11 @@
 
 package fr.`override`.linkit.api.local.system
 
-import fr.`override`.linkit.api.local.system.CloseReason.NOT_SPECIFIED
+import fr.`override`.linkit.api.local.system.Reason.NOT_SPECIFIED
 
 trait JustifiedCloseable extends AutoCloseable {
 
-    def close(reason: CloseReason): Unit
+    def close(reason: Reason): Unit
 
     def isClosed: Boolean
 

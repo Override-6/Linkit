@@ -16,7 +16,7 @@ import fr.`override`.linkit.api.connection.packet.Packet
 
 trait PacketWriter {
 
-    val relayID: String
+    val serverIdentifier: String
     val ownerID: String
     val identifier: Int
     val traffic: PacketTraffic

@@ -12,16 +12,18 @@
 
 package fr.`override`.linkit.core.connection.network.cache
 
+import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import fr.`override`.linkit.api.connection.packet.traffic.PacketSender
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.core.connection.packet
-import fr.`override`.linkit.core.connection.packet.traffic
-import fr.`override`.linkit.core.connection.packet.traffic.channel
+import fr.`override`.linkit.core.connection.packet.UnexpectedPacketException
+import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.core.local.utils.ConsumerContainer
 
 import scala.reflect.ClassTag
 
-class SharedInstance[A <: Serializable : ClassTag] private(handler: AbstractSharedCacheManager,
+class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheManager,
                                                            identifier: Long,
-                                                           channel: traffic.channel.CommunicationPacketChannel)
+                                                           channel: PacketSender)
         extends HandleableSharedCache[A](handler, identifier, channel) {
 
     override var autoFlush: Boolean = true
@@ -31,9 +33,9 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: AbstractShar
     @volatile private var modCount = 0
     @volatile private var instance: A = _
 
-    def this(handler: AbstractSharedCacheManager,
+    def this(handler: SharedCacheManager,
              identifier: Long,
-             channel: packet.traffic.channel.CommunicationPacketChannel,
+             channel: PacketSender,
              value: A = null) = {
         this(handler, identifier, channel)
         instance = value
@@ -48,7 +50,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: AbstractShar
                 listeners.applyAll(remoteInstance)
             //println(s"<$family> INSTANCE IS NOW (network): $instance")
 
-            case _ => throw new UnexpectedPacketException("Unable to handle a non-ObjectPacket into SharedInstance")
+            case _ => throw UnexpectedPacketException("Unable to handle a non-ObjectPacket into SharedInstance")
         }
     }
 
@@ -87,7 +89,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: AbstractShar
 object SharedInstance {
 
     def apply[A <: Serializable : ClassTag]: SharedCacheFactory[SharedInstance[A]] = {
-        (handler: AbstractSharedCacheManager, identifier: Long, baseContent: Array[Any], channel: channel.CommunicationPacketChannel) => {
+        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender) => {
             if (baseContent.isEmpty)
                 new SharedInstance[A](handler, identifier, channel)
             else new SharedInstance[A](handler, identifier, channel, baseContent(0).asInstanceOf[A])

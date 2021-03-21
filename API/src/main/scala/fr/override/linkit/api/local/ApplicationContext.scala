@@ -12,11 +12,10 @@
 
 package fr.`override`.linkit.api.local
 
-import fr.`override`.linkit.api.local.concurrency.Procrastinator
+import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.api.local.system.Version
 import fr.`override`.linkit.api.local.system.config.ApplicationConfiguration
-import fr.`override`.linkit.api.local.system.security.ApplicationSecurityManager
 
 
 //TODO Recap :
@@ -29,13 +28,12 @@ object ApplicationContext {
     val ApiVersion: Version = Version(name = "API", code = "0.20.0", stable = false)
 }
 
-trait ApplicationContext extends Procrastinator {
+trait ApplicationContext {
 
     val configuration: ApplicationConfiguration
 
-    val securityManager: ApplicationSecurityManager = configuration.securityManager
-
     def pluginManager: PluginManager
 
-
+    @throws[NoSuchElementException]("If the connection isn't found in the application's cache.")
+    def unregister(connection: ConnectionContext): Unit
 }

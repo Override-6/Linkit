@@ -12,6 +12,9 @@
 
 package fr.`override`.linkit.api.connection.task
 
+import fr.`override`.linkit.api.connection.ConnectionContext
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketReceiver, PacketSender}
+
 /**
  * The class that will execute the Task.
  * When the task is ready to be executed, the method [[execute()]] will be called.
@@ -29,15 +32,13 @@ trait TaskExecutor {
      *
      * @return a [[TaskInitInfo]] that describe how the completer will be instantiated
      * */
-    def initInfo: TaskInitInfo = null
+    //def initInfo: TaskInitInfo = null
 
     /**
      * Executes this task.
      * */
     def execute(): Unit
 
-    protected def setDoNotCloseChannel(): Unit
-
-    protected def setCloseChannel(): Unit
+    def init(connection: ConnectionContext, packetChannel: PacketReceiver with PacketSender): Unit
 
 }

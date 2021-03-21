@@ -12,23 +12,23 @@
 
 package fr.`override`.linkit.core.connection.network
 
+import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.network.{Network, NetworkEntity}
-import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableContainer}
-import fr.`override`.linkit.core.connection.network.cache.collection.BoundedCollection
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope
+import fr.`override`.linkit.core.connection.network.cache.collection.{BoundedCollection, SharedCollection}
 import fr.`override`.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
 
 
-abstract class AbstractNetwork(container: PacketInjectableContainer,
-                               selfIdentifier: String,
+abstract class AbstractNetwork(override val connection: ConnectionContext,
                                override val globalCache: SharedCacheManager) extends Network {
 
-    protected val sharedIdentifiers: cache.collection.SharedCollection[String] = globalCache
-            .get(3, cache.collection.SharedCollection.set[String])
+    protected val sharedIdentifiers: SharedCollection[String] = globalCache
+            .get(3, SharedCollection.set[String])
 
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     protected val communicator: CommunicationPacketChannel =
-        container.getInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)
+        connection.getInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
@@ -41,7 +41,7 @@ abstract class AbstractNetwork(container: PacketInjectableContainer,
     override def isConnected(identifier: String): Boolean = getEntity(identifier).isDefined
 
     protected def createEntity(identifier: String): NetworkEntity = {
-        if (identifier == selfIdentifier) {
+        if (identifier == connection.supportIdentifier) {
             return connectionEntity
         }
 

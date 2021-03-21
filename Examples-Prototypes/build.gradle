@@ -3,7 +3,7 @@ plugins {
     id 'scala'
 }
 
-group 'org.example'
+group 'fr.override.linkit'
 version '1.0-SNAPSHOT'
 
 repositories {

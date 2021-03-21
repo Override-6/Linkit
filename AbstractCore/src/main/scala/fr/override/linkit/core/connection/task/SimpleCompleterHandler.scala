@@ -13,7 +13,7 @@
 package fr.`override`.linkit.core.connection.task
 
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
-import fr.`override`.linkit.api.connection.task.{TaskCompleterHandler, TaskException}
+import fr.`override`.linkit.api.connection.task.{TaskCompleterHandler, TaskException, TasksHandler}
 import fr.`override`.linkit.core.connection.packet.fundamental.TaskInitPacket
 
 import scala.collection.mutable
@@ -60,5 +60,5 @@ class SimpleCompleterHandler extends TaskCompleterHandler {
     override def isRegistered(taskType: String): Boolean =
         completers.contains(taskType)
      */
-
+    override def handleCompleter(initPacket: Packet, coords: DedicatedPacketCoordinates, tasksHandler: TasksHandler): Unit = ()
 }

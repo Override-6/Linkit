@@ -14,7 +14,7 @@ package fr.`override`.linkit.core.connection.packet.traffic
 
 import fr.`override`.linkit.api.connection.network.ConnectionState
 import fr.`override`.linkit.api.connection.network.ConnectionState.CLOSED
-import fr.`override`.linkit.api.local.system.{AppException, CloseReason, IllegalCloseException, JustifiedCloseable}
+import fr.`override`.linkit.api.local.system.{AppException, IllegalCloseException, JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.`override`.linkit.core.local.system.ContextLogger
 
@@ -61,7 +61,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         }
     }
 
-    override def close(reason: CloseReason): Unit = {
+    override def close(reason: Reason): Unit = {
         SocketLocker.markAsClosed()
 
         if (!currentSocket.isClosed)

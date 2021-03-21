@@ -13,7 +13,7 @@
 package fr.`override`.linkit.core.connection.packet.traffic.channel
 import fr.`override`.linkit.api.connection.packet.traffic._
 import fr.`override`.linkit.api.local.concurrency.workerExecution
-import fr.`override`.linkit.api.local.system.{CloseReason, ForbiddenIdentifierException}
+import fr.`override`.linkit.api.local.system.{ForbiddenIdentifierException, Reason}
 
 import scala.collection.mutable
 
@@ -22,7 +22,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
     protected val writer: PacketWriter = scope.writer
-    override val ownerID: String = writer.relayID
+    override val ownerID: String = writer.serverIdentifier
     override val identifier: Int = writer.identifier
     override val traffic: PacketTraffic = writer.traffic
 
@@ -30,7 +30,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
 
     @volatile private var closed = true
 
-    override def close(reason: CloseReason): Unit = closed = true
+    override def close(reason: Reason): Unit = closed = true
 
     override def isClosed: Boolean = closed
 

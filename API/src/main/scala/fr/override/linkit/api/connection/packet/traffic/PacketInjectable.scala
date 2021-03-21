@@ -10,7 +10,9 @@
  * questions.
  */
 
-package fr.`override`.linkit.api.connection.packet.traffic .PacketInjection
+package fr.`override`.linkit.api.connection.packet.traffic
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketInjectableFactory, PacketInjection, PacketTraffic}
+import fr.`override`.linkit.api.local.concurrency.workerExecution
 import fr.`override`.linkit.api.local.system.JustifiedCloseable
 
 trait PacketInjectable extends JustifiedCloseable {

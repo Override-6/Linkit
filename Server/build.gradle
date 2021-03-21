@@ -1,0 +1,27 @@
+plugins {
+    id 'java'
+    id 'scala'
+}
+
+group 'fr.override.linkit'
+version '1.0-SNAPSHOT'
+
+repositories {
+    mavenCentral()
+}
+
+tasks.withType(ScalaCompile) {
+    scalaCompileOptions.additionalParameters = ["-feature", "-language:implicitConversions", "-language:postfixOps", "-language:existentials"]
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.5'
+    implementation group: 'log4j', name: 'log4j', version: '1.2.17'
+    implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
+    implementation project(':API')
+    implementation project(':AbstractCore')
+    implementation project(':LinKitExtensions:RelayController')
+    implementation project(':LinKitExtensions:EasySharing')
+    implementation project(':LinKitExtensions:DebugExtension')
+}

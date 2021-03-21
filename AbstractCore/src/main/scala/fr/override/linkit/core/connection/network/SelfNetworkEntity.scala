@@ -21,7 +21,7 @@ import java.sql.Timestamp
 class SelfNetworkEntity(connection: ConnectionContext,
                         override val cache: SharedCacheManager) extends NetworkEntity {
 
-    override val identifier: String = connection.identifier
+    override val identifier: String = connection.supportIdentifier
 
     override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())
 

@@ -36,7 +36,9 @@ import scala.util.control.NonFatal
 //TODO Use Array[Serializable] instead of Array[Any] for shared contents
 //TODO replace Longs with Ints (be aware that, with the current serialization algorithm,
 // primitives integers are all converted to Long, so it would cause cast problems until the algorithm is modified)
-abstract class AbstractSharedCacheManager(val family: String, ownerIdentifier: String, traffic: PacketTraffic) extends SharedCacheManager {
+abstract class AbstractSharedCacheManager(override val family: String,
+                                          override val ownerID: String,
+                                          traffic: PacketTraffic) extends SharedCacheManager {
 
     protected val communicator: RequestSender =
         traffic.getInjectable(11, ChannelScope.broadcast, new RequestSender(_))
@@ -80,7 +82,7 @@ abstract class AbstractSharedCacheManager(val family: String, ownerIdentifier: S
 
     private def retrieveBaseContent(cacheID: Long): Array[Any] = {
         println(s"Sending request to server in order to retrieve content of cache number $cacheID")
-        communicator.sendRequest(WrappedPacket(family, LongPacket(cacheID)), ownerIdentifier)
+        communicator.sendRequest(WrappedPacket(family, LongPacket(cacheID)), ownerID)
         println(s"request sent !")
         val content = communicator.nextResponse[ArrayObjectPacket].value //The request will return the cache content
         println(s"Content received ! (${content.mkString("Array(", ", ", ")")})")
@@ -201,7 +203,7 @@ abstract class AbstractSharedCacheManager(val family: String, ownerIdentifier: S
     }
 
     private def println(msg: String): Unit = {
-        Console.println(s"<$family, $ownerIdentifier> $msg")
+        Console.println(s"<$family, $ownerID> $msg")
     }
 
 }

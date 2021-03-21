@@ -13,7 +13,8 @@
 package fr.`override`.linkit.api.connection.task
 
 import fr.`override`.linkit.api.connection.packet.traffic.PacketChannel
-import fr.`override`.linkit.api.local.system.{CloseReason, JustifiedCloseable}
+import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
 
 /**
  * This class is the hearth of this program.
@@ -48,17 +49,12 @@ trait TasksHandler extends JustifiedCloseable {
     val tasksCompleterHandler: TaskCompleterHandler
 
     /**
-     * closes the current client tasks thread
-     * */
-    override def close(reason: CloseReason): Unit
-
-    /**
      * Handles the packet.
      * @param packet packet to handle
      *
      * @throws TaskException if the handling went wrong
      * */
-    def handlePacket(packet: TaskInitPacket, coordinates: DedicatedPacketCoordinates): Unit
+    def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates): Unit
 
 
     /**
@@ -72,5 +68,5 @@ trait TasksHandler extends JustifiedCloseable {
     /**
      * Suddenly stop a task execution and execute his successor.
      * */
-    def skipCurrent(reason: CloseReason): Unit
+    def skipCurrent(reason: Reason): Unit
 }

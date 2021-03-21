@@ -15,7 +15,7 @@ package fr.`override`.linkit.core.connection.packet.traffic.channel
 import fr.`override`.linkit.api.connection.packet.Packet
 import fr.`override`.linkit.api.connection.packet.traffic._
 import fr.`override`.linkit.api.local.concurrency.workerExecution
-import fr.`override`.linkit.api.local.system.CloseReason
+import fr.`override`.linkit.api.local.system.Reason
 import fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.core.local.concurrency.{BusyWorkerPool, PacketWorkerThread}
 
@@ -52,7 +52,7 @@ class SyncPacketChannel protected(scope: ChannelScope,
         scope.sendTo(packet, targets:_*)
     }
 
-    override def close(reason: CloseReason): Unit = {
+    override def close(reason: Reason): Unit = {
         super.close(reason)
         queue.clear()
     }

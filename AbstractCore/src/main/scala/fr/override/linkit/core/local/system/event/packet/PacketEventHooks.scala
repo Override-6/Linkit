@@ -13,6 +13,8 @@
 package fr.`override`.linkit.core.local.system.event.packet
 
 import fr.`override`.linkit.api.local.system.event.EventHookCategory
+import fr.`override`.linkit.core.local.system.event.SimpleEventHook
+import fr.`override`.linkit.core.local.system.event.packet.PacketEvents._
 
 //noinspection TypeAnnotation
 class PacketEventHooks extends EventHookCategory {

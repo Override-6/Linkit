@@ -12,10 +12,10 @@
 
 package fr.`override`.linkit.core.connection.task
 
+import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.packet.traffic.{PacketReceiver, PacketSender}
 import fr.`override`.linkit.api.connection.task.TaskExecutor
-import fr.`override`.linkit.api.local.system.CloseReason
-import fr.`override`.linkit.core.connection.packet.traffic
+import fr.`override`.linkit.api.local.system.Reason
 import fr.`override`.linkit.core.connection.packet.traffic.channel
 
 /**
@@ -29,19 +29,19 @@ import fr.`override`.linkit.core.connection.packet.traffic.channel
 abstract class SimpleTaskExecutor extends TaskExecutor {
 
     private var canCloseChannel: Boolean = true
-    implicit protected var relay: Relay = _
-    implicit protected var channel: PacketReceiver with PacketSender = _
+    protected var connection: ConnectionContext = _
+    protected var channel: PacketReceiver with PacketSender = _
 
 
-    final def init(relay: Relay, packetChannel: traffic.channel.SyncPacketChannel): Unit = {
-        if (relay == null || packetChannel == null)
+    final def init(connection: ConnectionContext, packetChannel: PacketReceiver with PacketSender): Unit = {
+        if (connection == null || packetChannel == null)
             throw new NullPointerException
-        this.channel = packetChannel
 
-        this.relay = relay
+        this.channel = packetChannel
+        this.connection = connection
     }
 
-    def closeChannel(reason: CloseReason): Unit = {
+    def closeChannel(reason: Reason): Unit = {
         if (canCloseChannel)
             channel.close(reason)
     }

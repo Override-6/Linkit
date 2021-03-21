@@ -12,7 +12,11 @@
 
 package fr.`override`.linkit.api.connection.task
 
+import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+
 trait TaskCompleterHandler {
+
+    def handleCompleter(initPacket: Packet, coords: DedicatedPacketCoordinates, tasksHandler: TasksHandler): Unit
 
     //def register[P <: Packet](taskType: String, supplier: (P, DedicatedPacketCoordinates) => TaskExecutor): Unit
 

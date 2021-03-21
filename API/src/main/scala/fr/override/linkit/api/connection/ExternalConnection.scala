@@ -12,6 +12,15 @@
 
 package fr.`override`.linkit.api.connection
 
+import fr.`override`.linkit.api.connection.network.ConnectionState
+import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
+
 trait ExternalConnection extends ConnectionContext {
+
     val boundIdentifier: String
+
+    def getState: ConnectionState
+
+    def translator: PacketTranslator
+
 }

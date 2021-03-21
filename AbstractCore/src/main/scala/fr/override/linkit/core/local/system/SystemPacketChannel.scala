@@ -13,12 +13,14 @@
 package fr.`override`.linkit.core.local.system
 
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory}
+import fr.`override`.linkit.api.local.system.Reason
+import fr.`override`.linkit.core.connection.packet.traffic.channel.SyncPacketChannel
 
 class SystemPacketChannel(scope: ChannelScope)
         extends SyncPacketChannel(scope, true) {
 
 
-    def sendOrder(systemOrder: SystemOrder, reason: CloseReason, content: Array[Byte] = Array()): Unit = {
+    def sendOrder(systemOrder: SystemOrder, reason: Reason, content: Array[Byte] = Array()): Unit = {
         send(SystemPacket(systemOrder, reason, content))
         //notifier.onSystemOrderSent(systemOrder) TODO rebased event system
     }

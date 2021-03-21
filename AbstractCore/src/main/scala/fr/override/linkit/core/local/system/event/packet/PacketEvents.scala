@@ -12,8 +12,8 @@
 
 package fr.`override`.linkit.core.local.system.event.packet
 
-import fr.`override`.linkit.api.connection.packet.traffic.PacketInjectable
-import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, Serializer}
+import fr.`override`.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
 
 object PacketEvents {
 
@@ -41,7 +41,7 @@ object PacketEvents {
 
     case class PacketWrittenEvent(override val packet: Packet,
                                   coordinates: PacketCoordinates,
-                                  serializer: Class[_ <: ObjectSerializer],
+                                  serializer: Class[_ <: Serializer],
                                   bytes: Array[Byte]) extends PacketEvent {
 
         override def getHooks(category: PacketEventHooks): Array[PacketEventHook] = !!(Array(category.packetWritten))
@@ -49,7 +49,7 @@ object PacketEvents {
 
     case class PacketReceivedEvent(override val packet: Packet,
                                    coordinates: PacketCoordinates,
-                                   serializer: Class[_ <: ObjectSerializer],
+                                   serializer: Class[_ <: Serializer],
                                    bytes: Array[Byte]) extends PacketEvent {
 
         override def getHooks(category: PacketEventHooks): Array[PacketEventHook] = !!(Array(category.packetReceived))
@@ -73,12 +73,12 @@ object PacketEvents {
         PacketWrittenEvent(result.packet, result.coords, result.serializer.getClass, result.bytes)
     }
 
-    def packetReceived(packet: Packet, serializer: ObjectSerializer, bytes: Array[Byte]): PacketReceivedEvent = {
-        PacketReceivedEvent(packet, serializer.getClass, bytes)
+    def packetReceived(packet: Packet, coords: PacketCoordinates, serializer: Serializer, bytes: Array[Byte]): PacketReceivedEvent = {
+        PacketReceivedEvent(packet, coords, serializer.getClass, bytes)
     }
 
-    def packetInjected(packet: Packet, injectable: PacketInjectable): PacketInjectedEvent = {
-        PacketInjectedEvent(packet, injectable)
+    def packetInjected(packet: Packet, coords: PacketCoordinates, injectable: PacketInjectable): PacketInjectedEvent = {
+        PacketInjectedEvent(packet, coords, injectable)
     }
 
     private def !![A](any: Any): A = any.asInstanceOf[A]

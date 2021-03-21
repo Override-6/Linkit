@@ -13,8 +13,8 @@
 package fr.`override`.linkit.core.local.system
 
 import fr.`override`.linkit.api.connection.packet.Packet
-import fr.`override`.linkit.api.local.system.CloseReason
+import fr.`override`.linkit.api.local.system.Reason
 
 case class SystemPacket private(order: SystemOrder,
-                                reason: CloseReason,
+                                reason: Reason,
                                 content: Array[Byte] = Array()) extends Packet

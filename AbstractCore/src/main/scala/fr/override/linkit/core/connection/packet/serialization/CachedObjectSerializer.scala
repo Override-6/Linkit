@@ -12,12 +12,16 @@
 
 package fr.`override`.linkit.core.connection.packet.serialization
 
-import fr.`override`.linkit.api.connection.packet.PacketCoordinates
+import fr.`override`.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.`override`.linkit.core.connection.network.cache
+import fr.`override`.linkit.core.connection.network.cache.map.{MapModification, SharedMap}
+import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 
 class CachedObjectSerializer(cache: cache.AbstractSharedCacheManager) extends ObjectSerializer {
 
-    private val objectMap = cache.get(14, map.SharedMap[Int, String])
+    private val objectMap = cache.get(14, SharedMap[Int, String])
     //objectMap.addListener(_ => s"MODIFIED : $objectMap")
 
     /**
@@ -57,7 +61,7 @@ class CachedObjectSerializer(cache: cache.AbstractSharedCacheManager) extends Ob
     serializeType(classOf[BroadcastPacketCoordinates])
     serializeType(classOf[WrappedPacket])
     serializeType(classOf[ObjectPacket])
-    serializeType(classOf[map.MapModification])
+    serializeType(classOf[MapModification])
     serializeType(classOf[(_, _, _)])
 
     private val NilName = "scala.collection.immutable.Nil$" //This class is odd, could not find it from my IDE, but it still present at runtime.

@@ -12,20 +12,10 @@
 
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.api.connection.packet.Packet
-import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
-import fr.`override`.linkit.api.local.system.AppException
-import fr.`override`.linkit.core.connection.packet
-import fr.`override`.linkit.core.connection.packet.traffic
-import fr.`override`.linkit.core.connection.packet.traffic.channel
+//TODO -------------------------------------------------- MAINTAINED --------------------------------------------------
+class RemoteConsolesContainer() {
 
-import java.util
-import java.util.Collections
-import java.util.concurrent.ConcurrentHashMap
-
-class RemoteConsolesContainer(relay: Relay) {
-
-    private val printChannel = relay.getInjectable(PacketTraffic.RemoteConsoles, ChannelScope.broadcast, channel.AsyncPacketChannel)
+   /* private val printChannel = relay.getInjectable(PacketTraffic.RemoteConsoles, ChannelScope.broadcast, channel.AsyncPacketChannel)
 
     private val outConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, SimpleRemoteConsole])
     private val errConsoles = Collections.synchronizedMap(new ConcurrentHashMap[String, SimpleRemoteConsole])
@@ -65,6 +55,6 @@ class RemoteConsolesContainer(relay: Relay) {
                 case other: Packet => throw new UnexpectedPacketException(s"Unexpected packet '${other.getClass.getName}' injected in a remote console.")
             }
         })
-    }
+    }*/
 
 }

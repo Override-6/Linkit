@@ -13,7 +13,7 @@
 package fr.`override`.linkit.core.local.concurrency
 
 import fr.`override`.linkit.api.local.concurrency.{IllegalThreadException, workerExecution}
-import fr.`override`.linkit.api.local.system.{CloseReason, JustifiedCloseable}
+import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread.packetReaderThreadGroup
 import fr.`override`.linkit.core.local.system.ContextLogger
 
@@ -47,7 +47,7 @@ abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packe
         }
     }
 
-    override def close(reason: CloseReason): Unit = {
+    override def close(reason: Reason): Unit = {
         open = false
         interrupt()
     }

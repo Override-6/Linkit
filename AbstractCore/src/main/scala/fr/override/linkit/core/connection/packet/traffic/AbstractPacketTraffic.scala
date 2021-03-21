@@ -14,18 +14,16 @@ package fr.`override`.linkit.core.connection.packet.traffic
 
 import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.connection.packet.traffic._
-import fr.`override`.linkit.api.local.system.{CloseReason, ClosedException, JustifiedCloseable}
+import fr.`override`.linkit.api.local.system.{ClosedException, JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread
-import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
-abstract class AbstractPacketTraffic(@NotNull private val ownerId: String) extends PacketTraffic {
+abstract class AbstractPacketTraffic(override val supportIdentifier: String) extends PacketTraffic {
 
-    override val relayID: String = ownerId
     private val holders = mutable.Map.empty[Int, ScopesHolder]
     @volatile private var closed = false
 
@@ -92,7 +90,7 @@ abstract class AbstractPacketTraffic(@NotNull private val ownerId: String) exten
         opt.get.getInjectables(target)
     }
 
-    override def close(reason: CloseReason): Unit = {
+    override def close(reason: Reason): Unit = {
         holders.values
                 .foreach(_.close(reason))
         holders.clear()
@@ -131,7 +129,7 @@ abstract class AbstractPacketTraffic(@NotNull private val ownerId: String) exten
         private val cache = mutable.Set.empty[(ChannelScope, PacketInjectable)]
         private var closed = false
 
-        override def close(reason: CloseReason): Unit = {
+        override def close(reason: Reason): Unit = {
             for (tuple <- cache if tuple._2.isOpen) try {
                 tuple._2.close()
             } catch {

@@ -12,7 +12,7 @@
 
 package fr.`override`.linkit.core.connection.task
 
-import fr.`override`.linkit.api.connection.task.Task
+import fr.`override`.linkit.api.connection.task.{Fallible, Task, TaskException, TasksHandler}
 import org.jetbrains.annotations.Nullable
 
 import java.util.concurrent.atomic.AtomicReference
@@ -48,7 +48,7 @@ import java.util.concurrent.atomic.AtomicReference
  * @see [[SimpleTaskExecutor]]
  * */
 
-abstract class SimpleTask[T](val targetID: String) extends Task[T] {
+abstract class SimpleTask[T](val targetID: String) extends Task[T] with Fallible {
 
     @volatile private var handler: TasksHandler = _
 
@@ -113,7 +113,7 @@ abstract class SimpleTask[T](val targetID: String) extends Task[T] {
         }
 
         synchronized {
-            wait
+            wait()
         }
         atomicResult.get()
     }
@@ -125,7 +125,7 @@ abstract class SimpleTask[T](val targetID: String) extends Task[T] {
     /**
      * Invoked by TaskExecutors to signal that this task was unsuccessful
      * */
-    protected def fail(msg: String): Unit = {
+    override def fail(msg: String): Unit = {
         if (onFail != null)
             onFail(msg)
     }

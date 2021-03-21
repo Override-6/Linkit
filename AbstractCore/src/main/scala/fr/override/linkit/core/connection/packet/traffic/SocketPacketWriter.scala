@@ -12,17 +12,17 @@
 
 package fr.`override`.linkit.core.connection.packet.traffic
 
+import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.`override`.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet}
-import fr.`override`.linkit.core.connection.packet.serialization
 
 class SocketPacketWriter(socket: DynamicSocket,
-                         translator: serialization.CompactedPacketTranslator,
+                         translator: PacketTranslator,
                          info: WriterInfo) extends PacketWriter {
 
     override val traffic: PacketTraffic = info.traffic
-    override val relayID: String = traffic.relayID
-    override val ownerID: String = traffic.ownerID
+    override val serverIdentifier: String = traffic.relayID
+    override val ownerID: String = traffic.supportIdentifier
     override val identifier: Int = info.identifier
 
     override def writePacket(packet: Packet, targetIDs: String*): Unit = {
@@ -31,26 +31,26 @@ class SocketPacketWriter(socket: DynamicSocket,
         val coords = if (targetIDs.length == 1) {
             val target = targetIDs.head
             val dedicated = DedicatedPacketCoordinates(identifier, targetIDs(0), ownerID)
-            if (target == relayID) {
+            if (target == serverIdentifier) {
                 traffic.handleInjection(PacketInjections.unhandled(dedicated, packet))
                 return
             }
             dedicated
         } else {
-            if (targetIDs.contains(relayID))
-                traffic.handleInjection(PacketInjections.unhandled(DedicatedPacketCoordinates(identifier, relayID, ownerID), packet))
+            if (targetIDs.contains(serverIdentifier))
+                traffic.handleInjection(PacketInjections.unhandled(DedicatedPacketCoordinates(identifier, serverIdentifier, ownerID), packet))
 
-            BroadcastPacketCoordinates(identifier, ownerID, false, targetIDs.filter(_ != relayID): _*)
+            BroadcastPacketCoordinates(identifier, ownerID, false, targetIDs.filter(_ != serverIdentifier): _*)
         }
 
-        socket.write(translator.fromPacketAndCoords(transformedPacket, coords))
+        socket.write(translator.translate(transformedPacket, coords).writableBytes)
     }
 
     override def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit = {
         val transformedPacket = info.transform(packet)
         val coords = BroadcastPacketCoordinates(identifier, ownerID, true, discardedIDs: _*)
 
-        socket.write(translator.fromPacketAndCoords(transformedPacket, coords))
+        socket.write(translator.translate(transformedPacket, coords).writableBytes)
     }
 
 }

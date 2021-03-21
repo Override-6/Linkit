@@ -12,6 +12,7 @@
 
 package fr.`override`.linkit.api.connection.network
 
+import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 
 import java.sql.Timestamp
@@ -21,7 +22,11 @@ trait Network {
 
     val connectionEntity: NetworkEntity
 
+    val serverIdentifier: String
+
     val globalCache: SharedCacheManager
+
+    val connection: ConnectionContext
 
     def listEntities: List[NetworkEntity]
 

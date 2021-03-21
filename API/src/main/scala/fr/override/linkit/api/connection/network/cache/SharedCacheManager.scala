@@ -18,6 +18,9 @@ import scala.reflect.ClassTag
 
 trait SharedCacheManager extends Updatable {
 
+    val family: String
+    val ownerID: String
+
     def post[A <: Serializable](key: Long, value: A): A
 
     def get[A <: Serializable](key: Long): Option[A]
