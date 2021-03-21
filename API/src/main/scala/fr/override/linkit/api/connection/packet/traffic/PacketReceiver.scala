@@ -12,9 +12,9 @@
 
 package fr.`override`.linkit.api.connection.packet.traffic
 
-import fr.`override`.linkit.api.connection.packet.Packet
+import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 
-trait PacketReceiver extends PacketChannel {
+trait PacketSyncReceiver extends PacketChannel {
 
     def nextPacket[P <: Packet]: P
 
@@ -22,4 +22,10 @@ trait PacketReceiver extends PacketChannel {
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait
      * */
     def haveMorePackets: Boolean
+}
+
+trait PacketAsyncReceiver extends PacketChannel {
+
+    def addOnPacketReceived(callback: (Packet, DedicatedPacketCoordinates) => Unit): Unit
+
 }

@@ -25,7 +25,7 @@ import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 //TODO doc
 class SyncPacketChannel protected(scope: ChannelScope,
                                   providable: Boolean) extends traffic.channel.AbstractPacketChannel(scope)
-        with PacketSender with PacketReceiver {
+        with PacketSender with PacketSyncReceiver {
 
 
     /**

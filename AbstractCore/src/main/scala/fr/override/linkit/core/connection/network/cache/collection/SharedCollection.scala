@@ -12,18 +12,15 @@
 
 package fr.`override`.linkit.core.connection.network.cache.collection
 
-import fr.`override`
-import fr.`override`.linkit
-import fr.`override`.linkit.api.connection.network.cache.SharedCacheFactory
+import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.core
-import fr.`override`.linkit.core.connection
-import fr.`override`.linkit.core.connection.network
-import fr.`override`.linkit.core.connection.network.cache
-import fr.`override`.linkit.core.connection.network.cache.collection
+import fr.`override`.linkit.core.connection.network.cache.HandleableSharedCache
+import fr.`override`.linkit.core.connection.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.core.connection.network.cache.collection.SharedCollection.CollectionAdapter
-import fr.`override`.linkit.core.connection.packet.traffic
-import fr.`override`.linkit.core.connection.packet.traffic.channel
+import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
+import fr.`override`.linkit.core.local.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable
@@ -31,14 +28,14 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class SharedCollection[A <: Serializable : ClassTag](handler: network.cache.AbstractSharedCacheManager,
+class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager,
                                                      identifier: Long,
                                                      adapter: CollectionAdapter[A],
-                                                     channel: channel.CommunicationPacketChannel)
-        extends cache.HandleableSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
+                                                     channel: PacketSender with PacketSyncReceiver)
+        extends HandleableSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
 
-    private val collectionModifications = ListBuffer.empty[(collection.CollectionModification, Long, Any)]
-    private val networkListeners = ConsumerContainer[(collection.CollectionModification, Long, A)]()
+    private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
+    private val networkListeners = ConsumerContainer[(CollectionModification, Long, A)]()
 
     @volatile private var modCount = 0
     @volatile override var autoFlush: Boolean = true
@@ -117,7 +114,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: network.cache.Abst
         this
     }
 
-    def mapped[B](map: A => B): collection.BoundedCollection.Immutable[B] = {
+    def mapped[B](map: A => B): BoundedCollection.Immutable[B] = {
         adapter.createBoundedCollection(map)
     }
 
@@ -126,12 +123,12 @@ class SharedCollection[A <: Serializable : ClassTag](handler: network.cache.Abst
      * (_, Int, _) : the index affected (may be -1 for mod kinds that does not specify any index such as CLEAR)
      * (_, _, T) : The object affected (may be null for mod kinds that does not specify any object such as CLEAR, or REMOVE)
      * */
-    def addListener(action: (collection.CollectionModification, Long, A) => Unit): this.type = {
+    def addListener(action: (CollectionModification, Long, A) => Unit): this.type = {
         networkListeners += (tuple3 => action(tuple3._1, tuple3._2, tuple3._3))
         this
     }
 
-    private def addLocalModification(@NotNull kind: collection.CollectionModification, @Nullable index: Int, @Nullable value: Any): Unit = {
+    private def addLocalModification(@NotNull kind: CollectionModification, @Nullable index: Int, @Nullable value: Any): Unit = {
         if (autoFlush) {
             flushModification((kind, index, value))
             return
@@ -145,16 +142,16 @@ class SharedCollection[A <: Serializable : ClassTag](handler: network.cache.Abst
         collectionModifications += ((kind, index, value))
     }
 
-    private def flushModification(mod: (collection.CollectionModification, Long, Any)): Unit = {
+    private def flushModification(mod: (CollectionModification, Long, Any)): Unit = {
         sendRequest(ObjectPacket(mod))
-        networkListeners.applyAllAsync(mod.asInstanceOf[(collection.CollectionModification, Long, A)])
+        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
         modCount += 1
         //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
-        val mod: (collection.CollectionModification, Long, Any) = packet.casted
-        val modKind: collection.CollectionModification = mod._1
+        val mod: (CollectionModification, Long, Any) = packet.casted
+        val modKind: CollectionModification = mod._1
         val index = mod._2.toInt
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed
         val action: CollectionAdapter[A] => Unit = modKind match {
@@ -171,7 +168,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: network.cache.Abst
         }
         modCount += 1
 
-        networkListeners.applyAllAsync(mod.asInstanceOf[(collection.CollectionModification, Long, A)])
+        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
     }
 }
 
@@ -197,7 +194,7 @@ object SharedCollection {
      * The insertFilter must be true in order to authorise the insertion
      * */
     def ofInsertFilter[A  <: Serializable : ClassTag](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
-        (handler: fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager, identifier: Long, baseContent: Array[Any], channel: traffic.channel.CommunicationPacketChannel) => {
+        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender with PacketSyncReceiver) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
 
@@ -212,15 +209,15 @@ object SharedCollection {
 
         type X
         private val mainCollection = ListBuffer.from(baseContent)
-        private val boundedCollections: ListBuffer[linkit.core.connection.network.cache.collection.BoundedCollection[A, X]] = ListBuffer.empty
+        private val boundedCollections: ListBuffer[BoundedCollection[A, X]] = ListBuffer.empty
 
         override def toString: String = mainCollection.toString()
 
         override def iterator: Iterator[A] = mainCollection.iterator
 
-        def createBoundedCollection[B](map: A => B): connection.network.cache.collection.BoundedCollection.Immutable[B] = {
-            val boundedCollection = new `override`.linkit.core.connection.network.cache.collection.BoundedCollection[A, B](map)
-            boundedCollections += boundedCollection.asInstanceOf[fr.`override`.linkit.core.connection.network.cache.collection.BoundedCollection[A, X]]
+        def createBoundedCollection[B](map: A => B): BoundedCollection.Immutable[B] = {
+            val boundedCollection = new BoundedCollection[A, B](map)
+            boundedCollections += boundedCollection.asInstanceOf[BoundedCollection[A, X]]
 
             val mainContent = mainCollection.toArray[Any].asInstanceOf[Array[A]]
             boundedCollection.set(mainContent)
@@ -272,7 +269,7 @@ object SharedCollection {
 
         private[SharedCollection] def get(): S[A] = mainCollection
 
-        private def foreachCollection(action: core.connection.network.cache.collection.BoundedCollection.Mutator[A] => Unit): Unit =
+        private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit =
             BusyWorkerPool.runLaterOrHere {
                 boundedCollections.clone.foreach(action)
             }

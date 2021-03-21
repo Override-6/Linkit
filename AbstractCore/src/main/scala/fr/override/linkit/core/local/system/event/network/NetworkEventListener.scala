@@ -12,6 +12,9 @@
 
 package fr.`override`.linkit.core.local.system.event.network
 
+import fr.`override`.linkit.api.local.system.event.EventListener
+import fr.`override`.linkit.core.local.system.event.network.NetworkEvents._
+
 abstract class NetworkEventListener extends EventListener {
 
     def onEntityAdded(event: EntityAddedEvent): Unit = ()

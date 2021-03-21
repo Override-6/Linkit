@@ -15,6 +15,7 @@ package fr.`override`.linkit.server.config
 import fr.`override`.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.`override`.linkit.api.local.system.config.schematic.{AppSchematic, EmptySchematic}
 import fr.`override`.linkit.api.local.system.fsa.FileSystemAdapter
+import fr.`override`.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.`override`.linkit.core.local.system.fsa.JDKFileSystemAdapters
 import fr.`override`.linkit.server.ServerApplicationContext
 import org.jetbrains.annotations.{NotNull, Nullable}
@@ -23,16 +24,19 @@ import scala.util.control.NonFatal
 
 abstract class ServerApplicationBuilder {
 
-    @Nullable var pluginFolder: String                                  = "/Plugins"
-    @NotNull var fsAdapter    : FileSystemAdapter                       = JDKFileSystemAdapters.Nio
-    @NotNull var loadSchematic: AppSchematic[ServerApplicationContext]  = EmptySchematic[ServerApplicationContext]
+    @Nullable var pluginsFolder      : String                                  = "/Plugins"
+    @NotNull var fsAdapter          : FileSystemAdapter                       = JDKFileSystemAdapters.Nio
+    @NotNull var securityManager    : ApplicationSecurityManager              = ApplicationSecurityManager.default
+    @NotNull var loadSchematic      : AppSchematic[ServerApplicationContext]  = EmptySchematic[ServerApplicationContext]
 
     @throws[ApplicationInstantiationException]("If any exception is thrown during build")
     def build(): ServerApplicationContext = {
         val builder = this
+
         val config = new ServerApplicationConfiguration {
-            override val pluginFolder: String = builder.pluginFolder
+            override val pluginFolder: String = builder.pluginsFolder
             override val fsAdapter: FileSystemAdapter = builder.fsAdapter
+            override val securityManager: ApplicationSecurityManager = builder.securityManager
         }
 
         try {

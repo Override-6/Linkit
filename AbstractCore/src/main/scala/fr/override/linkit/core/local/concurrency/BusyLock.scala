@@ -12,6 +12,7 @@
 
 package fr.`override`.linkit.core.local.concurrency
 
+import fr.`override`.linkit.api.local.concurrency.workerExecution
 import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable

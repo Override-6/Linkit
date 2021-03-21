@@ -13,7 +13,7 @@
 package fr.`override`.linkit.core.connection.network.cache
 
 import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
-import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketSender, PacketTraffic}
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketSender, PacketSyncReceiver, PacketTraffic}
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
 import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager.{MockCache, RequestSender}
 import fr.`override`.linkit.core.connection.network.cache.map.SharedMap
@@ -239,10 +239,14 @@ object AbstractSharedCacheManager {
         }
     }
 
-    private class RequestSender(scope: ChannelScope) extends CommunicationPacketChannel(scope, true) with PacketSender {
+    private[AbstractSharedCacheManager] class RequestSender(scope: ChannelScope) extends CommunicationPacketChannel(scope, true) with PacketSender with PacketSyncReceiver {
         override def send(packet: Packet): Unit = sendRequest(packet)
 
         override def sendTo(packet: Packet, targets: String*): Unit = sendRequest(packet, targets: _*)
+
+        override def nextPacket[P <: Packet]: P = nextResponse
+
+        override def haveMorePackets: Boolean = false
     }
 
     object MockCache extends HandleableSharedCache[Nothing](null, -1, null) {

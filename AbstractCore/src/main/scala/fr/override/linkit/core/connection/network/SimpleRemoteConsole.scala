@@ -12,19 +12,18 @@
 
 package fr.`override`.linkit.core.connection.network
 
-import fr.`override`.linkit.core.connection.packet.traffic.channel
+import fr.`override`.linkit.core.connection.packet.traffic.channel.AsyncPacketChannel
+import fr.`override`.linkit.core.local.utils.InactiveOutputStream
 import org.jetbrains.annotations.Nullable
-import sun.security.action.GetPropertyAction
 
 import java.io.PrintStream
-import java.security.AccessController
 
-
-class SimpleRemoteConsole private(@Nullable channel: channel.AsyncPacketChannel,
-                                  relay: Relay,
+//TODO -------------------------------------------------- MAINTAINED --------------------------------------------------
+class SimpleRemoteConsole private(@Nullable channel: AsyncPacketChannel,
+                                  //relay: Relay,
                                   owner: String,
                                   kind: String) extends PrintStream(InactiveOutputStream, true) {
-
+/*
     override def write(b: Array[Byte]): Unit = {
         print(new String(b))
     }
@@ -71,15 +70,15 @@ class SimpleRemoteConsole private(@Nullable channel: channel.AsyncPacketChannel,
     override def print(d: Double): Unit = print(d: Any)
 
     private val lineSeparator = AccessController.doPrivileged(new GetPropertyAction("line.separator"))
-
+*/
 }
 
 object SimpleRemoteConsole {
-
+/*
     def err(channel: AsyncPacketChannel, relay: Relay, owner: String): SimpleRemoteConsole = new SimpleRemoteConsole(channel, relay, owner, "err")
 
     def out(channel: AsyncPacketChannel, relay: Relay, owner: String): SimpleRemoteConsole = new SimpleRemoteConsole(channel, relay, owner, "out")
 
     val Mock: SimpleRemoteConsole = new SimpleRemoteConsole(null, null, null, "mock")
-
+*/
 }

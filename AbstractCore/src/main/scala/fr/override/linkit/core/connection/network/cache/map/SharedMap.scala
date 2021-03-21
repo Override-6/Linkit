@@ -12,20 +12,21 @@
 
 package fr.`override`.linkit.core.connection.network.cache.map
 
-import fr.`override`.linkit.api.connection.network.cache.SharedCacheFactory
+import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.core.connection
-import fr.`override`.linkit.core.connection.network
-import fr.`override`.linkit.core.connection.network.cache
-import fr.`override`.linkit.core.connection.packet.traffic
-import fr.`override`.linkit.core.connection.packet.traffic.channel
+import fr.`override`.linkit.core.connection.network.cache.HandleableSharedCache
+import fr.`override`.linkit.core.connection.network.cache.map.MapModification._
+import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
+import fr.`override`.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](handler: connection.network.cache.AbstractSharedCacheManager, identifier: Long, baseContent: Array[(K, V)], channel: traffic.channel.CommunicationPacketChannel)
-        extends network.cache.HandleableSharedCache[(K, V)](handler, identifier, channel) {
+class SharedMap[K, V](handler: SharedCacheManager, identifier: Long, baseContent: Array[(K, V)], channel: PacketSender with PacketSyncReceiver)
+        extends HandleableSharedCache[(K, V)](handler, identifier, channel) {
 
     private val networkListeners = ConsumerContainer[(MapModification, K, V)]()
     private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]
@@ -259,7 +260,7 @@ class SharedMap[K, V](handler: connection.network.cache.AbstractSharedCacheManag
 
 object SharedMap {
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        (handler: cache.AbstractSharedCacheManager, identifier: Long, baseContent: Array[Any], channel: channel.CommunicationPacketChannel) => {
+        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender with PacketSyncReceiver) => {
             new SharedMap[K, V](handler, identifier, ScalaUtils.slowCopy(baseContent), channel)
         }
     }

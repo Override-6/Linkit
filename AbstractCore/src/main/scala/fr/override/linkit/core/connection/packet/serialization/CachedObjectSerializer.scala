@@ -12,14 +12,14 @@
 
 package fr.`override`.linkit.core.connection.packet.serialization
 
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
-import fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.network.cache.map.{MapModification, SharedMap}
 import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 
-class CachedObjectSerializer(cache: cache.AbstractSharedCacheManager) extends ObjectSerializer {
+class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer {
 
     private val objectMap = cache.get(14, SharedMap[Int, String])
     //objectMap.addListener(_ => s"MODIFIED : $objectMap")

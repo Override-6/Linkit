@@ -20,4 +20,7 @@ trait Plugin {
     def onEnable(): Unit
 
     def onDisable(): Unit
+
+    @throws[IllegalStateException]("If the plugin is already initialized")
+    def init(manager: PluginManager): Unit
 }

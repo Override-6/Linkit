@@ -12,8 +12,9 @@
 
 package fr.`override`.linkit.core.local.plugin.fragment
 
-import fr.`override`.linkit.api.local.plugin.fragment.{FragmentManager, PluginFragment}
-import fr.`override`.linkit.api.local.plugin.{LinkitPlugin, Plugin, PluginLoadException}
+import fr.`override`.linkit.api.local.plugin.fragment.{FragmentManager, PluginFragment, RemoteFragment}
+import fr.`override`.linkit.api.local.plugin.{Plugin, PluginLoadException}
+import fr.`override`.linkit.core.local.plugin.LinkitPlugin
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -21,7 +22,7 @@ import scala.util.control.NonFatal
 
 class SimpleFragmentManager() extends FragmentManager {
 
-    private val fragmentMap: mutable.Map[Class[_ <: LinkitPlugin], ExtensionFragments] = mutable.Map.empty
+    private val fragmentMap: mutable.Map[Class[_ <: Plugin], PluginFragments] = mutable.Map.empty
 
     override def putFragment(fragment: PluginFragment)(implicit owner: Plugin): Unit = {
         val pluginClass = owner.getClass
@@ -29,19 +30,19 @@ class SimpleFragmentManager() extends FragmentManager {
         if (getFragment(pluginClass, fragmentClass).isDefined)
             throw new IllegalArgumentException("This fragment kind is already set for this extension")
 
-        fragmentMap.getOrElseUpdate(pluginClass, new ExtensionFragments)
+        fragmentMap.getOrElseUpdate(pluginClass, new PluginFragments)
                 .putFragment(fragment)
 
         fragment match {
-            case remote: LinkitRemoteFragment =>
-                initRemote(remote)
+            case remote: RemoteFragment =>
+                //TODO initRemote(remote)
 
             case _ =>
         }
 
     }
 
-    override def getFragment[F <: LinkitPluginFragment](extensionClass: Class[_ <: Plugin], fragmentClass: Class[F]): Option[F] = {
+    override def getFragment[F <: PluginFragment](extensionClass: Class[_ <: Plugin], fragmentClass: Class[F]): Option[F] = {
         val fragmentsOpt = fragmentMap.get(extensionClass)
         if (fragmentsOpt.isEmpty)
             return None
@@ -51,13 +52,13 @@ class SimpleFragmentManager() extends FragmentManager {
                 .getFragment(fragmentClass)
     }
 
-    def listRemoteFragments(): List[LinkitRemoteFragment] = {
-        val fragments = ListBuffer.empty[LinkitPluginFragment]
+    def listRemoteFragments(): List[RemoteFragment] = {
+        val fragments = ListBuffer.empty[PluginFragment]
         fragmentMap.values
                 .foreach(_.list()
                         .foreach(fragments.addOne))
-        fragments.filter(_.isInstanceOf[LinkitRemoteFragment])
-                .map(_.asInstanceOf[LinkitRemoteFragment])
+        fragments.filter(_.isInstanceOf[RemoteFragment])
+                .map(_.asInstanceOf[RemoteFragment])
                 .toList
     }
 
@@ -77,14 +78,14 @@ class SimpleFragmentManager() extends FragmentManager {
         fragmentMap.values.foreach(_.destroyAll())
     }
 
-    private class ExtensionFragments {
-        private val fragments: mutable.Map[Class[_ <: LinkitPluginFragment], LinkitPluginFragment] = mutable.Map.empty
+    private class PluginFragments {
+        private val fragments: mutable.Map[Class[_ <: PluginFragment], PluginFragment] = mutable.Map.empty
 
-        def getFragment[F <: LinkitPluginFragment](fragmentClass: Class[F]): Option[F] = {
+        def getFragment[F <: PluginFragment](fragmentClass: Class[F]): Option[F] = {
             fragments.get(fragmentClass).asInstanceOf[Option[F]]
         }
 
-        def putFragment(fragment: LinkitPluginFragment): Unit = {
+        def putFragment(fragment: PluginFragment): Unit = {
             fragments.put(fragment.getClass, fragment)
         }
 
@@ -117,7 +118,7 @@ class SimpleFragmentManager() extends FragmentManager {
             fragments.values.foreach(_.destroy())
         }
 
-        def list(): Iterable[LinkitPluginFragment] = {
+        def list(): Iterable[PluginFragment] = {
             fragments.values
         }
 

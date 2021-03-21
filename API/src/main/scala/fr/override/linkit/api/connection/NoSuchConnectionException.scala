@@ -12,6 +12,6 @@
 
 package fr.`override`.linkit.api.connection
 
-case class NoSuchConnectionException(msg: String, cause: Throwable = null) extends ConnectionException(msg, cause) {
+case class NoSuchConnectionException(msg: String, cause: Throwable = null) extends ConnectionException(null, msg, cause) {
 
 }

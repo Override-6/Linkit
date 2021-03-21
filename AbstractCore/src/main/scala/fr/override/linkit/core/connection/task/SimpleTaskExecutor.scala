@@ -13,7 +13,7 @@
 package fr.`override`.linkit.core.connection.task
 
 import fr.`override`.linkit.api.connection.ConnectionContext
-import fr.`override`.linkit.api.connection.packet.traffic.{PacketReceiver, PacketSender}
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.connection.task.TaskExecutor
 import fr.`override`.linkit.api.local.system.Reason
 import fr.`override`.linkit.core.connection.packet.traffic.channel
@@ -30,10 +30,10 @@ abstract class SimpleTaskExecutor extends TaskExecutor {
 
     private var canCloseChannel: Boolean = true
     protected var connection: ConnectionContext = _
-    protected var channel: PacketReceiver with PacketSender = _
+    protected var channel: PacketSyncReceiver with PacketSender = _
 
 
-    final def init(connection: ConnectionContext, packetChannel: PacketReceiver with PacketSender): Unit = {
+    final def init(connection: ConnectionContext, packetChannel: PacketSyncReceiver with PacketSender): Unit = {
         if (connection == null || packetChannel == null)
             throw new NullPointerException
 

@@ -13,6 +13,7 @@
 package fr.`override`.linkit.core.local.system.fsa.io
 
 import fr.`override`.linkit.api.local.system.fsa.FileAdapter
+import fr.`override`.linkit.core.local.system.fsa.AbstractFileSystemAdapter
 
 import java.io.{File, InputStream, OutputStream}
 
@@ -44,7 +45,7 @@ class IOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
     override def move(from: FileAdapter, to: FileAdapter): Unit = {
         val bytes = readAllBytes(from)
-        if (to notExists) {
+        if (to.notExists) {
             createDirectories(to)
             delete(to)
             create(to)

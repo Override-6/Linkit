@@ -12,9 +12,10 @@
 
 package fr.`override`.linkit.core.local.system.fsa
 
-import fr.`override`.linkit.api.local.system.fsa.FileSystemAdapter
+import fr.`override`.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 
 import java.io.File
+import scala.collection.mutable
 
 abstract class AbstractFileSystemAdapter extends FileSystemAdapter {
 

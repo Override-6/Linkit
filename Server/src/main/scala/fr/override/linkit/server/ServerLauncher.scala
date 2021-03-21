@@ -12,48 +12,39 @@
 
 package fr.`override`.linkit.server
 
-import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerApplicationBuilder}
-
-import java.nio.file.Paths
+import fr.`override`.linkit.server.config.schematic.ScalaServerAppSchematic
+import fr.`override`.linkit.server.config.{ServerApplicationBuilder, ServerConnectionConfigBuilder}
 
 
 object ServerLauncher {
     def main(args: Array[String]): Unit = {
         println(s"running server with arguments ${args.mkString("'", ", ", "'")}")
-        val ideRun = args.contains("--ide-run")
-        val relayServer: RelayServer = new ServerApplicationBuilder {
-            relayIDAmbiguityStrategy = AmbiguityStrategy.REJECT_NEW
-            enableExtensionsFolderLoad = !ideRun
-            extensionsFolder = getExtensionFolderPath
-        }
+        val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
 
-        relayServer.runLater {
-            relayServer.start()
-
-            if (ideRun) {
-
-                import fr.`override`.linkit.extension.controller.ControllerExtension
-                import fr.`override`.linkit.extension.debug.DebugExtension
-                import fr.`override`.linkit.extension.easysharing.EasySharing
-
-                val loader = relayServer.extensionLoader
-                loader.loadExtensions(
-                    classOf[ControllerExtension],
-                    classOf[EasySharing],
-                    classOf[DebugExtension]
-                )
+        val serverApplicationContext: ServerApplicationContext = new ServerApplicationBuilder {
+            pluginsFolder = userDefinedPluginFolder
+            loadSchematic = new ScalaServerAppSchematic {
+                servers += new ServerConnectionConfigBuilder {
+                    override val identifier: String = "TestServer1"
+                    override val port: Int = 4848
+                }
             }
         }
-        Runtime.getRuntime.addShutdownHook(new Thread(() => relayServer.runLater(relayServer.close(Reason.INTERNAL))))
+
+        val a = serverApplicationContext.getServerConnection(4848)
+        val b = serverApplicationContext.getServerConnection("TestServer1")
+        println(s"a == b = ${a == b}")
+        println(a)
     }
 
-    private def getExtensionFolderPath: String = {
-        val sourcePath = Paths.get(getClass.getProtectionDomain.getCodeSource.getLocation.toURI).getParent.toString
-        System.getenv().get("COMPUTERNAME") match {
-            case "PC_MATERIEL_NET" => "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\ClientSide\\RelayExtensions"
-            case "LORDI-N4SO7IERS" => "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\FileTransferer\\ClientSide\\RelayExtensions"
-            case _ => sourcePath + "/RelayExtensions/"
+    def getOrElse(args: Array[String], key: String, defaultValue: String): String = {
+        val index = args.indexOf(key)
+        if (index < 0 || index + 1 > args.length - 1) {
+            defaultValue
+        } else {
+            args(index + 1)
         }
+
     }
 
 }

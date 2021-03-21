@@ -12,13 +12,13 @@
 
 package fr.`override`.linkit.core.connection.packet.serialization
 
+import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet._
 import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.`override`.linkit.api.local.system.security.BytesHasher
 import fr.`override`.linkit.core.connection
-import fr.`override`.linkit.core.connection.network.cache
 import fr.`override`.linkit.core.connection.network.cache.collection
-import fr.`override`.linkit.core.connection.{network, packet}
+import fr.`override`.linkit.core.connection.packet
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
@@ -36,7 +36,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
         result
     }
 
-    def completeInitialisation(cache: cache.AbstractSharedCacheManager): Unit = {
+    def completeInitialisation(cache: SharedCacheManager): Unit = {
         return
         SmartSerializer.completeInitialisation(cache)
     }
@@ -89,7 +89,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
             (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
         }
 
-        def completeInitialisation(cache: network.cache.AbstractSharedCacheManager): Unit = {
+        def completeInitialisation(cache: SharedCacheManager): Unit = {
             if (cachedSerializer != null)
                 throw new IllegalStateException("This packet translator is already fully initialised !")
 

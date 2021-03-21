@@ -22,7 +22,7 @@ import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 class LinkitPluginManager(fsa: FileSystemAdapter) extends PluginManager {
-    private val extractor = new LinkitPluginExtractor(fsa)
+    private val extractor = new SimplePluginExtractor(fsa)
     private val plugins = ListBuffer.empty[Plugin]
     override val fragmentManager: FragmentManager = new SimpleFragmentManager
 

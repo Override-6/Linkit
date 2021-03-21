@@ -24,7 +24,7 @@ import scala.collection.mutable
  * */
 //TODO -------------------------------------------------- MAINTAINED --------------------------------------------------
 class SimpleCompleterHandler extends TaskCompleterHandler {
-    private type P <: Packet
+    type P <: Packet
     private val completers: mutable.Map[String, (P, DedicatedPacketCoordinates) => SimpleTaskExecutor] = new mutable.HashMap()
 
     /**

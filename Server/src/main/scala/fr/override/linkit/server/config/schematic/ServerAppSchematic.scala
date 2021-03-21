@@ -22,9 +22,8 @@ import scala.util.control.NonFatal
 
 abstract class ServerAppSchematic extends AppSchematic[ServerApplicationContext] {
 
-    protected[schematic] val serverConfigs: ListBuffer[ServerConnectionConfiguration] = ListBuffer.empty[ServerConnectionConfiguration]
-
-
+    protected[schematic] val serverConfigs: ListBuffer[ServerConnectionConfiguration] =
+        ListBuffer.empty[ServerConnectionConfiguration]
 
     @throws[ApplicationInstantiationException]
     override def setup(a: ServerApplicationContext): Unit = {

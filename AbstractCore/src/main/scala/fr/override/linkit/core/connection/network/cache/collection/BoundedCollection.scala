@@ -12,6 +12,10 @@
 
 package fr.`override`.linkit.core.connection.network.cache.collection
 
+import fr.`override`.linkit.core.connection.network.cache.collection.BoundedCollection.{Immutable, Mutator}
+import fr.`override`.linkit.core.connection.network.cache.collection.CollectionModification._
+import fr.`override`.linkit.core.local.utils.ConsumerContainer
+
 import java.util.ConcurrentModificationException
 import scala.collection.mutable.ListBuffer
 

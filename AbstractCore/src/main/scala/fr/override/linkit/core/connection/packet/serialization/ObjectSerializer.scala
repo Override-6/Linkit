@@ -194,14 +194,11 @@ abstract class ObjectSerializer extends Serializer {
         val flag = bytes(0)
         //println(s"flag = ${flag}")
         val content = bytes.drop(1)
-        var buff = Array[Serializable]()
+        var buff = Array[Any]()
         flag match {
-            case NullFlag =>
-                return null
             case EmptyFlag =>
-                return buff
-            case ByteArrayFlag =>
-                buff ++= content
+            case NullFlag => return null
+            case ByteArrayFlag => buff ++= content
             case ShortArrayFlag =>
                 buff ++= content.grouped(2).map(deserializeNumber(_, 0, 2).toShort)
             case IntArrayFlag =>
@@ -232,7 +229,7 @@ abstract class ObjectSerializer extends Serializer {
                 }
 
         }
-        buff
+        buff.asInstanceOf[Array[Serializable]]
     }
 
 

@@ -12,9 +12,7 @@
 
 package fr.`override`.linkit.api.local.plugin
 
-import java.io.Closeable
-
-trait PluginLoader extends Closeable {
+trait PluginLoader {
 
     @throws[PluginLoadException]
     def nextPlugin(): Plugin

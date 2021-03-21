@@ -13,6 +13,7 @@
 package fr.`override`.linkit.core.local.system.event.packet
 
 import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, Serializer}
+import fr.`override`.linkit.api.connection.packet.traffic.PacketInjectable
 import fr.`override`.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
 
 object PacketEvents {

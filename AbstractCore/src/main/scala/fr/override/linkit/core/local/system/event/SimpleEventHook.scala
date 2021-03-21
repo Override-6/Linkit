@@ -12,7 +12,9 @@
 
 package fr.`override`.linkit.core.local.system.event
 
-import fr.`override`.linkit.api.local.system.event.EventHook
+import fr.`override`.linkit.api.local.system.event.{Event, EventHook, EventListener}
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
+import fr.`override`.linkit.core.local.utils.ConsumerContainer
 import org.jetbrains.annotations.NotNull
 
 class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L, E) => Unit)*) extends EventHook[L, E] {

@@ -16,4 +16,5 @@ import fr.`override`.linkit.api.local.system.config.{ConnectionConfiguration, Ex
 
 trait ServerConnectionConfiguration extends ConnectionConfiguration with ExtendedConfiguration {
     val maxConnection: Int
+    val identifierAmbiguityStrategy: AmbiguityStrategy
 }

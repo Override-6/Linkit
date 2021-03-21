@@ -12,11 +12,11 @@
 
 package fr.`override`.linkit.api.connection.network.cache
 
-import fr.`override`.linkit.api.connection.packet.traffic.PacketSender
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 
 trait SharedCacheFactory[A <: SharedCache] {
 
-    def createNew(handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender): A
+    def createNew(handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender with PacketSyncReceiver): A
 
     final def factory: this.type = this //for Java users
 

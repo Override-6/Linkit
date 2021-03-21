@@ -13,7 +13,7 @@
 package fr.`override`.linkit.api.connection.task
 
 import fr.`override`.linkit.api.connection.ConnectionContext
-import fr.`override`.linkit.api.connection.packet.traffic.{PacketReceiver, PacketSender}
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 
 /**
  * The class that will execute the Task.
@@ -39,6 +39,6 @@ trait TaskExecutor {
      * */
     def execute(): Unit
 
-    def init(connection: ConnectionContext, packetChannel: PacketReceiver with PacketSender): Unit
+    def init(connection: ConnectionContext, packetChannel: PacketSyncReceiver with PacketSender): Unit
 
 }

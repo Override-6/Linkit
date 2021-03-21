@@ -12,6 +12,10 @@
 
 package fr.`override`.linkit.core.connection.network.cache.map
 
+import fr.`override`.linkit.core.connection.network.cache.map.BoundedMap.{Immutable, Mutator}
+import fr.`override`.linkit.core.connection.network.cache.map.MapModification._
+import fr.`override`.linkit.core.local.utils.ConsumerContainer
+
 import scala.collection.mutable
 
 class BoundedMap[K, V, nK, nV](mapper: (K, V) => (nK, nV)) extends Mutator[K, V] with Immutable[nK, nV] {

@@ -21,7 +21,7 @@ class SocketPacketWriter(socket: DynamicSocket,
                          info: WriterInfo) extends PacketWriter {
 
     override val traffic: PacketTraffic = info.traffic
-    override val serverIdentifier: String = traffic.relayID
+    override val serverIdentifier: String = traffic.serverIdentifier
     override val ownerID: String = traffic.supportIdentifier
     override val identifier: Int = info.identifier
 

@@ -27,3 +27,9 @@ case class PacketSerializationResult(packet: Packet, coords: PacketCoordinates, 
     }
 
 }
+
+object PacketSerializationResult {
+    implicit def autoUseWritableBytes(result: PacketSerializationResult): Array[Byte] = {
+        result.writableBytes
+    }
+}

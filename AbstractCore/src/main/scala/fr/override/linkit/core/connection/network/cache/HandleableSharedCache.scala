@@ -13,7 +13,7 @@
 package fr.`override`.linkit.core.connection.network.cache
 
 import fr.`override`.linkit.api.connection.network.cache.{SharedCache, SharedCacheManager}
-import fr.`override`.linkit.api.connection.packet.traffic.{PacketReceiver, PacketSender}
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
 
 abstract class HandleableSharedCache[A <: Serializable : ClassTag](@Nullable handler: SharedCacheManager,
                                                                    identifier: Long,
-                                                                   channel: PacketSender with PacketReceiver) extends SharedCache with JustifiedCloseable {
+                                                                   channel: PacketSender with PacketSyncReceiver) extends SharedCache with JustifiedCloseable {
 
     override val family: String = if (handler == null) "" else handler.family
 

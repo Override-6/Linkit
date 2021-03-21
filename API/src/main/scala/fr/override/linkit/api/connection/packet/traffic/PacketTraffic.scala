@@ -20,7 +20,8 @@ import fr.`override`.linkit.api.local.system.JustifiedCloseable
 trait PacketTraffic extends JustifiedCloseable with PacketInjectableContainer  {
 
     val supportIdentifier: String
-    val supportIdentifier: String
+
+    val serverIdentifier: String
 
     @workerExecution
     def handleInjection(injection: PacketInjection): Unit

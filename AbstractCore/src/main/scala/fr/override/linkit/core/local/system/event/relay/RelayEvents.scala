@@ -47,7 +47,7 @@ object RelayEvents {
                 case DISCONNECTED => category.disconnected
                 case CLOSED => category.connectionClosed
             }
-            Array(category.connectionStateChange, hook)
+            !!(Array(category.connectionStateChange, hook))
         }
     }
 

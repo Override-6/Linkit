@@ -92,7 +92,7 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
 
     def getTasksHandler: TasksHandler = session.tasksHandler
 
-    private[server] def updateSocket(socket: Socket): Unit = {
+    private[connection] def updateSocket(socket: Socket): Unit = {
         BusyWorkerPool.checkCurrentIsWorker()
         session.updateSocket(socket)
     }

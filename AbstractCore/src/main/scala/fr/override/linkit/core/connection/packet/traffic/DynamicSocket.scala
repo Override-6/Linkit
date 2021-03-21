@@ -17,6 +17,7 @@ import fr.`override`.linkit.api.connection.network.ConnectionState.CLOSED
 import fr.`override`.linkit.api.local.system.{AppException, IllegalCloseException, JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.`override`.linkit.core.local.system.ContextLogger
+import fr.`override`.linkit.core.local.utils.ConsumerContainer
 
 import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}
@@ -27,6 +28,8 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream: InputStream = _
     @volatile private var totalWriteTime: Long = 0
+
+    private val listeners = ConsumerContainer[ConnectionState]()
 
     protected def boundIdentifier: String
 
@@ -130,6 +133,9 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         -1
     }
 
+    def addConnectionStateListener(callback: ConnectionState => Unit): Unit = {
+        listeners += callback
+    }
 
     def getState: ConnectionState = SocketLocker.state
 
@@ -207,8 +213,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             if (isClosed)
                 throw new IllegalStateException("This socket is definitely closed.")
 
-            //val event = RelayEvents.connectionStateChange(boundIdentifier, state)
-            //notifier.notifyEvent(relayHooks, event)
+            listeners.applyAll(newState)
             state = newState
         }
 

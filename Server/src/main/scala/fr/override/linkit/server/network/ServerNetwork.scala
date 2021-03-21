@@ -76,7 +76,7 @@ class ServerNetwork private(serverConnection: ServerConnection,
                 })
     }
 
-    private[server] def addEntity(connection: ServerExternalConnection): Unit = {
+    private[connection] def addEntity(connection: ServerExternalConnection): Unit = {
         sharedIdentifiers.add(connection.supportIdentifier)
     }
 

@@ -15,13 +15,14 @@ package fr.`override`.linkit.core.local.plugin
 import fr.`override`.linkit.api.local.plugin._
 import fr.`override`.linkit.api.local.system.AppException
 import fr.`override`.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
-import fr.`override`.linkit.core.local.plugin.LinkitPluginExtractor.{MainClassField, PropertyName}
+import fr.`override`.linkit.core.local.plugin.SimplePluginExtractor.{MainClassField, PropertyName}
 import fr.`override`.linkit.core.local.plugin.fragment.{LinkitPluginFragment, LinkitRemoteFragment}
 
 import java.net.URLClassLoader
 import java.nio.file.NoSuchFileException
 import java.util.Properties
 import java.util.zip.ZipFile
+import scala.collection.mutable.ListBuffer
 
 /**
  * <p>
@@ -39,20 +40,22 @@ import java.util.zip.ZipFile
  * @see [[LinkitPlugin]]
  * */
 //TODO The package api.extension must receive a remaster according to the plugin loading system.
-class LinkitPluginExtractor(fsa: FileSystemAdapter) extends PluginExtractor {
+class SimplePluginExtractor(fsa: FileSystemAdapter) extends PluginExtractor {
 
-    override def extract(file: String): PluginLoader = {
+    override def extract(manager: PluginManager, file: String): PluginLoader = {
         val adapter = fsa.getAdapter(file)
         if (adapter.notExists)
             throw new NoSuchFileException(s"$file does not exists.")
         if (!adapter.getPath.endsWith(".jar"))
             throw new IllegalArgumentException(s"provided file '$file' is not a jar file.")
-        extract(loadJar(adapter))
+        extract(manager, loadJar(adapter))
     }
 
-    override def extract(clazz: Class[_ <: Plugin]): PluginLoader = extractAll(clazz)
+    override def extract(manager: PluginManager, clazz: Class[_ <: Plugin]): PluginLoader = {
+        extractAll(manager, clazz)
+    }
 
-    override def extractAll(folder: String): PluginLoader = {
+    override def extractAll(manager: PluginManager, folder: String): PluginLoader = {
         val adapter = fsa.getAdapter(folder)
         if (adapter.notExists)
             throw new NoSuchFileException(s"$folder does not exists.")
@@ -64,15 +67,17 @@ class LinkitPluginExtractor(fsa: FileSystemAdapter) extends PluginExtractor {
 
         for (path <- paths) {
             try {
-                extensions += loadJar(classLoader, path)
+                extensions += loadJar(path)
             } catch {
                 case e: AppException => e.printStackTrace()
             }
         }
-        extractAll(extensions: _*)
+        extractAll(manager, extensions.toSeq: _*)
     }
 
-    override def extractAll(classes: Class[_ <: Plugin]*): PluginLoader = new LinkitPluginManager(classes: _*)
+    override def extractAll(manager: PluginManager, classes: Class[_ <: Plugin]*): PluginLoader = {
+        new SimplePluginLoader(manager, classes: _*)
+    }
 
     private def loadJar(adapter: FileAdapter): Class[_ <: LinkitPlugin] = {
         val jarFile = new ZipFile(adapter.getPath)
@@ -105,7 +110,7 @@ class LinkitPluginExtractor(fsa: FileSystemAdapter) extends PluginExtractor {
 
 }
 
-object LinkitPluginExtractor {
+object SimplePluginExtractor {
     private val PropertyName = "extension.properties"
     private val MainClassField = "main"
 }

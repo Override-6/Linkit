@@ -13,7 +13,7 @@
 package fr.`override`.linkit.core.connection.network.cache
 
 import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
-import fr.`override`.linkit.api.connection.packet.traffic.PacketSender
+import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.core.connection.packet.UnexpectedPacketException
 import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
@@ -23,7 +23,7 @@ import scala.reflect.ClassTag
 
 class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheManager,
                                                            identifier: Long,
-                                                           channel: PacketSender)
+                                                           channel: PacketSender with PacketSyncReceiver)
         extends HandleableSharedCache[A](handler, identifier, channel) {
 
     override var autoFlush: Boolean = true
@@ -35,7 +35,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 
     def this(handler: SharedCacheManager,
              identifier: Long,
-             channel: PacketSender,
+             channel: PacketSender with PacketSyncReceiver,
              value: A = null) = {
         this(handler, identifier, channel)
         instance = value
@@ -89,7 +89,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 object SharedInstance {
 
     def apply[A <: Serializable : ClassTag]: SharedCacheFactory[SharedInstance[A]] = {
-        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender) => {
+        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender with PacketSyncReceiver) => {
             if (baseContent.isEmpty)
                 new SharedInstance[A](handler, identifier, channel)
             else new SharedInstance[A](handler, identifier, channel, baseContent(0).asInstanceOf[A])

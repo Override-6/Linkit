@@ -10,7 +10,10 @@
  * questions.
  */
 
-package fr.`override`.linkit.core.connection.packet.serialization .serializeInt
+package fr.`override`.linkit.core.connection.packet.serialization
+
+import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
+import fr.`override`.linkit.core.connection.packet.serialization.ObjectSerializer
 
 import scala.collection.mutable
 

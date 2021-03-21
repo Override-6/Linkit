@@ -20,7 +20,7 @@ import scala.collection.mutable.ListBuffer
 
 class DirectInjection(override val coordinates: DedicatedPacketCoordinates) extends PacketInjection {
 
-    private[PacketInjections] val injections = ListBuffer.empty[(Int, Packet)]
+    private val injections = ListBuffer.empty[(Int, Packet)]
     private val injectableID = coordinates.injectableID
     //The thread that created this object
     //will be set as the handler of the injection
