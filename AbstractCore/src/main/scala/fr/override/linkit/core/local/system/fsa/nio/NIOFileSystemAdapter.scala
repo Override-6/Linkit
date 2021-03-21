@@ -13,6 +13,7 @@
 package fr.`override`.linkit.core.local.system.fsa.nio
 
 import fr.`override`.linkit.api.local.system.fsa.FileAdapter
+import fr.`override`.linkit.core.local.system.fsa.AbstractFileSystemAdapter
 
 import java.io.{InputStream, OutputStream}
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}

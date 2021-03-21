@@ -27,19 +27,19 @@ class LinkitPluginManager(fsa: FileSystemAdapter) extends PluginManager {
     override val fragmentManager: FragmentManager = new SimpleFragmentManager
 
     override def load(file: String): Plugin = {
-        enablePlugins(extractor.extract(file)).head
+        enablePlugins(extractor.extract(this, file)).head
     }
 
     override def loadAll(folder: String): Array[Plugin] = {
-        enablePlugins(extractor.extractAll(folder))
+        enablePlugins(extractor.extractAll(this,  folder))
     }
 
     override def load(clazz: Class[_ <: Plugin]): Plugin = {
-        enablePlugins(extractor.extract(clazz)).head
+        enablePlugins(extractor.extract(this,  clazz)).head
     }
 
     override def loadAll(classes: Class[_ <: Plugin]*): Array[Plugin] = {
-        enablePlugins(extractor.extractAll(classes: _*))
+        enablePlugins(extractor.extractAll(this, classes: _*))
     }
 
     override def countPlugins: Int = plugins.length
