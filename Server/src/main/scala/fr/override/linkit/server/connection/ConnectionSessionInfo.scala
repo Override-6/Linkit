@@ -10,9 +10,14 @@
  * questions.
  */
 
-package fr.`override`.linkit.api.local.system.config
+package fr.`override`.linkit.server.connection
 
-trait ExtendedConfiguration {
-    val enableEventHandling  : Boolean
-    val nWorkerThreadFunction: Int => Int
+import fr.`override`.linkit.server.config.ExternalConnectionConfiguration
+import fr.`override`.linkit.server.network.ServerNetwork
+
+case class ConnectionSessionInfo(server: ServerConnection,
+                                 manager: ExternalConnectionsManager,
+                                 network: ServerNetwork,
+                                 configuration: ExternalConnectionConfiguration) {
+
 }

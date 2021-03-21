@@ -10,14 +10,12 @@
  * questions.
  */
 
-package fr.`override`.linkit.api.local.system.security
+package fr.`override`.linkit.api.local.system.config.schematic
 
-import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.`override`.linkit.api.local.ApplicationContext
 
-trait Checker {
+trait AppSchematic[A <: ApplicationContext] {
 
-    def checkConnectionCount(count: Int): Unit
-
-    def checkPacket(packet: Packet, coordinates: PacketCoordinates): Unit
+    def setup(a: A): Unit
 
 }

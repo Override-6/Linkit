@@ -17,6 +17,8 @@ import fr.`override`.linkit.api.local.system.security.BytesHasher
 
 trait ConnectionConfiguration {
 
+    val configName: String
+
     val identifier: String
     val port: Int
 

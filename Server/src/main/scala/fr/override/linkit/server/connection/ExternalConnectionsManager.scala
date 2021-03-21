@@ -12,10 +12,13 @@
 
 package fr.`override`.linkit.server.connection
 
+import fr.`override`.linkit.api.connection.ConnectionException
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread
 import fr.`override`.linkit.core.local.system.ContextLogger
+import fr.`override`.linkit.server.ServerException
+import fr.`override`.linkit.server.network.ServerNetwork
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -27,12 +30,14 @@ import scala.util.control.NonFatal
  * @see [[RelayServer]]
  * @see [[ServerExternalConnection]]
  * */
-class ExternalConnectionsManager(server: ServerConnection) extends JustifiedCloseable {
+class ExternalConnectionsManager(server: ServerConnection, serverNetwork: ServerNetwork) extends JustifiedCloseable {
 
     /**
      * java map containing all RelayPointConnection instances
      * */
     private val connections: mutable.Map[String, ServerExternalConnection] = mutable.Map.empty
+    private val maxConnection = server.configuration.maxConnection
+
     @volatile private var closed = false
 
 
@@ -44,26 +49,29 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
             case NonFatal(e) => e.printStackTrace()
         }
         closed = true
-
     }
 
     /**
-     * creates and register a RelayPoint connection.
+     * creates and register a connection.
      *
      * @param socket the socket to start the connection
-     * @throws RelayInitialisationException when a id is already set for this address, or another connection is known under this id.
+     * @param identifier the connection's identifier
+     * @throws ConnectionException if the provided identifier is already taken.
+     * @throws ServerException if the registered connection count exceeded configuration limit.
      * */
-    def registerConnection(identifier: String,
-                           socket: SocketContainer): Unit = {
-        println(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
+    @throws[ConnectionException]("if the provided identifier is already taken")
+    @throws[ServerException]("if the registered connection count exceeded configuration limit.")
+    def createConnection(identifier: String,
+                         socket: SocketContainer): Unit = {
+        ContextLogger.info(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
         if (connections.contains(identifier))
-            throw RelayInitialisationException(s"This relay id is already registered ! ('$identifier')")
+            throw ConnectionException(connections(identifier), s"This connection identifier is taken ! ('$identifier')")
 
-        if (connections.size > server.configuration.maxConnection)
-            throw new RelayException("Maximum connection limit exceeded")
+        if (connections.size > maxConnection)
+            throw ServerException(server, "Maximum connection limit exceeded")
 
         //Opening ClientConnection and finalizing registration
-        val connectionSession = ClientConnectionSession(identifier, socket, server)
+        val connectionSession = ConnectionSession(identifier, socket, server, this, serverNetwork)
         val connection = ServerExternalConnection.open(connectionSession)
         connections.put(identifier, connection)
 
@@ -84,26 +92,26 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         connection.close(Reason.SECURITY_CHECK)
     }
 
-    def broadcastMessage(err: Boolean, msg: String): Unit = {
-        connections.values
-                .foreach(connection => {
-                    if (err)
-                        connection.getConsoleErr.println(msg)
-                    else connection.getConsoleOut.println(msg)
-                })
-    }
+    /* def broadcastMessage(err: Boolean, msg: String): Unit = {
+         connections.values
+                 .foreach(connection => {
+                     if (err)
+                         connection.getConsoleErr.println(msg)
+                     else connection.getConsoleOut.println(msg)
+                 })
+     }*/
 
     /**
      * Broadcast bytes sequence to every connected clients
      * */
     def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
         PacketWorkerThread.checkNotCurrent()
-        val translator = server.packetTranslator
         connections.values
                 .filter(con => !discardedIDs.contains(con.supportIdentifier) && con.isConnected)
                 .foreach(connection => {
+                    val translator = connection.translator
                     val coordinates = DedicatedPacketCoordinates(injectableID, connection.supportIdentifier, senderID)
-                    val result = translator.fromPacketAndCoords(packet, coordinates)
+                    val result = translator.translate(packet, coordinates)
                     connection.send(result)
                 })
     }
@@ -160,7 +168,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     private[connection] def deflectTo(bytes: Array[Byte], target: String): Unit = {
         val connection = getConnection(target)
         if (connection == null)
-            throw new RelayException(s"unknown ID '$target' to deflect packet")
+            throw new ServerException(server, s"unknown ID '$target' to deflect packet")
         connection.send(bytes)
     }
 }

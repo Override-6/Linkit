@@ -268,7 +268,7 @@ class RelayServer private[server](override val configuration: ExternalConnection
         val currentConnection = getConnection(identifier)
         //There is no currently connected connection with the same identifier on this network.
         if (currentConnection.isEmpty) {
-            connectionsManager.registerConnection(identifier, socket)
+            connectionsManager.createConnection(identifier, socket)
             val newConnection = getConnection(identifier)
 
             if (newConnection.isDefined) //may be empty, in this case, the connection would be rejected.
@@ -304,7 +304,7 @@ class RelayServer private[server](override val configuration: ExternalConnection
 
             case REPLACE =>
                 connectionsManager.unregister(identifier).get.close(Reason.INTERNAL_ERROR)
-                connectionsManager.registerConnection(identifier, socket)
+                connectionsManager.createConnection(identifier, socket)
             //The connection initialisation packet isn't sent here because it is send into the registerConnection method.
 
             case DISCONNECT_BOTH =>

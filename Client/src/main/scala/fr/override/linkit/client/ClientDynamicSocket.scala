@@ -19,9 +19,10 @@ import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
 
 class ClientDynamicSocket(boundAddress: InetSocketAddress,
-                          socketFactory: InetSocketAddress => Socket) extends DynamicSocket(true, ) {
+                          socketFactory: InetSocketAddress => Socket) extends DynamicSocket(true) {
 
-    override val boundIdentifier: String = Relay.ServerIdentifier
+    var identifier: String = "$NOT SET$"
+    override def boundIdentifier: String = identifier
 
     var reconnectionPeriod: Int = 5000
 
@@ -45,7 +46,11 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
         markAsConnected()
     }
 
-    def start(): Unit = {
+    def start(identifier: String): Unit = {
+        if (this.identifier != null)
+            throw new IllegalStateException("The socket is already started ! And or is now definitely closed.")
+
+        this.identifier = identifier
         try {
             newSocket()
         } catch {

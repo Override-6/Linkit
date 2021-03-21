@@ -13,12 +13,34 @@
 package fr.`override`.linkit.api.connection
 
 import fr.`override`.linkit.api.local.system.AppException
+import org.jetbrains.annotations.{NotNull, Nullable}
 
-class ConnectionException(msg: String, cause: Throwable) extends AppException(msg, cause) {
+case class ConnectionException(@NotNull connection: ConnectionContext,
+                               msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+
+    override def appendMessage(sb: StringBuilder): Unit = {
+        super.appendMessage(sb)
+
+        val identifier = connection.supportIdentifier
+        sb.append("An exception occurred with connection '")
+                .append(identifier)
+                .append(''')
+        connection match {
+            case external: ExternalConnection =>
+                sb.append("\n\t")
+                        .append("bound to '")
+                        .append(external.boundIdentifier)
+                        .append("':\n")
+        }
+    }
 
 }
 
 object ConnectionException {
-    def apply(msg: String, cause: Throwable): ConnectionException = new ConnectionException(msg, cause)
+    def apply(@NotNull connection: ConnectionContext, @Nullable msg: String, @Nullable cause: Throwable = null): ConnectionException = {
+        if (connection == null)
+            throw new NullPointerException()
+        new ConnectionException(connection, msg, cause)
+    }
 
 }

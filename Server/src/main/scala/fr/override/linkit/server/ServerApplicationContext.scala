@@ -12,18 +12,56 @@
 
 package fr.`override`.linkit.server
 
+import fr.`override`.linkit.api.connection.NoSuchConnectionException
 import fr.`override`.linkit.api.local.ApplicationContext
 import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.core.local.plugin.LinkitPluginManager
 import fr.`override`.linkit.server.config.{ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.`override`.linkit.server.connection.ServerConnection
 
+import scala.collection.mutable
+
 class ServerApplicationContext(override val configuration: ServerApplicationConfiguration) extends ApplicationContext {
 
-    override val pluginManager  : PluginManager     = new LinkitPluginManager(configuration.fsAdapter)
+    override val pluginManager: PluginManager = new LinkitPluginManager(configuration.fsAdapter)
+    private val serverCache = mutable.HashMap.empty[Object, ServerConnection]
 
     def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = {
-        val serverConnection = new ServerConnection(configuration)
+        val serverConnection = new ServerConnection(this, configuration)
+
+        val port = configuration.port
+        val identifier = configuration.identifier
+        serverCache.put(port, serverConnection)
+        serverCache.put(identifier, serverConnection)
+
+        serverConnection
     }
 
+    @throws[NoSuchConnectionException]("If the connection isn't found in the application's cache.")
+    def unregister(serverConnection: ServerConnection): Unit = {
+        val configuration = serverConnection.configuration
+        val port = configuration.port
+        val identifier = configuration.identifier
+
+        if (!serverCache.contains(port) || !serverCache.contains(identifier))
+            throw NoSuchConnectionException(s"Could not unregister server $identifier opened on port $port; connection not found in application context.")
+
+        serverCache.remove(port)
+        serverCache.remove(identifier)
+    }
+
+    def getServerConnection(identifier: String): Option[ServerConnection] = {
+        serverCache.get(identifier)
+    }
+
+    def getServerConnection(port: Int): Option[ServerConnection] = {
+        serverCache.get(port)
+    }
+
+    override def countConnections: Int = {
+        /* We need to divide the servers map size by two because servers are twice put into this map,
+         * one for port association, and one for identifier association.
+         */
+        serverCache.size / 2
+    }
 }

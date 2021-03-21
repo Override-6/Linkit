@@ -14,8 +14,10 @@ package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.Network
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.`override`.linkit.api.local.system.event.EventNotifier
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
 import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.core.local.system.event.DefaultEventNotifier
 import fr.`override`.linkit.server.config.ServerConnectionConfiguration
@@ -26,13 +28,17 @@ import scala.reflect.ClassTag
 
 class ServerConnection(applicationContext: ServerApplicationContext,
                        override val configuration: ServerConnectionConfiguration) extends ConnectionContext {
+
+    private val workerPool: BusyWorkerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0))
+    private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
+    @volatile private var alive = true
+
+
     override val supportIdentifier: String = configuration.identifier
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
     override val network: Network = new ServerNetwork(this, traffic)
     override val eventNotifier: EventNotifier = new DefaultEventNotifier
 
-    private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    @volatile private var alive = true
 
     override def shutdown(): Unit = {
         if (!alive)
@@ -50,11 +56,11 @@ class ServerConnection(applicationContext: ServerApplicationContext,
     override def isAlive: Boolean = alive
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
-        traffic.get
+        traffic.getInjectable(injectableID, scopeFactory, factory)
     }
 
-    override def runLater(task: => Unit): Unit = ???
+    override def runLater(task: => Unit): Unit = workerPool.runLater(task)
 
-    def getConnection(identifier: String): ConnectionContext = ???
+    def getConnection(identifier: String): Option[ConnectionContext] = Option(connectionsManager.getConnection(identifier))
 
 }

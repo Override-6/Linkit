@@ -33,6 +33,8 @@ class ClientApplicationContext(override val configuration: ClientApplicationConf
 
     override def runLater(task: => Unit): Unit = workerPool.runLater(task)
 
+    override def countConnections: Int = connections.size
+
     def getConnection(identifier: String): ExternalConnection = {
         val opt = connections.get(identifier)
         if (opt.isEmpty)
@@ -44,9 +46,12 @@ class ClientApplicationContext(override val configuration: ClientApplicationConf
         val address = config.remoteAddress
         val dynamicSocket = new ClientDynamicSocket(address, config.socketFactory)
         dynamicSocket.reconnectionPeriod = config.reconnectionPeriod
+        workerPool.setThreadCount(countConnections + 1)
+
         openConnection(dynamicSocket, config)
     }
 
+    @throws[NoSuchElementException]("If the connection isn't found in the application's cache.")
     def unregister(connectionContext: ExternalConnection): Unit = {
         import connectionContext.{boundIdentifier, supportIdentifier}
 
@@ -61,4 +66,5 @@ class ClientApplicationContext(override val configuration: ClientApplicationConf
     private def openConnection(socket: DynamicSocket, config: ClientConnectionConfiguration): ExternalConnection = {
 
     }
+
 }

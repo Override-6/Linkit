@@ -12,9 +12,14 @@
 
 package fr.override.linkit.api.local.system;
 
+import scala.collection.mutable.StringBuilder;
+
+import java.io.PrintStream;
+import java.io.PrintWriter;
+
 /**
  * thrown to report an internal incident in the Relays
- * */
+ */
 public class AppException extends Exception {
 
     public AppException(String msg, Throwable cause) {
@@ -23,6 +28,38 @@ public class AppException extends Exception {
 
     public AppException(String msg) {
         super(msg);
+    }
+
+    @Override
+    public void printStackTrace() {
+        printStackTrace(System.err);
+    }
+
+    @Override
+    public void printStackTrace(PrintStream s) {
+        s.println(implementationHeaders());
+        super.printStackTrace(s);
+    }
+
+    @Override
+    public void printStackTrace(PrintWriter s) {
+        s.println(implementationHeaders());
+        super.printStackTrace(s);
+    }
+
+    protected void appendMessage(StringBuilder sb) {
+        //Must be override by implementations to take effect.
+    }
+
+    private StringBuilder implementationHeaders() {
+        StringBuilder sb = new StringBuilder();
+        appendMessage(sb);
+
+        //Remove possible double line separator that could occur because of implementation
+        if (sb.toString().endsWith("\n"))
+            sb.deleteCharAt(sb.length() - 1);
+
+        return sb;
     }
 
 }

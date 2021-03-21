@@ -10,9 +10,14 @@
  * questions.
  */
 
-package fr.`override`.linkit.api.local.system.config
+package fr.`override`.linkit.api.local.system.config.schematic
 
-trait ExtendedConfiguration {
-    val enableEventHandling  : Boolean
-    val nWorkerThreadFunction: Int => Int
+import fr.`override`.linkit.api.local.ApplicationContext
+
+class EmptySchematic[A <: ApplicationContext] extends AppSchematic[A] {
+    override def setup(a: A): Unit = ()
+}
+
+object EmptySchematic {
+    def apply[A <: ApplicationContext]: EmptySchematic[A] = new EmptySchematic()
 }

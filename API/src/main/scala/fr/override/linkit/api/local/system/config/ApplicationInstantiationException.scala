@@ -10,10 +10,10 @@
  * questions.
  */
 
-package fr.`override`.linkit.server.connection
+package fr.`override`.linkit.api.local.system.config
 
 import fr.`override`.linkit.api.local.system.AppException
 
-case class ConnectionException(msg: String) extends AppException(msg) {
+class ApplicationInstantiationException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

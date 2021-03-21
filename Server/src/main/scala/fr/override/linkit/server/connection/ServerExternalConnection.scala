@@ -12,16 +12,16 @@
 
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.connection.ExternalConnection
-import fr.`override`.linkit.api.connection.network.ConnectionState
+import fr.`override`.linkit.api.connection.network.{ConnectionState, Network}
 import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, PacketTraffic}
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.connection.task.TasksHandler
+import fr.`override`.linkit.api.connection.{ConnectionException, ExternalConnection}
 import fr.`override`.linkit.api.local.concurrency.workerExecution
 import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
 import fr.`override`.linkit.api.local.system.event.EventNotifier
-import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.connection.packet.fundamental.TaskInitPacket
 import fr.`override`.linkit.core.connection.packet.traffic.PacketInjections
 import fr.`override`.linkit.core.local.concurrency.{BusyWorkerPool, PacketWorkerThread}
@@ -32,41 +32,40 @@ import java.net.Socket
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class ServerExternalConnection private(session: ConnectionSession,
-                                       manager: ExternalConnectionsManager) extends ExternalConnection with JustifiedCloseable {
+class ServerExternalConnection private(session: ConnectionSession) extends ExternalConnection {
 
-    private val server = session.server
-    override val supportIdentifier: String = server.supportIdentifier
+    import session._
 
-    private val packetTranslator = server.translator
-    override val traffic: PacketTraffic = server.traffic
-    override val translator: PacketTranslator = server.translator
-    override val eventNotifier: EventNotifier = server.eventNotifier
-    override val boundIdentifier: String = session.boundIdentifier
-    override val configuration: ConnectionConfiguration = session.con
+    override val supportIdentifier  : String                    = server.supportIdentifier
+    override val traffic            : PacketTraffic             = server.traffic
+    override val translator         : PacketTranslator          = session.translator
+    override val eventNotifier      : EventNotifier             = server.eventNotifier
+    override val boundIdentifier    : String                    = session.boundIdentifier
+    override val configuration      : ConnectionConfiguration   = session.configuration
+    override val network            : Network                   = session.network
 
-    @volatile private var closed = false
+    @volatile private var alive = true
 
-    override def close(reason: Reason): Unit = {
+    override def shutdown(): Unit = {
         BusyWorkerPool.checkCurrentIsWorker()
-        closed = true
-        if (reason.isInternal && isConnected) {
+        alive = false
+        /*if (reason.isInternal && isConnected) {
             val sysChannel = session.channel
             sysChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
-        }
-        ConnectionPacketWorker.close(reason)
+        }*/
+        ConnectionPacketWorker.close()
 
-        session.close(reason)
+        session.close()
 
-        manager.unregister(supportIdentifier)
+        connectionManager.unregister(supportIdentifier)
         ContextLogger.trace(s"Connection closed for $supportIdentifier")
     }
 
-    override def shutdown(): Unit = ???
+    override def isAlive: Boolean = alive
 
-    override def isAlive: Boolean = ???
-
-    override def getInjectable[C: ClassTag](injectableID: Int, scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = ???
+    override def getInjectable[C: ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
+        serverTraffic.getInjectable(injectableID, scopeFactory, factory)
+    }
 
     override def getState: ConnectionState = session.getSocketState
 
@@ -74,11 +73,9 @@ class ServerExternalConnection private(session: ConnectionSession,
         server.runLater(callback)
     }
 
-    override def isClosed: Boolean = closed
-
     def start(): Unit = {
-        if (closed) {
-            throw ConnectionException("This Connection was already used and is now definitely closed.")
+        if (alive) {
+            throw ConnectionException(this, "This Connection was already used and is now definitely closed.")
         }
         ConnectionPacketWorker.start()
     }
@@ -86,7 +83,7 @@ class ServerExternalConnection private(session: ConnectionSession,
     def sendPacket(packet: Packet, channelID: Int): Unit = {
         runLater {
             val coords = DedicatedPacketCoordinates(channelID, supportIdentifier, server.supportIdentifier)
-            val result = packetTranslator.translate(packet, coords)
+            val result = translator.translate(packet, coords)
             session.send(result)
         }
     }
@@ -123,14 +120,14 @@ class ServerExternalConnection private(session: ConnectionSession,
                     e.printStackTrace()
                     //e.printStackTrace(session.errConsole)
                     runLater {
-                        ServerExternalConnection.this.close(Reason.INTERNAL_ERROR)
+                        ServerExternalConnection.this.shutdown()
                     }
             }
         }
 
         @workerExecution
         private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): Unit = {
-            if (closed)
+            if (alive)
                 return
 
             packet match {
@@ -148,7 +145,7 @@ class ServerExternalConnection private(session: ConnectionSession,
             val reason = packet.reason.reversedPOV()
             import SystemOrder._
             orderType match {
-                case CLIENT_CLOSE => runLater(ServerExternalConnection.this.close(reason))
+                case CLIENT_CLOSE => runLater(ServerExternalConnection.this.shutdown())
                 case SERVER_CLOSE => server.shutdown()
                 case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
 
@@ -172,11 +169,11 @@ object ServerExternalConnection {
      * @return a started ClientConnection.
      * @see [[SocketContainer]]
      * */
-    def open(@NotNull session: ConnectionSession, @NotNull manager: ExternalConnectionsManager): ServerExternalConnection = {
+    def open(@NotNull session: ConnectionSession): ServerExternalConnection = {
         if (session == null) {
             throw new NullPointerException("Unable to construct ClientConnection : session cant be null")
         }
-        val connection = new ServerExternalConnection(session, manager)
+        val connection = new ServerExternalConnection(session)
         connection.start()
         connection
     }

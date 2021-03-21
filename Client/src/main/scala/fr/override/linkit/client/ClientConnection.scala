@@ -76,7 +76,7 @@ class ClientConnection(socket: DynamicSocket,
     private def checkCoordinates(coordinates: DedicatedPacketCoordinates): Unit = {
         val targetID = coordinates.targetID
         if (targetID != supportIdentifier)
-            throw UnexpectedPacketException(s"Could not handle packet : targetID ($targetID) isn't equals to this relay identifier !")
+            throw UnexpectedPacketException(s"Could not handle received packet, coordinates aren't targeting this connection !")
     }
 
     private def initNetwork: Network = {

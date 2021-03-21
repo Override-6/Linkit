@@ -19,8 +19,8 @@ import java.net.Socket
 
 class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnect) {
 
-    override def boundIdentifier: String = identifier
     var identifier: String = "$NOT SET$"
+    override def boundIdentifier: String = identifier
 
     def set(socket: Socket): Unit = this.synchronized {
         if (currentSocket != null && !autoReconnect)

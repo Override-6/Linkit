@@ -12,8 +12,8 @@
 
 package fr.`override`.linkit.server.config
 
-import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
+import fr.`override`.linkit.api.local.system.config.{ConnectionConfiguration, ExtendedConfiguration}
 
-trait ServerConnectionConfiguration extends ConnectionConfiguration {
+trait ServerConnectionConfiguration extends ConnectionConfiguration with ExtendedConfiguration {
     val maxConnection: Int
 }

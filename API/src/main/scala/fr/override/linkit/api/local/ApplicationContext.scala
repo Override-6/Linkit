@@ -12,7 +12,6 @@
 
 package fr.`override`.linkit.api.local
 
-import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.api.local.system.Version
 import fr.`override`.linkit.api.local.system.config.ApplicationConfiguration
@@ -34,6 +33,6 @@ trait ApplicationContext {
 
     def pluginManager: PluginManager
 
-    @throws[NoSuchElementException]("If the connection isn't found in the application's cache.")
-    def unregister(connection: ConnectionContext): Unit
+    def countConnections: Int
+
 }

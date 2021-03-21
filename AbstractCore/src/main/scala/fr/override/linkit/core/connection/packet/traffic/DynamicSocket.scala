@@ -22,10 +22,13 @@ import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}
 
 abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
+
     @volatile protected var currentSocket: Socket = _
     @volatile protected var currentOutputStream: BufferedOutputStream = _
     @volatile protected var currentInputStream: InputStream = _
     @volatile private var totalWriteTime: Long = 0
+
+    protected def boundIdentifier: String
 
     def write(buff: Array[Byte]): Unit = {
         val t0 = System.currentTimeMillis()
@@ -127,7 +130,6 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         -1
     }
 
-    @volatile protected def boundIdentifier: String
 
     def getState: ConnectionState = SocketLocker.state
 

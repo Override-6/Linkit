@@ -15,7 +15,7 @@ package fr.`override`.linkit.server
 import fr.`override`.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.core.connection.packet.traffic.{PacketInjections, WriterInfo}
-import fr.`override`.linkit.server.connection.{ConnectionException, ServerConnection}
+import fr.`override`.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {
 

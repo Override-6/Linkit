@@ -13,11 +13,15 @@
 package fr.`override`.linkit.api.local.system.config
 
 import fr.`override`.linkit.api.local.system.fsa.FileSystemAdapter
+import fr.`override`.linkit.api.local.system.security.ApplicationSecurityManager
+import org.jetbrains.annotations.{NotNull, Nullable}
 
 trait ApplicationConfiguration {
 
-    val extensionsFolder: String //can be relative or global
+    @Nullable val pluginFolder: String //can be relative or global
 
-    val fsAdapter: FileSystemAdapter
+    @NotNull val fsAdapter: FileSystemAdapter
+
+    @NotNull val securityManager: ApplicationSecurityManager
 
 }

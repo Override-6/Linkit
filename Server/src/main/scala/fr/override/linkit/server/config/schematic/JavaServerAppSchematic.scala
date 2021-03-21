@@ -10,9 +10,13 @@
  * questions.
  */
 
-package fr.`override`.linkit.api.local.system.config
+package fr.`override`.linkit.server.config.schematic
 
-trait ExtendedConfiguration {
-    val enableEventHandling  : Boolean
-    val nWorkerThreadFunction: Int => Int
+import fr.`override`.linkit.server.config.ServerConnectionConfiguration
+
+class JavaServerAppSchematic extends ServerAppSchematic {
+    def addConfig(serverConfig: ServerConnectionConfiguration): this.type = {
+        serverConfigs += serverConfig
+        this
+    }
 }
