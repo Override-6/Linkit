@@ -14,6 +14,7 @@ package fr.`override`.linkit.server.security
 
 import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.local.ApplicationContext
+import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
 import fr.`override`.linkit.api.local.system.security.{ApplicationSecurityManager, BytesHasher}
 
 trait ServerSecurityManager extends ApplicationSecurityManager {
@@ -25,7 +26,7 @@ object ServerSecurityManager {
     class Default extends ServerSecurityManager {
         override def checkConnection(connection: ConnectionContext): Unit = ()
 
-        override def checkApp(application: ApplicationContext): Unit = ()
+        override def checkConnectionConfig(connection: ConnectionConfiguration): Unit = ()
 
         override val hasher: BytesHasher = BytesHasher.inactive
     }

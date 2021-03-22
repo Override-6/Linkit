@@ -12,7 +12,9 @@
 
 package fr.`override`.linkit.core.connection.network.cache
 
-import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import java.util.NoSuchElementException
+
+import fr.`override`.linkit.api.connection.network.cache.{HandleableSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketSender, PacketSyncReceiver, PacketTraffic}
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
 import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager.{MockCache, RequestSender}
@@ -23,7 +25,6 @@ import fr.`override`.linkit.core.connection.packet.fundamental.ValPacket.LongPac
 import fr.`override`.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.`override`.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
 
-import java.util.NoSuchElementException
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
@@ -44,7 +45,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
         traffic.getInjectable(11, ChannelScope.broadcast, new RequestSender(_))
 
     private val sharedObjects: map.SharedMap[Long, Serializable] = init()
-    println(s"sharedObjects = ${sharedObjects}")
+    println(s"sharedObjects = $sharedObjects")
 
     override def post[A <: Serializable](key: Long, value: A): A = {
         sharedObjects.put(key, value)
@@ -57,7 +58,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
     override def apply[A <: Serializable](key: Long): A = sharedObjects(key).asInstanceOf[A]
 
-    override def get[A <: HandleableSharedCache[_] : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
+    override def get[A <: HandleableSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
         LocalCacheHandler
                 .findCache[A](cacheID)
                 .fold {
@@ -99,7 +100,6 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
         val cacheOwners = SharedMap[Long, Serializable].createNew(this, 1, content, communicator)
         LocalCacheHandler.register(1L, cacheOwners)
-        println(s"cacheOwners = ${cacheOwners}")
         cacheOwners
                 .foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
 
@@ -120,7 +120,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
     def continuePacketHandling(packet: Packet, coords: DedicatedPacketCoordinates): Unit
 
     private def handlePacket(packet: Packet, coords: DedicatedPacketCoordinates): Unit = {
-        println(s"HANDLING PACKET ${packet}, $coords")
+        println(s"HANDLING PACKET $packet, $coords")
 
         packet match {
             //Normal packet
@@ -133,7 +133,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
     protected object LocalCacheHandler {
 
-        private val localRegisteredCaches = mutable.Map.empty[Long, HandleableSharedCache[_]]
+        private val localRegisteredCaches = mutable.Map.empty[Long, HandleableSharedCache]
 
         def updateAll(): Unit = {
             println(s"updating cache ($localRegisteredCaches)...")
@@ -142,7 +142,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
             println(s"cache updated ! ($localRegisteredCaches)")
         }
 
-        def register(identifier: Long, cache: HandleableSharedCache[_]): Unit = {
+        def register(identifier: Long, cache: HandleableSharedCache): Unit = {
             println(s"Registering $identifier into local cache.")
             localRegisteredCaches.put(identifier, cache)
             println(s"Local cache is now $localRegisteredCaches")
@@ -203,7 +203,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
     }
 
     private def println(msg: String): Unit = {
-        Console.println(s"<$family, $ownerID> $msg")
+        //Console.println(s"<$family, $ownerID> $msg")
     }
 
 }
@@ -218,15 +218,15 @@ object AbstractSharedCacheManager {
 
         caches.get((family, traffic))
                 .fold {
-                    println(s"--> CREATING SHARED CACHE HANDLER <$family>")
+                    //println(s"--> CREATING SHARED CACHE HANDLER <$family>")
                     val cache = factory(family, ownerIdentifier, traffic)
-                    println(s"--> SHARED CACHE HANDLER CREATED <$family>")
+                    //println(s"--> SHARED CACHE HANDLER CREATED <$family>")
                     caches.put((family, traffic), cache)
                     cache
                 }(cache => {
-                    println(s"--> UPDATING CACHE <$family> INSTEAD OF CREATING IT.")
+                    //println(s"--> UPDATING CACHE <$family> INSTEAD OF CREATING IT.")
                     cache.update()
-                    println(s"--> UPDATED CACHE <$family> INSTEAD OF CREATING IT.")
+                    //println(s"--> UPDATED CACHE <$family> INSTEAD OF CREATING IT.")
                     cache
                 })
     }
@@ -249,7 +249,7 @@ object AbstractSharedCacheManager {
         override def haveMorePackets: Boolean = false
     }
 
-    object MockCache extends HandleableSharedCache[Nothing](null, -1, null) {
+    object MockCache extends AbstractSharedCache[Nothing](null, -1, null) {
 
         override val family: String = ""
 

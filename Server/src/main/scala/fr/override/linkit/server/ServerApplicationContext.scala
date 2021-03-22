@@ -17,7 +17,9 @@ import fr.`override`.linkit.api.local.ApplicationContext
 import fr.`override`.linkit.api.local.concurrency.workerExecution
 import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.api.local.system.security.ConnectionSecurityException
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
 import fr.`override`.linkit.core.local.plugin.LinkitPluginManager
+import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.server.config.{ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.`override`.linkit.server.connection.ServerConnection
 
@@ -25,8 +27,9 @@ import scala.collection.mutable
 
 class ServerApplicationContext(override val configuration: ServerApplicationConfiguration) extends ApplicationContext {
 
-    override val pluginManager: PluginManager = new LinkitPluginManager(configuration.fsAdapter)
-    private val serverCache = mutable.HashMap.empty[Object, ServerConnection]
+    override val pluginManager: PluginManager = null // new LinkitPluginManager(configuration.fsAdapter)
+    private val mainWorkerPool = new BusyWorkerPool(3)
+    private val serverCache = mutable.HashMap.empty[Any, ServerConnection]
     private val securityManager = configuration.securityManager
 
     override def countConnections: Int = {
@@ -38,7 +41,19 @@ class ServerApplicationContext(override val configuration: ServerApplicationConf
     }
 
     @workerExecution
+    override def shutdown(): Unit = {
+        ContextLogger.info("Server application is shutting down...")
+        serverCache.values.
+            filter(_.isInstanceOf[Int])
+            .foreach(_.shutdown())
+        ContextLogger.info("Server application successfully shut down.")
+    }
+
+    override def runLater(@workerExecution task: => Unit): Unit = mainWorkerPool.runLater(task)
+
+    @workerExecution
     def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = {
+        BusyWorkerPool.checkCurrentIsWorker("openning server connection must be done in a worker thread pool.")
         securityManager.checkConnectionConfig(configuration)
         val serverConnection = new ServerConnection(this, configuration)
         serverConnection.start()

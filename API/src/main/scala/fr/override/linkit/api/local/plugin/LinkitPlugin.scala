@@ -10,19 +10,21 @@
  * questions.
  */
 
-package fr.`override`.linkit.core.local.plugin
+package fr.`override`.linkit.api.local.plugin
 
-import fr.`override`.linkit.api.local.plugin.fragment.PluginFragment
-import fr.`override`.linkit.api.local.plugin.{Plugin, PluginLoadException, PluginManager}
+import fr.`override`.linkit.api.local.ApplicationContext
+import fr.`override`.linkit.api.local.concurrency.workerExecution
+import fr.`override`.linkit.api.local.plugin.fragment.{FragmentManager, PluginFragment}
+import fr.`override`.linkit.api.local.plugin.{Plugin, PluginLoadException}
 
 abstract class LinkitPlugin extends Plugin {
 
     val name: String = getClass.getSimpleName
     implicit protected val self: LinkitPlugin = this
 
-    private var manager: PluginManager = _
-    private val fragmentsManager = manager.fragmentManager
-    //private val fragsChannel = relay.openChannel(4, )
+    private var context: ApplicationContext = _
+    private var fragmentsManager: FragmentManager = _
+    private var pluginManager: PluginManager = _
 
     protected def putFragment(fragment: PluginFragment): Unit = {
         fragmentsManager.putFragment(fragment)
@@ -40,11 +42,18 @@ abstract class LinkitPlugin extends Plugin {
         opt.get
     }
 
-    override def init(manager: PluginManager): Unit = {
-        if (manager != null)
+    protected def getContext: ApplicationContext = context
+    protected def getPluginManager: PluginManager = pluginManager
+
+    protected def runLater(@workerExecution task: => Unit): Unit = context.runLater(task)
+
+    override def init(context: ApplicationContext): Unit = {
+        if (this.context != null)
             throw new IllegalStateException("This plugin is already initialized !!")
 
-        this.manager = manager
+        this.pluginManager = context.pluginManager
+        this.fragmentsManager = pluginManager.fragmentManager
+        this.context = context
     }
 
     override def onLoad(): Unit = ()

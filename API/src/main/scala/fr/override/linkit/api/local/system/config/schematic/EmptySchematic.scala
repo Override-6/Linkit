@@ -16,6 +16,8 @@ import fr.`override`.linkit.api.local.ApplicationContext
 
 class EmptySchematic[A <: ApplicationContext] extends AppSchematic[A] {
     override def setup(a: A): Unit = ()
+
+    override val name: String = "empty"
 }
 
 object EmptySchematic {

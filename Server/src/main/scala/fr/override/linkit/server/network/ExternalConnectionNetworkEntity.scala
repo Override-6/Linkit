@@ -27,7 +27,7 @@ class ExternalConnectionNetworkEntity private(serverConnection: ServerConnection
         this(server, identifier, AbstractSharedCacheManager.get(identifier, identifier, ServerSharedCacheManager())(server.traffic))
     }
 
-    private val connection = serverConnection.getConnection(identifier)
+    private val connection = serverConnection.getConnection(identifier).get
     cache.get(3, SharedInstance[ConnectionState])
             .set(ConnectionState.CONNECTED) //technically already connected
 

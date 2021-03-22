@@ -12,7 +12,7 @@
 
 package fr.`override`.linkit.core.connection.network.cache
 
-import fr.`override`.linkit.api.connection.network.cache.{SharedCache, SharedCacheManager}
+import fr.`override`.linkit.api.connection.network.cache.{SharedCache, HandleableSharedCache, SharedCacheManager}
 import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
@@ -24,9 +24,9 @@ import org.jetbrains.annotations.Nullable
 
 import scala.reflect.ClassTag
 
-abstract class HandleableSharedCache[A <: Serializable : ClassTag](@Nullable handler: SharedCacheManager,
-                                                                   identifier: Long,
-                                                                   channel: PacketSender with PacketSyncReceiver) extends SharedCache with JustifiedCloseable {
+abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handler: SharedCacheManager,
+                                                                 identifier: Long,
+                                                                 channel: PacketSender with PacketSyncReceiver) extends HandleableSharedCache with JustifiedCloseable {
 
     override val family: String = if (handler == null) "" else handler.family
 
@@ -39,18 +39,14 @@ abstract class HandleableSharedCache[A <: Serializable : ClassTag](@Nullable han
             return this
 
         //asking server to give us his content version of our cache
-        println(s"<$family> UPDATING CACHE $identifier")
+        //println(s"<$family> UPDATING CACHE $identifier")
         channel.sendTo(WrappedPacket(family, LongPacket(identifier)), handler.ownerID)
         val content = channel.nextPacket[ArrayObjectPacket].value
-        println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
+        //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
 
         setCurrentContent(ScalaUtils.slowCopy(content))
         this
     }
-
-    def handlePacket(packet: Packet, coords: PacketCoordinates): Unit
-
-    def currentContent: Array[Any]
 
     protected def sendRequest(packet: Packet): Unit = channel.send(WrappedPacket(s"$family", WrappedPacket(identifier.toString, packet)))
 

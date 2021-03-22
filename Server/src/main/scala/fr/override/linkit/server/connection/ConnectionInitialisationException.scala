@@ -14,6 +14,6 @@ package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.connection.ConnectionException
 
-class ConnectionInitialisationException(msg: String) extends ConnectionException(msg) {
+class ConnectionInitialisationException(msg: String, cause: Throwable = null) extends ConnectionException(null, msg, cause) {
 
 }

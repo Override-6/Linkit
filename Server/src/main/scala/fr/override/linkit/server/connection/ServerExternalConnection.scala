@@ -15,7 +15,7 @@ package fr.`override`.linkit.server.connection
 import fr.`override`.linkit.api.connection.network.{ConnectionState, Network}
 import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
-import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, PacketTraffic}
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.connection.task.TasksHandler
 import fr.`override`.linkit.api.connection.{ConnectionException, ExternalConnection}
@@ -27,8 +27,10 @@ import fr.`override`.linkit.core.connection.packet.traffic.PacketInjections
 import fr.`override`.linkit.core.local.concurrency.{BusyWorkerPool, PacketWorkerThread}
 import fr.`override`.linkit.core.local.system.{ContextLogger, SystemOrder, SystemPacket}
 import org.jetbrains.annotations.NotNull
-
 import java.net.Socket
+
+import fr.`override`.linkit.api.connection.network.cache.HandleableSharedCache
+
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -36,13 +38,13 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
 
     import session._
 
-    override val supportIdentifier  : String                    = server.supportIdentifier
-    override val traffic            : PacketTraffic             = server.traffic
-    override val translator         : PacketTranslator          = session.translator
-    override val eventNotifier      : EventNotifier             = server.eventNotifier
-    override val boundIdentifier    : String                    = session.boundIdentifier
-    override val configuration      : ConnectionConfiguration   = session.configuration
-    override val network            : Network                   = session.network
+    override val supportIdentifier: String = server.supportIdentifier
+    override val traffic: PacketTraffic = server.traffic
+    override val translator: PacketTranslator = session.translator
+    override val eventNotifier: EventNotifier = server.eventNotifier
+    override val boundIdentifier: String = session.boundIdentifier
+    override val configuration: ConnectionConfiguration = session.configuration
+    override val network: Network = session.network
 
     @volatile private var alive = true
 
@@ -63,7 +65,7 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
 
     override def isAlive: Boolean = alive
 
-    override def getInjectable[C: ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
         serverTraffic.getInjectable(injectableID, scopeFactory, factory)
     }
 
@@ -111,10 +113,10 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
         override protected def refresh(): Unit = {
             try {
                 session
-                        .packetReader
-                        .nextPacket((packet, coordinates, packetNumber) => {
-                            runLater(handlePacket(packet, coordinates, packetNumber))
-                        })
+                    .packetReader
+                    .nextPacket((packet, coordinates, packetNumber) => {
+                        runLater(handlePacket(packet, coordinates, packetNumber))
+                    })
             } catch {
                 case NonFatal(e) =>
                     e.printStackTrace()

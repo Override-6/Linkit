@@ -100,7 +100,7 @@ class BusyWorkerPool(val nThreads: Int) extends AutoCloseable with Procrastinato
      * @throws IllegalStateException if the pool is closed
      * @param task the task to execute in the thread pool
      * */
-    override def runLater(task: => Unit): Unit = {
+    override def runLater(@workerExecution task: => Unit): Unit = {
         if (closed)
             throw new IllegalStateException("Attempted to submit a task in a closed thread pool !")
 

@@ -13,7 +13,7 @@
 package fr.`override`.linkit.server
 
 import fr.`override`.linkit.server.config.schematic.ScalaServerAppSchematic
-import fr.`override`.linkit.server.config.{ServerApplicationBuilder, ServerConnectionConfigBuilder}
+import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerApplicationBuilder, ServerConnectionConfigBuilder}
 
 
 object ServerLauncher {
@@ -27,14 +27,26 @@ object ServerLauncher {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = "TestServer1"
                     override val port: Int = 4848
+
+                    configName = "config1"
+                }
+                servers += new ServerConnectionConfigBuilder {
+                    override val identifier: String = "TestServer2"
+                    override val port: Int = 4849
+                    maxConnection = 2
+                    this.identifierAmbiguityStrategy = AmbiguityStrategy.REPLACE
+
+                    configName = "config2"
+                }
+                servers += new ServerConnectionConfigBuilder {
+                    override val identifier: String = "TestServer3"
+                    override val port: Int = 4850
+                    maxConnection = 3
+
+                    configName = "fail-config"
                 }
             }
         }
-
-        val a = serverApplicationContext.getServerConnection(4848)
-        val b = serverApplicationContext.getServerConnection("TestServer1")
-        println(s"a == b = ${a == b}")
-        println(a)
     }
 
     def getOrElse(args: Array[String], key: String, defaultValue: String): String = {

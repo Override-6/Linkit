@@ -12,6 +12,7 @@
 
 package fr.`override`.linkit.core.local.plugin
 
+import fr.`override`.linkit.api.local.ApplicationContext
 import fr.`override`.linkit.api.local.plugin.fragment.FragmentManager
 import fr.`override`.linkit.api.local.plugin.{Plugin, PluginLoader, PluginManager}
 import fr.`override`.linkit.api.local.system.fsa.FileSystemAdapter
@@ -21,25 +22,25 @@ import fr.`override`.linkit.core.local.system.ContextLogger
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class LinkitPluginManager(fsa: FileSystemAdapter) extends PluginManager {
-    private val extractor = new SimplePluginExtractor(fsa)
+class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) extends PluginManager {
+    private val extractor = new SimplePluginExtractor(context, fsa)
     private val plugins = ListBuffer.empty[Plugin]
     override val fragmentManager: FragmentManager = new SimpleFragmentManager
 
     override def load(file: String): Plugin = {
-        enablePlugins(extractor.extract(this, file)).head
+        enablePlugins(extractor.extract(file)).head
     }
 
     override def loadAll(folder: String): Array[Plugin] = {
-        enablePlugins(extractor.extractAll(this,  folder))
+        enablePlugins(extractor.extractAll(folder))
     }
 
     override def load(clazz: Class[_ <: Plugin]): Plugin = {
-        enablePlugins(extractor.extract(this,  clazz)).head
+        enablePlugins(extractor.extract(clazz)).head
     }
 
     override def loadAll(classes: Class[_ <: Plugin]*): Array[Plugin] = {
-        enablePlugins(extractor.extractAll(this, classes: _*))
+        enablePlugins(extractor.extractAll(classes: _*))
     }
 
     override def countPlugins: Int = plugins.length

@@ -23,9 +23,9 @@ import scala.collection.mutable
 object LocalCachedObjectSerializer extends ObjectSerializer {
     private val cache = new mutable.HashMap[Int, String]()
 
-    override protected val signature: Array[Byte] = Array(0)
+    override val signature: Array[Byte] = Array(0)
 
-    override protected def serializeType(clazz: Class[_]): Array[Byte] = {
+    override def serializeType(clazz: Class[_]): Array[Byte] = {
         val name = clazz.getName
         val hash = name.hashCode
         //println(s"name = ${name}")
@@ -39,7 +39,7 @@ object LocalCachedObjectSerializer extends ObjectSerializer {
     /**
      * @return a tuple with the Class and his value length into the array
      * */
-    override protected def deserializeType(bytes: Array[Byte]): (Class[_], Int) = {
+    override def deserializeType(bytes: Array[Byte]): (Class[_], Int) = {
         val numberLong = deserializeNumber(bytes, 0, 4)
         //println(s"numberLong = ${numberLong}")
         //println(s"numberInt = ${numberLong.toInt}")

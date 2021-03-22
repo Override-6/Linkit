@@ -12,6 +12,7 @@
 
 package fr.`override`.linkit.server
 
+import fr.`override`.linkit.api.connection.NoSuchConnectionException
 import fr.`override`.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.core.connection.packet.traffic.{PacketInjections, WriterInfo}
@@ -41,16 +42,17 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
                 traffic.handleInjection(PacketInjections.unhandled(coords, packet))
                 return
             }
-            if (serverConnection.isConnected(targetID)) {
-                serverConnection.getConnection(targetID).sendPacket(packet, identifier)
+            val opt = serverConnection.getConnection(targetID)
+            if (opt.isDefined) {
+                opt.get.sendPacket(packet, identifier)
             } else {
-                throw ConnectionException(s"Attempted to send a packet to target $targetID, but this target is not connected.")
+                throw NoSuchConnectionException(s"Attempted to send a packet to target $targetID, but this conection is missing or not connected.")
             }
         })
     }
 
 
     override def writeBroadcastPacket(packet: Packet, discarded: String*): Unit = {
-        server.broadcastPacketToConnections(packet, ownerID, identifier, discarded: _*)
+        serverConnection.broadcastPacketToConnections(packet, ownerID, identifier, discarded: _*)
     }
 }

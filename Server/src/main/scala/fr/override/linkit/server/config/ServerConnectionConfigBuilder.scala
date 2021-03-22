@@ -21,12 +21,13 @@ abstract class ServerConnectionConfigBuilder {
 
     var maxConnection: Int = Int.MaxValue
     var enableEventHandling: Boolean = true
-    var nWorkerThreadFunction: Int => Int = _ * 3 //3 threads per connection allocated
+    var nWorkerThreadFunction: Int => Int = _ * 2 + 1 //2 threads per connection allocated + 1 for the server connection
     var configName: String = s"hardcoded-config#$count"
     var hasher: BytesHasher = BytesHasher.inactive
     val identifier: String
     val port: Int
     var translator: PacketTranslator = new CompactedPacketTranslator(identifier, hasher)
+    var identifierAmbiguityStrategy: AmbiguityStrategy = AmbiguityStrategy.REJECT_NEW
 
     def build(): ServerConnectionConfiguration = {
         val builder = this
@@ -39,6 +40,7 @@ abstract class ServerConnectionConfigBuilder {
             override val port: Int = builder.port
             override val hasher: BytesHasher = builder.hasher
             override val translator: PacketTranslator = builder.translator
+            override val identifierAmbiguityStrategy: AmbiguityStrategy = builder.identifierAmbiguityStrategy
         }
     }
 

@@ -15,7 +15,7 @@ package fr.`override`.linkit.core.connection.network.cache.map
 import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
 import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.core.connection.network.cache.HandleableSharedCache
+import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.`override`.linkit.core.connection.network.cache.map.MapModification._
 import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
@@ -25,8 +25,9 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](handler: SharedCacheManager, identifier: Long, baseContent: Array[(K, V)], channel: PacketSender with PacketSyncReceiver)
-        extends HandleableSharedCache[(K, V)](handler, identifier, channel) {
+class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
+                      baseContent: Array[(K, V)], channel: PacketSender with PacketSyncReceiver)
+        extends AbstractSharedCache[(K, V)](handler, identifier, channel) {
 
     private val networkListeners = ConsumerContainer[(MapModification, K, V)]()
     private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]

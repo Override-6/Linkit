@@ -12,9 +12,9 @@
 
 package fr.`override`.linkit.api.local.plugin
 
-trait Plugin {
-    def getLoader: PluginLoader
+import fr.`override`.linkit.api.local.ApplicationContext
 
+trait Plugin {
     def onLoad(): Unit
 
     def onEnable(): Unit
@@ -22,5 +22,5 @@ trait Plugin {
     def onDisable(): Unit
 
     @throws[IllegalStateException]("If the plugin is already initialized")
-    def init(manager: PluginManager): Unit
+    def init(context: ApplicationContext): Unit
 }

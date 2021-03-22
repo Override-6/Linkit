@@ -16,6 +16,7 @@ import fr.`override`.linkit.api.local.system.config.ApplicationInstantiationExce
 import fr.`override`.linkit.api.local.system.config.schematic.{AppSchematic, EmptySchematic}
 import fr.`override`.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.`override`.linkit.api.local.system.security.ApplicationSecurityManager
+import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.core.local.system.fsa.JDKFileSystemAdapters
 import fr.`override`.linkit.server.ServerApplicationContext
 import org.jetbrains.annotations.{NotNull, Nullable}
@@ -24,10 +25,10 @@ import scala.util.control.NonFatal
 
 abstract class ServerApplicationBuilder {
 
-    @Nullable var pluginsFolder      : String                                  = "/Plugins"
-    @NotNull var fsAdapter          : FileSystemAdapter                       = JDKFileSystemAdapters.Nio
-    @NotNull var securityManager    : ApplicationSecurityManager              = ApplicationSecurityManager.default
-    @NotNull var loadSchematic      : AppSchematic[ServerApplicationContext]  = EmptySchematic[ServerApplicationContext]
+    @Nullable var pluginsFolder: String = "/Plugins"
+    @NotNull var fsAdapter: FileSystemAdapter = JDKFileSystemAdapters.Nio
+    @NotNull var securityManager: ApplicationSecurityManager = ApplicationSecurityManager.default
+    @NotNull var loadSchematic: AppSchematic[ServerApplicationContext] = EmptySchematic[ServerApplicationContext]
 
     @throws[ApplicationInstantiationException]("If any exception is thrown during build")
     def build(): ServerApplicationContext = {
@@ -39,14 +40,37 @@ abstract class ServerApplicationBuilder {
             override val securityManager: ApplicationSecurityManager = builder.securityManager
         }
 
-        try {
-            val serverAppContext = new ServerApplicationContext(config)
-            loadSchematic.setup(serverAppContext)
-            serverAppContext
+        val serverAppContext = try {
+            ContextLogger.info("Instantiating Server application...")
+            new ServerApplicationContext(config)
         } catch {
             case NonFatal(e) =>
                 throw new ApplicationInstantiationException("Could not instantiate Server Application.", e)
         }
+
+        var exception: Throwable = null
+        serverAppContext.runLater {
+            try {
+                ContextLogger.info(s"Applying schematic '${loadSchematic.name}...")
+                loadSchematic.setup(serverAppContext)
+                ContextLogger.info("Setup applied successfully.")
+            } catch {
+                case NonFatal(e) =>
+                    exception = e
+            } finally {
+                serverAppContext.synchronized {
+                    serverAppContext.notify()
+                }
+            }
+        }
+        serverAppContext.synchronized {
+            serverAppContext.wait()
+        }
+        if (exception != null)
+            throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
+
+        serverAppContext
+
     }
 
 }

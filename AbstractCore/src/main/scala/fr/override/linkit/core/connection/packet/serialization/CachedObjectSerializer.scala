@@ -28,7 +28,7 @@ class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer
      * @return the hashcode of the class name under a byte sequences
      *         If the class name is not registered into the cache, it will be added
      * */
-    override protected def serializeType(clazz: Class[_]): Array[Byte] = {
+    override def serializeType(clazz: Class[_]): Array[Byte] = {
         val name = clazz.getName
         val hash = name.hashCode
 
@@ -43,11 +43,11 @@ class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer
     /**
      * @return a tuple with the Class and his value length into the array
      * */
-    override protected def deserializeType(bytes: Array[Byte]): (Class[_], Int) = {
+    override def deserializeType(bytes: Array[Byte]): (Class[_], Int) = {
         (Class.forName(objectMap.getOrWait(deserializeNumber(bytes, 0, 4).toInt)), 4) //4 is the byte length of one integer
     }
 
-    override protected val signature: Array[Byte] = Array(0)
+    override val signature: Array[Byte] = Array(0)
 
     /*
     * Those types are directly registered because they are potentially used by the packet that

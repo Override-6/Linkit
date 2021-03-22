@@ -14,7 +14,9 @@ package fr.`override`.linkit.server.config.schematic
 
 import fr.`override`.linkit.server.config.ServerConnectionConfiguration
 
-class ScalaServerAppSchematic extends ServerAppSchematic {
+abstract class ScalaServerAppSchematic extends ServerAppSchematic {
+    override val name: String = "raw-schematic"
+
     protected object servers {
         def +=(serverConfig: ServerConnectionConfiguration): Unit = serverConfigs += serverConfig
     }

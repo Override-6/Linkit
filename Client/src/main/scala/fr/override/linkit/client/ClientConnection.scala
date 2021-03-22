@@ -51,7 +51,7 @@ class ClientConnection(socket: DynamicSocket,
         traffic.getInjectable(injectableID, scopeFactory, factory)
     }
 
-    override def runLater(task: => Unit): Unit = appContext.runLater(task)
+    override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
 
     override def getState: ConnectionState = socket.getState
 

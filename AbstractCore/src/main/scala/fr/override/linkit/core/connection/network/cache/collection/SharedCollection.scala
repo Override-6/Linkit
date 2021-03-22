@@ -15,7 +15,7 @@ package fr.`override`.linkit.core.connection.network.cache.collection
 import fr.`override`.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
 import fr.`override`.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
-import fr.`override`.linkit.core.connection.network.cache.HandleableSharedCache
+import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.`override`.linkit.core.connection.network.cache.collection.CollectionModification._
 import fr.`override`.linkit.core.connection.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
@@ -32,7 +32,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
                                                      identifier: Long,
                                                      adapter: CollectionAdapter[A],
                                                      channel: PacketSender with PacketSyncReceiver)
-        extends HandleableSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
+        extends AbstractSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
     private val networkListeners = ConsumerContainer[(CollectionModification, Long, A)]()
@@ -179,7 +179,7 @@ object SharedCollection {
     def set[A <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = {
         ofInsertFilter[A]((coll, it) => {
             val b = !coll.contains(it)
-            println(s"Insert filter result : ${b} (collection: $coll, it: $it)")
+            //println(s"Insert filter result : ${b} (collection: $coll, it: $it)")
             b
         })
     }

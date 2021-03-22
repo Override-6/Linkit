@@ -12,12 +12,13 @@
 
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.connection.ConnectionException
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.`override`.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread
 import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.server.ServerException
+import fr.`override`.linkit.server.config.ExternalConnectionConfiguration
 import fr.`override`.linkit.server.network.ServerNetwork
 import org.jetbrains.annotations.Nullable
 
@@ -27,10 +28,10 @@ import scala.util.control.NonFatal
 /**
  * TeamMate of RelayServer, handles the RelayPoint Connections.
  *
- * @see [[RelayServer]]
+ * @see [[ServerConnection]]
  * @see [[ServerExternalConnection]]
  * */
-class ExternalConnectionsManager(server: ServerConnection, serverNetwork: ServerNetwork) extends JustifiedCloseable {
+class ExternalConnectionsManager(server: ServerConnection) extends JustifiedCloseable {
 
     /**
      * java map containing all RelayPointConnection instances
@@ -44,7 +45,7 @@ class ExternalConnectionsManager(server: ServerConnection, serverNetwork: Server
     override def close(reason: Reason): Unit = {
         for ((_, connection) <- connections) try {
             ContextLogger.trace(s"Closing '${connection.supportIdentifier}'...")
-            connection.close(reason)
+            connection.shutdown()
         } catch {
             case NonFatal(e) => e.printStackTrace()
         }
@@ -54,15 +55,16 @@ class ExternalConnectionsManager(server: ServerConnection, serverNetwork: Server
     /**
      * creates and register a connection.
      *
-     * @param socket the socket to start the connection
+     * @param socket     the socket to start the connection
      * @param identifier the connection's identifier
      * @throws ConnectionException if the provided identifier is already taken.
-     * @throws ServerException if the registered connection count exceeded configuration limit.
+     * @throws ServerException     if the registered connection count exceeded configuration limit.
      * */
     @throws[ConnectionException]("if the provided identifier is already taken")
     @throws[ServerException]("if the registered connection count exceeded configuration limit.")
     def createConnection(identifier: String,
-                         socket: SocketContainer): Unit = {
+                         socket: SocketContainer,
+                         config: ExternalConnectionConfiguration): Unit = {
         ContextLogger.info(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
         if (connections.contains(identifier))
             throw ConnectionException(connections(identifier), s"This connection identifier is taken ! ('$identifier')")
@@ -71,25 +73,25 @@ class ExternalConnectionsManager(server: ServerConnection, serverNetwork: Server
             throw ServerException(server, "Maximum connection limit exceeded")
 
         //Opening ClientConnection and finalizing registration
-        val connectionSession = ConnectionSession(identifier, socket, server, this, serverNetwork)
+        val info = ConnectionSessionInfo(server, this, server.serverNetwork, config)
+        val connectionSession = ConnectionSession(identifier, socket, info)
         val connection = ServerExternalConnection.open(connectionSession)
         connections.put(identifier, connection)
 
         println("Sending authorisation packet...")
         server.sendAuthorisedConnection(socket)
 
-        val canConnect = server.securityManager.checkConnection(connection)
+        val canConnect = true //server.configuration.checkConnection(connection)
         if (canConnect) {
             println(s"Connection of '$identifier' was successfully registered !")
             return
         }
 
         val msg = "Connection rejected by security manager"
-        connection.getConsoleErr.println(msg)
         Console.err.println(s"Relay Connection '$identifier': " + msg)
 
         connections.remove(identifier)
-        connection.close(Reason.SECURITY_CHECK)
+        connection.shutdown()
     }
 
     /* def broadcastMessage(err: Boolean, msg: String): Unit = {
@@ -107,13 +109,13 @@ class ExternalConnectionsManager(server: ServerConnection, serverNetwork: Server
     def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
         PacketWorkerThread.checkNotCurrent()
         connections.values
-                .filter(con => !discardedIDs.contains(con.supportIdentifier) && con.isConnected)
-                .foreach(connection => {
-                    val translator = connection.translator
-                    val coordinates = DedicatedPacketCoordinates(injectableID, connection.supportIdentifier, senderID)
-                    val result = translator.translate(packet, coordinates)
-                    connection.send(result)
-                })
+            .filter(con => !discardedIDs.contains(con.supportIdentifier) && con.isConnected)
+            .foreach(connection => {
+                val translator = connection.translator
+                val coordinates = DedicatedPacketCoordinates(injectableID, connection.supportIdentifier, senderID)
+                val result = translator.translate(packet, coordinates)
+                connection.send(result)
+            })
     }
 
     /**
@@ -162,13 +164,13 @@ class ExternalConnectionsManager(server: ServerConnection, serverNetwork: Server
     /**
      * Deflects a packet to his associated [[ServerExternalConnection]]
      *
-     * @throws RelayException if no connection where found for this packet.
+     * @throws NoSuchConnectionException if no connection where found for this packet.
      * @param bytes the packet bytes to deflect
      * */
     private[connection] def deflectTo(bytes: Array[Byte], target: String): Unit = {
         val connection = getConnection(target)
         if (connection == null)
-            throw new ServerException(server, s"unknown ID '$target' to deflect packet")
+            throw NoSuchConnectionException(s"unknown ID '$target' to deflect packet")
         connection.send(bytes)
     }
 }

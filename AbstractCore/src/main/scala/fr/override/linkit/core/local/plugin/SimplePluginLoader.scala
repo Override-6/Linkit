@@ -12,11 +12,12 @@
 
 package fr.`override`.linkit.core.local.plugin
 
-import fr.`override`.linkit.api.local.plugin.{Plugin, PluginLoadException, PluginLoader, PluginManager}
+import fr.`override`.linkit.api.local.ApplicationContext
+import fr.`override`.linkit.api.local.plugin.{Plugin, PluginLoadException, PluginLoader}
 
 import scala.util.control.NonFatal
 
-class SimplePluginLoader(manager: PluginManager, classes: Class[_ <: Plugin]*) extends PluginLoader {
+class SimplePluginLoader(context: ApplicationContext, classes: Class[_ <: Plugin]*) extends PluginLoader {
     private var count = 0
 
     override def nextPlugin(): Plugin = {
@@ -25,7 +26,7 @@ class SimplePluginLoader(manager: PluginManager, classes: Class[_ <: Plugin]*) e
         val clazz = classes(count)
         try {
             val plugin = clazz.getConstructor().newInstance()
-            plugin.init(manager)
+            plugin.init(context)
             plugin
         } catch {
             case _: NoSuchMethodException =>

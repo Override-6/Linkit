@@ -31,7 +31,7 @@ import scala.util.control.NonFatal
 //TODO Transform all Any types to Serializable
 abstract class ObjectSerializer extends Serializer {
 
-    protected val signature: Array[Byte]
+    override val signature: Array[Byte]
     //private var totalSerialTime: Long = 0
     //private var totalSerials: Float = 0F
     //private var totalBytesCreated: Float = 0F

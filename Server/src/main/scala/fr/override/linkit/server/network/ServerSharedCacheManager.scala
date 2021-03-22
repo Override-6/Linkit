@@ -22,11 +22,11 @@ class ServerSharedCacheManager(family: String, owner: String, traffic: PacketTra
     override def continuePacketHandling(packet: Packet, coords: DedicatedPacketCoordinates): Unit = packet match {
         case LongPacket(cacheID) =>
             val senderID: String = coords.senderID
-            println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
+            //println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
             val content = LocalCacheHandler.getContentOrElseMock(cacheID)
-            println(s"Content = ${content.mkString("Array(", ", ", ")")}")
+            //println(s"Content = ${content.mkString("Array(", ", ", ")")}")
             communicator.sendResponse(ArrayObjectPacket(content), senderID)
-            println("Packet sent :D")
+            //println("Packet sent :D")
     }
 
 }

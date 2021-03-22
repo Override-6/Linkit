@@ -19,7 +19,8 @@ import org.jetbrains.annotations.NotNull
 
 class SocketPacketTraffic(@NotNull socket: DynamicSocket,
                           @NotNull translator: PacketTranslator,
-                          @NotNull override val supportIdentifier: String) extends AbstractPacketTraffic(supportIdentifier) {
+                          @NotNull override val supportIdentifier: String,
+                          @NotNull override val serverIdentifier: String) extends AbstractPacketTraffic(supportIdentifier) {
 
     override def newWriter(identifier: Int, transform: Packet => Packet): PacketWriter = {
         new SocketPacketWriter(socket, translator, WriterInfo(this, identifier, transform))

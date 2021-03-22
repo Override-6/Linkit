@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
 class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheManager,
                                                            identifier: Long,
                                                            channel: PacketSender with PacketSyncReceiver)
-        extends HandleableSharedCache[A](handler, identifier, channel) {
+        extends AbstractSharedCache[A](handler, identifier, channel) {
 
     override var autoFlush: Boolean = true
 

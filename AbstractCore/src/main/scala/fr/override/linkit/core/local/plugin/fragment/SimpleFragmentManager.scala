@@ -13,8 +13,7 @@
 package fr.`override`.linkit.core.local.plugin.fragment
 
 import fr.`override`.linkit.api.local.plugin.fragment.{FragmentManager, PluginFragment, RemoteFragment}
-import fr.`override`.linkit.api.local.plugin.{Plugin, PluginLoadException}
-import fr.`override`.linkit.core.local.plugin.LinkitPlugin
+import fr.`override`.linkit.api.local.plugin.{LinkitPlugin, Plugin, PluginLoadException}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

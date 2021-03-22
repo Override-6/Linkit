@@ -31,7 +31,7 @@ class ClientApplicationContext(override val configuration: ClientApplicationConf
 
     override val pluginManager: PluginManager = new LinkitPluginManager(configuration.fsAdapter)
 
-    override def runLater(task: => Unit): Unit = workerPool.runLater(task)
+    override def runLater(@workerExecution task: => Unit): Unit = workerPool.runLater(task)
 
     override def countConnections: Int = connections.size
 

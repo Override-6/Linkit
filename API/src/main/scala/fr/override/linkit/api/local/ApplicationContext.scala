@@ -12,6 +12,7 @@
 
 package fr.`override`.linkit.api.local
 
+import fr.`override`.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.api.local.system.Version
 import fr.`override`.linkit.api.local.system.config.ApplicationConfiguration
@@ -27,12 +28,15 @@ object ApplicationContext {
     val ApiVersion: Version = Version(name = "API", code = "0.20.0", stable = false)
 }
 
-trait ApplicationContext {
+trait ApplicationContext extends Procrastinator {
 
     val configuration: ApplicationConfiguration
 
     def pluginManager: PluginManager
 
     def countConnections: Int
+
+    @workerExecution
+    def shutdown(): Unit
 
 }

@@ -19,6 +19,7 @@ import fr.`override`.linkit.server.connection.ServerConnection
 
 class ServerPacketTraffic(serverConnection: ServerConnection) extends AbstractPacketTraffic(serverConnection.supportIdentifier) {
     override val supportIdentifier: String = serverConnection.supportIdentifier
+    override val serverIdentifier: String = supportIdentifier
 
     override def newWriter(identifier: Int, transform: Packet => Packet): PacketWriter = {
         new ServerPacketWriter(serverConnection, WriterInfo(this, identifier, transform))

@@ -36,7 +36,7 @@ class ServerNetwork private(serverConnection: ServerConnection,
 
     override val connectionEntity: NetworkEntity = {
         val selfCache = AbstractSharedCacheManager.get(serverIdentifier, serverIdentifier, ServerSharedCacheManager())
-        new SelfNetworkEntity(serverConnection, selfCache)
+        new SelfNetworkEntity(serverConnection, ConnectionState.CONNECTED, selfCache) //Server is always connected to... server !
     }
 
     //The current connection is the network's server connection.
@@ -46,7 +46,7 @@ class ServerNetwork private(serverConnection: ServerConnection,
 
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
-                .addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
+                //.addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
                 .add(serverIdentifier)
                 .flush()
                 .mapped(createEntity)
@@ -76,7 +76,7 @@ class ServerNetwork private(serverConnection: ServerConnection,
                 })
     }
 
-    private[connection] def addEntity(connection: ServerExternalConnection): Unit = {
+    private[server] def addEntity(connection: ServerExternalConnection): Unit = {
         sharedIdentifiers.add(connection.supportIdentifier)
     }
 

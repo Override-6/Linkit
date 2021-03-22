@@ -14,7 +14,7 @@ package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.Network
-import fr.`override`.linkit.api.connection.packet.DedicatedPacketCoordinates
+import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
@@ -29,8 +29,8 @@ import fr.`override`.linkit.core.local.system.event.DefaultEventNotifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.`override`.linkit.server.network.ServerNetwork
 import fr.`override`.linkit.server.{ServerApplicationContext, ServerException, ServerPacketTraffic}
-
 import java.net.{ServerSocket, SocketException}
+
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -39,15 +39,15 @@ class ServerConnection(applicationContext: ServerApplicationContext,
 
     private val workerPool: BusyWorkerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0))
     private val serverSocket: ServerSocket = new ServerSocket(configuration.port)
+    private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
 
     override val supportIdentifier: String = configuration.identifier
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
-    override val network: Network = new ServerNetwork(this, traffic)
+    private[server] val serverNetwork: ServerNetwork = new ServerNetwork(this, traffic)
+    override val network: Network = serverNetwork
     override val eventNotifier: EventNotifier = new DefaultEventNotifier
     override val translator: PacketTranslator = configuration.translator
 
-    private val serverNetwork: ServerNetwork = new ServerNetwork(this, traffic)
-    private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this, serverNetwork)
     @volatile private var alive = false
 
     @workerExecution
@@ -71,9 +71,8 @@ class ServerConnection(applicationContext: ServerApplicationContext,
         BusyWorkerPool.checkCurrentIsWorker("Must start server connection in a worker thread.")
         if (alive)
             throw new ServerException(this, "Server is already started.")
-
         ContextLogger.info(s"Starting server '$supportIdentifier' on port ${configuration.port}...")
-        ContextLogger.info(s"Identifier Ambiguity Strategy : $configuration.")
+        ContextLogger.info(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
 
         try {
             loadSocketListener()
@@ -90,9 +89,17 @@ class ServerConnection(applicationContext: ServerApplicationContext,
         traffic.getInjectable(injectableID, scopeFactory, factory)
     }
 
-    override def runLater(task: => Unit): Unit = workerPool.runLater(task)
+    override def runLater(@workerExecution task: => Unit): Unit = workerPool.runLater(task)
 
     def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
+
+    def broadcastPacketToConnections(packet: Packet, sender: String, injectableID: Int, discarded: String*): Unit = {
+        if (connectionsManager.countConnected - discarded.length <= 0) {
+            // There is nowhere to send this packet.
+            return
+        }
+        connectionsManager.broadcastBytes(packet, injectableID, sender, discarded.appended(supportIdentifier): _*)
+    }
 
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -164,7 +171,7 @@ class ServerConnection(applicationContext: ServerApplicationContext,
         val currentConnection = getConnection(identifier)
         //There is no currently connected connection with the same identifier on this network.
         if (currentConnection.isEmpty) {
-            connectionsManager.createConnection(identifier, socket)
+            connectionsManager.createConnection(identifier, socket, null) //TODO
             val newConnection = getConnection(identifier)
 
             if (newConnection.isDefined) //may be empty, in this case, the connection would be rejected.
@@ -200,7 +207,7 @@ class ServerConnection(applicationContext: ServerApplicationContext,
 
             case REPLACE =>
                 connectionsManager.unregister(identifier).get.shutdown()
-                connectionsManager.createConnection(identifier, socket)
+                connectionsManager.createConnection(identifier, socket, null)
             //The connection initialisation packet isn't sent here because it is send into the registerConnection method.
 
             case DISCONNECT_BOTH =>

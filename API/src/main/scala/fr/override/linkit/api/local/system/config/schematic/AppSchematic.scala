@@ -16,6 +16,8 @@ import fr.`override`.linkit.api.local.ApplicationContext
 
 trait AppSchematic[A <: ApplicationContext] {
 
+    val name: String
+
     def setup(a: A): Unit
 
 }

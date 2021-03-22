@@ -13,7 +13,7 @@
 package fr.`override`.linkit.server.task
 
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
-import fr.`override`.linkit.api.connection.task.{TaskException, TaskExecutor, TasksHandler}
+import fr.`override`.linkit.api.connection.task.{TaskCompleterHandler, TaskException, TaskExecutor, TasksHandler}
 import fr.`override`.linkit.api.local.system.Reason
 import fr.`override`.linkit.core.connection.task.TaskTicket
 import fr.`override`.linkit.core.local.system.SystemOrder
@@ -79,4 +79,11 @@ class ConnectionTasksHandler(session: ConnectionSession) extends TasksHandler {
         tasksThread.start()
     }
 
+    /**
+     * @return the [[TaskCompleterHandler]]
+     * @see [[TaskCompleterHandler]]
+     * */
+    override val tasksCompleterHandler: TaskCompleterHandler = null //TODO
+
+    override def isClosed: Boolean = tasksThread.isClosed
 }
