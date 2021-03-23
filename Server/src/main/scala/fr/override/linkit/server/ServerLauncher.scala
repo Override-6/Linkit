@@ -12,16 +12,17 @@
 
 package fr.`override`.linkit.server
 
+import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.server.config.schematic.ScalaServerAppSchematic
-import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerApplicationBuilder, ServerConnectionConfigBuilder}
+import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
 
 object ServerLauncher {
     def main(args: Array[String]): Unit = {
-        println(s"running server with arguments ${args.mkString("'", ", ", "'")}")
+        ContextLogger.info(s"Running server with arguments ${args.mkString("'", ", ", "'")}")
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
 
-        val serverApplicationContext: ServerApplicationContext = new ServerApplicationBuilder {
+        val config = new ServerApplicationConfigBuilder {
             pluginsFolder = userDefinedPluginFolder
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
@@ -43,10 +44,12 @@ object ServerLauncher {
                     override val port: Int = 4850
                     maxConnection = 3
 
-                    configName = "fail-config"
+                    configName = "last-config"
                 }
             }
         }
+        val serverApplicationContext = ServerApplication.launch(config)
+        ContextLogger.trace(s"Build complete: $serverApplicationContext")
     }
 
     def getOrElse(args: Array[String], key: String, defaultValue: String): String = {

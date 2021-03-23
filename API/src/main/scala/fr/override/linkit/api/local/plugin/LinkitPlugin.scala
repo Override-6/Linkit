@@ -43,6 +43,7 @@ abstract class LinkitPlugin extends Plugin {
     }
 
     protected def getContext: ApplicationContext = context
+
     protected def getPluginManager: PluginManager = pluginManager
 
     protected def runLater(@workerExecution task: => Unit): Unit = context.runLater(task)

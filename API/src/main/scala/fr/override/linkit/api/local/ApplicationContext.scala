@@ -12,10 +12,13 @@
 
 package fr.`override`.linkit.api.local
 
+import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.api.local.system.Version
 import fr.`override`.linkit.api.local.system.config.ApplicationConfiguration
+
+import scala.collection.mutable
 
 
 //TODO Recap :
@@ -38,5 +41,9 @@ trait ApplicationContext extends Procrastinator {
 
     @workerExecution
     def shutdown(): Unit
+
+    def isAlive: Boolean
+
+    def getConnections: Iterable[ConnectionContext]
 
 }

@@ -14,19 +14,19 @@ package fr.`override`.linkit.server.config.schematic
 
 import fr.`override`.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.`override`.linkit.api.local.system.config.schematic.AppSchematic
-import fr.`override`.linkit.server.ServerApplicationContext
+import fr.`override`.linkit.server.ServerApplication
 import fr.`override`.linkit.server.config.ServerConnectionConfiguration
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-abstract class ServerAppSchematic extends AppSchematic[ServerApplicationContext] {
+abstract class ServerAppSchematic extends AppSchematic[ServerApplication] {
 
     protected[schematic] val serverConfigs: ListBuffer[ServerConnectionConfiguration] =
         ListBuffer.empty[ServerConnectionConfiguration]
 
     @throws[ApplicationInstantiationException]
-    override def setup(a: ServerApplicationContext): Unit = {
+    override def setup(a: ServerApplication): Unit = {
         for (configuration <- serverConfigs) {
             try {
                 a.openServerConnection(configuration)

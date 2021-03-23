@@ -12,7 +12,7 @@
 
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.connection.ConnectionContext
+import fr.`override`.linkit.api.connection.{ConnectionContext, ConnectionInitialisationException}
 import fr.`override`.linkit.api.connection.network.Network
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
@@ -28,20 +28,20 @@ import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.core.local.system.event.DefaultEventNotifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.`override`.linkit.server.network.ServerNetwork
-import fr.`override`.linkit.server.{ServerApplicationContext, ServerException, ServerPacketTraffic}
+import fr.`override`.linkit.server.{ServerApplication, ServerException, ServerPacketTraffic}
 import java.net.{ServerSocket, SocketException}
 
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class ServerConnection(applicationContext: ServerApplicationContext,
+class ServerConnection(applicationContext: ServerApplication,
                        override val configuration: ServerConnectionConfiguration) extends ConnectionContext {
 
-    private val workerPool: BusyWorkerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0))
-    private val serverSocket: ServerSocket = new ServerSocket(configuration.port)
-    private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
-
     override val supportIdentifier: String = configuration.identifier
+    private val workerPool: BusyWorkerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier.toString)
+    private val serverSocket: ServerSocket = new ServerSocket(configuration.port)
+
+    private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
     private[server] val serverNetwork: ServerNetwork = new ServerNetwork(this, traffic)
     override val network: Network = serverNetwork
@@ -71,8 +71,8 @@ class ServerConnection(applicationContext: ServerApplicationContext,
         BusyWorkerPool.checkCurrentIsWorker("Must start server connection in a worker thread.")
         if (alive)
             throw new ServerException(this, "Server is already started.")
-        ContextLogger.info(s"Starting server '$supportIdentifier' on port ${configuration.port}...")
-        ContextLogger.info(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
+        ContextLogger.info(s"Server '$supportIdentifier' starts on port ${configuration.port}")
+        ContextLogger.trace(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
 
         try {
             loadSocketListener()
@@ -94,7 +94,7 @@ class ServerConnection(applicationContext: ServerApplicationContext,
     def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
 
     def broadcastPacketToConnections(packet: Packet, sender: String, injectableID: Int, discarded: String*): Unit = {
-        if (connectionsManager.countConnected - discarded.length <= 0) {
+        if (connectionsManager.countConnections - discarded.length <= 0) {
             // There is nowhere to send this packet.
             return
         }
@@ -130,7 +130,13 @@ class ServerConnection(applicationContext: ServerApplicationContext,
             val clientSocket = serverSocket.accept()
             socketContainer.set(clientSocket)
             runLater {
+                ContextLogger.trace(s"Handling client socket $clientSocket...")
+                val count = connectionsManager.countConnections
+                workerPool.setThreadCount(count)
                 handleSocket(socketContainer)
+                if (count != connectionsManager.countConnections) {
+                    workerPool.setThreadCount(count)
+                }
             }
         } catch {
             case e: SocketException =>

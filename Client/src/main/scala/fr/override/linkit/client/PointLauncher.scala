@@ -76,9 +76,9 @@ object PointLauncher {
 
         if (ideRun && relayPoint.isOpen) {
 
-            import fr.`override`.linkit.extension.controller.ControllerExtension
-            import fr.`override`.linkit.extension.debug.DebugExtension
-            import fr.`override`.linkit.extension.easysharing.EasySharing
+            import fr.`override`.linkit.plugin.controller.ControllerExtension
+            import fr.`override`.linkit.plugin.debug.DebugExtension
+            import fr.`override`.linkit.plugin.easysharing.EasySharing
 
             val loader = relayPoint.extensionLoader
             loader.loadExtensions(

@@ -28,30 +28,36 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
     override val fragmentManager: FragmentManager = new SimpleFragmentManager
 
     override def load(file: String): Plugin = {
+        ContextLogger.debug(s"Plugin $file is preparing to be loaded.")
         enablePlugins(extractor.extract(file)).head
     }
 
     override def loadAll(folder: String): Array[Plugin] = {
+        ContextLogger.debug(s"Plugins into folder '$folder' are preparing to be loaded.")
         enablePlugins(extractor.extractAll(folder))
     }
 
     override def load(clazz: Class[_ <: Plugin]): Plugin = {
+        ContextLogger.debug(s"Plugin $clazz is preparing to be loaded.")
         enablePlugins(extractor.extract(clazz)).head
     }
 
     override def loadAll(classes: Class[_ <: Plugin]*): Array[Plugin] = {
+        if(classes.isEmpty)
+            throw new IllegalArgumentException("Provided class array is empty.")
+
+        ContextLogger.debug(s"Plugins ${classes.mkString(", ")} are preparing to be loaded.")
         enablePlugins(extractor.extractAll(classes: _*))
     }
 
     override def countPlugins: Int = plugins.length
-
 
     private def enablePlugins(loader: PluginLoader): Array[Plugin] = {
         val buffer = new Array[Plugin](loader.length)
         for (i <- buffer.indices) {
             buffer(i) = loader.nextPlugin()
         }
-        def pluginName(implicit plugin: Plugin): String = plugin.getClass.getSimpleName
+        def pluginName(implicit plugin: Plugin): String = plugin.name
 
         def perform(action: Plugin => Unit): Unit = buffer.foreach(implicit plugin => {
             try {
@@ -62,16 +68,15 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
                     e.printStackTrace()
             }
         })
-        val count = buffer.length
-        ContextLogger.trace(s"Loading $count plugins...")
+        ContextLogger.debug(s"Loading plugins...")
         perform(implicit plugin => {
-            ContextLogger.trace(s"Loading ${pluginName}...")
+            ContextLogger.debug(s"Loading ${pluginName}...")
             plugin.onLoad()
         })
 
-        ContextLogger.trace(s"Enabling $count plugins...")
+        ContextLogger.debug(s"Enabling plugins...")
         perform(implicit plugin => {
-            ContextLogger.trace(s"Enabling ${pluginName}...")
+            ContextLogger.debug(s"Enabling ${pluginName}...")
             plugin.onEnable()
         })
 

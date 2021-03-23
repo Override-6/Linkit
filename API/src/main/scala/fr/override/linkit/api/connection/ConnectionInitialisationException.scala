@@ -10,12 +10,10 @@
  * questions.
  */
 
-package fr.`override`.linkit.core.local.system.event.relay
+package fr.`override`.linkit.api.connection
 
-import fr.`override`.linkit.api.local.system.event.{Event, EventHook}
+import fr.`override`.linkit.api.connection.ConnectionException
 
-trait RelayEvent extends Event[RelayEventHooks, RelayEventListener] {
-    protected type RelayEventHook = EventHook[RelayEventListener, this.type]
+class ConnectionInitialisationException(msg: String, cause: Throwable = null) extends ConnectionException(null, msg, cause) {
 
-    override def getHooks(category: RelayEventHooks): Array[RelayEventHook]
 }

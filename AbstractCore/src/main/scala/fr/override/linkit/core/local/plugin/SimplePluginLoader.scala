@@ -23,18 +23,24 @@ class SimplePluginLoader(context: ApplicationContext, classes: Class[_ <: Plugin
     override def nextPlugin(): Plugin = {
         if (!haveNextPlugin)
             throw new NoSuchElementException
+
         val clazz = classes(count)
+        count += 1
         try {
             val plugin = clazz.getConstructor().newInstance()
             plugin.init(context)
             plugin
         } catch {
             case _: NoSuchMethodException =>
-                throw PluginLoadException(s"Could not load '${clazz.getSimpleName}' : constructor() is missing !")
+                println("A")
+                throw PluginLoadException(s"Could not load '${clazz.getSimpleName}' : empty constructor is missing !")
             case NonFatal(e) =>
+                println("B")
                 throw PluginLoadException(s"Could not load '${clazz.getSimpleName}' : ${e.getMessage}", e)
-        } finally {
-            count += 1
+            case e =>
+                println("qqq")
+                throw e
+
         }
     }
 
@@ -42,6 +48,6 @@ class SimplePluginLoader(context: ApplicationContext, classes: Class[_ <: Plugin
 
     override def length: Int = classes.length
 
-    override def haveNextPlugin: Boolean = count >= classes.length
+    override def haveNextPlugin: Boolean = count < classes.length
 
 }

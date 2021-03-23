@@ -22,6 +22,5 @@ dependencies {
     implementation project(':API')
     implementation project(':AbstractCore')
     implementation project(':LinKitExtensions:RelayController')
-    implementation project(':LinKitExtensions:EasySharing')
     implementation project(':LinKitExtensions:DebugExtension')
 }

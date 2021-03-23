@@ -12,9 +12,9 @@
 
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.api.connection.ExternalConnection
+import fr.`override`.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.`override`.linkit.api.local.ApplicationContext
-import fr.`override`.linkit.api.local.concurrency.Procrastinator
+import fr.`override`.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
@@ -26,7 +26,7 @@ import scala.collection.mutable
 
 class ClientApplicationContext(override val configuration: ClientApplicationConfiguration) extends ApplicationContext with Procrastinator {
 
-    private val workerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0))
+    private val workerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Client Application")
     private val connections = mutable.HashMap.empty[String, ExternalConnection]
 
     override val pluginManager: PluginManager = new LinkitPluginManager(configuration.fsAdapter)
@@ -42,11 +42,13 @@ class ClientApplicationContext(override val configuration: ClientApplicationConf
         opt.get
     }
 
+    @throws[ConnectionInitialisationException]("If something went wrong during the connection's opening")
+    @workerExecution
     def newConnection(config: ClientConnectionConfiguration): ExternalConnection = {
         val address = config.remoteAddress
         val dynamicSocket = new ClientDynamicSocket(address, config.socketFactory)
         dynamicSocket.reconnectionPeriod = config.reconnectionPeriod
-        workerPool.setThreadCount(countConnections + 1)
+        workerPool.setThreadCount(countConnections + 1) //expand the pool for the new connection that will be opened
 
         openConnection(dynamicSocket, config)
     }

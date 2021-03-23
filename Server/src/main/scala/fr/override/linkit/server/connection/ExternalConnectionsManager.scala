@@ -137,7 +137,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     @Nullable
     def getConnection(identifier: String): ServerExternalConnection = connections.get(identifier).orNull
 
-    def countConnected: Int = connections.size
+    def countConnections: Int = connections.size
 
     def listIdentifiers: Seq[String] = connections.keys.toSeq
 

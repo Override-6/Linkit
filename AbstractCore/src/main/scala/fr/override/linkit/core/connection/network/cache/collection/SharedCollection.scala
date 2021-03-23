@@ -32,7 +32,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
                                                      identifier: Long,
                                                      adapter: CollectionAdapter[A],
                                                      channel: PacketSender with PacketSyncReceiver)
-        extends AbstractSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
+    extends AbstractSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
     private val networkListeners = ConsumerContainer[(CollectionModification, Long, A)]()
@@ -184,16 +184,16 @@ object SharedCollection {
         })
     }
 
-    def buffer[A  <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = {
+    def buffer[A <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = {
         ofInsertFilter[A]((_, _) => true)
     }
 
-    def apply[A  <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = buffer[A]
+    def apply[A <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = buffer[A]
 
     /**
      * The insertFilter must be true in order to authorise the insertion
      * */
-    def ofInsertFilter[A  <: Serializable : ClassTag](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
+    def ofInsertFilter[A <: Serializable : ClassTag](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
         (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender with PacketSyncReceiver) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
@@ -271,7 +271,7 @@ object SharedCollection {
 
         private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit =
             BusyWorkerPool.runLaterOrHere {
-                boundedCollections.clone.foreach(action)
+                Array.from(boundedCollections).foreach(action)
             }
     }
 

@@ -18,68 +18,38 @@ import fr.`override`.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.`override`.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.core.local.system.fsa.JDKFileSystemAdapters
-import fr.`override`.linkit.server.ServerApplicationContext
+import fr.`override`.linkit.server.ServerApplication
 import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.util.control.NonFatal
 
-abstract class ServerApplicationBuilder {
+abstract class ServerApplicationConfigBuilder {
 
+    var mainPoolThreadCount: Int = 2
     @Nullable var pluginsFolder: String = "/Plugins"
     @NotNull var fsAdapter: FileSystemAdapter = JDKFileSystemAdapters.Nio
     @NotNull var securityManager: ApplicationSecurityManager = ApplicationSecurityManager.default
-    @NotNull var loadSchematic: AppSchematic[ServerApplicationContext] = EmptySchematic[ServerApplicationContext]
+    @NotNull var loadSchematic: AppSchematic[ServerApplication] = EmptySchematic[ServerApplication]
 
     @throws[ApplicationInstantiationException]("If any exception is thrown during build")
-    def build(): ServerApplicationContext = {
+    def buildConfig(): ServerApplicationConfiguration = {
         val builder = this
-
-        val config = new ServerApplicationConfiguration {
+        new ServerApplicationConfiguration {
             override val pluginFolder: String = builder.pluginsFolder
             override val fsAdapter: FileSystemAdapter = builder.fsAdapter
             override val securityManager: ApplicationSecurityManager = builder.securityManager
+            override val mainPoolThreadCount: Int = builder.mainPoolThreadCount
+            override var loadSchematic: AppSchematic[ServerApplication] = builder.loadSchematic
         }
-
-        val serverAppContext = try {
-            ContextLogger.info("Instantiating Server application...")
-            new ServerApplicationContext(config)
-        } catch {
-            case NonFatal(e) =>
-                throw new ApplicationInstantiationException("Could not instantiate Server Application.", e)
-        }
-
-        var exception: Throwable = null
-        serverAppContext.runLater {
-            try {
-                ContextLogger.info(s"Applying schematic '${loadSchematic.name}...")
-                loadSchematic.setup(serverAppContext)
-                ContextLogger.info("Setup applied successfully.")
-            } catch {
-                case NonFatal(e) =>
-                    exception = e
-            } finally {
-                serverAppContext.synchronized {
-                    serverAppContext.notify()
-                }
-            }
-        }
-        serverAppContext.synchronized {
-            serverAppContext.wait()
-        }
-        if (exception != null)
-            throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
-
-        serverAppContext
-
     }
 
 }
 
 //TODO Java style Builder
-object ServerApplicationBuilder {
+object ServerApplicationConfigBuilder {
 
-    implicit def autoBuild(builder: ServerApplicationBuilder): ServerApplicationContext = {
-        builder.build()
+    implicit def autoBuild(builder: ServerApplicationConfigBuilder): ServerApplicationConfiguration = {
+        builder.buildConfig()
     }
 
 }

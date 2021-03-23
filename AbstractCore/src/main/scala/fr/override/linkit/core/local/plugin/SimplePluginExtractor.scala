@@ -18,7 +18,8 @@ import fr.`override`.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter
 import fr.`override`.linkit.core.local.plugin.SimplePluginExtractor.{MainClassField, PropertyName}
 import fr.`override`.linkit.core.local.plugin.fragment.{LinkitPluginFragment, LinkitRemoteFragment}
 import java.net.URLClassLoader
-import java.nio.file.NoSuchFileException
+import java.nio.file.{NoSuchFileException, NotDirectoryException}
+import java.security.AccessControlContext
 import java.util.Properties
 import java.util.zip.ZipFile
 
@@ -62,6 +63,8 @@ class SimplePluginExtractor(context: ApplicationContext, fsa: FileSystemAdapter)
         val adapter = fsa.getAdapter(folder)
         if (adapter.notExists)
             throw new NoSuchFileException(s"$folder does not exists.")
+        if (!adapter.isDirectory)
+            throw new NotDirectoryException(s"$folder is not a directory.")
 
         val content = fsa.list(adapter)
         val paths = content.filter(_.toString.endsWith(".jar"))
@@ -97,8 +100,7 @@ class SimplePluginExtractor(context: ApplicationContext, fsa: FileSystemAdapter)
             throw PluginLoadException(s"Jar file $adapter properties' must contains a field named '$MainClassField'")
 
         //Loading extension's main
-        //TODO better use the ClassLoader, The code may be remastered
-        val classLoader = new URLClassLoader(Array(adapter.toUri.toURL), getClass.getClassLoader)
+        val classLoader = new URLClassLoader(Array(adapter.toUri.toURL))
         val clazz = classLoader.loadClass(className)
         loadClass(clazz)
     }
@@ -114,6 +116,6 @@ class SimplePluginExtractor(context: ApplicationContext, fsa: FileSystemAdapter)
 }
 
 object SimplePluginExtractor {
-    private val PropertyName = "extension.properties"
+    private val PropertyName = "plugin.properties"
     private val MainClassField = "main"
 }

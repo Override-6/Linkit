@@ -13,8 +13,14 @@
 package fr.`override`.linkit.server.config
 
 import fr.`override`.linkit.api.local.system.config.ApplicationConfiguration
+import fr.`override`.linkit.api.local.system.config.schematic.{AppSchematic, EmptySchematic}
+import fr.`override`.linkit.server.ServerApplication
+import org.jetbrains.annotations.NotNull
 
 trait ServerApplicationConfiguration extends ApplicationConfiguration {
 
+    val mainPoolThreadCount: Int
+
+    @NotNull var loadSchematic: AppSchematic[ServerApplication]
 
 }
