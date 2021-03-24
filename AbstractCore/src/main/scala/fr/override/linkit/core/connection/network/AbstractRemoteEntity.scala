@@ -13,7 +13,7 @@
 package fr.`override`.linkit.core.connection.network
 
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
-import fr.`override`.linkit.api.connection.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 
 import java.sql.Timestamp
 
@@ -27,7 +27,7 @@ abstract class AbstractRemoteEntity(override val identifier: String,
         this
     }
 
-    override def getConnectionState: ConnectionState
+    override def getConnectionState: ExternalConnectionState
 
     override def toString: String = s"${getClass.getSimpleName}(identifier: $identifier, state: $getConnectionState)"
 }

@@ -23,7 +23,6 @@ class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer
 
     private val objectMap = cache.get(14, SharedMap[Int, String])
     //objectMap.addListener(_ => s"MODIFIED : $objectMap")
-
     /**
      * @return the hashcode of the class name under a byte sequences
      *         If the class name is not registered into the cache, it will be added

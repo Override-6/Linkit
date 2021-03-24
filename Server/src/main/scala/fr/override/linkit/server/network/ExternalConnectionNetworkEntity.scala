@@ -13,7 +13,7 @@
 package fr.`override`.linkit.server.network
 
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
-import fr.`override`.linkit.api.connection.network.{ConnectionState, Network}
+import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.`override`.linkit.core.connection.network.AbstractRemoteEntity
 import fr.`override`.linkit.core.connection.network.cache.{AbstractSharedCacheManager, SharedInstance}
 import fr.`override`.linkit.server.connection.ServerConnection
@@ -28,10 +28,10 @@ class ExternalConnectionNetworkEntity private(serverConnection: ServerConnection
     }
 
     private val connection = serverConnection.getConnection(identifier).get
-    cache.get(3, SharedInstance[ConnectionState])
-            .set(ConnectionState.CONNECTED) //technically already connected
+    cache.get(3, SharedInstance[ExternalConnectionState])
+            .set(ExternalConnectionState.CONNECTED) //technically already connected
 
-    override def getConnectionState: ConnectionState = connection.getState
+    override def getConnectionState: ExternalConnectionState = connection.getState
 
     override val network: Network = serverConnection.network
     // connection.addConnectionStateListener(state => server.runLater(sharedState.set(state)))

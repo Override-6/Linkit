@@ -12,7 +12,7 @@
 
 package fr.override.linkit.api.connection.network;
 
-public enum ConnectionState {
+public enum ExternalConnectionState {
 
     CONNECTED, DISCONNECTED, CONNECTING, CLOSED
 

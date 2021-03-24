@@ -44,6 +44,6 @@ trait ApplicationContext extends Procrastinator {
 
     def isAlive: Boolean
 
-    def getConnections: Iterable[ConnectionContext]
+    def listConnections: Iterable[ConnectionContext]
 
 }

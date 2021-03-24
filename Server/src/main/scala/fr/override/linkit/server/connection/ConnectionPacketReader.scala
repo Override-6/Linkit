@@ -15,8 +15,10 @@ package fr.`override`.linkit.server.connection
 import fr.`override`.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.core.connection.packet.traffic.{DynamicSocket, PacketInjections, PacketReader}
 import org.jetbrains.annotations.Nullable
-
 import java.net.SocketException
+
+import fr.`override`.linkit.core.local.system.ContextLogger
+
 import scala.util.control.NonFatal
 
 class ConnectionPacketReader(socket: DynamicSocket,
@@ -47,7 +49,8 @@ class ConnectionPacketReader(socket: DynamicSocket,
         }
 
         //NETWORK-DEBUG-MARK
-        println(s"${Console.YELLOW}received ($identifier): ${new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${bytes.length})${{Console.RESET}}")
+        val preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
+        ContextLogger.debug(s"Received ($identifier): $preview (l: ${bytes.length})")
         concernedPacketsReceived += 1 //let's suppose that the received packet is sent to the server.
         val packetNumber = concernedPacketsReceived
         server.runLater {

@@ -14,12 +14,12 @@ package fr.`override`.linkit.core.connection.network
 
 import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
-import fr.`override`.linkit.api.connection.network.{ConnectionState, Network, NetworkEntity}
+import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, Network, NetworkEntity}
 
 import java.sql.Timestamp
 
 class SelfNetworkEntity(connection: ConnectionContext,
-                        state: => ConnectionState,
+                        state: => ExternalConnectionState,
                         override val cache: SharedCacheManager) extends NetworkEntity {
 
     override val identifier: String = connection.supportIdentifier
@@ -42,7 +42,7 @@ class SelfNetworkEntity(connection: ConnectionContext,
         this
     }
 
-    override def getConnectionState: ConnectionState = state
+    override def getConnectionState: ExternalConnectionState = state
 
     override def toString: String = s"SelfNetworkEntity(identifier: ${identifier})"
 

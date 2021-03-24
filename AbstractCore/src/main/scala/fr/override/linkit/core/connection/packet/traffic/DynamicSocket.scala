@@ -12,15 +12,15 @@
 
 package fr.`override`.linkit.core.connection.packet.traffic
 
-import fr.`override`.linkit.api.connection.network.ConnectionState
-import fr.`override`.linkit.api.connection.network.ConnectionState.CLOSED
 import fr.`override`.linkit.api.local.system.{AppException, IllegalCloseException, JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.core.local.utils.ConsumerContainer
-
 import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}
+
+import fr.`override`.linkit.api.connection.network.ExternalConnectionState
+import fr.`override`.linkit.api.local.concurrency.packetWorkerExecution
 
 abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
 
@@ -29,7 +29,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     @volatile protected var currentInputStream: InputStream = _
     @volatile private var totalWriteTime: Long = 0
 
-    private val listeners = ConsumerContainer[ConnectionState]()
+    private val listeners = ConsumerContainer[ExternalConnectionState]()
 
     protected def boundIdentifier: String
 
@@ -45,7 +45,8 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
             totalWriteTime += t1 - t0
             //NETWORK-DEBUG-MARK
-            println(s"${Console.YELLOW}written : ${new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')} (l: ${buff.length}) totalWriteTime: $totalWriteTime ${Console.RESET}")
+            val preview = new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')
+            ContextLogger.debug(s"Written ($boundIdentifier) : $preview (l: ${buff.length}) totalWriteTime: $totalWriteTime")
         } catch {
             case e@(_: ConnectException | _: IOException) =>
 
@@ -76,7 +77,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         ContextLogger.info(s"All monitors that were waiting the socket that belongs to '$boundIdentifier' were been released")
     }
 
-    override def isClosed: Boolean = SocketLocker.state == CLOSED
+    override def isClosed: Boolean = SocketLocker.state == ExternalConnectionState.CLOSED
 
     def read(buff: Array[Byte]): Int = read(buff, 0)
 
@@ -133,11 +134,11 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         -1
     }
 
-    def addConnectionStateListener(callback: ConnectionState => Unit): Unit = {
+    def addConnectionStateListener(@packetWorkerExecution callback: ExternalConnectionState => Unit): Unit = {
         listeners += callback
     }
 
-    def getState: ConnectionState = SocketLocker.state
+    def getState: ExternalConnectionState = SocketLocker.state
 
     def remoteSocketAddress(): InetSocketAddress = {
         val inet = currentSocket.getInetAddress
@@ -169,12 +170,12 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
         ContextLogger.info(s"The connection with $boundIdentifier has been reestablished.")
     }
 
-    import ConnectionState._
+    import ExternalConnectionState._
 
     private object SocketLocker {
 
         @volatile var isWriting = false
-        @volatile var state: ConnectionState = DISCONNECTED
+        @volatile var state: ExternalConnectionState = DISCONNECTED
         private val writeLock = new Object
         private val disconnectLock = new Object
 
@@ -206,7 +207,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             updateState(CONNECTING)
         }
 
-        private def updateState(newState: ConnectionState): Unit = {
+        private def updateState(newState: ExternalConnectionState): Unit = {
             ensureReady()
             if (state == newState)
                 return

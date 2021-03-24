@@ -21,8 +21,8 @@ abstract class ServerConnectionConfigBuilder {
 
     var maxConnection: Int = Int.MaxValue
     var enableEventHandling: Boolean = true
-    var nWorkerThreadFunction: Int => Int = _ * 2 + 1 //2 threads per connection allocated + 1 for the server connection
-    var configName: String = s"hardcoded-config#$count"
+    var nWorkerThreadFunction: Int => Int = _ * 2 + 1 //2 threads per external connection allocated + 1 for the server connection
+    var configName: String = s"config#$count"
     var hasher: BytesHasher = BytesHasher.inactive
     val identifier: String
     val port: Int

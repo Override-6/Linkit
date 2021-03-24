@@ -20,9 +20,9 @@ trait ConnectionConfiguration {
     val configName: String
 
     val identifier: String
-    val port: Int
 
     val hasher: BytesHasher
+
     val translator: PacketTranslator
 
 }

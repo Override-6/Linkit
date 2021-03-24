@@ -39,6 +39,6 @@ object ContextLogger {
     def debug(msg: AnyRef, throwable: Throwable): Unit = logger.debug(msg, throwable)
 
     def log(priority: Priority, msg: AnyRef): Unit = logger.log(priority, msg)
-    def log(priority: Priority, msg: AnyRef, throwable: Throwable): Unit = logger.trace(priority, msg, throwable)
+    def log(priority: Priority, msg: AnyRef, throwable: Throwable): Unit = logger.log(priority, msg, throwable)
 
 }

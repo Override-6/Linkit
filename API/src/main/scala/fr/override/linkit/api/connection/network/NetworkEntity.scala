@@ -30,7 +30,7 @@ trait NetworkEntity extends Updatable {
 
     //def relayVersion: Version
 
-    def getConnectionState: ConnectionState
+    def getConnectionState: ExternalConnectionState
 
     //def getRemoteConsole: RemoteConsole
 

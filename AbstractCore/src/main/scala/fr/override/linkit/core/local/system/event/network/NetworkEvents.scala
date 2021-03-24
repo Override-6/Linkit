@@ -12,7 +12,7 @@
 
 package fr.`override`.linkit.core.local.system.event.network
 
-import fr.`override`.linkit.api.connection.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 
 object NetworkEvents {
 
@@ -25,8 +25,8 @@ object NetworkEvents {
     }
 
     case class EntityStateChangeEvent(override val entity: NetworkEntity,
-                                      newState: ConnectionState,
-                                      oldState: ConnectionState) extends NetworkEvent {
+                                      newState: ExternalConnectionState,
+                                      oldState: ExternalConnectionState) extends NetworkEvent {
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityStateChange))
     }
 
@@ -59,7 +59,7 @@ object NetworkEvents {
     def entityRemoved(entity: NetworkEntity): EntityRemovedEvent = EntityRemovedEvent(entity)
 
     def entityStateChange(entity: NetworkEntity,
-                          newState: ConnectionState, oldState: ConnectionState): EntityStateChangeEvent = {
+                          newState: ExternalConnectionState, oldState: ExternalConnectionState): EntityStateChangeEvent = {
         EntityStateChangeEvent(entity, newState, oldState)
     }
 

@@ -12,8 +12,12 @@
 
 package fr.`override`.linkit.client.config
 
+import fr.`override`.linkit.api.local.system.config.schematic.AppSchematic
 import fr.`override`.linkit.api.local.system.config.{ApplicationConfiguration, ExtendedConfiguration}
+import fr.`override`.linkit.client.ClientApplication
+import org.jetbrains.annotations.NotNull
 
 trait ClientApplicationConfiguration extends ApplicationConfiguration with ExtendedConfiguration {
+    @NotNull val loadSchematic: AppSchematic[ClientApplication]
 
 }

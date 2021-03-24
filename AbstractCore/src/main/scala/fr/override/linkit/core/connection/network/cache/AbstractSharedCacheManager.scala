@@ -14,6 +14,7 @@ package fr.`override`.linkit.core.connection.network.cache
 
 import java.util.NoSuchElementException
 
+import fr.`override`.linkit.api.connection.ExternalConnection
 import fr.`override`.linkit.api.connection.network.cache.{HandleableSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketSender, PacketSyncReceiver, PacketTraffic}
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
@@ -210,11 +211,11 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
 object AbstractSharedCacheManager {
 
-    private val caches = mutable.HashMap.empty[(String, PacketTraffic), AbstractSharedCacheManager]
+    private val caches = mutable.HashMap.empty[(String, PacketTraffic), SharedCacheManager]
 
     def get(family: String, ownerIdentifier: String,
-            factory: (String, String, PacketTraffic) => AbstractSharedCacheManager = new DefaultSharedCacheManager(_, _, _))
-           (implicit traffic: PacketTraffic): AbstractSharedCacheManager = {
+            factory: (String, String, PacketTraffic) => SharedCacheManager = new DefaultSharedCacheManager(_, _, _))
+           (implicit traffic: PacketTraffic): SharedCacheManager = {
 
         caches.get((family, traffic))
                 .fold {

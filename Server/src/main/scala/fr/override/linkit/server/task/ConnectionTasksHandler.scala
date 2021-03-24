@@ -63,8 +63,8 @@ class ConnectionTasksHandler(session: ConnectionSession) extends TasksHandler {
     /**
      * closes the current client tasks thread
      * */
-    override def close(reason: Reason): Unit = {
-        tasksThread.close(reason)
+    override def close(): Unit = {
+        tasksThread.close()
     }
 
     /**
@@ -85,5 +85,4 @@ class ConnectionTasksHandler(session: ConnectionSession) extends TasksHandler {
      * */
     override val tasksCompleterHandler: TaskCompleterHandler = null //TODO
 
-    override def isClosed: Boolean = tasksThread.isClosed
 }

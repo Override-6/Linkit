@@ -19,7 +19,7 @@ import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread
 import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.server.ServerException
 import fr.`override`.linkit.server.config.ExternalConnectionConfiguration
-import fr.`override`.linkit.server.network.ServerNetwork
+import fr.`override`.linkit.server.network.ServerSideNetwork
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable

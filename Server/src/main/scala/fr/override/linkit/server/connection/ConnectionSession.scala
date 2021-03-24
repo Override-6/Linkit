@@ -12,7 +12,7 @@
 
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.connection.network.{ConnectionState, NetworkEntity}
+import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
@@ -21,7 +21,7 @@ import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.`override`.linkit.core.local.system.SystemPacketChannel
 import fr.`override`.linkit.server.config.ExternalConnectionConfiguration
-import fr.`override`.linkit.server.network.ServerNetwork
+import fr.`override`.linkit.server.network.ServerSideNetwork
 import fr.`override`.linkit.server.task.ConnectionTasksHandler
 
 import java.net.Socket
@@ -31,7 +31,7 @@ case class ConnectionSession private(boundIdentifier: String,
                                      info: ConnectionSessionInfo) extends JustifiedCloseable {
 
     val server           : ServerConnection                 = info.server
-    val network          : ServerNetwork                    = info.network
+    val network          : ServerSideNetwork                    = info.network
     val connectionManager: ExternalConnectionsManager       = info.manager
     val configuration    : ExternalConnectionConfiguration  = info.configuration
     val translator       : PacketTranslator                 = configuration.translator
@@ -48,7 +48,7 @@ case class ConnectionSession private(boundIdentifier: String,
         serverTraffic.close(reason)
     }
 
-    def getSocketState: ConnectionState = socket.getState
+    def getSocketState: ExternalConnectionState = socket.getState
 
     def send(result: PacketSerializationResult): Unit = {
         socket.write(result.writableBytes)

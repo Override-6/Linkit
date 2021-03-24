@@ -14,14 +14,15 @@ package fr.`override`.linkit.client
 
 import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.`override`.linkit.core.local.system.ContextLogger
-
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
+
+import fr.`override`.linkit.client.ClientDynamicSocket.UnsetIdentifier
 
 class ClientDynamicSocket(boundAddress: InetSocketAddress,
                           socketFactory: InetSocketAddress => Socket) extends DynamicSocket(true) {
 
-    var identifier: String = "$NOT SET$"
+    var identifier: String = UnsetIdentifier
     override def boundIdentifier: String = identifier
 
     var reconnectionPeriod: Int = 5000
@@ -46,9 +47,9 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
         markAsConnected()
     }
 
-    def start(identifier: String): Unit = {
-        if (this.identifier != null)
-            throw new IllegalStateException("The socket is already started ! And or is now definitely closed.")
+    def connect(identifier: String): Unit = {
+        if (this.identifier != UnsetIdentifier)
+            throw new IllegalStateException("The socket is already started !")
 
         this.identifier = identifier
         try {
@@ -59,4 +60,9 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
         }
         markAsConnected()
     }
+
+}
+
+object ClientDynamicSocket {
+    private val UnsetIdentifier = "$Unset£"
 }

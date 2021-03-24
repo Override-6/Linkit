@@ -23,10 +23,14 @@ import fr.`override`.linkit.core.connection.packet.traffic.channel.Communication
 
 import java.sql.Timestamp
 
-class PointNetwork(connection: ClientConnection, globalCache: SharedCacheManager) extends AbstractNetwork(connection, globalCache) {
+class ClientSideNetwork(connection: ClientConnection, globalCache: SharedCacheManager) extends AbstractNetwork(connection, globalCache) {
     private implicit val traffic: PacketTraffic = connection.traffic
 
-    override val connectionEntity: SelfNetworkEntity = new SelfNetworkEntity(connection, AbstractSharedCacheManager.get(connection.supportIdentifier))
+    override val serverIdentifier: String = connection.boundIdentifier
+
+    override def serverEntity: NetworkEntity = getEntity(serverIdentifier).get
+
+    override val connectionEntity: SelfNetworkEntity = initDefaultEntity
 
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
@@ -44,6 +48,12 @@ class PointNetwork(connection: ClientConnection, globalCache: SharedCacheManager
     def update(): Unit = {
         globalCache.update()
         connectionEntity.update()
+    }
+
+    def initDefaultEntity: SelfNetworkEntity = {
+        val identifier = connection.supportIdentifier
+        val sharedCache = AbstractSharedCacheManager.get(identifier, identifier)
+        new SelfNetworkEntity(connection, connection.getState, sharedCache)
     }
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {

@@ -16,19 +16,16 @@ import fr.`override`.linkit.api.local.system.config.ApplicationInstantiationExce
 import fr.`override`.linkit.api.local.system.config.schematic.{AppSchematic, EmptySchematic}
 import fr.`override`.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.`override`.linkit.api.local.system.security.ApplicationSecurityManager
-import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.core.local.system.fsa.JDKFileSystemAdapters
 import fr.`override`.linkit.server.ServerApplication
 import org.jetbrains.annotations.{NotNull, Nullable}
-
-import scala.util.control.NonFatal
 
 abstract class ServerApplicationConfigBuilder {
 
     var mainPoolThreadCount: Int = 2
     @Nullable var pluginsFolder: String = "/Plugins"
     @NotNull var fsAdapter: FileSystemAdapter = JDKFileSystemAdapters.Nio
-    @NotNull var securityManager: ApplicationSecurityManager = ApplicationSecurityManager.default
+    @NotNull var securityManager: ApplicationSecurityManager = ApplicationSecurityManager.none
     @NotNull var loadSchematic: AppSchematic[ServerApplication] = EmptySchematic[ServerApplication]
 
     @throws[ApplicationInstantiationException]("If any exception is thrown during build")

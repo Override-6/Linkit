@@ -12,13 +12,13 @@
 
 package fr.`override`.linkit.core.connection.packet.serialization
 
+import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet._
 import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.`override`.linkit.api.local.system.security.BytesHasher
-import fr.`override`.linkit.core.connection
-import fr.`override`.linkit.core.connection.network.cache.collection
-import fr.`override`.linkit.core.connection.packet
+import fr.`override`.linkit.core.connection.network.cache.collection.SharedCollection
+import fr.`override`.linkit.core.connection.packet.serialization.CachedObjectSerializer
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
@@ -36,9 +36,11 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
         result
     }
 
-    def completeInitialisation(cache: SharedCacheManager): Unit = {
+    override val signature: Array[Byte] = new Array(3)
+
+    def update(connection: ConnectionContext): Unit = {
         return
-        SmartSerializer.completeInitialisation(cache)
+        SmartSerializer.completeInitialisation(connection.network.globalCache)
     }
 
     def blackListFromCachedSerializer(target: String): Unit = {
@@ -48,9 +50,9 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
     private object SmartSerializer {
         private val rawSerializer = RawObjectSerializer
         @Nullable
-        @volatile private var cachedSerializer: packet.serialization.ObjectSerializer = _ //Will be instantiated once connection with the server is handled.
+        @volatile private var cachedSerializer: ObjectSerializer = _ //Will be instantiated once connection with the server is handled.
         @Nullable
-        @volatile private var cachedSerializerWhitelist: collection.SharedCollection[String] = _
+        @volatile private var cachedSerializerWhitelist: SharedCollection[String] = _
 
         def serialize(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
             //Thread.dumpStack()
@@ -94,7 +96,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
                 throw new IllegalStateException("This packet translator is already fully initialised !")
 
             cachedSerializer = new CachedObjectSerializer(cache)
-            cachedSerializerWhitelist = cache.get(15, connection.network.cache.collection.SharedCollection[String])
+            cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(ownerIdentifier)
         }
 

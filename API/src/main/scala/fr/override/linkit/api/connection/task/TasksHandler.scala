@@ -12,6 +12,8 @@
 
 package fr.`override`.linkit.api.connection.task
 
+import java.io.Closeable
+
 import fr.`override`.linkit.api.connection.packet.traffic.PacketChannel
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
@@ -33,7 +35,7 @@ import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
  *
  * @see PacketChannel
  * */
-trait TasksHandler extends JustifiedCloseable {
+trait TasksHandler extends Closeable {
     //TODO handle a task which want to complete with an unknown relay identifier
     //TODO use systemPacketChannels to
 

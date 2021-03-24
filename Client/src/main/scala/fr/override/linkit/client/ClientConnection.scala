@@ -12,48 +12,55 @@
 
 package fr.`override`.linkit.client
 
-import fr.`override`.linkit.api.connection.ExternalConnection
-import fr.`override`.linkit.api.connection.network.{ConnectionState, Network}
+import java.nio.channels.AsynchronousCloseException
+
+import fr.`override`.linkit.api.connection.{ConnectionException, ExternalConnection}
+import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
+import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
-import fr.`override`.linkit.api.local.concurrency.workerExecution
+import fr.`override`.linkit.api.local.concurrency.{packetWorkerExecution, workerExecution}
 import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
 import fr.`override`.linkit.api.local.system.event.EventNotifier
-import fr.`override`.linkit.client.network.PointNetwork
+import fr.`override`.linkit.api.local.system.security.BytesHasher
+import fr.`override`.linkit.client.network.ClientSideNetwork
 import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager
 import fr.`override`.linkit.core.connection.packet.UnexpectedPacketException
-import fr.`override`.linkit.core.connection.packet.serialization.CompactedPacketTranslator
-import fr.`override`.linkit.core.connection.packet.traffic.{DynamicSocket, PacketInjections, PacketReader, SocketPacketTraffic}
+import fr.`override`.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
+import fr.`override`.linkit.core.connection.packet.serialization.{CompactedPacketTranslator, NumberSerializer}
+import fr.`override`.linkit.core.connection.packet.traffic.{DynamicSocket, PacketInjections, PacketReader, SocketPacketTraffic, SocketPacketWriter}
 import fr.`override`.linkit.core.local.concurrency.{BusyWorkerPool, PacketWorkerThread}
 import fr.`override`.linkit.core.local.system.event.DefaultEventNotifier
-import fr.`override`.linkit.core.local.system.{ContextLogger, SystemPacket}
+import fr.`override`.linkit.core.local.system.{ContextLogger, Rules, SystemPacket, SystemPacketChannel}
 
-import java.nio.channels.AsynchronousCloseException
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class ClientConnection(socket: DynamicSocket,
-                       appContext: ClientApplicationContext,
-                       serverIdentifier: String,
-                       override val configuration: ConnectionConfiguration) extends ExternalConnection {
+class ClientConnection private(socket: DynamicSocket,
+                               appContext: ClientApplication,
+                               serverIdentifier: String,
+                               override val configuration: ConnectionConfiguration) extends ExternalConnection {
 
     override val supportIdentifier: String = configuration.identifier
     override val boundIdentifier: String = serverIdentifier
     override val translator: PacketTranslator = new CompactedPacketTranslator(supportIdentifier, configuration.hasher)
-    override val traffic: PacketTraffic = new SocketPacketTraffic(socket, translator, supportIdentifier)
-    override val network: Network = initNetwork
+    override val traffic: PacketTraffic = new SocketPacketTraffic(socket, translator, supportIdentifier, serverIdentifier)
+    private val sideNetwork: ClientSideNetwork = initNetwork
+    override val network: Network = sideNetwork
     override val eventNotifier: EventNotifier = new DefaultEventNotifier
 
+    private val systemChannel: SystemPacketChannel = new SystemPacketChannel(ChannelScope.reserved(serverIdentifier)(traffic.newWriter(SystemChannelID)))
     @volatile private var alive = true
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
         traffic.getInjectable(injectableID, scopeFactory, factory)
     }
 
     override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
 
-    override def getState: ConnectionState = socket.getState
+    override def getState: ExternalConnectionState = socket.getState
 
     override def isAlive: Boolean = alive
 
@@ -70,20 +77,38 @@ class ClientConnection(socket: DynamicSocket,
         socket.close()
 
         alive = false
-
     }
 
-    private def checkCoordinates(coordinates: DedicatedPacketCoordinates): Unit = {
-        val targetID = coordinates.targetID
-        if (targetID != supportIdentifier)
-            throw UnexpectedPacketException(s"Could not handle received packet, coordinates aren't targeting this connection !")
+    @workerExecution
+    def start(): Unit = {
+        BusyWorkerPool.checkCurrentIsWorker("Can't start in a non worker pool !")
+        if (alive)
+            throw new IllegalStateException(s"Connection already started ! ($supportIdentifier)")
+
+        PointPacketWorkerThread.start()
+        socket.addConnectionStateListener(tryReconnect)
+
+        alive = true
     }
 
-    private def initNetwork: Network = {
+    @packetWorkerExecution //So the runLater must be specified in order to perform network operations
+    private def tryReconnect(state: ExternalConnectionState): Unit = {
+        val bytes = supportIdentifier.getBytes()
+        val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
+
+        if (state == ExternalConnectionState.CONNECTED && socket.isOpen) runLater {
+            socket.write(welcomePacket) //The welcome packet will let the server continue his socket handling
+            systemChannel.nextPacket[BooleanPacket]
+            sideNetwork.update()
+            translator.update(this)
+        }
+    }
+
+    private def initNetwork: ClientSideNetwork = {
         if (network != null)
             throw new IllegalStateException("Network is already initialized !")
         val globalCache = AbstractSharedCacheManager.get(supportIdentifier, supportIdentifier)(traffic)
-        new PointNetwork(this, globalCache)
+        new ClientSideNetwork(this, globalCache)
     }
 
     private def handleSystemPacket(system: SystemPacket, coords: DedicatedPacketCoordinates): Unit = {
@@ -150,7 +175,7 @@ class ClientConnection(socket: DynamicSocket,
                 return
             //NETWORK-DEBUG-MARK
             val preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
-            println(s"${Console.YELLOW}received : $preview (l: ${bytes.length})${Console.RESET}")
+            ContextLogger.debug(s"Received : $preview (l: ${bytes.length})")
             val packetNumber = packetsReceived + 1
             packetsReceived += 1
 
@@ -162,13 +187,43 @@ class ClientConnection(socket: DynamicSocket,
 
                 coordinates match {
                     case dedicated: DedicatedPacketCoordinates =>
-                        checkCoordinates(dedicated)
+                        //checkCoordinates(dedicated)
                         handlePacket(packet, dedicated, packetNumber)
                     case other => throw UnexpectedPacketException(s"Only DedicatedPacketCoordinates can be handled by a RelayPoint. Received : ${other.getClass.getName}")
                 }
             }
         }
-
     }
 
+
+}
+
+object ClientConnection {
+
+
+    @throws[ConnectionException]("If Something went wrong during the initialization")
+    def open(socket: ClientDynamicSocket, context: ClientApplication, configuration: ConnectionConfiguration): ClientConnection = {
+        val packetReader = new PacketReader(socket, BytesHasher.inactive)
+        val translator = configuration.translator
+        val identifier = configuration.identifier
+
+        val iDbytes = identifier.getBytes()
+        val translatorSignature = translator.signature
+        val hasherSignature = configuration.hasher.signature
+        val separator = Rules.WPArgsSeparator
+
+        val bytes = iDbytes ++ separator ++ translatorSignature ++ separator ++ hasherSignature
+        val welcomePacket = NumberSerializer.serializeInt(iDbytes.length) ++ bytes
+        socket.write(bytes)
+
+        val isAccepted = packetReader.readNextPacketBytes()(1) == Rules.ConnectionAccepted
+        if (!isAccepted) {
+            val msg = new String(packetReader.readNextPacketBytes())
+            val serverPort = socket.remoteSocketAddress().getPort
+            throw new ConnectionException(null, s"Server (port: $serverPort) refused connection: $msg")
+        }
+        val serverIdentifier = new String(packetReader.readNextPacketBytes())
+        socket.identifier = serverIdentifier
+        new ClientConnection(socket, context, serverIdentifier, configuration)
+    }
 }

@@ -13,7 +13,7 @@
 package fr.`override`.linkit.client.network
 
 import fr.`override`.linkit.api.connection.ConnectionContext
-import fr.`override`.linkit.api.connection.network.ConnectionState
+import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.core.connection.network.AbstractRemoteEntity
 import fr.`override`.linkit.core.connection.network.cache.{AbstractSharedCacheManager, SharedInstance}
@@ -22,19 +22,20 @@ import fr.`override`.linkit.core.connection.packet.traffic.channel.Communication
 class ConnectionNetworkEntity private(connection: ConnectionContext,
                                       identifier: String,
                                       cache: SharedCacheManager)
-        extends AbstractRemoteEntity(identifier, cache) {
+    extends AbstractRemoteEntity(identifier, cache) {
+
+    override val network: Network = connection.network
 
     def this(connection: ConnectionContext, identifier: String, communicator: CommunicationPacketChannel) = {
-        this(connection, identifier, AbstractSharedCacheManager.get(identifier)(relay.traffic), communicator)
+        this(connection, identifier, AbstractSharedCacheManager.get(identifier, identifier)(connection.traffic))
     }
 
-    private val stateInstance = cache.get(3, SharedInstance[ConnectionState])
+    private val stateInstance = cache.get(3, SharedInstance[ExternalConnectionState])
 
-    override def getConnectionState: ConnectionState = stateInstance.get
+    override def getConnectionState: ExternalConnectionState = stateInstance.get
 
     stateInstance.addListener(newState => {
         //val event = NetworkEvents.entityStateChange(this, newState, getConnectionState)
         //relay.eventNotifier.notifyEvent(relay.networkHooks, event)
     })
-
 }

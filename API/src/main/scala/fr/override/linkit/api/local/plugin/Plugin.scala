@@ -17,6 +17,8 @@ import fr.`override`.linkit.api.local.ApplicationContext
 trait Plugin {
     val name: String
 
+    val configuration: PluginConfiguration
+
     def onLoad(): Unit
 
     def onEnable(): Unit

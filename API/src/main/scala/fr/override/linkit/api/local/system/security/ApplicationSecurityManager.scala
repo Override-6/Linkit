@@ -17,8 +17,8 @@ import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
 
 trait ApplicationSecurityManager {
 
-    @throws[ConnectionSecurityException]("If the security manager rejected the initialisation.")
-    def checkConnectionConfig(connection: ConnectionConfiguration): Unit
+    @throws[ConnectionSecurityException]("If the security manager rejected the configuration.")
+    def checkConnectionConfig(config: ConnectionConfiguration): Unit
 
     @throws[ConnectionSecurityException]("If the security manager rejected the initialisation.")
     def checkConnection(connection: ConnectionContext): Unit
@@ -29,8 +29,8 @@ object ApplicationSecurityManager {
 
     class Default extends ApplicationSecurityManager {
         override def checkConnection(connection: ConnectionContext): Unit = ()
-        override def checkConnectionConfig(connection: ConnectionConfiguration): Unit = ()
+        override def checkConnectionConfig(config: ConnectionConfiguration): Unit = ()
     }
 
-    def default: ApplicationSecurityManager = new Default
+    def none: ApplicationSecurityManager = new Default
 }

@@ -57,6 +57,8 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
 
 
     override def close(): Unit = {
+        if (!open)
+            throw new IllegalStateException("ClientTasksHandler is already closed.")
         if (currentTicket != null) {
             currentTicket.abort()
             currentTicket = null
@@ -69,8 +71,14 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
     override def skipCurrent(reason: Reason): Unit = {
         //Restarting the thread causes the current task to be skipped
         //And wait or execute the task that come after it
-        close(reason)
+        close()
         start()
+    }
+
+    def start(): Unit = {
+        tasksThread = new Thread(() => listen())
+        tasksThread.setName("Client Tasks scheduler")
+        tasksThread.start()
     }
 
     private def listen(): Unit = {
@@ -78,7 +86,6 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
         while (open)
             executeNextTask()
     }
-
 
     private def executeNextTask(): Unit = {
         try {
@@ -93,11 +100,5 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
         }
     }
 
-    def start(): Unit = {
-        tasksThread = new Thread(() => listen())
-        tasksThread.setName("Client Tasks scheduler")
-        tasksThread.start()
-    }
 
-    override def isClosed: Boolean = !open
 }

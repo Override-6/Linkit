@@ -21,7 +21,7 @@ import fr.`override`.linkit.api.local.system.config.ApplicationInstantiationExce
 import fr.`override`.linkit.api.local.system.security.ConnectionSecurityException
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
 import fr.`override`.linkit.core.local.plugin.LinkitPluginManager
-import fr.`override`.linkit.core.local.system.ContextLogger
+import fr.`override`.linkit.core.local.system.{ContextLogger, Rules}
 import fr.`override`.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.`override`.linkit.server.connection.ServerConnection
 
@@ -57,10 +57,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         var downCount = 0
         val downLock = new Object
 
-        serverCache
-            .values
-            .toSet
-            .foreach((serverConnection: ServerConnection) => serverConnection.runLater {
+        listConnections.foreach((serverConnection: ServerConnection) => serverConnection.runLater {
                 try {
                     serverConnection.shutdown()
                 } catch {
@@ -102,8 +99,8 @@ class ServerApplication private(override val configuration: ServerApplicationCon
 
     override def runLater(@workerExecution task: => Unit): Unit = mainWorkerPool.runLater(task)
 
-    override def getConnections: Iterable[ServerConnection] = {
-        serverCache.values
+    override def listConnections: Iterable[ServerConnection] = {
+        serverCache.values.toSet
     }
 
     @workerExecution
@@ -114,15 +111,21 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         * */
         mainWorkerPool.checkCurrentThreadOwned("open server connection must be performed into Application's pool.")
         ensureAlive()
-        if (configuration.identifier.length > 16)
-            throw new IllegalArgumentException("Server identifier length > 16")
+        if (configuration.identifier.length > Rules.MaxConnectionIDLength)
+            throw new IllegalArgumentException(s"Server identifier length > ${Rules.MaxConnectionIDLength}")
 
         securityManager.checkConnectionConfig(configuration)
         val serverConnection = new ServerConnection(this, configuration)
+        val startLock = new Object
         serverConnection.runLater {
             serverConnection.start()
+            startLock.synchronized {
+                startLock.notify()
+            }
         }
-
+        startLock.synchronized{
+            startLock.wait()
+        }
         try {
             securityManager.checkConnection(serverConnection)
         } catch {

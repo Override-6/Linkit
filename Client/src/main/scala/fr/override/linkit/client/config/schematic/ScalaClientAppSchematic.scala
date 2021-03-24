@@ -10,13 +10,14 @@
  * questions.
  */
 
-package fr.`override`.linkit.client.config
+package fr.`override`.linkit.client.config.schematic
 
-import fr.`override`.linkit.api.local.system.config.ExternalConnectionConfiguration
+import fr.`override`.linkit.client.config.ClientConnectionConfiguration
 
-import java.net.{InetSocketAddress, Socket}
+abstract class ScalaClientAppSchematic extends ClientAppSchematic {
+    override val name: String = "raw-schematic"
 
-trait ClientConnectionConfiguration extends ExternalConnectionConfiguration {
-    val reconnectionMillis: Int //time to reconnect in ms
-    val socketFactory: InetSocketAddress => Socket
+    protected object clients {
+        def +=(serverConfig: ClientConnectionConfiguration): Unit = serverConfigs += serverConfig
+    }
 }

@@ -20,6 +20,8 @@ trait BytesHasher {
 
     val key: String
 
+    val signature: Array[Byte]
+
 }
 
 object BytesHasher {
@@ -28,7 +30,9 @@ object BytesHasher {
 
         override def deHashBytes(hashed: Array[Byte]): Array[Byte] = hashed
 
-        override val key: String = "default-hasher"
+        override val key: String = "inactive-hasher"
+
+        override val signature: Array[Byte] = Array(1)
     }
 
     def inactive: BytesHasher = new Inactive

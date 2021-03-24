@@ -13,11 +13,11 @@
 package fr.`override`.linkit.server.connection
 
 import fr.`override`.linkit.server.config.ExternalConnectionConfiguration
-import fr.`override`.linkit.server.network.ServerNetwork
+import fr.`override`.linkit.server.network.ServerSideNetwork
 
 case class ConnectionSessionInfo(server: ServerConnection,
                                  manager: ExternalConnectionsManager,
-                                 network: ServerNetwork,
+                                 network: ServerSideNetwork,
                                  configuration: ExternalConnectionConfiguration) {
 
 }

@@ -12,7 +12,7 @@
 
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.connection.network.{ConnectionState, Network}
+import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
@@ -69,7 +69,7 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
         serverTraffic.getInjectable(injectableID, scopeFactory, factory)
     }
 
-    override def getState: ConnectionState = session.getSocketState
+    override def getState: ExternalConnectionState = session.getSocketState
 
     override def runLater(callback: => Unit): Unit = {
         server.runLater(callback)
@@ -90,7 +90,7 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
         }
     }
 
-    def isConnected: Boolean = getState == ConnectionState.CONNECTED
+    def isConnected: Boolean = getState == ExternalConnectionState.CONNECTED
 
     def getTasksHandler: TasksHandler = session.tasksHandler
 

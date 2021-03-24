@@ -33,12 +33,7 @@ trait ConnectionContext extends PacketInjectableContainer with Procrastinator {
     def eventNotifier: EventNotifier
 
     @workerExecution
-    @throws[IllegalThreadException]("If the current thread is not one of a BusyWorkerPool")
     def shutdown(): Unit
-
-    @workerExecution
-    @throws[IllegalThreadException]("If the current thread is not one of a BusyWorkerPool")
-    def start(): Unit
 
     def isAlive: Boolean
 }

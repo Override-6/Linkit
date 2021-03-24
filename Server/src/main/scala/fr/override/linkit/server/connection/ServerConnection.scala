@@ -24,12 +24,15 @@ import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.StringP
 import fr.`override`.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
-import fr.`override`.linkit.core.local.system.ContextLogger
+import fr.`override`.linkit.core.local.system.{ContextLogger, Rules, SystemPacketChannel}
 import fr.`override`.linkit.core.local.system.event.DefaultEventNotifier
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
-import fr.`override`.linkit.server.network.ServerNetwork
+import fr.`override`.linkit.server.network.ServerSideNetwork
 import fr.`override`.linkit.server.{ServerApplication, ServerException, ServerPacketTraffic}
 import java.net.{ServerSocket, SocketException}
+
+import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
+import org.jetbrains.annotations.Nullable
 
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
@@ -43,7 +46,8 @@ class ServerConnection(applicationContext: ServerApplication,
 
     private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
-    private[server] val serverNetwork: ServerNetwork = new ServerNetwork(this, traffic)
+    private val systemChannel: SystemPacketChannel = new SystemPacketChannel(ChannelScope.broadcast(traffic.newWriter(SystemChannelID)))
+    private[server] val serverNetwork: ServerSideNetwork = new ServerSideNetwork(this, traffic)
     override val network: Network = serverNetwork
     override val eventNotifier: EventNotifier = new DefaultEventNotifier
     override val translator: PacketTranslator = configuration.translator
@@ -67,7 +71,7 @@ class ServerConnection(applicationContext: ServerApplication,
     }
 
     @workerExecution
-    override def start(): Unit = {
+    def start(): Unit = {
         BusyWorkerPool.checkCurrentIsWorker("Must start server connection in a worker thread.")
         if (alive)
             throw new ServerException(this, "Server is already started.")
@@ -109,26 +113,14 @@ class ServerConnection(applicationContext: ServerApplication,
 
     //TODO Documentation
 
-    /**
-     * Reads a welcome packet from a connection.<br>
-     * The Welcome packet is the first packet that a connection must send in order to provide his identifier to the server.
-     *
-     * @return the identifier bound with the socket
-     * */
-    private def readWelcomePacket(socket: SocketContainer): String = {
-        val welcomePacketLength = socket.readInt()
-        if (welcomePacketLength > 32)
-            throw new ConnectionInitialisationException("Relay identifier exceeded maximum size limit of 32")
-
-        val welcomePacket = socket.read(welcomePacketLength)
-        new String(welcomePacket)
-    }
-
     private def listenSocketConnection(): Unit = {
         val socketContainer = new SocketContainer(true)
         try {
+            val port = configuration.port
+            ContextLogger.debug(s"Ready to accept next connection on port $port")
             val clientSocket = serverSocket.accept()
             socketContainer.set(clientSocket)
+            ContextLogger.debug(s"Socket accepted ($clientSocket)")
             runLater {
                 ContextLogger.trace(s"Handling client socket $clientSocket...")
                 val count = connectionsManager.countConnections
@@ -156,8 +148,57 @@ class ServerConnection(applicationContext: ServerApplication,
         }
     }
 
+    /**
+     * Reads a welcome packet from a connection.<br>
+     * The Welcome packet is the first packet that a connection must send
+     * in order to provide his identifier to the server and his hasher & translator signature.
+     *
+     * @return the identifier bound with the socket
+     * */
+    private def readWelcomePacket(socket: SocketContainer): String = {
+        val welcomePacketLength = socket.readInt()
+        if (welcomePacketLength > 32)
+            throw new ConnectionInitialisationException("Relay identifier exceeded maximum size limit of 32")
+
+        val welcomePacket = socket.read(welcomePacketLength)
+        new String(welcomePacket)
+    }
+
+    /**
+     * @return a [[WelcomePacketVerdict]] if the scan that decides if the connection that sends
+     *         this welcomePacket should be discarded by the server.
+     * */
+    private def scanWelcomePacket(welcomePacket: String): WelcomePacketVerdict = {
+        val args = welcomePacket.split(";")
+        println(s"args = ${args.mkString("[", ", ","]")}")
+        if (args.length != Rules.WPArgsLength)
+            return WelcomePacketVerdict(null, false, s"Arguments length does not conform to server's rules of ${Rules.WPArgsLength}")
+        try {
+            val identifier = args(0)
+            val translatorSignature = args(1)
+            val hasherSignature = args(2)
+            if (!(configuration.hasher.signature sameElements hasherSignature))
+                return WelcomePacketVerdict(identifier, false, "hasher signatures missmatches !")
+            if (!(translator.signature sameElements translatorSignature))
+                return WelcomePacketVerdict(identifier, false, "translator signatures missmathes !")
+
+            WelcomePacketVerdict(identifier, true)
+        } catch {
+            case NonFatal(e) =>
+                e.printStackTrace()
+                WelcomePacketVerdict(null, false, e.getMessage)
+        }
+    }
+
     private def handleSocket(socket: SocketContainer): Unit = {
-        val identifier = readWelcomePacket(socket)
+        val welcomePacket = readWelcomePacket(socket)
+        val verdict = scanWelcomePacket(welcomePacket)
+        if (!verdict.accepted) {
+            verdict.concludeRefusal(socket)
+            return
+        }
+        socket.write(supportIdentifier.getBytes())
+        val identifier = verdict.identifier
         socket.identifier = identifier
         handleRelayConnection(identifier, socket)
     }
@@ -167,7 +208,7 @@ class ServerConnection(applicationContext: ServerApplication,
             alive = true
             while (alive) listenSocketConnection()
         })
-        thread.setName("Socket Connection Listener")
+        thread.setName(s"Connection Listener : ${configuration.port}")
         thread.start()
     }
 
@@ -223,14 +264,27 @@ class ServerConnection(applicationContext: ServerApplication,
     }
 
     private[connection] def sendAuthorisedConnection(socket: DynamicSocket): Unit = {
-        val coordinates = DedicatedPacketCoordinates(PacketTraffic.SystemChannelID, "unknown", supportIdentifier)
-        socket.write(translator.translate(BooleanPacket(true), coordinates))
+        socket.write(Array(Rules.ConnectionAccepted))
     }
 
     private[connection] def sendRefusedConnection(socket: DynamicSocket, message: String): Unit = {
-        val coordinates = DedicatedPacketCoordinates(PacketTraffic.SystemChannelID, "unknown", supportIdentifier)
-        socket.write(translator.translate(BooleanPacket(false), coordinates))
-        socket.write(translator.translate(StringPacket(message), coordinates))
+        socket.write(Array(Rules.ConnectionRefused))
+        socket.write(message.getBytes())
+    }
+
+    private case class WelcomePacketVerdict(@Nullable("bad-packet-format") identifier: String,
+                                            accepted: Boolean,
+                                            @Nullable("accepted=true") refusalMessage: String = null) {
+
+        def concludeRefusal(socket: DynamicSocket): Unit = {
+            if (identifier == null) {
+                ContextLogger.error(s"An unknown connection have been discarded: $refusalMessage")
+            } else {
+                ContextLogger.error(s"Connection $identifier has been discarded: $refusalMessage")
+            }
+            socket.write(Array(Rules.ConnectionRefused))
+            socket.write(s"Connection discarded by the server: $refusalMessage".getBytes)
+        }
     }
 
 }

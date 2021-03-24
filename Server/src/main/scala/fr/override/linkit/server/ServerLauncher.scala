@@ -27,24 +27,9 @@ object ServerLauncher {
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = "TestServer1"
-                    override val port: Int = 4848
+                    override val port: Int = 48484
 
                     configName = "config1"
-                }
-                servers += new ServerConnectionConfigBuilder {
-                    override val identifier: String = "TestServer2"
-                    override val port: Int = 4849
-                    maxConnection = 2
-                    this.identifierAmbiguityStrategy = AmbiguityStrategy.REPLACE
-
-                    configName = "config2"
-                }
-                servers += new ServerConnectionConfigBuilder {
-                    override val identifier: String = "TestServer3"
-                    override val port: Int = 4850
-                    maxConnection = 3
-
-                    configName = "last-config"
                 }
             }
         }
@@ -52,7 +37,7 @@ object ServerLauncher {
         ContextLogger.trace(s"Build complete: $serverApplicationContext")
     }
 
-    def getOrElse(args: Array[String], key: String, defaultValue: String): String = {
+    private def getOrElse(args: Array[String], key: String, defaultValue: String): String = {
         val index = args.indexOf(key)
         if (index < 0 || index + 1 > args.length - 1) {
             defaultValue
