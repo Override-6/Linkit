@@ -10,20 +10,10 @@
  * questions.
  */
 
-package fr.`override`.linkit.core.connection.packet.traffic
+package fr.`override`.linkit.api.connection.packet.traffic
 
-import fr.`override`.linkit.api.local.system.security.BytesHasher
+import fr.`override`.linkit.api.connection.packet.serialization.PacketDeserializationResult
 
-
-class PacketReader(socket: DynamicSocket, hasher: BytesHasher) {
-
-    def readNextPacketBytes(): Array[Byte] = synchronized {
-        val nextLength = socket.readInt()
-        if (nextLength == -1 || !socket.isOpen)
-            return null
-        val bytes = socket.read(nextLength)
-        hasher.deHashBytes(bytes)
-        bytes
-    }
-
+trait PacketReader {
+    def nextPacket(callback: (PacketDeserializationResult, Int) => Unit): Unit
 }

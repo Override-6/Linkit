@@ -19,10 +19,10 @@ import fr.`override`.linkit.api.local.plugin.PluginManager
 import fr.`override`.linkit.api.local.system.AppException
 import fr.`override`.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.`override`.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
-import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
+import fr.`override`.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
 import fr.`override`.linkit.core.local.plugin.LinkitPluginManager
-import fr.`override`.linkit.core.local.system.{ContextLogger, Rules}
+import fr.`override`.linkit.core.local.system.ContextLogger
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
@@ -107,7 +107,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
             ClientConnection.open(dynamicSocket, this, config)
         } catch {
             case e: ConnectionException => throw e
-            case NonFatal(e) => throw ConnectionException(null, s"Could not open connection with server $address : ${e.getMessage}", e)
+            case NonFatal(e) => throw new ConnectionInitialisationException(s"Could not open connection with server $address : ${e.getMessage}", e)
         }
 
         val serverIdentifier: String = connection.boundIdentifier

@@ -12,12 +12,11 @@
 
 package fr.`override`.linkit.core.local.concurrency
 
-import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
-
 import fr.`override`.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, workerExecution}
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool.{checkCurrentIsWorker, currentPool, workerThreadGroup}
 import fr.`override`.linkit.core.local.system.ContextLogger
 
+import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
 import scala.util.control.NonFatal
 
 /**
@@ -28,7 +27,7 @@ import scala.util.control.NonFatal
  * Let's say that we have a pool of 3 threads that handle deserialization and packet injections. <br>
  * (see [[fr.`override`.linkit.api.connection.packet.traffic.PacketInjectable]] for further details about injection
  * Then suddenly, for a reason that can often appear, every threads of the pool are waiting to receipt another packet.<br>
- * The waited packet will effectively be downloaded by the [[PacketWorkerThread]],
+ * The waited packet will effectively be downloaded by the [[PacketReaderThread]],
  * but it could not be deserialized and injected because all the thread are currently waiting for an injection.<br>
  * This way, a kind of deadlock will occur because each threads are waiting for their packet to be injected,
  * and there is no free thread that would process the packets in order to notify other threads that their packet has been effectively received.<br>
@@ -133,6 +132,7 @@ class BusyWorkerPool(val nThreads: Int, name: String) extends AutoCloseable with
     def busyThreads: Int = activeThreads
 
     def setThreadCount(newCount: Int): Unit = {
+        println(s"newCount = ${newCount}")
         executor.setCorePoolSize(newCount)
         ContextLogger.trace(s"$name's core pool size set to $newCount")
     }

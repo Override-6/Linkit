@@ -5,8 +5,6 @@ include 'Client'
 include 'Server'
 include 'LinKitExtensions:DebugExtension'
 findProject(':LinKitExtensions:DebugExtension')?.name = 'DebugExtension'
-include 'LinKitExtensions:EasySharing'
-findProject(':LinKitExtensions:EasySharing')?.name = 'EasySharing'
 include 'LinKitExtensions:RelayController'
 findProject(':LinKitExtensions:RelayController')?.name = 'RelayController'
 

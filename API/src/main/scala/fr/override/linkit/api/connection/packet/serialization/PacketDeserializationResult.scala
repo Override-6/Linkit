@@ -14,24 +14,11 @@ package fr.`override`.linkit.api.connection.packet.serialization
 
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 
-case class PacketSerializationResult(packet: Packet, coords: PacketCoordinates, serializer: Serializer) {
+case class PacketDeserializationResult(serializer: Serializer, bytes: Array[Byte]) {
 
-    lazy val bytes: Array[Byte] = serializer.serialize(Array(coords, packet))
+    private lazy val cache = serializer.deserializeAll(bytes)
 
-    def writableBytes: Array[Byte] = {
-        val length = bytes.length
-        Array[Byte](
-            ((length >> 24) & 0xff).toByte,
-            ((length >> 16) & 0xff).toByte,
-            ((length >> 8) & 0xff).toByte,
-            ((length >> 0) & 0xff).toByte
-        ) ++ bytes
-    }
+    lazy val coords: PacketCoordinates = cache(0).asInstanceOf[PacketCoordinates]
+    lazy val packet: Packet = cache(1).asInstanceOf[Packet]
 
-}
-
-object PacketSerializationResult {
-    implicit def autoUseWritableBytes(result: PacketSerializationResult): Array[Byte] = {
-        result.writableBytes
-    }
 }

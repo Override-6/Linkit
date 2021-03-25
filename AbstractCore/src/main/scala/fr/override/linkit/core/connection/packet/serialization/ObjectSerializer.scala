@@ -15,6 +15,7 @@ package fr.`override`.linkit.core.connection.packet.serialization
 import fr.`override`.linkit.api.connection.packet.serialization.Serializer
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer._
 import fr.`override`.linkit.core.connection.packet.serialization.ObjectSerializer._
+import fr.`override`.linkit.core.local.concurrency.PacketReaderThread
 import org.jetbrains.annotations.Nullable
 import sun.misc.Unsafe
 
@@ -38,6 +39,7 @@ abstract class ObjectSerializer extends Serializer {
 
     override def serialize(any: Serializable): Array[Byte] = {
         //val t0 = System.currentTimeMillis()
+        PacketReaderThread.checkNotCurrent()
         val bytes = signature ++ serializeValue(null, any)
         /*
         val t1 = System.currentTimeMillis()
@@ -55,6 +57,7 @@ abstract class ObjectSerializer extends Serializer {
     override def deserialize(bytes: Array[Byte]): Any = {
         if (!isSameSignature(bytes))
             throw new IllegalArgumentException("Those bytes does not come from this packet serializer !")
+        PacketReaderThread.checkNotCurrent()
 
         //val t0 = System.currentTimeMillis()
         val instance = deserializeObject(null, bytes.drop(signature.length)).asInstanceOf[Serializable]
@@ -64,6 +67,7 @@ abstract class ObjectSerializer extends Serializer {
     }
 
     override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
+        PacketReaderThread.checkNotCurrent()
         deserializeArray(bytes.drop(signature.length))
     }
 

@@ -25,6 +25,7 @@ abstract class LinkitPlugin extends Plugin {
     private var context: ApplicationContext = _
     private var fragmentsManager: FragmentManager = _
     private var pluginManager: PluginManager = _
+    override val configuration: PluginConfiguration = null
 
     protected def putFragment(fragment: PluginFragment): Unit = {
         fragmentsManager.putFragment(fragment)

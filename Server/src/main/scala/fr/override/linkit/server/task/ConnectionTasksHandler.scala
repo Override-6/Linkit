@@ -17,9 +17,9 @@ import fr.`override`.linkit.api.connection.task.{TaskCompleterHandler, TaskExcep
 import fr.`override`.linkit.api.local.system.Reason
 import fr.`override`.linkit.core.connection.task.TaskTicket
 import fr.`override`.linkit.core.local.system.SystemOrder
-import fr.`override`.linkit.server.connection.ConnectionSession
+import fr.`override`.linkit.server.connection.ExternalConnectionSession
 
-class ConnectionTasksHandler(session: ConnectionSession) extends TasksHandler {
+class ConnectionTasksHandler(session: ExternalConnectionSession) extends TasksHandler {
 
     private val server = session.server
     private val systemChannel = session.channel

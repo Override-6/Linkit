@@ -12,15 +12,15 @@
 
 package fr.`override`.linkit.core.connection.packet.traffic
 
+import fr.`override`.linkit.api.connection.network.ExternalConnectionState
+import fr.`override`.linkit.api.local.concurrency.packetWorkerExecution
 import fr.`override`.linkit.api.local.system.{AppException, IllegalCloseException, JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.core.local.utils.ConsumerContainer
+
 import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}
-
-import fr.`override`.linkit.api.connection.network.ExternalConnectionState
-import fr.`override`.linkit.api.local.concurrency.packetWorkerExecution
 
 abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
 
@@ -45,7 +45,6 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
             totalWriteTime += t1 - t0
             //NETWORK-DEBUG-MARK
-            //Thread.dumpStack()
             ContextLogger.network(s"Written ($boundIdentifier) : ", buff)
         } catch {
             case e@(_: ConnectException | _: IOException) =>

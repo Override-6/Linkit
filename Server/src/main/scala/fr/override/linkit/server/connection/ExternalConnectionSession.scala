@@ -19,24 +19,24 @@ import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketT
 import fr.`override`.linkit.api.local.concurrency.workerExecution
 import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
+import fr.`override`.linkit.core.local.concurrency.PacketReaderThread
 import fr.`override`.linkit.core.local.system.SystemPacketChannel
-import fr.`override`.linkit.server.config.ExternalConnectionConfiguration
 import fr.`override`.linkit.server.network.ServerSideNetwork
 import fr.`override`.linkit.server.task.ConnectionTasksHandler
 
 import java.net.Socket
 
-case class ConnectionSession private(boundIdentifier: String,
-                                     private val socket: SocketContainer,
-                                     info: ConnectionSessionInfo) extends JustifiedCloseable {
+case class ExternalConnectionSession private(boundIdentifier: String,
+                                             private val socket: SocketContainer,
+                                             info: ExternalConnectionSessionInfo) extends JustifiedCloseable {
 
     val server           : ServerConnection                 = info.server
-    val network          : ServerSideNetwork                    = info.network
+    val network          : ServerSideNetwork                = info.network
     val connectionManager: ExternalConnectionsManager       = info.manager
+    val readThread       : PacketReaderThread               = info.readThread
     val translator       : PacketTranslator                 = server.translator
     val serverTraffic    : PacketTraffic                    = server.traffic
     val channel          : SystemPacketChannel              = serverTraffic.getInjectable(SystemChannelID, ChannelScope.reserved(boundIdentifier), SystemPacketChannel)
-    val packetReader     : ConnectionPacketReader           = new ConnectionPacketReader(socket, server, connectionManager, boundIdentifier)
     val tasksHandler     : ConnectionTasksHandler           = new ConnectionTasksHandler(this)
 
     @workerExecution
@@ -61,7 +61,7 @@ case class ConnectionSession private(boundIdentifier: String,
 
     def updateSocket(socket: Socket): Unit = this.socket.set(socket)
 
-    def getEntity: NetworkEntity = server.network.getEntity(boundIdentifier).get
+    def getEntity: NetworkEntity = network.getEntity(boundIdentifier).get
 
     override def isClosed: Boolean = socket.isClosed //refers to an used closeable element
 }

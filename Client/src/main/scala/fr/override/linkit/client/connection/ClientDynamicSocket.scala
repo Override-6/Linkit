@@ -10,14 +10,14 @@
  * questions.
  */
 
-package fr.`override`.linkit.client
+package fr.`override`.linkit.client.connection
 
+import fr.`override`.linkit.client.connection.ClientDynamicSocket.UnsetIdentifier
 import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.`override`.linkit.core.local.system.ContextLogger
+
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
-
-import fr.`override`.linkit.client.ClientDynamicSocket.UnsetIdentifier
 
 class ClientDynamicSocket(boundAddress: InetSocketAddress,
                           socketFactory: InetSocketAddress => Socket) extends DynamicSocket(true) {

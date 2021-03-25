@@ -15,7 +15,7 @@ package fr.`override`.linkit.core.connection.packet.traffic
 import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.`override`.linkit.api.connection.packet.traffic._
 import fr.`override`.linkit.api.local.system.{ClosedException, JustifiedCloseable, Reason}
-import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread
+import fr.`override`.linkit.core.local.concurrency.PacketReaderThread
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -110,7 +110,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
         }
 
         val coordinates = injection.coordinates
-        PacketWorkerThread.checkNotCurrent()
+        PacketReaderThread.checkNotCurrent()
         ensureOpen()
 
         val id = coordinates.injectableID

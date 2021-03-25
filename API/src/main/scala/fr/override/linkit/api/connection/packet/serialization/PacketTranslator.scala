@@ -19,9 +19,10 @@ trait PacketTranslator {
 
     def translate(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult
 
-    def translate(bytes: Array[Byte]): (Packet, PacketCoordinates)
+    def translate(bytes: Array[Byte]): PacketDeserializationResult
 
     def updateCache(manager: SharedCacheManager): Unit
 
     val signature: Array[Byte]
+
 }

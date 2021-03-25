@@ -12,20 +12,17 @@
 
 package fr.`override`.linkit.core.local.plugin
 
+import fr.`override`.linkit.api.local.ApplicationContext
 import fr.`override`.linkit.api.local.plugin._
 import fr.`override`.linkit.api.local.system.AppException
 import fr.`override`.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 import fr.`override`.linkit.core.local.plugin.SimplePluginExtractor.{MainClassField, PropertyName}
 import fr.`override`.linkit.core.local.plugin.fragment.{LinkitPluginFragment, LinkitRemoteFragment}
+
 import java.net.URLClassLoader
 import java.nio.file.{NoSuchFileException, NotDirectoryException}
-import java.security.AccessControlContext
 import java.util.Properties
 import java.util.zip.ZipFile
-
-import fr.`override`.linkit.api.local.ApplicationContext
-import fr.`override`.linkit.api.local.concurrency.Procrastinator
-
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -63,6 +60,7 @@ class SimplePluginExtractor(context: ApplicationContext, fsa: FileSystemAdapter)
         val adapter = fsa.getAdapter(folder)
         if (adapter.notExists)
             throw new NoSuchFileException(s"$folder does not exists.")
+
         if (!adapter.isDirectory)
             throw new NotDirectoryException(s"$folder is not a directory.")
 

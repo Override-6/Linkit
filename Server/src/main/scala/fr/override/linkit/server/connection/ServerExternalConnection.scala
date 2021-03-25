@@ -20,21 +20,17 @@ import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, P
 import fr.`override`.linkit.api.connection.task.TasksHandler
 import fr.`override`.linkit.api.connection.{ConnectionException, ExternalConnection}
 import fr.`override`.linkit.api.local.concurrency.workerExecution
-import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
 import fr.`override`.linkit.api.local.system.event.EventNotifier
 import fr.`override`.linkit.core.connection.packet.fundamental.TaskInitPacket
 import fr.`override`.linkit.core.connection.packet.traffic.PacketInjections
-import fr.`override`.linkit.core.local.concurrency.{BusyWorkerPool, PacketWorkerThread}
+import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
 import fr.`override`.linkit.core.local.system.{ContextLogger, SystemOrder, SystemPacket}
 import org.jetbrains.annotations.NotNull
+
 import java.net.Socket
-
-import fr.`override`.linkit.api.connection.network.cache.HandleableSharedCache
-
 import scala.reflect.ClassTag
-import scala.util.control.NonFatal
 
-class ServerExternalConnection private(session: ConnectionSession) extends ExternalConnection {
+class ServerExternalConnection private(private[ServerExternalConnection] val session: ExternalConnectionSession) extends ExternalConnection {
 
     import session._
 
@@ -54,8 +50,7 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
             val sysChannel = session.channel
             sysChannel.sendOrder(SystemOrder.CLIENT_CLOSE, reason)
         }*/
-        ConnectionPacketWorker.close()
-
+        readThread.close()
         session.close()
 
         connectionManager.unregister(supportIdentifier)
@@ -78,7 +73,15 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
         if (alive) {
             throw ConnectionException(this, "This Connection was already used and is now definitely closed.")
         }
-        ConnectionPacketWorker.start()
+        alive = true
+        session.readThread.onPacketRead = (result, packetNumber) => {
+            val coordinates: DedicatedPacketCoordinates = result.coords match {
+                case d: DedicatedPacketCoordinates => d
+                case _ => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
+            }
+            handlePacket(result.packet, coordinates, packetNumber)
+        }
+        //Method useless but kept because services could need to be started in the future?
     }
 
     def sendPacket(packet: Packet, channelID: Int): Unit = {
@@ -106,56 +109,35 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
         session.send(bytes)
     }
 
-    object ConnectionPacketWorker extends PacketWorkerThread(boundIdentifier) {
+    @workerExecution
+    private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): Unit = {
+        if (alive)
+            return
 
-        @workerExecution
-        override protected def refresh(): Unit = {
-            try {
-                session
-                    .packetReader
-                    .nextPacket((packet, coordinates, packetNumber) => {
-                        runLater(handlePacket(packet, coordinates, packetNumber))
-                    })
-            } catch {
-                case NonFatal(e) =>
-                    e.printStackTrace()
-                    //e.printStackTrace(session.errConsole)
-                    runLater {
-                        ServerExternalConnection.this.shutdown()
-                    }
-            }
+        packet match {
+            case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
+            case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
+            case _: Packet =>
+                val injection = PacketInjections.createInjection(packet, coordinates, number)
+                serverTraffic.handleInjection(injection)
         }
-
-        @workerExecution
-        private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): Unit = {
-            if (alive)
-                return
-
-            packet match {
-                case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
-                case init: TaskInitPacket => session.tasksHandler.handlePacket(init, coordinates)
-                case _: Packet =>
-                    val injection = PacketInjections.createInjection(packet, coordinates, number)
-                    session.serverTraffic.handleInjection(injection)
-            }
-        }
+    }
 
 
-        private def handleSystemOrder(packet: SystemPacket): Unit = {
-            val orderType = packet.order
-            val reason = packet.reason.reversedPOV()
-            import SystemOrder._
-            orderType match {
-                case CLIENT_CLOSE => runLater(ServerExternalConnection.this.shutdown())
-                case SERVER_CLOSE => server.shutdown()
-                case ABORT_TASK => session.tasksHandler.skipCurrent(reason)
+    private def handleSystemOrder(packet: SystemPacket): Unit = {
+        val orderType = packet.order
+        val reason = packet.reason.reversedPOV()
+        import SystemOrder._
+        orderType match {
+            case CLIENT_CLOSE => runLater(shutdown())
+            case SERVER_CLOSE => server.shutdown()
+            case ABORT_TASK => tasksHandler.skipCurrent(reason)
 
-                case _ =>
-                    val msg = s"Could not complete order '$orderType', can't be handled by a server or unknown order"
-                    ContextLogger.error(msg)
-                //UnexpectedPacketException(s"Could not complete order '$orderType', can't be handled by a server or unknown order")
-                //.printStackTrace(getConsoleErr)
-            }
+            case _ =>
+                val msg = s"Could not complete order '$orderType', can't be handled by a server or unknown order"
+                ContextLogger.error(msg)
+            //UnexpectedPacketException(s"Could not complete order '$orderType', can't be handled by a server or unknown order")
+            //.printStackTrace(getConsoleErr)
         }
     }
 
@@ -170,7 +152,7 @@ object ServerExternalConnection {
      * @return a started ClientConnection.
      * @see [[SocketContainer]]
      * */
-    def open(@NotNull session: ConnectionSession): ServerExternalConnection = {
+    def open(@NotNull session: ExternalConnectionSession): ServerExternalConnection = {
         if (session == null) {
             throw new NullPointerException("Unable to construct ClientConnection : session cant be null")
         }

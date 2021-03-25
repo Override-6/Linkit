@@ -15,7 +15,7 @@ package fr.`override`.linkit.client.network
 import fr.`override`.linkit.api.connection.network.NetworkEntity
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic
-import fr.`override`.linkit.client.ClientConnection
+import fr.`override`.linkit.client.connection.ClientConnection
 import fr.`override`.linkit.core.connection.network.cache.SimpleSharedCacheManager
 import fr.`override`.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.`override`.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}

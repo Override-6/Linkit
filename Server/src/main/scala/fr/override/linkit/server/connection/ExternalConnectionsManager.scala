@@ -12,14 +12,13 @@
 
 package fr.`override`.linkit.server.connection
 
+import fr.`override`.linkit.api.connection.packet.serialization.PacketDeserializationResult
 import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.`override`.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.`override`.linkit.api.local.system.{JustifiedCloseable, Reason}
-import fr.`override`.linkit.core.local.concurrency.PacketWorkerThread
+import fr.`override`.linkit.core.local.concurrency.PacketReaderThread
 import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.server.ServerException
-import fr.`override`.linkit.server.config.ExternalConnectionConfiguration
-import fr.`override`.linkit.server.network.ServerSideNetwork
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -62,18 +61,22 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
      * */
     @throws[ConnectionException]("if the provided identifier is already taken")
     @throws[ServerException]("if the registered connection count exceeded configuration limit.")
-    def createConnection(identifier: String,
-                         socket: SocketContainer): Unit = {
+    def registerConnection(identifier: String,
+                           socket: SocketContainer): Unit = {
         ContextLogger.trace(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
+        //Ensure that the connection's identifier that is about to be created isn't registered yet.
         if (connections.contains(identifier))
             throw ConnectionException(connections(identifier), s"This connection identifier is taken ! ('$identifier')")
 
+        //Ensure that fixed connection limit is not reached.
         if (connections.size > maxConnection)
             throw ServerException(server, "Maximum connection limit exceeded")
 
-        //Opening ClientConnection and finalizing registration
-        val info = ConnectionSessionInfo(server, this, server.serverNetwork)
-        val connectionSession = ConnectionSession(identifier, socket, info)
+        //Opening ClientConnectionSession and finalizing registration...
+        val packetReader = new SelectivePacketReader(socket, server, this, identifier)
+        val readerThread = new PacketReaderThread(packetReader, server, identifier)
+        val info = ExternalConnectionSessionInfo(server, this, server.serverNetwork, readerThread)
+        val connectionSession = ExternalConnectionSession(identifier, socket, info)
         val connection = ServerExternalConnection.open(connectionSession)
         ContextLogger.info(s"Stage 2 completed : Connection '$identifier' created.")
         connections.put(identifier, connection)
@@ -104,7 +107,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
      * Broadcast bytes sequence to every connected clients
      * */
     def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
-        PacketWorkerThread.checkNotCurrent()
+        PacketReaderThread.checkNotCurrent()
         connections.values
             .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
             .foreach(connection => {
@@ -164,10 +167,15 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
      * @throws NoSuchConnectionException if no connection where found for this packet.
      * @param bytes the packet bytes to deflect
      * */
-    private[connection] def deflectTo(bytes: Array[Byte], target: String): Unit = {
+    private[connection] def deflect(result: PacketDeserializationResult): Unit = {
+        val target = result.coords match {
+            case e: DedicatedPacketCoordinates => e.targetID
+            case _ => throw new IllegalArgumentException("Direct packet must be provided with DedicatedPacketCoordinates")
+        }
+
         val connection = getConnection(target)
         if (connection == null)
             throw NoSuchConnectionException(s"unknown ID '$target' to deflect packet")
-        connection.send(bytes)
+        connection.send(result.bytes)
     }
 }

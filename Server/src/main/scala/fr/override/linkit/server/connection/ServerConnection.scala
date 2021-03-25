@@ -12,32 +12,27 @@
 
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.api.connection.{ConnectionContext, ConnectionInitialisationException}
+import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.Network
-import fr.`override`.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.`override`.linkit.api.connection.packet.Packet
 import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.`override`.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.`override`.linkit.api.local.concurrency.workerExecution
 import fr.`override`.linkit.api.local.system.event.EventNotifier
-import fr.`override`.linkit.core.connection.packet.fundamental.RefPacket.StringPacket
-import fr.`override`.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
+import fr.`override`.linkit.core.connection.network.cache.SimpleSharedCacheManager
+import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
-import fr.`override`.linkit.core.local.system.{ContextLogger, Rules, SystemPacketChannel}
 import fr.`override`.linkit.core.local.system.event.DefaultEventNotifier
-import fr.`override`.linkit.server.config.{AmbiguityStrategy, ExternalConnectionConfiguration, ServerConnectionConfiguration}
+import fr.`override`.linkit.core.local.system.{ContextLogger, Rules, SystemPacketChannel}
+import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.`override`.linkit.server.network.ServerSideNetwork
 import fr.`override`.linkit.server.{ServerApplication, ServerException, ServerPacketTraffic}
-import java.net.{ServerSocket, SocketException}
-
-import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
-import fr.`override`.linkit.api.local.system.security.BytesHasher
-import fr.`override`.linkit.core.connection.network.cache.SimpleSharedCacheManager
-import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
-import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 import org.jetbrains.annotations.Nullable
 
+import java.net.{ServerSocket, SocketException}
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -136,6 +131,7 @@ class ServerConnection(applicationContext: ServerApplication,
             runLater {
                 ContextLogger.trace(s"Handling client socket $clientSocket...")
                 val count = connectionsManager.countConnections
+                println(s"count = ${count}")
                 workerPool.setThreadCount(configuration.nWorkerThreadFunction(count))
                 handleSocket(socketContainer)
                 if (count != connectionsManager.countConnections) {
@@ -231,7 +227,7 @@ class ServerConnection(applicationContext: ServerApplication,
         val currentConnection = getConnection(identifier)
         //There is no currently connected connection with the same identifier on this network.
         if (currentConnection.isEmpty) {
-            connectionsManager.createConnection(identifier, socket)
+            connectionsManager.registerConnection(identifier, socket)
             val newConnection = getConnection(identifier)
 
             if (newConnection.isDefined) //if empty, the connection would be rejected.
@@ -268,7 +264,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
             case REPLACE =>
                 connectionsManager.unregister(identifier).get.shutdown()
-                connectionsManager.createConnection(identifier, socket)
+                connectionsManager.registerConnection(identifier, socket)
             //The connection initialisation packet isn't sent here because it is send into the registerConnection method.
 
             case DISCONNECT_BOTH =>

@@ -32,13 +32,10 @@ class SimplePluginLoader(context: ApplicationContext, classes: Class[_ <: Plugin
             plugin
         } catch {
             case _: NoSuchMethodException =>
-                println("A")
                 throw PluginLoadException(s"Could not load '${clazz.getSimpleName}' : empty constructor is missing !")
             case NonFatal(e) =>
-                println("B")
                 throw PluginLoadException(s"Could not load '${clazz.getSimpleName}' : ${e.getMessage}", e)
-            case e =>
-                println("qqq")
+            case e: Throwable =>
                 throw e
 
         }

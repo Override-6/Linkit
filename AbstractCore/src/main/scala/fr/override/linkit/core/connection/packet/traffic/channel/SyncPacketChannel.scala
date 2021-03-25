@@ -17,7 +17,7 @@ import fr.`override`.linkit.api.connection.packet.traffic._
 import fr.`override`.linkit.api.local.concurrency.workerExecution
 import fr.`override`.linkit.api.local.system.Reason
 import fr.`override`.linkit.core.connection.packet.traffic
-import fr.`override`.linkit.core.local.concurrency.{BusyWorkerPool, PacketWorkerThread}
+import fr.`override`.linkit.core.local.concurrency.{BusyWorkerPool, PacketReaderThread}
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
@@ -59,7 +59,7 @@ class SyncPacketChannel protected(scope: ChannelScope,
 
     override def nextPacket[P <: Packet]: P = {
         if (queue.isEmpty)
-            PacketWorkerThread.checkNotCurrent()
+            PacketReaderThread.checkNotCurrent()
 
         val packet = queue.take()
         packet.asInstanceOf[P]

@@ -12,11 +12,12 @@
 
 package fr.`override`.linkit.server.connection
 
-import fr.`override`.linkit.server.config.ExternalConnectionConfiguration
+import fr.`override`.linkit.core.local.concurrency.PacketReaderThread
 import fr.`override`.linkit.server.network.ServerSideNetwork
 
-case class ConnectionSessionInfo(server: ServerConnection,
-                                 manager: ExternalConnectionsManager,
-                                 network: ServerSideNetwork) {
+case class ExternalConnectionSessionInfo(server: ServerConnection,
+                                         manager: ExternalConnectionsManager,
+                                         network: ServerSideNetwork,
+                                         readThread: PacketReaderThread) {
 
 }

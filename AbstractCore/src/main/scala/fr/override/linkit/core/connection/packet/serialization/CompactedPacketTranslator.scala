@@ -14,10 +14,10 @@ package fr.`override`.linkit.core.connection.packet.serialization
 
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet._
-import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
+import fr.`override`.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketSerializationResult, PacketTranslator}
 import fr.`override`.linkit.api.local.system.security.BytesHasher
-import fr.`override`.linkit.core.connection.packet.serialization.CachedObjectSerializer
 import fr.`override`.linkit.core.connection.network.cache.collection.SharedCollection
+import fr.`override`.linkit.core.connection.packet.serialization.CachedObjectSerializer
 import fr.`override`.linkit.core.local.system.ContextLogger
 import org.jetbrains.annotations.Nullable
 
@@ -30,9 +30,9 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
         result
     }
 
-    override def translate(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
+    override def translate(bytes: Array[Byte]): PacketDeserializationResult = {
         securityManager.deHashBytes(bytes)
-        SmartSerializer.deserialize(bytes).swap
+        SmartSerializer.deserialize(bytes)
     }
 
     override val signature: Array[Byte] = new Array(3)
@@ -63,38 +63,32 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
             }
             try {
                 //ContextLogger.debug(s"Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
-                val bytes = serializer.serialize(Array(coordinates, packet))
-                PacketSerializationResult(packet, coordinates, serializer, bytes)
+                PacketSerializationResult(packet, coordinates, serializer)
             } catch {
                 case NonFatal(e) =>
                     throw PacketException(s"Could not serialize packet and coordinates $packet, $coordinates.", e)
             }
         }
 
-        def deserialize(bytes: Array[Byte]): (PacketCoordinates, Packet) = {
-            val serializer = if (rawSerializer.isSameSignature(bytes)) {
-                rawSerializer
-            } else if (!initialised) {
-                throw new IllegalStateException("Received cached serialisation signature but this packet translator is not ready to handle it.")
-            } else {
+        def deserialize(bytes: Array[Byte]): PacketDeserializationResult = {
+            val serializer = if (cachedSerializer.isSameSignature(bytes)) {
+                if (!initialised) {
+                    throw new IllegalStateException("Received cached serializer signature but this packet translator is not ready to handle it.")
+                }
                 cachedSerializer
+            } else if (rawSerializer.isSameSignature(bytes)) {
+                cachedSerializer
+            } else {
+                throw new IllegalStateException("Received unknown serializer signature.")
             }
-            val array = try {
-                serializer.deserializeAll(bytes)
-            } catch {
-                case NonFatal(e) =>
-                    throw PacketException(s"Could not deserialize bytes ${new String(bytes)} to packet.", e)
-
-            }
-            //println(s"Deserialized ${array.mkString("Array(", ", ", ")")}")
-            (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
+            PacketDeserializationResult(serializer, bytes)
         }
 
         def updateCache(cache: SharedCacheManager): Unit = {
             cachedSerializer = new CachedObjectSerializer(cache)
             cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(ownerIdentifier)
-            cachedSerializerWhitelist.addListener((_,_,_) => ContextLogger.debug(s"Whitelist : $cachedSerializerWhitelist"))
+            cachedSerializerWhitelist.addListener((_, _, _) => ContextLogger.debug(s"Whitelist : $cachedSerializerWhitelist"))
         }
 
         def initialised: Boolean = cachedSerializerWhitelist != null
