@@ -25,9 +25,9 @@ abstract class ClientConnectionConfigBuilder {
     var socketFactory: InetSocketAddress => Socket = s => new Socket(s.getAddress, s.getPort)
     var configName: String = "simple-config"
     var hasher: BytesHasher = BytesHasher.inactive
-    var identifier: String
-    var translator: PacketTranslator = new CompactedPacketTranslator(identifier, hasher)
-    var remoteAddress: InetSocketAddress
+    val identifier: String
+    lazy val translator: PacketTranslator = new CompactedPacketTranslator(identifier, hasher)
+    val remoteAddress: InetSocketAddress
 
 
     /**

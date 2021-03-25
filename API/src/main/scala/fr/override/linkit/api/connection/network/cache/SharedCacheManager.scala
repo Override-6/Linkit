@@ -28,5 +28,6 @@ trait SharedCacheManager extends Updatable {
     def apply[A <: Serializable](key: Long): A
 
     def get[A <: HandleableSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A
+    def getUpdated[A <: HandleableSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A
 
 }

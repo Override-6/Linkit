@@ -22,7 +22,7 @@ class SocketPacketWriter(socket: DynamicSocket,
 
     override val traffic: PacketTraffic = info.traffic
     override val serverIdentifier: String = traffic.serverIdentifier
-    override val ownerID: String = traffic.supportIdentifier
+    override val supportIdentifier: String = traffic.supportIdentifier
     override val identifier: Int = info.identifier
 
     override def writePacket(packet: Packet, targetIDs: String*): Unit = {
@@ -30,17 +30,17 @@ class SocketPacketWriter(socket: DynamicSocket,
 
         val coords = if (targetIDs.length == 1) {
             val target = targetIDs.head
-            val dedicated = DedicatedPacketCoordinates(identifier, targetIDs(0), ownerID)
-            if (target == serverIdentifier) {
+            val dedicated = DedicatedPacketCoordinates(identifier, targetIDs(0), supportIdentifier)
+            if (target == supportIdentifier) {
                 traffic.handleInjection(PacketInjections.unhandled(dedicated, packet))
                 return
             }
             dedicated
         } else {
-            if (targetIDs.contains(serverIdentifier))
-                traffic.handleInjection(PacketInjections.unhandled(DedicatedPacketCoordinates(identifier, serverIdentifier, ownerID), packet))
+            if (targetIDs.contains(supportIdentifier))
+                traffic.handleInjection(PacketInjections.unhandled(DedicatedPacketCoordinates(identifier, serverIdentifier, supportIdentifier), packet))
 
-            BroadcastPacketCoordinates(identifier, ownerID, false, targetIDs.filter(_ != serverIdentifier): _*)
+            BroadcastPacketCoordinates(identifier, supportIdentifier, false, targetIDs.filter(_ != supportIdentifier): _*)
         }
 
         socket.write(translator.translate(transformedPacket, coords).writableBytes)
@@ -48,7 +48,7 @@ class SocketPacketWriter(socket: DynamicSocket,
 
     override def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit = {
         val transformedPacket = info.transform(packet)
-        val coords = BroadcastPacketCoordinates(identifier, ownerID, true, discardedIDs: _*)
+        val coords = BroadcastPacketCoordinates(identifier, supportIdentifier, true, discardedIDs: _*)
 
         socket.write(translator.translate(transformedPacket, coords).writableBytes)
     }

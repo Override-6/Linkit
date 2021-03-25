@@ -19,7 +19,9 @@ import java.net.InetSocketAddress
 import java.nio.file.Paths
 import java.util.Scanner
 
+import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.`override`.linkit.client.config.schematic.ScalaClientAppSchematic
+import fr.`override`.linkit.core.connection.packet.serialization.CompactedPacketTranslator
 import fr.`override`.linkit.core.local.system.ContextLogger
 
 object ClientLauncher {
@@ -61,8 +63,8 @@ object ClientLauncher {
             loadSchematic = new ScalaClientAppSchematic {
                 clients += new ClientConnectionConfigBuilder {
                     pluginFolder = mainPluginFolder
-                    override var identifier: String = identifier0
-                    override var remoteAddress: InetSocketAddress = address
+                    override val identifier: String = identifier0
+                    override val remoteAddress: InetSocketAddress = address
                 }
             }
         }

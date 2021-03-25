@@ -45,7 +45,6 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
             return connectionEntity
         }
 
-        println(s"Creating entity $identifier")
         val channel = communicator.subInjectable(Array(identifier), CommunicationPacketChannel.providable, true)
         val ent = createRelayEntity(identifier, channel)
         ent

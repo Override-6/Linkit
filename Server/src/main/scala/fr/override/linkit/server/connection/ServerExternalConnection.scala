@@ -83,7 +83,7 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
 
     def sendPacket(packet: Packet, channelID: Int): Unit = {
         runLater {
-            val coords = DedicatedPacketCoordinates(channelID, supportIdentifier, server.supportIdentifier)
+            val coords = DedicatedPacketCoordinates(channelID, boundIdentifier, server.supportIdentifier)
             val result = translator.translate(packet, coords)
             session.send(result)
         }
@@ -106,7 +106,7 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
         session.send(bytes)
     }
 
-    object ConnectionPacketWorker extends PacketWorkerThread {
+    object ConnectionPacketWorker extends PacketWorkerThread(boundIdentifier) {
 
         @workerExecution
         override protected def refresh(): Unit = {

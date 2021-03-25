@@ -22,7 +22,7 @@ import fr.`override`.linkit.client.config.{ClientApplicationConfiguration, Clien
 import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
 import fr.`override`.linkit.core.local.plugin.LinkitPluginManager
-import fr.`override`.linkit.core.local.system.ContextLogger
+import fr.`override`.linkit.core.local.system.{ContextLogger, Rules}
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
@@ -90,7 +90,13 @@ class ClientApplication private(override val configuration: ClientApplicationCon
     @throws[ConnectionInitialisationException]("If something went wrong during the connection's opening")
     @workerExecution
     def newConnection(config: ClientConnectionConfiguration): ExternalConnection = {
-        ContextLogger.info(s"Creating connection to address '${config.remoteAddress}'")
+        workerPool.checkCurrentThreadOwned("Connection creation must be executed by the client application's thread pool")
+
+        val identifier = config.identifier
+  //      if (!Rules.IdentifierPattern.matcher(identifier).matches())
+//            throw new ConnectionInitialisationException("Provided identifier does not matches Client's rules.")
+
+        ContextLogger.info(s"Creating connection with address '${config.remoteAddress}'")
         val address = config.remoteAddress
         val dynamicSocket = new ClientDynamicSocket(address, config.socketFactory)
         dynamicSocket.reconnectionPeriod = config.reconnectionMillis
@@ -109,7 +115,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
         connectionCache.put(serverIdentifier, connection)
         connectionCache.put(port, connection)
-
+        ContextLogger.info(s"Connection Sucessfully bound to $address ($serverIdentifier)")
         connection
     }
 

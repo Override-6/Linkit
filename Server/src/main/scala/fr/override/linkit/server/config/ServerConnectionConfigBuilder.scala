@@ -26,7 +26,7 @@ abstract class ServerConnectionConfigBuilder {
     var hasher: BytesHasher = BytesHasher.inactive
     val identifier: String
     val port: Int
-    var translator: PacketTranslator = new CompactedPacketTranslator(identifier, hasher)
+    lazy val translator: PacketTranslator = new CompactedPacketTranslator(identifier, hasher)
     var identifierAmbiguityStrategy: AmbiguityStrategy = AmbiguityStrategy.REJECT_NEW
 
     def build(): ServerConnectionConfiguration = {

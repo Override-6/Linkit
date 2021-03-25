@@ -44,10 +44,10 @@ class ClientConnection private(socket: DynamicSocket,
                                serverIdentifier: String,
                                val configuration: ConnectionConfiguration) extends ExternalConnection {
 
-    start() //Weird
     override val supportIdentifier: String = configuration.identifier
+    start() //Weird
     override val boundIdentifier: String = serverIdentifier
-    override val translator: PacketTranslator = new CompactedPacketTranslator(supportIdentifier, configuration.hasher)
+    override val translator: PacketTranslator = configuration.translator
     override val traffic: PacketTraffic = new SocketPacketTraffic(socket, translator, supportIdentifier, serverIdentifier)
     private val sideNetwork: ClientSideNetwork = initNetwork
     override val network: Network = sideNetwork
@@ -109,8 +109,10 @@ class ClientConnection private(socket: DynamicSocket,
     private def initNetwork: ClientSideNetwork = {
         if (network != null)
             throw new IllegalStateException("Network is already initialized !")
-        val globalCache = SimpleSharedCacheManager.get(supportIdentifier, supportIdentifier)(traffic)
+
+        val globalCache = SimpleSharedCacheManager.get("Global Cache", serverIdentifier)(traffic)
         translator.updateCache(globalCache)
+        ContextLogger.info(s"$boundIdentifier: Stage 2 completed : Main cache manager created.")
         new ClientSideNetwork(this, globalCache)
     }
 
@@ -146,8 +148,7 @@ class ClientConnection private(socket: DynamicSocket,
         }
     }
 
-    private object PointPacketWorkerThread extends PacketWorkerThread() {
-        setName(s"$supportIdentifier's Read Thread")
+    private object PointPacketWorkerThread extends PacketWorkerThread(supportIdentifier) {
         private val packetReader = new PacketReader(socket, configuration.hasher)
         @volatile private var packetsReceived = 0
 
@@ -177,8 +178,7 @@ class ClientConnection private(socket: DynamicSocket,
             if (bytes == null)
                 return
             //NETWORK-DEBUG-MARK
-            val preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
-            ContextLogger.debug(s"Received : $preview (l: ${bytes.length})")
+            ContextLogger.network(s"Received : ", bytes)
             val packetNumber = packetsReceived + 1
             packetsReceived += 1
 
@@ -227,6 +227,9 @@ object ClientConnection {
         }
         val serverIdentifier = new String(packetReader.readNextPacketBytes())
         socket.identifier = serverIdentifier
-        new ClientConnection(socket, context, serverIdentifier, configuration)
+        ContextLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
+        val connection = new ClientConnection(socket, context, serverIdentifier, configuration)
+        ContextLogger.info(s"$identifier: Stage 3 completed : Connection instance created.")
+        connection
     }
 }

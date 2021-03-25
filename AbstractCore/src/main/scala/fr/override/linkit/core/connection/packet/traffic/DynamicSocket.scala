@@ -45,8 +45,8 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
             totalWriteTime += t1 - t0
             //NETWORK-DEBUG-MARK
-            val preview = new String(buff.take(1000)).replace('\n', ' ').replace('\r', ' ')
-            ContextLogger.debug(s"Written ($boundIdentifier) : $preview (l: ${buff.length}) totalWriteTime: $totalWriteTime")
+            //Thread.dumpStack()
+            ContextLogger.network(s"Written ($boundIdentifier) : ", buff)
         } catch {
             case e@(_: ConnectException | _: IOException) =>
 

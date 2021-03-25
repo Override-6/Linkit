@@ -38,7 +38,7 @@ class ConnectionPacketReader(socket: DynamicSocket,
                 val msg =
                     if (identifier == null) "socket connection reset while initialising connection."
                     else s"client '$identifier' disconnected."
-                Console.err.println(msg)
+                ContextLogger.error(msg)
         }
     }
 
@@ -49,8 +49,8 @@ class ConnectionPacketReader(socket: DynamicSocket,
         }
 
         //NETWORK-DEBUG-MARK
-        val preview = new String(bytes.take(1000)).replace('\n', ' ').replace('\r', ' ')
-        ContextLogger.debug(s"Received ($identifier): $preview (l: ${bytes.length})")
+        ContextLogger.network(s"Received ($identifier): ", bytes)
+
         concernedPacketsReceived += 1 //let's suppose that the received packet is sent to the server.
         val packetNumber = concernedPacketsReceived
         server.runLater {

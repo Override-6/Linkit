@@ -12,6 +12,8 @@
 
 package fr.`override`.linkit.server
 
+import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
+import fr.`override`.linkit.core.connection.packet.serialization.CompactedPacketTranslator
 import fr.`override`.linkit.core.local.system.ContextLogger
 import fr.`override`.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
@@ -44,7 +46,6 @@ object ServerLauncher {
         } else {
             args(index + 1)
         }
-
     }
 
 }

@@ -20,17 +20,12 @@ import fr.`override`.linkit.core.connection.network.cache.{SimpleSharedCacheMana
 import fr.`override`.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
 import fr.`override`.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.server.connection.{ServerConnection, ServerExternalConnection}
-import fr.`override`.linkit.server.network.ServerSideNetwork.defaultCache
 
 import java.sql.Timestamp
 
-class ServerSideNetwork private(serverConnection: ServerConnection,
-                                globalCache: SharedCacheManager)(implicit traffic: PacketTraffic)
-        extends AbstractNetwork(serverConnection, globalCache) {
-
-    def this(server: ServerConnection, traffic: PacketTraffic) = {
-        this(server, defaultCache(server, traffic))(traffic)
-    }
+class ServerSideNetwork(serverConnection: ServerConnection,
+                        globalCache: SharedCacheManager)(implicit traffic: PacketTraffic)
+    extends AbstractNetwork(serverConnection, globalCache) {
 
     override val serverIdentifier: String = serverConnection.supportIdentifier
 
@@ -46,16 +41,16 @@ class ServerSideNetwork private(serverConnection: ServerConnection,
 
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
-                //.addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
-                .add(serverIdentifier)
-                .flush()
-                .mapped(createEntity)
-                .addListener(handleTraffic)
+            //.addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
+            .add(serverIdentifier)
+            .flush()
+            .mapped(createEntity)
+            .addListener(handleTraffic)
     }
     connectionEntity
-            .cache
-            .get(3, SharedInstance[ExternalConnectionState])
-            .set(ExternalConnectionState.CONNECTED) //technically always connected
+        .cache
+        .get(3, SharedInstance[ExternalConnectionState])
+        .set(ExternalConnectionState.CONNECTED) //technically always connected
 
     override protected def createEntity(identifier: String): NetworkEntity = {
         //TODO Create remote breakpoints
@@ -69,11 +64,11 @@ class ServerSideNetwork private(serverConnection: ServerConnection,
 
     def removeEntity(identifier: String): Unit = {
         getEntity(identifier)
-                .foreach(entity => {
-                    if (entity.getConnectionState != ExternalConnectionState.CLOSED)
-                        throw new IllegalStateException(s"Could not remove entity '$identifier' from network as long as it still open")
-                    sharedIdentifiers.remove(identifier)
-                })
+            .foreach(entity => {
+                if (entity.getConnectionState != ExternalConnectionState.CLOSED)
+                    throw new IllegalStateException(s"Could not remove entity '$identifier' from network as long as it still open")
+                sharedIdentifiers.remove(identifier)
+            })
     }
 
     private[server] def addEntity(connection: ServerExternalConnection): Unit = {
@@ -94,11 +89,5 @@ class ServerSideNetwork private(serverConnection: ServerConnection,
         }
         //server.eventNotifier.notifyEvent(server.networkHooks, event)
         */
-    }
-}
-
-object ServerSideNetwork {
-    private def defaultCache(serverConnection: ServerConnection, traffic: PacketTraffic): SharedCacheManager = {
-        SimpleSharedCacheManager.get("Global Shared Cache", serverConnection.supportIdentifier)(traffic)
     }
 }

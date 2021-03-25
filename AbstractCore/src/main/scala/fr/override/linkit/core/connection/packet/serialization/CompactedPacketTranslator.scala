@@ -12,19 +12,18 @@
 
 package fr.`override`.linkit.core.connection.packet.serialization
 
-import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet._
 import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.`override`.linkit.api.local.system.security.BytesHasher
 import fr.`override`.linkit.core.connection.packet.serialization.CachedObjectSerializer
 import fr.`override`.linkit.core.connection.network.cache.collection.SharedCollection
+import fr.`override`.linkit.core.local.system.ContextLogger
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
 
 class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesHasher) extends PacketTranslator { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
-
     override def translate(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
         val result = SmartSerializer.serialize(packet, coordinates)
         securityManager.hashBytes(result.bytes)
@@ -38,9 +37,9 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
 
     override val signature: Array[Byte] = new Array(3)
 
-    def updateCache(cache: SharedCacheManager): Unit = {
+    def updateCache(manager: SharedCacheManager): Unit = {
         //return
-        SmartSerializer.updateCache(cache)
+        SmartSerializer.updateCache(manager)
     }
 
     def blackListFromCachedSerializer(target: String): Unit = {
@@ -63,7 +62,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
                 rawSerializer
             }
             try {
-                //println(s"Serializing $packet, $coordinates in thread ${Thread.currentThread()} with serializer ${serializer.getClass.getSimpleName}")
+                //ContextLogger.debug(s"Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
                 val bytes = serializer.serialize(Array(coordinates, packet))
                 PacketSerializationResult(packet, coordinates, serializer, bytes)
             } catch {
@@ -95,6 +94,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
             cachedSerializer = new CachedObjectSerializer(cache)
             cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(ownerIdentifier)
+            cachedSerializerWhitelist.addListener((_,_,_) => ContextLogger.debug(s"Whitelist : $cachedSerializerWhitelist"))
         }
 
         def initialised: Boolean = cachedSerializerWhitelist != null

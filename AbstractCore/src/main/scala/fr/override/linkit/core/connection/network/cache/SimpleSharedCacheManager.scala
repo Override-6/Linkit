@@ -62,15 +62,20 @@ class SimpleSharedCacheManager(override val family: String,
     override def get[A <: HandleableSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
         LocalCacheHandler
             .findCache[A](cacheID)
-            .fold {
+            .getOrElse {
                 println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
                 val baseContent = retrieveBaseContent(cacheID)
                 println(s"CONTENT RECEIVED (${baseContent.mkString("Array(", ", ", ")")}) FOR CACHE $cacheID")
                 val sharedCache = factory.createNew(this, cacheID, baseContent, communicator)
                 LocalCacheHandler.register(cacheID, sharedCache)
                 sharedCache
-            }(_.update())
+            }
     }
+
+    override def getUpdated[A <: HandleableSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
+        get(cacheID, factory).update()
+    }
+
 
     def forget(cacheID: Long): Unit = {
         LocalCacheHandler.unregister(cacheID)

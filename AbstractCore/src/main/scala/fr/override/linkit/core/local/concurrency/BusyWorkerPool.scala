@@ -115,7 +115,7 @@ class BusyWorkerPool(val nThreads: Int, name: String) extends AutoCloseable with
             } catch {
                 case NonFatal(e) => e.printStackTrace()
                 case e if currentTaskExecutionDepth == 0 =>
-                    ContextLogger.fatal(s"Catched fatal exception in thread pool '$name'")
+                    ContextLogger.fatal(s"Caught fatal exception in thread pool '$name'. The JVM Will exit.")
                     e.printStackTrace()
                     System.exit(1)
             }
@@ -132,7 +132,10 @@ class BusyWorkerPool(val nThreads: Int, name: String) extends AutoCloseable with
      * */
     def busyThreads: Int = activeThreads
 
-    def setThreadCount(newCount: Int): Unit = executor.setCorePoolSize(newCount)
+    def setThreadCount(newCount: Int): Unit = {
+        executor.setCorePoolSize(newCount)
+        ContextLogger.trace(s"$name's core pool size set to $newCount")
+    }
 
     /**
      * Executes tasks contained in the workQueue

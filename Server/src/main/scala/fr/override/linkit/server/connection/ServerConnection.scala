@@ -33,7 +33,9 @@ import java.net.{ServerSocket, SocketException}
 
 import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.`override`.linkit.api.local.system.security.BytesHasher
+import fr.`override`.linkit.core.connection.network.cache.SimpleSharedCacheManager
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
+import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 import org.jetbrains.annotations.Nullable
 
 import scala.reflect.ClassTag
@@ -49,10 +51,18 @@ class ServerConnection(applicationContext: ServerApplication,
     private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
     private val systemChannel: SystemPacketChannel = new SystemPacketChannel(ChannelScope.broadcast(traffic.newWriter(SystemChannelID)))
-    private[server] val serverNetwork: ServerSideNetwork = new ServerSideNetwork(this, traffic)
-    override val network: Network = serverNetwork
-    override val eventNotifier: EventNotifier = new DefaultEventNotifier
+
+    def initNetwork(): ServerSideNetwork = {
+        val cache = SimpleSharedCacheManager.get("Global Cache", supportIdentifier)(traffic)
+        translator.updateCache(cache)
+        new ServerSideNetwork(this, cache)(traffic)
+    }
+
+
     override val translator: PacketTranslator = configuration.translator
+    private[server] val serverNetwork: ServerSideNetwork = initNetwork()
+    override val eventNotifier: EventNotifier = new DefaultEventNotifier
+    override val network: Network = serverNetwork
 
     @volatile private var alive = false
 
@@ -126,10 +136,10 @@ class ServerConnection(applicationContext: ServerApplication,
             runLater {
                 ContextLogger.trace(s"Handling client socket $clientSocket...")
                 val count = connectionsManager.countConnections
-                workerPool.setThreadCount(count)
+                workerPool.setThreadCount(configuration.nWorkerThreadFunction(count))
                 handleSocket(socketContainer)
                 if (count != connectionsManager.countConnections) {
-                    workerPool.setThreadCount(count)
+                    workerPool.setThreadCount(configuration.nWorkerThreadFunction(count))
                 }
             }
         } catch {
@@ -159,9 +169,6 @@ class ServerConnection(applicationContext: ServerApplication,
      * */
     private def readWelcomePacket(socket: SocketContainer): String = {
         val welcomePacketLength = socket.readInt()
-        if (welcomePacketLength > 32)
-            throw new ConnectionInitialisationException("Relay identifier exceeded maximum size limit of 32")
-
         val welcomePacket = socket.read(welcomePacketLength)
         new String(welcomePacket)
     }
@@ -180,9 +187,13 @@ class ServerConnection(applicationContext: ServerApplication,
             val hasherSignature = args(2)
 
             if (!(configuration.hasher.signature sameElements hasherSignature))
-                return WelcomePacketVerdict(identifier, false, "Hasher signatures missmatches !")
+                return WelcomePacketVerdict(identifier, false, "Hasher signatures mismatches !")
+
             if (!(translator.signature sameElements translatorSignature))
-                return WelcomePacketVerdict(identifier, false, "Translator signatures missmathes !")
+                return WelcomePacketVerdict(identifier, false, "Translator signatures mismatches !")
+
+            if (!Rules.IdentifierPattern.matcher(identifier).matches())
+                return WelcomePacketVerdict(identifier, false, "Provided identifier does not matches server's rules.")
 
             WelcomePacketVerdict(identifier, true)
         } catch {
@@ -199,7 +210,7 @@ class ServerConnection(applicationContext: ServerApplication,
             verdict.concludeRefusal(socket)
             return
         }
-
+        ContextLogger.info("Stage 1 Completed : Connection seems able to support this server configuration.")
         val identifier = verdict.identifier
         socket.identifier = identifier
         handleNewConnection(identifier, socket)
@@ -231,17 +242,18 @@ class ServerConnection(applicationContext: ServerApplication,
         handleConnectionIdAmbiguity(currentConnection.get, socket)
     }
 
-    private def handleConnectionIdAmbiguity(current: ServerExternalConnection,
+    private def handleConnectionIdAmbiguity(conflicted: ServerExternalConnection,
                                             socket: SocketContainer): Unit = {
-
-        if (!current.isConnected) {
-            current.updateSocket(socket.get)
+        val identifier = conflicted.boundIdentifier
+        if (!conflicted.isConnected) {
+            conflicted.updateSocket(socket.get)
             sendAuthorisedConnection(socket)
-            println(s"The connection of ${current.boundIdentifier} has been resumed.")
+            ContextLogger.info(s"The connection of ${conflicted.boundIdentifier} has been resumed.")
             return
         }
+        val strategy = configuration.identifierAmbiguityStrategy
+        ContextLogger.trace(s"Connection '$identifier' conflicts with socket $socket. Applying Ambiguity Strategy '$strategy'...")
 
-        val identifier = current.boundIdentifier
         val rejectMsg = s"Another relay point with id '$identifier' is currently connected on the targeted network."
         import AmbiguityStrategy._
         configuration.identifierAmbiguityStrategy match {
@@ -266,16 +278,16 @@ class ServerConnection(applicationContext: ServerApplication,
     }
 
     private[connection] def sendAuthorisedConnection(socket: DynamicSocket): Unit = {
-        socket.write(NumberSerializer.serializeInt(1) ++ Array(Rules.ConnectionAccepted))
+        socket.write(serializeInt(1) ++ Array(Rules.ConnectionAccepted))
         val bytes = supportIdentifier.getBytes()
-        socket.write(NumberSerializer.serializeInt(bytes.length) ++ bytes)
+        socket.write(serializeInt(bytes.length) ++ bytes)
     }
 
     private[connection] def sendRefusedConnection(socket: DynamicSocket, message: String): Unit = {
-        socket.write(NumberSerializer.serializeInt(1) ++ Array(Rules.ConnectionRefused))
+        socket.write(serializeInt(1) ++ Array(Rules.ConnectionRefused))
         val bytes = message.getBytes()
 
-        socket.write(NumberSerializer.serializeInt(bytes.length) ++ bytes)
+        socket.write(serializeInt(bytes.length) ++ bytes)
     }
 
     private case class WelcomePacketVerdict(@Nullable("bad-packet-format") identifier: String,
@@ -288,8 +300,9 @@ class ServerConnection(applicationContext: ServerApplication,
             } else {
                 ContextLogger.error(s"Connection $identifier has been discarded: $refusalMessage")
             }
-            socket.write(Array(Rules.ConnectionRefused))
-            socket.write(s"Connection discarded by the server: $refusalMessage".getBytes)
+            socket.write(serializeInt(1) ++ Array(Rules.ConnectionRefused))
+            val msgBytes = s"Connection discarded by the server: $refusalMessage".getBytes
+            socket.write(serializeInt(msgBytes.length) ++ msgBytes)
         }
     }
 

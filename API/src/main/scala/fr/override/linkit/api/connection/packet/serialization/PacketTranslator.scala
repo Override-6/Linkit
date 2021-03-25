@@ -12,7 +12,6 @@
 
 package fr.`override`.linkit.api.connection.packet.serialization
 
-import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 
@@ -22,7 +21,7 @@ trait PacketTranslator {
 
     def translate(bytes: Array[Byte]): (Packet, PacketCoordinates)
 
-    def updateCache(handler: SharedCacheManager): Unit
+    def updateCache(manager: SharedCacheManager): Unit
 
     val signature: Array[Byte]
 }

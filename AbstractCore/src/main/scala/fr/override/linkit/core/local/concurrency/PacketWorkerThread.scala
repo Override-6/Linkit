@@ -22,7 +22,7 @@ import scala.util.control.NonFatal
 /**
  * A simple abstract class to easily handle packet reading.
  * */
-abstract class PacketWorkerThread extends Thread(packetReaderThreadGroup, "Packet Read Worker") with JustifiedCloseable {
+abstract class PacketWorkerThread(bound: String) extends Thread(packetReaderThreadGroup, s"$bound's Read Worker") with JustifiedCloseable {
 
     private var open = true
 

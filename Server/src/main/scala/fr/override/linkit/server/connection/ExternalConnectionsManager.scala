@@ -64,7 +64,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     @throws[ServerException]("if the registered connection count exceeded configuration limit.")
     def createConnection(identifier: String,
                          socket: SocketContainer): Unit = {
-        ContextLogger.info(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
+        ContextLogger.trace(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
         if (connections.contains(identifier))
             throw ConnectionException(connections(identifier), s"This connection identifier is taken ! ('$identifier')")
 
@@ -75,19 +75,17 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         val info = ConnectionSessionInfo(server, this, server.serverNetwork)
         val connectionSession = ConnectionSession(identifier, socket, info)
         val connection = ServerExternalConnection.open(connectionSession)
+        ContextLogger.info(s"Stage 2 completed : Connection '$identifier' created.")
         connections.put(identifier, connection)
-
-        println("Sending authorisation packet...")
         server.sendAuthorisedConnection(socket)
 
         val canConnect = true //server.configuration.checkConnection(connection)
         if (canConnect) {
-            println(s"Connection of '$identifier' was successfully registered !")
+            ContextLogger.info(s"Stage 3 completed : Connection of '$identifier' was registered into connection manager")
             return
         }
 
-        val msg = "Connection rejected by security manager"
-        Console.err.println(s"Relay Connection '$identifier': " + msg)
+        ContextLogger.error(s"Security Manager discarded connection $identifier from the server.")
 
         connections.remove(identifier)
         connection.shutdown()
@@ -108,10 +106,10 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
         PacketWorkerThread.checkNotCurrent()
         connections.values
-            .filter(con => !discardedIDs.contains(con.supportIdentifier) && con.isConnected)
+            .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
             .foreach(connection => {
                 val translator = connection.translator
-                val coordinates = DedicatedPacketCoordinates(injectableID, connection.supportIdentifier, senderID)
+                val coordinates = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
                 val result = translator.translate(packet, coordinates)
                 connection.send(result)
             })
