@@ -52,7 +52,7 @@ abstract class ObjectSerializer extends Serializer {
         bytes
     }
 
-    override def deserialize(bytes: Array[Byte]): Serializable = {
+    override def deserialize(bytes: Array[Byte]): Any = {
         if (!isSameSignature(bytes))
             throw new IllegalArgumentException("Those bytes does not come from this packet serializer !")
 
@@ -63,7 +63,7 @@ abstract class ObjectSerializer extends Serializer {
         instance
     }
 
-    override def deserializeAll(bytes: Array[Byte]): Array[Serializable] = {
+    override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
         deserializeArray(bytes.drop(signature.length))
     }
 
@@ -189,7 +189,7 @@ abstract class ObjectSerializer extends Serializer {
     }
 
 
-    private def deserializeArray(bytes: Array[Byte]): Array[Serializable] = {
+    private def deserializeArray(bytes: Array[Byte]): Array[Any] = {
         //println(s"Deserializing ${new String(bytes).replace('\r', ' ')}")
         val flag = bytes(0)
         //println(s"flag = ${flag}")
@@ -229,7 +229,7 @@ abstract class ObjectSerializer extends Serializer {
                 }
 
         }
-        buff.asInstanceOf[Array[Serializable]]
+        buff
     }
 
 

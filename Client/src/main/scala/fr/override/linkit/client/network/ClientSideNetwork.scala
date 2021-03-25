@@ -16,7 +16,7 @@ import fr.`override`.linkit.api.connection.network.NetworkEntity
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.`override`.linkit.client.ClientConnection
-import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager
+import fr.`override`.linkit.core.connection.network.cache.SimpleSharedCacheManager
 import fr.`override`.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.`override`.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
 import fr.`override`.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
@@ -52,7 +52,7 @@ class ClientSideNetwork(connection: ClientConnection, globalCache: SharedCacheMa
 
     def initDefaultEntity: SelfNetworkEntity = {
         val identifier = connection.supportIdentifier
-        val sharedCache = AbstractSharedCacheManager.get(identifier, identifier)
+        val sharedCache = SimpleSharedCacheManager.get(identifier, identifier)
         new SelfNetworkEntity(connection, connection.getState, sharedCache)
     }
 

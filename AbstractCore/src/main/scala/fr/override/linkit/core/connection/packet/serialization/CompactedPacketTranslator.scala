@@ -17,18 +17,13 @@ import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet._
 import fr.`override`.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.`override`.linkit.api.local.system.security.BytesHasher
-import fr.`override`.linkit.core.connection.network.cache.collection.SharedCollection
 import fr.`override`.linkit.core.connection.packet.serialization.CachedObjectSerializer
+import fr.`override`.linkit.core.connection.network.cache.collection.SharedCollection
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
 
 class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesHasher) extends PacketTranslator { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
-
-    override def translate(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
-        securityManager.deHashBytes(bytes)
-        SmartSerializer.deserialize(bytes).swap
-    }
 
     override def translate(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
         val result = SmartSerializer.serialize(packet, coordinates)
@@ -36,11 +31,16 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
         result
     }
 
+    override def translate(bytes: Array[Byte]): (Packet, PacketCoordinates) = {
+        securityManager.deHashBytes(bytes)
+        SmartSerializer.deserialize(bytes).swap
+    }
+
     override val signature: Array[Byte] = new Array(3)
 
-    def update(connection: ConnectionContext): Unit = {
-        return
-        SmartSerializer.completeInitialisation(connection.network.globalCache)
+    def updateCache(cache: SharedCacheManager): Unit = {
+        //return
+        SmartSerializer.updateCache(cache)
     }
 
     def blackListFromCachedSerializer(target: String): Unit = {
@@ -91,10 +91,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
             (array(0).asInstanceOf[PacketCoordinates], array(1).asInstanceOf[Packet])
         }
 
-        def completeInitialisation(cache: SharedCacheManager): Unit = {
-            if (cachedSerializer != null)
-                throw new IllegalStateException("This packet translator is already fully initialised !")
-
+        def updateCache(cache: SharedCacheManager): Unit = {
             cachedSerializer = new CachedObjectSerializer(cache)
             cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(ownerIdentifier)

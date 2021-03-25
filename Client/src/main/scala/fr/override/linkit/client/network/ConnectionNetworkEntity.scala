@@ -16,7 +16,7 @@ import fr.`override`.linkit.api.connection.ConnectionContext
 import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.core.connection.network.AbstractRemoteEntity
-import fr.`override`.linkit.core.connection.network.cache.{AbstractSharedCacheManager, SharedInstance}
+import fr.`override`.linkit.core.connection.network.cache.{SimpleSharedCacheManager, SharedInstance}
 import fr.`override`.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
 
 class ConnectionNetworkEntity private(connection: ConnectionContext,
@@ -27,7 +27,7 @@ class ConnectionNetworkEntity private(connection: ConnectionContext,
     override val network: Network = connection.network
 
     def this(connection: ConnectionContext, identifier: String, communicator: CommunicationPacketChannel) = {
-        this(connection, identifier, AbstractSharedCacheManager.get(identifier, identifier)(connection.traffic))
+        this(connection, identifier, SimpleSharedCacheManager.get(identifier, identifier)(connection.traffic))
     }
 
     private val stateInstance = cache.get(3, SharedInstance[ExternalConnectionState])

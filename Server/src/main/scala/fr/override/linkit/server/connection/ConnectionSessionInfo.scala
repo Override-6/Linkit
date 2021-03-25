@@ -17,7 +17,6 @@ import fr.`override`.linkit.server.network.ServerSideNetwork
 
 case class ConnectionSessionInfo(server: ServerConnection,
                                  manager: ExternalConnectionsManager,
-                                 network: ServerSideNetwork,
-                                 configuration: ExternalConnectionConfiguration) {
+                                 network: ServerSideNetwork) {
 
 }

@@ -63,8 +63,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     @throws[ConnectionException]("if the provided identifier is already taken")
     @throws[ServerException]("if the registered connection count exceeded configuration limit.")
     def createConnection(identifier: String,
-                         socket: SocketContainer,
-                         config: ExternalConnectionConfiguration): Unit = {
+                         socket: SocketContainer): Unit = {
         ContextLogger.info(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
         if (connections.contains(identifier))
             throw ConnectionException(connections(identifier), s"This connection identifier is taken ! ('$identifier')")
@@ -73,7 +72,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
             throw ServerException(server, "Maximum connection limit exceeded")
 
         //Opening ClientConnection and finalizing registration
-        val info = ConnectionSessionInfo(server, this, server.serverNetwork, config)
+        val info = ConnectionSessionInfo(server, this, server.serverNetwork)
         val connectionSession = ConnectionSession(identifier, socket, info)
         val connection = ServerExternalConnection.open(connectionSession)
         connections.put(identifier, connection)

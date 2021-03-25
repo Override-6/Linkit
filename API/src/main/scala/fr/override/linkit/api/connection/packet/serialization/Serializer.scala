@@ -20,8 +20,8 @@ trait Serializer {
 
     def isSameSignature(bytes: Array[Byte]): Boolean
 
-    def deserialize(bytes: Array[Byte]): Serializable
+    def deserialize(bytes: Array[Byte]): Any
 
-    def deserializeAll(bytes: Array[Byte]): Array[Serializable]
+    def deserializeAll(bytes: Array[Byte]): Array[Any]
 
 }

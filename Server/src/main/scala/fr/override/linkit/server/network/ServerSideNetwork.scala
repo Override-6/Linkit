@@ -16,7 +16,7 @@ import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.`override`.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.`override`.linkit.core.connection.network.cache.{AbstractSharedCacheManager, SharedInstance}
+import fr.`override`.linkit.core.connection.network.cache.{SimpleSharedCacheManager, SharedInstance}
 import fr.`override`.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
 import fr.`override`.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
 import fr.`override`.linkit.server.connection.{ServerConnection, ServerExternalConnection}
@@ -35,7 +35,7 @@ class ServerSideNetwork private(serverConnection: ServerConnection,
     override val serverIdentifier: String = serverConnection.supportIdentifier
 
     override val connectionEntity: NetworkEntity = {
-        val selfCache = AbstractSharedCacheManager.get(serverIdentifier, serverIdentifier, ServerSharedCacheManager())
+        val selfCache = SimpleSharedCacheManager.get(serverIdentifier, serverIdentifier)
         new SelfNetworkEntity(serverConnection, ExternalConnectionState.CONNECTED, selfCache) //Server is always connected to... server !
     }
 
@@ -99,6 +99,6 @@ class ServerSideNetwork private(serverConnection: ServerConnection,
 
 object ServerSideNetwork {
     private def defaultCache(serverConnection: ServerConnection, traffic: PacketTraffic): SharedCacheManager = {
-        AbstractSharedCacheManager.get("Global Shared Cache", serverConnection.supportIdentifier, ServerSharedCacheManager())(traffic)
+        SimpleSharedCacheManager.get("Global Shared Cache", serverConnection.supportIdentifier)(traffic)
     }
 }

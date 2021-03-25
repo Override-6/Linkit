@@ -33,8 +33,7 @@ case class ConnectionSession private(boundIdentifier: String,
     val server           : ServerConnection                 = info.server
     val network          : ServerSideNetwork                    = info.network
     val connectionManager: ExternalConnectionsManager       = info.manager
-    val configuration    : ExternalConnectionConfiguration  = info.configuration
-    val translator       : PacketTranslator                 = configuration.translator
+    val translator       : PacketTranslator                 = server.translator
     val serverTraffic    : PacketTraffic                    = server.traffic
     val channel          : SystemPacketChannel              = serverTraffic.getInjectable(SystemChannelID, ChannelScope.reserved(boundIdentifier), SystemPacketChannel)
     val packetReader     : ConnectionPacketReader           = new ConnectionPacketReader(socket, server, connectionManager, boundIdentifier)

@@ -25,8 +25,9 @@ import fr.`override`.linkit.api.local.concurrency.{packetWorkerExecution, worker
 import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
 import fr.`override`.linkit.api.local.system.event.EventNotifier
 import fr.`override`.linkit.api.local.system.security.BytesHasher
+import fr.`override`.linkit.client.config.ClientConnectionConfiguration
 import fr.`override`.linkit.client.network.ClientSideNetwork
-import fr.`override`.linkit.core.connection.network.cache.AbstractSharedCacheManager
+import fr.`override`.linkit.core.connection.network.cache.SimpleSharedCacheManager
 import fr.`override`.linkit.core.connection.packet.UnexpectedPacketException
 import fr.`override`.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.core.connection.packet.serialization.{CompactedPacketTranslator, NumberSerializer}
@@ -41,8 +42,9 @@ import scala.util.control.NonFatal
 class ClientConnection private(socket: DynamicSocket,
                                appContext: ClientApplication,
                                serverIdentifier: String,
-                               override val configuration: ConnectionConfiguration) extends ExternalConnection {
+                               val configuration: ConnectionConfiguration) extends ExternalConnection {
 
+    start() //Weird
     override val supportIdentifier: String = configuration.identifier
     override val boundIdentifier: String = serverIdentifier
     override val translator: PacketTranslator = new CompactedPacketTranslator(supportIdentifier, configuration.hasher)
@@ -100,14 +102,15 @@ class ClientConnection private(socket: DynamicSocket,
             socket.write(welcomePacket) //The welcome packet will let the server continue his socket handling
             systemChannel.nextPacket[BooleanPacket]
             sideNetwork.update()
-            translator.update(this)
+            translator.updateCache(network.globalCache)
         }
     }
 
     private def initNetwork: ClientSideNetwork = {
         if (network != null)
             throw new IllegalStateException("Network is already initialized !")
-        val globalCache = AbstractSharedCacheManager.get(supportIdentifier, supportIdentifier)(traffic)
+        val globalCache = SimpleSharedCacheManager.get(supportIdentifier, supportIdentifier)(traffic)
+        translator.updateCache(globalCache)
         new ClientSideNetwork(this, globalCache)
     }
 
@@ -144,13 +147,13 @@ class ClientConnection private(socket: DynamicSocket,
     }
 
     private object PointPacketWorkerThread extends PacketWorkerThread() {
-
+        setName(s"$supportIdentifier's Read Thread")
         private val packetReader = new PacketReader(socket, configuration.hasher)
         @volatile private var packetsReceived = 0
 
         override protected def refresh(): Unit = {
             try {
-                listen()
+                readNextPacket()
             } catch {
                 case _: AsynchronousCloseException =>
                     onException("Asynchronous close.")
@@ -169,7 +172,7 @@ class ClientConnection private(socket: DynamicSocket,
             }
         }
 
-        private def listen(): Unit = {
+        private def readNextPacket(): Unit = {
             val bytes = packetReader.readNextPacketBytes()
             if (bytes == null)
                 return
@@ -213,10 +216,10 @@ object ClientConnection {
         val separator = Rules.WPArgsSeparator
 
         val bytes = iDbytes ++ separator ++ translatorSignature ++ separator ++ hasherSignature
-        val welcomePacket = NumberSerializer.serializeInt(iDbytes.length) ++ bytes
-        socket.write(bytes)
+        val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
+        socket.write(welcomePacket)
 
-        val isAccepted = packetReader.readNextPacketBytes()(1) == Rules.ConnectionAccepted
+        val isAccepted = packetReader.readNextPacketBytes()(0) == Rules.ConnectionAccepted
         if (!isAccepted) {
             val msg = new String(packetReader.readNextPacketBytes())
             val serverPort = socket.remoteSocketAddress().getPort

@@ -164,10 +164,10 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     }
 
     private def reconnect(): Unit = {
-        ContextLogger.warn(s"The connection with $boundIdentifier has been lost. Currently trying to reconnect...")
+        ContextLogger.warn(s"The connection with connection $boundIdentifier has been lost. Currently trying to reconnect...")
         SocketLocker.markAsConnecting()
         handleReconnection()
-        ContextLogger.info(s"The connection with $boundIdentifier has been reestablished.")
+        ContextLogger.info(s"The connection with connection $boundIdentifier has been reestablished.")
     }
 
     import ExternalConnectionState._
@@ -225,7 +225,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
                 ContextLogger.warn(s"The socket is currently waiting on thread '${Thread.currentThread()}' because the connection with $boundIdentifier isn't ready or is disconnected.")
                 disconnectLock.wait()
-                ContextLogger.trace(s"The connection with $boundIdentifier is now ready.")
+                ContextLogger.trace(s"The connection with connection $boundIdentifier is now ready.")
             } catch {
                 case _: InterruptedException =>
             }

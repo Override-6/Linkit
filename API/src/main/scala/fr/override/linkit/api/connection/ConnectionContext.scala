@@ -20,8 +20,6 @@ import fr.`override`.linkit.api.local.system.config.ConnectionConfiguration
 import fr.`override`.linkit.api.local.system.event.EventNotifier
 
 trait ConnectionContext extends PacketInjectableContainer with Procrastinator {
-    val configuration: ConnectionConfiguration
-
     val supportIdentifier: String
 
     def traffic: PacketTraffic

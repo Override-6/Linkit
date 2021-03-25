@@ -115,7 +115,7 @@ class BusyWorkerPool(val nThreads: Int, name: String) extends AutoCloseable with
             } catch {
                 case NonFatal(e) => e.printStackTrace()
                 case e if currentTaskExecutionDepth == 0 =>
-                    ContextLogger.error(s"Received Fatal exception in thread pool '$name'")
+                    ContextLogger.fatal(s"Catched fatal exception in thread pool '$name'")
                     e.printStackTrace()
                     System.exit(1)
             }

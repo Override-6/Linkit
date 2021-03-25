@@ -26,19 +26,21 @@ import fr.`override`.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.`override`.linkit.core.local.concurrency.BusyWorkerPool
 import fr.`override`.linkit.core.local.system.{ContextLogger, Rules, SystemPacketChannel}
 import fr.`override`.linkit.core.local.system.event.DefaultEventNotifier
-import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
+import fr.`override`.linkit.server.config.{AmbiguityStrategy, ExternalConnectionConfiguration, ServerConnectionConfiguration}
 import fr.`override`.linkit.server.network.ServerSideNetwork
 import fr.`override`.linkit.server.{ServerApplication, ServerException, ServerPacketTraffic}
 import java.net.{ServerSocket, SocketException}
 
 import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
+import fr.`override`.linkit.api.local.system.security.BytesHasher
+import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
 import org.jetbrains.annotations.Nullable
 
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class ServerConnection(applicationContext: ServerApplication,
-                       override val configuration: ServerConnectionConfiguration) extends ConnectionContext {
+                       val configuration: ServerConnectionConfiguration) extends ConnectionContext {
 
     override val supportIdentifier: String = configuration.identifier
     private val workerPool: BusyWorkerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier.toString)
@@ -170,17 +172,17 @@ class ServerConnection(applicationContext: ServerApplication,
      * */
     private def scanWelcomePacket(welcomePacket: String): WelcomePacketVerdict = {
         val args = welcomePacket.split(";")
-        println(s"args = ${args.mkString("[", ", ","]")}")
         if (args.length != Rules.WPArgsLength)
             return WelcomePacketVerdict(null, false, s"Arguments length does not conform to server's rules of ${Rules.WPArgsLength}")
         try {
             val identifier = args(0)
             val translatorSignature = args(1)
             val hasherSignature = args(2)
+
             if (!(configuration.hasher.signature sameElements hasherSignature))
-                return WelcomePacketVerdict(identifier, false, "hasher signatures missmatches !")
+                return WelcomePacketVerdict(identifier, false, "Hasher signatures missmatches !")
             if (!(translator.signature sameElements translatorSignature))
-                return WelcomePacketVerdict(identifier, false, "translator signatures missmathes !")
+                return WelcomePacketVerdict(identifier, false, "Translator signatures missmathes !")
 
             WelcomePacketVerdict(identifier, true)
         } catch {
@@ -197,10 +199,10 @@ class ServerConnection(applicationContext: ServerApplication,
             verdict.concludeRefusal(socket)
             return
         }
-        socket.write(supportIdentifier.getBytes())
+
         val identifier = verdict.identifier
         socket.identifier = identifier
-        handleRelayConnection(identifier, socket)
+        handleNewConnection(identifier, socket)
     }
 
     private def loadSocketListener(): Unit = {
@@ -208,20 +210,20 @@ class ServerConnection(applicationContext: ServerApplication,
             alive = true
             while (alive) listenSocketConnection()
         })
-        thread.setName(s"Connection Listener : ${configuration.port}")
+        thread.setName(s"Socket Listener : ${configuration.port}")
         thread.start()
     }
 
-    private def handleRelayConnection(identifier: String,
+    private def handleNewConnection(identifier: String,
                                       socket: SocketContainer): Unit = {
 
         val currentConnection = getConnection(identifier)
         //There is no currently connected connection with the same identifier on this network.
         if (currentConnection.isEmpty) {
-            connectionsManager.createConnection(identifier, socket, null) //TODO
+            connectionsManager.createConnection(identifier, socket)
             val newConnection = getConnection(identifier)
 
-            if (newConnection.isDefined) //may be empty, in this case, the connection would be rejected.
+            if (newConnection.isDefined) //if empty, the connection would be rejected.
                 serverNetwork.addEntity(newConnection.get)
             return
         }
@@ -254,7 +256,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
             case REPLACE =>
                 connectionsManager.unregister(identifier).get.shutdown()
-                connectionsManager.createConnection(identifier, socket, null)
+                connectionsManager.createConnection(identifier, socket)
             //The connection initialisation packet isn't sent here because it is send into the registerConnection method.
 
             case DISCONNECT_BOTH =>
@@ -264,12 +266,16 @@ class ServerConnection(applicationContext: ServerApplication,
     }
 
     private[connection] def sendAuthorisedConnection(socket: DynamicSocket): Unit = {
-        socket.write(Array(Rules.ConnectionAccepted))
+        socket.write(NumberSerializer.serializeInt(1) ++ Array(Rules.ConnectionAccepted))
+        val bytes = supportIdentifier.getBytes()
+        socket.write(NumberSerializer.serializeInt(bytes.length) ++ bytes)
     }
 
     private[connection] def sendRefusedConnection(socket: DynamicSocket, message: String): Unit = {
-        socket.write(Array(Rules.ConnectionRefused))
-        socket.write(message.getBytes())
+        socket.write(NumberSerializer.serializeInt(1) ++ Array(Rules.ConnectionRefused))
+        val bytes = message.getBytes()
+
+        socket.write(NumberSerializer.serializeInt(bytes.length) ++ bytes)
     }
 
     private case class WelcomePacketVerdict(@Nullable("bad-packet-format") identifier: String,

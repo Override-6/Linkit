@@ -97,13 +97,11 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         dynamicSocket.connect("UnknownServerIdentifier")
         workerPool.setThreadCount(countConnections + 1) //expand the pool for the new connection that will be opened
 
-        val connection = ClientConnection.open(dynamicSocket, this, config)
-
-        try {
-            connection.start()
+        val connection = try {
+            ClientConnection.open(dynamicSocket, this, config)
         } catch {
             case e: ConnectionException => throw e
-            case NonFatal(e) => throw ConnectionException(connection, s"Could not start connection with server $address : ${e.getMessage}", e)
+            case NonFatal(e) => throw ConnectionException(null, s"Could not open connection with server $address : ${e.getMessage}", e)
         }
 
         val serverIdentifier: String = connection.boundIdentifier

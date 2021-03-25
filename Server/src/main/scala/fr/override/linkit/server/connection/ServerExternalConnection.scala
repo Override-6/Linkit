@@ -43,10 +43,9 @@ class ServerExternalConnection private(session: ConnectionSession) extends Exter
     override val translator: PacketTranslator = session.translator
     override val eventNotifier: EventNotifier = server.eventNotifier
     override val boundIdentifier: String = session.boundIdentifier
-    override val configuration: ConnectionConfiguration = session.configuration
     override val network: Network = session.network
 
-    @volatile private var alive = true
+    @volatile private var alive = false
 
     override def shutdown(): Unit = {
         BusyWorkerPool.checkCurrentIsWorker()

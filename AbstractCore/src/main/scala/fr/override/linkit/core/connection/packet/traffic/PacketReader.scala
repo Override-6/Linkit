@@ -21,7 +21,6 @@ class PacketReader(socket: DynamicSocket, hasher: BytesHasher) {
         val nextLength = socket.readInt()
         if (nextLength == -1 || !socket.isOpen)
             return null
-
         val bytes = socket.read(nextLength)
         hasher.deHashBytes(bytes)
         bytes

@@ -9,4 +9,5 @@ object Rules {
     val WPArgsLength: Byte = 3
     val WPArgsSeparator: Array[Byte] = ";".getBytes()
 
+
 }
