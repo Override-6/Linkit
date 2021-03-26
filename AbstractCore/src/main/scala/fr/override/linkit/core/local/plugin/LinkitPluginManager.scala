@@ -12,6 +12,8 @@
 
 package fr.`override`.linkit.core.local.plugin
 
+import java.nio.file.{NoSuchFileException, NotDirectoryException}
+
 import fr.`override`.linkit.api.local.ApplicationContext
 import fr.`override`.linkit.api.local.plugin.fragment.FragmentManager
 import fr.`override`.linkit.api.local.plugin.{Plugin, PluginLoader, PluginManager}
@@ -23,31 +25,48 @@ import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) extends PluginManager {
-    private val extractor = new SimplePluginExtractor(context, fsa)
+
+    private val bridge = new PluginClassLoaderBridge
     private val plugins = ListBuffer.empty[Plugin]
+
     override val fragmentManager: FragmentManager = new SimpleFragmentManager
 
     override def load(file: String): Plugin = {
         ContextLogger.debug(s"Plugin $file is preparing to be loaded.")
-        enablePlugins(extractor.extract(file)).head
+
+        val adapter = fsa.getAdapter(file)
+
+        if (adapter.notExists)
+            throw new NoSuchFileException(file)
+
+        val classLoader = bridge.newClassLoader(Array(adapter))
+        val pluginLoader = new URLPluginLoader(context, classLoader)
+        enablePlugins(pluginLoader).head
     }
 
     override def loadAll(folder: String): Array[Plugin] = {
         ContextLogger.debug(s"Plugins into folder '$folder' are preparing to be loaded.")
-        enablePlugins(extractor.extractAll(folder))
+        val adapter = fsa.getAdapter(folder)
+        if (adapter.notExists)
+            throw new NoSuchFileException(folder)
+        if (!adapter.isDirectory)
+            throw new NotDirectoryException(folder)
+
+        val classLoader = bridge.newClassLoader(fsa.list(adapter))
+        val pluginLoader = new URLPluginLoader(context, classLoader)
+        enablePlugins(pluginLoader)
     }
 
-    override def load(clazz: Class[_ <: Plugin]): Plugin = {
-        ContextLogger.debug(s"Plugin $clazz is preparing to be loaded.")
-        enablePlugins(extractor.extract(clazz)).head
+    override def loadClass(clazz: Class[_ <: Plugin]): Plugin = {
+        loadAllClass(Array(clazz): Array[Class[_ <: Plugin]]).head
     }
 
-    override def loadAll(classes: Class[_ <: Plugin]*): Array[Plugin] = {
+    override def loadAllClass(classes: Array[Class[_ <: Plugin]]): Array[Plugin] = {
         if(classes.isEmpty)
             throw new IllegalArgumentException("Provided class array is empty.")
 
-        ContextLogger.debug(s"Plugins ${classes.mkString(", ")} are preparing to be loaded.")
-        enablePlugins(extractor.extractAll(classes: _*))
+        val pluginLoader = new DirectPluginLoader(context, classes)
+        enablePlugins(pluginLoader)
     }
 
     override def countPlugins: Int = plugins.length

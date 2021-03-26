@@ -12,11 +12,12 @@
 
 package fr.`override`.linkit.server
 
-import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
-import fr.`override`.linkit.core.connection.packet.serialization.CompactedPacketTranslator
+import fr.`override`.linkit.api.local.plugin.Plugin
 import fr.`override`.linkit.core.local.system.ContextLogger
+import fr.`override`.linkit.plugin.controller.ControllerExtension
+import fr.`override`.linkit.plugin.debug.DebugExtension
 import fr.`override`.linkit.server.config.schematic.ScalaServerAppSchematic
-import fr.`override`.linkit.server.config.{AmbiguityStrategy, ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
+import fr.`override`.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
 
 object ServerLauncher {
@@ -25,7 +26,7 @@ object ServerLauncher {
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
 
         val config = new ServerApplicationConfigBuilder {
-            pluginsFolder = userDefinedPluginFolder
+            pluginsFolder = null //userDefinedPluginFolder
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = "TestServer1"
@@ -35,10 +36,16 @@ object ServerLauncher {
                 }
             }
         }
-        val serverApplicationContext = ServerApplication.launch(config)
-        ContextLogger.trace(s"Build complete: $serverApplicationContext")
+        val serverAppContext = ServerApplication.launch(config)
+        ContextLogger.trace(s"Build complete: $serverAppContext")
+        val pluginManager = serverAppContext.pluginManager
+        pluginManager.loadAllClass(Array(
+            classOf[ControllerExtension]: Class[_ <: Plugin],
+            classOf[DebugExtension]: Class[_ <: Plugin],
+        ))
     }
 
+    //noinspection SameParameterValue
     private def getOrElse(args: Array[String], key: String, defaultValue: String): String = {
         val index = args.indexOf(key)
         if (index < 0 || index + 1 > args.length - 1) {

@@ -18,11 +18,11 @@ trait PluginManager {
 
     def load(file: String): Plugin
 
-    def load(clazz: Class[_ <: Plugin]): Plugin
+    def loadClass(clazz: Class[_ <: Plugin]): Plugin
 
     def loadAll(folder: String): Array[Plugin]
 
-    def loadAll(classes: Class[_ <: Plugin]*): Array[Plugin]
+    def loadAllClass(classes: Array[Class[_ <: Plugin]]): Array[Plugin]
 
     def countPlugins: Int
 

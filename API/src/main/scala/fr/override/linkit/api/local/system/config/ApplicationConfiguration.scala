@@ -18,7 +18,7 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 
 trait ApplicationConfiguration {
 
-    @Nullable val pluginFolder: String //can be relative or global
+    @Nullable val pluginFolder: Option[String] //can be relative or global
 
     @NotNull val fsAdapter: FileSystemAdapter
 

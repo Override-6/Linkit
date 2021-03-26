@@ -58,16 +58,16 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         val downLock = new Object
 
         listConnections.foreach((serverConnection: ServerConnection) => serverConnection.runLater {
-                try {
-                    serverConnection.shutdown()
-                } catch {
-                    case NonFatal(e) => e.printStackTrace()
-                }
-                downLock.synchronized {
-                    downCount += 1
-                    downCount.notify()
-                }
-            })
+            try {
+                serverConnection.shutdown()
+            } catch {
+                case NonFatal(e) => e.printStackTrace()
+            }
+            downLock.synchronized {
+                downCount += 1
+                downCount.notify()
+            }
+        })
         while (downCount < countConnections) downLock.synchronized {
             downLock.wait()
         }
@@ -82,12 +82,13 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             throw new AppException("Server is already started")
         }
         alive = true
-        val pluginFolder = {
-            val path = configuration.pluginFolder
-            val adapter = configuration.fsAdapter.getAdapter(path)
-            adapter.getAbsolutePath
+        val pluginFolder = configuration.pluginFolder match {
+            case Some(path) =>
+                val adapter = configuration.fsAdapter.getAdapter(path)
+                adapter.getAbsolutePath //converting to absolute path.
+            case None => null
         }
-        if (pluginFolder != null && !pluginFolder.isEmpty) {
+        if (pluginFolder != null) {
             val pluginCount = pluginManager.loadAll(pluginFolder).length
             configuration.fsAdapter.getAdapter(pluginFolder)
 
@@ -109,7 +110,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         * This method is synchronized in order to prone parallel server initializations
         * and to ensure that no server would be open during shutdown.
         * */
-        mainWorkerPool.checkCurrentThreadOwned("open server connection must be performed into Application's pool.")
+        mainWorkerPool.checkCurrentThreadOwned("Open server connection must be performed into Application's pool.")
         ensureAlive()
         if (configuration.identifier.length > Rules.MaxConnectionIDLength)
             throw new IllegalArgumentException(s"Server identifier length > ${Rules.MaxConnectionIDLength}")
@@ -123,7 +124,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
                 startLock.notify()
             }
         }
-        startLock.synchronized{
+        startLock.synchronized {
             startLock.wait()
         }
         try {

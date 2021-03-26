@@ -17,7 +17,7 @@ import fr.`override`.linkit.api.local.plugin.{Plugin, PluginLoadException, Plugi
 
 import scala.util.control.NonFatal
 
-class SimplePluginLoader(context: ApplicationContext, classes: Class[_ <: Plugin]*) extends PluginLoader {
+class DirectPluginLoader(context: ApplicationContext, classes: Array[Class[_ <: Plugin]]) extends PluginLoader {
     private var count = 0
 
     override def nextPlugin(): Plugin = {
@@ -37,14 +37,13 @@ class SimplePluginLoader(context: ApplicationContext, classes: Class[_ <: Plugin
                 throw PluginLoadException(s"Could not load '${clazz.getSimpleName}' : ${e.getMessage}", e)
             case e: Throwable =>
                 throw e
-
         }
     }
 
-    override def currentIndex(): Int = count
+    override def currentIndex: Int = count
 
     override def length: Int = classes.length
 
-    override def haveNextPlugin: Boolean = count < classes.length
+    override def haveNextPlugin: Boolean = count < length
 
 }

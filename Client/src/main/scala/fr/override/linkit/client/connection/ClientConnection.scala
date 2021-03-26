@@ -24,6 +24,7 @@ import fr.`override`.linkit.api.local.system.event.EventNotifier
 import fr.`override`.linkit.api.local.system.security.BytesHasher
 import fr.`override`.linkit.client.ClientApplication
 import fr.`override`.linkit.client.config.ClientConnectionConfiguration
+import fr.`override`.linkit.core.connection.packet.UnexpectedPacketException
 import fr.`override`.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.`override`.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.`override`.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, PacketInjections}
@@ -166,7 +167,7 @@ object ClientConnection {
         socket.write(welcomePacket)
 
         //Ensuring that the server has accepted this connection's signatures based on the previously sent welcome packet.
-        packetReader.nextPacket(assertAccepted)
+        packetReader.nextPacket(assertAccepted(socket, packetReader))
 
         //Instantiating connection instances...
         var connection: ClientConnection = null
@@ -178,15 +179,16 @@ object ClientConnection {
             val serverIdentifier = new String(result.bytes)
             socket.identifier = serverIdentifier
 
-            //Initializing instance
+            //Constructing connection instance session
             ContextLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
             val readThread = new PacketReaderThread(packetReader, context, serverIdentifier)
             val sessionInfo = ClientConnectionSessionInfo(context, configuration, readThread)
             val session = ClientConnectionSession(socket, sessionInfo, serverIdentifier)
-            //Concluding instance...
+
+            //Constructing connection instance...
+            //Stage 2 will be completed into ClientConnection constructor.
             connection = new ClientConnection(session)
             ContextLogger.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
-
         })
 
         //The server couldn't send the packet.
@@ -196,10 +198,16 @@ object ClientConnection {
         connection
     }
 
-    private def assertAccepted(result: PacketDeserializationResult, ignored: Int)(socket: DynamicSocket, reader: PacketReader): Unit = {
-        val header = result.bytes(0)
-        if (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused)
-            throw new ConnectionInitialisationException("Received unexpected welcome packet verdict format")
+    private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(result: PacketDeserializationResult, ignored: Int = 0): Unit = {
+        println("?")
+        val bytes = result.bytes
+        println("??")
+        val header = bytes(0)
+        println("WWAWWAWAWAAWAWAWAWAWA")
+        if (bytes.length != 1 || (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused))
+            throw new ConnectionInitialisationException(s"Received unexpected welcome packet verdict format (received: ${new String(bytes)}")
+        println(s"new String(bytes) = ${new String(bytes)}")
+
         val isAccepted = header == Rules.ConnectionAccepted
         if (!isAccepted) {
             reader.nextPacket((result, _) => {

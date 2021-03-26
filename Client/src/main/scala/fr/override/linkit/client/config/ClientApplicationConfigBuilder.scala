@@ -11,7 +11,7 @@ class ClientApplicationConfigBuilder {
 
     var loadSchematic: AppSchematic[ClientApplication] = new EmptySchematic()
     var nWorkerThreadFunction: Int => Int = _ * 2 + 3 //2 threads per external connection + 3 thread for application.
-    var pluginFolder: String = "/Plugins"
+    var pluginFolder: Option[String] = Some("/Plugins")
     var fsAdapter: FileSystemAdapter = JDKFileSystemAdapters.Nio
     var securityManager: ApplicationSecurityManager = ApplicationSecurityManager.none
 
@@ -21,7 +21,7 @@ class ClientApplicationConfigBuilder {
             override val loadSchematic: AppSchematic[ClientApplication] = builder.loadSchematic
             override val enableEventHandling: Boolean = builder.enableEventHandling
             override val nWorkerThreadFunction: Int => Int = builder.nWorkerThreadFunction
-            override val pluginFolder: String = builder.pluginFolder
+            override val pluginFolder: Option[String] = builder.pluginFolder
             override val fsAdapter: FileSystemAdapter = builder.fsAdapter
             override val securityManager: ApplicationSecurityManager = builder.securityManager
         }

@@ -17,7 +17,7 @@ import fr.`override`.linkit.api.local.system.fsa.FileAdapter
 import java.io._
 import java.net.URI
 
-class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) extends FileAdapter {
+case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) extends FileAdapter {
 
     override def getPath: String = file.getPath
 

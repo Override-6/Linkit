@@ -19,7 +19,7 @@ import java.net.URI
 import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
 
 
-class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) extends FileAdapter {
+case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) extends FileAdapter {
 
     override def getPath: String = path.toString
 

@@ -26,15 +26,22 @@ class DefaultPacketReader(socket: DynamicSocket,
      * @return a tuple containing the next packet with its coordinates and its local number identifier
      * */
     override def nextPacket(callback: (PacketDeserializationResult, Int) => Unit): Unit = {
+        println("Hello ?")
         val nextLength = socket.readInt()
+        println(s"nextLength = ${nextLength}")
+        println(s"socket.isOpen = ${socket.isOpen}")
         if (nextLength == -1 || !socket.isOpen)
             return
 
+        println("A")
         val bytes = hasher.deHashBytes(socket.read(nextLength))
+        println("B")
         val result = translator.translate(bytes)
+        println("C")
         packetCount += 1
         val currentPacketNumber = packetCount
-
+        println("D")
         callback(result, currentPacketNumber)
+        println("E")
     }
 }

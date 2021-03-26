@@ -17,7 +17,7 @@ trait PluginLoader {
     @throws[PluginLoadException]
     def nextPlugin(): Plugin
 
-    def currentIndex(): Int
+    def currentIndex: Int
 
     def length: Int
 
