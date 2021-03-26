@@ -5,7 +5,7 @@ plugins {
 
 apply plugin: 'scala'
 
-group 'fr.override.linkit'
+group 'fr.linkit'
 version '1.0-SNAPSHOT'
 
 repositories {

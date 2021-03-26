@@ -3,7 +3,7 @@ plugins {
     id 'scala'
 }
 
-group 'fr.override.linkit'
+group 'fr.linkit'
 
 repositories {
     mavenCentral()

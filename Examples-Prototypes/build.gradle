@@ -3,7 +3,7 @@ plugins {
     id 'scala'
 }
 
-group 'fr.override.linkit'
+group 'fr.linkit'
 version '1.0-SNAPSHOT'
 
 repositories {
@@ -14,4 +14,5 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.5'
 
+    implementation project(':AbstractCore')
 }

@@ -3,7 +3,7 @@ plugins {
     id 'scala'
 }
 
-group 'fr.override.linkit'
+group 'fr.linkit'
 version '1.0-SNAPSHOT'
 
 repositories {
@@ -21,4 +21,7 @@ dependencies {
 
     implementation project(':API')
     implementation project(':AbstractCore')
+
+    implementation project(':LinKitExtensions:DebugExtension')
+    implementation project(':LinKitExtensions:RelayController')
 }
