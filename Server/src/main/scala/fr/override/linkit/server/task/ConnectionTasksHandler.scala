@@ -25,7 +25,7 @@ class ConnectionTasksHandler(session: ExternalConnectionSession) extends TasksHa
     private val systemChannel = session.channel
     override val identifier: String = session.boundIdentifier
     private var tasksThread = new ConnectionTasksThread(identifier)
-    tasksThread.start()
+    //tasksThread.start()
 
 
     /**

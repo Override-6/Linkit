@@ -74,13 +74,14 @@ class ServerExternalConnection private(private[ServerExternalConnection] val ses
             throw ConnectionException(this, "This Connection was already used and is now definitely closed.")
         }
         alive = true
-        session.readThread.onPacketRead = (result, packetNumber) => {
+        readThread.onPacketRead = (result, packetNumber) => {
             val coordinates: DedicatedPacketCoordinates = result.coords match {
                 case d: DedicatedPacketCoordinates => d
                 case _ => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
             }
             handlePacket(result.packet, coordinates, packetNumber)
         }
+        readThread.start()
         //Method useless but kept because services could need to be started in the future?
     }
 
@@ -111,7 +112,7 @@ class ServerExternalConnection private(private[ServerExternalConnection] val ses
 
     @workerExecution
     private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): Unit = {
-        if (alive)
+        if (!alive)
             return
 
         packet match {

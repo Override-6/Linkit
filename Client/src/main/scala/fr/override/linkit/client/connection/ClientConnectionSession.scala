@@ -14,7 +14,8 @@ package fr.`override`.linkit.client.connection
 
 import fr.`override`.linkit.api.connection.ConnectionException
 import fr.`override`.linkit.api.connection.packet.serialization.PacketTranslator
-import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic
+import fr.`override`.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
+import fr.`override`.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.`override`.linkit.api.local.system.event.EventNotifier
 import fr.`override`.linkit.client.ClientApplication
 import fr.`override`.linkit.client.config.ClientConnectionConfiguration
@@ -22,7 +23,7 @@ import fr.`override`.linkit.client.network.ClientSideNetwork
 import fr.`override`.linkit.core.connection.network.cache.SimpleSharedCacheManager
 import fr.`override`.linkit.core.connection.packet.traffic.{DynamicSocket, SocketPacketTraffic}
 import fr.`override`.linkit.core.local.concurrency.PacketReaderThread
-import fr.`override`.linkit.core.local.system.ContextLogger
+import fr.`override`.linkit.core.local.system.{ContextLogger, SystemPacketChannel}
 import fr.`override`.linkit.core.local.system.event.DefaultEventNotifier
 
 case class ClientConnectionSession(socket: DynamicSocket,
@@ -36,6 +37,7 @@ case class ClientConnectionSession(socket: DynamicSocket,
     val translator       : PacketTranslator              = configuration.translator
     val traffic          : PacketTraffic                 = new SocketPacketTraffic(socket, translator, supportIdentifier, serverIdentifier)
     val eventNotifier    : EventNotifier                 = new DefaultEventNotifier
+    val systemChannel    : SystemPacketChannel           = traffic.getInjectable(SystemChannelID, ChannelScope.broadcast, SystemPacketChannel)
 
     private var sideNetwork: ClientSideNetwork = _
 
@@ -48,7 +50,7 @@ case class ClientConnectionSession(socket: DynamicSocket,
 
         val globalCache = SimpleSharedCacheManager.get("Global Cache", serverIdentifier)(traffic)
         translator.updateCache(globalCache)
-        ContextLogger.info(s"$serverIdentifier: Stage 2 completed : Main cache manager created.")
+        ContextLogger.info(s"$supportIdentifier: Stage 2 completed : Main cache manager created.")
         sideNetwork = new ClientSideNetwork(connection, globalCache)
         sideNetwork
     }

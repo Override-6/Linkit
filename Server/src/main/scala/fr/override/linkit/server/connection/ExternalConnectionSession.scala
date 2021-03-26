@@ -37,7 +37,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     val translator       : PacketTranslator                 = server.translator
     val serverTraffic    : PacketTraffic                    = server.traffic
     val channel          : SystemPacketChannel              = serverTraffic.getInjectable(SystemChannelID, ChannelScope.reserved(boundIdentifier), SystemPacketChannel)
-    val tasksHandler     : ConnectionTasksHandler           = new ConnectionTasksHandler(this)
+    val tasksHandler     : ConnectionTasksHandler           = null //new ConnectionTasksHandler(this)
 
     @workerExecution
     override def close(reason: Reason): Unit = {

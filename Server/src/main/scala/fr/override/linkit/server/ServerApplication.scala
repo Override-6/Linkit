@@ -104,7 +104,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
     }
 
     @workerExecution
-    def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = this.synchronized {
+    def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = /*this.synchronized*/ {
         /*
         * This method is synchronized in order to prone parallel server initializations
         * and to ensure that no server would be open during shutdown.

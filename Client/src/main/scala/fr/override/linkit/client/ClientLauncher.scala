@@ -61,10 +61,12 @@ object ClientLauncher {
 
         val config = new ClientApplicationConfigBuilder {
             loadSchematic = new ScalaClientAppSchematic {
-                clients += new ClientConnectionConfigBuilder {
-                    pluginFolder = mainPluginFolder
-                    override val identifier: String = identifier0
-                    override val remoteAddress: InetSocketAddress = address
+                for (n <- 0 to 50) {
+                    clients += new ClientConnectionConfigBuilder {
+                        pluginFolder = mainPluginFolder
+                        override val identifier: String = identifier0 + s"${n}"
+                        override val remoteAddress: InetSocketAddress = address
+                    }
                 }
             }
         }

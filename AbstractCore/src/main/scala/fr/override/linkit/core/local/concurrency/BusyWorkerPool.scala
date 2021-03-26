@@ -132,9 +132,9 @@ class BusyWorkerPool(val nThreads: Int, name: String) extends AutoCloseable with
     def busyThreads: Int = activeThreads
 
     def setThreadCount(newCount: Int): Unit = {
-        println(s"newCount = ${newCount}")
         executor.setCorePoolSize(newCount)
-        ContextLogger.trace(s"$name's core pool size set to $newCount")
+        executor.setMaximumPoolSize(newCount)
+        ContextLogger.trace(s"$name's core pool size is set to $newCount")
     }
 
     /**

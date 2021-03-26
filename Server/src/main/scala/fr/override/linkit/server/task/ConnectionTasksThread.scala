@@ -32,7 +32,6 @@ class ConnectionTasksThread private(ticketQueue: BlockingQueue[TaskTicket],
         setName(s"RP Task Execution ($identifier)")
     }
 
-
     override def run(): Unit = {
         open = true
         while (open) {

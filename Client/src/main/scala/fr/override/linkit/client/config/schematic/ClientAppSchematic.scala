@@ -27,7 +27,7 @@ abstract class ClientAppSchematic extends AppSchematic[ClientApplication] {
 
     @throws[ApplicationInstantiationException]
     override def setup(a: ClientApplication): Unit = {
-        for (configuration <- serverConfigs) {
+        for (configuration <- serverConfigs) a.runLater {
             try {
                 a.newConnection(configuration)
             } catch {

@@ -27,10 +27,9 @@ class DirectInjection(override val coordinates: DedicatedPacketCoordinates) exte
     private[traffic] val handlerThread = Thread.currentThread()
 
     @workerExecution
-    override def getPackets: Seq[Packet] = {
-        val packets = injections
+    override def getPackets: Seq[Packet] = injections.synchronized {
+        val packets = Array.from(injections)
             .sorted((x: (Int, Packet), y: (Int, Packet)) => x._1 - y._1)
-            .toArray
             .map(_._2)
         //println(s"DISCOVERED PACKETS ${packets.mkString("Array(", ", ", ")")} vs INJECTIONS $injections")
         PacketInjections.currentInjections.remove((injectableID, coordinates.senderID))
@@ -42,7 +41,7 @@ class DirectInjection(override val coordinates: DedicatedPacketCoordinates) exte
         Thread.currentThread() != handlerThread
     }
 
-    def addPacket(packetNumber: Int, packet: Packet): Unit = {
+    def addPacket(packetNumber: Int, packet: Packet): Unit = injections.synchronized {
         injections += ((packetNumber, packet))
     }
 }

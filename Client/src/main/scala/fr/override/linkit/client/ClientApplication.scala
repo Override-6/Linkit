@@ -101,7 +101,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         val dynamicSocket = new ClientDynamicSocket(address, config.socketFactory)
         dynamicSocket.reconnectionPeriod = config.reconnectionMillis
         dynamicSocket.connect("UnknownServerIdentifier")
-        workerPool.setThreadCount(countConnections + 1) //expand the pool for the new connection that will be opened
+        workerPool.setThreadCount(configuration.nWorkerThreadFunction(countConnections + 1)) //expand the pool for the new connection that will be opened
 
         val connection = try {
             ClientConnection.open(dynamicSocket, this, config)

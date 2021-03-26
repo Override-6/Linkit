@@ -14,9 +14,9 @@ package fr.`override`.linkit.api.connection.packet.serialization
 
 import fr.`override`.linkit.api.connection.packet.{Packet, PacketCoordinates}
 
-case class PacketSerializationResult(packet: Packet, coords: PacketCoordinates, serializer: Serializer) {
+case class PacketSerializationResult(packet: Packet, coords: PacketCoordinates, serializer: () => Serializer) {
 
-    lazy val bytes: Array[Byte] = serializer.serialize(Array(coords, packet))
+    lazy val bytes: Array[Byte] = serializer().serialize(Array(coords, packet))
 
     def writableBytes: Array[Byte] = {
         val length = bytes.length

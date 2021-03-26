@@ -46,7 +46,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     override val network: Network = session.initNetwork(this)
     override val eventNotifier: EventNotifier = session.eventNotifier
 
-    private val systemChannel: SystemPacketChannel = new SystemPacketChannel(ChannelScope.reserved(serverIdentifier)(traffic.newWriter(SystemChannelID)))
     @volatile private var alive = true
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
@@ -89,6 +88,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             }
             handlePacket(result.packet, coordinates, packetNumber)
         }
+        readThread.start()
     }
 
     @packetWorkerExecution //So the runLater must be specified in order to perform network operations
@@ -143,7 +143,9 @@ object ClientConnection {
 
     @throws[ConnectionInitialisationException]("If Something went wrong during the initialization.")
     @NotNull
-    def open(socket: ClientDynamicSocket, context: ClientApplication, configuration: ClientConnectionConfiguration): ClientConnection = {
+    def open(socket: ClientDynamicSocket,
+             context: ClientApplication,
+             configuration: ClientConnectionConfiguration): ClientConnection = {
 
         //Initializing values that will be used for packet transactions during the initialization.
         val translator = configuration.translator
@@ -176,14 +178,15 @@ object ClientConnection {
             val serverIdentifier = new String(result.bytes)
             socket.identifier = serverIdentifier
 
+            //Initializing instance
             ContextLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
             val readThread = new PacketReaderThread(packetReader, context, serverIdentifier)
             val sessionInfo = ClientConnectionSessionInfo(context, configuration, readThread)
             val session = ClientConnectionSession(socket, sessionInfo, serverIdentifier)
-            ContextLogger.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
-
             //Concluding instance...
             connection = new ClientConnection(session)
+            ContextLogger.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
+
         })
 
         //The server couldn't send the packet.

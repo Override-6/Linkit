@@ -14,7 +14,7 @@ package fr.`override`.linkit.core.connection.packet.serialization
 
 import fr.`override`.linkit.api.connection.network.cache.SharedCacheManager
 import fr.`override`.linkit.api.connection.packet._
-import fr.`override`.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketSerializationResult, PacketTranslator}
+import fr.`override`.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketSerializationResult, PacketTranslator, Serializer}
 import fr.`override`.linkit.api.local.system.security.BytesHasher
 import fr.`override`.linkit.core.connection.network.cache.collection.SharedCollection
 import fr.`override`.linkit.core.connection.packet.serialization.CachedObjectSerializer
@@ -55,7 +55,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
 
         def serialize(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
             //Thread.dumpStack()
-            val serializer = if (initialised) {
+             def serializer(): Serializer = if (initialised) {
                 val whiteListArray = cachedSerializerWhitelist.toArray
                 coordinates.determineSerializer(whiteListArray, rawSerializer, cachedSerializer)
             } else {
@@ -71,15 +71,12 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
         }
 
         def deserialize(bytes: Array[Byte]): PacketDeserializationResult = {
-            val serializer = if (cachedSerializer.isSameSignature(bytes)) {
-                if (!initialised) {
-                    throw new IllegalStateException("Received cached serializer signature but this packet translator is not ready to handle it.")
-                }
-                cachedSerializer
-            } else if (rawSerializer.isSameSignature(bytes)) {
+            def serializer(): Serializer = if (rawSerializer.isSameSignature(bytes)) {
+                rawSerializer
+            } else if (initialised && cachedSerializer.isSameSignature(bytes)) {
                 cachedSerializer
             } else {
-                throw new IllegalStateException("Received unknown serializer signature.")
+                throw new IllegalStateException("Received unknown serializer signature. (or maybe cached serializer, but this translator is unable to match it while it stands not initialized.)")
             }
             PacketDeserializationResult(serializer, bytes)
         }
@@ -88,7 +85,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
             cachedSerializer = new CachedObjectSerializer(cache)
             cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(ownerIdentifier)
-            cachedSerializerWhitelist.addListener((_, _, _) => ContextLogger.debug(s"Whitelist : $cachedSerializerWhitelist"))
+            //cachedSerializerWhitelist.addListener((_, _, _) => ContextLogger.debug(s"Whitelist : $cachedSerializerWhitelist"))
         }
 
         def initialised: Boolean = cachedSerializerWhitelist != null

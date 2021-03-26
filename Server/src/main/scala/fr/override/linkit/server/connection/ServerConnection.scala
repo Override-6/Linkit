@@ -132,10 +132,10 @@ class ServerConnection(applicationContext: ServerApplication,
                 ContextLogger.trace(s"Handling client socket $clientSocket...")
                 val count = connectionsManager.countConnections
                 println(s"count = ${count}")
-                workerPool.setThreadCount(configuration.nWorkerThreadFunction(count))
                 handleSocket(socketContainer)
-                if (count != connectionsManager.countConnections) {
-                    workerPool.setThreadCount(configuration.nWorkerThreadFunction(count))
+                val newCount = connectionsManager.countConnections
+                if (count != newCount) {
+                    workerPool.setThreadCount(configuration.nWorkerThreadFunction(newCount))
                 }
             }
         } catch {
@@ -282,7 +282,6 @@ class ServerConnection(applicationContext: ServerApplication,
     private[connection] def sendRefusedConnection(socket: DynamicSocket, message: String): Unit = {
         socket.write(serializeInt(1) ++ Array(Rules.ConnectionRefused))
         val bytes = message.getBytes()
-
         socket.write(serializeInt(bytes.length) ++ bytes)
     }
 
@@ -296,9 +295,7 @@ class ServerConnection(applicationContext: ServerApplication,
             } else {
                 ContextLogger.error(s"Connection $identifier has been discarded: $refusalMessage")
             }
-            socket.write(serializeInt(1) ++ Array(Rules.ConnectionRefused))
-            val msgBytes = s"Connection discarded by the server: $refusalMessage".getBytes
-            socket.write(serializeInt(msgBytes.length) ++ msgBytes)
+            sendRefusedConnection(socket, s"Connection discarded by the server: $refusalMessage")
         }
     }
 
