@@ -21,7 +21,6 @@ import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.core.connection.network.cache.SimpleSharedCacheManager
 import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 import fr.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.linkit.core.local.concurrency.BusyWorkerPool
@@ -45,19 +44,12 @@ class ServerConnection(applicationContext: ServerApplication,
 
     private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     override val traffic: PacketTraffic = new ServerPacketTraffic(this)
-    private val systemChannel: SystemPacketChannel = new SystemPacketChannel(ChannelScope.broadcast(traffic.newWriter(SystemChannelID)))
-
-    def initNetwork(): ServerSideNetwork = {
-        val cache = SimpleSharedCacheManager.get("Global Cache", supportIdentifier)(traffic)
-        translator.updateCache(cache)
-        new ServerSideNetwork(this, cache)(traffic)
-    }
-
 
     override val translator: PacketTranslator = configuration.translator
-    private[connection] val serverNetwork: ServerSideNetwork = initNetwork()
     override val eventNotifier: EventNotifier = new DefaultEventNotifier
+    private[connection] val serverNetwork: ServerSideNetwork = new ServerSideNetwork(this)(traffic)
     override val network: Network = serverNetwork
+    private val systemChannel: SystemPacketChannel = new SystemPacketChannel(ChannelScope.broadcast(traffic.newWriter(SystemChannelID)))
 
     @volatile private var alive = false
 
@@ -235,10 +227,8 @@ class ServerConnection(applicationContext: ServerApplication,
         if (currentConnection.isEmpty) {
             connectionsManager.registerConnection(identifier, socket)
             val newConnection = getConnection(identifier)
-            println(s"newConnection = ${newConnection}")
             if (newConnection.isDefined) //if empty, the connection would be rejected.
                 serverNetwork.addEntity(newConnection.get)
-            println("Done.")
             return
         }
 

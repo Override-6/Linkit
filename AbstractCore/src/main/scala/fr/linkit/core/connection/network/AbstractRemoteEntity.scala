@@ -18,12 +18,12 @@ import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 import java.sql.Timestamp
 
 abstract class AbstractRemoteEntity(override val identifier: String,
-                                    override val cache: SharedCacheManager) extends NetworkEntity {
+                                    override val entityCache: SharedCacheManager) extends NetworkEntity {
 
-    override def connectionDate: Timestamp = cache.getOrWait(2)
+    override def connectionDate: Timestamp = entityCache.getOrWait(2)
 
     override def update(): this.type = {
-        cache.update()
+        entityCache.update()
         this
     }
 

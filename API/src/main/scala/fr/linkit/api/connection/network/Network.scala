@@ -12,8 +12,8 @@
 
 package fr.linkit.api.connection.network
 
-import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.network.cache.SharedCacheManager
+import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 
 import java.sql.Timestamp
 
@@ -22,11 +22,11 @@ trait Network {
 
     val connectionEntity: NetworkEntity
 
-    val serverIdentifier: String
-
     val globalCache: SharedCacheManager
 
     val connection: ConnectionContext
+
+    def serverIdentifier: String
 
     def listEntities: List[NetworkEntity]
 
@@ -37,5 +37,9 @@ trait Network {
     def isConnected(identifier: String): Boolean
 
     def startUpDate: Timestamp
+
+    def newCacheManager(family: String, owner: ConnectionContext): SharedCacheManager
+
+    def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager
 
 }

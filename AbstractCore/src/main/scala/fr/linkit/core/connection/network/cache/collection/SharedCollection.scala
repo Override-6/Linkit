@@ -146,7 +146,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
         modCount += 1
-        println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
+        //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
@@ -179,7 +179,6 @@ object SharedCollection {
     def set[A <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = {
         ofInsertFilter[A]((coll, it) => {
             val b = !coll.contains(it)
-            println(s"Insert filter result : ${b} (collection: $coll, it: $it)")
             b
         })
     }

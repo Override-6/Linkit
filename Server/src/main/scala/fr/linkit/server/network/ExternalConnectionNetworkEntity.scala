@@ -15,24 +15,22 @@ package fr.linkit.server.network
 import fr.linkit.api.connection.network.cache.SharedCacheManager
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.core.connection.network.AbstractRemoteEntity
-import fr.linkit.core.connection.network.cache.{SharedInstance, SimpleSharedCacheManager}
+import fr.linkit.core.connection.network.cache.SharedInstance
 import fr.linkit.server.connection.ServerConnection
 
-class ExternalConnectionNetworkEntity private(serverConnection: ServerConnection,
-                                              identifier: String,
-                                              cache: SharedCacheManager)
-        extends AbstractRemoteEntity(identifier, cache) {
+class ExternalConnectionNetworkEntity private[network](serverConnection: ServerConnection,
+                                                       identifier: String,
+                                                       entityCache: SharedCacheManager)
+        extends AbstractRemoteEntity(identifier, entityCache) {
 
-    def this(server: ServerConnection, identifier: String) = {
-        this(server, identifier, SimpleSharedCacheManager.get(identifier, identifier)(server.traffic))
-    }
-
+    override val network: Network = serverConnection.network
     private val connection = serverConnection.getConnection(identifier).get
-    cache.get(3, SharedInstance[ExternalConnectionState])
+
+    entityCache.get(3, SharedInstance[ExternalConnectionState])
             .set(ExternalConnectionState.CONNECTED) //technically already connected
 
     override def getConnectionState: ExternalConnectionState = connection.getState
 
-    override val network: Network = serverConnection.network
     // connection.addConnectionStateListener(state => server.runLater(sharedState.set(state)))
 }
+

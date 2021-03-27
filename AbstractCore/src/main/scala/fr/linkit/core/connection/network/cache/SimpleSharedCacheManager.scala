@@ -13,20 +13,15 @@
 package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{HandleableSharedCache, SharedCacheFactory, SharedCacheManager}
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketSender, PacketSyncReceiver, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
-import fr.linkit.core.connection.network.cache.SimpleSharedCacheManager.{MockCache, RequestSender}
+import fr.linkit.core.connection.network.cache.SimpleSharedCacheManager.MockCache
 import fr.linkit.core.connection.network.cache.map.SharedMap
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
 import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
-import fr.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
+
 import java.util.NoSuchElementException
-
-import fr.linkit.core.local.system.ContextLogger
-
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
@@ -40,13 +35,9 @@ import scala.util.control.NonFatal
 // primitives integers are all converted to Long, so it would cause cast problems until the algorithm is modified)
 class SimpleSharedCacheManager(override val family: String,
                                override val ownerID: String,
-                               traffic: PacketTraffic) extends SharedCacheManager {
+                               communicator: RequestSender) extends SharedCacheManager {
 
-    protected val communicator: RequestSender =
-        traffic.getInjectable(11, ChannelScope.broadcast, new RequestSender(_))
-
-    private val sharedObjects: map.SharedMap[Long, Serializable] = init()
-    println(s"sharedObjects = $sharedObjects")
+    private lazy val sharedObjects: map.SharedMap[Long, Serializable] = init()
 
     override def post[A <: Serializable](key: Long, value: A): A = {
         sharedObjects.put(key, value)
@@ -61,68 +52,26 @@ class SimpleSharedCacheManager(override val family: String,
 
     override def get[A <: HandleableSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
         LocalCacheHandler
-            .findCache[A](cacheID)
-            .getOrElse {
-                println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
-                val baseContent = retrieveBaseContent(cacheID)
-                println(s"CONTENT RECEIVED (${baseContent.mkString("Array(", ", ", ")")}) FOR CACHE $cacheID")
-                val sharedCache = factory.createNew(this, cacheID, baseContent, communicator)
-                LocalCacheHandler.register(cacheID, sharedCache)
-                sharedCache
-            }
+                .findCache[A](cacheID)
+                .getOrElse {
+                    println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
+                    val baseContent = retrieveBaseContent(cacheID)
+                    println(s"CONTENT RECEIVED (${baseContent.mkString("Array(", ", ", ")")}) FOR CACHE $cacheID")
+                    val sharedCache = factory.createNew(this, cacheID, baseContent, communicator)
+                    LocalCacheHandler.register(cacheID, sharedCache)
+                    sharedCache
+                }
     }
 
     override def getUpdated[A <: HandleableSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
         get(cacheID, factory).update()
     }
 
-
     def forget(cacheID: Long): Unit = {
         LocalCacheHandler.unregister(cacheID)
     }
 
-    override def update(): this.type = {
-        LocalCacheHandler.updateAll()
-        //sharedObjects will be updated by LocalCacheHandler.updateAll
-        this
-    }
-
-    private def retrieveBaseContent(cacheID: Long): Array[Any] = {
-        println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
-        communicator.sendRequest(WrappedPacket(family, LongPacket(cacheID)), ownerID)
-        println(s"request sent !")
-        val content = communicator.nextResponse[ArrayObjectPacket].value //The request will return the cache content
-        println(s"Content received ! (${content.mkString("Array(", ", ", ")")})")
-        content.asInstanceOf[Array[Any]]
-    }
-
-    private def init(): SharedMap[Long, Serializable] = {
-        if (this.sharedObjects != null)
-            throw new IllegalStateException("This SharedCacheManager is already initialised !")
-
-        initPacketHandling()
-
-        val content = retrieveBaseContent(1)
-
-        val cacheOwners = SharedMap[Long, Serializable].createNew(this, 1, content, communicator)
-        LocalCacheHandler.register(1L, cacheOwners)
-        cacheOwners
-            .foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
-
-        cacheOwners
-    }
-
-    private def initPacketHandling(): Unit = {
-        communicator.addRequestListener((packet, coords) => {
-            packet match {
-                case WrappedPacket(tag, subPacket) =>
-                    if (tag == family)
-                        handlePacket(subPacket, coords)
-            }
-        })
-    }
-
-    private def handlePacket(packet: Packet, coords: DedicatedPacketCoordinates): Unit = {
+    def handlePacket(packet: Packet, coords: DedicatedPacketCoordinates): Unit = {
         println(s"HANDLING PACKET $packet, $coords")
 
         packet match {
@@ -139,6 +88,31 @@ class SimpleSharedCacheManager(override val family: String,
         }
     }
 
+    override def update(): this.type = {
+        LocalCacheHandler.updateAll()
+        //sharedObjects will be updated by LocalCacheHandler.updateAll call
+        this
+    }
+
+    private def retrieveBaseContent(cacheID: Long): Array[Any] = {
+        println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
+        communicator.sendRequest(WrappedPacket(family, LongPacket(cacheID)), ownerID)
+        println(s"request sent !")
+        val content = communicator.nextResponse[ArrayObjectPacket].value //The request will return the cache content
+        println(s"Content received ! (${content.mkString("Array(", ", ", ")")})")
+        content.asInstanceOf[Array[Any]]
+    }
+
+    private def init(): SharedMap[Long, Serializable] = {
+        val content = retrieveBaseContent(1)
+
+        val sharedObjects = SharedMap[Long, Serializable].createNew(this, 1, content, communicator)
+        LocalCacheHandler.register(1L, sharedObjects)
+        sharedObjects.foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
+        println("Shared objects : " + sharedObjects)
+        sharedObjects
+    }
+
     protected object LocalCacheHandler {
 
         private val localRegisteredCaches = mutable.Map.empty[Long, HandleableSharedCache]
@@ -146,7 +120,7 @@ class SimpleSharedCacheManager(override val family: String,
         def updateAll(): Unit = {
             println(s"updating cache ($localRegisteredCaches)...")
             localRegisteredCaches
-                .foreach(_._2.update())
+                    .foreach(_._2.update())
             println(s"cache updated ! ($localRegisteredCaches)")
         }
 
@@ -199,7 +173,7 @@ class SimpleSharedCacheManager(override val family: String,
 
             if (opt.exists(!_.isInstanceOf[A])) {
                 val requestedClass = classTag[A].runtimeClass
-                val presentClass = opt.get.getClass
+                val presentClass   = opt.get.getClass
                 throw new IllegalArgumentException(s"Attempted to open a cache of type '$cacheID' while a cache with the same id is already registered, but does not have the same type. ($presentClass vs $requestedClass)")
             }
 
@@ -211,45 +185,12 @@ class SimpleSharedCacheManager(override val family: String,
     }
 
     private def println(msg: String): Unit = {
-        ContextLogger.trace(s"<$family, $ownerID> $msg")
+        //ContextLogger.trace(s"<$family, $ownerID> $msg")
     }
 
 }
 
 object SimpleSharedCacheManager {
-
-    private val caches = mutable.HashMap.empty[(String, PacketTraffic), SharedCacheManager]
-    private val unhandledPacketCache = mutable.HashMap.empty[(String, PacketTraffic), ListBuffer[Packet]]
-
-    def handleUnfoundPacket()
-
-    def get(family: String, ownerIdentifier: String)
-           (implicit traffic: PacketTraffic): SharedCacheManager = {
-
-        caches.get((family, traffic))
-            .fold {
-                //println(s"--> CREATING SHARED CACHE HANDLER <$family>")
-                val cache = new SimpleSharedCacheManager(family, ownerIdentifier, traffic)
-                //println(s"--> SHARED CACHE HANDLER CREATED <$family>")
-                caches.put((family, traffic), cache)
-                cache: SharedCacheManager
-            }(cache => {
-                //println(s"--> UPDATING CACHE <$family> INSTEAD OF CREATING IT.")
-                cache.update()
-                //println(s"--> UPDATED CACHE <$family> INSTEAD OF CREATING IT.")
-                cache
-            })
-    }
-
-    private[SimpleSharedCacheManager] class RequestSender(scope: ChannelScope) extends CommunicationPacketChannel(scope, true) with PacketSender with PacketSyncReceiver {
-        override def send(packet: Packet): Unit = sendRequest(packet)
-
-        override def sendTo(packet: Packet, targets: String*): Unit = sendRequest(packet, targets: _*)
-
-        override def nextPacket[P <: Packet]: P = nextResponse
-
-        override def haveMorePackets: Boolean = false
-    }
 
     object MockCache extends AbstractSharedCache[Nothing](null, -1, null) {
 

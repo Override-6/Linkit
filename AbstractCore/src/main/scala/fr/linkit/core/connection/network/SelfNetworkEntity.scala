@@ -20,7 +20,7 @@ import java.sql.Timestamp
 
 class SelfNetworkEntity(connection: ConnectionContext,
                         state: => ExternalConnectionState,
-                        override val cache: SharedCacheManager) extends NetworkEntity {
+                        override val entityCache: SharedCacheManager) extends NetworkEntity {
 
     override val identifier: String = connection.supportIdentifier
 
@@ -35,10 +35,10 @@ class SelfNetworkEntity(connection: ConnectionContext,
     update()
 
     override def update(): this.type = {
-        cache.post(2, connectionDate)
+        entityCache.post(2, connectionDate)
         //cache.post(4, apiVersion)
         //cache.post(5, relayVersion)
-        cache.update()
+        entityCache.update()
         this
     }
 

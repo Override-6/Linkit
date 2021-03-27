@@ -14,9 +14,10 @@ package fr.linkit.core.connection.packet.serialization
 
 import fr.linkit.api.connection.network.cache.SharedCacheManager
 import fr.linkit.api.connection.packet._
-import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketSerializationResult, PacketTranslator, Serializer}
+import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.core.connection.network.cache.collection.SharedCollection
+import fr.linkit.core.local.system.ContextLogger
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
@@ -53,7 +54,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
 
         def serialize(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
             //Thread.dumpStack()
-             def serializer(): Serializer = if (initialised) {
+            lazy val  serializer = if (initialised) {
                 val whiteListArray = cachedSerializerWhitelist.toArray
                 coordinates.determineSerializer(whiteListArray, rawSerializer, cachedSerializer)
             } else {
@@ -61,7 +62,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
             }
             try {
                 //ContextLogger.debug(s"Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
-                PacketSerializationResult(packet, coordinates, serializer)
+                PacketSerializationResult(packet, coordinates, () => serializer)
             } catch {
                 case NonFatal(e) =>
                     throw PacketException(s"Could not serialize packet and coordinates $packet, $coordinates.", e)
@@ -69,18 +70,22 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
         }
 
         def deserialize(bytes: Array[Byte]): PacketDeserializationResult = {
-            def serializer(): Serializer = if (rawSerializer.isSameSignature(bytes)) {
+            lazy val serializer = if (rawSerializer.isSameSignature(bytes)) {
                 rawSerializer
             } else if (initialised && cachedSerializer.isSameSignature(bytes)) {
                 cachedSerializer
             } else {
                 throw new IllegalStateException("Received unknown serializer signature. (or maybe cached serializer, but this translator is unable to match it while it stands not initialized.)")
             }
-            PacketDeserializationResult(serializer, bytes)
+            PacketDeserializationResult(() => serializer, bytes)
         }
 
         def updateCache(cache: SharedCacheManager): Unit = {
             cachedSerializer = new CachedObjectSerializer(cache)
+
+            if (cachedSerializer == null)
+                ContextLogger.info(s"$ownerIdentifier: Stage 2 completed : Main cache manager created.")
+
             cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(ownerIdentifier)
             //cachedSerializerWhitelist.addListener((_, _, _) => ContextLogger.debug(s"Whitelist : $cachedSerializerWhitelist"))

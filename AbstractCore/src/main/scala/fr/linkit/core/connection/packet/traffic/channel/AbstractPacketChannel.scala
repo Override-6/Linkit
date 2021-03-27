@@ -13,10 +13,13 @@
 package fr.linkit.core.connection.packet.traffic.channel
 
 import fr.linkit.api.connection.packet.traffic._
+import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{ForbiddenIdentifierException, Reason}
+import fr.linkit.core.connection.packet.traffic.PacketInjections
 
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel with PacketInjectable {
 
@@ -28,6 +31,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     override val traffic: PacketTraffic = writer.traffic
 
     private val subChannels = mutable.Set.empty[SubInjectableContainer]
+    private val storedPackets = ListBuffer.empty[(Packet, DedicatedPacketCoordinates)]
 
     @volatile private var closed = true
 
@@ -39,7 +43,6 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     final override def inject(injection: PacketInjection): Unit = {
         val coordinates = injection.coordinates
         scope.assertAuthorised(coordinates.senderID)
-
         if (subInject(injection)) {
             handleInjection(injection)
         }
@@ -61,6 +64,42 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         register(scope, factory, transparent)
     }
 
+    def storePacket(packet: Packet, coords: PacketCoordinates): Unit = {
+
+        if (coords.injectableID != identifier) {
+            throw new IllegalArgumentException("Stored packet coordinates must target the same injectable identifier as this channel.")
+        }
+
+        val supportIdentifier = scope.writer.supportIdentifier
+        val directCoords = coords match {
+            case dedicated: DedicatedPacketCoordinates =>
+                if (dedicated.targetID != supportIdentifier) {
+                    throw new IllegalArgumentException("Stored packet coordinates must target current connection.")
+                }
+
+                dedicated
+            case broadcast: BroadcastPacketCoordinates =>
+                if (broadcast.targetIDs.contains(supportIdentifier) == broadcast.discardTargets) {
+                    throw new IllegalArgumentException("Stored packet coordinates must target at least current connection.")
+                }
+
+                DedicatedPacketCoordinates(identifier, supportIdentifier, broadcast.senderID)
+        }
+        storedPackets += ((packet, directCoords))
+    }
+
+    def injectStoredPackets(): Unit = {
+        Array.from(storedPackets)
+                .foreach(stored => {
+                    val injection = PacketInjections.unhandled(stored._2, stored._1)
+                    inject(injection)
+                })
+        storedPackets.clear()
+    }
+
+    @workerExecution
+    def handleInjection(injection: PacketInjection): Unit
+
     private def register[C <: PacketInjectable](scope: ChannelScope,
                                                 factory: PacketInjectableFactory[C],
                                                 transparent: Boolean): C = {
@@ -68,9 +107,6 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         subChannels += SubInjectableContainer(channel, transparent)
         channel
     }
-
-    @workerExecution
-    def handleInjection(injection: PacketInjection): Unit
 
     protected case class SubInjectableContainer(subInjectable: PacketInjectable, transparent: Boolean)
 

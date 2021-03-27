@@ -23,6 +23,7 @@ import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
+import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, PacketInjections}
@@ -38,14 +39,14 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     start() //Weird
 
-    override val supportIdentifier: String = configuration.identifier
-    override val boundIdentifier: String = serverIdentifier
-    override val translator: PacketTranslator = configuration.translator
-    override val traffic: PacketTraffic = session.traffic
-    override val network: Network = session.initNetwork(this)
-    override val eventNotifier: EventNotifier = session.eventNotifier
-
-    @volatile private var alive = true
+    override val traffic          : PacketTraffic     = session.traffic
+    override val supportIdentifier: String            = configuration.identifier
+    override val boundIdentifier  : String            = serverIdentifier
+    override val translator       : PacketTranslator  = configuration.translator
+    override val eventNotifier    : EventNotifier     = session.eventNotifier
+    private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(this)
+    override val network          : Network           = sideNetwork
+    @volatile private var alive                       = true
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
         traffic.getInjectable(injectableID, scopeFactory, factory)
@@ -94,19 +95,19 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     @packetWorkerExecution //So the runLater must be specified in order to perform network operations
     private def tryReconnect(state: ExternalConnectionState): Unit = {
-        val bytes = supportIdentifier.getBytes()
+        val bytes         = supportIdentifier.getBytes()
         val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
 
         if (state == ExternalConnectionState.CONNECTED && socket.isOpen) runLater {
             socket.write(welcomePacket) //The welcome packet will let the server continue his socket handling
             systemChannel.nextPacket[BooleanPacket]
-            session.network.update()
+            sideNetwork.update()
             translator.updateCache(network.globalCache)
         }
     }
 
     private def handleSystemPacket(system: SystemPacket, coords: DedicatedPacketCoordinates): Unit = {
-        val order = system.order
+        val order  = system.order
         val reason = system.reason.reversedPOV()
         val sender = coords.senderID
 
@@ -146,7 +147,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
 object ClientConnection {
 
-
     @throws[ConnectionInitialisationException]("If Something went wrong during the initialization.")
     @NotNull
     def open(socket: ClientDynamicSocket,
@@ -154,20 +154,20 @@ object ClientConnection {
              configuration: ClientConnectionConfiguration): ClientConnection = {
 
         //Initializing values that will be used for packet transactions during the initialization.
-        val translator = configuration.translator
+        val translator   = configuration.translator
         val packetReader = new DefaultPacketReader(socket, BytesHasher.inactive, translator)
 
         //WelcomePacket informational fields
-        val identifier = configuration.identifier
+        val identifier          = configuration.identifier
         val translatorSignature = translator.signature
-        val hasherSignature = configuration.hasher.signature
+        val hasherSignature     = configuration.hasher.signature
 
         //Aliases
-        val IDbytes = identifier.getBytes()
+        val IDbytes   = identifier.getBytes()
         val separator = Rules.WPArgsSeparator
 
         //Creating and sending welcomePacket
-        val bytes = IDbytes ++ separator ++ translatorSignature ++ separator ++ hasherSignature
+        val bytes         = IDbytes ++ separator ++ translatorSignature ++ separator ++ hasherSignature
         val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
         socket.write(welcomePacket)
 
@@ -186,9 +186,9 @@ object ClientConnection {
 
             //Constructing connection instance session
             ContextLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
-            val readThread = new PacketReaderThread(packetReader, context, serverIdentifier)
+            val readThread  = new PacketReaderThread(packetReader, context, serverIdentifier)
             val sessionInfo = ClientConnectionSessionInfo(context, configuration, readThread)
-            val session = ClientConnectionSession(socket, sessionInfo, serverIdentifier)
+            val session     = ClientConnectionSession(socket, sessionInfo, serverIdentifier)
 
             //Constructing connection instance...
             //Stage 2 will be completed into ClientConnection constructor.
@@ -204,7 +204,7 @@ object ClientConnection {
     }
 
     private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(result: PacketDeserializationResult, ignored: Int = 0): Unit = {
-        val bytes = result.bytes
+        val bytes  = result.bytes
         val header = bytes(0)
         if (bytes.length != 1 || (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused))
             throw new ConnectionInitialisationException(s"Received unexpected welcome packet verdict format (received: ${new String(bytes)}")
@@ -212,7 +212,7 @@ object ClientConnection {
         val isAccepted = header == Rules.ConnectionAccepted
         if (!isAccepted) {
             reader.nextPacket((result, _) => {
-                val msg = new String(result.bytes)
+                val msg        = new String(result.bytes)
                 val serverPort = socket.remoteSocketAddress().getPort
                 throw new ConnectionInitialisationException(s"Server (port: $serverPort) refused connection: $msg")
             })

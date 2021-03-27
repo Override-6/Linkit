@@ -12,28 +12,21 @@
 
 package fr.linkit.server.network
 
-import fr.linkit.api.connection.network.cache.SharedCacheManager
 import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
+import fr.linkit.core.connection.network.cache.SharedInstance
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.linkit.core.connection.network.cache.{SharedInstance, SimpleSharedCacheManager}
 import fr.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
 import fr.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.linkit.core.local.system.ContextLogger
 import fr.linkit.server.connection.{ServerConnection, ServerExternalConnection}
 
 import java.sql.Timestamp
 
-class ServerSideNetwork(serverConnection: ServerConnection,
-                        globalCache: SharedCacheManager)(implicit traffic: PacketTraffic)
-        extends AbstractNetwork(serverConnection, globalCache) {
+class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: PacketTraffic)
+        extends AbstractNetwork(serverConnection) {
 
-    override val serverIdentifier: String = serverConnection.supportIdentifier
-
-    override val connectionEntity: NetworkEntity = {
-        val selfCache = SimpleSharedCacheManager.get(serverIdentifier, serverIdentifier)
-        new SelfNetworkEntity(serverConnection, ExternalConnectionState.CONNECTED, selfCache) //Server is always connected to... server !
-    }
-
+    override val connectionEntity: NetworkEntity = createServerEntity()
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
                 //.addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
@@ -45,17 +38,17 @@ class ServerSideNetwork(serverConnection: ServerConnection,
 
     override val startUpDate: Timestamp = globalCache.post(2, new Timestamp(System.currentTimeMillis()))
 
-    connectionEntity
-            .cache
-            .get(3, SharedInstance[ExternalConnectionState])
-            .set(ExternalConnectionState.CONNECTED) //technically always connected
+    override def serverIdentifier: String = serverConnection.supportIdentifier
 
     //The current connection is the network's server connection.
     override def serverEntity: NetworkEntity = connectionEntity
 
     override def createEntity0(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {
-        println(s"CREATING CONNECTION $identifier")
-        new ExternalConnectionNetworkEntity(serverConnection, identifier)
+        ContextLogger.debug(s"CREATING CONNECTION $identifier")
+        val entityCache = newCacheManager(identifier, identifier)
+        val v = new ExternalConnectionNetworkEntity(serverConnection, identifier, entityCache)
+        ContextLogger.debug(s"CREATED ENTITY ${v} ($identifier)")
+        v
     }
 
     def removeEntity(identifier: String): Unit = {
@@ -75,6 +68,16 @@ class ServerSideNetwork(serverConnection: ServerConnection,
         println(s"Adding entity $identifier")
         if (!sharedIdentifiers.contains(identifier))
             sharedIdentifiers.add(identifier)
+    }
+
+    def createServerEntity(): NetworkEntity = {
+        val selfCache = newCacheManager(serverIdentifier, serverConnection)
+        val serverEntity = new SelfNetworkEntity(serverConnection, ExternalConnectionState.CONNECTED, selfCache) //Server always connected to himself
+        serverEntity
+                .entityCache
+                .get(3, SharedInstance[ExternalConnectionState])
+                .set(ExternalConnectionState.CONNECTED) //technically always connected
+        serverEntity
     }
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {

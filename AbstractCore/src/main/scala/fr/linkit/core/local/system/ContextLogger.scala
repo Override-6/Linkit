@@ -17,7 +17,6 @@ import org.apache.log4j.{Level, Logger}
 
 
 object ContextLogger {
-
     var NetworkPreviewLength: Int = 1000
 
     val logger: Logger = Logger.getLogger(classOf[ApplicationContext])

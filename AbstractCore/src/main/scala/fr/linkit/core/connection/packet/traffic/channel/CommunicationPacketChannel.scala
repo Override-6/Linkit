@@ -45,9 +45,7 @@ class CommunicationPacketChannel(scope: ChannelScope,
                 tag match {
                     case "res" => responses.add(subPacket)
                     case "req" => requestListeners.applyAll((subPacket, coordinates))
-                    case _ =>
                 }
-            case _ =>
         }
         //println(s"<$identifier> responses = ${responses}")
     }

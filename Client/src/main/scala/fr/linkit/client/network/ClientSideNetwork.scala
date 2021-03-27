@@ -13,22 +13,14 @@
 package fr.linkit.client.network
 
 import fr.linkit.api.connection.network.NetworkEntity
-import fr.linkit.api.connection.network.cache.SharedCacheManager
-import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.client.connection.ClientConnection
-import fr.linkit.core.connection.network.cache.SimpleSharedCacheManager
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
 import fr.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
 
 import java.sql.Timestamp
 
-class ClientSideNetwork(connection: ClientConnection, globalCache: SharedCacheManager) extends AbstractNetwork(connection, globalCache) {
-    private implicit val traffic: PacketTraffic = connection.traffic
-
-    override val serverIdentifier: String = connection.boundIdentifier
-
-    override def serverEntity: NetworkEntity = getEntity(serverIdentifier).get
+class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
 
     override val connectionEntity: SelfNetworkEntity = initDefaultEntity
 
@@ -39,10 +31,15 @@ class ClientSideNetwork(connection: ClientConnection, globalCache: SharedCacheMa
                 .addListener(handleTraffic)
     }
 
+    override def serverIdentifier: String = connection.boundIdentifier
+
+    override def serverEntity: NetworkEntity = getEntity(serverIdentifier).get
+
     override def startUpDate: Timestamp = globalCache(2)
 
     override def createEntity0(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {
-        new ConnectionNetworkEntity(connection, identifier, communicator)
+        val entityCache = newCacheManager(identifier, identifier)
+        new ConnectionNetworkEntity(connection, identifier, entityCache)
     }
 
     def update(): Unit = {
@@ -52,7 +49,7 @@ class ClientSideNetwork(connection: ClientConnection, globalCache: SharedCacheMa
 
     def initDefaultEntity: SelfNetworkEntity = {
         val identifier = connection.supportIdentifier
-        val sharedCache = SimpleSharedCacheManager.get(identifier, identifier)
+        val sharedCache = newCacheManager(identifier, identifier)
         new SelfNetworkEntity(connection, connection.getState, sharedCache)
     }
 

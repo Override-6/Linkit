@@ -20,7 +20,7 @@ trait NetworkEntity extends Updatable {
 
     val identifier: String
 
-    val cache: SharedCacheManager
+    val entityCache: SharedCacheManager
 
     val network: Network
 
