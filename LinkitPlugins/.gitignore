@@ -1,0 +1,12 @@
+# Project exclude paths
+/out/
+/target/
+/target/idea_output/
+*/build/
+*/out/
+.gradle
+.idea
+.idea_modules
+*.class
+*.iml
+*.log

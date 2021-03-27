@@ -4,23 +4,23 @@
 This project is designed to help the user to quickly write the network side of an application (for games, apps...). 
 But it is also designed to be used for simple domotic, such as linking your phones with all of your computers, in order to take control or retrieve some files quickly from them...
 (An application for phones would be developped in order to define behaviour between your electronic stuff)
-LinKit offers an entire networking library, that can be extended and controlled from a 'Relay'  
+Linkit offers an entire networking library, that can be extended and controlled from a 'Relay'  
 The project is mainly write in scala, and some classes in Java.  
 
 ## Table of contents
-* [Notes and General information](https://github.com/Override-6/LinKit/#notes-and-general-information)
-* [The API](https://github.com/Override-6/LinKit/#the-api)
-* [The Client](https://github.com/Override-6/LinKit/#the-fr.override.linkit.client)
-* [The Server](https://github.com/Override-6/LinKit/#the-server)
-* [Features](https://github.com/Override-6/LinKit/#features)
-* [How to extend](https://github.com/Override-6/LinKit/#how-to-extend)
-* [How to configure](https://github.com/Override-6/LinKit/#how-to-configure)
-* [Setup](https://github.com/Override-6/LinKit/#setup)
-* [Acknowledgements](https://github.com/Override-6/LinKit/#acknowledgements)
+* [Notes and General information](https://github.com/Override-6/Linkit/#notes-and-general-information)
+* [The API](https://github.com/Override-6/Linkit/#the-api)
+* [The Client](https://github.com/Override-6/Linkit/#the-fr.override.linkit.client)
+* [The Server](https://github.com/Override-6/Linkit/#the-server)
+* [Features](https://github.com/Override-6/Linkit/#features)
+* [How to extend](https://github.com/Override-6/Linkit/#how-to-extend)
+* [How to configure](https://github.com/Override-6/Linkit/#how-to-configure)
+* [Setup](https://github.com/Override-6/Linkit/#setup)
+* [Acknowledgements](https://github.com/Override-6/Linkit/#acknowledgements)
 
 ## Notes and General information
 This Readme contains the general information to create your own project with this program  
-If you want further details about the [API](https://github.com/Override-6/LinKit/blob/master/API), the [RelayServer](https://github.com/Override-6/LinKit/blob/master/RelayServer) or the [RelayPoint](https://github.com/Override-6/LinKit/blob/master/RelayPoint), you can open theirs respective folders.  
+If you want further details about the [API](https://github.com/Override-6/Linkit/blob/master/API), the [RelayServer](https://github.com/Override-6/Linkit/blob/master/RelayServer) or the [RelayPoint](https://github.com/Override-6/Linkit/blob/master/RelayPoint), you can open theirs respective folders.  
 This project quickly progresses, and, as long as the project stands in beta, irreversible changes would often be made.  
 Such as refactoring, movement or deletion of different classes, packages, folders or methods, Illogical feature operations, bugs or even redesigning some aspect.  
 Some Scala practices would be a real nightmare to use in Java, such as Builders, so they have a Java version in order to be more user-friendly with java developers.
@@ -41,18 +41,18 @@ The API is a bag of features and definitions of behavior that a Relay implementa
 Some features are pre-implemented and handled by the api, such as the [extension](TODO), the [event handling system](TODO) or the [Packet handling](TODO) and [Task scheduling](TODO) which are partially implemented.  
 All of those features are accessible from the Relay interface.  
 
-(see [API README](https://github.com/Override-6/LinKit/tree/master/API) to get further details)  
+(see [API README](https://github.com/Override-6/Linkit/tree/master/API) to get further details)  
 
 ### Packet handling
 
 Protocol Used : TCP
 
-[Packet](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/packet/Packet.scala) implementations are simply serialised / deserialised using custom serialisation protocol. Any packet is serialised/deserialised with the [PacketTranslator](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/packet/serialization/PacketTranslator.scala), that handles the byte sequence of packet content __and__ their coordinates.
+[Packet](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/packet/Packet.scala) implementations are simply serialised / deserialised using custom serialisation protocol. Any packet is serialised/deserialised with the [PacketTranslator](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/packet/serialization/PacketTranslator.scala), that handles the byte sequence of packet content __and__ their coordinates.
 
 ## The Client  
 The Client, or RelayPoint, is one implementation of the Relay interface, which can connect to any server implementation, as long as they comply with the same mutual initialisation rules.  
 In order to instantiate a RelayPoint, you need a RelayPointConfiguration.  
-The different option explications of a RelayPointConfiguration can be find in the [RelayPoint README](https://github.com/Override-6/LinKit/tree/master/RelayPoint), but here, we will focus on how to create a default RelayPoint by using its builder :  
+The different option explications of a RelayPointConfiguration can be find in the [RelayPoint README](https://github.com/Override-6/Linkit/tree/master/RelayPoint), but here, we will focus on how to create a default RelayPoint by using its builder :  
 
 ```scala
 val relayPoint: RelayPoint = new RelayPointBuilder {
@@ -92,10 +92,10 @@ TODO List
 
 ## How to extend 
 You can extend the Linkit program by adding a plugin jar into the RelayExtension folder.  
-In order to define your jar as a RelayExtension, you must create a `extension.property` resource file referencing yout main class, that must extends from [`RelayExtension`](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/extension/RelayExtension.scala).
+In order to define your jar as a RelayExtension, you must create a `extension.property` resource file referencing yout main class, that must extends from [`RelayExtension`](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/extension/RelayExtension.scala).
 This class, defines one abstract method `onEnable`, and two overridable methods `onLoad` & `onDisable`. It also defines protected put/getFragment methods.
-If you want your extension to be usable by other internal extensions, you can put an [ExtensionFragment](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/extension/fragment/ExtensionFragment.scala).
-Also, If you would like to have a fragment extension to be usable by other relays, through the network, you can put a [RemoteFragment](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/extension/fragment/RemoteFragment.scala). The putFragment method is only usable during [Load phase](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/extension/LoadPhase.java)
+If you want your extension to be usable by other internal extensions, you can put an [ExtensionFragment](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/extension/fragment/ExtensionFragment.scala).
+Also, If you would like to have a fragment extension to be usable by other relays, through the network, you can put a [RemoteFragment](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/extension/fragment/RemoteFragment.scala). The putFragment method is only usable during [Load phase](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/extension/LoadPhase.java)
 
 Here is a scala example for an extension plugin main class :
 ```scala
@@ -131,10 +131,10 @@ Here is an exaustive list of options contained in the default RelayPointConfigur
 * defaultContainerPacketCacheSize (FOR REMOVAL)
 * maxPacketContainerCacheSize (FOR REMOVAL)
 
-You can find the list of [RelayPoint](https://github.com/Override-6/LinKit/tree/master/RelayPoint) and [RelayServer](https://github.com/Override-6/LinKit/tree/master/RelayServer) configuration options in their respective readme.  
+You can find the list of [RelayPoint](https://github.com/Override-6/Linkit/tree/master/RelayPoint) and [RelayServer](https://github.com/Override-6/Linkit/tree/master/RelayServer) configuration options in their respective readme.  
 
 ## Setup
-The setup is very simple; you just have to download / compile the source code of RelayPoint or RelayServer, then create a RelayPoint/Server instance with a RelayPoint/ServerBuilder. In order to start your relay, you'll must call the Relay#start method in the [BusyWorkerPool](https://github.com/Override-6/LinKit/blob/master/API/src/fr/override/linkit/api/concurrency/BusyWorkerPool.scala) of the relay. In order to retrieve the thread pool execution, simply use Relay#runLater.
+The setup is very simple; you just have to download / compile the source code of RelayPoint or RelayServer, then create a RelayPoint/Server instance with a RelayPoint/ServerBuilder. In order to start your relay, you'll must call the Relay#start method in the [BusyWorkerPool](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/concurrency/BusyWorkerPool.scala) of the relay. In order to retrieve the thread pool execution, simply use Relay#runLater.
 
 Here is an example for setting up the fr.override.linkit.client : 
 ```scala
