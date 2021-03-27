@@ -78,6 +78,7 @@ class ServerSideNetwork(serverConnection: ServerConnection,
     }
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
+        println(s"ENTITIES : $entities")
         /*lazy val entity = entityOpt.orNull //get
         println(s"mod = ${mod}")
         println(s"index = ${index}")

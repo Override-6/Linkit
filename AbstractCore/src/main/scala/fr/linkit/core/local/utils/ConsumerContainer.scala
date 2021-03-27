@@ -75,9 +75,8 @@ class ConsumerContainer[T]() {
     }
 
     def applyAll(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        consumers.indices.foreach(i => {
+        Array.from(consumers).foreach(consumer => {
             try {
-                val consumer = consumers(i)
                 consumer.execute(t)
             } catch {
                 case NonFatal(e) => onException(e)

@@ -21,9 +21,12 @@ import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
 import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
-
 import java.util.NoSuchElementException
+
+import fr.linkit.core.local.system.ContextLogger
+
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
@@ -85,7 +88,7 @@ class SimpleSharedCacheManager(override val family: String,
     }
 
     private def retrieveBaseContent(cacheID: Long): Array[Any] = {
-        println(s"Sending request to server in order to retrieve content of cache number $cacheID")
+        println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
         communicator.sendRequest(WrappedPacket(family, LongPacket(cacheID)), ownerID)
         println(s"request sent !")
         val content = communicator.nextResponse[ArrayObjectPacket].value //The request will return the cache content
@@ -107,7 +110,6 @@ class SimpleSharedCacheManager(override val family: String,
             .foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
 
         cacheOwners
-
     }
 
     private def initPacketHandling(): Unit = {
@@ -130,9 +132,9 @@ class SimpleSharedCacheManager(override val family: String,
 
             case LongPacket(cacheID) =>
                 val senderID: String = coords.senderID
-                //println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
+                println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
                 val content = LocalCacheHandler.getContentOrElseMock(cacheID)
-                //println(s"Content = ${content.mkString("Array(", ", ", ")")}")
+                println(s"Content = ${content.mkString("Array(", ", ", ")")}")
                 communicator.sendResponse(ArrayObjectPacket(content), senderID)
         }
     }
@@ -209,7 +211,7 @@ class SimpleSharedCacheManager(override val family: String,
     }
 
     private def println(msg: String): Unit = {
-        //Console.println(s"<$family, $ownerID> $msg")
+        ContextLogger.trace(s"<$family, $ownerID> $msg")
     }
 
 }
@@ -217,6 +219,9 @@ class SimpleSharedCacheManager(override val family: String,
 object SimpleSharedCacheManager {
 
     private val caches = mutable.HashMap.empty[(String, PacketTraffic), SharedCacheManager]
+    private val unhandledPacketCache = mutable.HashMap.empty[(String, PacketTraffic), ListBuffer[Packet]]
+
+    def handleUnfoundPacket()
 
     def get(family: String, ownerIdentifier: String)
            (implicit traffic: PacketTraffic): SharedCacheManager = {
