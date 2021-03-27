@@ -13,6 +13,7 @@
 package fr.linkit.api.local.system.config
 
 trait ExtendedConfiguration {
+
     val enableEventHandling  : Boolean
     val nWorkerThreadFunction: Int => Int
 }

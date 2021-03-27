@@ -17,8 +17,7 @@ import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.core.connection.network.cache.SharedInstance
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
-import fr.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
 import fr.linkit.server.connection.{ServerConnection, ServerExternalConnection}
 
 import java.sql.Timestamp
@@ -26,8 +25,8 @@ import java.sql.Timestamp
 class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: PacketTraffic)
         extends AbstractNetwork(serverConnection) {
 
-    override val connectionEntity: NetworkEntity = createServerEntity()
-    override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
+    override           val connectionEntity: NetworkEntity                              = createServerEntity()
+    override protected val entities        : BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
                 //.addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
                 .add(serverIdentifier)
@@ -43,11 +42,9 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
     //The current connection is the network's server connection.
     override def serverEntity: NetworkEntity = connectionEntity
 
-    override def createEntity0(identifier: String, communicator: CommunicationPacketChannel): NetworkEntity = {
-        ContextLogger.debug(s"CREATING CONNECTION $identifier")
+    override def createEntity0(identifier: String, communicator: RequestPacketChannel): NetworkEntity = {
         val entityCache = newCacheManager(identifier, identifier)
-        val v = new ExternalConnectionNetworkEntity(serverConnection, identifier, entityCache)
-        ContextLogger.debug(s"CREATED ENTITY ${v} ($identifier)")
+        val v           = new ExternalConnectionNetworkEntity(serverConnection, identifier, entityCache)
         v
     }
 
@@ -65,13 +62,12 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
             throw new IllegalAccessException("Attempted to add connection into a network that does not belongs to it")
 
         val identifier = connection.boundIdentifier
-        println(s"Adding entity $identifier")
         if (!sharedIdentifiers.contains(identifier))
             sharedIdentifiers.add(identifier)
     }
 
     def createServerEntity(): NetworkEntity = {
-        val selfCache = newCacheManager(serverIdentifier, serverConnection)
+        val selfCache    = newCacheManager(serverIdentifier, serverConnection)
         val serverEntity = new SelfNetworkEntity(serverConnection, ExternalConnectionState.CONNECTED, selfCache) //Server always connected to himself
         serverEntity
                 .entityCache
@@ -81,7 +77,6 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
     }
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
-        println(s"ENTITIES : $entities")
         /*lazy val entity = entityOpt.orNull //get
         println(s"mod = ${mod}")
         println(s"index = ${index}")

@@ -18,6 +18,7 @@ import fr.linkit.core.local.system.fsa.AbstractFileSystemAdapter
 import java.io.{File, InputStream, OutputStream}
 
 class IOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
+
     override val name: String = "java.io"
 
     override def createAdapter(path: String): FileAdapter = new IOFileAdapter(path, this)

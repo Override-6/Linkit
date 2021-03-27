@@ -63,5 +63,4 @@ case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) exten
         }
     }
 
-
 }

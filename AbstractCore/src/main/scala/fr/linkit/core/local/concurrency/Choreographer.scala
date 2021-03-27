@@ -19,13 +19,13 @@ class Choreographer(pool: BusyWorkerPool, maxThreadCount: Int, threadChunkSize: 
 
     type WorkerThread = BusyWorkerPool#WorkerThread
 
-    private val threads = ListBuffer.empty[WorkerThread]
+    private val threads  = ListBuffer.empty[WorkerThread]
     private val poolName = pool.name
 
     def notifyTaskSubmit(): Unit = {
-        val threadCount = threads.length
+        val threadCount                    = threads.length
         val (countRunning, countDisturbed) = countRunningThreads
-        val activeThreads = countRunning + countDisturbed
+        val activeThreads                  = countRunning + countDisturbed
 
         val minCount = threadCount - threadMargin
         val maxCount = threadCount + threadMargin
@@ -58,7 +58,7 @@ class Choreographer(pool: BusyWorkerPool, maxThreadCount: Int, threadChunkSize: 
     }
 
     private def countRunningThreads: (Int, Int) = {
-        var running = 0
+        var running   = 0
         var disturbed = 0
         for (worker <- threads) {
             val state = worker.getState

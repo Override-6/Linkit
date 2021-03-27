@@ -21,12 +21,11 @@ import fr.linkit.server.connection.ExternalConnectionSession
 
 class ConnectionTasksHandler(session: ExternalConnectionSession) extends TasksHandler {
 
-    private val server = session.server
-    private val systemChannel = session.channel
+    private  val server             = session.server
+    private  val systemChannel      = session.channel
     override val identifier: String = session.boundIdentifier
-    private var tasksThread = new ConnectionTasksThread(identifier)
+    private var tasksThread         = new ConnectionTasksThread(identifier)
     //tasksThread.start()
-
 
     /**
      * Handles the packet.

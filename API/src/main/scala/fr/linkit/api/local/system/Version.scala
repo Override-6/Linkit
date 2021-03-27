@@ -36,13 +36,12 @@ object Version {
         Version(name, major, minor, patch, stable)
     }
 
-
     @throws[IllegalArgumentException]("If the version object could not be built from this string")
     def fromString(implicit str: String): Version = {
         val expressions = str.split(' ')
         checkPattern(expressions.length == 2)
 
-        val name = expressions(0).dropRight(1)
+        val name                          = expressions(0).dropRight(1)
         val (major, minor, patch, stable) = getSemVer(expressions(1))
 
         Version(name, major, minor, patch, stable)
@@ -51,7 +50,7 @@ object Version {
     private def getSemVer(str: String)(implicit version: String): (Byte, Byte, Byte, Boolean) = {
         checkPattern(str.startsWith("v") || str.endsWith("-stable") || str.endsWith("-unstable"))
 
-        val stable = str.endsWith("stable")
+        val stable   = str.endsWith("stable")
         val versions = str.slice(1, str.indexOf('-')).split('.')
 
         checkPattern(versions.length == 3)

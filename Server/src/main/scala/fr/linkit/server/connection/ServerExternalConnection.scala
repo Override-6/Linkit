@@ -23,7 +23,7 @@ import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.fundamental.TaskInitPacket
 import fr.linkit.core.connection.packet.traffic.PacketInjections
 import fr.linkit.core.local.concurrency.BusyWorkerPool
-import fr.linkit.core.local.system.{ContextLogger, SystemPacket}
+import fr.linkit.core.local.system.{AppLogger, SystemPacket}
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
@@ -33,12 +33,12 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     import session._
 
-    override val supportIdentifier: String = server.supportIdentifier
-    override val traffic: PacketTraffic = server.traffic
-    override val translator: PacketTranslator = session.translator
-    override val eventNotifier: EventNotifier = server.eventNotifier
-    override val boundIdentifier: String = session.boundIdentifier
-    override val network: Network = session.network
+    override val supportIdentifier: String           = server.supportIdentifier
+    override val traffic          : PacketTraffic    = server.traffic
+    override val translator       : PacketTranslator = session.translator
+    override val eventNotifier    : EventNotifier    = server.eventNotifier
+    override val boundIdentifier  : String           = session.boundIdentifier
+    override val network          : Network          = session.network
 
     @volatile private var alive = false
 
@@ -53,7 +53,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         session.close()
 
         connectionManager.unregister(supportIdentifier)
-        ContextLogger.trace(s"Connection closed for $supportIdentifier")
+        AppLogger.trace(s"Connection closed for $supportIdentifier")
     }
 
     override def isAlive: Boolean = alive
@@ -127,10 +127,9 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }
     }
 
-
     private def handleSystemOrder(packet: SystemPacket): Unit = {
         val orderType = packet.order
-        val reason = packet.reason.reversedPOV()
+        val reason    = packet.reason.reversedPOV()
         import fr.linkit.core.local.system.SystemOrder._
         orderType match {
             case CLIENT_CLOSE => runLater(shutdown())
@@ -139,7 +138,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
             case _ =>
                 val msg = s"Could not complete order '$orderType', can't be handled by a server or unknown order"
-                ContextLogger.error(msg)
+                AppLogger.error(msg)
             //UnexpectedPacketException(s"Could not complete order '$orderType', can't be handled by a server or unknown order")
             //.printStackTrace(getConsoleErr)
         }

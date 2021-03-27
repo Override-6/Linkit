@@ -28,10 +28,9 @@ import fr.linkit.core.connection.packet.traffic.channel
  * */
 abstract class SimpleTaskExecutor extends TaskExecutor {
 
-    private var canCloseChannel: Boolean = true
-    protected var connection: ConnectionContext = _
-    protected var channel: PacketSyncReceiver with PacketSender = _
-
+    private   var canCloseChannel: Boolean                              = true
+    protected var connection     : ConnectionContext                    = _
+    protected var channel        : PacketSyncReceiver with PacketSender = _
 
     final def init(connection: ConnectionContext, packetChannel: PacketSyncReceiver with PacketSender): Unit = {
         if (connection == null || packetChannel == null)

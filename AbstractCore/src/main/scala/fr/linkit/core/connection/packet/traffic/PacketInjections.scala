@@ -18,11 +18,12 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import java.util.concurrent.ConcurrentHashMap
 
 object PacketInjections {
+
     private[traffic] val currentInjections = new ConcurrentHashMap[(Int, String), DirectInjection]
 
     def createInjection(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): PacketInjection = this.synchronized {
         //println(s"CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates, $number")
-        val id = coordinates.injectableID
+        val id     = coordinates.injectableID
         val sender = coordinates.senderID
 
         var injection = currentInjections.get((id, sender))
@@ -38,7 +39,7 @@ object PacketInjections {
     def unhandled(coordinates: DedicatedPacketCoordinates, packets: Packet*): PacketInjection = {
         //println(s"NEW UNHANDLED FOR COORDINATES $coordinates / PACKETS ${packets}")
         val injection = new DirectInjection(coordinates)
-        var i = 0
+        var i         = 0
         packets.foreach(packet => {
             i += 1
             injection.addPacket(i, packet)

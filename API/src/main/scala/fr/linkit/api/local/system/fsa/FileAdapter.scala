@@ -56,6 +56,4 @@ trait FileAdapter {
 
     def write(bytes: Array[Byte], append: Boolean = false): Unit
 
-
-
 }

@@ -17,6 +17,7 @@ import fr.linkit.api.local.system.Version
 import java.security.Permission
 
 trait PluginConfiguration {
+
     val pluginName: String
 
     val pluginDescription: String

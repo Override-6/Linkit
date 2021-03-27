@@ -48,7 +48,7 @@ class WorkersLock {
             return null
 
         val locks = locksOpt.get
-        val lock = locks.removeLock()
+        val lock  = locks.removeLock()
 
         if (locks.isEmpty) {
             busyLockRefs.remove(currentThread) //will unregister this lock.
@@ -80,6 +80,7 @@ class WorkersLock {
      * This class works as a LIFO Queue
      * */
     private class ThreadLocks(val owner: Thread) {
+
         private val queue = new util.ArrayDeque[AnyRef]()
 
         /**

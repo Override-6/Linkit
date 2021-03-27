@@ -17,16 +17,19 @@ import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 object NetworkEvents {
 
     case class EntityAddedEvent(override val entity: NetworkEntity) extends NetworkEvent {
+
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityAdded))
     }
 
     case class EntityRemovedEvent(override val entity: NetworkEntity) extends NetworkEvent {
+
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityRemoved))
     }
 
     case class EntityStateChangeEvent(override val entity: NetworkEntity,
                                       newState: ExternalConnectionState,
                                       oldState: ExternalConnectionState) extends NetworkEvent {
+
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityStateChange))
     }
 
@@ -35,6 +38,7 @@ object NetworkEvents {
                                          newProperty: Serializable,
                                          oldProperty: Any,
                                          private val currentChanged: Boolean) extends NetworkEvent {
+
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = {
             if (currentChanged)
                 !!(Array(category.entityEditCurrentProperties))
@@ -46,6 +50,7 @@ object NetworkEvents {
     case class RemotePrintEvent(override val entity: NetworkEntity,
                                 print: String,
                                 private val received: Boolean) extends NetworkEvent {
+
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = {
             if (received)
                 !!(Array(category.remotePrintReceived))
@@ -86,6 +91,5 @@ object NetworkEvents {
     }
 
     private def !![A](any: Any): A = any.asInstanceOf[A] //FIXME REMOVE THIS
-
 
 }

@@ -18,6 +18,7 @@ import fr.linkit.client.ClientApplication
 import org.jetbrains.annotations.NotNull
 
 trait ClientApplicationConfiguration extends ApplicationConfiguration with ExtendedConfiguration {
+
     @NotNull val loadSchematic: AppSchematic[ClientApplication]
 
 }

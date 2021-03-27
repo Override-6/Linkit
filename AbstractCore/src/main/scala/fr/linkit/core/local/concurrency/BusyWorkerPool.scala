@@ -14,7 +14,7 @@ package fr.linkit.core.local.concurrency
 
 import fr.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, workerExecution}
 import fr.linkit.core.local.concurrency.BusyWorkerPool.{checkCurrentIsWorker, currentPool, workerThreadGroup}
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 
 import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
 import scala.util.control.NonFatal
@@ -83,14 +83,14 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
 
     //private val choreographer = new Choreographer(this)
     private val factory: ThreadFactory = new WorkerThread(_, name)
-    private val executor = Executors.newFixedThreadPool(initialThreadCount, factory).asInstanceOf[ThreadPoolExecutor]
-        
+    private val executor               = Executors.newFixedThreadPool(initialThreadCount, factory).asInstanceOf[ThreadPoolExecutor]
+
     //The extracted workQueue of the executor which contains all the tasks to execute
-    private val workQueue = executor.getQueue
-    private var closed = false
-    private val workersLocks = new WorkersLock
+    private val workQueue               = executor.getQueue
+    private           var closed        = false
+    private val workersLocks            = new WorkersLock
     @volatile private var activeThreads = 0
-    private var threadID = 1
+    private           var threadID      = 1
 
     override def close(): Unit = {
         closed = true
@@ -116,7 +116,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
             } catch {
                 case NonFatal(e) => e.printStackTrace()
                 case e if currentTaskExecutionDepth == 0 =>
-                    ContextLogger.fatal(s"Caught fatal exception in thread pool '$name'. The JVM Will exit.")
+                    AppLogger.fatal(s"Caught fatal exception in thread pool '$name'. The JVM Will exit.")
                     e.printStackTrace()
                     System.exit(1)
             }
@@ -140,8 +140,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     override def isCurrentThreadOwned: Boolean = {
         currentPool().exists(_ eq this)
     }
-    
-    
+
     def countRemainingTasks: Int = workQueue.size()
 
     /**
@@ -152,7 +151,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     def setThreadCount(newCount: Int): Unit = {
         executor.setMaximumPoolSize(newCount)
         executor.setCorePoolSize(newCount)
-        ContextLogger.trace(s"$name's core pool size is set to $newCount")
+        AppLogger.trace(s"$name's core pool size is set to $newCount")
     }
 
     /**
@@ -291,7 +290,8 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * This class contains information that need to be stored into a specific thread class.
      * */
     private[concurrency] final class WorkerThread private[BusyWorkerPool](target: Runnable, poolName: String)
-        extends Thread(workerThreadGroup, target, s"$poolName's Thread#$threadID") {
+            extends Thread(workerThreadGroup, target, s"$poolName's Thread#$threadID") {
+
         private[BusyWorkerPool] val ownerPool: BusyWorkerPool = BusyWorkerPool.this
 
         threadID += 1
@@ -300,6 +300,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         var currentTaskExecutionDepth = 0
         //var inBusyLock: Boolean = false
     }
+
 }
 
 object BusyWorkerPool {

@@ -25,7 +25,9 @@ trait BytesHasher {
 }
 
 object BytesHasher {
+
     class Inactive extends BytesHasher {
+
         override def hashBytes(raw: Array[Byte]): Array[Byte] = raw
 
         override def deHashBytes(hashed: Array[Byte]): Array[Byte] = hashed

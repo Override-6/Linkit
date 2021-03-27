@@ -25,13 +25,12 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
 
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
-    protected val writer: PacketWriter = scope.writer
-    override val ownerID: String = writer.serverIdentifier
-    override val identifier: Int = writer.identifier
-    override val traffic: PacketTraffic = writer.traffic
-
-    private val subChannels = mutable.Set.empty[SubInjectableContainer]
-    private val storedPackets = ListBuffer.empty[(Packet, DedicatedPacketCoordinates)]
+    protected val writer    : PacketWriter  = scope.writer
+    override  val ownerID   : String        = writer.serverIdentifier
+    override  val identifier: Int           = writer.identifier
+    override  val traffic   : PacketTraffic = writer.traffic
+    private   val subChannels               = mutable.Set.empty[SubInjectableContainer]
+    private   val storedPackets             = ListBuffer.empty[(Packet, DedicatedPacketCoordinates)]
 
     @volatile private var closed = true
 
@@ -71,7 +70,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         }
 
         val supportIdentifier = scope.writer.supportIdentifier
-        val directCoords = coords match {
+        val directCoords      = coords match {
             case dedicated: DedicatedPacketCoordinates =>
                 if (dedicated.targetID != supportIdentifier) {
                     throw new IllegalArgumentException("Stored packet coordinates must target current connection.")
@@ -119,7 +118,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     private def subInject(injection: PacketInjection): Boolean = {
         val coords = injection.coordinates
 
-        val target = coords.targetID
+        val target          = coords.targetID
         var authoriseInject = true
         for (container <- subChannels if container.subInjectable.canInjectFrom(target)) {
             //println(s"FOR container = ${container}")

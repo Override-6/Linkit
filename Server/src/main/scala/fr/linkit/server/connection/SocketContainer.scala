@@ -20,6 +20,7 @@ import java.net.Socket
 class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnect) {
 
     var identifier: String = "$NOT SET$"
+
     override def boundIdentifier: String = identifier
 
     def set(socket: Socket): Unit = this.synchronized {
@@ -40,7 +41,7 @@ class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnec
             try {
                 wait()
             } catch {
-                case _:InterruptedException => //thrown when the reconnection is brutally stopped (ex: server stopped, critical error...)
+                case _: InterruptedException => //thrown when the reconnection is brutally stopped (ex: server stopped, critical error...)
             }
         }
     }

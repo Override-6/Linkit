@@ -17,12 +17,14 @@ import fr.linkit.api.local.system.config.ConnectionConfiguration
 import fr.linkit.api.local.system.security.{ApplicationSecurityManager, BytesHasher}
 
 trait ServerSecurityManager extends ApplicationSecurityManager {
+
     val hasher: BytesHasher
 }
 
 object ServerSecurityManager {
 
     class Default extends ServerSecurityManager {
+
         override def checkConnection(connection: ConnectionContext): Unit = ()
 
         override def checkConnectionConfig(connection: ConnectionConfiguration): Unit = ()

@@ -12,16 +12,30 @@
 
 package fr.linkit.prototypes
 
+import org.apache.logging.log4j.LogManager
+
 object TestsMain {
 
+    private val logger = LogManager.getLogger(getClass)
+
     def main(args: Array[String]): Unit = {
-        println("Salut")
-        println("Salut")
-        println("Salut")
-        println("Salut")
-        println("Salut")
-        println("Salut")
-        println("Salut")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.debug("TESTE PUTAIN !")
+        logger.error("TESTE PUTAIN !")
+
     }
 
 }

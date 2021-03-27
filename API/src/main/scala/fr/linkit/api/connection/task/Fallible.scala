@@ -13,6 +13,7 @@
 package fr.linkit.api.connection.task
 
 trait Fallible {
+
     @throws[TaskOperationFailException]("")
     def fail(msg: String): Unit
 }

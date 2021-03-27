@@ -18,6 +18,7 @@ import fr.linkit.core.local.system.event.packet.PacketEvents._
 
 //noinspection TypeAnnotation
 class PacketEventHooks extends EventHookCategory {
+
     type L = PacketEventListener
     val packetWritten = SimpleEventHook[L, PacketWrittenEvent](_.onPacketWritten(_))
 

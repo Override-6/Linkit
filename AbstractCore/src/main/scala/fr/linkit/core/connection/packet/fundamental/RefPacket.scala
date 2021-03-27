@@ -15,19 +15,23 @@ package fr.linkit.core.connection.packet.fundamental
 import fr.linkit.api.connection.packet.Packet
 
 import java.io.Serializable
+
 /**
  * This trait is used to transport a packet for specific ref serializable types
  * such as strings or arrays.
  * */
 sealed trait RefPacket[A <: Serializable] extends Packet {
+
     /**
      * The main value of the packet
      * */
     val value: A
+
     def casted[C <: A]: C = value.asInstanceOf[C]
 }
 
 object RefPacket {
+
     /**
      * Represents a packet that contains a string value
      * */
@@ -70,7 +74,9 @@ object RefPacket {
      * */
     //TODO Fix Array[Serializable] and Array[Any] cast exception
     class ArrayObjectPacket(array: Array[Any]) extends ArrayRefPacket[Any](array)
+
     object ArrayObjectPacket {
+
         def apply(array: Array[Any]): ArrayObjectPacket = new ArrayObjectPacket(array)
     }
 
@@ -78,6 +84,7 @@ object RefPacket {
      * Represents a packet that contains an array of primitive values
      * */
     case class ArrayValPacket[A <: AnyVal](override val value: Array[A]) extends RefPacket[Array[A]] {
+
         def apply(i: Int): A = value(i)
 
         def isEmpty: Boolean = value.isEmpty
@@ -85,7 +92,9 @@ object RefPacket {
         def contains(a: A): Boolean = value.contains(a)
 
         def length: Int = value.length
+
         Thread.currentThread().getContextClassLoader
+
         override def toString: String = s"ArrayValPacket(${value.mkString(",")})"
     }
 

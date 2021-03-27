@@ -20,8 +20,8 @@ import scala.collection.mutable.ListBuffer
 
 class DirectInjection(override val coordinates: DedicatedPacketCoordinates) extends PacketInjection {
 
-    private val injections = ListBuffer.empty[(Int, Packet)]
-    private val injectableID = coordinates.injectableID
+    private          val injections    = ListBuffer.empty[(Int, Packet)]
+    private          val injectableID  = coordinates.injectableID
     //The thread that created this object
     //will be set as the handler of the injection
     private[traffic] val handlerThread = Thread.currentThread()
@@ -29,8 +29,8 @@ class DirectInjection(override val coordinates: DedicatedPacketCoordinates) exte
     @workerExecution
     override def getPackets: Seq[Packet] = injections.synchronized {
         val packets = Array.from(injections)
-            .sorted((x: (Int, Packet), y: (Int, Packet)) => x._1 - y._1)
-            .map(_._2)
+                .sorted((x: (Int, Packet), y: (Int, Packet)) => x._1 - y._1)
+                .map(_._2)
         //println(s"DISCOVERED PACKETS ${packets.mkString("Array(", ", ", ")")} vs INJECTIONS $injections")
         PacketInjections.currentInjections.remove((injectableID, coordinates.senderID))
         packets

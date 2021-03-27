@@ -27,7 +27,7 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val packets = injection.getPackets
+        val packets     = injection.getPackets
         val coordinates = injection.coordinates
         packets.foreach {
             case WrappedPacket(category, subPacket) =>
@@ -43,7 +43,7 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
         //         throw new IllegalArgumentException(s"The category '$name' already exists for this categorised channel")
 
         categories.getOrElseUpdate(name, {
-            val writer = traffic.newWriter(identifier, WrappedPacket(name, _))
+            val writer  = traffic.newWriter(identifier, WrappedPacket(name, _))
             val channel = factory.createNew(scopeFactory(writer))
             categories.put(name, channel)
             channel
@@ -53,6 +53,7 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
 }
 
 object PacketChannelCategories extends PacketInjectableFactory[PacketChannelCategories] {
+
     override def createNew(scope: ChannelScope): PacketChannelCategories = {
         new PacketChannelCategories(scope)
     }

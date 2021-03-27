@@ -29,7 +29,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
                       baseContent: Array[(K, V)], channel: PacketSender with PacketSyncReceiver)
         extends AbstractSharedCache[(K, V)](handler, identifier, channel) {
 
-    private val networkListeners = ConsumerContainer[(MapModification, K, V)]()
+    private val networkListeners        = ConsumerContainer[(MapModification, K, V)]()
     private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]
 
     @volatile private var modCount: Int = 0
@@ -122,7 +122,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
             return apply(k)
         //println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
 
-        val lock = new Object
+        val lock  = new Object
         var found = false
 
         val listener: ((MapModification, K, V)) => Unit = t => {
@@ -152,8 +152,8 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
     private def handleNetworkModRequest(mod: (MapModification, K, V)): Unit = {
         val modKind: MapModification = mod._1
-        val key = mod._2
-        val value = mod._3
+        val key                      = mod._2
+        val value                    = mod._3
 
         val action: LocalMap.type => Unit = modKind match {
             case CLEAR => _.clear()
@@ -257,9 +257,11 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         //Only for debug purpose
         override def toString: String = mainMap.toString()
     }
+
 }
 
 object SharedMap {
+
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
         (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender with PacketSyncReceiver) => {
             new SharedMap[K, V](handler, identifier, ScalaUtils.slowCopy(baseContent), channel)

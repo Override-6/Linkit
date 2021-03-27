@@ -16,12 +16,13 @@ import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.JustifiedCloseable
 
 trait PacketInjectable extends JustifiedCloseable {
+
     val identifier: Int
-    val ownerID: String
+    val ownerID   : String
     /**
      * The traffic handler that is directly or not injecting the packets
      * */
-    val traffic: PacketTraffic
+    val traffic   : PacketTraffic
 
     @workerExecution
     def inject(injection: PacketInjection): Unit

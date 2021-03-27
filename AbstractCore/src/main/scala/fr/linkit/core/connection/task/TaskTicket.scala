@@ -43,16 +43,15 @@ class TaskTicket(executor: TaskExecutor,
                     case e: InvocationTargetException => e.getCause.printStackTrace()
                     case e: TaskOperationFailException =>
                         Console.err.println(e.getMessage)
-                        //e.printStackTrace(errRemote)
+                    //e.printStackTrace(errRemote)
 
                     case NonFatal(e) =>
                         e.printStackTrace()
-                        //e.printStackTrace(errRemote)
+                    //e.printStackTrace(errRemote)
                 }
             case _ =>
         }
     }
-
 
     def start(): Unit = {
         var reason = Reason.INTERNAL_ERROR
@@ -75,11 +74,11 @@ class TaskTicket(executor: TaskExecutor,
 
             case e: TaskOperationFailException =>
                 Console.err.println(e.getMessage)
-                //e.printStackTrace(errRemote)
+            //e.printStackTrace(errRemote)
 
             case NonFatal(e) =>
                 e.printStackTrace()
-                //e.printStackTrace(errRemote)
+            //e.printStackTrace(errRemote)
 
         } finally {
             notifyExecutor()

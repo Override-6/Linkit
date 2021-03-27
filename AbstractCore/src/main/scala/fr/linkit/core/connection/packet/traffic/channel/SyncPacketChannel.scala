@@ -21,12 +21,10 @@ import fr.linkit.core.local.concurrency.{BusyWorkerPool, PacketReaderThread}
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
-
 //TODO doc
 class SyncPacketChannel protected(scope: ChannelScope,
                                   providable: Boolean) extends traffic.channel.AbstractPacketChannel(scope)
         with PacketSender with PacketSyncReceiver {
-
 
     /**
      * this blocking queue stores the received packets until they are requested
@@ -40,7 +38,6 @@ class SyncPacketChannel protected(scope: ChannelScope,
         }
     }
 
-
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
         injection.getPackets.foreach(queue.add)
@@ -49,7 +46,7 @@ class SyncPacketChannel protected(scope: ChannelScope,
     override def send(packet: Packet): Unit = scope.sendToAll(packet)
 
     override def sendTo(packet: Packet, targets: String*): Unit = {
-        scope.sendTo(packet, targets:_*)
+        scope.sendTo(packet, targets: _*)
     }
 
     override def close(reason: Reason): Unit = {
@@ -65,7 +62,6 @@ class SyncPacketChannel protected(scope: ChannelScope,
         packet.asInstanceOf[P]
     }
 
-
     /**
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] would not wait
      * */
@@ -73,7 +69,6 @@ class SyncPacketChannel protected(scope: ChannelScope,
         !queue.isEmpty
 
 }
-
 
 object SyncPacketChannel extends PacketInjectableFactory[SyncPacketChannel] {
 

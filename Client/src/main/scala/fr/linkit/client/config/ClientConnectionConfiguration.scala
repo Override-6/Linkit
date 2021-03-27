@@ -17,6 +17,7 @@ import fr.linkit.api.local.system.config.ExternalConnectionConfiguration
 import java.net.{InetSocketAddress, Socket}
 
 trait ClientConnectionConfiguration extends ExternalConnectionConfiguration {
+
     val reconnectionMillis: Int //time to reconnect in ms
-    val socketFactory: InetSocketAddress => Socket
+    val socketFactory     : InetSocketAddress => Socket
 }

@@ -88,6 +88,7 @@ class ConsumerContainer[T]() {
     override def toString: String = s"ConsumerContainer($consumers)"
 
     private class ConsumerExecutor(consumer: T => Unit, executeOnce: Boolean) {
+
         def execute(t: T): Unit = {
             if (executeOnce) consumer.synchronized {
                 //synchronise in order to be sure that another thread would not start to execute the
@@ -105,5 +106,6 @@ class ConsumerContainer[T]() {
 }
 
 object ConsumerContainer {
+
     def apply[T](): ConsumerContainer[T] = new ConsumerContainer()
 }

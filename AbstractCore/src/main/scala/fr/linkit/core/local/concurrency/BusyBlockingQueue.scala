@@ -29,7 +29,7 @@ import scala.collection.mutable.ListBuffer
 class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
 
     private val content = ListBuffer.empty[A]
-    private val lock = new Object
+    private val lock    = new Object
 
     override def add(e: A): Boolean = {
         content += e
@@ -71,9 +71,9 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
     @workerExecution
     override def poll(timeout: Long, unit: TimeUnit): A = {
-        val toWait = unit.toMillis(timeout)
+        val toWait      = unit.toMillis(timeout)
         var total: Long = 0
-        var last = now()
+        var last        = now()
 
         //the lock object will be notified if an object has been inserted in the list.
         pool.executeRemainingTasks(lock, {
@@ -149,6 +149,5 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
     override def toArray[T](a: Array[T with Object]): Array[T with Object] = {
         toArray.asInstanceOf[Array[T with Object]]
     }
-
 
 }

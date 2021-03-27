@@ -20,16 +20,16 @@ class SocketPacketWriter(socket: DynamicSocket,
                          translator: PacketTranslator,
                          info: WriterInfo) extends PacketWriter {
 
-    override val traffic: PacketTraffic = info.traffic
-    override val serverIdentifier: String = traffic.serverIdentifier
-    override val supportIdentifier: String = traffic.supportIdentifier
-    override val identifier: Int = info.identifier
+    override val traffic          : PacketTraffic = info.traffic
+    override val serverIdentifier : String        = traffic.serverIdentifier
+    override val supportIdentifier: String        = traffic.supportIdentifier
+    override val identifier       : Int           = info.identifier
 
     override def writePacket(packet: Packet, targetIDs: String*): Unit = {
         val transformedPacket = info.transform(packet)
 
         val coords = if (targetIDs.length == 1) {
-            val target = targetIDs.head
+            val target    = targetIDs.head
             val dedicated = DedicatedPacketCoordinates(identifier, targetIDs(0), supportIdentifier)
             if (target == supportIdentifier) {
                 traffic.handleInjection(PacketInjections.unhandled(dedicated, packet))
@@ -48,7 +48,7 @@ class SocketPacketWriter(socket: DynamicSocket,
 
     override def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit = {
         val transformedPacket = info.transform(packet)
-        val coords = BroadcastPacketCoordinates(identifier, supportIdentifier, true, discardedIDs: _*)
+        val coords            = BroadcastPacketCoordinates(identifier, supportIdentifier, true, discardedIDs: _*)
 
         socket.write(translator.translate(transformedPacket, coords).writableBytes)
     }

@@ -20,15 +20,13 @@ import java.net.{InetSocketAddress, Socket}
 
 abstract class ClientConnectionConfigBuilder {
 
-
-    var reconnectionMillis: Int = 5000
-    var socketFactory: InetSocketAddress => Socket = s => new Socket(s.getAddress, s.getPort)
-    var configName: String = "simple-config"
-    var hasher: BytesHasher = BytesHasher.inactive
+    var reconnectionMillis: Int                         = 5000
+    var socketFactory     : InetSocketAddress => Socket = s => new Socket(s.getAddress, s.getPort)
+    var configName        : String                      = "simple-config"
+    var hasher            : BytesHasher                 = BytesHasher.inactive
     val identifier: String
     lazy val translator: PacketTranslator = new CompactedPacketTranslator(identifier, hasher)
     val remoteAddress: InetSocketAddress
-
 
     /**
      * @return a RelayPointConfiguration based on the current settings
@@ -36,13 +34,13 @@ abstract class ClientConnectionConfigBuilder {
     def buildConfig(): ClientConnectionConfiguration = {
         val builder = this
         new ClientConnectionConfiguration {
-            override val reconnectionMillis: Int = builder.reconnectionMillis
-            override val socketFactory: InetSocketAddress => Socket = builder.socketFactory
-            override val remoteAddress: InetSocketAddress = builder.remoteAddress
-            override val configName: String = builder.configName
-            override val identifier: String = builder.identifier
-            override val hasher: BytesHasher = builder.hasher
-            override val translator: PacketTranslator = builder.translator
+            override val reconnectionMillis: Int                         = builder.reconnectionMillis
+            override val socketFactory     : InetSocketAddress => Socket = builder.socketFactory
+            override val remoteAddress     : InetSocketAddress           = builder.remoteAddress
+            override val configName        : String                      = builder.configName
+            override val identifier        : String                      = builder.identifier
+            override val hasher            : BytesHasher                 = builder.hasher
+            override val translator        : PacketTranslator            = builder.translator
         }: ClientConnectionConfiguration
     }
 

@@ -21,7 +21,7 @@ import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.security.ConnectionSecurityException
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.system.{ContextLogger, Rules}
+import fr.linkit.core.local.system.{AppLogger, Rules}
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
 
@@ -30,11 +30,11 @@ import scala.util.control.NonFatal
 
 class ServerApplication private(override val configuration: ServerApplicationConfiguration) extends ApplicationContext {
 
-    private val mainWorkerPool = new BusyWorkerPool(configuration.mainPoolThreadCount, "Appplication")
+    private  val mainWorkerPool               = new BusyWorkerPool(configuration.mainPoolThreadCount, "Appplication")
     override val pluginManager: PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
-    private val serverCache = mutable.HashMap.empty[Any, ServerConnection]
-    private val securityManager = configuration.securityManager
-    @volatile private var alive = false
+    private  val serverCache                  = mutable.HashMap.empty[Any, ServerConnection]
+    private  val securityManager              = configuration.securityManager
+    @volatile private var alive               = false
 
     override def countConnections: Int = {
         /*
@@ -53,9 +53,9 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         * */
         mainWorkerPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
-        ContextLogger.info("Server application is shutting down...")
+        AppLogger.info("Server application is shutting down...")
         var downCount = 0
-        val downLock = new Object
+        val downLock  = new Object
 
         listConnections.foreach((serverConnection: ServerConnection) => serverConnection.runLater {
             try {
@@ -72,7 +72,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             downLock.wait()
         }
         alive = false
-        ContextLogger.info("Server application successfully shutdown.")
+        AppLogger.info("Server application successfully shutdown.")
     }
 
     @workerExecution
@@ -92,7 +92,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             val pluginCount = pluginManager.loadAll(pluginFolder).length
             configuration.fsAdapter.getAdapter(pluginFolder)
 
-            ContextLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
+            AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
         }
     }
 
@@ -123,7 +123,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
 
         securityManager.checkConnectionConfig(configuration)
         val serverConnection = new ServerConnection(this, configuration)
-        val startLock = new Object
+        val startLock        = new Object
         serverConnection.runLater {
             serverConnection.start()
             startLock.synchronized {
@@ -143,7 +143,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
                 throw e
         }
 
-        val port = configuration.port
+        val port       = configuration.port
         val identifier = configuration.identifier
         serverCache.put(port, serverConnection)
         serverCache.put(identifier, serverConnection)
@@ -156,8 +156,8 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         ensureAlive()
 
         val configuration = serverConnection.configuration
-        val port = configuration.port
-        val identifier = configuration.identifier
+        val port          = configuration.port
+        val identifier    = configuration.identifier
 
         if (!serverCache.contains(port) || !serverCache.contains(identifier))
             throw NoSuchConnectionException(s"Could not unregister server $identifier opened on port $port; connection not found in application context.")
@@ -182,6 +182,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
 }
 
 object ServerApplication {
+
     @volatile private var initialized = false
 
     def launch(config: ServerApplicationConfiguration): ServerApplication = {
@@ -189,7 +190,7 @@ object ServerApplication {
             throw new IllegalStateException("Application was already launched !")
 
         val serverAppContext = try {
-            ContextLogger.info("Instantiating Server application...")
+            AppLogger.info("Instantiating Server application...")
             new ServerApplication(config)
         } catch {
             case NonFatal(e) =>
@@ -199,12 +200,12 @@ object ServerApplication {
         @volatile var exception: Throwable = null
         serverAppContext.runLater {
             try {
-                ContextLogger.info("Starting Server Application...")
+                AppLogger.info("Starting Server Application...")
                 serverAppContext.start()
                 val loadSchematic = config.loadSchematic
-                ContextLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
+                AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
                 loadSchematic.setup(serverAppContext)
-                ContextLogger.trace("Schematic applied successfully.")
+                AppLogger.trace("Schematic applied successfully.")
             } catch {
                 case NonFatal(e) =>
                     exception = e

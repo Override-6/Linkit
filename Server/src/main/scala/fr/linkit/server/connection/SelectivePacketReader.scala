@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, PacketInjections}
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 
 import java.net.SocketException
 import scala.util.control.NonFatal
@@ -26,8 +26,8 @@ class SelectivePacketReader(socket: DynamicSocket,
                             manager: ExternalConnectionsManager,
                             boundIdentifier: String) extends PacketReader {
 
-    private val configuration = server.configuration
-    private val simpleReader = new DefaultPacketReader(socket, configuration.hasher, configuration.translator)
+    private val configuration                      = server.configuration
+    private val simpleReader                       = new DefaultPacketReader(socket, configuration.hasher, configuration.translator)
     @volatile private var concernedPacketsReceived = 0
 
     override def nextPacket(callback: (PacketDeserializationResult, Int) => Unit): Unit = {
@@ -35,7 +35,7 @@ class SelectivePacketReader(socket: DynamicSocket,
             nextConcernedPacket(callback)
         } catch {
             case e: SocketException if e.getMessage == "Connection reset" =>
-                ContextLogger.error(s"client '$boundIdentifier' disconnected.")
+                AppLogger.error(s"client '$boundIdentifier' disconnected.")
         }
     }
 
@@ -63,14 +63,13 @@ class SelectivePacketReader(socket: DynamicSocket,
                     concernedPacketsReceived -= 1 //reduce the number of concerned packets because this packet did not target the server
                 }
 
-
             case broadcast: BroadcastPacketCoordinates =>
                 //TODO optimise packet deflection : only serialize the new coordinates, then concat the packet bytes
                 val identifiers = broadcast.listDiscarded(manager.listIdentifiers) ++ Array(boundIdentifier)
                 manager.broadcastBytes(packet, broadcast.injectableID, boundIdentifier, identifiers: _*)
 
                 //would inject into the server too
-                val coords = DedicatedPacketCoordinates(broadcast.injectableID, server.supportIdentifier, broadcast.senderID)
+                val coords    = DedicatedPacketCoordinates(broadcast.injectableID, server.supportIdentifier, broadcast.senderID)
                 val injection = PacketInjections.createInjection(packet, coords, concernedPacketsReceived)
                 server.traffic.handleInjection(injection)
         }

@@ -14,9 +14,10 @@ package fr.linkit.core.local.system
 
 import fr.linkit.api.local.ApplicationContext
 import org.apache.log4j.{Level, Logger}
+import org.jetbrains.annotations.Nullable
 
+object AppLogger {
 
-object ContextLogger {
     var NetworkPreviewLength: Int = 1000
 
     val logger: Logger = Logger.getLogger(classOf[ApplicationContext])
@@ -45,10 +46,18 @@ object ContextLogger {
 
     def debug(msg: AnyRef, throwable: Throwable): Unit = logger.debug(msg, throwable)
 
-    def network(prefix: String, bytes: Array[Byte]): Unit = {
+    def logUpload(target: String, bytes: Array[Byte]): Unit = {
         if (logger.isDebugEnabled) {
             val preview = new String(bytes.take(NetworkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
-            debug(prefix + preview + s" (l: ${bytes.length})")
+            debug(s"${Console.MAGENTA}Written : ↑ $target ↑ $preview (l: ${bytes.length})")
+        }
+    }
+
+    def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = {
+        if (logger.isDebugEnabled) {
+            val preview     = new String(bytes.take(NetworkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
+            val finalTarget = if (target == null) "" else target
+            debug(s"${Console.CYAN}Received: ↓ $finalTarget ↓ $preview (l: ${bytes.length})")
         }
     }
 

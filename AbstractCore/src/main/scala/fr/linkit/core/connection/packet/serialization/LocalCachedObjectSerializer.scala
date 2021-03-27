@@ -20,6 +20,7 @@ import scala.collection.mutable
  * Used for tests only.
  * */
 object LocalCachedObjectSerializer extends ObjectSerializer {
+
     private val cache = new mutable.HashMap[Int, String]()
 
     override val signature: Array[Byte] = Array(0)

@@ -13,31 +13,31 @@
 package fr.linkit.server
 
 import fr.linkit.api.local.plugin.Plugin
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 import fr.linkit.plugin.controller.ControllerExtension
 import fr.linkit.plugin.debug.DebugExtension
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
-
 object ServerLauncher {
+
     def main(args: Array[String]): Unit = {
-        ContextLogger.info(s"Running server with arguments ${args.mkString("'", ", ", "'")}")
+        AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
 
-        val config = new ServerApplicationConfigBuilder {
+        val config           = new ServerApplicationConfigBuilder {
             pluginsFolder = None //userDefinedPluginFolder
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = "TestServer1"
-                    override val port: Int = 48484
+                    override val port      : Int    = 48484
 
                     configName = "config1"
                 }
             }
         }
         val serverAppContext = ServerApplication.launch(config)
-        ContextLogger.trace(s"Build complete: $serverAppContext")
+        AppLogger.trace(s"Build complete: $serverAppContext")
         val pluginManager = serverAppContext.pluginManager
         pluginManager.loadAllClass(Array(
             classOf[ControllerExtension]: Class[_ <: Plugin],

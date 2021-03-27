@@ -19,6 +19,7 @@ import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.system.event.EventNotifier
 
 trait ConnectionContext extends PacketInjectableContainer with Procrastinator {
+
     val supportIdentifier: String
 
     def traffic: PacketTraffic

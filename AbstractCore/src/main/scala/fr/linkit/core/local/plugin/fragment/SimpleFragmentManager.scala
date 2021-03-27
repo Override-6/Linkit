@@ -24,7 +24,7 @@ class SimpleFragmentManager() extends FragmentManager {
     private val fragmentMap: mutable.Map[Class[_ <: Plugin], PluginFragments] = mutable.Map.empty
 
     override def putFragment(fragment: PluginFragment)(implicit owner: Plugin): Unit = {
-        val pluginClass = owner.getClass
+        val pluginClass   = owner.getClass
         val fragmentClass = fragment.getClass
         if (getFragment(pluginClass, fragmentClass).isDefined)
             throw new IllegalArgumentException("This fragment kind is already set for this extension")
@@ -34,7 +34,7 @@ class SimpleFragmentManager() extends FragmentManager {
 
         fragment match {
             case remote: RemoteFragment =>
-                //TODO initRemote(remote)
+            //TODO initRemote(remote)
 
             case _ =>
         }
@@ -78,6 +78,7 @@ class SimpleFragmentManager() extends FragmentManager {
     }
 
     private class PluginFragments {
+
         private val fragments: mutable.Map[Class[_ <: PluginFragment], PluginFragment] = mutable.Map.empty
 
         def getFragment[F <: PluginFragment](fragmentClass: Class[F]): Option[F] = {

@@ -18,6 +18,7 @@ import fr.linkit.api.local.plugin.{Plugin, PluginLoadException, PluginLoader}
 import scala.util.control.NonFatal
 
 class DirectPluginLoader(context: ApplicationContext, classes: Array[Class[_ <: Plugin]]) extends PluginLoader {
+
     private var count = 0
 
     override def nextPlugin(): Plugin = {

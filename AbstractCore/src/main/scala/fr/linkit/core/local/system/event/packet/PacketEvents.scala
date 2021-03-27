@@ -19,6 +19,7 @@ import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPac
 object PacketEvents {
 
     sealed trait PacketSentEvent extends PacketEvent {
+
         val coordinates: PacketCoordinates
     }
 

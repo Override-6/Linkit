@@ -13,6 +13,7 @@
 package fr.linkit.core.connection.packet.serialization
 
 object NumberSerializer {
+
     def serializeLong(value: Long): Array[Byte] = {
         Array[Byte](
             ((value >> 56) & 0xff).toByte,

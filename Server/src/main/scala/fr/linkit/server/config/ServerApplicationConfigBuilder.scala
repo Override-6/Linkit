@@ -22,21 +22,21 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 
 abstract class ServerApplicationConfigBuilder {
 
-    var mainPoolThreadCount: Int = 2
-    @Nullable var pluginsFolder: Option[String] = Some("/Plugins")
-    @NotNull var fsAdapter: FileSystemAdapter = JDKFileSystemAdapters.Nio
-    @NotNull var securityManager: ApplicationSecurityManager = ApplicationSecurityManager.none
-    @NotNull var loadSchematic: AppSchematic[ServerApplication] = EmptySchematic[ServerApplication]
+              var mainPoolThreadCount: Int                             = 2
+    @Nullable var pluginsFolder      : Option[String]                  = Some("/Plugins")
+    @NotNull  var fsAdapter          : FileSystemAdapter               = JDKFileSystemAdapters.Nio
+    @NotNull  var securityManager    : ApplicationSecurityManager      = ApplicationSecurityManager.none
+    @NotNull  var loadSchematic      : AppSchematic[ServerApplication] = EmptySchematic[ServerApplication]
 
     @throws[ApplicationInstantiationException]("If any exception is thrown during build")
     def buildConfig(): ServerApplicationConfiguration = {
         val builder = this
         new ServerApplicationConfiguration {
-            override val pluginFolder: Option[String] = builder.pluginsFolder
-            override val fsAdapter: FileSystemAdapter = builder.fsAdapter
-            override val securityManager: ApplicationSecurityManager = builder.securityManager
-            override val mainPoolThreadCount: Int = builder.mainPoolThreadCount
-            override var loadSchematic: AppSchematic[ServerApplication] = builder.loadSchematic
+            override val pluginFolder       : Option[String]                  = builder.pluginsFolder
+            override val fsAdapter          : FileSystemAdapter               = builder.fsAdapter
+            override val securityManager    : ApplicationSecurityManager      = builder.securityManager
+            override val mainPoolThreadCount: Int                             = builder.mainPoolThreadCount
+            override var loadSchematic      : AppSchematic[ServerApplication] = builder.loadSchematic
         }
     }
 

@@ -17,44 +17,46 @@ import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.core.connection.network.cache.collection.SharedCollection
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
 
 class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesHasher) extends PacketTranslator { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
     override def translate(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
-        val result = SmartSerializer.serialize(packet, coordinates)
+        val result = AdaptiveSerializer.serialize(packet, coordinates)
         securityManager.hashBytes(result.bytes)
         result
     }
 
     override def translate(bytes: Array[Byte]): PacketDeserializationResult = {
         securityManager.deHashBytes(bytes)
-        SmartSerializer.deserialize(bytes)
+        AdaptiveSerializer.deserialize(bytes)
     }
 
     override val signature: Array[Byte] = new Array(3)
 
     def updateCache(manager: SharedCacheManager): Unit = {
         //return
-        SmartSerializer.updateCache(manager)
+        AdaptiveSerializer.updateCache(manager)
     }
 
     def blackListFromCachedSerializer(target: String): Unit = {
-        SmartSerializer.blackListFromCachedSerializer(target)
+        AdaptiveSerializer.blackListFromCachedSerializer(target)
     }
 
-    private object SmartSerializer {
-        private val rawSerializer = RawObjectSerializer
+    private object AdaptiveSerializer {
+
+        private val rawSerializer                                                 = RawObjectSerializer
         @Nullable
-        @volatile private var cachedSerializer: ObjectSerializer = _ //Will be instantiated once connection with the server is handled.
+        @volatile private var cachedSerializer         : CachedObjectSerializer   = _ //Will be instantiated once connection with the server is handled.
         @Nullable
         @volatile private var cachedSerializerWhitelist: SharedCollection[String] = _
 
         def serialize(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
             //Thread.dumpStack()
-            lazy val  serializer = if (initialised) {
+            lazy val serializer = if (initialised) {
+                //println(s"cachedSerializerWhitelist = ${cachedSerializerWhitelist}")
                 val whiteListArray = cachedSerializerWhitelist.toArray
                 coordinates.determineSerializer(whiteListArray, rawSerializer, cachedSerializer)
             } else {
@@ -70,12 +72,12 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
         }
 
         def deserialize(bytes: Array[Byte]): PacketDeserializationResult = {
-            lazy val serializer = if (rawSerializer.isSameSignature(bytes)) {
-                rawSerializer
-            } else if (initialised && cachedSerializer.isSameSignature(bytes)) {
-                cachedSerializer
-            } else {
-                throw new IllegalStateException("Received unknown serializer signature. (or maybe cached serializer, but this translator is unable to match it while it stands not initialized.)")
+            lazy val serializer = {
+                if (bytes.startsWith(RawObjectSerializer.Signature))
+                    rawSerializer
+                else if (bytes.startsWith(CachedObjectSerializer.Signature))
+                    cachedSerializer
+                else throw new IllegalStateException(s"Received unknown packet signature. (${new String(bytes)})")
             }
             PacketDeserializationResult(() => serializer, bytes)
         }
@@ -83,12 +85,12 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
         def updateCache(cache: SharedCacheManager): Unit = {
             cachedSerializer = new CachedObjectSerializer(cache)
 
-            if (cachedSerializer == null)
-                ContextLogger.info(s"$ownerIdentifier: Stage 2 completed : Main cache manager created.")
+            if (cachedSerializerWhitelist == null)
+                AppLogger.info(s"$ownerIdentifier: Stage 2 completed : Main cache manager created.")
 
             cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
             cachedSerializerWhitelist.add(ownerIdentifier)
-            //cachedSerializerWhitelist.addListener((_, _, _) => ContextLogger.debug(s"Whitelist : $cachedSerializerWhitelist"))
+            cachedSerializerWhitelist.addListener((_, _, _) => AppLogger.warn(s"Whitelist : $cachedSerializerWhitelist"))
         }
 
         def initialised: Boolean = cachedSerializerWhitelist != null

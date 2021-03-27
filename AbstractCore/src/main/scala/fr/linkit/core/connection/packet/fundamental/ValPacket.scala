@@ -15,6 +15,7 @@ package fr.linkit.core.connection.packet.fundamental
 import fr.linkit.api.connection.packet.Packet
 
 sealed trait ValPacket[A <: AnyVal] extends Packet {
+
     val value: A
 
     def apply: A = value

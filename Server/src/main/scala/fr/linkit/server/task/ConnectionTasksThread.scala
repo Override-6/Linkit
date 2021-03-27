@@ -24,7 +24,7 @@ import scala.util.control.NonFatal
 class ConnectionTasksThread private(ticketQueue: BlockingQueue[TaskTicket],
                                     lostInjections: mutable.Map[Int, ListBuffer[PacketInjection]]) extends Thread with JustifiedCloseable {
 
-    @volatile private var open = false
+    @volatile private var open                      = false
     @volatile private var currentTicket: TaskTicket = _
 
     def this(identifier: String) = {
@@ -42,7 +42,7 @@ class ConnectionTasksThread private(ticketQueue: BlockingQueue[TaskTicket],
                 case _: InterruptedException =>
                 case NonFatal(e) =>
                     e.printStackTrace()
-                   // consoleErr.print(e)
+                // consoleErr.print(e)
             }
         }
     }
@@ -71,7 +71,7 @@ class ConnectionTasksThread private(ticketQueue: BlockingQueue[TaskTicket],
         val ticket = ticketQueue.take()
         currentTicket = ticket
         val channel = ticket.channel
-        val taskID = channel.identifier
+        val taskID  = channel.identifier
         //Adding eventual lost packets to this task
         if (lostInjections.contains(taskID)) {
             val queue = lostInjections(taskID)

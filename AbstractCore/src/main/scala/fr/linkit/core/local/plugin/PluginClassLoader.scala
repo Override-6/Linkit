@@ -23,7 +23,7 @@ import java.util.zip.ZipFile
 import scala.collection.mutable
 
 class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bridge: PluginClassLoaderBridge)
-    extends URLClassLoader(pluginFiles.map(_.toUri.toURL)) {
+        extends URLClassLoader(pluginFiles.map(_.toUri.toURL)) {
 
     private val map = mutable.HashMap.empty[FileAdapter, String]
 
@@ -50,7 +50,7 @@ class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bri
 
     private def loadJar(adapter: FileAdapter): Class[_ <: Plugin] = {
 
-        val jarFile = new ZipFile(adapter.getPath)
+        val jarFile      = new ZipFile(adapter.getPath)
         val propertyFile = jarFile.getEntry(PropertiesFileName)
         //Checking property presence
         if (propertyFile == null)
@@ -83,6 +83,7 @@ class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bri
 }
 
 object PluginClassLoader {
-    val MainClassField = "main"
+
+    val MainClassField     = "main"
     val PropertiesFileName = "plugin.properties"
 }

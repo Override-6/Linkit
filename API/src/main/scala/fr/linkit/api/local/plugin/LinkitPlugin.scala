@@ -21,10 +21,10 @@ abstract class LinkitPlugin extends Plugin {
     val name: String = getClass.getSimpleName
     implicit protected val self: LinkitPlugin = this
 
-    private var context: ApplicationContext = _
-    private var fragmentsManager: FragmentManager = _
-    private var pluginManager: PluginManager = _
-    override val configuration: PluginConfiguration = null
+    private var context         : ApplicationContext  = _
+    private var fragmentsManager: FragmentManager     = _
+    private var pluginManager   : PluginManager       = _
+    override val configuration  : PluginConfiguration = null
 
     protected def putFragment(fragment: PluginFragment): Unit = {
         fragmentsManager.putFragment(fragment)

@@ -24,7 +24,6 @@ import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float =
 import java.nio.ByteBuffer
 import scala.util.control.NonFatal
 
-
 //TODO Work with all primitives integer types instead of using longs.
 //TODO Optimize arrays; The item kind is repeated in front of each elements of the array, where the type of the array could only be specified once (Be sure that all the elements are the same !)
 //TODO Deducting number types from their lengths instead of putting a flag MIGHT BE NOT POSSIBLE EVERYWHERE
@@ -85,8 +84,6 @@ abstract class ObjectSerializer extends Serializer {
      * */
     protected def deserializeType(bytes: Array[Byte]): (Class[_], Int)
 
-
-
     private def serializeObject(insertFlag: Boolean, any: Any): Array[Byte] = {
         //println(s"Serializing object '$any'")
         if (any == null)
@@ -99,23 +96,23 @@ abstract class ObjectSerializer extends Serializer {
         if (clazz.isArray)
             return ObjectFlagArray ++ serializeArray(any.asInstanceOf[Array[_]])
 
-        val fields = listSerializableFields(clazz)
+        val fields       = listSerializableFields(clazz)
         val fieldsLength = fields.length
-        val typeIdBytes = if (insertFlag) serializeType(clazz) else Array()
+        val typeIdBytes  = if (insertFlag) serializeType(clazz) else Array()
 
         //println(s"fieldsLength = ${fieldsLength}")
         if (fieldsLength == 0)
             return ObjectFlagArray ++ typeIdBytes ++ NoFieldFlagArray
 
-        var bytes = Array[Byte]()
+        var bytes   = Array[Byte]()
         //Discard the last field, we already know his length by deducting it from previous lengths
         val lengths = new Array[Int](fieldsLength - 1)
         //println(s"fieldsLength = ${fieldsLength}")
 
         for (i <- 0 until fieldsLength) {
-            val field = fields(i)
+            val field      = fields(i)
             //println(s"field = ${field}")
-            val value = field.get(any)
+            val value      = field.get(any)
             //println(s"Serializing field value '$value' of field $field")
             val valueBytes = serializeValue(field.getType, value)
             //println(s"value = ${new String(valueBytes)}")
@@ -149,7 +146,7 @@ abstract class ObjectSerializer extends Serializer {
         if (anyArray.isEmpty)
             return EmptyFlagArray
 
-        val flag = getAppropriateFlag(anyArray)
+        val flag                 = getAppropriateFlag(anyArray)
         //println(s"flag = ${flag}")
         val content: Array[Byte] = flag match {
             case ByteArrayFlag =>
@@ -168,11 +165,11 @@ abstract class ObjectSerializer extends Serializer {
                 buff.array()
             case AnyArrayFlag =>
                 val lengths = new Array[Int](anyArray.length - 1) //discard the last element length, because it can be deducted from the total length
-                var buff = Array[Byte]()
+                var buff    = Array[Byte]()
                 //TODO var lastClass: Class[_] = null
 
                 for (i <- anyArray.indices) {
-                    val any = anyArray(i)
+                    val any   = anyArray(i)
                     //println(s"serializing = ${any}")
                     val bytes = serializeValue(null, any)
                     //println(s"serialized $any as ${new String(bytes).replace('\r', ' ')}")
@@ -181,7 +178,7 @@ abstract class ObjectSerializer extends Serializer {
                     buff ++= bytes
                 }
                 val numOfLength = serializeNumber(anyArray.length, true)
-                val signBytes = lengths.flatMap(l => serializeNumber(l, true))
+                val signBytes   = lengths.flatMap(l => serializeNumber(l, true))
                 //println(s"For array : ${anyArray.mkString("Array(", ", ", ")")}")
                 //println(s"signBytes = ${new String(signBytes)}")
                 //println("buff = " + new String(buff).replace('\r', ' '))
@@ -192,13 +189,12 @@ abstract class ObjectSerializer extends Serializer {
         Array(flag) ++ content
     }
 
-
     private def deserializeArray(bytes: Array[Byte]): Array[Any] = {
         //println(s"Deserializing ${new String(bytes).replace('\r', ' ')}")
-        val flag = bytes(0)
+        val flag    = bytes(0)
         //println(s"flag = ${flag}")
         val content = bytes.drop(1)
-        var buff = Array[Any]()
+        var buff    = Array[Any]()
         flag match {
             case EmptyFlag =>
             case NullFlag => return null
@@ -214,9 +210,9 @@ abstract class ObjectSerializer extends Serializer {
                 //println(s"numOfLengths = ${numOfLengths}")
                 //println(s"numBytesLength = ${numBytesLength}")
                 //println(s"content = ${new String(content).replace('\r', ' ')}")
-                val (lengths, signBytesLength) = readSign(content, numBytesLength, numOfLengths.toInt, content.length)
+                val (lengths, signBytesLength)     = readSign(content, numBytesLength, numOfLengths.toInt, content.length)
                 //println(s"signBytesLength = ${signBytesLength}")
-                var currentItIndex = signBytesLength + numBytesLength //the total sign length
+                var currentItIndex                 = signBytesLength + numBytesLength //the total sign length
                 //println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
                 //println(s"signBytesLength = ${signBytesLength}")
                 //TODO var lastType: Class[_] = null
@@ -225,7 +221,7 @@ abstract class ObjectSerializer extends Serializer {
                     val itemBytes = content.slice(currentItIndex, currentItIndex + itLength)
                     //println(s"Deserializing ${new String(itemBytes)}")
                     //TODO val forceObj = (typeStreak && !determineForceObjDeserial(lastType)) || (!typeStreak && determineForceObjDeserial(lastType))
-                    val value = deserializeValue(null, itemBytes)
+                    val value     = deserializeValue(null, itemBytes)
                     //println(s"value = ${value}")
                     buff = buff.appended(value)
 
@@ -235,7 +231,6 @@ abstract class ObjectSerializer extends Serializer {
         }
         buff
     }
-
 
     protected def serializeNumber(value: Long, insertFlag: Boolean): Array[Byte] = {
         //println(s"Serializing number $value, insertFlag: $insertFlag")
@@ -261,12 +256,11 @@ abstract class ObjectSerializer extends Serializer {
         flag(LongFlagArray) ++ serializeLong(value)
     }
 
-
     protected def serializeValue(typeHint: Class[_], value: Any): Array[Byte] = {
         if (value == null) {
             return NullFlagArray
         }
-        val clazz = value.getClass
+        val clazz           = value.getClass
         //println(s"Serializing value : $value of type $clazz")
         val serializedValue = if (clazz.isArray) {
             serializeArray(value.asInstanceOf[Array[_]])
@@ -316,14 +310,14 @@ abstract class ObjectSerializer extends Serializer {
         //println(s"Deserializing number in region ${new String(bytes.slice(from, to))}")
 
         var result = 0
-        val limit = to.min(bytes.length) - from
+        val limit  = to.min(bytes.length) - from
 
         if (limit == 1)
             return bytes(from)
         //println(s"from = ${from}")
         for (i <- 0 until limit) {
             val byteIndex = from + ((i - limit).abs - 1)
-            val b = bytes(byteIndex)
+            val b         = bytes(byteIndex)
             //println(s"i = ${i}")
             //println(s"b = ${b} ${new String(Array(b))}")
             result |= (0xff & b) << i * 8
@@ -351,7 +345,7 @@ abstract class ObjectSerializer extends Serializer {
 
     private def readSign(bytes: Array[Byte], from: Int, numOfLengths: Int, lastLengthReference: Int): (Array[Int], Int) = {
         val valuesLengths = new Array[Int](numOfLengths)
-        var nextIndex = from
+        var nextIndex     = from
 
         //println(s"Reading sign ${new String(bytes.drop(from)).replace('\r', ' ')}")
 
@@ -403,8 +397,8 @@ abstract class ObjectSerializer extends Serializer {
             return instance
         }
 
-        val objectLength = bytes.length
-        val fields = listSerializableFields(kindClass)
+        val objectLength  = bytes.length
+        val fields        = listSerializableFields(kindClass)
         val fieldsNumbers = fields.length
 
         //Reading Instance Sign...
@@ -418,15 +412,15 @@ abstract class ObjectSerializer extends Serializer {
         //Writing values to the empty instance
         var currentValIndex = kindClassLength + signBytesLength
         for (i <- 0 until fieldsNumbers) {
-            val field = fields(i)
-            val fieldType = field.getType
+            val field       = fields(i)
+            val fieldType   = field.getType
             val valueLength = valuesLengths(i)
             //println(s"field = ${field}")
             //println(s"currentValIndex = ${currentValIndex}")
             //println(s"valueLength = ${valueLength}")
-            val valueBytes = bytes.slice(currentValIndex, currentValIndex + valueLength)
+            val valueBytes  = bytes.slice(currentValIndex, currentValIndex + valueLength)
             //println(s"valueBytes = ${new String(valueBytes)}")
-            val value = deserializeValue(fieldType, valueBytes)
+            val value       = deserializeValue(fieldType, valueBytes)
             //println(s"value = ${value}")
             //println(s"value.getClass = ${value.getClass}")
             setValue(instance, field, value)
@@ -456,7 +450,7 @@ abstract class ObjectSerializer extends Serializer {
 
     private def deserializeEnum[T <: Enum[T]](bytes: Array[Byte]): T = {
         val (clazz, length) = deserializeType(bytes)
-        val enumName = new String(bytes.drop(length))
+        val enumName        = new String(bytes.drop(length))
         Enum.valueOf(clazz.asInstanceOf[Class[T]], enumName)
     }
 
@@ -500,7 +494,6 @@ abstract class ObjectSerializer extends Serializer {
         }
     }
 
-
     private def listSerializableFields(clazz: Class[_]): Array[Field] = {
         if (clazz == null)
             return Array()
@@ -513,44 +506,45 @@ abstract class ObjectSerializer extends Serializer {
 }
 
 object ObjectSerializer {
+
     private val TheUnsafe = findUnsafe()
     private val EnumClass = classOf[Enum[_]]
 
     private val ShortArrayFlag: Byte = -100
-    private val ByteArrayFlag: Byte = -99
-    private val IntArrayFlag: Byte = -98
-    private val LongArrayFlag: Byte = -97
-    private val AnyArrayFlag: Byte = -96
+    private val ByteArrayFlag : Byte = -99
+    private val IntArrayFlag  : Byte = -98
+    private val LongArrayFlag : Byte = -97
+    private val AnyArrayFlag  : Byte = -96
 
-    private val IntFlag: Byte = -95
-    private val ShortFlag: Byte = -94
-    private val ByteFlag: Byte = -93
-    private val LongFlag: Byte = -92
-    private val FloatFlag: Byte = -91
+    private val IntFlag   : Byte = -95
+    private val ShortFlag : Byte = -94
+    private val ByteFlag  : Byte = -93
+    private val LongFlag  : Byte = -92
+    private val FloatFlag : Byte = -91
     private val DoubleFlag: Byte = -90
     private val ObjectFlag: Byte = -89
 
-    private val StringFlag: Byte = -88
-    private val NullFlag: Byte = -87
-    private val EmptyFlag: Byte = -86
-    private val NoFieldFlag: Byte = -85
+    private val StringFlag  : Byte = -88
+    private val NullFlag    : Byte = -87
+    private val EmptyFlag   : Byte = -86
+    private val NoFieldFlag : Byte = -85
     private val OneFieldFlag: Byte = -84
-    private val EnumFlag: Byte = -83
+    private val EnumFlag    : Byte = -83
 
-    private val IntFlagArray: Array[Byte] = Array(IntFlag)
-    private val ShortFlagArray: Array[Byte] = Array(ShortFlag)
-    private val ByteFlagArray: Array[Byte] = Array(ByteFlag)
-    private val LongFlagArray: Array[Byte] = Array(LongFlag)
-    private val FloatFlagArray: Array[Byte] = Array(FloatFlag)
+    private val IntFlagArray   : Array[Byte] = Array(IntFlag)
+    private val ShortFlagArray : Array[Byte] = Array(ShortFlag)
+    private val ByteFlagArray  : Array[Byte] = Array(ByteFlag)
+    private val LongFlagArray  : Array[Byte] = Array(LongFlag)
+    private val FloatFlagArray : Array[Byte] = Array(FloatFlag)
     private val DoubleFlagArray: Array[Byte] = Array(DoubleFlag)
     private val ObjectFlagArray: Array[Byte] = Array(ObjectFlag)
 
-    private val StringFlagArray: Array[Byte] = Array(StringFlag)
-    private val NullFlagArray: Array[Byte] = Array(NullFlag)
-    private val EmptyFlagArray: Array[Byte] = Array(EmptyFlag)
-    private val NoFieldFlagArray: Array[Byte] = Array(NoFieldFlag)
+    private val StringFlagArray  : Array[Byte] = Array(StringFlag)
+    private val NullFlagArray    : Array[Byte] = Array(NullFlag)
+    private val EmptyFlagArray   : Array[Byte] = Array(EmptyFlag)
+    private val NoFieldFlagArray : Array[Byte] = Array(NoFieldFlag)
     private val OneFieldFlagArray: Array[Byte] = Array(OneFieldFlag)
-    private val EnumFlagArray: Array[Byte] = Array(EnumFlag)
+    private val EnumFlagArray    : Array[Byte] = Array(EnumFlag)
 
     private val NumberWrapperClasses: Array[Class[_]] = Array(classOf[JByte], classOf[JShort], classOf[JInt], classOf[JLong])
 
@@ -561,7 +555,6 @@ object ObjectSerializer {
     private def isArray(bytes: Array[Byte]): Boolean = {
         ArrayFlags.exists(bytes.startsWith(_))
     }
-
 
     @throws[IllegalAccessException]
     private def findUnsafe(): Unsafe = {

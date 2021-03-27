@@ -23,6 +23,7 @@ import scala.collection.mutable
  * */
 @deprecated("Still in development...")
 class BusyLock(releaseCondition: => Boolean = true) {
+
     /**
      * A Map containing the busy lock tickets wich are associated to a thread
      * */
@@ -87,6 +88,7 @@ class BusyLock(releaseCondition: => Boolean = true) {
      * Busy lock repertory of one thread
      * */
     private final case class ThreadLocksRepertory() {
+
         private val depths = mutable.HashMap.empty[Int, AnyRef]
 
         /**
@@ -94,7 +96,7 @@ class BusyLock(releaseCondition: => Boolean = true) {
          * */
         def stopWorking(): Unit = {
             val depth = currentPool.currentTaskExecutionDepth
-            val lock = depths(depth)
+            val lock  = depths(depth)
             lock.synchronized {
                 lock.notifyAll()
             }

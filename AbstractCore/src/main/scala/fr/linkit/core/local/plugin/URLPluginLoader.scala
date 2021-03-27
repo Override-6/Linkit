@@ -17,12 +17,12 @@ import fr.linkit.api.local.plugin.{Plugin, PluginLoadException, PluginLoader}
 
 import scala.util.control.NonFatal
 
-class URLPluginLoader(context: ApplicationContext, loader: PluginClassLoader) extends PluginLoader{
+class URLPluginLoader(context: ApplicationContext, loader: PluginClassLoader) extends PluginLoader {
 
     @volatile private var count = 0
 
     override def nextPlugin(): Plugin = {
-        val adapter = loader.pluginFiles(count)
+        val adapter   = loader.pluginFiles(count)
         val mainClass = loader.loadMainClass(adapter)
         count += 1
         try {

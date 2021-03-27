@@ -16,8 +16,7 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.JustifiedCloseable
 
-
-trait PacketTraffic extends JustifiedCloseable with PacketInjectableContainer  {
+trait PacketTraffic extends JustifiedCloseable with PacketInjectableContainer {
 
     val supportIdentifier: String
 
@@ -30,10 +29,10 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableContainer  {
 
     def newWriter(id: Int, transform: Packet => Packet = p => p): PacketWriter
 
-
 }
 
 object PacketTraffic {
+
     val SystemChannelID = 1
-    val RemoteConsoles = 2
+    val RemoteConsoles  = 2
 }

@@ -17,6 +17,7 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import org.jetbrains.annotations.NotNull
 
 trait RemoteFragment extends PluginFragment {
+
     val nameIdentifier: String
 
     def handleRequest(packet: Packet, coords: DedicatedPacketCoordinates): Unit

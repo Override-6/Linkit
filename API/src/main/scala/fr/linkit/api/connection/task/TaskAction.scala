@@ -22,6 +22,7 @@ import java.util.concurrent.ThreadLocalRandom
  * @see [[TaskAction]]
  * */
 trait TaskAction[T] {
+
     /**
      * The session identifier is different from the Relay identifiers.
      * this identifier is implanted to packets who emerges from this task.

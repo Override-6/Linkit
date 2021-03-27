@@ -15,5 +15,6 @@ package fr.linkit.api.connection.packet.traffic
 import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
 
 trait PacketReader {
+
     def nextPacket(callback: (PacketDeserializationResult, Int) => Unit): Unit
 }

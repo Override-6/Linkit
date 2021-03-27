@@ -20,10 +20,10 @@ import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {
 
-    override val identifier: Int = info.identifier
-    override val traffic: PacketTraffic = info.traffic
-    override val serverIdentifier: String = serverConnection.supportIdentifier
-    override val supportIdentifier: String = traffic.supportIdentifier
+    override val identifier       : Int           = info.identifier
+    override val traffic          : PacketTraffic = info.traffic
+    override val serverIdentifier : String        = serverConnection.supportIdentifier
+    override val supportIdentifier: String        = traffic.supportIdentifier
 
     //private val notifier = info.notifier
     //private val hooks = info.packetHooks
@@ -50,7 +50,6 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
             }
         })
     }
-
 
     override def writeBroadcastPacket(packet: Packet, discarded: String*): Unit = {
         serverConnection.broadcastPacketToConnections(packet, supportIdentifier, identifier, discarded: _*)

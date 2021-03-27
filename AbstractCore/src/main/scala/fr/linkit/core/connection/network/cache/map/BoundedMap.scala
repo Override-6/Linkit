@@ -20,7 +20,7 @@ import scala.collection.mutable
 
 class BoundedMap[K, V, nK, nV](mapper: (K, V) => (nK, nV)) extends Mutator[K, V] with Immutable[nK, nV] {
 
-    private val map = mutable.Map.empty[Any, nV]
+    private val map       = mutable.Map.empty[Any, nV]
     private val listeners = ConsumerContainer[(MapModification, Any)]()
 
     override def set(content: Array[(K, V)]): Unit = {
@@ -34,7 +34,7 @@ class BoundedMap[K, V, nK, nV](mapper: (K, V) => (nK, nV)) extends Mutator[K, V]
     }
 
     def change(k: K, v: V, action: (nK, nV) => Unit): Unit = {
-        val entry = mapper(k, v)
+        val entry  = mapper(k, v)
         val nK: nK = entry._1
         val nV: nV = entry._2
         action(nK, nV)
@@ -66,6 +66,7 @@ class BoundedMap[K, V, nK, nV](mapper: (K, V) => (nK, nV)) extends Mutator[K, V]
 object BoundedMap {
 
     trait Mutator[K, V] {
+
         def set(content: Array[(K, V)]): Unit
 
         def put(k: K, v: V): Unit
@@ -76,6 +77,7 @@ object BoundedMap {
     }
 
     trait Immutable[K, V] extends Iterable[(K, V)] {
+
         def get(any: Any): Option[V]
 
         def apply(any: Any): V

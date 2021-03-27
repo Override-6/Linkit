@@ -36,6 +36,7 @@ import java.io.Closeable
  * @see PacketChannel
  * */
 trait TasksHandler extends Closeable {
+
     //TODO handle a task which want to complete with an unknown relay identifier
     //TODO use systemPacketChannels to
 
@@ -57,7 +58,6 @@ trait TasksHandler extends Closeable {
      * @throws TaskException if the handling went wrong
      * */
     def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates): Unit
-
 
     /**
      * Registers a task

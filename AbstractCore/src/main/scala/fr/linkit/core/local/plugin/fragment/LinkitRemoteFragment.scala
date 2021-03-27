@@ -18,6 +18,7 @@ import fr.linkit.core.connection.packet.traffic.channel.AsyncPacketChannel
 import org.jetbrains.annotations.NotNull
 
 abstract class LinkitRemoteFragment extends LinkitPluginFragment with RemoteFragment {
+
     private var channel: AsyncPacketChannel = _
 
     val nameIdentifier: String

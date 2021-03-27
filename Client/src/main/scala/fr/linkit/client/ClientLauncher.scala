@@ -15,7 +15,7 @@ package fr.linkit.client
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 import fr.linkit.plugin.controller.ControllerExtension
 import fr.linkit.plugin.debug.DebugExtension
 
@@ -24,23 +24,27 @@ import java.util.Scanner
 
 object ClientLauncher {
 
-    val PORT = 48484
+    val PORT           = 48484
     val SERVER_ADDRESS = new InetSocketAddress("192.168.1.19", PORT)
-    val LOCALHOST = new InetSocketAddress("localhost", PORT)
+    val LOCALHOST      = new InetSocketAddress("localhost", PORT)
 
     def main(args: Array[String]): Unit = {
+        AppLogger.info(s"Running client with arguments '${args.mkString(" ")}'")
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
 
-
-        print("say 'y' to connect to localhost : ")
-        val scanner = new Scanner(System.in)
+        print("Say 'y' to connect to localhost : ")
+        val scanner     = new Scanner(System.in)
         val isLocalhost = scanner.nextLine().startsWith("y")
-        val address = if (isLocalhost) LOCALHOST else SERVER_ADDRESS
+        val address     = if (isLocalhost) LOCALHOST else SERVER_ADDRESS
 
-        print("choose an identifier : ")
+        print("Choose an identifier : ")
         val identifier = scanner.nextLine()
 
-        launch(userDefinedPluginFolder, address, identifier)
+        print(s"Choose how much client will connect to $address (1 = enter) : ")
+        val numberEntry = scanner.nextLine()
+        val raidCount   = if (numberEntry.isEmpty) 1 else numberEntry.toInt
+
+        launch(userDefinedPluginFolder, address, identifier, raidCount)
     }
 
     private def getOrElse(args: Array[String], key: String, defaultValue: String): String = {
@@ -55,19 +59,23 @@ object ClientLauncher {
 
     def launch(mainPluginFolder: String,
                address: InetSocketAddress,
-               identifier0: String): Unit = {
+               identifier0: String,
+               raidCount: Int): Unit = {
 
         val config = new ClientApplicationConfigBuilder {
             loadSchematic = new ScalaClientAppSchematic {
-                clients += new ClientConnectionConfigBuilder {
-                    pluginFolder = None // Some(mainPluginFolder)
-                    override val identifier: String = identifier0
-                    override val remoteAddress: InetSocketAddress = address
+                for (i <- 0 to raidCount) {
+                    clients += new ClientConnectionConfigBuilder {
+                        pluginFolder = None // Some(mainPluginFolder)
+                        override val identifier   : String            = identifier0 + i
+                        override val remoteAddress: InetSocketAddress = address
+                    }
                 }
             }
         }
+
         val client = ClientApplication.launch(config)
-        ContextLogger.debug(s"Build completed: $client")
+        AppLogger.debug(s"Build completed: $client")
         val pluginManager = client.pluginManager
         pluginManager.loadAllClass(Array(
             classOf[ControllerExtension]: Class[_ <: Plugin],

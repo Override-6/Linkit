@@ -17,7 +17,6 @@ import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 
 import java.sql.Timestamp
 
-
 trait Network {
 
     val connectionEntity: NetworkEntity

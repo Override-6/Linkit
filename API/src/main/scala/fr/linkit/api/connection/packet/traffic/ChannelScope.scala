@@ -16,6 +16,7 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.local.system.ForbiddenIdentifierException
 
 trait ChannelScope {
+
     val writer: PacketWriter
 
     def sendToAll(packet: Packet): Unit
@@ -40,6 +41,7 @@ trait ChannelScope {
 object ChannelScope {
 
     final case class BroadcastScope private(override val writer: PacketWriter) extends ChannelScope {
+
         override def sendToAll(packet: Packet): Unit = writer.writeBroadcastPacket(packet)
 
         override def sendTo(packet: Packet, targetIDs: String*): Unit = {
@@ -62,6 +64,7 @@ object ChannelScope {
     }
 
     final case class ReservedScope private(override val writer: PacketWriter, authorisedIds: String*) extends ChannelScope {
+
         override def sendToAll(packet: Packet): Unit = {
             authorisedIds.foreach(writer.writePacket(packet, _))
         }
@@ -90,6 +93,7 @@ object ChannelScope {
     }
 
     trait ScopeFactory[S <: ChannelScope] {
+
         def apply(writer: PacketWriter): S
     }
 

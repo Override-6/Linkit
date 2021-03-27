@@ -15,11 +15,13 @@ package fr.linkit.api.local.system.config.schematic
 import fr.linkit.api.local.ApplicationContext
 
 class EmptySchematic[A <: ApplicationContext] extends AppSchematic[A] {
+
     override def setup(a: A): Unit = ()
 
     override val name: String = "empty"
 }
 
 object EmptySchematic {
+
     def apply[A <: ApplicationContext]: EmptySchematic[A] = new EmptySchematic()
 }

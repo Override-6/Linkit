@@ -31,7 +31,7 @@ class AsyncPacketChannel protected(scope: ChannelScope)
         pool.runLater {
             try {
                 val packets = injection.getPackets
-                val coords = injection.coordinates
+                val coords  = injection.coordinates
                 packets.foreach(packet => packetReceivedContainer.applyAll((packet, coords)))
             } catch {
                 case NonFatal(e) =>

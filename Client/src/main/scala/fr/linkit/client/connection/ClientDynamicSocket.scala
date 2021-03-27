@@ -14,7 +14,7 @@ package fr.linkit.client.connection
 
 import fr.linkit.client.connection.ClientDynamicSocket.UnsetIdentifier
 import fr.linkit.core.connection.packet.traffic.DynamicSocket
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
@@ -22,10 +22,10 @@ import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}
 class ClientDynamicSocket(boundAddress: InetSocketAddress,
                           socketFactory: InetSocketAddress => Socket) extends DynamicSocket(true) {
 
-    var identifier: String = UnsetIdentifier
-    override def boundIdentifier: String = identifier
+    var identifier        : String = UnsetIdentifier
+    var reconnectionPeriod: Int    = 5000
 
-    var reconnectionPeriod: Int = 5000
+    override def boundIdentifier: String = identifier
 
     private def newSocket(): Unit = {
         closeCurrentStreams()
@@ -39,8 +39,8 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
             newSocket()
         } catch {
             case _@(_: SocketException | _: ConnectException) =>
-                ContextLogger.warn("Unable to connect to server.")
-                ContextLogger.warn(s"Waiting for $reconnectionPeriod ms before another try...")
+                AppLogger.warn("Unable to connect to server.")
+                AppLogger.warn(s"Waiting for $reconnectionPeriod ms before another try...")
                 Thread.sleep(reconnectionPeriod)
                 handleReconnection()
         }
@@ -56,7 +56,7 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
             newSocket()
         } catch {
             case _@(_: SocketException | _: ConnectException) =>
-            handleReconnection()
+                handleReconnection()
         }
         markAsConnected()
     }
@@ -64,5 +64,6 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
 }
 
 object ClientDynamicSocket {
+
     private val UnsetIdentifier = "$Unset£"
 }

@@ -14,9 +14,10 @@ package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketSender, PacketSyncReceiver}
-import fr.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
+import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
 
-class RequestSender(scope: ChannelScope) extends CommunicationPacketChannel(scope, true) with PacketSender with PacketSyncReceiver {
+class RequestSender(scope: ChannelScope) extends RequestPacketChannel(scope, true) with PacketSender with PacketSyncReceiver {
+
     override def send(packet: Packet): Unit = sendRequest(packet)
 
     override def sendTo(packet: Packet, targets: String*): Unit = sendRequest(packet, targets: _*)

@@ -18,7 +18,6 @@ import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.system.Version
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 
-
 //TODO Recap :
 //TODO Rewrite/write Doc and README of API, RelayServer and RelayPoint
 //TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
@@ -26,6 +25,7 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 //TODO Create a PacketTree that can let the RelaySecurityManager know the content and the structure of a packet without casting it or making weird reflection stuff.
 //TODO Replace all Any types by Serializable types in network.cache
 object ApplicationContext {
+
     val ApiVersion: Version = Version(name = "API", code = "0.20.0", stable = false)
 }
 

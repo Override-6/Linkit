@@ -30,7 +30,7 @@ class DefaultPacketReader(socket: DynamicSocket,
         if (nextLength == -1 || !socket.isOpen)
             return
 
-        val bytes = hasher.deHashBytes(socket.read(nextLength))
+        val bytes  = hasher.deHashBytes(socket.read(nextLength))
         val result = translator.translate(bytes)
         packetCount += 1
         val currentPacketNumber = packetCount

@@ -43,5 +43,4 @@ class PluginClassLoaderBridge {
         throw new ClassNotFoundException("Plugin '")
     }
 
-
 }

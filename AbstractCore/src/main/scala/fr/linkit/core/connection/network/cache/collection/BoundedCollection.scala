@@ -21,8 +21,8 @@ import scala.collection.mutable.ListBuffer
 
 class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] {
 
-    private val collection: ListBuffer[B] = ListBuffer.empty
-    private val listeners = ConsumerContainer[(CollectionModification, Int, Option[B])]()
+    private val collection: ListBuffer[B]  = ListBuffer.empty
+    private val listeners                  = ConsumerContainer[(CollectionModification, Int, Option[B])]()
     @volatile private var specificModCount = 0
 
     override def iterator: Iterator[B] = collection.iterator
@@ -49,7 +49,6 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
     override def remove(i: Int): Unit = {
         specificModCount += 1
 
-
         val el = collection.remove(i)
         listeners.applyAll((REMOVE, i, Option(el)))
     }
@@ -75,8 +74,8 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
 
     private def safeMap(a: A): B = {
         val lastModCount = specificModCount
-        val t: Any = map(a)
-        val v = t.asInstanceOf[B]
+        val t: Any       = map(a)
+        val v            = t.asInstanceOf[B]
         if (specificModCount != lastModCount)
             throw new ConcurrentModificationException("Bounded Collection got modified during mapping.")
         v
@@ -87,6 +86,7 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
 object BoundedCollection {
 
     trait Mutator[A] {
+
         def set(array: Array[A]): Unit
 
         def add(e: A): Unit
@@ -101,6 +101,7 @@ object BoundedCollection {
     }
 
     trait Immutable[A] extends Iterable[A] {
+
         override def iterator: Iterator[A]
 
         def addListener(callback: (CollectionModification, Int, Option[A]) => Unit): this.type

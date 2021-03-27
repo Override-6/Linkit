@@ -26,7 +26,9 @@ class ServerException(@NotNull connection: ServerConnection,
     }
 
 }
+
 object ServerException {
+
     def apply(@NotNull connection: ServerConnection, msg: String, cause: Throwable = null): ServerException = {
         if (connection == null)
             throw new NullPointerException()

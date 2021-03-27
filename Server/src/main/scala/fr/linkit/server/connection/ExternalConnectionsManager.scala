@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.core.local.concurrency.PacketReaderThread
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 import fr.linkit.server.ServerException
 import org.jetbrains.annotations.Nullable
 
@@ -36,14 +36,13 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
      * java map containing all RelayPointConnection instances
      * */
     private val connections: mutable.Map[String, ServerExternalConnection] = mutable.Map.empty
-    private val maxConnection = server.configuration.maxConnection
+    private val maxConnection                                              = server.configuration.maxConnection
 
     @volatile private var closed = false
 
-
     override def close(reason: Reason): Unit = {
         for ((_, connection) <- connections) try {
-            ContextLogger.trace(s"Closing '${connection.supportIdentifier}'...")
+            AppLogger.trace(s"Closing '${connection.supportIdentifier}'...")
             connection.shutdown()
         } catch {
             case NonFatal(e) => e.printStackTrace()
@@ -63,7 +62,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     @throws[ServerException]("if the registered connection count exceeded configuration limit.")
     def registerConnection(identifier: String,
                            socket: SocketContainer): Unit = {
-        ContextLogger.trace(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
+        AppLogger.trace(s"Registering connection '$identifier' (${socket.remoteSocketAddress()})...")
         //Ensure that the connection's identifier that is about to be created isn't registered yet.
         if (connections.contains(identifier))
             throw ConnectionException(connections(identifier), s"This connection identifier is taken ! ('$identifier')")
@@ -75,20 +74,21 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         //Opening ClientConnectionSession and finalizing registration...
         val packetReader = new SelectivePacketReader(socket, server, this, identifier)
         val readerThread = new PacketReaderThread(packetReader, server, identifier)
-        val info = ExternalConnectionSessionInfo(server, this, server.serverNetwork, readerThread)
+        val info         = ExternalConnectionSessionInfo(server, this, server.getSideNetwork, readerThread)
+
         val connectionSession = ExternalConnectionSession(identifier, socket, info)
-        val connection = ServerExternalConnection.open(connectionSession)
-        ContextLogger.info(s"Stage 2 completed : Connection '$identifier' created.")
+        val connection        = ServerExternalConnection.open(connectionSession)
+        AppLogger.info(s"Stage 2 completed : Connection '$identifier' created.")
         connections.put(identifier, connection)
         server.sendAuthorisedConnection(socket)
 
         val canConnect = true //server.configuration.checkConnection(connection)
         if (canConnect) {
-            ContextLogger.info(s"Stage 3 completed : Connection of '$identifier' was registered into connection manager")
+            AppLogger.info(s"Stage 3 completed : Connection of '$identifier' was registered into connection manager")
             return
         }
 
-        ContextLogger.error(s"Security Manager discarded connection $identifier from the server.")
+        AppLogger.error(s"Security Manager discarded connection $identifier from the server.")
 
         connections.remove(identifier)
         connection.shutdown()
@@ -109,13 +109,13 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
         PacketReaderThread.checkNotCurrent()
         connections.values
-            .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
-            .foreach(connection => {
-                val translator = connection.translator
-                val coordinates = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
-                val result = translator.translate(packet, coordinates)
-                connection.send(result)
-            })
+                .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
+                .foreach(connection => {
+                    val translator  = connection.translator
+                    val coordinates = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
+                    val result      = translator.translate(packet, coordinates)
+                    connection.send(result)
+                })
     }
 
     /**
@@ -126,7 +126,6 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     def unregister(identifier: String): Option[ServerExternalConnection] = {
         connections.remove(identifier)
     }
-
 
     /**
      * retrieves a RelayPointConnection based on the address

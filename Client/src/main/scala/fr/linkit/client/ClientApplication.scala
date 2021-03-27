@@ -22,18 +22,17 @@ import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnection
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
 class ClientApplication private(override val configuration: ClientApplicationConfiguration) extends ApplicationContext with Procrastinator {
 
-    private val workerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
-    private val connectionCache = mutable.HashMap.empty[Any, ExternalConnection]
-    @volatile private var alive: Boolean = false
-
-    override val pluginManager: PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
+    private  val workerPool                    = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
+    private  val connectionCache               = mutable.HashMap.empty[Any, ExternalConnection]
+    override val pluginManager : PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
+    @volatile private var alive: Boolean       = false
 
     override def countConnections: Int = connectionCache.size
 
@@ -41,7 +40,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
     override def shutdown(): Unit = {
         workerPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
-        ContextLogger.info("Client application is shutting down...")
+        AppLogger.info("Client application is shutting down...")
 
         listConnections.foreach(connection => {
             try {
@@ -72,7 +71,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
             throw new AppException("Client is already started")
         }
         alive = true
-        ContextLogger.info("Starting Client Application...")
+        AppLogger.info("Starting Client Application...")
         val pluginFolder = configuration.pluginFolder match {
             case Some(path) =>
                 val adapter = configuration.fsAdapter.getAdapter(path)
@@ -83,7 +82,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
             val pluginCount = pluginManager.loadAll(pluginFolder).length
             configuration.fsAdapter.getAdapter(pluginFolder)
 
-            ContextLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
+            AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
         }
     }
 
@@ -100,14 +99,15 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         workerPool.ensureCurrentThreadOwned("Connection creation must be executed by the client application's thread pool")
 
         val identifier = config.identifier
-  //      if (!Rules.IdentifierPattern.matcher(identifier).matches())
-//            throw new ConnectionInitialisationException("Provided identifier does not matches Client's rules.")
+        //      if (!Rules.IdentifierPattern.matcher(identifier).matches())
+        //            throw new ConnectionInitialisationException("Provided identifier does not matches Client's rules.")
 
-        ContextLogger.info(s"Creating connection with address '${config.remoteAddress}'")
-        val address = config.remoteAddress
+        AppLogger.info(s"Creating connection with address '${config.remoteAddress}'")
+        val address       = config.remoteAddress
         val dynamicSocket = new ClientDynamicSocket(address, config.socketFactory)
         dynamicSocket.reconnectionPeriod = config.reconnectionMillis
         dynamicSocket.connect("UnknownServerIdentifier")
+        AppLogger.trace("Socket accepted !")
         workerPool.setThreadCount(configuration.nWorkerThreadFunction(countConnections + 1)) //expand the pool for the new connection that will be opened
 
         val connection = try {
@@ -118,11 +118,11 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         }
 
         val serverIdentifier: String = connection.boundIdentifier
-        val port = config.remoteAddress.getPort
+        val port                     = config.remoteAddress.getPort
 
         connectionCache.put(serverIdentifier, connection)
         connectionCache.put(port, connection)
-        ContextLogger.info(s"Connection Sucessfully bound to $address ($serverIdentifier)")
+        AppLogger.info(s"Connection Sucessfully bound to $address ($serverIdentifier)")
         connection
     }
 
@@ -135,7 +135,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         val newThreadCount = configuration.nWorkerThreadFunction(connectionCache.size)
         workerPool.setThreadCount(newThreadCount)
 
-        ContextLogger.info(s"Connection '$supportIdentifier' bound to $boundIdentifier was detached from application.")
+        AppLogger.info(s"Connection '$supportIdentifier' bound to $boundIdentifier was detached from application.")
     }
 
     private def ensureAlive(): Unit = {
@@ -145,6 +145,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 }
 
 object ClientApplication {
+
     @volatile private var initialized = false
 
     def launch(config: ClientApplicationConfiguration): ClientApplication = {
@@ -152,7 +153,7 @@ object ClientApplication {
             throw new IllegalStateException("Client Application is already launched.")
 
         val clientApp = try {
-            ContextLogger.info("Instantiating Client application...")
+            AppLogger.info("Instantiating Client application...")
             new ClientApplication(config)
         } catch {
             case NonFatal(e) =>
@@ -162,12 +163,12 @@ object ClientApplication {
         @volatile var exception: Throwable = null
         clientApp.runLater {
             try {
-                ContextLogger.info("Starting Client Application...")
+                AppLogger.info("Starting Client Application...")
                 clientApp.start()
                 val loadSchematic = config.loadSchematic
-                ContextLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
+                AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
                 loadSchematic.setup(clientApp)
-                ContextLogger.trace("Schematic applied successfully.")
+                AppLogger.trace("Schematic applied successfully.")
             } catch {
                 case NonFatal(e) =>
                     exception = e

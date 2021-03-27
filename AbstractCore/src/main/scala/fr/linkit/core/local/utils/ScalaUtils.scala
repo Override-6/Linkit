@@ -19,7 +19,7 @@ object ScalaUtils {
 
     def slowCopy[A: ClassTag](origin: Array[_ <: Any]): Array[A] = {
         val buff = new Array[A](origin.length)
-        var i = 0
+        var i    = 0
         try {
             origin.foreach(anyRef => {
                 buff(i) = anyRef.asInstanceOf[A]

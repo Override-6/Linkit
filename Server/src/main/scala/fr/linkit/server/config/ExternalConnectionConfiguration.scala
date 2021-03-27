@@ -16,5 +16,4 @@ import fr.linkit.api.local.system.config.ConnectionConfiguration
 
 trait ExternalConnectionConfiguration extends ConnectionConfiguration {
 
-
 }

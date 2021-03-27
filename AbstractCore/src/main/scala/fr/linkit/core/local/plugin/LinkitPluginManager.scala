@@ -17,7 +17,7 @@ import fr.linkit.api.local.plugin.fragment.FragmentManager
 import fr.linkit.api.local.plugin.{Plugin, PluginLoader, PluginManager}
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.core.local.plugin.fragment.SimpleFragmentManager
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 
 import java.nio.file.{NoSuchFileException, NotDirectoryException}
 import scala.collection.mutable.ListBuffer
@@ -25,33 +25,33 @@ import scala.util.control.NonFatal
 
 class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) extends PluginManager {
 
-    private val bridge = new PluginClassLoaderBridge
+    private val bridge  = new PluginClassLoaderBridge
     private val plugins = ListBuffer.empty[Plugin]
 
     override val fragmentManager: FragmentManager = new SimpleFragmentManager
 
     override def load(file: String): Plugin = {
-        ContextLogger.debug(s"Plugin $file is preparing to be loaded.")
+        AppLogger.debug(s"Plugin $file is preparing to be loaded.")
 
         val adapter = fsa.getAdapter(file)
 
         if (adapter.notExists)
             throw new NoSuchFileException(file)
 
-        val classLoader = bridge.newClassLoader(Array(adapter))
+        val classLoader  = bridge.newClassLoader(Array(adapter))
         val pluginLoader = new URLPluginLoader(context, classLoader)
         enablePlugins(pluginLoader).head
     }
 
     override def loadAll(folder: String): Array[Plugin] = {
-        ContextLogger.debug(s"Plugins into folder '$folder' are preparing to be loaded.")
+        AppLogger.debug(s"Plugins into folder '$folder' are preparing to be loaded.")
         val adapter = fsa.getAdapter(folder)
         if (adapter.notExists)
             throw new NoSuchFileException(folder)
         if (!adapter.isDirectory)
             throw new NotDirectoryException(folder)
 
-        val classLoader = bridge.newClassLoader(fsa.list(adapter))
+        val classLoader  = bridge.newClassLoader(fsa.list(adapter))
         val pluginLoader = new URLPluginLoader(context, classLoader)
         enablePlugins(pluginLoader)
     }
@@ -61,7 +61,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
     }
 
     override def loadAllClass(classes: Array[Class[_ <: Plugin]]): Array[Plugin] = {
-        if(classes.isEmpty)
+        if (classes.isEmpty)
             throw new IllegalArgumentException("Provided class array is empty.")
 
         val pluginLoader = new DirectPluginLoader(context, classes)
@@ -75,6 +75,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
         for (i <- buffer.indices) {
             buffer(i) = loader.nextPlugin()
         }
+
         def pluginName(implicit plugin: Plugin): String = plugin.name
 
         def perform(action: Plugin => Unit): Unit = buffer.foreach(implicit plugin => {
@@ -82,19 +83,20 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
                 action(plugin)
             } catch {
                 case NonFatal(e) =>
-                    ContextLogger.error(s"Could not load '${pluginName}'" + e.getMessage)
+                    AppLogger.error(s"Could not load '${pluginName}'" + e.getMessage)
                     e.printStackTrace()
             }
         })
-        ContextLogger.debug(s"Loading plugins...")
+
+        AppLogger.debug(s"Loading plugins...")
         perform(implicit plugin => {
-            ContextLogger.debug(s"Loading ${pluginName}...")
+            AppLogger.debug(s"Loading ${pluginName}...")
             plugin.onLoad()
         })
 
-        ContextLogger.debug(s"Enabling plugins...")
+        AppLogger.debug(s"Enabling plugins...")
         perform(implicit plugin => {
-            ContextLogger.debug(s"Enabling ${pluginName}...")
+            AppLogger.debug(s"Enabling ${pluginName}...")
             plugin.onEnable()
         })
 

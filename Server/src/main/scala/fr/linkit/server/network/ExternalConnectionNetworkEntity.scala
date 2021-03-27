@@ -24,7 +24,7 @@ class ExternalConnectionNetworkEntity private[network](serverConnection: ServerC
         extends AbstractRemoteEntity(identifier, entityCache) {
 
     override val network: Network = serverConnection.network
-    private val connection = serverConnection.getConnection(identifier).get
+    private  val connection       = serverConnection.getConnection(identifier).get
 
     entityCache.get(3, SharedInstance[ExternalConnectionState])
             .set(ExternalConnectionState.CONNECTED) //technically already connected

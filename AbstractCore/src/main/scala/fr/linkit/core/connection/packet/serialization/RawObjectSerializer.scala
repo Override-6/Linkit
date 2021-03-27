@@ -15,6 +15,7 @@ package fr.linkit.core.connection.packet.serialization
 object RawObjectSerializer extends ObjectSerializer {
 
     val Separator: Array[Byte] = ";".getBytes
+    val Signature: Array[Byte] = Array(1)
 
     override def serializeType(clazz: Class[_]): Array[Byte] = {
         clazz.getName.getBytes ++ Separator
@@ -24,10 +25,10 @@ object RawObjectSerializer extends ObjectSerializer {
      * @return a tuple with the Class and his value length into the array
      * */
     override def deserializeType(bytes: Array[Byte]): (Class[_], Int) = {
-        val length = bytes.indexOfSlice(Separator)
+        val length    = bytes.indexOfSlice(Separator)
         val className = new String(bytes.take(length))
         (Class.forName(className), length + 1) //add the ';' character
     }
 
-    override val signature: Array[Byte] = Array(1)
+    override val signature: Array[Byte] = Signature
 }

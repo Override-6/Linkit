@@ -14,7 +14,6 @@ package fr.linkit.api.connection.task
 
 trait TaskScheduler {
 
-
     /**
      * @return the [[TaskCompleterHandler]] used by this Relay.
      * @see [[TaskCompleterHandler]]
@@ -30,13 +29,13 @@ trait TaskScheduler {
      * */
     def scheduleTask[R](task: Task[R]): RelayTaskAction[R]
 
-
     /**
      * RelayTaskAction is a wraps a [[TaskAction]] object.
      * this class avoid the user to specify the task identifier
      * @see [[TaskAction]]
      * */
     class RelayTaskAction[T](taskAction: TaskAction[T]) {
+
         def queue(onSuccess: T => Unit = null, onError: String => Unit = Console.err.println): Unit =
             taskAction.queue(onSuccess, onError)
 
@@ -45,6 +44,7 @@ trait TaskScheduler {
     }
 
     protected object RelayTaskAction {
+
         def of[T](taskAction: TaskAction[T]): RelayTaskAction[T] =
             new RelayTaskAction[T](taskAction)
     }

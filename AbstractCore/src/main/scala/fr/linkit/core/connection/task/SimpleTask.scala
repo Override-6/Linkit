@@ -17,7 +17,6 @@ import org.jetbrains.annotations.Nullable
 
 import java.util.concurrent.atomic.AtomicReference
 
-
 //TODO reedit the DOC
 /**
  * <p>
@@ -57,14 +56,14 @@ abstract class SimpleTask[T](val targetID: String) extends Task[T] with Fallible
      * parameter 'T' is the return Type for why this task hardly worked for
      * */
     @volatile
-    @Nullable private var onSuccess: T => Unit = _
+    @Nullable private var onSuccess: T => Unit      = _
     /**
      *  Invoked when the task execution was unsuccessful.
      *  The String is the error message.
      *  Prints the error by default.
      * */
     @volatile
-    @Nullable private var onFail: String => Unit = Console.err.println
+    @Nullable private var onFail   : String => Unit = Console.err.println
 
     /**
      * initialises this task.
@@ -102,7 +101,7 @@ abstract class SimpleTask[T](val targetID: String) extends Task[T] with Fallible
         handler.schedule(this, identifier, targetID, true)
         val atomicResult = new AtomicReference[T]()
 
-        onSuccess  = result => synchronized {
+        onSuccess = result => synchronized {
             atomicResult.set(result)
             notifyAll()
         }

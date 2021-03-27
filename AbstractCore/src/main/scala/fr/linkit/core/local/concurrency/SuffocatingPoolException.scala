@@ -14,6 +14,6 @@ package fr.linkit.core.local.concurrency
 
 import fr.linkit.api.local.system.AppException
 
-class SuffocatingPoolException(msg: String, cause: Throwable = null) extends AppException(msg, cause){
+class SuffocatingPoolException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

@@ -30,5 +30,4 @@ trait PacketInjectableContainer {
      * */
     def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C
 
-
 }

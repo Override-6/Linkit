@@ -15,6 +15,7 @@ package fr.linkit.api.local.plugin
 import fr.linkit.api.local.ApplicationContext
 
 trait Plugin {
+
     val name: String
 
     val configuration: PluginConfiguration

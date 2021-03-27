@@ -16,10 +16,10 @@ import fr.linkit.api.connection.packet.Packet
 
 trait PacketWriter {
 
-    val serverIdentifier: String
+    val serverIdentifier : String
     val supportIdentifier: String
-    val identifier: Int
-    val traffic: PacketTraffic
+    val identifier       : Int
+    val traffic          : PacketTraffic
 
     def writePacket(packet: Packet, targetIDs: String*): Unit
 

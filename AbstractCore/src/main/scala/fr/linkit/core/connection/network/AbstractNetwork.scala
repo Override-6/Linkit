@@ -19,8 +19,8 @@ import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, SharedCollection}
 import fr.linkit.core.connection.network.cache.{RequestSender, SimpleSharedCacheManager}
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
-import fr.linkit.core.connection.packet.traffic.channel.CommunicationPacketChannel
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
+import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 
@@ -29,12 +29,14 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     private   val cacheCommunicator                             = connection.getInjectable(11, ChannelScope.broadcast, new RequestSender(_))
     private   val caches                                        = mutable.HashMap.empty[String, SimpleSharedCacheManager]
     override  val globalCache      : SharedCacheManager         = initCaches()
-    protected val sharedIdentifiers: SharedCollection[String]   = globalCache.get(3, SharedCollection.set[String])
-    protected val communicator     : CommunicationPacketChannel = connection.getInjectable(9, ChannelScope.broadcast, CommunicationPacketChannel.providable)
+    protected val sharedIdentifiers: SharedCollection[String] = globalCache.get(3, SharedCollection.set[String])
+    protected val communicator     : RequestPacketChannel     = connection.getInjectable(9, ChannelScope.broadcast, RequestPacketChannel.providable)
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     init()
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
+
+    override def isConnected(identifier: String): Boolean = getEntity(identifier).isDefined
 
     override def getEntity(identifier: String): Option[NetworkEntity] = {
         if (entities != null)
@@ -42,17 +44,9 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         else None
     }
 
-    override def isConnected(identifier: String): Boolean = getEntity(identifier).isDefined
-
     override def newCacheManager(family: String, owner: ConnectionContext): SharedCacheManager = {
         newCacheManager(family, owner.supportIdentifier)
     }
-
-    override def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager = {
-        newCacheManager(family, owner.boundIdentifier)
-    }
-
-    protected def createEntity0(identifier: String, communicationChannel: CommunicationPacketChannel): NetworkEntity
 
     protected def newCacheManager(family: String, owner: String): SharedCacheManager = {
         if (family == null || owner == null)
@@ -60,27 +54,30 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
         caches.get(family)
                 .fold {
-                    ContextLogger.debug(s"--> CREATING SHARED CACHE HANDLER <$family>")
+                    AppLogger.debug(s"--> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
                     val cache = new SimpleSharedCacheManager(family, owner, cacheCommunicator)
                     //Will inject all packet that the new cache have possibly missed.
                     caches.put(family, cache)
                     cacheCommunicator.injectStoredPackets()
-                    ContextLogger.debug(s"--> SHARED CACHE HANDLER CREATED <$family>")
                     cache: SharedCacheManager
                 }(cache => {
-                    ContextLogger.debug(s"--> UPDATING CACHE <$family> INSTEAD OF CREATING IT.")
                     cache.update()
-                    ContextLogger.debug(s"--> UPDATED CACHE <$family> INSTEAD OF CREATING IT.")
                     cache
                 })
     }
+
+    override def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager = {
+        newCacheManager(family, owner.boundIdentifier)
+    }
+
+    protected def createEntity0(identifier: String, communicationChannel: RequestPacketChannel): NetworkEntity
 
     protected def createEntity(identifier: String): NetworkEntity = {
         if (identifier == connection.supportIdentifier) {
             return connectionEntity
         }
 
-        val channel = communicator.subInjectable(Array(identifier), CommunicationPacketChannel.providable, true)
+        val channel = communicator.subInjectable(Array(identifier), RequestPacketChannel.providable, true)
         val ent     = createEntity0(identifier, channel)
         ent
     }
@@ -102,7 +99,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def init(): Unit = {
-        sharedIdentifiers.addListener((_, _, _) => ContextLogger.debug(s"SharedIdentifiers Updated : $sharedIdentifiers"))
+        sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"SharedIdentifiers Updated : $sharedIdentifiers"))
         connection.translator.updateCache(globalCache)
     }
 

@@ -17,11 +17,13 @@ import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPac
 import fr.linkit.core.connection.network.cache.map.{MapModification, SharedMap}
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.linkit.core.connection.packet.serialization.CachedObjectSerializer.Signature
 import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 
 class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer {
 
     private val objectMap = cache.get(14, SharedMap[Int, String])
+
     /**
      * @return the hashcode of the class name under a byte sequences
      *         If the class name is not registered into the cache, it will be added
@@ -45,7 +47,7 @@ class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer
         (Class.forName(objectMap.getOrWait(deserializeNumber(bytes, 0, 4).toInt)), 4) //4 is the byte length of one integer
     }
 
-    override val signature: Array[Byte] = Array(0)
+    override val signature: Array[Byte] = Signature
 
     /*
     * Those types are directly registered because they are potentially used by the packet that
@@ -61,9 +63,10 @@ class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer
     serializeType(classOf[ObjectPacket])
     serializeType(classOf[MapModification])
     serializeType(classOf[(_, _, _)])
+    serializeType(Nil.getClass)
 
-    private val NilName = "scala.collection.immutable.Nil$" //This class is odd, could not find it from my IDE, but it still present at runtime.
-    if (!objectMap.contains(NilName.hashCode))
-        objectMap.put(NilName.hashCode, NilName)
+}
 
+object CachedObjectSerializer {
+    val Signature: Array[Byte] = Array(0)
 }

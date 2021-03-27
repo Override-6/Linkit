@@ -28,7 +28,9 @@ trait ApplicationSecurityManager {
 object ApplicationSecurityManager {
 
     class Default extends ApplicationSecurityManager {
+
         override def checkConnection(connection: ConnectionContext): Unit = ()
+
         override def checkConnectionConfig(config: ConnectionConfiguration): Unit = ()
     }
 

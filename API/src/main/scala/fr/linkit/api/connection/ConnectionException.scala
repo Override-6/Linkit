@@ -39,6 +39,7 @@ class ConnectionException(@Nullable connection: ConnectionContext,
 }
 
 object ConnectionException {
+
     def apply(@Nullable connection: ConnectionContext, @Nullable msg: String, @Nullable cause: Throwable = null): ConnectionException = {
         new ConnectionException(connection, msg, cause)
     }

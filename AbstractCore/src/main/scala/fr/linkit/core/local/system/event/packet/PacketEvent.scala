@@ -16,6 +16,7 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.local.system.event.{Event, EventHook}
 
 trait PacketEvent extends Event[PacketEventHooks, PacketEventListener] {
+
     protected type PacketEventHook = EventHook[PacketEventListener, this.type]
     val packet: Packet
 

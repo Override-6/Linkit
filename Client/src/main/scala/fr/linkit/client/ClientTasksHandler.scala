@@ -25,14 +25,14 @@ import scala.util.control.NonFatal
 protected class ClientTasksHandler(private val systemChannel: SystemPacketChannel,
                                    private val connection: ConnectionContext) extends TasksHandler {
 
-    private val queue: BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](1000)
-    private var tasksThread: Thread = _
+    private val queue      : BlockingQueue[TaskTicket] = new ArrayBlockingQueue[TaskTicket](1000)
+    private var tasksThread: Thread                    = _
 
     @volatile private var currentTicket: TaskTicket = _
-    @volatile private var open = false
+    @volatile private var open                      = false
 
     override val tasksCompleterHandler = new SimpleCompleterHandler()
-    override val identifier: String = connection.supportIdentifier
+    override val identifier: String    = connection.supportIdentifier
 
     override def schedule(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit = {
         if (targetID == identifier)
@@ -50,11 +50,10 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
                 Console.err.println(e.getMessage)
                 systemChannel.sendOrder(SystemOrder.ABORT_TASK, Reason.INTERNAL_ERROR)
 
-                //val errConsole = relay.getConsoleErr(coordinates.senderID)
+            //val errConsole = relay.getConsoleErr(coordinates.senderID)
             //errConsole.print(e)
         }
     }
-
 
     override def close(): Unit = {
         if (!open)
@@ -99,6 +98,5 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
             case NonFatal(e) => e.printStackTrace()
         }
     }
-
 
 }

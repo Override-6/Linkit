@@ -14,6 +14,6 @@ package fr.linkit.api.local.system.security
 
 import fr.linkit.api.local.system.AppException
 
-case class AppSecurityException(msg: String, cause: Throwable = null) extends AppException(msg, cause){
+case class AppSecurityException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

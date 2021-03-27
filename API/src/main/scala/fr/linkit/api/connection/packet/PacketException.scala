@@ -17,5 +17,6 @@ class PacketException(msg: String, cause: Throwable = null) extends Exception(ms
 }
 
 object PacketException {
+
     def apply(msg: String, cause: Throwable): PacketException = new PacketException(msg, cause)
 }

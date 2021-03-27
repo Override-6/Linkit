@@ -24,18 +24,18 @@ import scala.util.control.NonFatal
 
 abstract class AbstractPacketTraffic(override val supportIdentifier: String) extends PacketTraffic {
 
-    private val holders = mutable.Map.empty[Int, ScopesHolder]
+    private val holders          = mutable.Map.empty[Int, ScopesHolder]
     @volatile private var closed = false
 
     private val lostInjections = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int,
-                                                                    scopeFactory: ScopeFactory[_ <: ChannelScope],
-                                                                    factory: PacketInjectableFactory[C]): C = {
-        val scope = scopeFactory(newWriter(id))
+                                                                 scopeFactory: ScopeFactory[_ <: ChannelScope],
+                                                                 factory: PacketInjectableFactory[C]): C = {
+        val scope     = scopeFactory(newWriter(id))
         val holderOpt = holders.get(id)
         if (holderOpt.isDefined) {
-            val holder = holderOpt.get
+            val holder  = holderOpt.get
             val attempt = holder.tryRetrieveInjectable(scope)
             if (attempt.isDefined) {
                 return attempt.get
@@ -86,7 +86,6 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
         if (opt.isEmpty)
             return Iterable()
 
-
         opt.get.getInjectables(target)
     }
 
@@ -115,7 +114,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
         val id = coordinates.injectableID
 
-        val sender = coordinates.senderID
+        val sender      = coordinates.senderID
         val injectables = getInjectables(id, sender)
         if (injectables.isEmpty) {
             lostInjections.getOrElseUpdate(id, ListBuffer.empty) += injection
@@ -126,7 +125,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
     protected case class ScopesHolder(identifier: Int) extends JustifiedCloseable {
 
-        private val cache = mutable.Set.empty[(ChannelScope, PacketInjectable)]
+        private val cache  = mutable.Set.empty[(ChannelScope, PacketInjectable)]
         private var closed = false
 
         override def close(reason: Reason): Unit = {
@@ -167,6 +166,5 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
             cache += ((scope, injectable))
         }
     }
-
 
 }

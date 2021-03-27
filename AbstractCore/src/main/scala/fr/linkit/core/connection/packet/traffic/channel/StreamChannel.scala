@@ -21,9 +21,10 @@ import org.jetbrains.annotations.Nullable
 import java.io.{DataInputStream, DataOutputStream}
 
 class StreamChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
-    @Nullable private var input: DataInputStream = _
+
+    @Nullable private var input : DataInputStream  = _
     @Nullable private var output: DataOutputStream = _
-    @volatile private var transferConstantly = false
+    @volatile private var transferConstantly       = false
 
     override def handleInjection(injection: PacketInjection): Unit = {
         val packets = injection.getPackets
@@ -36,7 +37,7 @@ class StreamChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
 
     def transferAll(): Unit = {
         val available = input.available()
-        val buff = new Array[Byte](available)
+        val buff      = new Array[Byte](available)
         input.readFully(buff)
         scope.sendToAll(new StreamPacket(buff))
     }

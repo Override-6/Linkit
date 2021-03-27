@@ -15,5 +15,6 @@ package fr.linkit.api.local.system.config
 import java.net.InetSocketAddress
 
 trait ExternalConnectionConfiguration extends ConnectionConfiguration {
+
     val remoteAddress: InetSocketAddress
 }

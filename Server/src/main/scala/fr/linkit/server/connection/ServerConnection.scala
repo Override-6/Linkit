@@ -25,7 +25,7 @@ import fr.linkit.core.connection.packet.serialization.NumberSerializer.serialize
 import fr.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 import fr.linkit.core.local.system.event.DefaultEventNotifier
-import fr.linkit.core.local.system.{ContextLogger, Rules, SystemPacketChannel}
+import fr.linkit.core.local.system.{AppLogger, Rules, SystemPacketChannel}
 import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.network.ServerSideNetwork
 import fr.linkit.server.{ServerApplication, ServerException, ServerPacketTraffic}
@@ -38,18 +38,16 @@ import scala.util.control.NonFatal
 class ServerConnection(applicationContext: ServerApplication,
                        val configuration: ServerConnectionConfiguration) extends ConnectionContext {
 
-    override val supportIdentifier: String = configuration.identifier
-    private val workerPool: BusyWorkerPool = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier.toString)
-    private val serverSocket: ServerSocket = new ServerSocket(configuration.port)
-
-    private val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    override val traffic: PacketTraffic = new ServerPacketTraffic(this)
-
-    override val translator: PacketTranslator = configuration.translator
-    override val eventNotifier: EventNotifier = new DefaultEventNotifier
-    private[connection] val serverNetwork: ServerSideNetwork = new ServerSideNetwork(this)(traffic)
-    override val network: Network = serverNetwork
-    private val systemChannel: SystemPacketChannel = new SystemPacketChannel(ChannelScope.broadcast(traffic.newWriter(SystemChannelID)))
+    override val supportIdentifier : String                     = configuration.identifier
+    override val translator        : PacketTranslator           = configuration.translator
+    private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier.toString)
+    private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
+    private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
+    override val traffic           : PacketTraffic              = new ServerPacketTraffic(this)
+    override val eventNotifier     : EventNotifier              = new DefaultEventNotifier
+    private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
+    override val network           : Network                    = sideNetwork
+    private  val systemChannel     : SystemPacketChannel        = new SystemPacketChannel(ChannelScope.broadcast(traffic.newWriter(SystemChannelID)))
 
     @volatile private var alive = false
 
@@ -61,12 +59,12 @@ class ServerConnection(applicationContext: ServerApplication,
 
         val port = configuration.port
 
-        ContextLogger.info(s"Server '$supportIdentifier' on port $port prepares to shutdown...")
+        AppLogger.info(s"Server '$supportIdentifier' on port $port prepares to shutdown...")
         applicationContext.unregister(this)
 
         connectionsManager.close()
         alive = false
-        ContextLogger.info(s"Server '$supportIdentifier' shutdown.")
+        AppLogger.info(s"Server '$supportIdentifier' shutdown.")
     }
 
     @workerExecution
@@ -74,8 +72,8 @@ class ServerConnection(applicationContext: ServerApplication,
         BusyWorkerPool.checkCurrentIsWorker("Must start server connection in a worker thread.")
         if (alive)
             throw new ServerException(this, "Server is already started.")
-        ContextLogger.info(s"Server '$supportIdentifier' starts on port ${configuration.port}")
-        ContextLogger.trace(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
+        AppLogger.info(s"Server '$supportIdentifier' starts on port ${configuration.port}")
+        AppLogger.trace(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
 
         try {
             loadSocketListener()
@@ -110,6 +108,8 @@ class ServerConnection(applicationContext: ServerApplication,
         connectionsManager.broadcastBytes(packet, injectableID, sender, discarded.appended(supportIdentifier): _*)
     }
 
+    private[connection] def getSideNetwork: ServerSideNetwork = sideNetwork
+
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     ////////////////////////////////  C L I E N T  I N I T I A L I S A T I O N  H A N D L I N G  /////////////////////////////////
@@ -122,14 +122,13 @@ class ServerConnection(applicationContext: ServerApplication,
         val socketContainer = new SocketContainer(true)
         try {
             val port = configuration.port
-            ContextLogger.debug(s"Ready to accept next connection on port $port")
+            AppLogger.debug(s"Ready to accept next connection on port $port")
             val clientSocket = serverSocket.accept()
             socketContainer.set(clientSocket)
-            ContextLogger.debug(s"Socket accepted ($clientSocket)")
+            AppLogger.debug(s"Socket accepted ($clientSocket)")
             runLater {
-                ContextLogger.trace(s"Handling client socket $clientSocket...")
+                AppLogger.trace(s"Handling client socket $clientSocket...")
                 val count = connectionsManager.countConnections
-                println(s"count = ${count}")
                 handleSocket(socketContainer)
                 val newCount = connectionsManager.countConnections
                 if (count != newCount) {
@@ -163,7 +162,7 @@ class ServerConnection(applicationContext: ServerApplication,
      * */
     private def readWelcomePacket(socket: SocketContainer): String = {
         val welcomePacketLength = socket.readInt()
-        val welcomePacket = socket.read(welcomePacketLength)
+        val welcomePacket       = socket.read(welcomePacketLength)
         new String(welcomePacket)
     }
 
@@ -176,9 +175,9 @@ class ServerConnection(applicationContext: ServerApplication,
         if (args.length != Rules.WPArgsLength)
             return WelcomePacketVerdict(null, false, s"Arguments length does not conform to server's rules of ${Rules.WPArgsLength}")
         try {
-            val identifier = args(0)
+            val identifier          = args(0)
             val translatorSignature = args(1)
-            val hasherSignature = args(2)
+            val hasherSignature     = args(2)
 
             if (!(configuration.hasher.signature sameElements hasherSignature))
                 return WelcomePacketVerdict(identifier, false, "Hasher signatures mismatches !")
@@ -199,12 +198,12 @@ class ServerConnection(applicationContext: ServerApplication,
 
     private def handleSocket(socket: SocketContainer): Unit = {
         val welcomePacket = readWelcomePacket(socket)
-        val verdict = scanWelcomePacket(welcomePacket)
+        val verdict       = scanWelcomePacket(welcomePacket)
         if (!verdict.accepted) {
             verdict.concludeRefusal(socket)
             return
         }
-        ContextLogger.info("Stage 1 Completed : Connection seems able to support this server configuration.")
+        AppLogger.info("Stage 1 Completed : Connection seems able to support this server configuration.")
         val identifier = verdict.identifier
         socket.identifier = identifier
         handleNewConnection(identifier, socket)
@@ -220,7 +219,7 @@ class ServerConnection(applicationContext: ServerApplication,
     }
 
     private def handleNewConnection(identifier: String,
-                                      socket: SocketContainer): Unit = {
+                                    socket: SocketContainer): Unit = {
 
         val currentConnection = getConnection(identifier)
         //There is no currently connected connection with the same identifier on this network.
@@ -228,7 +227,7 @@ class ServerConnection(applicationContext: ServerApplication,
             connectionsManager.registerConnection(identifier, socket)
             val newConnection = getConnection(identifier)
             if (newConnection.isDefined) //if empty, the connection would be rejected.
-                serverNetwork.addEntity(newConnection.get)
+                sideNetwork.addEntity(newConnection.get)
             return
         }
 
@@ -241,11 +240,11 @@ class ServerConnection(applicationContext: ServerApplication,
         if (!conflicted.isConnected) {
             conflicted.updateSocket(socket.get)
             sendAuthorisedConnection(socket)
-            ContextLogger.info(s"The connection of ${conflicted.boundIdentifier} has been resumed.")
+            AppLogger.info(s"The connection of ${conflicted.boundIdentifier} has been resumed.")
             return
         }
         val strategy = configuration.identifierAmbiguityStrategy
-        ContextLogger.trace(s"Connection '$identifier' conflicts with socket $socket. Applying Ambiguity Strategy '$strategy'...")
+        AppLogger.trace(s"Connection '$identifier' conflicts with socket $socket. Applying Ambiguity Strategy '$strategy'...")
 
         val rejectMsg = s"Another relay point with id '$identifier' is currently connected on the targeted network."
         import AmbiguityStrategy._
@@ -288,9 +287,9 @@ class ServerConnection(applicationContext: ServerApplication,
 
         def concludeRefusal(socket: DynamicSocket): Unit = {
             if (identifier == null) {
-                ContextLogger.error(s"An unknown connection have been discarded: $refusalMessage")
+                AppLogger.error(s"An unknown connection have been discarded: $refusalMessage")
             } else {
-                ContextLogger.error(s"Connection $identifier has been discarded: $refusalMessage")
+                AppLogger.error(s"Connection $identifier has been discarded: $refusalMessage")
             }
             sendRefusedConnection(socket, s"Connection discarded by the server: $refusalMessage")
         }

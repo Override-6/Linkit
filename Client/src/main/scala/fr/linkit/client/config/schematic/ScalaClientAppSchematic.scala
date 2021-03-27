@@ -15,9 +15,12 @@ package fr.linkit.client.config.schematic
 import fr.linkit.client.config.ClientConnectionConfiguration
 
 abstract class ScalaClientAppSchematic extends ClientAppSchematic {
+
     override val name: String = "raw-schematic"
 
     protected object clients {
+
         def +=(serverConfig: ClientConnectionConfiguration): Unit = serverConfigs += serverConfig
     }
+
 }

@@ -28,7 +28,7 @@ import fr.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, PacketInjections}
 import fr.linkit.core.local.concurrency.{BusyWorkerPool, PacketReaderThread}
-import fr.linkit.core.local.system.{ContextLogger, Rules, SystemPacket}
+import fr.linkit.core.local.system.{AppLogger, Rules, SystemPacket}
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
@@ -185,15 +185,14 @@ object ClientConnection {
             socket.identifier = serverIdentifier
 
             //Constructing connection instance session
-            ContextLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
+            AppLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
             val readThread  = new PacketReaderThread(packetReader, context, serverIdentifier)
             val sessionInfo = ClientConnectionSessionInfo(context, configuration, readThread)
             val session     = ClientConnectionSession(socket, sessionInfo, serverIdentifier)
-
             //Constructing connection instance...
             //Stage 2 will be completed into ClientConnection constructor.
             connection = new ClientConnection(session)
-            ContextLogger.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
+            AppLogger.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
         })
 
         //The server couldn't send the packet.

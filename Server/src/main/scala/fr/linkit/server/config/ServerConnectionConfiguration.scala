@@ -15,7 +15,8 @@ package fr.linkit.server.config
 import fr.linkit.api.local.system.config.{ConnectionConfiguration, ExtendedConfiguration}
 
 trait ServerConnectionConfiguration extends ConnectionConfiguration with ExtendedConfiguration {
-    val maxConnection: Int
-    val port: Int
+
+    val maxConnection              : Int
+    val port                       : Int
     val identifierAmbiguityStrategy: AmbiguityStrategy
 }

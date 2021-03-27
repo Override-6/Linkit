@@ -15,6 +15,7 @@ package fr.linkit.client.config.schematic
 import fr.linkit.client.config.ClientConnectionConfiguration
 
 class JavaConfigAppSchematic extends ClientAppSchematic {
+
     override val name: String = "raw-schematic"
 
     def addConfig(serverConfig: ClientConnectionConfiguration): this.type = {

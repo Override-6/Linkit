@@ -19,6 +19,7 @@ import fr.linkit.core.connection.network.cache.map.SharedMap
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
 import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.linkit.core.local.system.AppLogger
 
 import java.util.NoSuchElementException
 import scala.collection.mutable
@@ -185,7 +186,7 @@ class SimpleSharedCacheManager(override val family: String,
     }
 
     private def println(msg: String): Unit = {
-        //ContextLogger.trace(s"<$family, $ownerID> $msg")
+        AppLogger.trace(s"<$family, $ownerID> $msg")
     }
 
 }

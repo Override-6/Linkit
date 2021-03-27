@@ -20,6 +20,7 @@ import fr.linkit.core.connection.network.cache.collection.CollectionModification
 import fr.linkit.core.connection.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.local.concurrency.BusyWorkerPool
+import fr.linkit.core.local.system.AppLogger
 import fr.linkit.core.local.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -32,12 +33,12 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
                                                      identifier: Long,
                                                      adapter: CollectionAdapter[A],
                                                      channel: PacketSender with PacketSyncReceiver)
-    extends AbstractSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
+        extends AbstractSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
-    private val networkListeners = ConsumerContainer[(CollectionModification, Long, A)]()
+    private val networkListeners        = ConsumerContainer[(CollectionModification, Long, A)]()
 
-    @volatile private var modCount = 0
+    @volatile private  var modCount           = 0
     @volatile override var autoFlush: Boolean = true
 
     override def modificationCount(): Int = modCount
@@ -48,7 +49,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         this
     }
 
-    override def toString: String = adapter.toString
+    override def toString: String = getClass.getSimpleName + s"(family: $family, id: $identifier, content: ${adapter.toString})"
 
     override def currentContent: Array[Any] = adapter.get().toArray
 
@@ -71,7 +72,6 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         addLocalModification(ADD, -1, t)
         this
     }
-
 
     def foreach(action: A => Unit): this.type = {
         adapter.get().foreach(action)
@@ -129,6 +129,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
     }
 
     private def addLocalModification(@NotNull kind: CollectionModification, @Nullable index: Int, @Nullable value: Any): Unit = {
+        AppLogger.debug(s"<$family> Local modification : ${(kind, index, value)}")
         if (autoFlush) {
             flushModification((kind, index, value))
             return
@@ -146,14 +147,17 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
         modCount += 1
-        //println(s"<$family> COLLECTION IS NOW (local): " + adapter + " IDENTIFIER : " + identifier)
+        AppLogger.warn(s"<$family> (${channel.traffic.supportIdentifier}) COLLECTION IS NOW (local): " + this)
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
-        val mod: (CollectionModification, Long, Any) = packet.casted
-        val modKind: CollectionModification = mod._1
-        val index = mod._2.toInt
+        val mod    : (CollectionModification, Long, Any) = packet.casted
+        val modKind: CollectionModification              = mod._1
+        val index                                        = mod._2.toInt
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed (could occur to NPE)
+
+        AppLogger.warn(s"<$family> Received mod request : $mod")
+        AppLogger.warn(s"<$family> Current items : $this")
         val action: CollectionAdapter[A] => Unit = modKind match {
             case CLEAR => _.clear()
             case SET => _.set(index, item)
@@ -169,6 +173,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         modCount += 1
 
         networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
+        AppLogger.warn(s"<$family> COLLECTION IS NOW (network) $this")
     }
 }
 
@@ -207,7 +212,7 @@ object SharedCollection {
     class CollectionAdapter[A](baseContent: Array[A], insertFilter: A => Boolean) extends mutable.Iterable[A] {
 
         type X
-        private val mainCollection = ListBuffer.from(baseContent)
+        private val mainCollection                                          = ListBuffer.from(baseContent)
         private val boundedCollections: ListBuffer[BoundedCollection[A, X]] = ListBuffer.empty
 
         override def toString: String = mainCollection.toString()
@@ -227,7 +232,6 @@ object SharedCollection {
             mainCollection.clear()
             foreachCollection(_.clear())
         }
-
 
         def set(i: Int, it: A): Unit = {
             mainCollection.update(i, it)
@@ -250,7 +254,6 @@ object SharedCollection {
             foreachCollection(_.add(it))
             mainCollection.size - 1
         }
-
 
         def set(array: Array[A]): Unit = {
             mainCollection.clear()

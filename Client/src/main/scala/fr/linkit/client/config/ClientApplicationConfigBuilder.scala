@@ -19,28 +19,30 @@ import fr.linkit.client.ClientApplication
 import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
 
 class ClientApplicationConfigBuilder {
+
     private final var enableEventHandling: Boolean = false //still in development
 
-    var loadSchematic: AppSchematic[ClientApplication] = new EmptySchematic()
-    var nWorkerThreadFunction: Int => Int = _ * 2 + 3 //2 threads per external connection + 3 thread for application.
-    var pluginFolder: Option[String] = Some("/Plugins")
-    var fsAdapter: FileSystemAdapter = JDKFileSystemAdapters.Nio
-    var securityManager: ApplicationSecurityManager = ApplicationSecurityManager.none
+    var loadSchematic        : AppSchematic[ClientApplication] = new EmptySchematic()
+    var nWorkerThreadFunction: Int => Int                      = _ * 2 + 3 //2 threads per external connection + 3 thread for application.
+    var pluginFolder         : Option[String]                  = Some("/Plugins")
+    var fsAdapter            : FileSystemAdapter               = JDKFileSystemAdapters.Nio
+    var securityManager      : ApplicationSecurityManager      = ApplicationSecurityManager.none
 
     def buildConfig(): ClientApplicationConfiguration = {
         val builder = this
         new ClientApplicationConfiguration {
-            override val loadSchematic: AppSchematic[ClientApplication] = builder.loadSchematic
-            override val enableEventHandling: Boolean = builder.enableEventHandling
-            override val nWorkerThreadFunction: Int => Int = builder.nWorkerThreadFunction
-            override val pluginFolder: Option[String] = builder.pluginFolder
-            override val fsAdapter: FileSystemAdapter = builder.fsAdapter
-            override val securityManager: ApplicationSecurityManager = builder.securityManager
+            override val loadSchematic        : AppSchematic[ClientApplication] = builder.loadSchematic
+            override val enableEventHandling  : Boolean                         = builder.enableEventHandling
+            override val nWorkerThreadFunction: Int => Int                      = builder.nWorkerThreadFunction
+            override val pluginFolder         : Option[String]                  = builder.pluginFolder
+            override val fsAdapter            : FileSystemAdapter               = builder.fsAdapter
+            override val securityManager      : ApplicationSecurityManager      = builder.securityManager
         }
     }
 }
 
 object ClientApplicationConfigBuilder {
+
     implicit def autoBuild(builder: ClientApplicationConfigBuilder): ClientApplicationConfiguration = {
         builder.buildConfig()
     }

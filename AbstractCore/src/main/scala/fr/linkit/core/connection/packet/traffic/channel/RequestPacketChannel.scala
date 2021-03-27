@@ -21,8 +21,8 @@ import fr.linkit.core.local.utils.ConsumerContainer
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
-class CommunicationPacketChannel(scope: ChannelScope,
-                                 providable: Boolean)
+class RequestPacketChannel(scope: ChannelScope,
+                           providable: Boolean)
         extends AbstractPacketChannel(scope) {
 
     private val responses: BlockingQueue[Packet] = {
@@ -38,7 +38,7 @@ class CommunicationPacketChannel(scope: ChannelScope,
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val packets = injection.getPackets
+        val packets     = injection.getPackets
         val coordinates = injection.coordinates
         packets.foreach {
             case WrappedPacket(tag, subPacket) =>
@@ -50,35 +50,29 @@ class CommunicationPacketChannel(scope: ChannelScope,
         //println(s"<$identifier> responses = ${responses}")
     }
 
-
     def addRequestListener(action: (Packet, DedicatedPacketCoordinates) => Unit): Unit =
         requestListeners += (tuple => action(tuple._1, tuple._2))
 
-    def nextResponse[P <: Packet]: P = responses.take().asInstanceOf[P]
-
-    def sendResponse(packet: Packet): Unit = {
-        scope.sendToAll(WrappedPacket("res", packet))
-    }
-
     def sendRequest(packet: Packet): Unit = {
         scope.sendToAll(WrappedPacket("req", packet))
-    }
-
-    def sendResponse(packet: Packet, targets: String*): Unit = {
-        scope.sendTo(WrappedPacket("res", packet), targets: _*)
     }
 
     def sendRequest(packet: Packet, targets: String*): Unit = {
         scope.sendTo(WrappedPacket("req", packet), targets: _*)
     }
 
-}
-
-object CommunicationPacketChannel extends PacketInjectableFactory[CommunicationPacketChannel] {
-    override def createNew(scope: ChannelScope): CommunicationPacketChannel = {
-        new CommunicationPacketChannel(scope, false)
+    def sendResponse(packet: Packet, targets: String*): Unit = {
+        scope.sendTo(WrappedPacket("res", packet), targets: _*)
     }
 
-    def providable: PacketInjectableFactory[CommunicationPacketChannel] = new CommunicationPacketChannel(_, true)
+}
+
+object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel] {
+
+    override def createNew(scope: ChannelScope): RequestPacketChannel = {
+        new RequestPacketChannel(scope, false)
+    }
+
+    def providable: PacketInjectableFactory[RequestPacketChannel] = new RequestPacketChannel(_, true)
 
 }

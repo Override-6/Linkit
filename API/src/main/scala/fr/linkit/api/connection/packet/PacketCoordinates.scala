@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.serialization.Serializer
 trait PacketCoordinates extends Serializable {
 
     val injectableID: Int
-    val senderID: String
+    val senderID    : String
 
     def determineSerializer(array: Array[String], raw: Serializer, cached: Serializer): Serializer
 

@@ -30,7 +30,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 
     private val listeners = new ConsumerContainer[A]
 
-    @volatile private var modCount = 0
+    @volatile private var modCount    = 0
     @volatile private var instance: A = _
 
     def this(handler: SharedCacheManager,
@@ -71,7 +71,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
         listeners.applyAll(t)
         //println(s"INSTANCE IS NOW (local) : $instance $autoFlush")
         if (autoFlush)
-        flush()
+            flush()
         this
     }
 

@@ -18,6 +18,7 @@ import fr.linkit.core.local.utils.ConsumerContainer
 import org.jetbrains.annotations.NotNull
 
 class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L, E) => Unit)*) extends EventHook[L, E] {
+
     private val consumers = ConsumerContainer[E]()
 
     override def await(@NotNull lock: AnyRef = new Object): Unit = {
@@ -46,6 +47,7 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
 }
 
 object SimpleEventHook {
+
     def apply[L <: EventListener, E <: Event[_, L]](methods: (L, E) => Unit*): SimpleEventHook[L, E] = {
         new SimpleEventHook[L, E](methods: _*)
     }

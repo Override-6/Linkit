@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, packetWorkerExecution}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.core.local.concurrency.PacketReaderThread.packetReaderThreadGroup
-import fr.linkit.core.local.system.ContextLogger
+import fr.linkit.core.local.system.AppLogger
 
 import java.nio.channels.AsynchronousCloseException
 import scala.util.control.NonFatal
@@ -30,8 +30,8 @@ class PacketReaderThread(reader: PacketReader,
                          bound: String) extends Thread(packetReaderThreadGroup, s"$bound's Read Worker") with JustifiedCloseable {
 
     private var open = true
-    var onPacketRead: (PacketDeserializationResult, Int) => Unit = (_, _) => ()
-    var onReadException: () => Unit = () => ()
+    var onPacketRead   : (PacketDeserializationResult, Int) => Unit = (_, _) => ()
+    var onReadException: () => Unit                                 = () => ()
 
     override def isClosed: Boolean = open
 
@@ -47,7 +47,7 @@ class PacketReaderThread(reader: PacketReader,
             }
         } catch {
             case NonFatal(e) =>
-                ContextLogger.error("Packet reading threw an error", e)
+                AppLogger.error("Packet reading threw an error", e)
                 open = false
         } finally {
             //println("STOPPED PACKET WORKER")
@@ -78,7 +78,7 @@ class PacketReaderThread(reader: PacketReader,
         }
 
         def onException(msg: String): Unit = {
-            ContextLogger.warn(msg)
+            AppLogger.warn(msg)
             onReadException()
         }
     }
@@ -86,7 +86,7 @@ class PacketReaderThread(reader: PacketReader,
     private def readNextPacket(): Unit = {
         reader.nextPacket((result, packetNumber) => {
             //NETWORK-DEBUG-MARK
-            ContextLogger.network(s"Received : ", result.bytes)
+            AppLogger.logDownload(bound, result.bytes)
             procrastinator.runLater {
                 onPacketRead(result, packetNumber)
             }
