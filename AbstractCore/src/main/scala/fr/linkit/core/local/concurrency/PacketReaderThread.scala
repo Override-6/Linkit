@@ -87,9 +87,7 @@ class PacketReaderThread(reader: PacketReader,
         reader.nextPacket((result, packetNumber) => {
             //NETWORK-DEBUG-MARK
             AppLogger.logDownload(bound, result.bytes)
-            procrastinator.runLater {
-                onPacketRead(result, packetNumber)
-            }
+            onPacketRead(result, packetNumber)
         })
     }
 
@@ -103,7 +101,7 @@ object PacketReaderThread {
      *
      * @see [[IllegalPacketWorkerLockException]]
      * */
-    val packetReaderThreadGroup: ThreadGroup = new ThreadGroup("Relay Packet Worker")
+    val packetReaderThreadGroup: ThreadGroup = new ThreadGroup("Relay Packet Reader")
 
     /**
      * ensures that the current thread is a [[PacketReaderThread]]
@@ -111,7 +109,7 @@ object PacketReaderThread {
      * */
     def checkCurrent(): Unit = {
         if (!isCurrentWorkerThread)
-            throw new IllegalThreadException("This action must be performed by a Packet Worker thread !")
+            throw new IllegalThreadException("This action must be performed by a Packet Reader thread !")
     }
 
     /**
@@ -120,7 +118,7 @@ object PacketReaderThread {
      * */
     def checkNotCurrent(): Unit = {
         if (isCurrentWorkerThread)
-            throw new IllegalThreadException("This action must not be performed by a Packet Worker thread !")
+            throw new IllegalThreadException("This action must not be performed by a Packet Reader thread !")
     }
 
     /**
@@ -146,7 +144,7 @@ object PacketReaderThread {
     private def currentThread(): Option[PacketReaderThread] = {
         Thread.currentThread() match {
             case worker: PacketReaderThread => Some(worker)
-            case _ => None
+            case _                          => None
         }
     }
 

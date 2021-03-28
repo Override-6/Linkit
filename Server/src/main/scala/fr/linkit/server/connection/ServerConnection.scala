@@ -54,6 +54,7 @@ class ServerConnection(applicationContext: ServerApplication,
     @workerExecution
     override def shutdown(): Unit = {
         BusyWorkerPool.checkCurrentIsWorker("Must shutdown server connection in a worker thread.")
+        AppLogger.error("SHUTING DOWN SERVER...")
         if (!alive)
             return
 
@@ -142,9 +143,11 @@ class ServerConnection(applicationContext: ServerApplication,
                     return
                 Console.err.println(msg)
                 onException(e)
-            case NonFatal(e) =>
+            case NonFatal(e)        =>
                 e.printStackTrace()
-                onException(e)
+                runLater {
+                    onException(e)
+                }
         }
 
         def onException(e: Throwable): Unit = {

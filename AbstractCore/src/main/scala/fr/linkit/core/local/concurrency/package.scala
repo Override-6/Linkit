@@ -12,6 +12,10 @@
 
 package fr.linkit.core.local
 
+import sun.misc.Unsafe
+
+import java.util.concurrent.locks.LockSupport
+
 /**
  * This package is a simple utility set for aliases and concurrency operations.
  * */
@@ -39,9 +43,9 @@ package object concurrency {
      * @param timeout the maximum amount of time to wait
      * @return the time the thread waited on the object.
      * */
-    def timedWait(lock: AnyRef, timeout: Long): Long = lock.synchronized {
+    def timedPark(timeout: Long): Long = {
         val t0 = now()
-        lock.wait(timeout)
+        LockSupport.parkUntil(timeout)
         val t1 = now()
         t1 - t0
     }

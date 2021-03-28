@@ -5,6 +5,7 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.core.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel.{Request, Response, ResponseSubmitter}
 import fr.linkit.core.local.concurrency.BusyWorkerPool
+import fr.linkit.core.local.system.AppLogger
 import fr.linkit.core.local.utils.ConsumerContainer
 import fr.linkit.core.local.utils.ScalaUtils.ensureType
 
@@ -16,13 +17,15 @@ import scala.reflect.ClassTag
 
 class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
 
-    private val requests            = mutable.HashMap.empty[Long, Request]
+    private val requests            = mutable.LinkedHashMap.empty[Long, Request]
     private val requestConsumers    = ConsumerContainer[(Packet, DedicatedPacketCoordinates, ResponseSubmitter)]()
     @volatile private var requestID = 0
 
     override def handleInjection(injection: PacketInjection): Unit = {
         val packets = injection.getPackets
         val coords  = injection.coordinates
+        AppLogger.debug(s"HANDLING $packets")
+
         packets.foreach {
             case AnyRefPacket((id: Int, packet: Packet)) =>
                 val submitter = new ResponseSubmitter(id, scope, coords.senderID)
@@ -34,8 +37,8 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
 
             case response: Response =>
                 requests.get(response.id) match {
-                    case Some(value) => value.addResponse(response)
-                    case None        => // no-op
+                    case Some(request) => request.addResponse(response)
+                    case None          => throw new NoSuchElementException(s"response.id not found (${response.id}) ($requests)")
                 }
 
         }
@@ -80,6 +83,7 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         private val responseConsumer = ConsumerContainer[Response]()
 
         def nextResponse: Response = {
+            AppLogger.debug(s"Waiting for response... ($id)")
             queue.take()
         }
 
@@ -88,8 +92,11 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         }
 
         private[RequestPacketChannel] def addResponse(response: Response): Unit = {
+            AppLogger.error("ADDING RESPONSE")
+            //Thread.dumpStack()
             queue.add(response)
             responseConsumer.applyAllAsync(response)
+            AppLogger.error("RESPONSE ADDED")
         }
 
     }
@@ -103,6 +110,7 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def addPacket(packet: Packet): this.type = {
             ensureNotSubmit()
             packets += packet
+            AppLogger.debug("packets = " + packets)
             this
         }
 
@@ -121,7 +129,9 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def submit(): Unit = {
             ensureNotSubmit()
             val snapshot = Response(id, packets.toArray, properties.toMap, scope.writer.supportIdentifier)
+            AppLogger.debug(s"Submitting response ($id)...")
             scope.sendTo(snapshot, requester)
+            AppLogger.debug("Response submit !")
             isSubmit = true
         }
 

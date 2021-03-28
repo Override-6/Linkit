@@ -15,6 +15,7 @@ package fr.linkit.server.connection
 import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
+import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, PacketInjections}
 import fr.linkit.core.local.system.AppLogger
 
@@ -27,10 +28,10 @@ class SelectivePacketReader(socket: DynamicSocket,
                             boundIdentifier: String) extends PacketReader {
 
     private val configuration                      = server.configuration
-    private val simpleReader                       = new DefaultPacketReader(socket, configuration.hasher, configuration.translator)
+    private val simpleReader                       = new DefaultPacketReader(socket, configuration.hasher, server, configuration.translator)
     @volatile private var concernedPacketsReceived = 0
 
-    override def nextPacket(callback: (PacketDeserializationResult, Int) => Unit): Unit = {
+    override def nextPacket(@workerExecution callback: (PacketDeserializationResult, Int) => Unit): Unit = {
         try {
             nextConcernedPacket(callback)
         } catch {
@@ -43,9 +44,7 @@ class SelectivePacketReader(socket: DynamicSocket,
         simpleReader.nextPacket((result, _) => {
             concernedPacketsReceived += 1 //let's suppose that the received packet is sent to the server.
             val packetNumber = concernedPacketsReceived
-            server.runLater {
-                handleSerialResult(result, callback(_, packetNumber))
-            }
+            handleSerialResult(result, callback(_, packetNumber))
         })
     } catch {
         case NonFatal(e) => e.printStackTrace(Console.out)

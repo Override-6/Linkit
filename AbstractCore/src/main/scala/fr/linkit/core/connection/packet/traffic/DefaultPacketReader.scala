@@ -14,10 +14,13 @@ package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.PacketReader
+import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.system.security.BytesHasher
+import fr.linkit.core.local.system.AppLogger
 
 class DefaultPacketReader(socket: DynamicSocket,
                           hasher: BytesHasher,
+                          procrastinator: Procrastinator,
                           translator: PacketTranslator) extends PacketReader {
 
     private var packetCount = 0
@@ -25,10 +28,16 @@ class DefaultPacketReader(socket: DynamicSocket,
     /**
      * @return a tuple containing the next packet with its coordinates and its local number identifier
      * */
-    override def nextPacket(callback: (PacketDeserializationResult, Int) => Unit): Unit = {
+    override def nextPacket(@workerExecution callback: (PacketDeserializationResult, Int) => Unit): Unit = {
+        nextPacketSync((a, b) => procrastinator.runLater(callback(a, b)))
+    }
+
+    def nextPacketSync(callback: (PacketDeserializationResult, Int) => Unit): Unit = {
         val nextLength = socket.readInt()
-        if (nextLength == -1 || !socket.isOpen)
+        if (nextLength == -1 || socket.isClosed) {
+            AppLogger.error(s"PACKET READ WAS ABORTED : $nextLength || ${socket.isOpen}")
             return
+        }
 
         val bytes  = hasher.deHashBytes(socket.read(nextLength))
         val result = translator.translate(bytes)

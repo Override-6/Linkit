@@ -16,7 +16,9 @@ import fr.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, 
 import fr.linkit.core.local.concurrency.BusyWorkerPool.{checkCurrentIsWorker, currentPool, workerThreadGroup}
 import fr.linkit.core.local.system.AppLogger
 
+import java.util.concurrent.locks.LockSupport
 import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
+import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
 /**
@@ -86,10 +88,11 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     private val executor               = Executors.newFixedThreadPool(initialThreadCount, factory).asInstanceOf[ThreadPoolExecutor]
 
     //The extracted workQueue of the executor which contains all the tasks to execute
-    private val workQueue               = executor.getQueue
-    private val workersLocks            = new WorkersLock
-    private           var closed        = false
-    private           var threadID      = 1
+    private val workQueue = executor.getQueue
+    private val workers   = ListBuffer.empty[WorkerThread]
+    private var closed    = false
+
+    //additional values for debugging
     @volatile private var activeThreads = 0
 
     override def close(): Unit = {
@@ -110,25 +113,29 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
 
         var runnable: Runnable = null
         runnable = () => {
-            activeThreads += 1
+            val rootExecution = currentTaskExecutionDepth == 0
+            if (rootExecution)
+                activeThreads += 1
             try {
-                AppLogger.warn(s"TASK TAKEN FROM POOL $name, ($activeThreads / ${threadID - 1}), TOTAL TASKS : $workQueue")
+                AppLogger.warn(s"($activeThreads / ${threadCount}) TASK $runnable TAKEN FROM POOL $name, TOTAL TASKS : $workQueue")
                 task
             } catch {
-                case NonFatal(e)                         => e.printStackTrace()
-                case e if currentTaskExecutionDepth == 0 =>
+                case NonFatal(e)        => e.printStackTrace()
+                case e if rootExecution =>
                     AppLogger.fatal(s"Caught fatal exception in thread pool '$name'. The JVM Will exit.")
                     e.printStackTrace()
                     System.exit(1)
             }
-            activeThreads -= 1
-            AppLogger.warn(s"TASK ACCOMPLISHED. ($workQueue) ($activeThreads / ${threadID - 1})")
+            if (rootExecution)
+                activeThreads -= 1
+            AppLogger.warn(s"($activeThreads / ${threadCount}) TASK ACCOMPLISHED ($runnable) ($workQueue).")
         }
+        AppLogger.warn(s"($activeThreads / ${threadCount}) Task $runnable will be submitted...")
         executor.submit(runnable)
-        AppLogger.warn(s"TASK SUBMIT TO POOL $name, TOTAL TASKS : $workQueue")
+        AppLogger.warn(s"($activeThreads / ${threadCount}) TASK $runnable SUBMIT TO POOL $name, TOTAL TASKS : $workQueue")
         //If there is one busy thread that is waiting for a new task to be performed,
         //It would instantly execute the current task.
-        workersLocks.notifyOneBusyThread()
+        unparkBusyThread()
     }
 
     override def ensureCurrentThreadOwned(): Unit = {
@@ -171,9 +178,9 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         while (!workQueue.isEmpty && condition) {
             val task = workQueue.poll()
             if (task != null) {
-                currentWorker.currentTaskExecutionDepth += 1
+                currentWorker.taskExecutionDepth += 1
                 task.run()
-                currentWorker.currentTaskExecutionDepth -= 1
+                currentWorker.taskExecutionDepth -= 1
             }
         }
     }
@@ -191,53 +198,62 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      *
      * Using a [[BusyLock]] is highly recommended to keep a thread busy
      *
-     * @param lock      the reference to link a monitor lock if needed
      * @param condition the condition
      * @throws IllegalThreadException if the current thread is not a [[WorkerThread]]
      * @see [[BusyLock]]
      * */
-    def executeRemainingTasksWhile(condition: => Boolean, lock: AnyRef = new Object): Unit = {
+    def executeRemainingTasksWhile(condition: => Boolean): Unit = {
         executeRemainingTasks(condition)
-        if (!condition)
-            return
-        lock.synchronized {
-            if (condition) {
-                workersLocks.addBusyLock(lock)
-                //currentWorker.inBusyLock = true
-                lock.wait()
-                //currentWorker.inBusyLock = false
-                workersLocks.removeLastBusyLock()
+        while (condition) {
+            currentWorker.synchronized {
+                currentWorker.isWaitingRecursiveTask = true
+                AppLogger.error("WAITING FOR RECURSIVE TASK")
+                LockSupport.park()
+                AppLogger.error("This thread has been unparked.")
+                currentWorker.isWaitingRecursiveTask = false
+                if (currentWorker.lastWasStopped) {
+                    currentWorker.lastWasStopped = false
+                    return
+                }
+                executeRemainingTasks(condition)
+                AppLogger.error(s"condition = $condition")
             }
         }
-        if (condition) //We may still need to be busy
-            executeRemainingTasksWhile(condition, lock)
+        AppLogger.error("executeRemainingTasksWhile just ended.")
     }
 
     /**
      * Keep the current thread busy with task execution for at least
      * x milliseconds.
      *
-     * @param lock   the lock that will handle monotirs
      * @param millis the number of milliseconds the thread must be busy.
      * @throws IllegalThreadException if the current thread is not a [[WorkerThread]]
      * */
-    def timedExecuteRemainingTasks(millis: Long, lock: AnyRef = new Object): Unit = {
+    def timedExecuteRemainingTasks(millis: Long): Unit = {
         checkCurrentIsWorker()
 
-        var totalProvided: Long = 0
-        while (!workQueue.isEmpty && totalProvided <= millis) {
+        var busiedMillis: Long = 0
+        while (!workQueue.isEmpty && busiedMillis <= millis) {
             val t0 = now()
             workQueue.take().run()
             val t1 = now()
-            totalProvided += (t1 - t0)
+            busiedMillis += (t1 - t0)
         }
-        val toWait = millis - totalProvided
-        if (toWait > 0) {
-            workersLocks.addBusyLock(lock)
-            val waited = timedWait(lock, toWait)
-            workersLocks.removeLastBusyLock()
-            if (waited < toWait)
-                timedExecuteRemainingTasks(millis)
+
+        var toWait = millis - busiedMillis
+        while (toWait > 0) {
+            val millis = currentWorker.synchronized {
+                currentWorker.isWaitingRecursiveTask = true
+                val millis = timedPark(toWait)
+                currentWorker.isWaitingRecursiveTask = false
+                if (currentWorker.lastWasStopped) {
+                    currentWorker.lastWasStopped = false
+                    return
+                }
+
+                millis
+            }
+            toWait -= millis
         }
     }
 
@@ -272,7 +288,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     @workerExecution
     def currentTaskExecutionDepth: Int = {
         checkCurrentIsWorker("This action is only permitted to relay threads")
-        currentWorker.currentTaskExecutionDepth
+        currentWorker.taskExecutionDepth
     }
 
     /**
@@ -288,20 +304,30 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         currentThread.asInstanceOf[WorkerThread]
     }
 
+    private def unparkBusyThread(): Unit = {
+        workers.find(_.isWaitingRecursiveTask) match {
+            case Some(thread) =>
+                AppLogger.error(s"$thread <- This thread will be unparked because a new task is ready to entertain it.")
+                LockSupport.unpark(thread)
+            case None         => //no-op
+        }
+    }
+
+    private def threadCount: Int = workers.length
+
     /**
      * The representation of a java thread, extending from [[Thread]].
      * This class contains information that need to be stored into a specific thread class.
      * */
     private[concurrency] final class WorkerThread private[BusyWorkerPool](target: Runnable, poolName: String)
-            extends Thread(workerThreadGroup, target, s"$poolName's Thread#$threadID") {
+            extends Thread(workerThreadGroup, target, s"$poolName's Thread#${workers.length + 1}") {
 
-        private[BusyWorkerPool] val ownerPool: BusyWorkerPool = BusyWorkerPool.this
+        workers += this
 
-        threadID += 1
-        //choreographer.addThread(this)
-
-        var currentTaskExecutionDepth = 0
-        //var inBusyLock: Boolean = false
+        private[BusyWorkerPool] val ownerPool             : BusyWorkerPool = BusyWorkerPool.this
+        private[BusyWorkerPool] var isWaitingRecursiveTask: Boolean        = false
+        private[BusyWorkerPool] var lastWasStopped        : Boolean        = false
+        private[BusyWorkerPool] var taskExecutionDepth    : Int            = 0
     }
 
 }
@@ -396,9 +422,9 @@ object BusyWorkerPool {
      * @see [[BusyWorkerPool.executeRemainingTasks()]] for further details about the busy system.
      * */
     @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
-    def executeRemainingTasksWhile(condition: => Boolean, lock: AnyRef = new Object): Unit = {
+    def executeRemainingTasksWhile(condition: => Boolean): Unit = {
         val pool = checkCurrentIsWorker("executeRemainingTasksWhile must be processed by a worker thread !")
-        pool.executeRemainingTasksWhile(condition, lock)
+        pool.executeRemainingTasksWhile(condition)
     }
 
     /**
@@ -439,6 +465,22 @@ object BusyWorkerPool {
         currentThread match {
             case worker: BusyWorkerPool#WorkerThread => Some(worker.ownerPool)
             case _                                   => None
+        }
+    }
+
+    def stopExecuteRemainingTasks(thread: BusyWorkerPool#WorkerThread): Unit = {
+        if (thread.isWaitingRecursiveTask) {
+            thread.lastWasStopped = true
+            AppLogger.error(s"[$thread] <- This thread will be unparked because users asked it.")
+            LockSupport.unpark(thread)
+        }
+    }
+
+    @workerExecution
+    def currentWorkerThread: BusyWorkerPool#WorkerThread = {
+        currentThread match {
+            case worker: BusyWorkerPool#WorkerThread => worker
+            case _                                   => throw new IllegalThreadException("Not a worker thread.")
         }
     }
 

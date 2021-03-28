@@ -155,7 +155,7 @@ object ClientConnection {
 
         //Initializing values that will be used for packet transactions during the initialization.
         val translator   = configuration.translator
-        val packetReader = new DefaultPacketReader(socket, BytesHasher.inactive, translator)
+        val packetReader = new DefaultPacketReader(socket, BytesHasher.inactive, context, translator)
 
         //WelcomePacket informational fields
         val identifier          = configuration.identifier
@@ -179,7 +179,7 @@ object ClientConnection {
 
         //Server should send a packet which provides its identifier.
         //This packet concludes phase 1 of connection's initialization.
-        packetReader.nextPacket((result, _) => {
+        packetReader.nextPacketSync((result, _) => {
             //The contains the server identifier bytes' string
             val serverIdentifier = new String(result.bytes)
             socket.identifier = serverIdentifier

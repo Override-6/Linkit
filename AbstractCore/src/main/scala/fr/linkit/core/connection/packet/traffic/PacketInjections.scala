@@ -14,23 +14,28 @@ package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.traffic.PacketInjection
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.core.local.system.AppLogger
 
-import java.util.concurrent.ConcurrentHashMap
+import scala.collection.mutable
 
 object PacketInjections {
 
-    private[traffic] val currentInjections = new ConcurrentHashMap[(Int, String), DirectInjection]
+    private[traffic] val currentInjections = new mutable.LinkedHashMap[(Int, String), DirectInjection]
 
     def createInjection(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): PacketInjection = this.synchronized {
-        //println(s"CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates, $number")
+        AppLogger.debug(s"$number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates")
         val id     = coordinates.injectableID
         val sender = coordinates.senderID
 
-        var injection = currentInjections.get((id, sender))
-        if (injection == null) {
-            injection = new DirectInjection(coordinates)
-            currentInjections.put((id, sender), injection)
+        val injection = currentInjections.get((id, sender)) match {
+            case Some(value) =>
+                AppLogger.debug(s"$number -> INJECTION ALREADY EXISTS, ADDING PACKET.")
+                value
+            case None        =>
+                AppLogger.debug(s"$number -> INJECTION DOES NOT EXISTS, CREATING IT.")
+                new DirectInjection(coordinates)
         }
+        currentInjections.put((id, sender), injection)
 
         injection.addPacket(number, packet)
         injection

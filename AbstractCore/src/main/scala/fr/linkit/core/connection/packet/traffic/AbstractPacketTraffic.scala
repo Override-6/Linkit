@@ -16,6 +16,7 @@ import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.local.system.{ClosedException, JustifiedCloseable, Reason}
 import fr.linkit.core.local.concurrency.PacketReaderThread
+import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -105,6 +106,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
     override def handleInjection(injection: PacketInjection): Unit = {
         if (injection.mayNotHandle) {
+            AppLogger.error("Injection refused current thread to handle it")
             return
         }
 

@@ -15,6 +15,7 @@ package fr.linkit.core.connection.packet.traffic
 import fr.linkit.api.connection.packet.traffic.PacketInjection
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable.ListBuffer
 
@@ -31,7 +32,7 @@ class DirectInjection(override val coordinates: DedicatedPacketCoordinates) exte
         val packets = Array.from(injections)
                 .sorted((x: (Int, Packet), y: (Int, Packet)) => x._1 - y._1)
                 .map(_._2)
-        //println(s"DISCOVERED PACKETS ${packets.mkString("Array(", ", ", ")")} vs INJECTIONS $injections")
+        AppLogger.debug(s"DISCOVERED PACKETS ${packets.mkString("Array(", ", ", ")")}")
         PacketInjections.currentInjections.remove((injectableID, coordinates.senderID))
         packets
     }

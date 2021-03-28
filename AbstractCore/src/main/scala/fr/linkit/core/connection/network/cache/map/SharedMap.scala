@@ -15,6 +15,7 @@ package fr.linkit.core.connection.network.cache.map
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.map.MapModification._
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
@@ -117,28 +118,23 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
     def isEmpty: Boolean = iterator.isEmpty
 
+    @workerExecution
     def awaitPut(k: K): V = {
         if (contains(k))
             return apply(k)
         //println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
 
-        val lock  = new Object
-        var found = false
+        var found  = false
+        val thread = BusyWorkerPool.currentWorkerThread
 
         val listener: ((MapModification, K, V)) => Unit = t => {
             found = t._2 == k
-            //println(s"k = ${k}")
-            //println(s"t._2 = ${t._2}")
-            //println(s"found = ${found}")
-            if (found) lock.synchronized {
-                //println(s"Notified lock $lock")
-                lock.notifyAll()
-            }
+            BusyWorkerPool.stopExecuteRemainingTasks(thread)
         }
 
         addListener(listener) //Due to hyper parallelized thread execution,
         //the awaited key could be added since the 'found' value has been created.
-        BusyWorkerPool.executeRemainingTasksWhile(!(contains(k) || found), lock)
+        BusyWorkerPool.executeRemainingTasksWhile(!(contains(k) || found))
         removeListener(listener)
         //println("Done !")
         apply(k)
@@ -156,8 +152,8 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         val value                    = mod._3
 
         val action: LocalMap.type => Unit = modKind match {
-            case CLEAR => _.clear()
-            case PUT => _.put(key, value)
+            case CLEAR  => _.clear()
+            case PUT    => _.put(key, value)
             case REMOVE => _.remove(key)
         }
         action(LocalMap)
@@ -173,7 +169,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         }
 
         kind match {
-            case CLEAR => collectionModifications.clear()
+            case CLEAR        => collectionModifications.clear()
             case PUT | REMOVE => collectionModifications.filterInPlace(m => !((m._1 == PUT || m._1 == REMOVE) && m._2 == key))
         }
         collectionModifications += ((kind, key, value))

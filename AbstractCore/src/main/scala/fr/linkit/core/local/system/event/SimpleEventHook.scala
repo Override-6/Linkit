@@ -21,15 +21,12 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
 
     private val consumers = ConsumerContainer[E]()
 
-    override def await(@NotNull lock: AnyRef = new Object): Unit = {
-        var stillBusy = true
+    override def await(): Unit = {
+        val thread = BusyWorkerPool.currentWorkerThread
         addOnce {
-            lock.synchronized {
-                stillBusy = false
-                lock.notifyAll()
-            }
+            BusyWorkerPool.stopExecuteRemainingTasks(thread)
         }
-        BusyWorkerPool.executeRemainingTasksWhile(stillBusy, lock)
+        BusyWorkerPool.executeRemainingTasksWhile(true)
     }
 
     override def add(action: E => Unit): Unit = consumers += action

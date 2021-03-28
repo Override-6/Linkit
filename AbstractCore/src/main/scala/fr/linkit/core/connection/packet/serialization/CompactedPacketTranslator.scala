@@ -56,14 +56,13 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
         def serialize(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
             //Thread.dumpStack()
             lazy val serializer = if (initialised) {
-                //println(s"cachedSerializerWhitelist = ${cachedSerializerWhitelist}")
                 val whiteListArray = cachedSerializerWhitelist.toArray
                 coordinates.determineSerializer(whiteListArray, rawSerializer, cachedSerializer)
             } else {
                 rawSerializer
             }
             try {
-                //ContextLogger.debug(s"Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
+                AppLogger.debug(s"Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
                 PacketSerializationResult(packet, coordinates, () => serializer)
             } catch {
                 case NonFatal(e) =>

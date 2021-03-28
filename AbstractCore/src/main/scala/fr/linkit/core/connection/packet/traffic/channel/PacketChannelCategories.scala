@@ -18,6 +18,7 @@ import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.connection.packet.traffic.PacketInjections
+import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 

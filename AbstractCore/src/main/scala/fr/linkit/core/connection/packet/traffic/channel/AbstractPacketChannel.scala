@@ -74,9 +74,9 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         val supportIdentifier = scope.writer.supportIdentifier
         val directCoords      = coords match {
             case dedicated: DedicatedPacketCoordinates =>
-                if (dedicated.targetID != supportIdentifier) {
-                    throw new IllegalArgumentException("Stored packet coordinates must target current connection.")
-                }
+                //if (dedicated.targetID != supportIdentifier) {
+                //    throw new IllegalArgumentException("Stored packet coordinates must target current connection.")
+                //}
 
                 dedicated
             case broadcast: BroadcastPacketCoordinates =>

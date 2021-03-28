@@ -14,7 +14,7 @@ package fr.linkit.api.local.system.event
 
 trait EventHook[L <: EventListener, E <: Event[_, L]] {
 
-    def await(lock: AnyRef = this): Unit //Would wait until the hooked event triggers
+    def await(): Unit //Would wait until the hooked event triggers
 
     def add(action: E => Unit): Unit //would add an action to execute every times the event fires
 

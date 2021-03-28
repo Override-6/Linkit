@@ -117,6 +117,15 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     private def init(): SharedMap[Long, Serializable] = {
+        /*
+        * Don't touch, scala objects works as a lazy val, and all lazy vals are synchronized on the instance that
+        * they are computing. If you remove this line, NetworkSCManager could some times be deadlocked because retrieveCacheContent
+        * will wait for its content's request, and thus its request response will be handled by another thread,
+        * which will need LocalCacheHandler in order to retrieve the local cache, which is synchronized, so it will
+        * be blocked until the thread that requested the content get it's response, but it's impossible because the thread
+        * that handles the request is locking...
+        * */
+        LocalCacheHandler
         val content = retrieveCacheContent(1)
 
         val sharedObjects = SharedMap[Long, Serializable].createNew(this, 1, content, cacheChannel)

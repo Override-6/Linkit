@@ -16,6 +16,7 @@ import fr.linkit.api.connection.NoSuchConnectionException
 import fr.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.core.connection.packet.traffic.{PacketInjections, WriterInfo}
+import fr.linkit.core.local.system.AppLogger
 import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {
@@ -37,8 +38,7 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
              * */
             if (targetID == serverIdentifier) {
                 val coords = DedicatedPacketCoordinates(identifier, targetID, serverIdentifier)
-                //val event = PacketEvents.packedSent(packet, coords)
-                //notifier.notifyEvent(hooks, event)
+                AppLogger.debug(s"Reinjected $packet")
                 traffic.handleInjection(PacketInjections.unhandled(coords, packet))
                 return
             }

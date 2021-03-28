@@ -13,6 +13,7 @@
 package fr.linkit.core.local.concurrency
 
 import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.core.local.system.AppLogger
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 import java.util
@@ -29,13 +30,11 @@ import scala.collection.mutable.ListBuffer
 class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
 
     private val content = ListBuffer.empty[A]
-    private val lock    = new Object
+    private val entertainer = new WorkerEntertainer(pool)
 
     override def add(e: A): Boolean = {
         content += e
-        lock.synchronized {
-            lock.notify()
-        }
+        entertainer.stopFirstThreadAmusement()
         true
     }
 
@@ -65,7 +64,8 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
     @workerExecution
     override def take(): A = {
-        pool.executeRemainingTasksWhile(content.isEmpty, lock) //will be released once the queue is empty
+        AppLogger.error(s"Taking item in $this")
+        entertainer.amuseCurrentThreadWhile(content.isEmpty) //will be released once the queue is empty
         poll()
     }
 
@@ -76,12 +76,12 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
         var last        = now()
 
         //the lock object will be notified if an object has been inserted in the list.
-        pool.executeRemainingTasksWhile({
+        entertainer.amuseCurrentThreadWhile {
             val n = now()
             total += n - last
             last = n
             total <= toWait
-        }, lock)
+        }
         //will return the current head or null if the list is empty
         poll()
     }

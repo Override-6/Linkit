@@ -21,4 +21,5 @@ case class PacketDeserializationResult(serializer: () => Serializer, bytes: Arra
     lazy val coords: PacketCoordinates = cache(0).asInstanceOf[PacketCoordinates]
     lazy val packet: Packet            = cache(1).asInstanceOf[Packet]
 
+
 }
