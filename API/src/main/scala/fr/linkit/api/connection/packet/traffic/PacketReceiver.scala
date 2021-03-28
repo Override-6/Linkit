@@ -14,9 +14,11 @@ package fr.linkit.api.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 
+import scala.reflect.ClassTag
+
 trait PacketSyncReceiver extends PacketChannel {
 
-    def nextPacket[P <: Packet]: P
+    def nextPacket[P <: Packet : ClassTag]: P
 
     /**
      * @return true if this channel contains stored packets. In other words, return true if [[nextPacket]] will not wait

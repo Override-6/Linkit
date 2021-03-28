@@ -42,7 +42,7 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
         //TODO if (categories.contains(name)) <- Has need to be removed due to the client/server reconnection.
         //         throw new IllegalArgumentException(s"The category '$name' already exists for this categorised channel")
 
-        val packet = categories.getOrElseUpdate(name, {
+        categories.getOrElseUpdate(name, {
             val writer  = traffic.newWriter(identifier, WrappedPacket(name, _))
             val channel = factory.createNew(scopeFactory(writer))
             categories.put(name, channel)

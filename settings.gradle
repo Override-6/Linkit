@@ -5,6 +5,6 @@ include 'Client'
 include 'Server'
 include 'LinkitPlugins:DebugExtension'
 findProject(':LinkitPlugins:DebugExtension')?.name = 'DebugExtension'
-include 'LinkitPlugins:RelayController'
-findProject(':LinkitPlugins:RelayController')?.name = 'RelayController'
+include 'LinkitPlugins:CLICommands'
+findProject(':LinkitPlugins:CLICommands')?.name = 'CLICommands'
 

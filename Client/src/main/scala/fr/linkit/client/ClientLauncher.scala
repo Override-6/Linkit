@@ -64,7 +64,7 @@ object ClientLauncher {
 
         val config = new ClientApplicationConfigBuilder {
             loadSchematic = new ScalaClientAppSchematic {
-                for (i <- 0 to raidCount) {
+                for (i <- 1 to raidCount) {
                     clients += new ClientConnectionConfigBuilder {
                         pluginFolder = None // Some(mainPluginFolder)
                         override val identifier   : String            = identifier0 + i

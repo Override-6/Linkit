@@ -18,23 +18,6 @@ import fr.linkit.api.local.system.Reason
 
 import java.io.Closeable
 
-/**
- * This class is the hearth of this program.
- * Tasks are registered and are enqueued, then executed one after the others
- *
- * <b><u>How tasks are created from packets :</u></b>
- *      1. First, all received packets are handled by the [[Relay]], then this TasksHandler.
- *         DataPackets have an identifier, this identifier is the identifier from which Task this packet is concerned.
- *         2. If the packet identifier differs from the current Task, it means the Relay received a new Task to schedule and enqueue
- *         DataPackets contains a identifier, a header and some content bytes
- *         3. The [[TaskCompleterHandler]] creates a TaskExecutor from the init packet header (which is the task name). Then registers the task.
- *
- *      <b>Notes:</b>
- *          if the packet identifier is equals to the current task identifier, the TasksHandler will add the packet to
- *          the used [[PacketChannel]]
- *
- * @see PacketChannel
- * */
 trait TasksHandler extends Closeable {
 
     //TODO handle a task which want to complete with an unknown relay identifier

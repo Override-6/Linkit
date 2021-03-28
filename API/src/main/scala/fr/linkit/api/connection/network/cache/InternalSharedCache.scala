@@ -10,20 +10,14 @@
  * questions.
  */
 
-package fr.linkit.api.connection.task
+package fr.linkit.api.connection.network.cache
 
-//TODO reedit the DOC
+import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
 
-trait Task[T] extends TaskExecutor with TaskAction[T] {
+trait InternalSharedCache extends SharedCache {
 
-    /**
-     * Invoked by TaskExecutors to signal that this task was unsuccessful
-     * */
-    protected def fail(msg: String): Unit
+    def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit
 
-    /**
-     * Invoked by TaskExecutors to signal that this task was successful
-     * */
-    protected def success(t: T): Unit
+    def currentContent: Array[Any]
 
 }

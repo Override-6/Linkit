@@ -29,7 +29,7 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
                 lock.notifyAll()
             }
         }
-        BusyWorkerPool.executeRemainingTasks(lock, stillBusy)
+        BusyWorkerPool.executeRemainingTasksWhile(stillBusy, lock)
     }
 
     override def add(action: E => Unit): Unit = consumers += action

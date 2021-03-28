@@ -65,7 +65,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
     @workerExecution
     override def take(): A = {
-        pool.executeRemainingTasks(lock, content.isEmpty) //will be released once the queue is empty
+        pool.executeRemainingTasksWhile(content.isEmpty, lock) //will be released once the queue is empty
         poll()
     }
 
@@ -76,12 +76,12 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
         var last        = now()
 
         //the lock object will be notified if an object has been inserted in the list.
-        pool.executeRemainingTasks(lock, {
+        pool.executeRemainingTasksWhile({
             val n = now()
             total += n - last
             last = n
             total <= toWait
-        })
+        }, lock)
         //will return the current head or null if the list is empty
         poll()
     }

@@ -16,13 +16,15 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketSender, PacketSyncReceiver}
 import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel
 
+import scala.reflect.ClassTag
+
 class SyncAsyncSender(scope: ChannelScope) extends SyncAsyncPacketChannel(scope, true) with PacketSender with PacketSyncReceiver {
 
-    override def send(packet: Packet): Unit = sendRequest(packet)
+    override def send(packet: Packet): Unit = sendAsync(packet)
 
-    override def sendTo(packet: Packet, targets: String*): Unit = sendRequest(packet, targets: _*)
+    override def sendTo(packet: Packet, targets: String*): Unit = sendAsync(packet, targets: _*)
 
-    override def nextPacket[P <: Packet]: P = nextResponse
+    override def nextPacket[P <: Packet : ClassTag]: P = nextSync
 
     override def haveMorePackets: Boolean = false
 }

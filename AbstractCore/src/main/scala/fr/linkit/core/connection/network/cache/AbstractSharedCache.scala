@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.network.cache
 
-import fr.linkit.api.connection.network.cache.{HandleableSharedCache, SharedCacheManager}
+import fr.linkit.api.connection.network.cache.{InternalSharedCache, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
 
 abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handler: SharedCacheManager,
                                                                  identifier: Long,
-                                                                 channel: PacketSender with PacketSyncReceiver) extends HandleableSharedCache with JustifiedCloseable {
+                                                                 channel: PacketSender with PacketSyncReceiver) extends InternalSharedCache with JustifiedCloseable {
 
     override val family: String = if (handler == null) "" else handler.family
 
@@ -40,8 +40,7 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
 
         //asking server to give us his content version of our cache
         //println(s"<$family> UPDATING CACHE $identifier")
-        channel.sendTo(WrappedPacket(family, LongPacket(identifier)), handler.ownerID)
-        val content = channel.nextPacket[ArrayObjectPacket].value
+        val content = handler.retrieveCacheContent(identifier)
         //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
 
         setCurrentContent(ScalaUtils.slowCopy(content))

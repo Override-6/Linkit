@@ -33,14 +33,14 @@ class RemoteFragmentController(val nameIdentifier: String, val channel: SyncAsyn
     }
 
     def sendRequest(packet: Packet): Unit = {
-        channel.sendRequest(WrappedPacket(nameIdentifier, packet))
+        channel.sendAsync(WrappedPacket(nameIdentifier, packet))
     }
 
     def sendResponse(packet: Packet): Unit = {
-        channel.sendResponse(packet)
+        channel.sendAsync(packet)
     }
 
-    def nextResponse[P <: Packet]: P = channel.nextResponse.asInstanceOf[P]
+    def nextResponse[P <: Packet]: P = channel.nextSync.asInstanceOf[P]
 
     override def toString: String = s"RemoteFragmentController($nameIdentifier)"
 

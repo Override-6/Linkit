@@ -16,15 +16,15 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, _}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.Reason
-import fr.linkit.core.connection.packet.traffic
 import fr.linkit.core.local.concurrency.{BusyWorkerPool, PacketReaderThread}
 import fr.linkit.core.local.utils.ScalaUtils.ensureType
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
+import scala.reflect.ClassTag
 
 //TODO doc
 class SyncPacketChannel protected(scope: ChannelScope,
-                                  providable: Boolean) extends traffic.channel.AbstractPacketChannel(scope)
+                                  providable: Boolean) extends AbstractPacketChannel(scope)
         with PacketSender with PacketSyncReceiver {
 
     /**
@@ -55,12 +55,12 @@ class SyncPacketChannel protected(scope: ChannelScope,
         queue.clear()
     }
 
-    override def nextPacket[P <: Packet]: P = {
+    override def nextPacket[P <: Packet : ClassTag]: P = {
         if (queue.isEmpty)
             PacketReaderThread.checkNotCurrent()
 
         val packet = queue.take()
-        ensureType(packet)
+        ensureType[P](packet)
     }
 
     /**

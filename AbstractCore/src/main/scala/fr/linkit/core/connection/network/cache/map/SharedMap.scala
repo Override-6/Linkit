@@ -138,7 +138,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
         addListener(listener) //Due to hyper parallelized thread execution,
         //the awaited key could be added since the 'found' value has been created.
-        BusyWorkerPool.executeRemainingTasks(lock, !(contains(k) || found))
+        BusyWorkerPool.executeRemainingTasksWhile(!(contains(k) || found), lock)
         removeListener(listener)
         //println("Done !")
         apply(k)

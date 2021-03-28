@@ -87,10 +87,10 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
 
     //The extracted workQueue of the executor which contains all the tasks to execute
     private val workQueue               = executor.getQueue
-    private           var closed        = false
     private val workersLocks            = new WorkersLock
-    @volatile private var activeThreads = 0
+    private           var closed        = false
     private           var threadID      = 1
+    @volatile private var activeThreads = 0
 
     override def close(): Unit = {
         closed = true
@@ -112,6 +112,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         runnable = () => {
             activeThreads += 1
             try {
+                AppLogger.warn(s"TASK TAKEN FROM POOL $name, ($activeThreads / ${threadID - 1}), TOTAL TASKS : $workQueue")
                 task
             } catch {
                 case NonFatal(e)                         => e.printStackTrace()
@@ -121,8 +122,10 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
                     System.exit(1)
             }
             activeThreads -= 1
+            AppLogger.warn(s"TASK ACCOMPLISHED. ($workQueue) ($activeThreads / ${threadID - 1})")
         }
         executor.submit(runnable)
+        AppLogger.warn(s"TASK SUBMIT TO POOL $name, TOTAL TASKS : $workQueue")
         //If there is one busy thread that is waiting for a new task to be performed,
         //It would instantly execute the current task.
         workersLocks.notifyOneBusyThread()

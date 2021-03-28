@@ -12,7 +12,9 @@
 
 package fr.linkit.core.local.plugin.fragment
 
-abstract class LinkitPluginFragment {
+import fr.linkit.api.local.plugin.fragment.PluginFragment
+
+abstract class LinkitPluginFragment extends PluginFragment {
 
     def start(): Unit
 

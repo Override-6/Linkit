@@ -21,6 +21,7 @@ import fr.linkit.core.local.utils.ScalaUtils.ensureType
 import fr.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
+import scala.reflect.ClassTag
 
 class SyncAsyncPacketChannel(scope: ChannelScope,
                              busy: Boolean)
@@ -54,16 +55,16 @@ class SyncAsyncPacketChannel(scope: ChannelScope,
     def addAsyncListener(action: (Packet, DedicatedPacketCoordinates) => Unit): Unit =
         asyncListeners += (tuple => action(tuple._1, tuple._2))
 
-    def nextSync[P <: Packet]: P = {
-        ensureType(sync.take())
+    def nextSync[P <: Packet : ClassTag]: P = {
+        ensureType[P](sync.take())
     }
 
     def sendAsync(packet: Packet): Unit = {
-        scope.sendToAll(WrappedPacket("req", packet))
+        scope.sendToAll(WrappedPacket("a", packet))
     }
 
     def sendAsync(packet: Packet, targets: String*): Unit = {
-        scope.sendTo(WrappedPacket("req", packet), targets: _*)
+        scope.sendTo(WrappedPacket("a", packet), targets: _*)
     }
 
     def sendSync(packet: Packet, targets: String*): Unit = {

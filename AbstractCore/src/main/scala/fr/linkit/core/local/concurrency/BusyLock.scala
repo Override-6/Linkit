@@ -44,7 +44,7 @@ class BusyLock(releaseCondition: => Boolean = true) {
         locks.put(currentThread, repertory)
         repertory.markBusy(lock)
 
-        pool.executeRemainingTasks(lock, repertory.containsLock && releaseCondition)
+        pool.executeRemainingTasksWhile(repertory.containsLock && releaseCondition, lock)
         locks.remove(currentThread)
     }
 
