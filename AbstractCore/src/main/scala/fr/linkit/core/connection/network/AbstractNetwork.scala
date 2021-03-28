@@ -17,20 +17,20 @@ import fr.linkit.api.connection.network.{Network, NetworkEntity}
 import fr.linkit.api.connection.packet.traffic.ChannelScope
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, SharedCollection}
-import fr.linkit.core.connection.network.cache.{RequestSender, SimpleSharedCacheManager}
+import fr.linkit.core.connection.network.cache.{SyncAsyncSender, SimpleSharedCacheManager}
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
-import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
+import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel
 import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
-    private   val cacheCommunicator                             = connection.getInjectable(11, ChannelScope.broadcast, new RequestSender(_))
+    private   val cacheCommunicator                             = connection.getInjectable(11, ChannelScope.broadcast, new SyncAsyncSender(_))
     private   val caches                                        = mutable.HashMap.empty[String, SimpleSharedCacheManager]
     override  val globalCache      : SharedCacheManager         = initCaches()
     protected val sharedIdentifiers: SharedCollection[String] = globalCache.get(3, SharedCollection.set[String])
-    protected val communicator     : RequestPacketChannel     = connection.getInjectable(9, ChannelScope.broadcast, RequestPacketChannel.providable)
+    protected val communicator     : SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScope.broadcast, SyncAsyncPacketChannel.busy)
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     init()
 
@@ -70,20 +70,20 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         newCacheManager(family, owner.boundIdentifier)
     }
 
-    protected def createEntity0(identifier: String, communicationChannel: RequestPacketChannel): NetworkEntity
+    protected def createEntity0(identifier: String, communicationChannel: SyncAsyncPacketChannel): NetworkEntity
 
     protected def createEntity(identifier: String): NetworkEntity = {
         if (identifier == connection.supportIdentifier) {
             return connectionEntity
         }
 
-        val channel = communicator.subInjectable(Array(identifier), RequestPacketChannel.providable, true)
+        val channel = communicator.subInjectable(Array(identifier), SyncAsyncPacketChannel.busy, true)
         val ent     = createEntity0(identifier, channel)
         ent
     }
 
     private def initCaches(): SharedCacheManager = {
-        cacheCommunicator.addRequestListener((packet, coords) => {
+        cacheCommunicator.addAsyncListener((packet, coords) => {
             packet match {
                 case WrappedPacket(family, subPacket) =>
                     caches.get(family)

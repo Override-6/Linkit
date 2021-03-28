@@ -16,10 +16,12 @@ import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{ForbiddenIdentifierException, Reason}
+import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.connection.packet.traffic.PacketInjections
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.reflect.{ClassTag, classTag}
 
 abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel with PacketInjectable {
 
@@ -107,8 +109,6 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         channel
     }
 
-    protected case class SubInjectableContainer(subInjectable: PacketInjectable, transparent: Boolean)
-
     /**
      * @return true if the injection can be performed into this channel
      *         the boolean returned depends on the sub injectables.
@@ -116,10 +116,10 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
      *         the current injectable could not handle packets for it.
      * */
     private def subInject(injection: PacketInjection): Boolean = {
-        val coords = injection.coordinates
-
+        val coords          = injection.coordinates
         val target          = coords.targetID
         var authoriseInject = true
+
         for (container <- subChannels if container.subInjectable.canInjectFrom(target)) {
             //println(s"FOR container = ${container}")
             val injectable = container.subInjectable
@@ -129,5 +129,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         }
         authoriseInject
     }
+
+    protected case class SubInjectableContainer(subInjectable: PacketInjectable, transparent: Boolean)
 
 }

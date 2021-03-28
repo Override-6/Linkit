@@ -12,10 +12,10 @@
 
 package fr.linkit.server
 
+import fr.`override`.linkit.extension.controller.ControllerExtension
+import fr.`override`.linkit.extension.debug.DebugExtension
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.core.local.system.AppLogger
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugExtension
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 

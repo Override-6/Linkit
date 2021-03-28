@@ -16,7 +16,7 @@ import fr.linkit.api.connection.network.NetworkEntity
 import fr.linkit.client.connection.ClientConnection
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
-import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
+import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel
 
 import java.sql.Timestamp
 
@@ -37,7 +37,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
 
     override def startUpDate: Timestamp = globalCache(2)
 
-    override def createEntity0(identifier: String, communicator: RequestPacketChannel): NetworkEntity = {
+    override def createEntity0(identifier: String, communicator: SyncAsyncPacketChannel): NetworkEntity = {
         val entityCache = newCacheManager(identifier, identifier)
         new ConnectionNetworkEntity(connection, identifier, entityCache)
     }

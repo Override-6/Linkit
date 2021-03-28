@@ -114,7 +114,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
             try {
                 task
             } catch {
-                case NonFatal(e) => e.printStackTrace()
+                case NonFatal(e)                         => e.printStackTrace()
                 case e if currentTaskExecutionDepth == 0 =>
                     AppLogger.fatal(s"Caught fatal exception in thread pool '$name'. The JVM Will exit.")
                     e.printStackTrace()
@@ -162,7 +162,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * @param condition the condition to check, the thread will continue to be busy with tasks
      *                  while the condition is true. (and while the thread have tasks to execute)
      * */
-    def executeRemainingTasksWhile(condition: => Boolean): Unit = {
+    def executeRemainingTasks(condition: => Boolean): Unit = {
         checkCurrentIsWorker()
 
         while (!workQueue.isEmpty && condition) {
@@ -193,8 +193,8 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * @throws IllegalThreadException if the current thread is not a [[WorkerThread]]
      * @see [[BusyLock]]
      * */
-    def executeRemainingTasks(lock: AnyRef = new Object, condition: => Boolean): Unit = {
-        executeRemainingTasksWhile(condition)
+    def executeRemainingTasksWhile(condition: => Boolean, lock: AnyRef = new Object): Unit = {
+        executeRemainingTasks(condition)
         if (!condition)
             return
         lock.synchronized {
@@ -207,7 +207,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
             }
         }
         if (condition) //We may still need to be busy
-            executeRemainingTasks(lock, condition)
+            executeRemainingTasksWhile(condition, lock)
     }
 
     /**
@@ -319,38 +319,50 @@ object BusyWorkerPool {
         ifCurrentWorkerOrElse(_.runLater(action), action)
     }
 
+    @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
+    def runLaterInCurrentPool(@workerExecution action: => Unit): Unit = {
+        val pool = checkCurrentIsWorker("Could not run request action because current thread does not belong to any worker pool")
+        pool.runLater(action)
+    }
+
     /**
      * @throws IllegalThreadException if the current thread is a [[BusyWorkerPool#WorkerThread]]
      * */
-    def checkCurrentIsWorker(): Unit = {
+    @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
+    def checkCurrentIsWorker(): BusyWorkerPool = {
         if (!isCurrentWorkerThread)
-            throw new IllegalThreadException("This action must be performed in a Packet Worker thread !")
+            throw new IllegalThreadException("This action must be performed by a Worker thread !")
+        currentPool().get
     }
 
     /**
      * @throws IllegalThreadException if the current thread is a [[BusyWorkerPool#WorkerThread]]
      * @param msg the message to complain with the exception
      * */
-    def checkCurrentIsWorker(msg: String): Unit = {
+    @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
+    def checkCurrentIsWorker(msg: String): BusyWorkerPool = {
         if (!isCurrentWorkerThread)
-            throw new IllegalThreadException(s"This action must be performed in a Packet Worker thread ! ($msg)")
+            throw new IllegalThreadException(s"This action must be performed by a Worker thread ! ($msg)")
+        currentPool().get
     }
 
     /**
      * @throws IllegalThreadException if the current thread is not a [[BusyWorkerPool#WorkerThread]]
      * */
+    @throws[IllegalThreadException]("If the current thread that executes this method is an instance of WorkerThread.")
     def checkCurrentIsNotWorker(): Unit = {
         if (isCurrentWorkerThread)
-            throw new IllegalThreadException("This action must not be performed in a Packet Worker thread !")
+            throw new IllegalThreadException("This action must not be performed by a Worker thread !")
     }
 
     /**
      * @throws IllegalThreadException if the current thread is not a [[BusyWorkerPool#WorkerThread]]
      * @param msg the message to complain with the exception
      * */
+    @throws[IllegalThreadException]("If the current thread that executes this method is an instance of WorkerThread.")
     def checkCurrentIsNotWorker(msg: String): Unit = {
         if (isCurrentWorkerThread)
-            throw new IllegalThreadException(s"This action must not be performed in a Packet Worker thread ! ($msg)")
+            throw new IllegalThreadException(s"This action must not be performed by a Worker thread ! ($msg)")
     }
 
     /**
@@ -367,8 +379,8 @@ object BusyWorkerPool {
      *
      * @param condition the condition to test
      * */
-    def executeRemainingTasksWhile(condition: => Boolean): Unit = {
-        ifCurrentWorkerOrElse(_.executeRemainingTasksWhile(condition), ())
+    def executeRemainingTasks(condition: => Boolean): Unit = {
+        ifCurrentWorkerOrElse(_.executeRemainingTasks(condition), ())
     }
 
     /**
@@ -380,8 +392,10 @@ object BusyWorkerPool {
      * @param lock      the lock to handle
      * @see [[BusyWorkerPool.executeRemainingTasks()]] for further details about the busy system.
      * */
-    def executeRemainingTasks(lock: AnyRef, condition: => Boolean): Unit = {
-        ifCurrentWorkerOrElse(_.executeRemainingTasks(lock, condition), if (condition) lock.synchronized(lock.wait()))
+    @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
+    def executeRemainingTasksWhile(condition: => Boolean, lock: AnyRef = new Object): Unit = {
+        val pool = checkCurrentIsWorker("executeRemainingTasksWhile must be processed by a worker thread !")
+        pool.executeRemainingTasksWhile(condition, lock)
     }
 
     /**
@@ -421,7 +435,7 @@ object BusyWorkerPool {
     def currentPool(): Option[BusyWorkerPool] = {
         currentThread match {
             case worker: BusyWorkerPool#WorkerThread => Some(worker.ownerPool)
-            case _ => None
+            case _                                   => None
         }
     }
 

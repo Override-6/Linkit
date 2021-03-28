@@ -1,78 +1,136 @@
-/*
- * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can only use it for personal uses, studies or documentation.
- * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
- *
- * Please contact maximebatista18@gmail.com if you need additional information or have any
- * questions.
- */
-
 package fr.linkit.core.connection.packet.traffic.channel
 
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, PacketInjection}
+import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjection}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
-import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.linkit.core.connection.packet.fundamental.RefPacket.AnyRefPacket
+import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel.{Request, ResponseSubmitter}
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
+import fr.linkit.core.local.utils.ScalaUtils.ensureType
 
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
+import java.util.NoSuchElementException
+import java.util.concurrent.BlockingQueue
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
-class RequestPacketChannel(scope: ChannelScope,
-                           providable: Boolean)
-        extends AbstractPacketChannel(scope) {
+class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
 
-    private val responses: BlockingQueue[Packet] = {
-        if (!providable)
-            new LinkedBlockingQueue[Packet]()
-        else {
-            BusyWorkerPool
-                    .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
-        }
-    }
+    private val requests            = mutable.HashMap.empty[Int, Request]
+    private val requestConsumers    = ConsumerContainer[(Packet, DedicatedPacketCoordinates, ResponseSubmitter)]()
+    @volatile private var requestID = 0
 
-    private val requestListeners = new ConsumerContainer[(Packet, DedicatedPacketCoordinates)]
-
-    @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val packets     = injection.getPackets
-        val coordinates = injection.coordinates
+        val packets = injection.getPackets
+        val coords  = injection.coordinates
         packets.foreach {
-            case WrappedPacket(tag, subPacket) =>
-                tag match {
-                    case "res" => responses.add(subPacket)
-                    case "req" => requestListeners.applyAll((subPacket, coordinates))
-                }
+            case AnyRefPacket((id: Int, packet: Packet)) =>
+                val submitter = new ResponseSubmitter(id, scope, coords.senderID)
+                requestConsumers.applyAllAsync((packet, coords, submitter))
         }
-        //println(s"<$identifier> responses = ${responses}")
     }
 
-    def addRequestListener(action: (Packet, DedicatedPacketCoordinates) => Unit): Unit =
-        requestListeners += (tuple => action(tuple._1, tuple._2))
-
-    def sendRequest(packet: Packet): Unit = {
-        scope.sendToAll(WrappedPacket("req", packet))
+    def sendRequest(packet: Packet, targets: String*): Request = {
+        send(packet, scope.sendTo(_, targets: _*))
     }
 
-    def sendRequest(packet: Packet, targets: String*): Unit = {
-        scope.sendTo(WrappedPacket("req", packet), targets: _*)
+    def broadcastRequest(packet: Packet): Request = {
+        send(packet, scope.sendToAll)
     }
 
-    def sendResponse(packet: Packet, targets: String*): Unit = {
-        scope.sendTo(WrappedPacket("res", packet), targets: _*)
+    private def send(packet: Packet, send: Packet => Unit): Request = {
+        val pool = BusyWorkerPool.checkCurrentIsWorker()
+
+        val requestID = nextRequestID
+        val request   = Request(requestID, pool.newBusyQueue)
+
+        send(AnyRefPacket(requestID, packet))
+        requests.put(requestID, request)
+        request
+    }
+
+    private def nextRequestID: Int = {
+        requestID += 1
+        requestID
     }
 
 }
 
-object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel] {
+object RequestPacketChannel {
 
-    override def createNew(scope: ChannelScope): RequestPacketChannel = {
-        new RequestPacketChannel(scope, false)
+    case class Request(id: Int, queue: BlockingQueue[Response]) {
+
+        private val responseConsumer = ConsumerContainer[Response]()
+
+        def nextResponse: Response = {
+            queue.take()
+        }
+
+        def addOnResponseReceived(callback: Response => Unit): Unit = {
+            responseConsumer += callback
+        }
+
+        private[RequestPacketChannel] def setResponse(response: Response): Unit = {
+            queue.add(response)
+            responseConsumer.applyAllAsync(response)
+        }
+
     }
 
-    def providable: PacketInjectableFactory[RequestPacketChannel] = new RequestPacketChannel(_, true)
+    class ResponseSubmitter(id: Int, scope: ChannelScope, requester: String) {
+
+        private val packets            = ListBuffer.empty[Packet]
+        private val properties         = mutable.HashMap.empty[String, Serializable]
+        @volatile private var isSubmit = false
+
+        def addPacket(packet: Packet): this.type = {
+            ensureNotSubmit()
+            packets += packet
+            this
+        }
+
+        def addPackets(packets: Packet*): this.type = {
+            ensureNotSubmit()
+            this.packets ++= packets
+            this
+        }
+
+        def putProperty(name: String, value: Serializable): this.type = {
+            ensureNotSubmit()
+            properties.put(name, value)
+            this
+        }
+
+        def submit(): Unit = {
+            ensureNotSubmit()
+            val snapshot = Response(id, packets.toArray, properties.toMap, scope.writer.supportIdentifier)
+            scope.sendTo(snapshot, requester)
+            isSubmit = true
+        }
+
+        private def ensureNotSubmit(): Unit = {
+            if (isSubmit)
+                throw new IllegalStateException("Response was already sent.")
+        }
+    }
+
+    case class Response(id: Int,
+                        packets: Array[Packet],
+                        private val properties: Map[String, Serializable],
+                        answerer: String) extends Packet { self =>
+
+        private var packetIndex = 0
+
+        def getProperty(name: String): Serializable = properties(name)
+
+        @throws[NoSuchElementException]("If this method is called more times than packet array's length")
+        def nextPacket[P <: Packet](): P = {
+            if (packetIndex >= packets.length)
+                throw new NoSuchElementException()
+            val packet = packets(packetIndex)
+            packetIndex += 1
+            ensureType(packet)
+        }
+
+    }
 
 }

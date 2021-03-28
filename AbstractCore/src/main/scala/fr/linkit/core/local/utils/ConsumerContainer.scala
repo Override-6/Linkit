@@ -64,13 +64,11 @@ class ConsumerContainer[T]() {
 
     @workerExecution
     def applyAllAsync(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        BusyWorkerPool.checkCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
+        val pool = BusyWorkerPool.checkCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
         //Will be
-        BusyWorkerPool.currentPool()
-                .get
-                .runLater {
-                    applyAll(t, onException)
-                }
+        pool.runLater {
+            applyAll(t, onException)
+        }
         this
     }
 

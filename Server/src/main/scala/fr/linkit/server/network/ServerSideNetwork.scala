@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.core.connection.network.cache.SharedInstance
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
-import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
+import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel
 import fr.linkit.server.connection.{ServerConnection, ServerExternalConnection}
 
 import java.sql.Timestamp
@@ -42,7 +42,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
     //The current connection is the network's server connection.
     override def serverEntity: NetworkEntity = connectionEntity
 
-    override def createEntity0(identifier: String, communicator: RequestPacketChannel): NetworkEntity = {
+    override def createEntity0(identifier: String, communicator: SyncAsyncPacketChannel): NetworkEntity = {
         val entityCache = newCacheManager(identifier, identifier)
         val v           = new ExternalConnectionNetworkEntity(serverConnection, identifier, entityCache)
         v

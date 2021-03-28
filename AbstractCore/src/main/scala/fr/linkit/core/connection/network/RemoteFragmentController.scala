@@ -14,14 +14,14 @@ package fr.linkit.core.connection.network
 
 import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
-import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
+import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel
 import fr.linkit.core.local.utils.ConsumerContainer
 
-class RemoteFragmentController(val nameIdentifier: String, val channel: RequestPacketChannel) {
+class RemoteFragmentController(val nameIdentifier: String, val channel: SyncAsyncPacketChannel) {
 
     private val listeners = ConsumerContainer[(Packet, PacketCoordinates)]()
 
-    channel.addRequestListener((packet, coords) => {
+    channel.addAsyncListener((packet, coords) => {
         packet match {
             case WrappedPacket(this.nameIdentifier, subPacket) => listeners.applyAll((subPacket, coords))
             case _ =>

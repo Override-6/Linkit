@@ -12,6 +12,9 @@
 
 package fr.linkit.core.local.utils
 
+import fr.linkit.api.connection.packet.Packet
+import fr.linkit.core.connection.packet.UnexpectedPacketException
+
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
@@ -32,6 +35,15 @@ object ScalaUtils {
                 println(s"Origin = ${origin.mkString("Array(", ", ", ")")}")
                 println(s"Failed when casting ref : ${origin(i)} at index $i")
                 throw e
+        }
+    }
+
+    def ensureType[P <: Packet : ClassTag](packet: Packet): P = {
+        val rClass = classTag[P].runtimeClass
+        packet match {
+            case p: P => p
+            case null => throw new NullPointerException("Received null packet.")
+            case p    => throw UnexpectedPacketException(s"Received unexpected packet type (${p.getClass.getName}), requested : ${rClass.getName}")
         }
     }
 

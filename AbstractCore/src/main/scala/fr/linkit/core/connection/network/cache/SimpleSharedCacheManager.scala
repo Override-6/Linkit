@@ -36,7 +36,7 @@ import scala.util.control.NonFatal
 // primitives integers are all converted to Long, so it would cause cast problems until the algorithm is modified)
 class SimpleSharedCacheManager(override val family: String,
                                override val ownerID: String,
-                               communicator: RequestSender) extends SharedCacheManager {
+                               communicator: SyncAsyncSender) extends SharedCacheManager {
 
     private lazy val sharedObjects: map.SharedMap[Long, Serializable] = init()
 

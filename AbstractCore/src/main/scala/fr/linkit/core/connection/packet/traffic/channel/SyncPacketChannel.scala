@@ -18,6 +18,7 @@ import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.Reason
 import fr.linkit.core.connection.packet.traffic
 import fr.linkit.core.local.concurrency.{BusyWorkerPool, PacketReaderThread}
+import fr.linkit.core.local.utils.ScalaUtils.ensureType
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
@@ -59,7 +60,7 @@ class SyncPacketChannel protected(scope: ChannelScope,
             PacketReaderThread.checkNotCurrent()
 
         val packet = queue.take()
-        packet.asInstanceOf[P]
+        ensureType(packet)
     }
 
     /**
