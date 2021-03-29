@@ -25,7 +25,7 @@ import scala.reflect.ClassTag
 //TODO doc
 class SyncPacketChannel protected(scope: ChannelScope,
                                   providable: Boolean) extends AbstractPacketChannel(scope)
-        with PacketSender with PacketSyncReceiver {
+    with PacketSender with PacketSyncReceiver {
 
     /**
      * this blocking queue stores the received packets until they are requested
@@ -35,13 +35,13 @@ class SyncPacketChannel protected(scope: ChannelScope,
             new LinkedBlockingQueue[Packet]()
         else {
             BusyWorkerPool
-                    .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
+                .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        injection.getPackets.foreach(queue.add)
+        injection.process(queue.add)
     }
 
     override def send(packet: Packet): Unit = scope.sendToAll(packet)

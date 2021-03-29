@@ -50,7 +50,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             case e@(_: ConnectException | _: IOException) =>
 
                 if (e.getMessage.contains("socket write error")) {
-                    e.printStackTrace()
+                    AppLogger.exception(e)
                 } else {
                     System.err.println(e)
                 }

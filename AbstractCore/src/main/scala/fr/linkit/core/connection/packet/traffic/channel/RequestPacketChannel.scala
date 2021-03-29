@@ -22,27 +22,27 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
     @volatile private var requestID = 0
 
     override def handleInjection(injection: PacketInjection): Unit = {
-        val packets = injection.getPackets
-        val coords  = injection.coordinates
-        AppLogger.debug(s"HANDLING $packets")
+        val coords = injection.coordinates
+        injection.process(packet => {
+            AppLogger.debug(s"INJECTING REQUEST $packet")
+            packet match {
+                case AnyRefPacket((id: Int, packet: Packet)) =>
+                    val submitter = new ResponseSubmitter(id, scope, coords.senderID)
+                    requestConsumers.applyAllAsync((packet, coords, submitter))
 
-        packets.foreach {
-            case AnyRefPacket((id: Int, packet: Packet)) =>
-                val submitter = new ResponseSubmitter(id, scope, coords.senderID)
-                requestConsumers.applyAllAsync((packet, coords, submitter))
+                case AnyRefPacket((id: Long, packet: Packet)) =>
+                    val submitter = new ResponseSubmitter(id, scope, coords.senderID)
+                    requestConsumers.applyAllAsync((packet, coords, submitter))
 
-            case AnyRefPacket((id: Long, packet: Packet)) =>
-                val submitter = new ResponseSubmitter(id, scope, coords.senderID)
-                requestConsumers.applyAllAsync((packet, coords, submitter))
-
-            case response: Response =>
-                requests.get(response.id) match {
-                    case Some(request) => request.addResponse(response)
-                    case None          => throw new NoSuchElementException(s"response.id not found (${response.id}) ($requests)")
-                }
-
-        }
+                case response: Response =>
+                    requests.get(response.id) match {
+                        case Some(request) => request.addResponse(response)
+                        case None          => throw new NoSuchElementException(s"response.id not found (${response.id}) ($requests)")
+                    }
+            }
+        })
     }
+
 
     def addRequestListener(callback: (Packet, DedicatedPacketCoordinates, ResponseSubmitter) => Unit): Unit = {
         requestConsumers += (tuple => callback(tuple._1, tuple._2, tuple._3))
@@ -144,7 +144,8 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
     case class Response(id: Long,
                         packets: Array[Packet],
                         private val properties: Map[String, Serializable],
-                        answerer: String) extends Packet { self =>
+                        answerer: String) extends Packet {
+        self =>
 
         private var packetIndex = 0
 

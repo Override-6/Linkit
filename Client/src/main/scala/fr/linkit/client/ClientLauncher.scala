@@ -12,15 +12,13 @@
 
 package fr.linkit.client
 
+import java.net.InetSocketAddress
+import java.util.Scanner
+
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
 import fr.linkit.core.local.system.AppLogger
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugExtension
-
-import java.net.InetSocketAddress
-import java.util.Scanner
 
 object ClientLauncher {
 
@@ -78,8 +76,8 @@ object ClientLauncher {
         AppLogger.debug(s"Build completed: $client")
         val pluginManager = client.pluginManager
         pluginManager.loadAllClass(Array(
-            classOf[ControllerExtension]: Class[_ <: Plugin],
-            classOf[DebugExtension]: Class[_ <: Plugin],
+           // classOf[ControllerExtension]: Class[_ <: Plugin],
+            //classOf[DebugExtension]: Class[_ <: Plugin],
         ))
     }
 }

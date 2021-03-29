@@ -40,13 +40,13 @@ class TaskTicket(executor: TaskExecutor,
                     fallible.fail("Task aborted from an external handler")
                 } catch {
                     case e: InvocationTargetException if e.getCause.isInstanceOf[TaskException] => Console.err.println(e.getMessage)
-                    case e: InvocationTargetException => e.getCause.printStackTrace()
+                    case e: InvocationTargetException => e.getCausAppLogger.exception(e)
                     case e: TaskOperationFailException =>
                         Console.err.println(e.getMessage)
                     //e.printStackTrace(errRemote)
 
                     case NonFatal(e) =>
-                        e.printStackTrace()
+                        AppLogger.exception(e)
                     //e.printStackTrace(errRemote)
                 }
             case _ =>
@@ -77,7 +77,7 @@ class TaskTicket(executor: TaskExecutor,
             //e.printStackTrace(errRemote)
 
             case NonFatal(e) =>
-                e.printStackTrace()
+                AppLogger.exception(e)
             //e.printStackTrace(errRemote)
 
         } finally {

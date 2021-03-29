@@ -95,7 +95,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
         } catch {
             //Do not considerate InterruptedException
             case _: InterruptedException =>
-            case NonFatal(e) => e.printStackTrace()
+            case NonFatal(e) => AppLogger.exception(e)
         }
     }
 

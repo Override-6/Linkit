@@ -14,9 +14,9 @@ package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.system.{ClosedException, JustifiedCloseable, Reason}
 import fr.linkit.core.local.concurrency.PacketReaderThread
-import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -25,10 +25,10 @@ import scala.util.control.NonFatal
 
 abstract class AbstractPacketTraffic(override val supportIdentifier: String) extends PacketTraffic {
 
-    private val holders          = mutable.Map.empty[Int, ScopesHolder]
-    @volatile private var closed = false
-
-    private val lostInjections = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
+    private  val holders            = mutable.Map.empty[Int, ScopesHolder]
+    private  val lostInjections     = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
+    override val injectionContainer = new DirectInjectionContainer
+    @volatile private var closed    = false
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int,
                                                                  scopeFactory: ScopeFactory[_ <: ChannelScope],
@@ -52,8 +52,8 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
     override def canConflict(identifier: Int, scope: ChannelScope): Boolean = {
         holders
-                .get(identifier)
-                .exists(_.canConflict(scope))
+            .get(identifier)
+            .exists(_.canConflict(scope))
     }
 
     private def completeCreation[C <: PacketInjectable](scope: ChannelScope, factory: PacketInjectableFactory[C]): C = {
@@ -76,8 +76,8 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
         //Will inject every lost packets
         lostInjections
-                .get(id)
-                .foreach(_.foreach(injectable.inject))
+            .get(id)
+            .foreach(_.foreach(injectable.inject))
         lostInjections.remove(id)
     }
 
@@ -92,7 +92,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
     override def close(reason: Reason): Unit = {
         holders.values
-                .foreach(_.close(reason))
+            .foreach(_.close(reason))
         holders.clear()
         closed = true
     }
@@ -104,12 +104,11 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
             throw new ClosedException("This Traffic handler is closed")
     }
 
-    override def handleInjection(injection: PacketInjection): Unit = {
-        if (injection.mayNotHandle) {
-            AppLogger.error("Injection refused current thread to handle it")
-            return
-        }
+    override def handleInjection(packet: Packet, coordinates: DedicatedPacketCoordinates): Unit = {
+        handleInjection(injectionContainer.makeInjection(packet, coordinates))
+    }
 
+    override def handleInjection(injection: PacketInjection): Unit = {
         val coordinates = injection.coordinates
         PacketReaderThread.checkNotCurrent()
         ensureOpen()
@@ -123,6 +122,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
             return
         }
         injectables.foreach(_.inject(injection))
+        injectionContainer.removeInjection(injection)
     }
 
     protected case class ScopesHolder(identifier: Int) extends JustifiedCloseable {
@@ -134,7 +134,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
             for (tuple <- cache if tuple._2.isOpen) try {
                 tuple._2.close()
             } catch {
-                case NonFatal(e) => e.printStackTrace()
+                case NonFatal(e) => AppLogger.exception(e)
             }
             cache.clear()
             closed = true
@@ -152,16 +152,16 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
         def getInjectables(target: String): Seq[PacketInjectable] = {
             cache
-                    .filter(_._1.areAuthorised(target))
-                    .map(_._2)
-                    .toSeq
+                .filter(_._1.areAuthorised(target))
+                .map(_._2)
+                .toSeq
         }
 
         def tryRetrieveInjectable[I <: PacketInjectable : ClassTag](scope: ChannelScope): Option[I] = {
             val injectableClass = classTag[I].runtimeClass
             cache.find(tuple => tuple._1 == scope && tuple._2.getClass == injectableClass)
-                    .map(_._2)
-                    .asInstanceOf[Option[I]]
+                .map(_._2)
+                .asInstanceOf[Option[I]]
         }
 
         def register(scope: ChannelScope, injectable: PacketInjectable): Unit = {

@@ -120,10 +120,10 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
                 AppLogger.warn(s"($activeThreads / ${threadCount}) TASK $runnable TAKEN FROM POOL $name, TOTAL TASKS : $workQueue")
                 task
             } catch {
-                case NonFatal(e)        => e.printStackTrace()
+                case NonFatal(e)        => AppLogger.exception(e)
                 case e if rootExecution =>
                     AppLogger.fatal(s"Caught fatal exception in thread pool '$name'. The JVM Will exit.")
-                    e.printStackTrace()
+                    AppLogger.exception(e)
                     System.exit(1)
             }
             if (rootExecution)

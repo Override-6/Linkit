@@ -26,12 +26,11 @@ import scala.util.control.NonFatal
  * A simple abstract class to easily handle packet reading.
  * */
 class PacketReaderThread(reader: PacketReader,
-                         procrastinator: Procrastinator,
                          bound: String) extends Thread(packetReaderThreadGroup, s"$bound's Read Worker") with JustifiedCloseable {
 
     private var open = true
-    var onPacketRead   : (PacketDeserializationResult, Int) => Unit = (_, _) => ()
-    var onReadException: () => Unit                                 = () => ()
+    var onPacketRead   : PacketDeserializationResult => Unit = (_) => ()
+    var onReadException: () => Unit                          = () => ()
 
     override def isClosed: Boolean = open
 
@@ -73,7 +72,7 @@ class PacketReaderThread(reader: PacketReader,
                 onException("Asynchronous close.")
 
             case NonFatal(e) =>
-                e.printStackTrace()
+                AppLogger.exception(e)
                 onException(s"Suddenly disconnected from the server.")
         }
 
@@ -84,10 +83,10 @@ class PacketReaderThread(reader: PacketReader,
     }
 
     private def readNextPacket(): Unit = {
-        reader.nextPacket((result, packetNumber) => {
+        reader.nextPacket((result) => {
             //NETWORK-DEBUG-MARK
             AppLogger.logDownload(bound, result.bytes)
-            onPacketRead(result, packetNumber)
+            onPacketRead(result)
         })
     }
 
@@ -105,6 +104,7 @@ object PacketReaderThread {
 
     /**
      * ensures that the current thread is a [[PacketReaderThread]]
+     *
      * @throws IllegalThreadException if the current thread is not a [[PacketReaderThread]]
      * */
     def checkCurrent(): Unit = {
@@ -114,6 +114,7 @@ object PacketReaderThread {
 
     /**
      * ensures that the current thread is not a [[PacketReaderThread]]
+     *
      * @throws IllegalThreadException if the current thread is a [[PacketReaderThread]]
      * */
     def checkNotCurrent(): Unit = {

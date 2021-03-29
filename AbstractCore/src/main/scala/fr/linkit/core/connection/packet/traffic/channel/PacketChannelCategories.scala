@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, 
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
-import fr.linkit.core.connection.packet.traffic.PacketInjections
+import fr.linkit.core.connection.packet.traffic.DirectInjectionContainer
 import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
@@ -28,11 +28,9 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val packets     = injection.getPackets
         val coordinates = injection.coordinates
-        packets.foreach {
+        injection.process {
             case WrappedPacket(category, subPacket) =>
-                val injection = PacketInjections.unhandled(coordinates, subPacket)
                 categories.get(category).foreach(_.inject(injection))
 
             case packet => throw UnexpectedPacketException(s"Received unexpected packet $packet")

@@ -80,7 +80,7 @@ class ServerConnection(applicationContext: ServerApplication,
             loadSocketListener()
         } catch {
             case NonFatal(e) =>
-                e.printStackTrace()
+                AppLogger.exception(e)
                 shutdown()
         }
     }
@@ -144,7 +144,7 @@ class ServerConnection(applicationContext: ServerApplication,
                 Console.err.println(msg)
                 onException(e)
             case NonFatal(e)        =>
-                e.printStackTrace()
+                AppLogger.exception(e)
                 runLater {
                     onException(e)
                 }
@@ -194,7 +194,7 @@ class ServerConnection(applicationContext: ServerApplication,
             WelcomePacketVerdict(identifier, true)
         } catch {
             case NonFatal(e) =>
-                e.printStackTrace()
+                AppLogger.exception(e)
                 WelcomePacketVerdict(null, false, e.getMessage)
         }
     }

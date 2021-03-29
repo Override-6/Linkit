@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.JustifiedCloseable
 
@@ -21,6 +21,11 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableContainer {
     val supportIdentifier: String
 
     val serverIdentifier: String
+
+    val injectionContainer: InjectionContainer
+
+    @workerExecution
+    def handleInjection(packet: Packet, coordinates: DedicatedPacketCoordinates): Unit
 
     @workerExecution
     def handleInjection(injection: PacketInjection): Unit

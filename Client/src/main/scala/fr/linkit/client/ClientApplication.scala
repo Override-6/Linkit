@@ -47,7 +47,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
                 //Connections will unregister themself from connectionCache automatically
                 connection.shutdown()
             } catch {
-                case NonFatal(e) => e.printStackTrace()
+                case NonFatal(e) => AppLogger.exception(e)
             }
         })
     }

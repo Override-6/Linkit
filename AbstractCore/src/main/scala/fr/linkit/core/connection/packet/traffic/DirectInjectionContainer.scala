@@ -12,22 +12,23 @@
 
 package fr.linkit.core.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.traffic.PacketInjection
+import fr.linkit.api.connection.packet.traffic.{InjectionContainer, PacketInjection}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 
-object PacketInjections {
+class DirectInjectionContainer extends InjectionContainer {
 
-    private[traffic] val currentInjections = new mutable.LinkedHashMap[(Int, String), DirectInjection]
+    private val processingInjections = new mutable.LinkedHashMap[(Int, String), DirectInjection]
 
-    def createInjection(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): PacketInjection = this.synchronized {
+    override def makeInjection(packet: Packet, coordinates: DedicatedPacketCoordinates): PacketInjection = this.synchronized {
+        val number = packet.number
         AppLogger.debug(s"$number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates")
         val id     = coordinates.injectableID
         val sender = coordinates.senderID
 
-        val injection = currentInjections.get((id, sender)) match {
+        val injection = processingInjections.get((id, sender)) match {
             case Some(value) =>
                 AppLogger.debug(s"$number -> INJECTION ALREADY EXISTS, ADDING PACKET.")
                 value
@@ -35,21 +36,24 @@ object PacketInjections {
                 AppLogger.debug(s"$number -> INJECTION DOES NOT EXISTS, CREATING IT.")
                 new DirectInjection(coordinates)
         }
-        currentInjections.put((id, sender), injection)
+        processingInjections.put((id, sender), injection)
 
-        injection.addPacket(number, packet)
+        injection.inject(packet)
         injection
     }
 
-    def unhandled(coordinates: DedicatedPacketCoordinates, packets: Packet*): PacketInjection = {
-        //println(s"NEW UNHANDLED FOR COORDINATES $coordinates / PACKETS ${packets}")
-        val injection = new DirectInjection(coordinates)
-        var i         = 0
-        packets.foreach(packet => {
-            i += 1
-            injection.addPacket(i, packet)
-        })
-        injection
+    override def isProcessing(injection: PacketInjection): Boolean = {
+        val coords = injection.coordinates
+        val id     = coords.injectableID
+        val sender = coords.senderID
+        processingInjections.contains((id, sender))
+    }
+
+    def removeInjection(injection: PacketInjection): Unit = {
+        val coords = injection.coordinates
+        val id     = coords.injectableID
+        val sender = coords.senderID
+        processingInjections.remove((id, sender))
     }
 
 }

@@ -24,5 +24,5 @@ object AsyncExecutionContext extends ExecutionContext {
 
     override def execute(runnable: Runnable): Unit = ses.submit(runnable)
 
-    override def reportFailure(cause: Throwable): Unit = cause.printStackTrace()
+    override def reportFailure(cause: Throwable): Unit = causAppLogger.exception(e)
 }

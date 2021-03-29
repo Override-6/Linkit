@@ -12,17 +12,18 @@
 
 package fr.linkit.core.local.utils
 
+import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
-class ConsumerContainer[T]() {
+class ConsumerContainer[A]() {
 
     private val consumers = ListBuffer.empty[ConsumerExecutor]
 
-    def add(consumer: T => Unit): this.type = {
+    def add(consumer: A => Unit): this.type = {
         consumers += new ConsumerExecutor(consumer, false)
         this
     }
@@ -32,12 +33,12 @@ class ConsumerContainer[T]() {
      *
      * @param consumer the action to perform
      * */
-    def addOnce(consumer: T => Unit): this.type = {
+    def addOnce(consumer: A => Unit): this.type = {
         consumers += new ConsumerExecutor(consumer, true)
         this
     }
 
-    def remove(consumer: T => Unit): this.type = {
+    def remove(consumer: A => Unit): this.type = {
         consumers.filterInPlace(_.isSameConsumer(consumer))
         this
     }
@@ -47,23 +48,27 @@ class ConsumerContainer[T]() {
         this
     }
 
+    def foreach(action: (A => Unit) => Unit): Unit = {
+        consumers.foreach(p => action(p.consumer))
+    }
+
     /**
      * alias for [[ConsumerContainer#add()]]
      * */
-    def +=(consumer: T => Unit): this.type = add(consumer)
+    def +=(consumer: A => Unit): this.type = add(consumer)
 
     /**
      * alias for [[ConsumerContainer#addOnce()]]
      * */
-    def +:+=(consumer: T => Unit): this.type = addOnce(consumer)
+    def +:+=(consumer: A => Unit): this.type = addOnce(consumer)
 
     /**
      * alias for [[ConsumerContainer#remove()]]
      * */
-    def -=(consumer: T => Unit): this.type = remove(consumer)
+    def -=(consumer: A => Unit): this.type = remove(consumer)
 
     @workerExecution
-    def applyAllAsync(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
+    def applyAllAsync(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
         val pool = BusyWorkerPool.checkCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
         //Will be
         pool.runLater {
@@ -72,7 +77,7 @@ class ConsumerContainer[T]() {
         this
     }
 
-    def applyAll(t: T, onException: Throwable => Unit = _.printStackTrace()): this.type = {
+    def applyAll(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
         Array.from(consumers).foreach(consumer => {
             try {
                 consumer.execute(t)
@@ -85,9 +90,9 @@ class ConsumerContainer[T]() {
 
     override def toString: String = s"ConsumerContainer($consumers)"
 
-    private class ConsumerExecutor(consumer: T => Unit, executeOnce: Boolean) {
+    private case class ConsumerExecutor(consumer: A => Unit, executeOnce: Boolean) {
 
-        def execute(t: T): Unit = {
+        def execute(t: A): Unit = {
             if (executeOnce) consumer.synchronized {
                 //synchronise in order to be sure that another thread would not start to execute the
                 //consumer again when the first thread is removing it from the queue.
@@ -98,7 +103,7 @@ class ConsumerContainer[T]() {
             consumer(t)
         }
 
-        def isSameConsumer(consumer: T => Unit): Boolean = this.consumer == consumer
+        def isSameConsumer(consumer: A => Unit): Boolean = this.consumer == consumer
     }
 
 }

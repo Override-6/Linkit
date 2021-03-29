@@ -27,7 +27,7 @@ object SyncExecutionContext extends ExecutionContext {
             val action = queue.takeLast()
             action.run()
         } catch {
-            case NonFatal(e) => e.printStackTrace()
+            case NonFatal(e) => AppLogger.exception(e)
         }
     })
 
@@ -36,5 +36,5 @@ object SyncExecutionContext extends ExecutionContext {
 
     override def execute(runnable: Runnable): Unit = queue.addFirst(runnable)
 
-    override def reportFailure(cause: Throwable): Unit = cause.printStackTrace()
+    override def reportFailure(cause: Throwable): Unit = causAppLogger.exception(e)
 }

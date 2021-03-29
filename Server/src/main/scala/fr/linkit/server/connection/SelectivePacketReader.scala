@@ -12,14 +12,15 @@
 
 package fr.linkit.server.connection
 
+import java.net.SocketException
+
 import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, PacketInjections}
+import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, DirectInjectionContainer}
 import fr.linkit.core.local.system.AppLogger
 
-import java.net.SocketException
 import scala.util.control.NonFatal
 
 class SelectivePacketReader(socket: DynamicSocket,
@@ -27,11 +28,10 @@ class SelectivePacketReader(socket: DynamicSocket,
                             manager: ExternalConnectionsManager,
                             boundIdentifier: String) extends PacketReader {
 
-    private val configuration                      = server.configuration
-    private val simpleReader                       = new DefaultPacketReader(socket, configuration.hasher, server, configuration.translator)
-    @volatile private var concernedPacketsReceived = 0
+    private val configuration = server.configuration
+    private val simpleReader  = new DefaultPacketReader(socket, configuration.hasher, server, configuration.translator)
 
-    override def nextPacket(@workerExecution callback: (PacketDeserializationResult, Int) => Unit): Unit = {
+    override def nextPacket(@workerExecution callback: (PacketDeserializationResult) => Unit): Unit = {
         try {
             nextConcernedPacket(callback)
         } catch {
@@ -40,11 +40,9 @@ class SelectivePacketReader(socket: DynamicSocket,
         }
     }
 
-    private def nextConcernedPacket(callback: (PacketDeserializationResult, Int) => Unit): Unit = try {
-        simpleReader.nextPacket((result, _) => {
-            concernedPacketsReceived += 1 //let's suppose that the received packet is sent to the server.
-            val packetNumber = concernedPacketsReceived
-            handleSerialResult(result, callback(_, packetNumber))
+    private def nextConcernedPacket(callback: (PacketDeserializationResult) => Unit): Unit = try {
+        simpleReader.nextPacket(result => {
+            handleSerialResult(result, callback)
         })
     } catch {
         case NonFatal(e) => e.printStackTrace(Console.out)
@@ -59,7 +57,6 @@ class SelectivePacketReader(socket: DynamicSocket,
                     callback(result)
                 } else {
                     manager.deflect(result)
-                    concernedPacketsReceived -= 1 //reduce the number of concerned packets because this packet did not target the server
                 }
 
             case broadcast: BroadcastPacketCoordinates =>
@@ -68,9 +65,8 @@ class SelectivePacketReader(socket: DynamicSocket,
                 manager.broadcastBytes(packet, broadcast.injectableID, boundIdentifier, identifiers: _*)
 
                 //would inject into the server too
-                val coords    = DedicatedPacketCoordinates(broadcast.injectableID, server.supportIdentifier, broadcast.senderID)
-                val injection = PacketInjections.createInjection(packet, coords, concernedPacketsReceived)
-                server.traffic.handleInjection(injection)
+                val coords = DedicatedPacketCoordinates(broadcast.injectableID, server.supportIdentifier, broadcast.senderID)
+                server.traffic.handleInjection(packet, coords)
         }
     }
 

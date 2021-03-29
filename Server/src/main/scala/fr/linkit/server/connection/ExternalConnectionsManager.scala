@@ -45,7 +45,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
             AppLogger.trace(s"Closing '${connection.supportIdentifier}'...")
             connection.shutdown()
         } catch {
-            case NonFatal(e) => e.printStackTrace()
+            case NonFatal(e) => AppLogger.exception(e)
         }
         closed = true
     }
@@ -73,7 +73,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
 
         //Opening ClientConnectionSession and finalizing registration...
         val packetReader = new SelectivePacketReader(socket, server, this, identifier)
-        val readerThread = new PacketReaderThread(packetReader, server, identifier)
+        val readerThread = new PacketReaderThread(packetReader, identifier)
         val info         = ExternalConnectionSessionInfo(server, this, server.getSideNetwork, readerThread)
 
         val connectionSession = ExternalConnectionSession(identifier, socket, info)
@@ -164,7 +164,6 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
      * Deflects a packet to his associated [[ServerExternalConnection]]
      *
      * @throws NoSuchConnectionException if no connection where found for this packet.
-     * @param bytes the packet bytes to deflect
      * */
     private[connection] def deflect(result: PacketDeserializationResult): Unit = {
         val target = result.coords match {

@@ -17,5 +17,5 @@ import fr.linkit.api.local.concurrency.workerExecution
 
 trait PacketReader {
 
-    def nextPacket(@workerExecution callback: (PacketDeserializationResult, Int) => Unit): Unit
+    def nextPacket(@workerExecution callback: (PacketDeserializationResult) => Unit): Unit
 }

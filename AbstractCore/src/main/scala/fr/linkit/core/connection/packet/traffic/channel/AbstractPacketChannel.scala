@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPac
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{ForbiddenIdentifierException, Reason}
 import fr.linkit.core.connection.packet.UnexpectedPacketException
-import fr.linkit.core.connection.packet.traffic.PacketInjections
+import fr.linkit.core.connection.packet.traffic.DirectInjectionContainer
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -91,10 +91,10 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
 
     def injectStoredPackets(): Unit = {
         Array.from(storedPackets)
-                .foreach(stored => {
-                    val injection = PacketInjections.unhandled(stored._2, stored._1)
-                    inject(injection)
-                })
+            .foreach(stored => {
+                val injection = traffic.injectionContainer.makeInjection(stored._1, stored._2)
+                inject(injection)
+            })
         storedPackets.clear()
     }
 

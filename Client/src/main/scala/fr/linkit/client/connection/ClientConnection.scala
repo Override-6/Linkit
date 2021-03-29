@@ -26,7 +26,7 @@ import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.core.connection.packet.serialization.NumberSerializer
-import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, PacketInjections}
+import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, DirectInjectionContainer}
 import fr.linkit.core.local.concurrency.{BusyWorkerPool, PacketReaderThread}
 import fr.linkit.core.local.system.{AppLogger, Rules, SystemPacket}
 import org.jetbrains.annotations.NotNull
@@ -83,12 +83,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         alive = true
 
         socket.addConnectionStateListener(tryReconnect)
-        readThread.onPacketRead = (result, packetNumber) => {
+        readThread.onPacketRead = (result) => {
             val coordinates: DedicatedPacketCoordinates = result.coords match {
                 case d: DedicatedPacketCoordinates => d
                 case _ => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
             }
-            handlePacket(result.packet, coordinates, packetNumber)
+            handlePacket(result.packet, coordinates)
         }
         readThread.start()
     }
@@ -126,12 +126,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         }
     }
 
-    private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): Unit = {
+    private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates): Unit = {
         packet match {
             //FIXME case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
             case system: SystemPacket => handleSystemPacket(system, coordinates)
             case _: Packet =>
-                val injection = PacketInjections.createInjection(packet, coordinates, number)
+                val injection = InjectionContainer.createInjection(packet, coordinates)
                 //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
                 traffic.handleInjection(injection)
             //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
@@ -179,14 +179,14 @@ object ClientConnection {
 
         //Server should send a packet which provides its identifier.
         //This packet concludes phase 1 of connection's initialization.
-        packetReader.nextPacketSync((result, _) => {
+        packetReader.nextPacketSync(result => {
             //The contains the server identifier bytes' string
             val serverIdentifier = new String(result.bytes)
             socket.identifier = serverIdentifier
 
             //Constructing connection instance session
             AppLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
-            val readThread  = new PacketReaderThread(packetReader, context, serverIdentifier)
+            val readThread  = new PacketReaderThread(packetReader, serverIdentifier)
             val sessionInfo = ClientConnectionSessionInfo(context, configuration, readThread)
             val session     = ClientConnectionSession(socket, sessionInfo, serverIdentifier)
             //Constructing connection instance...
@@ -202,7 +202,7 @@ object ClientConnection {
         connection
     }
 
-    private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(result: PacketDeserializationResult, ignored: Int = 0): Unit = {
+    private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(result: PacketDeserializationResult): Unit = {
         val bytes  = result.bytes
         val header = bytes(0)
         if (bytes.length != 1 || (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused))
@@ -210,7 +210,7 @@ object ClientConnection {
 
         val isAccepted = header == Rules.ConnectionAccepted
         if (!isAccepted) {
-            reader.nextPacket((result, _) => {
+            reader.nextPacket((result) => {
                 val msg        = new String(result.bytes)
                 val serverPort = socket.remoteSocketAddress().getPort
                 throw new ConnectionInitialisationException(s"Server (port: $serverPort) refused connection: $msg")

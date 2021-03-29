@@ -19,7 +19,7 @@ case class PacketDeserializationResult(serializer: () => Serializer, bytes: Arra
     private lazy val cache = serializer().deserializeAll(bytes)
 
     lazy val coords: PacketCoordinates = cache(0).asInstanceOf[PacketCoordinates]
-    lazy val packet: Packet            = cache(1).asInstanceOf[Packet]
+    lazy val packet: Packet            = cache(1).asInstanceOf[Packet].prepare()
 
 
 }

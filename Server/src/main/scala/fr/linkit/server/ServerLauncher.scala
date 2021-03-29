@@ -14,8 +14,6 @@ package fr.linkit.server
 
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.core.local.system.AppLogger
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugExtension
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
@@ -40,8 +38,8 @@ object ServerLauncher {
         AppLogger.trace(s"Build complete: $serverAppContext")
         val pluginManager = serverAppContext.pluginManager
         pluginManager.loadAllClass(Array(
-            classOf[ControllerExtension]: Class[_ <: Plugin],
-            classOf[DebugExtension]: Class[_ <: Plugin],
+            //classOf[ControllerExtension]: Class[_ <: Plugin],
+            //classOf[DebugExtension]: Class[_ <: Plugin],
         ))
     }
 

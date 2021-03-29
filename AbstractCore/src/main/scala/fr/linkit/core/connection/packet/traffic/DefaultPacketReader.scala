@@ -23,16 +23,14 @@ class DefaultPacketReader(socket: DynamicSocket,
                           procrastinator: Procrastinator,
                           translator: PacketTranslator) extends PacketReader {
 
-    private var packetCount = 0
-
     /**
      * @return a tuple containing the next packet with its coordinates and its local number identifier
      * */
-    override def nextPacket(@workerExecution callback: (PacketDeserializationResult, Int) => Unit): Unit = {
-        nextPacketSync((a, b) => procrastinator.runLater(callback(a, b)))
+    override def nextPacket(@workerExecution callback: PacketDeserializationResult => Unit): Unit = {
+        nextPacketSync(a => procrastinator.runLater(callback(a)))
     }
 
-    def nextPacketSync(callback: (PacketDeserializationResult, Int) => Unit): Unit = {
+    def nextPacketSync(callback: PacketDeserializationResult => Unit): Unit = {
         val nextLength = socket.readInt()
         if (nextLength == -1 || socket.isClosed) {
             AppLogger.error(s"PACKET READ WAS ABORTED : $nextLength || ${socket.isOpen}")
@@ -41,8 +39,6 @@ class DefaultPacketReader(socket: DynamicSocket,
 
         val bytes  = hasher.deHashBytes(socket.read(nextLength))
         val result = translator.translate(bytes)
-        packetCount += 1
-        val currentPacketNumber = packetCount
-        callback(result, currentPacketNumber)
+        callback(result)
     }
 }

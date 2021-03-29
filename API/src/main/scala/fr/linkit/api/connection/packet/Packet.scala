@@ -12,9 +12,34 @@
 
 package fr.linkit.api.connection.packet
 
+import fr.linkit.api.connection.packet.Packet.nextPacketID
+
 //TODO Doc
 trait Packet extends Serializable {
 
+    @volatile
+    @transient private var id = nextPacketID(this)
+
     def className: String = getClass.getSimpleName
 
+    def number: Int = id
+
+    private[packet] def prepare(): this.type = {
+        //If the packet has been instantiated using Unsafe.allocateInstance
+        //The constructor will not be called thus packetID will not be initialized.
+        //This method will manually give this packet an id
+        id = nextPacketID(this)
+        this
+    }
+
+}
+
+object Packet {
+    @volatile private var packetID = 0
+
+    private def nextPacketID(p: Packet): Int = {
+        packetID += 1
+        println(s"id = ${packetID}; packet = $p")
+        packetID
+    }
 }

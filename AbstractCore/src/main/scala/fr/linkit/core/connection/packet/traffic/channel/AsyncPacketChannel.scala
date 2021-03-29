@@ -21,7 +21,7 @@ import fr.linkit.core.local.utils.ConsumerContainer
 import scala.util.control.NonFatal
 
 class AsyncPacketChannel protected(scope: ChannelScope)
-        extends AbstractPacketChannel(scope) with PacketSender with PacketAsyncReceiver {
+    extends AbstractPacketChannel(scope) with PacketSender with PacketAsyncReceiver {
 
     private val packetReceivedContainer: ConsumerContainer[(Packet, DedicatedPacketCoordinates)] = ConsumerContainer()
 
@@ -29,14 +29,15 @@ class AsyncPacketChannel protected(scope: ChannelScope)
     override def handleInjection(injection: PacketInjection): Unit = {
         val pool = BusyWorkerPool.currentPool().get
         pool.runLater {
-            try {
-                val packets = injection.getPackets
-                val coords  = injection.coordinates
-                packets.foreach(packet => packetReceivedContainer.applyAll((packet, coords)))
-            } catch {
-                case NonFatal(e) =>
-                    e.printStackTrace()
-            }
+            injection.process(packet => {
+                try {
+                    val coords = injection.coordinates
+                    packetReceivedContainer.applyAll((packet, coords))
+                } catch {
+                    case NonFatal(e) =>
+                        AppLogger.exception(e)
+                }
+            })
         }
     }
 

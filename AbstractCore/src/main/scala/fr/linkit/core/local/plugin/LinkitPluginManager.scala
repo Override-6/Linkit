@@ -62,7 +62,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
 
     override def loadAllClass(classes: Array[Class[_ <: Plugin]]): Array[Plugin] = {
         if (classes.isEmpty)
-            throw new IllegalArgumentException("Provided class array is empty.")
+            return Array()
 
         val pluginLoader = new DirectPluginLoader(context, classes)
         enablePlugins(pluginLoader)
@@ -84,7 +84,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
             } catch {
                 case NonFatal(e) =>
                     AppLogger.error(s"Could not load '${pluginName}'" + e.getMessage)
-                    e.printStackTrace()
+                    AppLogger.exception(e)
             }
         })
 

@@ -61,7 +61,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             try {
                 serverConnection.shutdown()
             } catch {
-                case NonFatal(e) => e.printStackTrace()
+                case NonFatal(e) => AppLogger.exception(e)
             }
             downLock.synchronized {
                 downCount += 1
@@ -209,8 +209,6 @@ object ServerApplication {
             } catch {
                 case NonFatal(e) =>
                     exception = e
-                case e =>
-                    throw e
             }
             serverAppContext.synchronized {
                 serverAppContext.notify()

@@ -25,14 +25,14 @@ import scala.reflect.ClassTag
 
 class SyncAsyncPacketChannel(scope: ChannelScope,
                              busy: Boolean)
-        extends AbstractPacketChannel(scope) {
+    extends AbstractPacketChannel(scope) {
 
     private val sync: BlockingQueue[Packet] = {
         if (!busy)
             new LinkedBlockingQueue[Packet]()
         else {
             BusyWorkerPool
-                    .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
+                .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 
@@ -40,9 +40,8 @@ class SyncAsyncPacketChannel(scope: ChannelScope,
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val packets     = injection.getPackets
         val coordinates = injection.coordinates
-        packets.foreach {
+        injection.process {
             case WrappedPacket(tag, subPacket) =>
                 tag match {
                     case "s" => sync.add(subPacket)

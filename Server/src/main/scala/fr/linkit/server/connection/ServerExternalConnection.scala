@@ -21,7 +21,7 @@ import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.fundamental.TaskInitPacket
-import fr.linkit.core.connection.packet.traffic.PacketInjections
+import fr.linkit.core.connection.packet.traffic.DirectInjectionContainer
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 import fr.linkit.core.local.system.{AppLogger, SystemPacket}
 import org.jetbrains.annotations.NotNull
@@ -79,12 +79,12 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
             throw ConnectionException(this, "This Connection was already used and is now definitely closed.")
         }
         alive = true
-        readThread.onPacketRead = (result, packetNumber) => {
+        readThread.onPacketRead = result => {
             val coordinates: DedicatedPacketCoordinates = result.coords match {
                 case d: DedicatedPacketCoordinates => d
-                case _ => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
+                case _                             => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
             }
-            handlePacket(result.packet, coordinates, packetNumber)
+            handlePacket(result.packet, coordinates)
         }
         readThread.start()
         //Method useless but kept because services could need to be started in the future?
@@ -114,16 +114,15 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
 
     @workerExecution
-    private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates, number: Int): Unit = {
+    private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates): Unit = {
         if (!alive)
             return
 
         packet match {
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
-            case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
-            case _: Packet =>
-                val injection = PacketInjections.createInjection(packet, coordinates, number)
-                serverTraffic.handleInjection(injection)
+            case init: TaskInitPacket       => tasksHandler.handlePacket(init, coordinates)
+            case _: Packet                  =>
+                serverTraffic.handleInjection(packet, coordinates)
         }
     }
 
@@ -134,7 +133,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         orderType match {
             case CLIENT_CLOSE => runLater(shutdown())
             case SERVER_CLOSE => server.shutdown()
-            case ABORT_TASK => tasksHandler.skipCurrent(reason)
+            case ABORT_TASK   => tasksHandler.skipCurrent(reason)
 
             case _ =>
                 val msg = s"Could not complete order '$orderType', can't be handled by a server or unknown order"

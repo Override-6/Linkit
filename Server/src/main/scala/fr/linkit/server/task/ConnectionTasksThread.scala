@@ -41,7 +41,7 @@ class ConnectionTasksThread private(ticketQueue: BlockingQueue[TaskTicket],
                 //normal exception thrown when the thread was suddenly stopped
                 case _: InterruptedException =>
                 case NonFatal(e) =>
-                    e.printStackTrace()
+                    AppLogger.exception(e)
                 // consoleErr.print(e)
             }
         }

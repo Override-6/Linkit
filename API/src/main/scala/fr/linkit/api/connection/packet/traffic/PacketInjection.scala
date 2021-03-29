@@ -20,9 +20,7 @@ trait PacketInjection {
     val coordinates: DedicatedPacketCoordinates
 
     @workerExecution
-    def getPackets: Seq[Packet]
+    def process(callback: Packet => Unit): Unit
 
-    @workerExecution
-    def mayNotHandle: Boolean
 
 }

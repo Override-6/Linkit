@@ -168,7 +168,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         try {
             action(adapter)
         } catch {
-            case NonFatal(e) => e.printStackTrace()
+            case NonFatal(e) => AppLogger.exception(e)
         }
         modCount += 1
 
