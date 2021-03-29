@@ -12,13 +12,13 @@
 
 package fr.linkit.core.connection.packet.traffic
 
-import java.nio.BufferOverflowException
-
 import fr.linkit.api.connection.packet.traffic.PacketInjection
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.traffic.DirectInjection.{PacketBuffer, PacketCallback}
-import fr.linkit.core.local.system.AppLogger
+import fr.linkit.core.local.concurrency.BusyWorkerPool.{currentTaskId, currentWorker}
 
+import java.nio.BufferOverflowException
 import scala.collection.mutable.ListBuffer
 
 class DirectInjection(override val coordinates: DedicatedPacketCoordinates) extends PacketInjection {
@@ -28,11 +28,16 @@ class DirectInjection(override val coordinates: DedicatedPacketCoordinates) exte
 
     override def process(callback0: Packet => Unit): Unit = {
         val callback = new PacketCallback(callback0)
-        callbacks += callback
+        callbacks.synchronized {
+            callbacks += callback
+        }
         buff.process(callback)
     }
 
     def inject(packet: Packet): Unit = {
+        if (buff.contains(packet))
+            return
+
         buff.insert(packet)
         val currentThread = Thread.currentThread()
         callbacks.foreach(callback => {
@@ -50,6 +55,7 @@ object DirectInjection {
     @volatile private var totalProcess = 0
 
     private class PacketCallback(callback: Packet => Unit) {
+
         var threadHandler: Thread = _
         private val marks = new Array[Int](10)
         private var i     = 0
@@ -64,18 +70,28 @@ object DirectInjection {
     }
 
     class PacketBuffer {
+
         private val buff             = new Array[Packet](10)
         @volatile private var length = 0
+
+        def contains(packet: Packet): Boolean = {
+            val packetNumber = packet.number
+            for (i <- 0 until length) {
+                if (buff(i).number == packetNumber)
+                    return true
+            }
+            false
+        }
 
         def insert(packet: Packet): Unit = {
             var index        = 0
             val packetNumber = packet.number
-            //AppLogger.debug(s"Inserting $packet in buffer ${buff.mkString("Array(", ", ", ")")}")
+            AppLogger.debug(s"${currentTaskId} <> Inserting $packet in buffer ${buff.mkString("Array(", ", ", ")")}")
             while (index < buff.length) {
                 val indexPacket = buff(index)
                 if (indexPacket == null) {
                     buff(index) = packet
-//                    AppLogger.debug(s"Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
+                    AppLogger.debug(s"${currentTaskId} <> Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
                     length += 1
                     return
                 }
@@ -90,12 +106,13 @@ object DirectInjection {
                         buff(nextIndex) = indexPacket
 
                         if (nextPacket == null) {
-                            //AppLogger.debug(s"Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
+                            AppLogger.debug(s"Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
+                            length += 1
                             return
                         }
                         nextIndex += 1
                     }
-                    //AppLogger.debug(s"Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
+                    AppLogger.debug(s"Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
                     length += 1
                     return
                 }
@@ -114,7 +131,7 @@ object DirectInjection {
             while (count < length) {
                 val packet = buff(i)
                 totalProcess += 1
-                AppLogger.debug(s"PROCESSING $packet ($totalProcess / ${packet.number})")
+                AppLogger.debug(s"${currentTaskId} <> PROCESSING $packet ($totalProcess / ${packet.number})")
                 if (packet != null) {
                     action(packet)
                     count += 1

@@ -15,8 +15,8 @@ package fr.linkit.server
 import fr.linkit.api.connection.NoSuchConnectionException
 import fr.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.traffic.{DirectInjectionContainer, WriterInfo}
-import fr.linkit.core.local.system.AppLogger
 import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {

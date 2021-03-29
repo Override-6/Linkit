@@ -15,7 +15,7 @@ package fr.linkit.client
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.connection.task.{TaskException, TaskExecutor, TasksHandler}
-import fr.linkit.api.local.system.Reason
+import fr.linkit.api.local.system.{AppLogger, Reason}
 import fr.linkit.core.connection.task.{SimpleCompleterHandler, TaskTicket}
 import fr.linkit.core.local.system.{SystemOrder, SystemPacketChannel}
 
@@ -95,7 +95,7 @@ protected class ClientTasksHandler(private val systemChannel: SystemPacketChanne
         } catch {
             //Do not considerate InterruptedException
             case _: InterruptedException =>
-            case NonFatal(e) => AppLogger.exception(e)
+            case NonFatal(e) => AppLogger.printStackTrace(e)
         }
     }
 

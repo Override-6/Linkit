@@ -15,9 +15,8 @@ package fr.linkit.core.local.concurrency
 import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, packetWorkerExecution}
-import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
+import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.core.local.concurrency.PacketReaderThread.packetReaderThreadGroup
-import fr.linkit.core.local.system.AppLogger
 
 import java.nio.channels.AsynchronousCloseException
 import scala.util.control.NonFatal
@@ -72,7 +71,7 @@ class PacketReaderThread(reader: PacketReader,
                 onException("Asynchronous close.")
 
             case NonFatal(e) =>
-                AppLogger.exception(e)
+                AppLogger.printStackTrace(e)
                 onException(s"Suddenly disconnected from the server.")
         }
 
@@ -84,8 +83,6 @@ class PacketReaderThread(reader: PacketReader,
 
     private def readNextPacket(): Unit = {
         reader.nextPacket((result) => {
-            //NETWORK-DEBUG-MARK
-            AppLogger.logDownload(bound, result.bytes)
             onPacketRead(result)
         })
     }

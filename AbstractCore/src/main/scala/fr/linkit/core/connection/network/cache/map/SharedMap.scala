@@ -125,7 +125,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         //println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
 
         var found  = false
-        val thread = BusyWorkerPool.currentWorkerThread
+        val thread = BusyWorkerPool.currentWorker
 
         val listener: ((MapModification, K, V)) => Unit = t => {
             found = t._2 == k

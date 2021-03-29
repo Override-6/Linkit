@@ -19,6 +19,7 @@ import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.concurrency.{packetWorkerExecution, workerExecution}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.client.ClientApplication
@@ -26,9 +27,9 @@ import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.core.connection.packet.serialization.NumberSerializer
-import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, DirectInjectionContainer}
+import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DirectInjectionContainer, DynamicSocket}
 import fr.linkit.core.local.concurrency.{BusyWorkerPool, PacketReaderThread}
-import fr.linkit.core.local.system.{AppLogger, Rules, SystemPacket}
+import fr.linkit.core.local.system.{Rules, SystemPacket}
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
@@ -131,9 +132,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             //FIXME case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
             case system: SystemPacket => handleSystemPacket(system, coordinates)
             case _: Packet =>
-                val injection = InjectionContainer.createInjection(packet, coordinates)
                 //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
-                traffic.handleInjection(injection)
+                traffic.handleInjection(packet, coordinates)
             //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }

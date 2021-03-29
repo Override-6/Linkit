@@ -1,7 +1,8 @@
 package fr.linkit.core.local.concurrency
 
 import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.core.local.system.AppLogger
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.local.concurrency.BusyWorkerPool.currentTaskId
 
 import scala.collection.mutable.ListBuffer
 
@@ -18,8 +19,8 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
     @workerExecution
     def amuseCurrentThreadWhile(condition: => Boolean): Unit = {
         pool.ensureCurrentThreadOwned("Threads cannot play with strangers.")
-        AppLogger.error("Amusing current thread...")
-        val currentWorker = BusyWorkerPool.currentWorkerThread
+        AppLogger.error(s"$currentTaskId <> Amusing current thread...")
+        val currentWorker = BusyWorkerPool.currentWorker
         entertainedThreads += currentWorker
         BusyWorkerPool.executeRemainingTasksWhile(condition)
         entertainedThreads -= currentWorker
@@ -51,8 +52,8 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
 
         val unamused = action(entertainedThreads)
 
-        AppLogger.error("unamused = " + unamused)
-        AppLogger.error("entertainedThreads = " + entertainedThreads)
+        AppLogger.error(s"$currentTaskId <> unamused = " + unamused)
+        AppLogger.error(s"$currentTaskId <> entertainedThreads = " + entertainedThreads)
 
         if (unamused.isEmpty || entertainedThreads.isEmpty)
             return //Instruction below could throw NoSuchElementException when removing unamused list to entertainedThreads.

@@ -15,12 +15,12 @@ package fr.linkit.core.connection.network.cache.collection
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.collection.CollectionModification._
 import fr.linkit.core.connection.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.local.concurrency.BusyWorkerPool
-import fr.linkit.core.local.system.AppLogger
 import fr.linkit.core.local.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -145,7 +145,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
 
     private def flushModification(mod: (CollectionModification, Long, Any)): Unit = {
         sendRequest(ObjectPacket(mod))
-        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
+        networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Long, A)])
         modCount += 1
         AppLogger.warn(s"<$family> (${channel.traffic.supportIdentifier}) COLLECTION IS NOW (local): " + this)
     }
@@ -168,11 +168,11 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         try {
             action(adapter)
         } catch {
-            case NonFatal(e) => AppLogger.exception(e)
+            case NonFatal(e) => AppLogger.printStackTrace(e)
         }
         modCount += 1
 
-        networkListeners.applyAllAsync(mod.asInstanceOf[(CollectionModification, Long, A)])
+        networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Long, A)])
         AppLogger.warn(s"<$family> COLLECTION IS NOW (network) $this")
     }
 }

@@ -16,12 +16,12 @@ import fr.linkit.api.connection.NoSuchConnectionException
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.system.AppException
+import fr.linkit.api.local.system.{AppException, AppLogger}
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.security.ConnectionSecurityException
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.system.{AppLogger, Rules}
+import fr.linkit.core.local.system.Rules
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
 
@@ -61,7 +61,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             try {
                 serverConnection.shutdown()
             } catch {
-                case NonFatal(e) => AppLogger.exception(e)
+                case NonFatal(e) => AppLogger.printStackTrace(e)
             }
             downLock.synchronized {
                 downCount += 1

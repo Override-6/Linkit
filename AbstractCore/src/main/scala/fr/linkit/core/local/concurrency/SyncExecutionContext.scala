@@ -12,6 +12,8 @@
 
 package fr.linkit.core.local.concurrency
 
+import fr.linkit.api.local.system.AppLogger
+
 import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 import scala.concurrent.ExecutionContext
 import scala.util.control.NonFatal
@@ -27,7 +29,7 @@ object SyncExecutionContext extends ExecutionContext {
             val action = queue.takeLast()
             action.run()
         } catch {
-            case NonFatal(e) => AppLogger.exception(e)
+            case NonFatal(e) => AppLogger.printStackTrace(e)
         }
     })
 
@@ -36,5 +38,5 @@ object SyncExecutionContext extends ExecutionContext {
 
     override def execute(runnable: Runnable): Unit = queue.addFirst(runnable)
 
-    override def reportFailure(cause: Throwable): Unit = causAppLogger.exception(e)
+    override def reportFailure(cause: Throwable): Unit = AppLogger.printStackTrace(cause)
 }

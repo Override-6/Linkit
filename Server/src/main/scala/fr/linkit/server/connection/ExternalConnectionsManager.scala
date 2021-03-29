@@ -15,9 +15,8 @@ package fr.linkit.server.connection
 import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
-import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
+import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.core.local.concurrency.PacketReaderThread
-import fr.linkit.core.local.system.AppLogger
 import fr.linkit.server.ServerException
 import org.jetbrains.annotations.Nullable
 
@@ -45,7 +44,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
             AppLogger.trace(s"Closing '${connection.supportIdentifier}'...")
             connection.shutdown()
         } catch {
-            case NonFatal(e) => AppLogger.exception(e)
+            case NonFatal(e) => AppLogger.printStackTrace(e)
         }
         closed = true
     }

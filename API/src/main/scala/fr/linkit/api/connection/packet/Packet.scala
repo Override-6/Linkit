@@ -13,6 +13,7 @@
 package fr.linkit.api.connection.packet
 
 import fr.linkit.api.connection.packet.Packet.nextPacketID
+import fr.linkit.api.local.system.AppLogger
 
 //TODO Doc
 trait Packet extends Serializable {
@@ -28,6 +29,7 @@ trait Packet extends Serializable {
         //If the packet has been instantiated using Unsafe.allocateInstance
         //The constructor will not be called thus packetID will not be initialized.
         //This method will manually give this packet an id
+        AppLogger.trace("Preparing packet...")
         id = nextPacketID(this)
         this
     }
@@ -39,7 +41,8 @@ object Packet {
 
     private def nextPacketID(p: Packet): Int = {
         packetID += 1
-        println(s"id = ${packetID}; packet = $p")
+        AppLogger.discoverLines(3, 8)
+        AppLogger.trace(s"id = ${packetID}; packet = $p")
         packetID
     }
 }

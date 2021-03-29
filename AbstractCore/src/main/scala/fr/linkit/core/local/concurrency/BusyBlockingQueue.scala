@@ -13,7 +13,8 @@
 package fr.linkit.core.local.concurrency
 
 import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.core.local.system.AppLogger
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.local.concurrency.BusyWorkerPool.currentTaskId
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 import java.util
@@ -29,11 +30,12 @@ import scala.collection.mutable.ListBuffer
  * */
 class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
 
-    private val content = ListBuffer.empty[A]
+    private val content     = ListBuffer.empty[A]
     private val entertainer = new WorkerEntertainer(pool)
 
     override def add(e: A): Boolean = {
         content += e
+        AppLogger.error(s"Added ${e} in content $content")
         entertainer.stopFirstThreadAmusement()
         true
     }
@@ -64,7 +66,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
     @workerExecution
     override def take(): A = {
-        AppLogger.error(s"Taking item in $this")
+        AppLogger.error(s"$currentTaskId <> Taking item in $this")
         entertainer.amuseCurrentThreadWhile(content.isEmpty) //will be released once the queue is empty
         poll()
     }

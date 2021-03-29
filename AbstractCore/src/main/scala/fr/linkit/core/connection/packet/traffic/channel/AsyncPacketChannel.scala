@@ -15,6 +15,7 @@ package fr.linkit.core.connection.packet.traffic.channel
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
 
@@ -35,7 +36,7 @@ class AsyncPacketChannel protected(scope: ChannelScope)
                     packetReceivedContainer.applyAll((packet, coords))
                 } catch {
                     case NonFatal(e) =>
-                        AppLogger.exception(e)
+                        AppLogger.printStackTrace(e)
                 }
             })
         }

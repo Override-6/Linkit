@@ -14,11 +14,10 @@ package fr.linkit.client
 
 import java.net.InetSocketAddress
 import java.util.Scanner
-
 import fr.linkit.api.local.plugin.Plugin
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
-import fr.linkit.core.local.system.AppLogger
 
 object ClientLauncher {
 

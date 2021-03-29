@@ -16,10 +16,8 @@ import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
 
 case class PacketDeserializationResult(serializer: () => Serializer, bytes: Array[Byte]) {
 
-    private lazy val cache = serializer().deserializeAll(bytes)
-
-    lazy val coords: PacketCoordinates = cache(0).asInstanceOf[PacketCoordinates]
-    lazy val packet: Packet            = cache(1).asInstanceOf[Packet].prepare()
-
+    private lazy val cache                     = serializer().deserializeAll(bytes)
+    lazy         val coords: PacketCoordinates = cache(0).asInstanceOf[PacketCoordinates]
+    lazy         val packet: Packet            = cache(1).asInstanceOf[Packet].prepare()
 
 }

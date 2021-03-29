@@ -13,7 +13,7 @@
 package fr.linkit.server.task
 
 import fr.linkit.api.connection.packet.traffic.PacketInjection
-import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
+import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.core.connection.task.TaskTicket
 
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
@@ -41,7 +41,7 @@ class ConnectionTasksThread private(ticketQueue: BlockingQueue[TaskTicket],
                 //normal exception thrown when the thread was suddenly stopped
                 case _: InterruptedException =>
                 case NonFatal(e) =>
-                    AppLogger.exception(e)
+                    AppLogger.printStackTrace(e)
                 // consoleErr.print(e)
             }
         }

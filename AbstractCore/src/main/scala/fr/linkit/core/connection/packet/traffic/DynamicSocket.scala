@@ -14,9 +14,8 @@ package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.network.ExternalConnectionState
 import fr.linkit.api.local.concurrency.packetWorkerExecution
-import fr.linkit.api.local.system.{AppException, IllegalCloseException, JustifiedCloseable, Reason}
+import fr.linkit.api.local.system.{AppException, AppLogger, IllegalCloseException, JustifiedCloseable, Reason}
 import fr.linkit.core.connection.packet.serialization.NumberSerializer
-import fr.linkit.core.local.system.AppLogger
 import fr.linkit.core.local.utils.ConsumerContainer
 
 import java.io.{BufferedOutputStream, IOException, InputStream}
@@ -31,7 +30,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
     private val listeners = ConsumerContainer[ExternalConnectionState]()
 
-    protected def boundIdentifier: String
+    def boundIdentifier: String
 
     def write(buff: Array[Byte]): Unit = {
         val t0 = System.currentTimeMillis()
@@ -50,7 +49,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             case e@(_: ConnectException | _: IOException) =>
 
                 if (e.getMessage.contains("socket write error")) {
-                    AppLogger.exception(e)
+                    AppLogger.printStackTrace(e)
                 } else {
                     System.err.println(e)
                 }

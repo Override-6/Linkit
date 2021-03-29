@@ -1,16 +1,4 @@
-/*
- * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- * This code is free software; you can only use it for personal uses, studies or documentation.
- * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
- *
- * Please contact maximebatista18@gmail.com if you need additional information or have any
- * questions.
- */
-
-package fr.linkit.core.local.system
+package fr.linkit.api.local.system
 
 import fr.linkit.api.local.ApplicationContext
 import org.apache.log4j.{Level, Logger}
@@ -64,5 +52,19 @@ object AppLogger {
     def log(level: Level, msg: AnyRef): Unit = logger.log(level, msg)
 
     def log(level: Level, msg: AnyRef, throwable: Throwable): Unit = logger.log(level, msg, throwable)
+
+    def printStackTrace(e: Throwable): Unit = {
+        logger.error(s"Exception in thread '${Thread.currentThread().getName}'" + e.getMessage, e)
+    }
+
+    def discoverLines(from: Int, to: Int): Unit = {
+        val currentThread = Thread.currentThread()
+        val stackTrace    = currentThread.getStackTrace
+
+        debug(s"RETRIEVING ${to - from} STACK LINES FOR THREAD ${currentThread.getName} :")
+        for (i <- (from + 1) to to.min(stackTrace.length - 1)) {
+            println("\t" + stackTrace(i))
+        }
+    }
 
 }

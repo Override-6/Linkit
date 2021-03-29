@@ -15,7 +15,7 @@ package fr.linkit.core.connection.packet.traffic
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
-import fr.linkit.api.local.system.{ClosedException, JustifiedCloseable, Reason}
+import fr.linkit.api.local.system.{AppLogger, ClosedException, JustifiedCloseable, Reason}
 import fr.linkit.core.local.concurrency.PacketReaderThread
 
 import scala.collection.mutable
@@ -134,7 +134,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
             for (tuple <- cache if tuple._2.isOpen) try {
                 tuple._2.close()
             } catch {
-                case NonFatal(e) => AppLogger.exception(e)
+                case NonFatal(e) => AppLogger.printStackTrace(e)
             }
             cache.clear()
             closed = true

@@ -15,9 +15,9 @@ package fr.linkit.core.local.plugin
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.plugin.fragment.FragmentManager
 import fr.linkit.api.local.plugin.{Plugin, PluginLoader, PluginManager}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.core.local.plugin.fragment.SimpleFragmentManager
-import fr.linkit.core.local.system.AppLogger
 
 import java.nio.file.{NoSuchFileException, NotDirectoryException}
 import scala.collection.mutable.ListBuffer
@@ -84,7 +84,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
             } catch {
                 case NonFatal(e) =>
                     AppLogger.error(s"Could not load '${pluginName}'" + e.getMessage)
-                    AppLogger.exception(e)
+                    AppLogger.printStackTrace(e)
             }
         })
 

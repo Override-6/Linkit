@@ -2,10 +2,11 @@ package fr.linkit.core.connection.packet.traffic.channel
 
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, PacketInjection}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel.{Request, Response, ResponseSubmitter}
 import fr.linkit.core.local.concurrency.BusyWorkerPool
-import fr.linkit.core.local.system.AppLogger
+import fr.linkit.core.local.concurrency.BusyWorkerPool.{currentTaskId, currentWorker}
 import fr.linkit.core.local.utils.ConsumerContainer
 import fr.linkit.core.local.utils.ScalaUtils.ensureType
 
@@ -24,27 +25,28 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
     override def handleInjection(injection: PacketInjection): Unit = {
         val coords = injection.coordinates
         injection.process(packet => {
-            AppLogger.debug(s"INJECTING REQUEST $packet")
+            AppLogger.debug(s"${currentTaskId} <> INJECTING REQUEST $packet " + this)
             packet match {
                 case AnyRefPacket((id: Int, packet: Packet)) =>
                     val submitter = new ResponseSubmitter(id, scope, coords.senderID)
-                    requestConsumers.applyAllAsync((packet, coords, submitter))
+                    requestConsumers.applyAllLater((packet, coords, submitter))
 
                 case AnyRefPacket((id: Long, packet: Packet)) =>
                     val submitter = new ResponseSubmitter(id, scope, coords.senderID)
-                    requestConsumers.applyAllAsync((packet, coords, submitter))
+                    requestConsumers.applyAllLater((packet, coords, submitter))
 
                 case response: Response =>
                     requests.get(response.id) match {
                         case Some(request) => request.addResponse(response)
-                        case None          => throw new NoSuchElementException(s"response.id not found (${response.id}) ($requests)")
+                        case None          => throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requests)")
                     }
             }
         })
     }
 
-
+    AppLogger.fatal("$currentTaskId <> CREATED INSTANCE OF REQUEST PACKET CHANNEL : " + this)
     def addRequestListener(callback: (Packet, DedicatedPacketCoordinates, ResponseSubmitter) => Unit): Unit = {
+        AppLogger.fatal(s"$currentTaskId <> ADDED REQUEST LISTENER : $requests " + this)
         requestConsumers += (tuple => callback(tuple._1, tuple._2, tuple._3))
     }
 
@@ -62,8 +64,10 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
         val requestID = nextRequestID
         val request   = Request(requestID, pool.newBusyQueue)
 
-        send(AnyRefPacket(requestID, packet))
         requests.put(requestID, request)
+        AppLogger.error(s"$currentTaskId <> Adding request '$request' into $requests " + this)
+        send(AnyRefPacket(requestID, packet))
+        AppLogger.error(s"$currentTaskId <> Request '${request}' has been sent ! " + this)
         request
     }
 
@@ -83,7 +87,7 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         private val responseConsumer = ConsumerContainer[Response]()
 
         def nextResponse: Response = {
-            AppLogger.debug(s"Waiting for response... ($id)")
+            AppLogger.debug(s"$currentTaskId <> Waiting for response... ($id) " + this)
             queue.take()
         }
 
@@ -92,11 +96,11 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         }
 
         private[RequestPacketChannel] def addResponse(response: Response): Unit = {
-            AppLogger.error("ADDING RESPONSE")
+            AppLogger.error(s"$currentTaskId <> ADDING RESPONSE " + this)
             //Thread.dumpStack()
             queue.add(response)
-            responseConsumer.applyAllAsync(response)
-            AppLogger.error("RESPONSE ADDED")
+            responseConsumer.applyAllLater(response)
+            AppLogger.error(s"$currentTaskId <> RESPONSE ADDED " + this)
         }
 
     }
@@ -110,7 +114,8 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def addPacket(packet: Packet): this.type = {
             ensureNotSubmit()
             packets += packet
-            AppLogger.debug("packets = " + packets)
+            AppLogger.debug(s"$currentTaskId <> packets = " + packets)
+            AppLogger.debug(s"$currentTaskId <> this = " + this)
             this
         }
 
@@ -129,15 +134,15 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def submit(): Unit = {
             ensureNotSubmit()
             val snapshot = Response(id, packets.toArray, properties.toMap, scope.writer.supportIdentifier)
-            AppLogger.debug(s"Submitting response ($id)...")
+            AppLogger.debug(s"$currentTaskId <> Submitting response ($id)..." + this)
             scope.sendTo(snapshot, requester)
-            AppLogger.debug("Response submit !")
+            AppLogger.debug(s"$currentTaskId <> Response submit !" + this)
             isSubmit = true
         }
 
         private def ensureNotSubmit(): Unit = {
             if (isSubmit)
-                throw new IllegalStateException("Response was already sent.")
+                throw new IllegalStateException("Response was already sent." + this)
         }
     }
 
@@ -151,7 +156,7 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
 
         def getProperty(name: String): Serializable = properties(name)
 
-        @throws[NoSuchElementException]("If this method is called more times than packet array's length")
+        @throws[NoSuchElementException]("If this method is called more times than packet array's length" + this)
         def nextPacket[P <: Packet : ClassTag](): P = {
             if (packetIndex >= packets.length)
                 throw new NoSuchElementException()

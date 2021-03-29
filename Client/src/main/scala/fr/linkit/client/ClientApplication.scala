@@ -16,13 +16,12 @@ import fr.linkit.api.connection.{ConnectionContext, ConnectionException, Connect
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.system.AppException
+import fr.linkit.api.local.system.{AppException, AppLogger}
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
@@ -47,7 +46,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
                 //Connections will unregister themself from connectionCache automatically
                 connection.shutdown()
             } catch {
-                case NonFatal(e) => AppLogger.exception(e)
+                case NonFatal(e) => AppLogger.printStackTrace(e)
             }
         })
     }

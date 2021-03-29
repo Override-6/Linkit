@@ -20,12 +20,13 @@ import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 import fr.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.linkit.core.local.concurrency.BusyWorkerPool
 import fr.linkit.core.local.system.event.DefaultEventNotifier
-import fr.linkit.core.local.system.{AppLogger, Rules, SystemPacketChannel}
+import fr.linkit.core.local.system.{Rules, SystemPacketChannel}
 import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.network.ServerSideNetwork
 import fr.linkit.server.{ServerApplication, ServerException, ServerPacketTraffic}
@@ -80,7 +81,7 @@ class ServerConnection(applicationContext: ServerApplication,
             loadSocketListener()
         } catch {
             case NonFatal(e) =>
-                AppLogger.exception(e)
+                AppLogger.printStackTrace(e)
                 shutdown()
         }
     }
@@ -144,7 +145,7 @@ class ServerConnection(applicationContext: ServerApplication,
                 Console.err.println(msg)
                 onException(e)
             case NonFatal(e)        =>
-                AppLogger.exception(e)
+                AppLogger.printStackTrace(e)
                 runLater {
                     onException(e)
                 }
@@ -194,7 +195,7 @@ class ServerConnection(applicationContext: ServerApplication,
             WelcomePacketVerdict(identifier, true)
         } catch {
             case NonFatal(e) =>
-                AppLogger.exception(e)
+                AppLogger.printStackTrace(e)
                 WelcomePacketVerdict(null, false, e.getMessage)
         }
     }

@@ -15,8 +15,8 @@ package fr.linkit.core.connection.packet.traffic
 import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.security.BytesHasher
-import fr.linkit.core.local.system.AppLogger
 
 class DefaultPacketReader(socket: DynamicSocket,
                           hasher: BytesHasher,
@@ -33,11 +33,13 @@ class DefaultPacketReader(socket: DynamicSocket,
     def nextPacketSync(callback: PacketDeserializationResult => Unit): Unit = {
         val nextLength = socket.readInt()
         if (nextLength == -1 || socket.isClosed) {
-            AppLogger.error(s"PACKET READ WAS ABORTED : $nextLength || ${socket.isOpen}")
+            AppLogger.error(s"PACKET READ READ WAS ABORTED : $nextLength || ${socket.isOpen}")
             return
         }
 
         val bytes  = hasher.deHashBytes(socket.read(nextLength))
+        //NETWORK-DEBUG-MARK
+        AppLogger.logDownload(socket.boundIdentifier, bytes)
         val result = translator.translate(bytes)
         callback(result)
     }

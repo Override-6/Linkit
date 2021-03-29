@@ -12,6 +12,8 @@
 
 package fr.linkit.core.local.concurrency
 
+import fr.linkit.api.local.system.AppLogger
+
 import java.util.concurrent.Executors
 import scala.concurrent.ExecutionContext
 
@@ -24,5 +26,5 @@ object AsyncExecutionContext extends ExecutionContext {
 
     override def execute(runnable: Runnable): Unit = ses.submit(runnable)
 
-    override def reportFailure(cause: Throwable): Unit = causAppLogger.exception(e)
+    override def reportFailure(cause: Throwable): Unit = AppLogger.printStackTrace(cause)
 }

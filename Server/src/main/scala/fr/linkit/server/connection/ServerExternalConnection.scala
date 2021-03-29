@@ -19,11 +19,12 @@ import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, 
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.fundamental.TaskInitPacket
 import fr.linkit.core.connection.packet.traffic.DirectInjectionContainer
 import fr.linkit.core.local.concurrency.BusyWorkerPool
-import fr.linkit.core.local.system.{AppLogger, SystemPacket}
+import fr.linkit.core.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket

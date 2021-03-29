@@ -15,7 +15,7 @@ package fr.linkit.core.connection.task
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.packet.traffic.ChannelScope
 import fr.linkit.api.connection.task.{Fallible, TaskException, TaskExecutor, TaskOperationFailException}
-import fr.linkit.api.local.system.Reason
+import fr.linkit.api.local.system.{AppLogger, Reason}
 import fr.linkit.core.connection.packet.traffic.channel.SyncPacketChannel
 
 import java.io.IOException
@@ -40,13 +40,13 @@ class TaskTicket(executor: TaskExecutor,
                     fallible.fail("Task aborted from an external handler")
                 } catch {
                     case e: InvocationTargetException if e.getCause.isInstanceOf[TaskException] => Console.err.println(e.getMessage)
-                    case e: InvocationTargetException => e.getCausAppLogger.exception(e)
+                    case e: InvocationTargetException => AppLogger.printStackTrace(e.getCause)
                     case e: TaskOperationFailException =>
                         Console.err.println(e.getMessage)
                     //e.printStackTrace(errRemote)
 
                     case NonFatal(e) =>
-                        AppLogger.exception(e)
+                        AppLogger.printStackTrace(e)
                     //e.printStackTrace(errRemote)
                 }
             case _ =>
@@ -77,7 +77,7 @@ class TaskTicket(executor: TaskExecutor,
             //e.printStackTrace(errRemote)
 
             case NonFatal(e) =>
-                AppLogger.exception(e)
+                AppLogger.printStackTrace(e)
             //e.printStackTrace(errRemote)
 
         } finally {

@@ -13,7 +13,7 @@
 package fr.linkit.server
 
 import fr.linkit.api.local.plugin.Plugin
-import fr.linkit.core.local.system.AppLogger
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 

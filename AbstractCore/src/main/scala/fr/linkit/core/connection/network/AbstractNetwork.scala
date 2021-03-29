@@ -17,11 +17,11 @@ import fr.linkit.api.connection.network.{Network, NetworkEntity}
 import fr.linkit.api.connection.packet.traffic.ChannelScope
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, SharedCollection}
 import fr.linkit.core.connection.network.cache.{NetworkSharedCacheManager, SyncAsyncSender}
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.connection.packet.traffic.channel.{AbstractPacketChannel, RequestPacketChannel, SyncAsyncPacketChannel}
-import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 

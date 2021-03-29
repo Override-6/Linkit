@@ -13,13 +13,12 @@
 package fr.linkit.server.connection
 
 import java.net.SocketException
-
 import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, DirectInjectionContainer}
-import fr.linkit.core.local.system.AppLogger
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DirectInjectionContainer, DynamicSocket}
 
 import scala.util.control.NonFatal
 

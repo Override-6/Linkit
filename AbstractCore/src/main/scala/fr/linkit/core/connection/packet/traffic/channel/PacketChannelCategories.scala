@@ -15,10 +15,10 @@ package fr.linkit.core.connection.packet.traffic.channel
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketInjection}
 import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.connection.packet.traffic.DirectInjectionContainer
-import fr.linkit.core.local.system.AppLogger
 
 import scala.collection.mutable
 
