@@ -15,8 +15,7 @@ package fr.linkit.core.connection.packet.traffic
 import fr.linkit.api.connection.packet.traffic.{InjectionContainer, PacketInjection}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.BusyWorkerPool
-import fr.linkit.core.local.concurrency.BusyWorkerPool.{currentTaskId, currentWorker}
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
 
 import scala.collection.mutable
 

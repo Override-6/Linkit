@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.traffic.PacketInjection
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.traffic.DirectInjection.{PacketBuffer, PacketCallback}
-import fr.linkit.core.local.concurrency.BusyWorkerPool.{currentTaskId, currentWorker}
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
 
 import java.nio.BufferOverflowException
 import scala.collection.mutable.ListBuffer

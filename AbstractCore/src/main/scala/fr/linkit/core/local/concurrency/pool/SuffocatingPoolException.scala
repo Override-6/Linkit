@@ -10,7 +10,7 @@
  * questions.
  */
 
-package fr.linkit.core.local.concurrency
+package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.system.AppException
 

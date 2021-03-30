@@ -19,7 +19,7 @@ import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.map.MapModification._
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.core.local.concurrency.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -134,7 +134,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
         addListener(listener) //Due to hyper parallelized thread execution,
         //the awaited key could be added since the 'found' value has been created.
-        BusyWorkerPool.executeRemainingTasksWhile(!(contains(k) || found))
+        BusyWorkerPool.executeRemainingTasksWhileThen(!(contains(k) || found))
         removeListener(listener)
         //println("Done !")
         apply(k)

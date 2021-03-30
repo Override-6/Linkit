@@ -22,7 +22,7 @@ import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
 import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel.ResponseSubmitter
-import fr.linkit.core.local.concurrency.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
 
 import java.util.NoSuchElementException
 import scala.collection.mutable

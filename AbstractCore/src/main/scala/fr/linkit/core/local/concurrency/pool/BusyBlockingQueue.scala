@@ -10,11 +10,12 @@
  * questions.
  */
 
-package fr.linkit.core.local.concurrency
+package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.now
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 import java.util

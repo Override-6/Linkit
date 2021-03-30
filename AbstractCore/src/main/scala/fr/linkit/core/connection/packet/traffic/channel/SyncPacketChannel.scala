@@ -16,7 +16,8 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, _}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.Reason
-import fr.linkit.core.local.concurrency.{BusyWorkerPool, PacketReaderThread}
+import fr.linkit.core.local.concurrency.PacketReaderThread
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ScalaUtils.ensureType
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}

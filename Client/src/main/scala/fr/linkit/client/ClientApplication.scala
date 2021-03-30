@@ -20,7 +20,7 @@ import fr.linkit.api.local.system.{AppException, AppLogger}
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
-import fr.linkit.core.local.concurrency.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.plugin.LinkitPluginManager
 
 import scala.collection.mutable

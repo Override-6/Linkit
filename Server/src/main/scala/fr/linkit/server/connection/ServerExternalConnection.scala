@@ -23,7 +23,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.fundamental.TaskInitPacket
 import fr.linkit.core.connection.packet.traffic.DirectInjectionContainer
-import fr.linkit.core.local.concurrency.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull
 

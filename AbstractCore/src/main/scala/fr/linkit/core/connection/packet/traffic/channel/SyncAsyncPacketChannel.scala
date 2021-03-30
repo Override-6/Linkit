@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFa
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
-import fr.linkit.core.local.concurrency.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ScalaUtils.ensureType
 import fr.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 

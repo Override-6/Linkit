@@ -18,7 +18,7 @@ import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResul
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.core.connection.network.cache.collection.SharedCollection
-import fr.linkit.core.local.concurrency.BusyWorkerPool.{currentTaskId, currentWorker}
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal

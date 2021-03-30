@@ -10,16 +10,15 @@
  * questions.
  */
 
-package fr.linkit.core.local.concurrency
+package fr.linkit.core.local.concurrency.pool
 
 import scala.collection.mutable.ListBuffer
 
-//TODO
+//TODO This class is unused
+@deprecated("Under development, will not work at all.")
 class Choreographer(pool: BusyWorkerPool, maxThreadCount: Int, threadChunkSize: Int, threadMargin: Int) {
 
-    type WorkerThread = BusyWorkerPool#WorkerThread
-
-    private val threads  = ListBuffer.empty[WorkerThread]
+    private val threads  = ListBuffer.empty[BusyWorkerThread]
     private val poolName = pool.name
 
     def notifyTaskSubmit(): Unit = {
@@ -50,7 +49,7 @@ class Choreographer(pool: BusyWorkerPool, maxThreadCount: Int, threadChunkSize: 
 
     }
 
-    def addThread(thread: WorkerThread): Unit = {
+    def addThread(thread: BusyWorkerThread): Unit = {
         /*if (thread.ownerPool != pool)
             throw new IllegalArgumentException(s"Given unexpected thread to ${poolName}'s Choreographer. (pools mismatches !)")
 

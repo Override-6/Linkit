@@ -20,7 +20,7 @@ import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.collection.CollectionModification._
 import fr.linkit.core.connection.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.core.local.concurrency.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
 

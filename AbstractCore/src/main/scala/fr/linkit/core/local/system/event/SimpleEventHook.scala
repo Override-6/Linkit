@@ -13,7 +13,7 @@
 package fr.linkit.core.local.system.event
 
 import fr.linkit.api.local.system.event.{Event, EventHook, EventListener}
-import fr.linkit.core.local.concurrency.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
 import org.jetbrains.annotations.NotNull
 
@@ -26,7 +26,7 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
         addOnce {
             BusyWorkerPool.stopExecuteRemainingTasks(thread)
         }
-        BusyWorkerPool.executeRemainingTasksWhile(true)
+        BusyWorkerPool.executeRemainingTasksWhileThen(true)
     }
 
     override def add(action: E => Unit): Unit = consumers += action

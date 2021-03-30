@@ -1,15 +1,14 @@
-package fr.linkit.core.local.concurrency
+package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
 
 import scala.collection.mutable.ListBuffer
 
 class WorkerEntertainer(pool: BusyWorkerPool) {
 
-    type WorkerThread = BusyWorkerPool#WorkerThread
-    private val entertainedThreads = new ListBuffer[WorkerThread]()
+    private val entertainedThreads = new ListBuffer[BusyWorkerThread]()
 
     @workerExecution
     def amuseCurrentThread(): Unit = {
@@ -22,7 +21,7 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
         AppLogger.error(s"$currentTaskId <> Amusing current thread...")
         val currentWorker = BusyWorkerPool.currentWorker
         entertainedThreads += currentWorker
-        BusyWorkerPool.executeRemainingTasksWhile(condition)
+        BusyWorkerPool.executeRemainingTasksWhileThen(condition)
         entertainedThreads -= currentWorker
     }
 
@@ -47,7 +46,7 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
     }
 
     @workerExecution
-    private def stopThreadsAmusement(action: ListBuffer[WorkerThread] => Iterable[WorkerThread]): Unit = {
+    private def stopThreadsAmusement(action: ListBuffer[BusyWorkerThread] => Iterable[BusyWorkerThread]): Unit = {
         pool.ensureCurrentThreadOwned("Threads cannot play with strangers.")
 
         val unamused = action(entertainedThreads)

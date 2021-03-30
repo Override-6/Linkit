@@ -28,7 +28,8 @@ import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DirectInjectionContainer, DynamicSocket}
-import fr.linkit.core.local.concurrency.{BusyWorkerPool, PacketReaderThread}
+import fr.linkit.core.local.concurrency.PacketReaderThread
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.system.{Rules, SystemPacket}
 import org.jetbrains.annotations.NotNull
 

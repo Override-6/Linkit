@@ -5,8 +5,8 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel.{Request, Response, ResponseSubmitter}
-import fr.linkit.core.local.concurrency.BusyWorkerPool
-import fr.linkit.core.local.concurrency.BusyWorkerPool.{currentTaskId, currentWorker}
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
 import fr.linkit.core.local.utils.ConsumerContainer
 import fr.linkit.core.local.utils.ScalaUtils.ensureType
 
@@ -18,9 +18,9 @@ import scala.reflect.ClassTag
 
 class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
 
-    private val requests            = mutable.LinkedHashMap.empty[Long, Request]
-    private val requestConsumers    = ConsumerContainer[(Packet, DedicatedPacketCoordinates, ResponseSubmitter)]()
-    @volatile private var requestID = 0
+    private[RequestPacketChannel] val requests         = mutable.LinkedHashMap.empty[Long, Request]
+    private                       val requestConsumers = ConsumerContainer[(Packet, DedicatedPacketCoordinates, ResponseSubmitter)]()
+    @volatile private var requestID                    = 0
 
     override def handleInjection(injection: PacketInjection): Unit = {
         val coords = injection.coordinates
@@ -45,6 +45,7 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
     }
 
     AppLogger.fatal("$currentTaskId <> CREATED INSTANCE OF REQUEST PACKET CHANNEL : " + this)
+
     def addRequestListener(callback: (Packet, DedicatedPacketCoordinates, ResponseSubmitter) => Unit): Unit = {
         AppLogger.fatal(s"$currentTaskId <> ADDED REQUEST LISTENER : $requests " + this)
         requestConsumers += (tuple => callback(tuple._1, tuple._2, tuple._3))
@@ -62,7 +63,7 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
         val pool = BusyWorkerPool.checkCurrentIsWorker()
 
         val requestID = nextRequestID
-        val request   = Request(requestID, pool.newBusyQueue)
+        val request   = Request(requestID, pool.newBusyQueue, this)
 
         requests.put(requestID, request)
         AppLogger.error(s"$currentTaskId <> Adding request '$request' into $requests " + this)
@@ -82,18 +83,27 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
 
     override def createNew(scope: ChannelScope): RequestPacketChannel = new RequestPacketChannel(scope)
 
-    case class Request(id: Long, queue: BlockingQueue[Response]) {
+    case class Request(id: Long, queue: BlockingQueue[Response], handler: RequestPacketChannel) {
 
         private val responseConsumer = ConsumerContainer[Response]()
 
         def nextResponse: Response = {
             AppLogger.debug(s"$currentTaskId <> Waiting for response... ($id) " + this)
-            queue.take()
+            val response = queue.take()
+            AppLogger.error(s"$currentTaskId <> RESPONSE RECEIVED ! $response")
+            response
         }
+        /*
+        * JE CROIS QUE J'AI TROuVé LE BUG :D
+        * En gros les threads attendent pour une réponse qu'ils ont antérieurement
+        *
+        * */
 
         def addOnResponseReceived(callback: Response => Unit): Unit = {
             responseConsumer += callback
         }
+
+        def delete(): Unit = handler.requests.remove(id)
 
         private[RequestPacketChannel] def addResponse(response: Response): Unit = {
             AppLogger.error(s"$currentTaskId <> ADDING RESPONSE " + this)
@@ -136,7 +146,7 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
             val snapshot = Response(id, packets.toArray, properties.toMap, scope.writer.supportIdentifier)
             AppLogger.debug(s"$currentTaskId <> Submitting response ($id)..." + this)
             scope.sendTo(snapshot, requester)
-            AppLogger.debug(s"$currentTaskId <> Response submit !" + this)
+            AppLogger.debug(s"$currentTaskId <> Response submit ! ")
             isSubmit = true
         }
 
@@ -149,8 +159,7 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
     case class Response(id: Long,
                         packets: Array[Packet],
                         private val properties: Map[String, Serializable],
-                        answerer: String) extends Packet {
-        self =>
+                        answerer: String) extends Packet { self =>
 
         private var packetIndex = 0
 

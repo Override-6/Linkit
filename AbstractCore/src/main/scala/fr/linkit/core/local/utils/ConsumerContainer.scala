@@ -12,11 +12,10 @@
 
 package fr.linkit.core.local.utils
 
-import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.BusyWorkerPool
-import fr.linkit.core.local.concurrency.BusyWorkerPool.{currentTaskId, currentWorker}
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal

@@ -24,7 +24,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 import fr.linkit.core.connection.packet.traffic.DynamicSocket
-import fr.linkit.core.local.concurrency.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.system.event.DefaultEventNotifier
 import fr.linkit.core.local.system.{Rules, SystemPacketChannel}
 import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
