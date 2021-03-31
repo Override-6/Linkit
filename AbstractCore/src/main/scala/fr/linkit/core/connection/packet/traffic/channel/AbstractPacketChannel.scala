@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{AppLogger, ForbiddenIdentifierException, Reason}
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -64,7 +64,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     }
 
     def storePacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        AppLogger.debug(s"$currentTaskId <> STORING PACKET $packet AND COORDS $coords")
+        AppLogger.debug(s"$currentTasksId <> STORING PACKET $packet AND COORDS $coords")
         if (coords.injectableID != identifier) {
             throw new IllegalArgumentException("Stored packet coordinates must target the same injectable identifier as this channel.")
         }

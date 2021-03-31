@@ -15,7 +15,7 @@ package fr.linkit.core.connection.packet.traffic
 import fr.linkit.api.connection.packet.traffic.{InjectionContainer, PacketInjection}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable
 
@@ -25,16 +25,16 @@ class DirectInjectionContainer extends InjectionContainer {
 
     override def makeInjection(packet: Packet, coordinates: DedicatedPacketCoordinates): PacketInjection = this.synchronized {
         val number = packet.number
-        AppLogger.debug(s"${currentTaskId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates")
+        AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates")
         val id     = coordinates.injectableID
         val sender = coordinates.senderID
 
         val injection = processingInjections.get((id, sender)) match {
             case Some(value) =>
-                AppLogger.debug(s"${currentTaskId} <> $number -> INJECTION ALREADY EXISTS, ADDING PACKET.")
+                AppLogger.debug(s"${currentTasksId} <> $number -> INJECTION ALREADY EXISTS, ADDING PACKET.")
                 value
             case None        =>
-                AppLogger.debug(s"${currentTaskId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
+                AppLogger.debug(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
                 new DirectInjection(coordinates)
         }
         processingInjections.put((id, sender), injection)

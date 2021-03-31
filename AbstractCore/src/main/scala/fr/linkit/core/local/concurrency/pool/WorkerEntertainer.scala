@@ -2,13 +2,17 @@ package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable.ListBuffer
 
 class WorkerEntertainer(pool: BusyWorkerPool) {
 
     private val entertainedThreads = new ListBuffer[BusyWorkerThread]()
+
+    def this() {
+        this(BusyWorkerPool.ensureCurrentIsWorker())
+    }
 
     @workerExecution
     def amuseCurrentThread(): Unit = {
@@ -17,8 +21,8 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
 
     @workerExecution
     def amuseCurrentThreadWhile(condition: => Boolean): Unit = {
-        pool.ensureCurrentThreadOwned("Threads cannot play with strangers.")
-        AppLogger.error(s"$currentTaskId <> Amusing current thread...")
+        pool.ensureCurrentThreadOwned("Current thread ")
+        AppLogger.error(s"$currentTasksId <> Amusing current thread...")
         val currentWorker = BusyWorkerPool.currentWorker
         entertainedThreads += currentWorker
         BusyWorkerPool.executeRemainingTasksWhileThen(condition)
@@ -27,7 +31,7 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
 
     @workerExecution
     def stopFirstNThreadAmusement(n: Int): Unit = {
-        stopThreadsAmusement( _.take(n))
+        stopThreadsAmusement(_.take(n))
     }
 
     @workerExecution
@@ -37,7 +41,7 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
 
     @workerExecution
     def stopLastNThreadAmusement(n: Int): Unit = {
-        stopThreadsAmusement( _.takeRight(n))
+        stopThreadsAmusement(_.takeRight(n))
     }
 
     @workerExecution
@@ -46,19 +50,25 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
     }
 
     @workerExecution
+    def stopThreadAmusement(thread: BusyWorkerThread): Unit = {
+        if (!entertainedThreads.contains(thread))
+            throw new NoSuchElementException(s"Provided thread is not entertained ! (${thread.getName})")
+        BusyWorkerPool.stopWaitRemainingTasks(thread)
+    }
+
+    @workerExecution
     private def stopThreadsAmusement(action: ListBuffer[BusyWorkerThread] => Iterable[BusyWorkerThread]): Unit = {
-        pool.ensureCurrentThreadOwned("Threads cannot play with strangers.")
 
         val unamused = action(entertainedThreads)
 
-        AppLogger.error(s"$currentTaskId <> unamused = " + unamused)
-        AppLogger.error(s"$currentTaskId <> entertainedThreads = " + entertainedThreads)
+        AppLogger.error(s"$currentTasksId <> unamused = " + unamused)
+        AppLogger.error(s"$currentTasksId <> entertainedThreads = " + entertainedThreads)
 
         if (unamused.isEmpty || entertainedThreads.isEmpty)
-            return //Instruction below could throw NoSuchElementException when removing unamused list to entertainedThreads.
+            return //Instructions below could throw NoSuchElementException when removing unamused list to entertainedThreads.
 
         for (thread <- unamused) {
-            BusyWorkerPool.stopExecuteRemainingTasks(thread)
+            BusyWorkerPool.stopWaitRemainingTasks(thread)
         }
         entertainedThreads --= unamused
     }

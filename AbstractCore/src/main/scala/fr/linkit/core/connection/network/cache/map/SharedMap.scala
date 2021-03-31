@@ -19,7 +19,7 @@ import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.map.MapModification._
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, WorkerEntertainer}
 import fr.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -32,6 +32,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
     private val networkListeners        = ConsumerContainer[(MapModification, K, V)]()
     private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]
+    private val entertainer = new WorkerEntertainer()
 
     @volatile private var modCount: Int = 0
 
@@ -54,7 +55,6 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
      * */
     def addListener(action: ((MapModification, K, V)) => Unit): this.type = {
         networkListeners += action
-        //println(s"networkListeners = ${networkListeners}")
         this
     }
 
@@ -128,13 +128,11 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         val thread = BusyWorkerPool.currentWorker
 
         val listener: ((MapModification, K, V)) => Unit = t => {
-            found = t._2 == k
-            BusyWorkerPool.stopExecuteRemainingTasks(thread)
+            entertainer.stopFirstThreadAmusement()
         }
 
-        addListener(listener) //Due to hyper parallelized thread execution,
-        //the awaited key could be added since the 'found' value has been created.
-        BusyWorkerPool.executeRemainingTasksWhileThen(!(contains(k) || found))
+        addListener(listener)
+        entertainer.amuseCurrentThread()
         removeListener(listener)
         //println("Done !")
         apply(k)

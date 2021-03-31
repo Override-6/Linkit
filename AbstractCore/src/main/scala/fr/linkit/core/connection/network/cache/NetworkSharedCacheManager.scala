@@ -22,7 +22,7 @@ import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
 import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel.ResponseSubmitter
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import java.util.NoSuchElementException
 import scala.collection.mutable
@@ -208,7 +208,7 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     private def println(msg: String): Unit = {
-        AppLogger.trace(s"$currentTaskId <> <$family, $ownerID> $msg")
+        AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
 }

@@ -22,7 +22,7 @@ import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, Sh
 import fr.linkit.core.connection.network.cache.{NetworkSharedCacheManager, SyncAsyncSender}
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.connection.packet.traffic.channel.{AbstractPacketChannel, RequestPacketChannel, SyncAsyncPacketChannel}
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable
 
@@ -57,12 +57,12 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
         caches.get(family)
                 .fold {
-                    AppLogger.debug(s"$currentTaskId <> --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
+                    AppLogger.debug(s"$currentTasksId <> --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
                     val cache = new NetworkSharedCacheManager(family, owner, cacheCommunicator, cacheRequestChannel)
                     //Will inject all packet that the new cache have possibly missed.
-                    AppLogger.debug(s"$currentTaskId <> PUTTING CACHE <$family, $owner> INTO CACHES")
+                    AppLogger.debug(s"$currentTasksId <> PUTTING CACHE <$family, $owner> INTO CACHES")
                     caches.put(family, cache)
-                    AppLogger.debug(s"$currentTaskId <> CACHES <$family, $owner> IS NOW : $caches")
+                    AppLogger.debug(s"$currentTasksId <> CACHES <$family, $owner> IS NOW : $caches")
                     cacheCommunicator.injectStoredPackets()
                     cache: SharedCacheManager
                 }(cache => {
@@ -92,7 +92,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                   (handler: (Packet, NetworkSharedCacheManager) => Unit): Unit = {
             packet match {
                 case WrappedPacket(family, subPacket) =>
-                    AppLogger.warn(s"$currentTaskId <> FINDING CACHE '$family' FOR PACKET $packet into $caches")
+                    AppLogger.warn(s"$currentTasksId <> FINDING CACHE '$family' FOR PACKET $packet into $caches")
                     caches.get(family)
                             //If the caches does not contains the family tag, this mean that it could possibly be
                             //opened in the future, so received packets will be stored and injected every
@@ -118,7 +118,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def init(): Unit = {
-        sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"$currentTaskId <> SharedIdentifiers Updated : $sharedIdentifiers"))
+        sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"$currentTasksId <> SharedIdentifiers Updated : $sharedIdentifiers"))
         connection.translator.updateCache(globalCache)
     }
 

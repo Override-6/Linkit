@@ -24,7 +24,7 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
     override def await(): Unit = {
         val thread = BusyWorkerPool.currentWorker
         addOnce {
-            BusyWorkerPool.stopExecuteRemainingTasks(thread)
+            BusyWorkerPool.stopWaitRemainingTasks(thread)
         }
         BusyWorkerPool.executeRemainingTasksWhileThen(true)
     }

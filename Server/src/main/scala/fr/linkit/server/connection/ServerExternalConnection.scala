@@ -44,7 +44,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     @volatile private var alive = false
 
     override def shutdown(): Unit = {
-        BusyWorkerPool.checkCurrentIsWorker()
+        BusyWorkerPool.ensureCurrentIsWorker()
         alive = false
         /*if (reason.isInternal && isConnected) {
             val sysChannel = session.channel
@@ -102,7 +102,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override def isConnected: Boolean = getState == ExternalConnectionState.CONNECTED
 
     private[connection] def updateSocket(socket: Socket): Unit = {
-        BusyWorkerPool.checkCurrentIsWorker()
+        BusyWorkerPool.ensureCurrentIsWorker()
         session.updateSocket(socket)
     }
 

@@ -18,7 +18,7 @@ import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResul
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.core.connection.network.cache.collection.SharedCollection
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
@@ -63,7 +63,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
                 rawSerializer
             }
             try {
-                AppLogger.debug(s"${currentTaskId} <> Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
+                AppLogger.debug(s"${currentTasksId} <> Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
                 PacketSerializationResult(packet, coordinates, () => serializer)
             } catch {
                 case NonFatal(e) =>

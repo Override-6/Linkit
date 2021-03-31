@@ -54,7 +54,8 @@ object AppLogger {
     def log(level: Level, msg: AnyRef, throwable: Throwable): Unit = logger.log(level, msg, throwable)
 
     def printStackTrace(e: Throwable): Unit = {
-        logger.error(s"Exception in thread '${Thread.currentThread().getName}'" + e.getMessage, e)
+        logger.error(s"Exception in thread '${Thread.currentThread().getName}'" + e.getMessage)
+        e.printStackTrace()
     }
 
     def discoverLines(from: Int, to: Int): Unit = {

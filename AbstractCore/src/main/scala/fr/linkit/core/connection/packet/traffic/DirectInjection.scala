@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.traffic.PacketInjection
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.traffic.DirectInjection.{PacketBuffer, PacketCallback}
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import java.nio.BufferOverflowException
 import scala.collection.mutable.ListBuffer
@@ -86,12 +86,12 @@ object DirectInjection {
         def insert(packet: Packet): Unit = {
             var index        = 0
             val packetNumber = packet.number
-            AppLogger.debug(s"${currentTaskId} <> Inserting $packet in buffer ${buff.mkString("Array(", ", ", ")")}")
+            AppLogger.debug(s"${currentTasksId} <> Inserting $packet in buffer ${buff.mkString("Array(", ", ", ")")}")
             while (index < buff.length) {
                 val indexPacket = buff(index)
                 if (indexPacket == null) {
                     buff(index) = packet
-                    AppLogger.debug(s"${currentTaskId} <> Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
+                    AppLogger.debug(s"${currentTasksId} <> Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
                     length += 1
                     return
                 }
@@ -131,7 +131,7 @@ object DirectInjection {
             while (count < length) {
                 val packet = buff(i)
                 totalProcess += 1
-                AppLogger.debug(s"${currentTaskId} <> PROCESSING $packet ($totalProcess / ${packet.number})")
+                AppLogger.debug(s"${currentTasksId} <> PROCESSING $packet ($totalProcess / ${packet.number})")
                 if (packet != null) {
                     action(packet)
                     count += 1

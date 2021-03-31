@@ -2,10 +2,10 @@ package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.EntertainedThread
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.{currentTaskId, workerThreadGroup}
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.workerThreadGroup
 
 import java.util.concurrent.locks.LockSupport
-import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 /**
  * The representation of a java thread, extending from [[Thread]].
@@ -16,58 +16,80 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
                                                                        id: Int)
         extends Thread(workerThreadGroup, target, s"${owner.name}'s Thread#${id}") with EntertainedThread {
 
-    private val alternatives = mutable.ListBuffer.empty[() => Unit]
+    private              var continueWorkflow       : Boolean         = true
+    private[concurrency] var isParkingForWorkflow   : Boolean         = false
+    private[concurrency] var taskRecursionDepthCount: Int             = 0
+    private              var currentTaskID          : Int             = -1
+    private val currentTasksID                      : ListBuffer[Int] = ListBuffer()
 
-    private                        var continueWorkflow          : Boolean = true
-    private[concurrency]           var isParkingForRecursiveTask0: Boolean = false
-    private[concurrency]           var taskRecursionDepthCount   : Int     = 0
-    @volatile private[concurrency] var currentTaskID             : Int     = 0
+    private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
+        while (continueWorkflow) {
+            isParkingForWorkflow = true
+            val t = parkAction
+            AppLogger.error(s"$tasksId <> This thread has been unparked.")
+            isParkingForWorkflow = false
 
-    def submitAlternative(check: => Boolean, retake: () => Unit): Unit = {
-        val alternative = () => if (!check) {
-            alternatives -= alternative
-            retake
+            AppLogger.error(s"$tasksId <> Continue workflow...")
+            workflow(t)
+            AppLogger.error(s"$tasksId <> Workflow have ended !")
         }
-        alternatives += alternative
+        this.continueWorkflow = true //set it to true for future loopWorkflow
     }
 
     /**
-     * Will execute awaitAction: T, then execute workflow(T) or retake(T) if the thread should retake this task.
+     * Will execute awaitAction: T, then execute workflow(T) while field continueWorkflow is ready..
      * all alternatives will be executed before executing awaitAction.
-     * @param parkAction the action that will make the thread wait.
-     * @param continueWait a condition checked before any execution could take a time to finalize.
-     * @param workflow the action to perform after the awaitAction accomplished.
-     * @param retake the action to perform if the thread must retake this task.
      * */
-    private[concurrency] def awaitTaskSubmissionThen[T](parkAction: => T, continueWait: => Boolean)(workflow: T => Unit)(retake: => Unit): Unit = {
-        AppLogger.error(s"${currentTaskId} <> WAITING FOR RECURSIVE TASK...")
-
-        submitAlternative(continueWait, () => retake)
-
-        for (i <- 0 to alternatives.size) {
-            if (!continueWait)
-                return
-            val alternative = alternatives(i)
-            alternative.apply()
-        }
-
-        isParkingForRecursiveTask0 = true
-        val t = parkAction
-        AppLogger.error(s"${currentTaskId} <> This thread has been unparked.")
-        isParkingForRecursiveTask0 = false
-        if (!continueWorkflow || !continueWait) {
-            continueWorkflow = true
+    private[concurrency] def stopWorkflowLoop(): Unit = {
+        if (!isWaitingForRecursiveTask)
             return
-        }
-        workflow(t)
-    }
-
-    private[concurrency] def resumeTaskExecution(continueWorkflow: Boolean = true): Unit = {
-        this.continueWorkflow = continueWorkflow
+        this.continueWorkflow = false
         LockSupport.unpark(this)
     }
 
-    override def isWaitingForRecursiveTask: Boolean = isParkingForRecursiveTask0
+    private[concurrency] def addTaskID(id: Int): Unit = {
+        currentTasksID += id
+        currentTaskID = id
+        isUpdated = true
+    }
+
+    private[concurrency] def removeTaskID(id: Int): Unit = {
+        currentTasksID -= id
+        currentTaskID = currentTasksID.lastOption.getOrElse(-1)
+        isUpdated = true
+    }
+
+    def getCurrentTaskID: Int = currentTaskID
+
+    //debug only
+    private var isUpdated          = true
+    private var tasksIdStr: String = _
+
+    def tasksId: String = {
+        if (currentTasksID.isEmpty)
+            return s"${Console.YELLOW}[]"
+        if (!isUpdated)
+            return tasksIdStr
+
+        val current = getCurrentTaskID
+        val sb      = new StringBuilder(s"${Console.YELLOW}[")
+        currentTasksID.foreach(taskID => {
+            if (taskID == current) {
+                sb.append(Console.RED)
+                        .append(taskID)
+                        .append(Console.YELLOW)
+            } else {
+                sb.append(taskID)
+            }
+            sb.append(',')
+        })
+        tasksIdStr = sb.dropRight(1) // remove last ',' char
+                .append(']')
+                .toString()
+        tasksIdStr
+    }
+
+    override def isWaitingForRecursiveTask: Boolean = isParkingForWorkflow
 
     override def taskRecursionDepth: Int = taskRecursionDepthCount
 

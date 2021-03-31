@@ -15,7 +15,7 @@ package fr.linkit.core.local.concurrency.pool
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.local.concurrency.now
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 import java.util
@@ -67,7 +67,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
     @workerExecution
     override def take(): A = {
-        AppLogger.error(s"$currentTaskId <> Taking item in $this")
+        AppLogger.error(s"$currentTasksId <> Taking item in $this")
         entertainer.amuseCurrentThreadWhile(content.isEmpty) //will be released once the queue is empty
         poll()
     }

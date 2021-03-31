@@ -15,7 +15,7 @@ package fr.linkit.core.local.utils
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTaskId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
@@ -25,9 +25,9 @@ class ConsumerContainer[A]() {
     private val consumers = ListBuffer.empty[ConsumerExecutor]
 
     def add(consumer: A => Unit): this.type = {
-        AppLogger.trace(s"${currentTaskId} <> ADDING CONSUMER $consumer INTO $consumers...")
+        AppLogger.trace(s"${currentTasksId} <> ADDING CONSUMER $consumer INTO $consumers...")
         consumers += ConsumerExecutor(consumer, false)
-        AppLogger.trace(s"${currentTaskId} <> CONSUMER ADDED ($consumers)")
+        AppLogger.trace(s"${currentTasksId} <> CONSUMER ADDED ($consumers)")
         this
     }
 
@@ -72,7 +72,7 @@ class ConsumerContainer[A]() {
 
     @workerExecution
     def applyAllLater(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        val pool = BusyWorkerPool.checkCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
+        val pool = BusyWorkerPool.ensureCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
         pool.runLater {
             applyAll(t, onException)
         }
@@ -80,12 +80,12 @@ class ConsumerContainer[A]() {
     }
 
     def applyAll(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        AppLogger.trace(s"${currentTaskId} <> CONSUMERS = $consumers")
+        AppLogger.trace(s"${currentTasksId} <> CONSUMERS = $consumers")
         Array.from(consumers).foreach(consumer => {
             try {
-                AppLogger.trace(s"${currentTaskId} <> Consumming $consumer...")
+                AppLogger.trace(s"${currentTasksId} <> Consumming $consumer...")
                 consumer.execute(t)
-                AppLogger.trace(s"${currentTaskId} <> Consummer $consumer consumed !")
+                AppLogger.trace(s"${currentTasksId} <> Consummer $consumer consumed !")
             } catch {
                 case NonFatal(e) => onException(e)
             }
