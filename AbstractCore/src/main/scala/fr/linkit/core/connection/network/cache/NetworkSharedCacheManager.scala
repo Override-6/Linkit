@@ -73,6 +73,7 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     override def update(): this.type = {
+        println("This cache will be updated.")
         LocalCacheHandler.updateAll()
         //sharedObjects will be updated by LocalCacheHandler.updateAll call
         this
@@ -92,7 +93,7 @@ class NetworkSharedCacheManager(override val family: String,
     def handleRequest(packet: Packet, coords: DedicatedPacketCoordinates, response: ResponseSubmitter): Unit = {
         println(s"HANDLING REQUEST $packet, $coords")
 
-        packet match {
+         packet match {
 
             case LongPacket(cacheID) =>
                 val senderID: String = coords.senderID

@@ -13,6 +13,7 @@
 package fr.linkit.client.network
 
 import fr.linkit.api.connection.network.NetworkEntity
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.client.connection.ClientConnection
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
@@ -26,7 +27,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
 
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
-                .addListener((_, _, _) => if (entities != null) () /*println("entities are now : " + entities)*/) //debug purposes
+                .addListener((_, _, _) => if (entities != null) AppLogger.debug("entities are now : " + entities)) //debug purposes
                 .mapped(createEntity)
                 .addListener(handleTraffic)
     }

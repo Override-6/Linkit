@@ -35,7 +35,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     protected val sharedIdentifiers: SharedCollection[String] = globalCache.get(3, SharedCollection.set[String])
     protected val communicator     : SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScope.broadcast, SyncAsyncPacketChannel.busy)
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
-    init()
+    postInit()
 
     override def listEntities: List[NetworkEntity] = entities.to(List)
 
@@ -56,19 +56,20 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             throw new NullPointerException("Family or owner is null.")
 
         caches.get(family)
-            .fold(caches.synchronized {
-                AppLogger.debug(s"$currentTasksId <> --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
-                val cache = new NetworkSharedCacheManager(family, owner, cacheCommunicator, cacheRequestChannel)
-                //Will inject all packet that the new cache have possibly missed.
-                AppLogger.debug(s"$currentTasksId <> PUTTING CACHE <$family, $owner> INTO CACHES")
-                caches.put(family, cache)
-                AppLogger.debug(s"$currentTasksId <> CACHES <$family, $owner> IS NOW : $caches")
-                cacheCommunicator.injectStoredPackets()
-                cache: SharedCacheManager
-            })(cache => {
-                cache.update()
-                cache
-            })
+                .fold(caches.synchronized {
+                    AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
+                    val cache = new NetworkSharedCacheManager(family, owner, cacheCommunicator, cacheRequestChannel)
+                    //Will inject all packet that the new cache have possibly missed.
+                    AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: PUTTING CACHE <$family, $owner> INTO CACHES")
+                    caches.put(family, cache)
+                    AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
+                    cacheCommunicator.injectStoredPackets()
+                    cache: SharedCacheManager
+                })(cache => {
+                    AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: <$family, $owner> UpDaTiNg CaChE")
+                    cache.update()
+                    cache
+                })
     }
 
     override def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager = {
@@ -92,36 +93,38 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                   (handler: (Packet, NetworkSharedCacheManager) => Unit): Unit = {
             packet match {
                 case WrappedPacket(family, subPacket) =>
-                    AppLogger.warn(s"$currentTasksId <> FINDING CACHE '$family' FOR PACKET $packet into $caches")
                     val opt = caches.synchronized {
+                        AppLogger.warn(s"$currentTasksId <> ${connection.supportIdentifier}: FINDING CACHE '$family' FOR PACKET $packet into $caches")
                         caches.get(family)
                     }
                     opt
-                        //If the caches does not contains the family tag, this mean that it could possibly be
-                        //opened in the future, so received packets will be stored and injected every
-                        //time a cache opens.
-                        .fold(channel.storePacket(WrappedPacket("a", packet), coords))(cache => {
-                            handler(subPacket, cache)
-                        })
+                            //If the caches does not contains the family tag, this mean that it could possibly be
+                            //opened in the future, so received packets will be stored and injected every
+                            //time a cache opens.
+                            .fold(channel.storePacket(WrappedPacket("a", packet), coords))(cache => {
+                                handler(subPacket, cache)
+                            })
             }
         }
 
+        AppLogger.debug(s"${connection.supportIdentifier}: Adding listener for cache communication...")
         cacheCommunicator.addAsyncListener((packet, coords) => {
             listen(cacheCommunicator, packet, coords) {
                 (subPacket, cache) => cache.handleCachePacket(subPacket, coords)
             }
         })
+        AppLogger.debug(s"${connection.supportIdentifier}: Adding listener for cache manager requests/responses...")
         cacheRequestChannel.addRequestListener((packet, coords, submitter) => {
             listen(cacheRequestChannel, packet, coords) {
                 (subPacket, cache) => cache.handleRequest(subPacket, coords, submitter)
             }
         })
 
-        newCacheManager("Global Cache", serverIdentifier)
+        newCacheManager(s"Global Cache", serverIdentifier)
     }
 
-    private def init(): Unit = {
-        sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"$currentTasksId <> SharedIdentifiers Updated : $sharedIdentifiers"))
+    private def postInit(): Unit = {
+        sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: SharedIdentifiers Updated : $sharedIdentifiers"))
         connection.translator.updateCache(globalCache)
     }
 

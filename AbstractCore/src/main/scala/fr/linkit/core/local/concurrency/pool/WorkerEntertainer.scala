@@ -47,6 +47,11 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
     }
 
     @workerExecution
+    def stopAllThreadAmusement(): Unit = {
+        stopThreadsAmusement(i => i)
+    }
+
+    @workerExecution
     def stopThreadAmusement(thread: BusyWorkerThread): Unit = {
         if (!entertainedThreads.contains(thread))
             throw new NoSuchElementException(s"Provided thread is not entertained by this entertainer ! (${thread.getName})")

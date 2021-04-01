@@ -25,9 +25,7 @@ class ConsumerContainer[A]() {
     private val consumers = ListBuffer.empty[ConsumerExecutor]
 
     def add(consumer: A => Unit): this.type = {
-        AppLogger.trace(s"${currentTasksId} <> ADDING CONSUMER $consumer INTO $consumers...")
         consumers += ConsumerExecutor(consumer, false)
-        AppLogger.trace(s"${currentTasksId} <> CONSUMER ADDED ($consumers)")
         this
     }
 
@@ -80,12 +78,9 @@ class ConsumerContainer[A]() {
     }
 
     def applyAll(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        AppLogger.trace(s"${currentTasksId} <> CONSUMERS = $consumers")
         Array.from(consumers).foreach(consumer => {
             try {
-                AppLogger.trace(s"${currentTasksId} <> Consumming $consumer...")
                 consumer.execute(t)
-                AppLogger.trace(s"${currentTasksId} <> Consummer $consumer consumed !")
             } catch {
                 case NonFatal(e) => onException(e)
             }

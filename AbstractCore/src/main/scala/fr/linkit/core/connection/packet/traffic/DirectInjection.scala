@@ -53,11 +53,12 @@ class DirectInjection(override val coordinates: DedicatedPacketCoordinates) exte
 object DirectInjection {
 
     @volatile private var totalProcess = 0
+    private val BuffLength             = 100
 
     private class PacketCallback(callback: Packet => Unit) {
 
         var threadHandler: Thread = _
-        private val marks = new Array[Int](10)
+        private val marks = new Array[Int](BuffLength)
         private var i     = 0
 
         def apply(packet: Packet): Unit = {
@@ -71,7 +72,7 @@ object DirectInjection {
 
     class PacketBuffer {
 
-        private val buff             = new Array[Packet](10)
+        private val buff             = new Array[Packet](BuffLength)
         @volatile private var length = 0
 
         def contains(packet: Packet): Boolean = {
@@ -89,7 +90,7 @@ object DirectInjection {
             AppLogger.debug(s"${currentTasksId} <> Inserting $packet in buffer ${buff.mkString("Array(", ", ", ")")}")
             while (index < buff.length) {
                 val indexPacket = buff(index)
-                if (indexPacket == null) {
+                if (indexPacket == null || (indexPacket eq packet)) {
                     buff(index) = packet
                     AppLogger.debug(s"${currentTasksId} <> Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
                     length += 1

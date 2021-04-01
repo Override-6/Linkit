@@ -17,9 +17,10 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.local.concurrency.{JNullAssistant, now}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
-import java.util
-import java.util.concurrent.{BlockingQueue, TimeUnit}
 
+import java.util
+import java.util.Collections
+import java.util.concurrent.{BlockingQueue, TimeUnit}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -31,11 +32,11 @@ import scala.collection.mutable.ListBuffer
  * @param pool the pool that created this blocking queue, at which will be used by the queue to handle busy locks.
  * */
 class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
-    private val content     = ListBuffer.empty[A]
+    private val content     = new util.LinkedList[A]()
     private val entertainer = new WorkerEntertainer(pool)
 
     override def add(e: A): Boolean = {
-        content += e
+        content.add(e)
         AppLogger.error(s"Added ${e} in content $content")
         entertainer.stopFirstThreadAmusement()
         true
@@ -48,29 +49,19 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
     override def offer(e: A, timeout: Long, unit: TimeUnit): Boolean = add(e)
 
     override def remove(): A = content.synchronized {
-        val head = content.headOption
-        if (head.isEmpty)
-            throw new NoSuchElementException()
-
-        content.remove(0)
-        head.get
+        content.removeFirst()
     }
 
     override def poll(): A = {
-        AppLogger.warn(content)
-        val head = content.headOption
-        if (head.isDefined) {
-            content.remove(0)
-            return head.get
-        }
-        JNullAssistant.getNull
+        content.pollFirst()
     }
 
     @workerExecution
     override def take(): A = {
-        AppLogger.error(s"$currentTasksId <> Taking item in $this")
+        AppLogger.error(s"$currentTasksId <> Taking item in $this...")
         if (content.isEmpty)
             entertainer.amuseCurrentThread() //will be released once the queue isn't empty anymore
+        AppLogger.error(s"Content has been fulled !")
         poll()
     }
 
@@ -86,18 +77,11 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
     }
 
     override def element(): A = {
-        val head = content.headOption
-        if (head.isEmpty)
-            throw new NoSuchElementException
-        head.get
+        content.element()
     }
 
     override def peek(): A = {
-        val head = content.headOption
-        if (head.isDefined) {
-            return head.get
-        }
-        JNullAssistant.getNull
+        content.peekFirst()
     }
 
     override def remove(o: Any): Boolean = content.synchronized {
@@ -126,7 +110,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
     override def isEmpty: Boolean = content.isEmpty
 
-    override def containsAll(c: util.Collection[_]): Boolean = content.containsSlice(c.toArray)
+    override def containsAll(c: util.Collection[_]): Boolean = content.containsAll(c)
 
     override def addAll(c: util.Collection[_ <: A]): Boolean = {
         c.forEach(add)
@@ -139,8 +123,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
     }
 
     override def retainAll(c: util.Collection[_]): Boolean = {
-        content.filterInPlace(c.contains)
-        true
+        content.retainAll(c)
     }
 
     override def clear(): Unit = content.synchronized {
@@ -149,11 +132,11 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
     override def toArray: Array[AnyRef] = {
         val buff = ListBuffer.empty[Any]
-        content.foreach(e => buff.addOne(e))
+        content.forEach(e => buff.addOne(e))
         buff.toArray.asInstanceOf[Array[AnyRef]]
     }
 
-    override def toString: String = content.toArray[Any].mkString("ProvidedBlockingQueue(", ", ", ")")
+    override def toString: String = toArray().mkString("ProvidedBlockingQueue(", ", ", ")")
 
     override def toArray[T](a: Array[T with Object]): Array[T with Object] = {
         toArray.asInstanceOf[Array[T with Object]]

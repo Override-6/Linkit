@@ -19,6 +19,8 @@ trait ChannelScope {
 
     val writer: PacketWriter
 
+    val traffic: PacketTraffic = writer.traffic
+
     def sendToAll(packet: Packet): Unit
 
     def sendTo(packet: Packet, targetIDs: String*): Unit

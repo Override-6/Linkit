@@ -64,7 +64,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     }
 
     def storePacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        AppLogger.debug(s"$currentTasksId <> STORING PACKET $packet AND COORDS $coords")
+        AppLogger.debug(s"$currentTasksId <> STORING PACKET $packet AND COORDS $coords INTO $storedPackets")
         if (coords.injectableID != identifier) {
             throw new IllegalArgumentException("Stored packet coordinates must target the same injectable identifier as this channel.")
         }
@@ -89,13 +89,14 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
 
     def injectStoredPackets(): Unit = {
         AppLogger.debug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedPackets")
-        Array.from(storedPackets)
-            .foreach(stored => {
-                AppLogger.debug(s"$currentTasksId <> stored = $stored")
-                val injection = traffic.injectionContainer.makeInjection(stored._1, stored._2)
-                inject(injection)
-            })
+
+        val clone = Array.from(storedPackets)
         storedPackets.clear()
+        clone.foreach(stored => {
+            AppLogger.debug(s"$currentTasksId <> Reinjecting stored = $stored")
+            val injection = traffic.injectionContainer.makeInjection(stored._1, stored._2)
+            inject(injection)
+        })
     }
 
     @workerExecution

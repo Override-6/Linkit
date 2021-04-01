@@ -21,18 +21,20 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
     private[RequestPacketChannel] val requests         = mutable.LinkedHashMap.empty[Long, Request]
     private                       val requestConsumers = ConsumerContainer[(Packet, DedicatedPacketCoordinates, ResponseSubmitter)]()
     @volatile private var requestID                    = 0
+    //debug only
+    private                       val source           = scope.traffic.supportIdentifier
 
     override def handleInjection(injection: PacketInjection): Unit = {
         val coords = injection.coordinates
         injection.process(packet => {
-            AppLogger.debug(s"${currentTasksId} <> INJECTING REQUEST $packet " + this)
+            AppLogger.debug(s"${currentTasksId} <> $source: INJECTING REQUEST $packet " + this)
             packet match {
                 case AnyRefPacket((id: Int, packet: Packet)) =>
-                    val submitter = new ResponseSubmitter(id, scope, coords.senderID)
+                    val submitter = new ResponseSubmitter(id, scope, coords.senderID, source)
                     requestConsumers.applyAllLater((packet, coords, submitter))
 
                 case AnyRefPacket((id: Long, packet: Packet)) =>
-                    val submitter = new ResponseSubmitter(id, scope, coords.senderID)
+                    val submitter = new ResponseSubmitter(id, scope, coords.senderID, source)
                     requestConsumers.applyAllLater((packet, coords, submitter))
 
                 case response: Response =>
@@ -44,10 +46,10 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
         })
     }
 
-    AppLogger.fatal("$currentTaskId <> CREATED INSTANCE OF REQUEST PACKET CHANNEL : " + this)
+    AppLogger.fatal(s"${currentTasksId} <> $source:  CREATED INSTANCE OF REQUEST PACKET CHANNEL : " + this)
 
     def addRequestListener(callback: (Packet, DedicatedPacketCoordinates, ResponseSubmitter) => Unit): Unit = {
-        AppLogger.fatal(s"$currentTasksId <> ADDED REQUEST LISTENER : $requests " + this)
+        AppLogger.fatal(s"$currentTasksId <> $source: ADDED REQUEST LISTENER : $requests " + this)
         requestConsumers += (tuple => callback(tuple._1, tuple._2, tuple._3))
     }
 
@@ -63,12 +65,12 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
         val pool = BusyWorkerPool.ensureCurrentIsWorker()
 
         val requestID = nextRequestID
-        val request   = Request(requestID, pool.newBusyQueue, this)
+        val request   = Request(requestID, pool.newBusyQueue, this, source)
 
         requests.put(requestID, request)
-        AppLogger.error(s"$currentTasksId <> Adding request '$request' into $requests " + this)
+        AppLogger.error(s"$currentTasksId <> $source: Adding request '$request' into $requests " + this)
         send(AnyRefPacket(requestID, packet))
-        AppLogger.error(s"$currentTasksId <> Request '${request}' has been sent ! " + this)
+        AppLogger.error(s"$currentTasksId <> $source: Request '${request}' has been sent ! " + this)
         request
     }
 
@@ -83,16 +85,17 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
 
     override def createNew(scope: ChannelScope): RequestPacketChannel = new RequestPacketChannel(scope)
 
-    case class Request(id: Long, queue: BlockingQueue[Response], handler: RequestPacketChannel) {
+    case class Request(id: Long, queue: BlockingQueue[Response], handler: RequestPacketChannel, source: String) {
 
         private val responseConsumer = ConsumerContainer[Response]()
 
         def nextResponse: Response = {
-            AppLogger.debug(s"$currentTasksId <> Waiting for response... ($id) " + this)
+            AppLogger.debug(s"$currentTasksId <> $source: Waiting for response... ($id) " + this)
             val response = queue.take()
-            AppLogger.error(s"$currentTasksId <> RESPONSE RECEIVED ! $response")
+            AppLogger.error(s"$currentTasksId <> $source: RESPONSE RECEIVED ! $response")
             response
         }
+
         /*
         * JE CROIS QUE J'AI TROuVé LE BUG :D
         * En gros les threads attendent pour une réponse qu'ils ont antérieurement
@@ -106,16 +109,16 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def delete(): Unit = handler.requests.remove(id)
 
         private[RequestPacketChannel] def addResponse(response: Response): Unit = {
-            AppLogger.error(s"$currentTasksId <> ADDING RESPONSE FOR " + this)
+            AppLogger.error(s"$currentTasksId <> $source: ADDING RESPONSE FOR " + this)
             //Thread.dumpStack()
             queue.add(response)
             responseConsumer.applyAllLater(response)
-            AppLogger.error(s"$currentTasksId <> RESPONSE ADDED TO " + this)
+            AppLogger.error(s"$currentTasksId <> $source: RESPONSE ADDED TO " + this)
         }
 
     }
 
-    class ResponseSubmitter(id: Long, scope: ChannelScope, requester: String) {
+    class ResponseSubmitter(id: Long, scope: ChannelScope, requester: String, source: String) {
 
         private val packets            = ListBuffer.empty[Packet]
         private val properties         = mutable.HashMap.empty[String, Serializable]
@@ -124,8 +127,6 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def addPacket(packet: Packet): this.type = {
             ensureNotSubmit()
             packets += packet
-            AppLogger.debug(s"$currentTasksId <> packets = " + packets)
-            AppLogger.debug(s"$currentTasksId <> this = " + this)
             this
         }
 
@@ -144,9 +145,9 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def submit(): Unit = {
             ensureNotSubmit()
             val snapshot = Response(id, packets.toArray, properties.toMap, scope.writer.supportIdentifier)
-            AppLogger.debug(s"$currentTasksId <> Submitting response ($id)... to $requester")
+            AppLogger.debug(s"$currentTasksId <> $source: Submitting response ($id)... to $requester")
             scope.sendTo(snapshot, requester)
-            AppLogger.debug(s"$currentTasksId <> Response ($id) submit ! ")
+            AppLogger.debug(s"$currentTasksId <> $source: Response ($id) submit ! ")
             isSubmit = true
         }
 

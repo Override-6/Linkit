@@ -113,7 +113,12 @@ class ClientApplication private(override val configuration: ClientApplicationCon
             ClientConnection.open(dynamicSocket, this, config)
         } catch {
             case e: ConnectionException => throw e
-            case NonFatal(e) => throw new ConnectionInitialisationException(s"Could not open connection with server $address : ${e.getMessage}", e)
+            case NonFatal(e) =>
+                runLater {
+                    AppLogger.fatal("EXITING...")
+                    System.exit(1)
+                }
+                throw new ConnectionInitialisationException(s"Could not open connection with server $address : ${e.getMessage}", e)
         }
 
         val serverIdentifier: String = connection.boundIdentifier
