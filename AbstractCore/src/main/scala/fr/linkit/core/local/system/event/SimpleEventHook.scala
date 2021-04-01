@@ -12,6 +12,7 @@
 
 package fr.linkit.core.local.system.event
 
+import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.event.{Event, EventHook, EventListener}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
@@ -21,12 +22,14 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
 
     private val consumers = ConsumerContainer[E]()
 
+    @workerExecution
     override def await(): Unit = {
+        val pool = BusyWorkerPool.ensureCurrentIsWorker()
         val thread = BusyWorkerPool.currentWorker
         addOnce {
             BusyWorkerPool.stopWaitRemainingTasks(thread)
         }
-        BusyWorkerPool.executeRemainingTasksWhileThen(true)
+        pool.executeRemainingTasksOrWait()
     }
 
     override def add(action: E => Unit): Unit = consumers += action

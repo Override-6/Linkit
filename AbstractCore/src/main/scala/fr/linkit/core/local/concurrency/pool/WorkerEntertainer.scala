@@ -2,7 +2,7 @@ package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.{currentTasksId, currentWorker}
 
 import scala.collection.mutable.ListBuffer
 
@@ -16,17 +16,14 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
 
     @workerExecution
     def amuseCurrentThread(): Unit = {
-        amuseCurrentThreadWhile(true)
+        entertainedThreads += currentWorker
+        pool.executeRemainingTasksOrWait()
     }
 
     @workerExecution
-    def amuseCurrentThreadWhile(condition: => Boolean): Unit = {
-        pool.ensureCurrentThreadOwned("Current thread ")
-        AppLogger.error(s"$currentTasksId <> Amusing current thread...")
-        val currentWorker = BusyWorkerPool.currentWorker
+    def amuseCurrentThreadFor(millis: Long): Unit = {
         entertainedThreads += currentWorker
-        BusyWorkerPool.executeRemainingTasksWhileThen(condition)
-        entertainedThreads -= currentWorker
+        pool.timedExecuteRemainingTasks(millis)
     }
 
     @workerExecution
@@ -52,7 +49,7 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
     @workerExecution
     def stopThreadAmusement(thread: BusyWorkerThread): Unit = {
         if (!entertainedThreads.contains(thread))
-            throw new NoSuchElementException(s"Provided thread is not entertained ! (${thread.getName})")
+            throw new NoSuchElementException(s"Provided thread is not entertained by this entertainer ! (${thread.getName})")
         BusyWorkerPool.stopWaitRemainingTasks(thread)
     }
 
@@ -64,8 +61,10 @@ class WorkerEntertainer(pool: BusyWorkerPool) {
         AppLogger.error(s"$currentTasksId <> unamused = " + unamused)
         AppLogger.error(s"$currentTasksId <> entertainedThreads = " + entertainedThreads)
 
-        if (unamused.isEmpty || entertainedThreads.isEmpty)
+        if (unamused.isEmpty || entertainedThreads.isEmpty) {
+            AppLogger.error("THREADS WERE EMPTY !")
             return //Instructions below could throw NoSuchElementException when removing unamused list to entertainedThreads.
+        }
 
         for (thread <- unamused) {
             BusyWorkerPool.stopWaitRemainingTasks(thread)

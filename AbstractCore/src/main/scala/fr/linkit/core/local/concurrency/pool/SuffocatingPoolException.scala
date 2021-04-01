@@ -14,6 +14,7 @@ package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.system.AppException
 
+@deprecated("Under developpement")
 class SuffocatingPoolException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

@@ -122,10 +122,13 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             throw new IllegalArgumentException(s"Server identifier length > ${Rules.MaxConnectionIDLength}")
 
         securityManager.checkConnectionConfig(configuration)
+        AppLogger.debug("Instantiating server connection...")
         val serverConnection = new ServerConnection(this, configuration)
         val startLock        = new Object
         serverConnection.runLater {
+            AppLogger.debug("Starting server...")
             serverConnection.start()
+            AppLogger.debug("Server started !")
             startLock.synchronized {
                 startLock.notify()
             }

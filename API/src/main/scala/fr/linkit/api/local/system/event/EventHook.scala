@@ -12,8 +12,11 @@
 
 package fr.linkit.api.local.system.event
 
+import fr.linkit.api.local.concurrency.workerExecution
+
 trait EventHook[L <: EventListener, E <: Event[_, L]] {
 
+    @workerExecution
     def await(): Unit //Would wait until the hooked event triggers
 
     def add(action: E => Unit): Unit //would add an action to execute every times the event fires

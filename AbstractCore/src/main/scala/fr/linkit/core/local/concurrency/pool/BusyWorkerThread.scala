@@ -14,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 private[concurrency] final class BusyWorkerThread private[concurrency](target: Runnable,
                                                                        override val owner: BusyWorkerPool,
                                                                        id: Int)
-        extends Thread(workerThreadGroup, target, s"${owner.name}'s Thread#${id}") with EntertainedThread {
+    extends Thread(workerThreadGroup, target, s"${owner.name}'s Thread#$id") with EntertainedThread {
 
     private              var continueWorkflow       : Boolean         = true
     private[concurrency] var isParkingForWorkflow   : Boolean         = false
@@ -23,27 +23,33 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     private val currentTasksID                      : ListBuffer[Int] = ListBuffer()
 
     private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
+        AppLogger.error(s"$tasksId <> Entering Workflow Loop...")
         while (continueWorkflow) {
             isParkingForWorkflow = true
+            AppLogger.error(s"$tasksId <> Parking...")
             val t = parkAction
             AppLogger.error(s"$tasksId <> This thread has been unparked.")
             isParkingForWorkflow = false
+
+            if (!continueWorkflow) {
+                AppLogger.error("Workflow returned...")
+                continueWorkflow = true
+                return
+            }
 
             AppLogger.error(s"$tasksId <> Continue workflow...")
             workflow(t)
             AppLogger.error(s"$tasksId <> Workflow have ended !")
         }
         this.continueWorkflow = true //set it to true for future loopWorkflow
+        AppLogger.error(s"$tasksId <> Exit Worker Loop")
     }
 
-    /**
-     * Will execute awaitAction: T, then execute workflow(T) while field continueWorkflow is ready..
-     * all alternatives will be executed before executing awaitAction.
-     * */
     private[concurrency] def stopWorkflowLoop(): Unit = {
-        if (!isWaitingForRecursiveTask)
-            return
+        //if (!isWaitingForRecursiveTask)
+        //    return
         this.continueWorkflow = false
+        AppLogger.error(s"$getName <-- This thread will be unparked because stopWorkflowLoop has been invoked.")
         LockSupport.unpark(this)
     }
 
@@ -67,25 +73,23 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
 
     def tasksId: String = {
         if (currentTasksID.isEmpty)
-            return s"${Console.YELLOW}[]"
+            return s"[]"
         if (!isUpdated)
             return tasksIdStr
 
         val current = getCurrentTaskID
-        val sb      = new StringBuilder(s"${Console.YELLOW}[")
+        val sb      = new StringBuilder(s"[")
         currentTasksID.foreach(taskID => {
             if (taskID == current) {
-                sb.append(Console.RED)
-                        .append(taskID)
-                        .append(Console.YELLOW)
+                sb.append(taskID)
             } else {
                 sb.append(taskID)
             }
             sb.append(',')
         })
         tasksIdStr = sb.dropRight(1) // remove last ',' char
-                .append(']')
-                .toString()
+            .append(']')
+            .toString()
         tasksIdStr
     }
 

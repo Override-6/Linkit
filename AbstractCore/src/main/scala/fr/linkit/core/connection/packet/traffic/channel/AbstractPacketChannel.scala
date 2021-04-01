@@ -88,8 +88,10 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     }
 
     def injectStoredPackets(): Unit = {
+        AppLogger.debug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedPackets")
         Array.from(storedPackets)
             .foreach(stored => {
+                AppLogger.debug(s"$currentTasksId <> stored = $stored")
                 val injection = traffic.injectionContainer.makeInjection(stored._1, stored._2)
                 inject(injection)
             })

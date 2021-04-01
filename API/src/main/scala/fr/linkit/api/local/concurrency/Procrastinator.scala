@@ -12,6 +12,8 @@
 
 package fr.linkit.api.local.concurrency
 
+import java.util.concurrent.locks.LockSupport
+
 trait Procrastinator {
 
     def runLater(@workerExecution task: => Unit): Unit
@@ -21,4 +23,10 @@ trait Procrastinator {
     def ensureCurrentThreadOwned(): Unit
 
     def isCurrentThreadOwned: Boolean
+
+
+}
+
+object Procrastinator {
+    val workerThreadGroup: ThreadGroup = new ThreadGroup("Entertained Workers")
 }

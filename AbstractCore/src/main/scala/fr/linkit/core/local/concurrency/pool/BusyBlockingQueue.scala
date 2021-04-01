@@ -14,12 +14,13 @@ package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.now
+import fr.linkit.core.local.concurrency.{JNullAssistant, now}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
-
 import java.util
 import java.util.concurrent.{BlockingQueue, TimeUnit}
+
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -30,7 +31,6 @@ import scala.collection.mutable.ListBuffer
  * @param pool the pool that created this blocking queue, at which will be used by the queue to handle busy locks.
  * */
 class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
-
     private val content     = ListBuffer.empty[A]
     private val entertainer = new WorkerEntertainer(pool)
 
@@ -47,62 +47,66 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
     override def offer(e: A, timeout: Long, unit: TimeUnit): Boolean = add(e)
 
-    override def remove(): A = {
-        if (content.isEmpty)
+    override def remove(): A = content.synchronized {
+        val head = content.headOption
+        if (head.isEmpty)
             throw new NoSuchElementException()
 
-        val head = content.head
         content.remove(0)
-        head
+        head.get
     }
 
     override def poll(): A = {
-        if (content.isEmpty)
-            return _: A
-
-        val head = content.head
-        content.remove(0)
-        head
+        AppLogger.warn(content)
+        val head = content.headOption
+        if (head.isDefined) {
+            content.remove(0)
+            return head.get
+        }
+        JNullAssistant.getNull
     }
 
     @workerExecution
     override def take(): A = {
         AppLogger.error(s"$currentTasksId <> Taking item in $this")
-        entertainer.amuseCurrentThreadWhile(content.isEmpty) //will be released once the queue is empty
+        if (content.isEmpty)
+            entertainer.amuseCurrentThread() //will be released once the queue isn't empty anymore
         poll()
     }
 
     @workerExecution
     override def poll(timeout: Long, unit: TimeUnit): A = {
-        val toWait      = unit.toMillis(timeout)
-        var total: Long = 0
-        var last        = now()
+        val toWait = unit.toMillis(timeout)
 
         //the lock object will be notified if an object has been inserted in the list.
-        entertainer.amuseCurrentThreadWhile {
-            val n = now()
-            total += n - last
-            last = n
-            total <= toWait
-        }
+        if (content.isEmpty)
+            entertainer.amuseCurrentThreadFor(toWait)
         //will return the current head or null if the list is empty
         poll()
     }
 
     override def element(): A = {
-        val head = content.head
-        if (head == null)
+        val head = content.headOption
+        if (head.isEmpty)
             throw new NoSuchElementException
-        head
+        head.get
     }
 
     override def peek(): A = {
-        content.head
+        val head = content.headOption
+        if (head.isDefined) {
+            return head.get
+        }
+        JNullAssistant.getNull
     }
 
-    override def remove(o: Any): Boolean = content.remove(content.indexOf(o)) != null
+    override def remove(o: Any): Boolean = content.synchronized {
+        content.remove(content.indexOf(o)) != null
+    }
 
-    override def contains(o: Any): Boolean = content.contains(o)
+    override def contains(o: Any): Boolean = {
+        content.contains(o)
+    }
 
     override def size(): Int = content.size
 
@@ -139,7 +143,9 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
         true
     }
 
-    override def clear(): Unit = content.clear()
+    override def clear(): Unit = content.synchronized {
+        content.clear()
+    }
 
     override def toArray: Array[AnyRef] = {
         val buff = ListBuffer.empty[Any]

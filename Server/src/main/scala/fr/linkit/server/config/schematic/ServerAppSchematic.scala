@@ -12,6 +12,7 @@
 
 package fr.linkit.server.config.schematic
 
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.config.schematic.AppSchematic
 import fr.linkit.server.ServerApplication
@@ -29,6 +30,7 @@ abstract class ServerAppSchematic extends AppSchematic[ServerApplication] {
     override def setup(a: ServerApplication): Unit = {
         for (configuration <- serverConfigs) {
             try {
+                AppLogger.debug(s"Loading configuration ${configuration.configName}")
                 a.openServerConnection(configuration)
             } catch {
                 case NonFatal(e) =>

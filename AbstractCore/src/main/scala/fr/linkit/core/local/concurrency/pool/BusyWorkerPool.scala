@@ -166,6 +166,10 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         currentPool().exists(_ eq this)
     }
 
+    def taskParkingThreads: Iterable[BusyWorkerThread] = {
+        workers.filter(_.isParkingForWorkflow)
+    }
+
     def countRemainingTasks: Int = workQueue.size()
 
     /**
@@ -193,12 +197,13 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
      * */
     def executeRemainingTasksOrWait(): Unit = {
+
         executeRemainingTasks()
 
         currentWorker.workflowLoop(LockSupport.park()) { _ =>
             executeRemainingTasks()
         }
-        AppLogger.error(s"${currentTasksId} <> executeRemainingTasksWhile just ended.")
+        AppLogger.error(s"${currentTasksId} <> executeRemainingTasksOrWait just ended.")
     }
 
     /**
@@ -264,7 +269,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     private def unparkBusyThread(): Unit = {
         workers.find(_.isWaitingForRecursiveTask) match {
             case Some(thread) =>
-                AppLogger.error(s"${thread.getName} <- This thread will be unparked because a new task is ready to entertain it.")
+                AppLogger.error(s"${thread.getName} <- This thread will be unparked because a new task is ready to be executed.")
                 LockSupport.unpark(thread)
             case None         => //no-op
         }
@@ -286,7 +291,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * */
     private def executeRemainingTasks(): Unit = {
         ensureCurrentIsWorker()
-
+        AppLogger.debug(s"EXECUTING ALL REMAINING TASKS $workQueue")
         while (!workQueue.isEmpty) {
             val task = workQueue.poll()
             if (task != null) {
@@ -295,8 +300,8 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
                 currentWorker.taskRecursionDepthCount -= 1
             }
         }
+        AppLogger.error("Exit executeRemainingTasks...")
     }
-
 }
 
 object BusyWorkerPool {

@@ -41,7 +41,7 @@ object Packet {
 
     private def nextPacketID(p: Packet): Int = {
         packetID += 1
-        AppLogger.discoverLines(3, 8)
+        //AppLogger.discoverLines(3, 8)
         AppLogger.trace(s"id = ${packetID}; packet = $p")
         packetID
     }

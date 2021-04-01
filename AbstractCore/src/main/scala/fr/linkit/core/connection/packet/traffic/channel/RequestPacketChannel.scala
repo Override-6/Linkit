@@ -106,11 +106,11 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def delete(): Unit = handler.requests.remove(id)
 
         private[RequestPacketChannel] def addResponse(response: Response): Unit = {
-            AppLogger.error(s"$currentTasksId <> ADDING RESPONSE " + this)
+            AppLogger.error(s"$currentTasksId <> ADDING RESPONSE FOR " + this)
             //Thread.dumpStack()
             queue.add(response)
             responseConsumer.applyAllLater(response)
-            AppLogger.error(s"$currentTasksId <> RESPONSE ADDED " + this)
+            AppLogger.error(s"$currentTasksId <> RESPONSE ADDED TO " + this)
         }
 
     }
@@ -144,9 +144,9 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def submit(): Unit = {
             ensureNotSubmit()
             val snapshot = Response(id, packets.toArray, properties.toMap, scope.writer.supportIdentifier)
-            AppLogger.debug(s"$currentTasksId <> Submitting response ($id)..." + this)
+            AppLogger.debug(s"$currentTasksId <> Submitting response ($id)... to $requester")
             scope.sendTo(snapshot, requester)
-            AppLogger.debug(s"$currentTasksId <> Response submit ! ")
+            AppLogger.debug(s"$currentTasksId <> Response ($id) submit ! ")
             isSubmit = true
         }
 
