@@ -12,14 +12,18 @@
 
 package fr.linkit.api.connection.packet
 
-import fr.linkit.api.connection.packet.Packet.nextPacketID
+import fr.linkit.api.connection.packet.Packet.{nextPacketID, packetID}
 import fr.linkit.api.local.system.AppLogger
 
 //TODO Doc
 trait Packet extends Serializable {
 
     @volatile
-    @transient private var id = nextPacketID(this)
+    @transient private var id = {
+        val n = nextPacketID
+        AppLogger.trace(s"id = ${n}; packet = $this")
+        n
+    }
 
     def className: String = getClass.getSimpleName
 
@@ -30,7 +34,8 @@ trait Packet extends Serializable {
         //The constructor will not be called thus packetID will not be initialized.
         //This method will manually give this packet an id
         AppLogger.trace("Preparing packet...")
-        id = nextPacketID(this)
+        id = nextPacketID
+        AppLogger.trace(s"id = ${packetID}; packet = $this")
         this
     }
 
@@ -39,10 +44,8 @@ trait Packet extends Serializable {
 object Packet {
     @volatile private var packetID = 0
 
-    private def nextPacketID(p: Packet): Int = {
+    private def nextPacketID: Int = {
         packetID += 1
-        //AppLogger.discoverLines(3, 8)
-        AppLogger.trace(s"id = ${packetID}; packet = $p")
         packetID
     }
 }

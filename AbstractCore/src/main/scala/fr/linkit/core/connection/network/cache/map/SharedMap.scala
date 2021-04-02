@@ -20,7 +20,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.map.MapModification._
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, WorkerEntertainer}
+import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, WorkerController}
 import fr.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -33,7 +33,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
     private val networkListeners        = ConsumerContainer[(MapModification, K, V)]()
     private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]
-    private val entertainer             = new WorkerEntertainer()
+    private val entertainer             = new WorkerController()
 
     @volatile private var modCount: Int = 0
 
@@ -125,17 +125,18 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
             return apply(k)
         //println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
 
-        val thread = BusyWorkerPool.currentWorker
+        val worker = BusyWorkerPool.currentWorker
+        val taskID = worker.getCurrentTaskID
 
         val listener: ((MapModification, K, V)) => Unit = t => {
             AppLogger.debug(s"k = ${k}")
             AppLogger.debug(s"t._2 = ${t._2}")
             if (t._2 == k)
-                entertainer.stopThreadAmusement(thread)
+                entertainer.notifyThread(worker, taskID)
         }
 
         addListener(listener)
-        entertainer.amuseCurrentThread()
+        entertainer.waitTask()
         removeListener(listener)
         //println("Done !")
         apply(k)

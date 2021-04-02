@@ -2,9 +2,10 @@ package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.EntertainedThread
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.workerThreadGroup
-
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.{currentTasksId, workerThreadGroup}
 import java.util.concurrent.locks.LockSupport
+
+import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 /**
@@ -16,24 +17,23 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
                                                                        id: Int)
     extends Thread(workerThreadGroup, target, s"${owner.name}'s Thread#$id") with EntertainedThread {
 
-    private              var continueWorkflow       : Boolean         = true
-    private[concurrency] var isParkingForWorkflow   : Boolean         = false
-    private[concurrency] var taskRecursionDepthCount: Int             = 0
-    private              var currentTaskID          : Int             = -1
-    private val currentTasksID                      : ListBuffer[Int] = ListBuffer()
+    private[concurrency] var isParkingForWorkflow   : Boolean                   = false
+    private[concurrency] var taskRecursionDepthCount: Int                       = 0
+    private              var currentTaskID          : Int                       = -1
+    private val workflowContinueLevels              : mutable.Map[Int, Boolean] = mutable.HashMap()
 
     private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
         AppLogger.error(s"$tasksId <> Entering Workflow Loop...")
-        while (continueWorkflow) {
+        while (workflowContinueLevels(currentTaskID)) {
             isParkingForWorkflow = true
             AppLogger.error(s"$tasksId <> Parking...")
             val t = parkAction
             AppLogger.error(s"$tasksId <> This thread has been unparked.")
             isParkingForWorkflow = false
 
-            if (!continueWorkflow) {
+            if (!workflowContinueLevels(currentTaskID)) {
                 AppLogger.error("Workflow returned...")
-                continueWorkflow = true
+                workflowContinueLevels(currentTaskID) = true
                 return
             }
 
@@ -41,29 +41,40 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
             workflow(t)
             AppLogger.error(s"$tasksId <> Workflow have ended !")
         }
-        this.continueWorkflow = true //set it to true for future loopWorkflow
+        this.workflowContinueLevels(currentTaskID) = true //set it to true for future loopWorkflow
         AppLogger.error(s"$tasksId <> Exit Worker Loop")
     }
 
-    private[concurrency] def stopWorkflowLoop(): Unit = {
-        //if (!isWaitingForRecursiveTask)
-        //    return
-        this.continueWorkflow = false
-        AppLogger.error(s"$getName <-- This thread will be unparked because stopWorkflowLoop has been invoked.")
-        LockSupport.unpark(this)
+    private[concurrency] def stopWorkflowLoop(taskID: Int): Unit = {
+        val continueWorkflow = workflowContinueLevels.get(taskID)
+        AppLogger.error(s"stopWorkflowLoop($taskID) called for thread $getName.")
+        AppLogger.error(s"workflowContinueLevels = $workflowContinueLevels")
+        if (continueWorkflow.isEmpty)
+            return
+        if (continueWorkflow.get)
+            this.workflowContinueLevels(taskID) = false
+
+        AppLogger.error(s"$getName <-- This thread will be unparked for task $taskID because stopWorkflowLoop has been invoked.")
+        if (currentTaskID == taskID)
+            LockSupport.unpark(this)
     }
 
-    private[concurrency] def addTaskID(id: Int): Unit = {
-        currentTasksID += id
+    private[concurrency] def pushTaskID(id: Int): Unit = {
+        workflowContinueLevels.put(id, true)
         currentTaskID = id
         isUpdated = true
     }
 
     private[concurrency] def removeTaskID(id: Int): Unit = {
-        currentTasksID -= id
-        currentTaskID = currentTasksID.lastOption.getOrElse(-1)
+        workflowContinueLevels.remove(id)
+        currentTaskID = workflowContinueLevels
+            .keys
+            .lastOption
+            .getOrElse(-1)
         isUpdated = true
     }
+
+    def isExecutingTask(taskID: Int): Boolean = workflowContinueLevels.contains(taskID)
 
     def getCurrentTaskID: Int = currentTaskID
 
@@ -72,14 +83,14 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     private var tasksIdStr: String = _
 
     def tasksId: String = {
-        if (currentTasksID.isEmpty)
+        if (workflowContinueLevels.isEmpty)
             return s"[]"
         if (!isUpdated)
             return tasksIdStr
 
         val current = getCurrentTaskID
         val sb      = new StringBuilder(s"[")
-        currentTasksID.foreach(taskID => {
+        workflowContinueLevels.keys.foreach(taskID => {
             if (taskID == current) {
                 sb.append(taskID)
             } else {

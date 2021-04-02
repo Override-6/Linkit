@@ -92,7 +92,7 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def nextResponse: Response = {
             AppLogger.debug(s"$currentTasksId <> $source: Waiting for response... ($id) " + this)
             val response = queue.take()
-            AppLogger.error(s"$currentTasksId <> $source: RESPONSE RECEIVED ! $response")
+            AppLogger.error(s"$currentTasksId <> $source: RESPONSE ($id) RECEIVED ! $response")
             response
         }
 

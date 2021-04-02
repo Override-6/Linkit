@@ -33,12 +33,12 @@ import scala.collection.mutable.ListBuffer
  * */
 class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
     private val content     = new util.LinkedList[A]()
-    private val entertainer = new WorkerEntertainer(pool)
+    private val entertainer = new WorkerController(pool)
 
     override def add(e: A): Boolean = {
         content.add(e)
         AppLogger.error(s"Added ${e} in content $content")
-        entertainer.stopFirstThreadAmusement()
+        entertainer.notifyFirstThread()
         true
     }
 
@@ -60,7 +60,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
     override def take(): A = {
         AppLogger.error(s"$currentTasksId <> Taking item in $this...")
         if (content.isEmpty)
-            entertainer.amuseCurrentThread() //will be released once the queue isn't empty anymore
+            entertainer.waitTask() //will be released once the queue isn't empty anymore
         AppLogger.error(s"Content has been fulled !")
         poll()
     }
@@ -71,7 +71,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
         //the lock object will be notified if an object has been inserted in the list.
         if (content.isEmpty)
-            entertainer.amuseCurrentThreadFor(toWait)
+            entertainer.waitTask(toWait)
         //will return the current head or null if the list is empty
         poll()
     }

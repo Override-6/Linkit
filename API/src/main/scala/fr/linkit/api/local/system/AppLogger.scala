@@ -63,7 +63,7 @@ object AppLogger {
         val stackTrace    = currentThread.getStackTrace
 
         debug(s"RETRIEVING ${to - from} STACK LINES FOR THREAD ${currentThread.getName} :")
-        for (i <- (from + 1) to to.min(stackTrace.length - 1)) {
+        for (i <- (from + 2) to to.min(stackTrace.length - 2)) {
             println("\t" + stackTrace(i))
         }
     }

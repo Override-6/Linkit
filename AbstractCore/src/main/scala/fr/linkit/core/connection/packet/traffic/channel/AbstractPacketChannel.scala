@@ -92,6 +92,10 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
 
         val clone = Array.from(storedPackets)
         storedPackets.clear()
+
+        if (clone.exists(clone.contains(_)))
+            throw new Error("Double instance packet in storage.")
+
         clone.foreach(stored => {
             AppLogger.debug(s"$currentTasksId <> Reinjecting stored = $stored")
             val injection = traffic.injectionContainer.makeInjection(stored._1, stored._2)

@@ -25,11 +25,12 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
     @workerExecution
     override def await(): Unit = {
         val pool = BusyWorkerPool.ensureCurrentIsWorker()
-        val thread = BusyWorkerPool.currentWorker
+        val worker = BusyWorkerPool.currentWorker
+        val taskID = worker.getCurrentTaskID
         addOnce {
-            BusyWorkerPool.stopWaitRemainingTasks(thread)
+            BusyWorkerPool.notifyTask(worker, taskID)
         }
-        pool.executeRemainingTasksOrWait()
+        pool.waitCurrentTask()
     }
 
     override def add(action: E => Unit): Unit = consumers += action

@@ -123,11 +123,14 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
             try {
                 val tasks = workTaskIds.synchronized(workTaskIds.toString())
                 AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID TAKEN FROM POOL $name, TOTAL TASKS : $tasks")
-                currentWorker.addTaskID(submittedTaskID)
+                currentWorker.pushTaskID(submittedTaskID)
                 task
                 currentWorker.removeTaskID(submittedTaskID)
             } catch {
-                case NonFatal(e)        => AppLogger.printStackTrace(e)
+                case NonFatal(e)        =>
+                    AppLogger.fatal(s"${currentTasksId} <> Caught fatal exception in thread pool '$name'. The JVM Will exit.")
+                    AppLogger.printStackTrace(e)
+                    System.exit(1)
                 case e if rootExecution =>
                     AppLogger.fatal(s"${currentTasksId} <> Caught fatal exception in thread pool '$name'. The JVM Will exit.")
                     AppLogger.printStackTrace(e)
@@ -143,6 +146,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) Task $submittedTaskID will be submitted...")
 
         val tasks = workTaskIds.synchronized {
+            AppLogger.discoverLines(0, 4)
             workTaskIds += submittedTaskID
             workTaskIds.toString()
         }
@@ -196,7 +200,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      *
      * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
      * */
-    def executeRemainingTasksOrWait(): Unit = {
+    def waitCurrentTask(): Unit = {
         AppLogger.error(s"${currentTasksId} <> This Thread will execute remaining tasks or wait.")
         executeRemainingTasks()
 
@@ -409,8 +413,8 @@ object BusyWorkerPool {
         }
     }
 
-    def stopWaitRemainingTasks(thread: BusyWorkerThread): Unit = {
-        thread.stopWorkflowLoop()
+    def notifyTask(thread: BusyWorkerThread, taskID: Int): Unit = {
+        thread.stopWorkflowLoop(taskID)
     }
 
     def currentTasksId: String = {
