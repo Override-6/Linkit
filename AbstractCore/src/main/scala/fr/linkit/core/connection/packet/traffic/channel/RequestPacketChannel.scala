@@ -54,21 +54,21 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
     }
 
     def startRequest(packet: Packet, targets: String*): Request = {
-        send(packet, scope.sendTo(_, targets: _*))
+        sendRequest(packet, scope.sendTo(_, targets: _*))
     }
 
     def broadcastRequest(packet: Packet): Request = {
-        send(packet, scope.sendToAll)
+        sendRequest(packet, scope.sendToAll)
     }
 
-    private def send(packet: Packet, send: Packet => Unit): Request = {
+    private def sendRequest(packet: Packet, send: Packet => Unit): Request = {
         val pool = BusyWorkerPool.ensureCurrentIsWorker()
 
         val requestID = nextRequestID
         val request   = Request(requestID, pool.newBusyQueue, this, source)
 
-        requests.put(requestID, request)
         AppLogger.error(s"$currentTasksId <> $source: Adding request '$request' into $requests " + this)
+        requests.put(requestID, request)
         send(AnyRefPacket(requestID, packet))
         AppLogger.error(s"$currentTasksId <> $source: Request '${request}' has been sent ! " + this)
         request
@@ -92,15 +92,9 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def nextResponse: Response = {
             AppLogger.debug(s"$currentTasksId <> $source: Waiting for response... ($id) " + this)
             val response = queue.take()
-            AppLogger.error(s"$currentTasksId <> $source: RESPONSE ($id) RECEIVED ! $response")
+            AppLogger.error(s"$currentTasksId <> $source: RESPONSE ($id) RECEIVED ! $response, $queue")
             response
         }
-
-        /*
-        * JE CROIS QUE J'AI TROuVé LE BUG :D
-        * En gros les threads attendent pour une réponse qu'ils ont antérieurement
-        *
-        * */
 
         def addOnResponseReceived(callback: Response => Unit): Unit = {
             responseConsumer += callback
@@ -109,11 +103,10 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
         def delete(): Unit = handler.requests.remove(id)
 
         private[RequestPacketChannel] def addResponse(response: Response): Unit = {
-            AppLogger.error(s"$currentTasksId <> $source: ADDING RESPONSE FOR " + this)
-            //Thread.dumpStack()
+            AppLogger.error(s"$currentTasksId <> $source: ADDING RESPONSE $response FOR REQUEST $this")
             queue.add(response)
             responseConsumer.applyAllLater(response)
-            AppLogger.error(s"$currentTasksId <> $source: RESPONSE ADDED TO " + this)
+            AppLogger.error(s"$currentTasksId <> $source: RESPONSE $response ADDED TO REQUEST $this")
         }
 
     }
@@ -147,7 +140,7 @@ object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel
             val snapshot = Response(id, packets.toArray, properties.toMap, scope.writer.supportIdentifier)
             AppLogger.debug(s"$currentTasksId <> $source: Submitting response ($id)... to $requester")
             scope.sendTo(snapshot, requester)
-            AppLogger.debug(s"$currentTasksId <> $source: Response ($id) submit ! ")
+            AppLogger.debug(s"$currentTasksId <> $source: Response ($id) submited ! ")
             isSubmit = true
         }
 

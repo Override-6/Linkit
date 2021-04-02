@@ -2,11 +2,10 @@ package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.EntertainedThread
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.{currentTasksId, workerThreadGroup}
-import java.util.concurrent.locks.LockSupport
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.workerThreadGroup
 
+import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 /**
  * The representation of a java thread, extending from [[Thread]].
@@ -15,7 +14,7 @@ import scala.collection.mutable.ListBuffer
 private[concurrency] final class BusyWorkerThread private[concurrency](target: Runnable,
                                                                        override val owner: BusyWorkerPool,
                                                                        id: Int)
-    extends Thread(workerThreadGroup, target, s"${owner.name}'s Thread#$id") with EntertainedThread {
+        extends Thread(workerThreadGroup, target, s"${owner.name}'s Thread#$id") with EntertainedThread {
 
     private[concurrency] var isParkingForWorkflow   : Boolean                   = false
     private[concurrency] var taskRecursionDepthCount: Int                       = 0
@@ -25,6 +24,7 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
         AppLogger.error(s"$tasksId <> Entering Workflow Loop...")
         while (workflowContinueLevels(currentTaskID)) {
+            AppLogger.error(s"$tasksId <> Workflow Loop continuing...")
             isParkingForWorkflow = true
             AppLogger.error(s"$tasksId <> Parking...")
             val t = parkAction
@@ -41,20 +41,20 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
             workflow(t)
             AppLogger.error(s"$tasksId <> Workflow have ended !")
         }
-        this.workflowContinueLevels(currentTaskID) = true //set it to true for future loopWorkflow
+        this.workflowContinueLevels(currentTaskID) = true //set it to true in case if stopWorkflowLoop has been called.
         AppLogger.error(s"$tasksId <> Exit Worker Loop")
     }
 
     private[concurrency] def stopWorkflowLoop(taskID: Int): Unit = {
         val continueWorkflow = workflowContinueLevels.get(taskID)
         AppLogger.error(s"stopWorkflowLoop($taskID) called for thread $getName.")
-        AppLogger.error(s"workflowContinueLevels = $workflowContinueLevels")
         if (continueWorkflow.isEmpty)
             return
         if (continueWorkflow.get)
             this.workflowContinueLevels(taskID) = false
 
         AppLogger.error(s"$getName <-- This thread will be unparked for task $taskID because stopWorkflowLoop has been invoked.")
+        AppLogger.error(s"workflowContinueLevels = $workflowContinueLevels")
         if (currentTaskID == taskID)
             LockSupport.unpark(this)
     }
@@ -68,15 +68,17 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     private[concurrency] def removeTaskID(id: Int): Unit = {
         workflowContinueLevels.remove(id)
         currentTaskID = workflowContinueLevels
-            .keys
-            .lastOption
-            .getOrElse(-1)
+                .keys
+                .lastOption
+                .getOrElse(-1)
         isUpdated = true
     }
 
     def isExecutingTask(taskID: Int): Boolean = workflowContinueLevels.contains(taskID)
 
     def getCurrentTaskID: Int = currentTaskID
+
+    def currentTaskIsWaiting(): Boolean = workflowContinueLevels(currentTaskID)
 
     //debug only
     private var isUpdated          = true
@@ -99,8 +101,8 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
             sb.append(',')
         })
         tasksIdStr = sb.dropRight(1) // remove last ',' char
-            .append(']')
-            .toString()
+                .append(']')
+                .toString()
         tasksIdStr
     }
 

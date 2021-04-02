@@ -38,13 +38,17 @@ class WorkerController(pool: BusyWorkerPool) {
 
     @workerExecution
     def notifyFirstThread(): Unit = {
+        AppLogger.error(s"$currentTasksId <> entertainedThreads = " + entertainedThreads)
         val opt = entertainedThreads.headOption
         if (opt.isEmpty)
             return
 
         val entry = opt.get
+        val worker = entry._2
+        val taskID = entry._1
 
-        BusyWorkerPool.notifyTask(entry._2, entry._1)
+        BusyWorkerPool.notifyTask(worker, taskID)
+        entertainedThreads -= taskID
     }
 
     @workerExecution

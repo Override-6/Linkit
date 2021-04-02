@@ -82,7 +82,10 @@ class ConsumerContainer[A]() {
             try {
                 consumer.execute(t)
             } catch {
-                case NonFatal(e) => onException(e)
+                case NonFatal(e) =>
+                    onException(e)
+                    AppLogger.fatal("EXITING VM...")
+                    System.exit(1)
             }
         })
         this

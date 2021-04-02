@@ -24,7 +24,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 import fr.linkit.core.connection.packet.traffic.DynamicSocket
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, WorkerController}
 import fr.linkit.core.local.system.event.DefaultEventNotifier
 import fr.linkit.core.local.system.{Rules, SystemPacketChannel}
 import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
@@ -39,16 +39,17 @@ import scala.util.control.NonFatal
 class ServerConnection(applicationContext: ServerApplication,
                        val configuration: ServerConnectionConfiguration) extends ConnectionContext {
 
-    override val supportIdentifier : String                     = configuration.identifier
-    override val translator        : PacketTranslator           = configuration.translator
-    private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier.toString)
-    private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
-    private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    override val traffic           : PacketTraffic              = new ServerPacketTraffic(this)
-    override val eventNotifier     : EventNotifier              = new DefaultEventNotifier
-    private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
-    override val network           : Network                    = sideNetwork
-    private  val systemChannel     : SystemPacketChannel        = new SystemPacketChannel(ChannelScope.broadcast(traffic.newWriter(SystemChannelID)))
+    override val supportIdentifier  : String                     = configuration.identifier
+    override val translator         : PacketTranslator           = configuration.translator
+    private  val workerPool         : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier.toString)
+    private  val serverSocket       : ServerSocket               = new ServerSocket(configuration.port)
+    private  val connectionsManager : ExternalConnectionsManager = new ExternalConnectionsManager(this)
+    override val traffic            : PacketTraffic              = new ServerPacketTraffic(this)
+    override val eventNotifier      : EventNotifier              = new DefaultEventNotifier
+    private  val sideNetwork        : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
+    override val network            : Network                    = sideNetwork
+    private  val systemChannel      : SystemPacketChannel        = new SystemPacketChannel(ChannelScope.broadcast(traffic.newWriter(SystemChannelID)))
+    private  val initializationLocks: WorkerController           = new WorkerController(workerPool)
 
     @volatile private var alive = false
 
@@ -229,9 +230,6 @@ class ServerConnection(applicationContext: ServerApplication,
         //There is no currently connected connection with the same identifier on this network.
         if (currentConnection.isEmpty) {
             connectionsManager.registerConnection(identifier, socket)
-            val newConnection = getConnection(identifier)
-            if (newConnection.isDefined) //if empty, the connection would be rejected.
-                sideNetwork.addEntity(newConnection.get)
             return
         }
 

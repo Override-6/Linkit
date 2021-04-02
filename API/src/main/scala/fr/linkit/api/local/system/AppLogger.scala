@@ -54,7 +54,7 @@ object AppLogger {
     def log(level: Level, msg: AnyRef, throwable: Throwable): Unit = logger.log(level, msg, throwable)
 
     def printStackTrace(e: Throwable): Unit = {
-        logger.error(s"Exception in thread '${Thread.currentThread().getName}'" + e.getMessage)
+        logger.error(s"Exception in thread '${Thread.currentThread().getName}': " + e.getMessage)
         e.printStackTrace()
     }
 
@@ -63,7 +63,7 @@ object AppLogger {
         val stackTrace    = currentThread.getStackTrace
 
         debug(s"RETRIEVING ${to - from} STACK LINES FOR THREAD ${currentThread.getName} :")
-        for (i <- (from + 2) to to.min(stackTrace.length - 2)) {
+        for (i <- (from + 2) to to.min(stackTrace.length - 2) + 1) {
             println("\t" + stackTrace(i))
         }
     }

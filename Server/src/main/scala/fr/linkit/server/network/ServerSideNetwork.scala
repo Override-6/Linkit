@@ -57,15 +57,6 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
                 })
     }
 
-    def addEntity(connection: ServerExternalConnection): Unit = {
-        if (serverConnection ne connection.session.server)
-            throw new IllegalAccessException("Attempted to add connection into a network that does not belongs to it")
-
-        val identifier = connection.boundIdentifier
-        if (!sharedIdentifiers.contains(identifier))
-            sharedIdentifiers.add(identifier)
-    }
-
     def createServerEntity(): NetworkEntity = {
         val selfCache    = newCacheManager(serverIdentifier, serverConnection)
         val serverEntity = new SelfNetworkEntity(serverConnection, ExternalConnectionState.CONNECTED, selfCache) //Server always connected to himself

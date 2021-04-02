@@ -56,16 +56,18 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             throw new NullPointerException("Family or owner is null.")
 
         caches.get(family)
-                .fold(caches.synchronized {
+                .fold {
                     AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
                     val cache = new NetworkSharedCacheManager(family, owner, cacheCommunicator, cacheRequestChannel)
                     //Will inject all packet that the new cache have possibly missed.
-                    AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: PUTTING CACHE <$family, $owner> INTO CACHES")
-                    caches.put(family, cache)
-                    AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
+                    caches.synchronized {
+                        AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: PUTTING CACHE <$family, $owner> INTO CACHES")
+                        caches.put(family, cache)
+                        AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
+                    }
                     cacheCommunicator.injectStoredPackets()
                     cache: SharedCacheManager
-                })(cache => {
+                }(cache => {
                     AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: <$family, $owner> UpDaTiNg CaChE")
                     cache.update()
                     cache

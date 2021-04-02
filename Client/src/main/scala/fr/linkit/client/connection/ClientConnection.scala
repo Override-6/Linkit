@@ -39,7 +39,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     import session._
 
-    start() //Weird
+    initPacketReader()
 
     override val traffic          : PacketTraffic     = session.traffic
     override val supportIdentifier: String            = configuration.identifier
@@ -49,6 +49,14 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(this)
     override val network          : Network           = sideNetwork
     @volatile private var alive                       = true
+
+    /*
+    * This will have for consequence to add the current connection's presence to the whole network.
+    * Depending on how many clients are connected over the network, the time
+    * for complete initialization between the server and all the client may vary.
+    * This time is exponential.
+    * */
+    sideNetwork.handshake()
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
         traffic.getInjectable(injectableID, scopeFactory, factory)
@@ -78,7 +86,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     }
 
     @workerExecution
-    def start(): Unit = {
+    private def initPacketReader(): Unit = {
         BusyWorkerPool.ensureCurrentIsWorker("Can't start in a non worker pool !")
         if (alive)
             throw new IllegalStateException(s"Connection already started ! ($supportIdentifier)")

@@ -36,8 +36,10 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
     private val entertainer = new WorkerController(pool)
 
     override def add(e: A): Boolean = {
-        content.add(e)
-        AppLogger.error(s"Added ${e} in content $content")
+        content.synchronized {
+            content.add(e)
+            AppLogger.error(s"Added ${e} in content $this (${System.identityHashCode(this)})")
+        }
         entertainer.notifyFirstThread()
         true
     }
@@ -52,16 +54,18 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
         content.removeFirst()
     }
 
-    override def poll(): A = {
+    override def poll(): A = content.synchronized  {
         content.pollFirst()
     }
 
     @workerExecution
     override def take(): A = {
-        AppLogger.error(s"$currentTasksId <> Taking item in $this...")
+        AppLogger.error(s"$currentTasksId <> Taking item in $this (${System.identityHashCode(this)})...")
         if (content.isEmpty)
             entertainer.waitTask() //will be released once the queue isn't empty anymore
-        AppLogger.error(s"Content has been fulled !")
+        AppLogger.error(s"Something has been added !")
+        if (content.isEmpty)
+            throw new Error("Content can't be empty.")
         poll()
     }
 

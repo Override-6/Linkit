@@ -20,7 +20,6 @@ import fr.linkit.core.local.concurrency.{currentThread, now, timedPark}
 import java.util.concurrent.locks.LockSupport
 import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
 import scala.collection.mutable.ListBuffer
-import scala.util.control.NonFatal
 
 /**
  * This class handles a FixedThreadPool from Java executors, excepted that the used threads can be busy about
@@ -127,7 +126,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
                 task
                 currentWorker.removeTaskID(submittedTaskID)
             } catch {
-                case NonFatal(e)        =>
+                case e                  =>
                     AppLogger.fatal(s"${currentTasksId} <> Caught fatal exception in thread pool '$name'. The JVM Will exit.")
                     AppLogger.printStackTrace(e)
                     System.exit(1)
@@ -138,10 +137,11 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
             }
             if (rootExecution)
                 activeThreads -= 1
-
-            workTaskIds -= workTaskIds.synchronized(submittedTaskID)
-            val tasks = workTaskIds.synchronized(workTaskIds.toString())
-            AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK ACCOMPLISHED ($submittedTaskID) ($tasks).")
+            workTaskIds.synchronized {
+                workTaskIds -= submittedTaskID
+                val tasks = workTaskIds.toString()
+                AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK ACCOMPLISHED ($submittedTaskID) ($tasks).")
+            }
         }
         AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) Task $submittedTaskID will be submitted...")
 
@@ -296,7 +296,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     private def executeRemainingTasks(): Unit = {
         ensureCurrentIsWorker()
         AppLogger.debug(s"EXECUTING ALL REMAINING TASKS $workQueue")
-        while (!workQueue.isEmpty) {
+        while (!workQueue.isEmpty && currentWorker.currentTaskIsWaiting()) {
             val task = workQueue.poll()
             if (task != null) {
                 currentWorker.taskRecursionDepthCount += 1

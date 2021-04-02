@@ -54,6 +54,14 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
         new SelfNetworkEntity(connection, connection.getState, sharedCache)
     }
 
+    private[client] def handshake(): Unit = {
+        AppLogger.debug("HANDSHAKING...")
+        val identifier = connection.supportIdentifier
+        if (!sharedIdentifiers.contains(identifier))
+            sharedIdentifiers.add(identifier)
+        AppLogger.debug("HANDSHAKE MADE !")
+    }
+
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
         //lazy val entity = entityOpt.get
         /*val event = mod match {

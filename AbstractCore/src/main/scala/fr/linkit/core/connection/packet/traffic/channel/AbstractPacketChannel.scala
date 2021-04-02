@@ -64,7 +64,9 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
     }
 
     def storePacket(packet: Packet, coords: PacketCoordinates): Unit = {
-        AppLogger.debug(s"$currentTasksId <> STORING PACKET $packet AND COORDS $coords INTO $storedPackets")
+        storedPackets.synchronized {
+            AppLogger.debug(s"$currentTasksId <> STORING PACKET $packet AND COORDS $coords INTO $storedPackets")
+        }
         if (coords.injectableID != identifier) {
             throw new IllegalArgumentException("Stored packet coordinates must target the same injectable identifier as this channel.")
         }
@@ -84,20 +86,34 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
 
                 DedicatedPacketCoordinates(identifier, supportIdentifier, broadcast.senderID)
         }
-        storedPackets += ((packet, directCoords))
+        if (storedPackets.exists(_._1 eq packet))
+            throw new Error("Double instance packet in storage.")
+
+        storedPackets.synchronized {
+            storedPackets += ((packet, directCoords))
+        }
     }
 
     def injectStoredPackets(): Unit = {
-        AppLogger.debug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedPackets")
+        var clone: Array[(Packet, DedicatedPacketCoordinates)] = null
+        storedPackets.synchronized {
 
-        val clone = Array.from(storedPackets)
-        storedPackets.clear()
+            AppLogger.debug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedPackets")
 
-        if (clone.exists(clone.contains(_)))
-            throw new Error("Double instance packet in storage.")
+            clone = Array.from(storedPackets)
+
+            storedPackets.clear()
+        }
+
+        val builder = ListBuffer.newBuilder
+        builder.sizeHint(clone.length)
+        val injected = builder.result()
 
         clone.foreach(stored => {
             AppLogger.debug(s"$currentTasksId <> Reinjecting stored = $stored")
+            if (injected.contains(stored))
+                throw new Error("Double instance packet in storage.")
+
             val injection = traffic.injectionContainer.makeInjection(stored._1, stored._2)
             inject(injection)
         })

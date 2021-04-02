@@ -93,7 +93,7 @@ class NetworkSharedCacheManager(override val family: String,
     def handleRequest(packet: Packet, coords: DedicatedPacketCoordinates, response: ResponseSubmitter): Unit = {
         println(s"HANDLING REQUEST $packet, $coords")
 
-         packet match {
+        packet match {
 
             case LongPacket(cacheID) =>
                 val senderID: String = coords.senderID
@@ -109,13 +109,22 @@ class NetworkSharedCacheManager(override val family: String,
 
     override def retrieveCacheContent(cacheID: Long): Array[Any] = {
         println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
-        val content = requestChannel
+        val request = requestChannel
                 .startRequest(WrappedPacket(family, LongPacket(cacheID)), ownerID)
-                .nextResponse
-                .nextPacket[ArrayObjectPacket]()
-                .value
-        println(s"Content received ! (${content.mkString("Array(", ", ", ")")})")
-        content
+        try {
+
+            val content = request.nextResponse
+                    .nextPacket[ArrayObjectPacket]()
+                    .value
+            println(s"Content received ! (${content.mkString("Array(", ", ", ")")})")
+            content
+        } catch {
+            case e: Throwable =>
+                AppLogger.fatal(s"Was executing request (${request.id}) for cache ID '$cacheID'.")
+                e.printStackTrace()
+                System.exit(1)
+                throw new Error
+        }
     }
 
     private def init(): SharedMap[Long, Serializable] = {
