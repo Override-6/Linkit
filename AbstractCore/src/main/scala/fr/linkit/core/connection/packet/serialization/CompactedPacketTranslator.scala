@@ -63,7 +63,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
                 rawSerializer
             }
             try {
-                AppLogger.debug(s"${currentTasksId} <> Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
+                //AppLogger.debug(s"${currentTasksId} <> Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
                 PacketSerializationResult(packet, coordinates, () => serializer)
             } catch {
                 case NonFatal(e) =>
@@ -88,7 +88,7 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
             if (cachedSerializerWhitelist == null)
                 AppLogger.info(s"$ownerIdentifier: Stage 2 completed : Main cache manager created.")
 
-            cachedSerializerWhitelist = cache.get(15, SharedCollection[String])
+            cachedSerializerWhitelist = cache.getCache(15, SharedCollection[String])
             cachedSerializerWhitelist.add(ownerIdentifier)
             cachedSerializerWhitelist.addListener((_, _, _) => AppLogger.warn(s"Whitelist : $cachedSerializerWhitelist"))
         }

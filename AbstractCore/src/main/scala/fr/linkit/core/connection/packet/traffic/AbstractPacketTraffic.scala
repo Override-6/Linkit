@@ -109,6 +109,11 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
     }
 
     override def handleInjection(injection: PacketInjection): Unit = {
+        if (injection.isProcessing) {
+            AppLogger.error("Current thread has been discarded from injection because this injection is already processed.")
+            injection.processRemainingPins()
+            return
+        }
         val coordinates = injection.coordinates
         PacketReaderThread.checkNotCurrent()
         ensureOpen()
@@ -122,6 +127,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
             return
         }
         injectables.foreach(_.inject(injection))
+        injection.processRemainingPins()
         injectionContainer.removeInjection(injection)
     }
 

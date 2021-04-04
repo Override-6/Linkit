@@ -19,30 +19,30 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     private[concurrency] var isParkingForWorkflow   : Boolean                   = false
     private[concurrency] var taskRecursionDepthCount: Int                       = 0
     private              var currentTaskID          : Int                       = -1
-    private val workflowContinueLevels              : mutable.Map[Int, Boolean] = mutable.HashMap()
+    private val workflowContinueLevels              : mutable.Map[Int, Boolean] = mutable.LinkedHashMap()
 
     private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
-        AppLogger.error(s"$tasksId <> Entering Workflow Loop...")
+        AppLogger.error(s"$tasksId <> Entering Workflow Loop... ($currentTaskID)")
         while (workflowContinueLevels(currentTaskID)) {
-            AppLogger.error(s"$tasksId <> Workflow Loop continuing...")
+            AppLogger.error(s"$tasksId <> Workflow Loop continuing... ($currentTaskID)")
             isParkingForWorkflow = true
-            AppLogger.error(s"$tasksId <> Parking...")
+            AppLogger.error(s"$tasksId <> Parking... ($currentTaskID)")
             val t = parkAction
-            AppLogger.error(s"$tasksId <> This thread has been unparked.")
+            AppLogger.error(s"$tasksId <> This thread has been unparked. ($currentTaskID)")
             isParkingForWorkflow = false
 
             if (!workflowContinueLevels(currentTaskID)) {
-                AppLogger.error("Workflow returned...")
+                AppLogger.error(s"Workflow returned... ($currentTaskID)")
                 workflowContinueLevels(currentTaskID) = true
                 return
             }
 
-            AppLogger.error(s"$tasksId <> Continue workflow...")
+            AppLogger.error(s"$tasksId <> Continue workflow... ($currentTaskID)")
             workflow(t)
-            AppLogger.error(s"$tasksId <> Workflow have ended !")
+            AppLogger.error(s"$tasksId <> Workflow have ended ! ($currentTaskID)")
         }
         this.workflowContinueLevels(currentTaskID) = true //set it to true in case if stopWorkflowLoop has been called.
-        AppLogger.error(s"$tasksId <> Exit Worker Loop")
+        AppLogger.error(s"$tasksId <> Exit Worker Loop ($currentTaskID)")
     }
 
     private[concurrency] def stopWorkflowLoop(taskID: Int): Unit = {
@@ -62,7 +62,7 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     private[concurrency] def pushTaskID(id: Int): Unit = {
         workflowContinueLevels.put(id, true)
         currentTaskID = id
-        isUpdated = true
+        tasksIdStr = getUpdatedTasksID
     }
 
     private[concurrency] def removeTaskID(id: Int): Unit = {
@@ -71,7 +71,7 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
                 .keys
                 .lastOption
                 .getOrElse(-1)
-        isUpdated = true
+        tasksIdStr = getUpdatedTasksID
     }
 
     def isExecutingTask(taskID: Int): Boolean = workflowContinueLevels.contains(taskID)
@@ -81,14 +81,11 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     def currentTaskIsWaiting(): Boolean = workflowContinueLevels(currentTaskID)
 
     //debug only
-    private var isUpdated          = true
     private var tasksIdStr: String = _
 
-    def tasksId: String = {
+    private def getUpdatedTasksID: String = {
         if (workflowContinueLevels.isEmpty)
             return s"[]"
-        if (!isUpdated)
-            return tasksIdStr
 
         val current = getCurrentTaskID
         val sb      = new StringBuilder(s"[")
@@ -101,10 +98,14 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
             sb.append(',')
         })
         tasksIdStr = sb.dropRight(1) // remove last ',' char
-                .append(']')
+                .append("](")
+                .append(currentTaskID)
+                .append(")")
                 .toString()
         tasksIdStr
     }
+
+    def tasksId: String = tasksIdStr
 
     override def isWaitingForRecursiveTask: Boolean = isParkingForWorkflow
 

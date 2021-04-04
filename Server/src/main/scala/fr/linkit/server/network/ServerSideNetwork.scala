@@ -35,7 +35,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
                 .addListener(handleTraffic)
     }
 
-    override val startUpDate: Timestamp = globalCache.post(2, new Timestamp(System.currentTimeMillis()))
+    override val startUpDate: Timestamp = globalCache.postInstance(2, new Timestamp(System.currentTimeMillis()))
 
     override def serverIdentifier: String = serverConnection.supportIdentifier
 
@@ -62,7 +62,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
         val serverEntity = new SelfNetworkEntity(serverConnection, ExternalConnectionState.CONNECTED, selfCache) //Server always connected to himself
         serverEntity
                 .entityCache
-                .get(3, SharedInstance[ExternalConnectionState])
+                .getInstance(3, SharedInstance[ExternalConnectionState])
                 .set(ExternalConnectionState.CONNECTED) //technically always connected
         serverEntity
     }

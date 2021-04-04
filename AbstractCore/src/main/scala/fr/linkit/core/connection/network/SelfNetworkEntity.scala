@@ -35,7 +35,7 @@ class SelfNetworkEntity(connection: ConnectionContext,
     update()
 
     override def update(): this.type = {
-        entityCache.post(2, connectionDate)
+        entityCache.postInstance(2, connectionDate)
         //cache.post(4, apiVersion)
         //cache.post(5, relayVersion)
         entityCache.update()

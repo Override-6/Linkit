@@ -12,7 +12,8 @@
 
 package fr.linkit.core.connection.network.cache
 
-import fr.linkit.api.connection.network.cache.{InternalSharedCache, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.packet.traffic.ChannelScope
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.NetworkSharedCacheManager.MockCache
@@ -20,8 +21,7 @@ import fr.linkit.core.connection.network.cache.map.SharedMap
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
 import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
-import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel
-import fr.linkit.core.connection.packet.traffic.channel.RequestPacketChannel.ResponseSubmitter
+import fr.linkit.core.connection.packet.traffic.channel.request.{RequestPacket, RequestPacketChannel, ResponseSubmitter}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import java.util.NoSuchElementException
@@ -43,24 +43,25 @@ class NetworkSharedCacheManager(override val family: String,
                                 requestChannel: RequestPacketChannel) extends SharedCacheManager {
 
     private lazy val sharedObjects: map.SharedMap[Long, Serializable] = init()
+    private      val ownerScope                                       = ChannelScope.reserved(WrappedPacket(family, _), ownerID)
 
-    override def post[A <: Serializable](key: Long, value: A): A = {
+    override def postInstance[A <: Serializable](key: Long, value: A): A = {
         sharedObjects.put(key, value)
         value
     }
 
-    override def get[A <: Serializable](key: Long): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
+    override def getInstance[A <: Serializable](key: Long): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
 
-    override def getOrWait[A <: Serializable](key: Long): A = sharedObjects.getOrWait(key).asInstanceOf[A]
+    override def getInstanceOrWait[A <: Serializable](key: Long): A = sharedObjects.getOrWait(key).asInstanceOf[A]
 
     override def apply[A <: Serializable](key: Long): A = sharedObjects(key).asInstanceOf[A]
 
-    override def get[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
+    override def getCache[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior): A = {
         LocalCacheHandler
                 .findCache[A](cacheID)
                 .getOrElse {
                     println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
-                    val baseContent = retrieveCacheContent(cacheID)
+                    val baseContent = retrieveCacheContent(cacheID, behavior)
                     println(s"CONTENT RECEIVED (${baseContent.mkString("Array(", ", ", ")")}) FOR CACHE $cacheID")
                     val sharedCache = factory.createNew(this, cacheID, baseContent, cacheChannel)
                     LocalCacheHandler.register(cacheID, sharedCache)
@@ -68,12 +69,43 @@ class NetworkSharedCacheManager(override val family: String,
                 }
     }
 
-    override def getUpdated[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A = {
-        get(cacheID, factory).update()
+    override def getUpdated[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior): A = {
+        getCache(cacheID, factory, behavior).update()
+    }
+
+    override def retrieveCacheContent(cacheID: Long, behavior: CacheOpenBehavior): Array[Any] = {
+        println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
+        val request = requestChannel
+                .makeRequest(ownerScope)
+                .putProperty("behavior", behavior)
+                .addPacket(LongPacket(cacheID))
+                .submit()
+
+        try {
+            val response         = request.nextResponse
+            val possibleErrorMsg = response.getProperty[String]("errorMsg")
+
+            if (possibleErrorMsg.isDefined) {
+                val errorMsg = possibleErrorMsg.get
+                throw new CacheOpenException(errorMsg)
+            }
+
+            val content = response.nextPacket[ArrayObjectPacket].value
+            request.delete()
+
+            println(s"Content '$cacheID' received ! (${content.mkString("Array(", ", ", ")")})")
+            content
+        } catch {
+            case e: Throwable =>
+                AppLogger.fatal(s"Was executing request (${request.id}) for cache ID '$cacheID'.")
+                AppLogger.printStackTrace(e)
+                System.exit(1)
+                throw new Error
+        }
     }
 
     override def update(): this.type = {
-        println("This cache will be updated.")
+        println("Cache will be updated.")
         LocalCacheHandler.updateAll()
         //sharedObjects will be updated by LocalCacheHandler.updateAll call
         this
@@ -90,54 +122,33 @@ class NetworkSharedCacheManager(override val family: String,
         }
     }
 
-    def handleRequest(packet: Packet, coords: DedicatedPacketCoordinates, response: ResponseSubmitter): Unit = {
+    def handleRequest(packet: RequestPacket, coords: DedicatedPacketCoordinates, response: ResponseSubmitter): Unit = {
         println(s"HANDLING REQUEST $packet, $coords")
 
-        packet match {
+        val senderID: String = coords.senderID
+        val behavior         = packet.getProperty[CacheOpenBehavior]("behavior").get
 
-            case LongPacket(cacheID) =>
-                val senderID: String = coords.senderID
-                println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
-                val content = LocalCacheHandler.getContentOrElseMock(cacheID)
-                println(s"Content = ${content.mkString("Array(", ", ", ")")}")
+        println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
+        val content = LocalCacheHandler.getContentOrElseMock(cacheID)
+        println(s"Content = ${content.mkString("Array(", ", ", ")")}")
 
-                response
-                        .addPacket(ArrayObjectPacket(content))
-                        .submit()
-        }
-    }
-
-    override def retrieveCacheContent(cacheID: Long): Array[Any] = {
-        println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
-        val request = requestChannel
-                .startRequest(WrappedPacket(family, LongPacket(cacheID)), ownerID)
-        try {
-
-            val content = request.nextResponse
-                    .nextPacket[ArrayObjectPacket]()
-                    .value
-            println(s"Content received ! (${content.mkString("Array(", ", ", ")")})")
-            content
-        } catch {
-            case e: Throwable =>
-                AppLogger.fatal(s"Was executing request (${request.id}) for cache ID '$cacheID'.")
-                e.printStackTrace()
-                System.exit(1)
-                throw new Error
-        }
+        response
+                .addPacket(ArrayObjectPacket(content))
+                .submit()
     }
 
     private def init(): SharedMap[Long, Serializable] = {
         /*
-        * Don't touch, scala objects works as a lazy val, and all lazy vals are synchronized on the instance that
+        * Don't touch, scala objects works as a lazy val, and all lazy val are synchronized on the instance that
         * they are computing. If you remove this line, NetworkSCManager could some times be deadlocked because retrieveCacheContent
         * will wait for its content's request, and thus its request response will be handled by another thread,
         * which will need LocalCacheHandler in order to retrieve the local cache, which is synchronized, so it will
         * be blocked until the thread that requested the content get it's response, but it's impossible because the thread
         * that handles the request is locking...
+        * For simple, if you remove this line, a deadlock will occur.
         * */
         LocalCacheHandler
-        val content = retrieveCacheContent(1)
+        val content = retrieveCacheContent(1, CacheOpenBehavior.AWAIT_OPEN)
 
         val sharedObjects = SharedMap[Long, Serializable].createNew(this, 1, content, cacheChannel)
         LocalCacheHandler.register(1L, sharedObjects)

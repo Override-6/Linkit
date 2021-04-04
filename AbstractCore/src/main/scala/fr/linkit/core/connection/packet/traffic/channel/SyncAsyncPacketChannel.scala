@@ -41,7 +41,7 @@ class SyncAsyncPacketChannel(scope: ChannelScope,
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
         val coordinates = injection.coordinates
-        injection.process {
+        injection.attachPin {
             case WrappedPacket(tag, subPacket) =>
                 tag match {
                     case "s" => sync.add(subPacket)

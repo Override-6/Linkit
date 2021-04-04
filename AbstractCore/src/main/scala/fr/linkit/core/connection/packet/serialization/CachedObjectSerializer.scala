@@ -22,7 +22,7 @@ import fr.linkit.core.connection.packet.serialization.NumberSerializer.serialize
 
 class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer {
 
-    private val objectMap = cache.get(14, SharedMap[Int, String])
+    private val objectMap = cache.getCache(14, SharedMap[Int, String])
 
     /**
      * @return the hashcode of the class name under a byte sequences

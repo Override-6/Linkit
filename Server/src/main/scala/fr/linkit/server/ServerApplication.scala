@@ -212,6 +212,7 @@ object ServerApplication {
             } catch {
                 case NonFatal(e) =>
                     exception = e
+                    AppLogger.printStackTrace(e)
             }
             serverAppContext.synchronized {
                 serverAppContext.notify()

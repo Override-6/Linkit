@@ -270,7 +270,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         currentWorker.taskRecursionDepth
     }
 
-    private def unparkBusyThread(): Unit = {
+    private def unparkBusyThread(): Unit = workers.synchronized {
         workers.find(_.isWaitingForRecursiveTask) match {
             case Some(thread) =>
                 AppLogger.error(s"${thread.getName} <- This thread will be unparked because a new task is ready to be executed.")
@@ -283,7 +283,9 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
 
     private def getThreadFactory: ThreadFactory = target => {
         val worker = new BusyWorkerThread(target, this, threadCount + 1)
-        workers += worker
+        workers.synchronized {
+            workers += worker
+        }
         worker
     }
 

@@ -30,22 +30,22 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 
     private val listeners = new ConsumerContainer[A]
 
-    @volatile private var modCount    = 0
-    @volatile private var instance: A = _
+    @volatile private var modCount            = 0
+    @volatile private var instance: Option[A] = None
 
     def this(handler: SharedCacheManager,
              identifier: Long,
              channel: PacketSender with PacketSyncReceiver,
              value: A = null) = {
         this(handler, identifier, channel)
-        instance = value
+        instance = Option(value)
     }
 
     override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
         //println(s"<$family> Handling packet $packet")
         packet match {
             case ObjectPacket(remoteInstance: A) =>
-                this.instance = remoteInstance
+                this.instance = Option(remoteInstance)
                 modCount += 1
                 listeners.applyAll(remoteInstance)
             //println(s"<$family> INSTANCE IS NOW (network): $instance")
@@ -56,17 +56,23 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 
     override def modificationCount(): Int = modCount
 
-    override def currentContent: Array[Any] = Array(instance)
+    override def currentContent: Array[Any] = Array(instance.orNull)
+
+    override def toString: String = s"SharedInstance($instance)"
 
     override protected def setCurrentContent(content: Array[A]): Unit = {
-        content.ensuring(_.length == 1)
-        set(content(0))
+        content.ensuring(_.length <= 1)
+        if (content.isEmpty) {
+            instance = None
+            return
+        }
+        instance = Option(content(0))
     }
 
-    def get: A = instance
+    def get: Option[A] = instance
 
     def set(t: A): this.type = {
-        instance = t
+        instance = Option(t)
         modCount += 1
         listeners.applyAll(t)
         //println(s"INSTANCE IS NOW (local) : $instance $autoFlush")

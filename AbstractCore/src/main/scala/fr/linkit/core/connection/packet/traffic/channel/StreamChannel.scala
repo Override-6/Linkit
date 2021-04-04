@@ -27,7 +27,7 @@ class StreamChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
     @volatile private var transferConstantly       = false
 
     override def handleInjection(injection: PacketInjection): Unit = {
-        injection.process {
+        injection.attachPin {
             case packet: StreamPacket =>
                 output.write(packet.streamSlice)
             case p                    => throw new UnexpectedPacketException(s"Received forbidden packet $p")

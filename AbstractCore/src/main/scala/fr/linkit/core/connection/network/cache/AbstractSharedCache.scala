@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.network.cache
 
-import fr.linkit.api.connection.network.cache.{InternalSharedCache, SharedCacheManager}
+import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
@@ -38,10 +38,10 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         if (handler == null)
             return this
 
-        //asking server to give us his content version of our cache
-        //println(s"<$family> UPDATING CACHE $identifier")
-        val content = handler.retrieveCacheContent(identifier)
-        //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
+
+        println(s"<$family> UPDATING CACHE $identifier")
+        val content = handler.retrieveCacheContent(identifier, CacheOpenBehavior.GET_OR_CRASH)
+        println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
 
         setCurrentContent(ScalaUtils.slowCopy(content))
         this

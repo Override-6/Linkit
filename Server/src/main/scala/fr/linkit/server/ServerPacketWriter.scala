@@ -15,8 +15,7 @@ package fr.linkit.server
 import fr.linkit.api.connection.NoSuchConnectionException
 import fr.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.connection.packet.traffic.{DirectInjectionContainer, WriterInfo}
+import fr.linkit.core.connection.packet.traffic.WriterInfo
 import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {
@@ -30,6 +29,7 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
     //private val hooks = info.packetHooks
 
     override def writePacket(packet: Packet, targetIDs: String*): Unit = {
+        val transformedPacket = info.transform(packet)
         targetIDs.foreach(targetID => {
             /*
              * If the targetID is the same as the server's identifier, that means that we target ourself,
@@ -38,12 +38,12 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
              * */
             if (targetID == serverIdentifier) {
                 val coords = DedicatedPacketCoordinates(identifier, targetID, serverIdentifier)
-                traffic.handleInjection(packet, coords)
+                traffic.handleInjection(transformedPacket, coords)
                 return
             }
             val opt = serverConnection.getConnection(targetID)
             if (opt.isDefined) {
-                opt.get.sendPacket(packet, identifier)
+                opt.get.sendPacket(transformedPacket, identifier)
             } else {
                 throw NoSuchConnectionException(s"Attempted to send a packet to target $targetID, but this conection is missing or not connected.")
             }
@@ -51,6 +51,7 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
     }
 
     override def writeBroadcastPacket(packet: Packet, discarded: String*): Unit = {
-        serverConnection.broadcastPacketToConnections(packet, supportIdentifier, identifier, discarded: _*)
+        val transformedPacket = info.transform(packet)
+        serverConnection.broadcastPacketToConnections(transformedPacket, supportIdentifier, identifier, discarded: _*)
     }
 }

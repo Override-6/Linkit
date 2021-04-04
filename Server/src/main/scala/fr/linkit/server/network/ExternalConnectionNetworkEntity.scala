@@ -26,7 +26,7 @@ class ExternalConnectionNetworkEntity private[network](serverConnection: ServerC
     override val network: Network = serverConnection.network
     private  val connection       = serverConnection.getConnection(identifier).get
 
-    entityCache.get(3, SharedInstance[ExternalConnectionState])
+    entityCache.getInstance(3, SharedInstance[ExternalConnectionState])
             .set(ExternalConnectionState.CONNECTED) //technically already connected
 
     override def getConnectionState: ExternalConnectionState = connection.getState

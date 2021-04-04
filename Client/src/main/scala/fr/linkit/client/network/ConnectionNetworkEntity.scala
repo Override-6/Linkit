@@ -13,8 +13,9 @@
 package fr.linkit.client.network
 
 import fr.linkit.api.connection.ConnectionContext
-import fr.linkit.api.connection.network.cache.SharedCacheManager
+import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, SharedCacheManager}
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.AbstractRemoteEntity
 import fr.linkit.core.connection.network.cache.SharedInstance
 
@@ -25,9 +26,9 @@ class ConnectionNetworkEntity private[network](connection: ConnectionContext,
 
     override val network: Network = connection.network
 
-    private val stateInstance = cache.get(3, SharedInstance[ExternalConnectionState])
+    private val stateInstance = cache.getCache(3, SharedInstance[ExternalConnectionState], CacheOpenBehavior.AWAIT_OPEN)
 
-    override def getConnectionState: ExternalConnectionState = stateInstance.get
+    override def getConnectionState: ExternalConnectionState = stateInstance.get.get
 
     //TODO
     stateInstance.addListener(newState => {

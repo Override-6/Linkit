@@ -21,7 +21,7 @@ import scala.collection.mutable
 
 class DirectInjectionContainer extends InjectionContainer {
 
-    private val processingInjections = new mutable.LinkedHashMap[(Int, String), DirectInjection]
+    private val processingInjections = new mutable.LinkedHashMap[(Int, String), ParallelInjection]
 
     override def makeInjection(packet: Packet, coordinates: DedicatedPacketCoordinates): PacketInjection = this.synchronized {
         val number = packet.number
@@ -35,11 +35,11 @@ class DirectInjectionContainer extends InjectionContainer {
                 value
             case None        =>
                 AppLogger.debug(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
-                new DirectInjection(coordinates)
+                new ParallelInjection(coordinates)
         }
         processingInjections.put((id, sender), injection)
 
-        injection.inject(packet)
+        injection.insert(packet)
         injection
     }
 

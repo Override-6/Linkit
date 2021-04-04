@@ -32,14 +32,14 @@ class SocketPacketWriter(socket: DynamicSocket,
             val target    = targetIDs.head
             val dedicated = DedicatedPacketCoordinates(identifier, targetIDs(0), supportIdentifier)
             if (target == supportIdentifier) {
-                traffic.handleInjection(packet, dedicated)
+                traffic.handleInjection(transformedPacket, dedicated)
                 return
             }
             dedicated
         } else {
             if (targetIDs.contains(supportIdentifier)) {
                 val coords = DedicatedPacketCoordinates(identifier, serverIdentifier, supportIdentifier)
-                traffic.handleInjection(packet, coords)
+                traffic.handleInjection(transformedPacket, coords)
             }
 
             BroadcastPacketCoordinates(identifier, supportIdentifier, false, targetIDs.filter(_ != supportIdentifier): _*)

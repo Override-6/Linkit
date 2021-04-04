@@ -23,7 +23,7 @@ class ClientApplicationConfigBuilder {
     private final var enableEventHandling: Boolean = false //still in development
 
     var loadSchematic        : AppSchematic[ClientApplication] = new EmptySchematic()
-    var nWorkerThreadFunction: Int => Int                      = _ * 2 + 2 //2 threads per external connection + 3 thread for application.
+    var nWorkerThreadFunction: Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 thread for application.
     var pluginFolder         : Option[String]                  = Some("/Plugins")
     var fsAdapter            : FileSystemAdapter               = JDKFileSystemAdapters.Nio
     var securityManager      : ApplicationSecurityManager      = ApplicationSecurityManager.none

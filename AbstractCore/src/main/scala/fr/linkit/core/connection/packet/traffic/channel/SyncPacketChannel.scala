@@ -42,7 +42,7 @@ class SyncPacketChannel protected(scope: ChannelScope,
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        injection.process(queue.add)
+        injection.attachPin(queue.add)
     }
 
     override def send(packet: Packet): Unit = scope.sendToAll(packet)

@@ -29,7 +29,7 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
         val coordinates = injection.coordinates
-        injection.process {
+        injection.attachPin {
             case WrappedPacket(category, subPacket) =>
                 categories.get(category).foreach(_.inject(injection))
 

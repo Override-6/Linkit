@@ -63,7 +63,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
         AppLogger.error(s"$currentTasksId <> Taking item in $this (${System.identityHashCode(this)})...")
         if (content.isEmpty)
             entertainer.waitTask() //will be released once the queue isn't empty anymore
-        AppLogger.error(s"Something has been added !")
+        AppLogger.error(s"Something has been added ! $this (${System.identityHashCode(this)})")
         if (content.isEmpty)
             throw new Error("Content can't be empty.")
         poll()

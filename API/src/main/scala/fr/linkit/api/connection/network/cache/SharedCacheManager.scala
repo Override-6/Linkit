@@ -21,18 +21,18 @@ trait SharedCacheManager extends Updatable {
     val family : String
     val ownerID: String
 
-    def post[A <: Serializable](key: Long, value: A): A
+    def postInstance[A <: Serializable](key: Long, value: A): A
 
-    def get[A <: Serializable](key: Long): Option[A]
+    def getInstance[A <: Serializable](key: Long): Option[A]
 
-    def getOrWait[A <: Serializable](key: Long): A
+    def getInstanceOrWait[A <: Serializable](key: Long): A
 
     def apply[A <: Serializable](key: Long): A
 
-    def get[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A
+    def getCache[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior = CacheOpenBehavior.GET_OR_EMPTY): A
 
-    def retrieveCacheContent(cacheID: Long): Array[Any]
+    def getUpdated[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior = CacheOpenBehavior.GET_OR_EMPTY): A
 
-    def getUpdated[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A]): A
+    def retrieveCacheContent(cacheID: Long, behavior: CacheOpenBehavior): Array[Any]
 
 }

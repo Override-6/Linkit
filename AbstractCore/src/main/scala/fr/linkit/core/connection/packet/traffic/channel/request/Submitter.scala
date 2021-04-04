@@ -1,0 +1,73 @@
+package fr.linkit.core.connection.packet.traffic.channel.request
+
+import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.traffic.ChannelScope
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
+
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
+sealed abstract class Submitter[P](id: Long, scope: ChannelScope) {
+
+    protected val packets: ListBuffer[Packet] = ListBuffer.empty[Packet]
+    protected val properties                  = mutable.HashMap.empty[String, Serializable]
+    @volatile private var isSubmit            = false
+
+    def addPacket(packet: Packet): this.type = {
+        ensureNotSubmit()
+        packets += packet
+        this
+    }
+
+    def addPackets(packets: Packet*): this.type = {
+        ensureNotSubmit()
+        this.packets ++= packets
+        this
+    }
+
+    def putProperty(name: String, value: Serializable): this.type = {
+        ensureNotSubmit()
+        properties.put(name, value)
+        this
+    }
+
+    def submit(): P = {
+        ensureNotSubmit()
+        AppLogger.debug(s"$currentTasksId <> Submitting response ($id)... with scope $scope")
+        val result = makeSubmit()
+        AppLogger.debug(s"$currentTasksId <> Response ($id) submitted ! ")
+        isSubmit = true
+        result
+    }
+
+    protected def makeSubmit(): P
+
+    private def ensureNotSubmit(): Unit = {
+        if (isSubmit)
+            throw new IllegalStateException("Response was already sent." + this)
+    }
+}
+
+class ResponseSubmitter(id: Long, scope: ChannelScope) extends Submitter[Unit](id, scope) {
+
+    override protected def makeSubmit(): Unit = {
+        val response = ResponsePacket(id, packets.toArray, properties.toMap)
+        scope.sendToAll(response)
+    }
+}
+
+class RequestSubmitter(id: Long, scope: ChannelScope, pool: BusyWorkerPool, handler: RequestPacketChannel) extends Submitter[RequestHolder](id, scope) {
+
+    override protected def makeSubmit(): RequestHolder = {
+        val holder  = RequestHolder(id, pool.newBusyQueue, handler)
+        val request = RequestPacket(id, packets.toArray, properties.toMap)
+
+        handler.addRequestHolder(holder)
+        scope.sendToAll(request)
+
+        holder
+    }
+
+}
