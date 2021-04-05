@@ -19,6 +19,7 @@ import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.core.connection.packet.serialization.NumberSerializer
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.core.local.system.SystemPacketChannel
 import fr.linkit.server.network.ServerSideNetwork
@@ -35,7 +36,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     val connectionManager: ExternalConnectionsManager = info.manager
     val readThread       : PacketReaderThread         = info.readThread
     val serverTraffic    : PacketTraffic              = server.traffic
-    val channel          : SystemPacketChannel        = serverTraffic.getInjectable(SystemChannelID, ChannelScope.reserved(boundIdentifier), SystemPacketChannel)
+    val channel          : SystemPacketChannel        = serverTraffic.getInjectable(SystemChannelID, ChannelScopes.reserved(boundIdentifier), SystemPacketChannel)
     val tasksHandler     : ConnectionTasksHandler     = null //new ConnectionTasksHandler(this)
 
     @workerExecution

@@ -15,25 +15,28 @@ package fr.linkit.core.connection.packet.traffic.channel
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketInjection}
 import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
-import fr.linkit.core.connection.packet.traffic.DirectInjectionContainer
+import fr.linkit.core.connection.packet.traffic.channel.PacketChannelCategories.nextChannelNumber
 
 import scala.collection.mutable
 
 class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel(scope) {
 
-    private val categories = mutable.Map.empty[String, PacketInjectable]
+    private val categories    = mutable.Map.empty[String, PacketInjectable]
+    private val channelNumber = nextChannelNumber
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val coordinates = injection.coordinates
         injection.attachPin {
-            case WrappedPacket(category, subPacket) =>
-                categories.get(category).foreach(_.inject(injection))
-
-            case packet => throw UnexpectedPacketException(s"Received unexpected packet $packet")
+            (packet, attr) => {
+                val attribute = attr.getPresence[String](this)
+                if (attribute.isEmpty) throw UnexpectedPacketException(s"Received unexpected packet $packet")
+                val categoryName = attribute.get
+                categories.get(categoryName).fold(throw new NoSuchElementException(s"Category '$categoryName' does not exists into PacketChannelCategories$channelNumber.")) {
+                    category => category.inject(injection)
+                }
+            }
         }
     }
 
@@ -42,8 +45,9 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
         //         throw new IllegalArgumentException(s"The category '$name' already exists for this categorised channel")
 
         categories.getOrElseUpdate(name, {
-            val writer  = traffic.newWriter(identifier, WrappedPacket(name, _))
+            val writer  = traffic.newWriter(identifier)
             val channel = factory.createNew(scopeFactory(writer))
+            channel.addDefaultPresence(this, name)
             categories.put(name, channel)
             channel
         }).asInstanceOf[C]
@@ -52,6 +56,13 @@ class PacketChannelCategories(scope: ChannelScope) extends AbstractPacketChannel
 }
 
 object PacketChannelCategories extends PacketInjectableFactory[PacketChannelCategories] {
+
+    @volatile private var channelNumber: Int = 0
+
+    private def nextChannelNumber: Int = {
+        channelNumber += 1
+        channelNumber
+    }
 
     override def createNew(scope: ChannelScope): PacketChannelCategories = {
         new PacketChannelCategories(scope)

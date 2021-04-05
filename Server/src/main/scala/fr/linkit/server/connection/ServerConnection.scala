@@ -14,7 +14,7 @@ package fr.linkit.server.connection
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
@@ -23,7 +23,7 @@ import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
-import fr.linkit.core.connection.packet.traffic.DynamicSocket
+import fr.linkit.core.connection.packet.traffic.{ChannelScopes, DynamicSocket}
 import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, WorkerController}
 import fr.linkit.core.local.system.event.DefaultEventNotifier
 import fr.linkit.core.local.system.{Rules, SystemPacketChannel}
@@ -48,7 +48,7 @@ class ServerConnection(applicationContext: ServerApplication,
     override val eventNotifier      : EventNotifier              = new DefaultEventNotifier
     private  val sideNetwork        : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
     override val network            : Network                    = sideNetwork
-    private  val systemChannel      : SystemPacketChannel        = new SystemPacketChannel(ChannelScope.broadcast(traffic.newWriter(SystemChannelID)))
+    private  val systemChannel      : SystemPacketChannel        = new SystemPacketChannel(ChannelScopes.broadcast(traffic.newWriter(SystemChannelID)))
     private  val initializationLocks: WorkerController           = new WorkerController(workerPool)
 
     @volatile private var alive = false
@@ -103,12 +103,12 @@ class ServerConnection(applicationContext: ServerApplication,
 
     def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
 
-    def broadcastPacketToConnections(packet: Packet, sender: String, injectableID: Int, discarded: String*): Unit = {
+    def broadcastPacketToConnections(packet: Packet, attributes: PacketAttributes, sender: String, injectableID: Int, discarded: String*): Unit = {
         if (connectionsManager.countConnections - discarded.length <= 0) {
             // There is nowhere to send this packet.
             return
         }
-        connectionsManager.broadcastPacket(packet, injectableID, sender, discarded.appended(supportIdentifier): _*)
+        connectionsManager.broadcastPacket(packet,attributes,  injectableID, sender, discarded.appended(supportIdentifier): _*)
     }
 
     private[connection] def getSideNetwork: ServerSideNetwork = sideNetwork

@@ -60,7 +60,7 @@ object RefPacket {
         def contains(a: Any): Boolean = {
             a match {
                 case s: A => value.contains(s)
-                case _ => false
+                case _    => false
             }
         }
 
@@ -73,11 +73,10 @@ object RefPacket {
      * Represents a packet that contains an array of serializable values
      * */
     //TODO Fix Array[Serializable] and Array[Any] cast exception
-    class ArrayObjectPacket(array: Array[Any]) extends ArrayRefPacket[Any](array)
+    class ArrayObjectPacket(array: Array[Any] = Array()) extends ArrayRefPacket[Any](array)
 
     object ArrayObjectPacket {
-
-        def apply(array: Array[Any]): ArrayObjectPacket = new ArrayObjectPacket(array)
+        def apply(array: Array[Any] = Array()): ArrayObjectPacket = new ArrayObjectPacket(array)
     }
 
     /**

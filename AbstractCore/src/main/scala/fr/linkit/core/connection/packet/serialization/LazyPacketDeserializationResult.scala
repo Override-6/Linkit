@@ -3,7 +3,7 @@ package fr.linkit.core.connection.packet.serialization
 import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, Serializer}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.core.connection.packet.fundamental.EmptyPacket
-import fr.linkit.core.connection.packet.{EmptyPacketAttributes, UnexpectedPacketException}
+import fr.linkit.core.connection.packet.{SimplePacketAttributes, UnexpectedPacketException}
 
 case class LazyPacketDeserializationResult(override val bytes: Array[Byte],
                                            serializer: () => Serializer) extends PacketTransferResult {
@@ -23,7 +23,7 @@ case class LazyPacketDeserializationResult(override val bytes: Array[Byte],
 
             case Array(_: PacketCoordinates)
                  | Array(_: PacketCoordinates, _: Packet) =>
-                EmptyPacketAttributes
+                SimplePacketAttributes.empty
 
             case _ => throw UnexpectedPacketException(s"Received unknown packet info array (${cache.mkString("Array(", ", ", ")")})")
         }

@@ -12,14 +12,14 @@
 
 package fr.linkit.server.connection
 
-import java.net.SocketException
 import fr.linkit.api.connection.packet.serialization.PacketTransferResult
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DirectInjectionContainer, DynamicSocket}
+import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 
+import java.net.SocketException
 import scala.util.control.NonFatal
 
 class SelectivePacketReader(socket: DynamicSocket,
@@ -61,11 +61,12 @@ class SelectivePacketReader(socket: DynamicSocket,
             case broadcast: BroadcastPacketCoordinates =>
                 //TODO optimise packet deflection : only serialize the new coordinates, then concat the packet bytes
                 val identifiers = broadcast.listDiscarded(manager.listIdentifiers) ++ Array(boundIdentifier)
-                manager.broadcastPacket(packet, broadcast.injectableID, boundIdentifier, identifiers: _*)
+                manager.broadcastPacket(packet, result.attributes, broadcast.injectableID, boundIdentifier, identifiers: _*)
 
                 //would inject into the server too
-                val coords = DedicatedPacketCoordinates(broadcast.injectableID, server.supportIdentifier, broadcast.senderID)
-                server.traffic.handleInjection(packet, coords)
+                val coords     = DedicatedPacketCoordinates(broadcast.injectableID, server.supportIdentifier, broadcast.senderID)
+                val attributes = result.attributes
+                server.traffic.processInjection(packet, attributes, coords)
         }
     }
 

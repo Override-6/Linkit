@@ -3,16 +3,15 @@ package fr.linkit.core.connection.packet.traffic.channel.request
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.ChannelScope
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
-import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-sealed abstract class Submitter[P](id: Long, scope: ChannelScope) {
+sealed abstract class Submitter[P](id: Long, scope: ChannelScope) extends SimplePacketAttributes {
 
     protected val packets: ListBuffer[Packet] = ListBuffer.empty[Packet]
-    protected val properties                  = mutable.HashMap.empty[String, Serializable]
     @volatile private var isSubmit            = false
 
     def addPacket(packet: Packet): this.type = {
@@ -24,12 +23,6 @@ sealed abstract class Submitter[P](id: Long, scope: ChannelScope) {
     def addPackets(packets: Packet*): this.type = {
         ensureNotSubmit()
         this.packets ++= packets
-        this
-    }
-
-    def putProperty(name: String, value: Serializable): this.type = {
-        ensureNotSubmit()
-        properties.put(name, value)
         this
     }
 
@@ -53,8 +46,8 @@ sealed abstract class Submitter[P](id: Long, scope: ChannelScope) {
 class ResponseSubmitter(id: Long, scope: ChannelScope) extends Submitter[Unit](id, scope) {
 
     override protected def makeSubmit(): Unit = {
-        val response = ResponsePacket(id, packets.toArray, properties.toMap)
-        scope.sendToAll(response)
+        val response = ResponsePacket(id, packets.toArray)
+        scope.sendToAll(response, this)
     }
 }
 
@@ -62,10 +55,10 @@ class RequestSubmitter(id: Long, scope: ChannelScope, pool: BusyWorkerPool, hand
 
     override protected def makeSubmit(): RequestHolder = {
         val holder  = RequestHolder(id, pool.newBusyQueue, handler)
-        val request = RequestPacket(id, packets.toArray, properties.toMap)
+        val request = RequestPacket(id, packets.toArray)
 
         handler.addRequestHolder(holder)
-        scope.sendToAll(request)
+        scope.sendToAll(request, this)
 
         holder
     }

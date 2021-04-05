@@ -16,6 +16,7 @@ import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.packet.traffic.ChannelScope
 import fr.linkit.api.connection.task.{Fallible, TaskException, TaskExecutor, TaskOperationFailException}
 import fr.linkit.api.local.system.{AppLogger, Reason}
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.SyncPacketChannel
 
 import java.io.IOException
@@ -29,7 +30,7 @@ class TaskTicket(executor: TaskExecutor,
                  ownFreeWill: Boolean) {
 
     //private val errRemote = relay.getConsoleErr(target)
-    val channel: SyncPacketChannel = connection.getInjectable(taskId, ChannelScope.reserved(target), SyncPacketChannel)
+    val channel: SyncPacketChannel = connection.getInjectable(taskId, ChannelScopes.reserved(target), SyncPacketChannel)
 
     def abort(): Unit = {
         notifyExecutor()

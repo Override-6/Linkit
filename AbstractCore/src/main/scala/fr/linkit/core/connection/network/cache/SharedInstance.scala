@@ -14,7 +14,7 @@ package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
-import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.local.utils.ConsumerContainer
@@ -41,7 +41,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
         instance = Option(value)
     }
 
-    override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
+    override def handlePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = {
         //println(s"<$family> Handling packet $packet")
         packet match {
             case ObjectPacket(remoteInstance: A) =>

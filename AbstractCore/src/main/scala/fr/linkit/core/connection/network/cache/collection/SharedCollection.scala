@@ -14,7 +14,7 @@ package fr.linkit.core.connection.network.cache.collection
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
-import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.collection.CollectionModification._
@@ -55,7 +55,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
 
     override def iterator: Iterator[A] = adapter.iterator
 
-    override final def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
+    override final def handlePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = {
         packet match {
             case modPacket: ObjectPacket => BusyWorkerPool.runLaterOrHere {
                 handleNetworkModRequest(modPacket)

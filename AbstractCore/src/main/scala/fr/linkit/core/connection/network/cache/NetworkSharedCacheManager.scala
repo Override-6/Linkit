@@ -14,13 +14,15 @@ package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.traffic.ChannelScope
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketCoordinates}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.NetworkSharedCacheManager.MockCache
 import fr.linkit.core.connection.network.cache.map.SharedMap
+import fr.linkit.core.connection.packet.AbstractAttributePresence
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
 import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.request.{RequestPacket, RequestPacketChannel, ResponseSubmitter}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
@@ -39,11 +41,11 @@ import scala.util.control.NonFatal
 // primitives integers are all converted to Long, so it would cause cast problems until the algorithm is modified)
 class NetworkSharedCacheManager(override val family: String,
                                 override val ownerID: String,
-                                cacheChannel: SyncAsyncSender,
-                                requestChannel: RequestPacketChannel) extends SharedCacheManager {
+                                cacheChannel: AsyncSenderSyncReceiver,
+                                requestChannel: RequestPacketChannel) extends AbstractAttributePresence with SharedCacheManager {
 
+    private      val ownerScope                                       = prepareOwnerScope()
     private lazy val sharedObjects: map.SharedMap[Long, Serializable] = init()
-    private      val ownerScope                                       = ChannelScope.reserved(WrappedPacket(family, _), ownerID)
 
     override def postInstance[A <: Serializable](key: Long, value: A): A = {
         sharedObjects.put(key, value)
@@ -65,6 +67,7 @@ class NetworkSharedCacheManager(override val family: String,
                     println(s"CONTENT RECEIVED (${baseContent.mkString("Array(", ", ", ")")}) FOR CACHE $cacheID")
                     val sharedCache = factory.createNew(this, cacheID, baseContent, cacheChannel)
                     LocalCacheHandler.register(cacheID, sharedCache)
+                    requestChannel.injectStoredSubmitters()
                     sharedCache
                 }
     }
@@ -77,13 +80,13 @@ class NetworkSharedCacheManager(override val family: String,
         println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
         val request = requestChannel
                 .makeRequest(ownerScope)
-                .putProperty("behavior", behavior)
+                .putAttribute("behavior", behavior)
                 .addPacket(LongPacket(cacheID))
                 .submit()
 
         try {
             val response         = request.nextResponse
-            val possibleErrorMsg = response.getProperty[String]("errorMsg")
+            val possibleErrorMsg = response.getAttribute[String]("errorMsg")
 
             if (possibleErrorMsg.isDefined) {
                 val errorMsg = possibleErrorMsg.get
@@ -111,14 +114,16 @@ class NetworkSharedCacheManager(override val family: String,
         this
     }
 
+    override def getID: Int = family.hashCode
+
     def forget(cacheID: Long): Unit = {
         LocalCacheHandler.unregister(cacheID)
     }
 
-    def handleCachePacket(packet: Packet, coords: DedicatedPacketCoordinates): Unit = {
+    def handleCachePacket(packet: Packet, attributes: PacketAttributes, coords: DedicatedPacketCoordinates): Unit = {
         packet match {
             case WrappedPacket(key, subPacket) =>
-                LocalCacheHandler.injectPacket(key.toLong, subPacket, coords)
+                LocalCacheHandler.injectPacket(key.toLong, subPacket, attributes, coords)
         }
     }
 
@@ -126,15 +131,32 @@ class NetworkSharedCacheManager(override val family: String,
         println(s"HANDLING REQUEST $packet, $coords")
 
         val senderID: String = coords.senderID
-        /* val behavior         = packet.getProperty[CacheOpenBehavior]("behavior").get
+        val behavior         = packet.getAttribute[CacheOpenBehavior]("behavior").get
+        val cacheID          = packet.nextPacket[LongPacket].value
 
-         println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
-         val content = LocalCacheHandler.getContentOrElseMock(cacheID)
-         println(s"Content = ${content.mkString("Array(", ", ", ")")}")
+        println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
+        val contentOpt = LocalCacheHandler.getContent(cacheID)
 
-         response
-                 .addPacket(ArrayObjectPacket(content))
-                 .submit()*/
+        if (contentOpt.isDefined) {
+            response.addPacket(ArrayObjectPacket(contentOpt.get))
+        } else {
+            import CacheOpenBehavior._
+            behavior match {
+                case GET_OR_EMPTY => response.addPacket(ArrayObjectPacket())
+                case GET_OR_CRASH => response.putAttribute("errorMsg", s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
+                case AWAIT_OPEN =>
+                    requestChannel.storeSubmitter(packet, coords, response)
+                    println(s"Await open ($cacheID)...")
+                    return
+            }
+        }
+        val content = contentOpt.get
+
+        println(s"Content = ${content.mkString("Array(", ", ", ")")}")
+
+        response
+                .addPacket(ArrayObjectPacket(content))
+                .submit()
     }
 
     private def init(): SharedMap[Long, Serializable] = {
@@ -155,6 +177,13 @@ class NetworkSharedCacheManager(override val family: String,
         sharedObjects.foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
         println("Shared objects : " + sharedObjects)
         sharedObjects
+    }
+
+    private def prepareOwnerScope(): ChannelScope = {
+        val writer = cacheChannel.traffic.newWriter(requestChannel.identifier)
+        val scope  = ChannelScopes.reserved(ownerID)(writer)
+        scope.addDefaultPresence(requestChannel, family)
+        scope
     }
 
     protected object LocalCacheHandler {
@@ -180,8 +209,8 @@ class NetworkSharedCacheManager(override val family: String,
             println(s"Cache is now $identifier")
         }
 
-        def injectPacket(cacheID: Long, packet: Packet, coords: PacketCoordinates): Unit = try {
-            localRegisteredCaches(cacheID).handlePacket(packet, coords)
+        def injectPacket(cacheID: Long, packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = try {
+            localRegisteredCaches(cacheID).handlePacket(packet, attributes, coords)
         } catch {
             case _: NoSuchElementException =>
                 println(s"Mocked $cacheID")
@@ -193,17 +222,8 @@ class NetworkSharedCacheManager(override val family: String,
             localRegisteredCaches.put(identifier, MockCache)
         }
 
-        def getContent(cacheID: Long): Array[Any] = {
-            localRegisteredCaches(cacheID).currentContent
-        }
-
-        def getContentOrElseMock(cacheID: Long): Array[Any] = {
-            val opt = localRegisteredCaches.get(cacheID)
-            if (opt.isEmpty) {
-                registerMock(cacheID)
-                return Array()
-            }
-            opt.get.currentContent
+        def getContent(cacheID: Long): Option[Array[Any]] = {
+            localRegisteredCaches.get(cacheID).map(_.currentContent)
         }
 
         def isRegistered(cacheID: Long): Boolean = {
@@ -242,7 +262,7 @@ object NetworkSharedCacheManager {
 
         override var autoFlush: Boolean = false
 
-        override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = ()
+        override def handlePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = ()
 
         override def currentContent: Array[Any] = Array()
 

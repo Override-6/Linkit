@@ -13,7 +13,7 @@
 package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.traffic.{InjectionContainer, PacketInjection}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
@@ -23,7 +23,7 @@ class DirectInjectionContainer extends InjectionContainer {
 
     private val processingInjections = new mutable.LinkedHashMap[(Int, String), ParallelInjection]
 
-    override def makeInjection(packet: Packet, coordinates: DedicatedPacketCoordinates): PacketInjection = this.synchronized {
+    override def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjection = this.synchronized {
         val number = packet.number
         AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates")
         val id     = coordinates.injectableID
@@ -39,7 +39,7 @@ class DirectInjectionContainer extends InjectionContainer {
         }
         processingInjections.put((id, sender), injection)
 
-        injection.insert(packet)
+        injection.insert(packet, attributes)
         injection
     }
 

@@ -12,9 +12,14 @@
 
 package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 
 trait PacketSender extends PacketChannel {
+
+    def send(packet: Packet, attributes: PacketAttributes): Unit
+
+    @throws[IllegalArgumentException]("If targets contains an identifier that is not authorised by his scope.")
+    def sendTo(packet: Packet, attributes: PacketAttributes, targets: String*): Unit
 
     def send(packet: Packet): Unit
 

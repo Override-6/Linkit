@@ -12,7 +12,6 @@
 
 package fr.linkit.server
 
-import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketWriter
 import fr.linkit.core.connection.packet.traffic.{AbstractPacketTraffic, WriterInfo}
 import fr.linkit.server.connection.ServerConnection
@@ -22,7 +21,7 @@ class ServerPacketTraffic(serverConnection: ServerConnection) extends AbstractPa
     override val supportIdentifier: String = serverConnection.supportIdentifier
     override val serverIdentifier : String = supportIdentifier
 
-    override def newWriter(identifier: Int, transform: Packet => Packet): PacketWriter = {
-        new ServerPacketWriter(serverConnection, WriterInfo(this, identifier, transform))
+    override def newWriter(identifier: Int): PacketWriter = {
+        new ServerPacketWriter(serverConnection, WriterInfo(this, identifier))
     }
 }

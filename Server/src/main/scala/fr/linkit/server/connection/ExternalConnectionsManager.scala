@@ -12,10 +12,11 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.packet.serialization.PacketTransferResult
+import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, Serializer}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
+import fr.linkit.core.connection.packet.serialization.PartialTransferInfo
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
 import org.jetbrains.annotations.Nullable
@@ -107,14 +108,28 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
      * */
     def broadcastPacket(packet: Packet, attributes: PacketAttributes, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
         PacketReaderThread.checkNotCurrent()
-        val bytes = server.translator.translatePacket()
-        connections.values
+        val candidates = connections.values
                 .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
-                .foreach(connection => {
-                    val coordinates = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
-                    val result      = translator.translate(packet, coordinates)
-                    connection.send(result)
-                })
+
+        val packetCache = new mutable.HashMap[Serializer, Array[Byte]]()
+        val attributesCache = new mutable.HashMap[Serializer, Array[Byte]]()
+
+        candidates.foreach(connection => {
+            val translator = connection.translator
+            val connectionID = connection.boundIdentifier
+            val serializer = translator.findSerializerFor(connectionID).get
+
+            if (!packetCache.contains(serializer))
+                packetCache.put(serializer, translator.translatePacket(packet, connectionID))
+
+            if (!attributesCache.contains(serializer))
+                attributesCache.put(serializer, translator.translateAttributes(attributes, connectionID))
+
+            val coords = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
+            val transferInfo = PartialTransferInfo((coords, null), (attributes, attributesCache(serializer)), (packet, packetCache(serializer)))
+            val result      = translator.translate(transferInfo)
+            connection.send(result)
+        })
     }
 
     /**
@@ -167,7 +182,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     private[connection] def deflect(result: PacketTransferResult): Unit = {
         val target = result.coords match {
             case e: DedicatedPacketCoordinates => e.targetID
-            case _ => throw new IllegalArgumentException("Direct packet must be provided with DedicatedPacketCoordinates")
+            case _                             => throw new IllegalArgumentException("Direct packet must be provided with DedicatedPacketCoordinates")
         }
 
         val connection = getConnection(target)

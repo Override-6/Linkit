@@ -142,7 +142,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             case system: SystemPacket => handleSystemPacket(system, coordinates)
             case _: Packet =>
                 //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
-                traffic.handleInjection(packet, coordinates)
+                traffic.processInjection(packet, coordinates)
             //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }

@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 
 /**
@@ -41,7 +41,9 @@ trait PacketInjection {
      *                 called later.
      * */
     @workerExecution
-    def attachPin(@workerExecution callback: Packet => Unit): Unit
+    def attachPin(@workerExecution callback: (Packet, PacketAttributes) => Unit): Unit
+
+    def attachPinPacket(@workerExecution callback: (Packet) => Unit): Unit
 
     /**
      * Notifies that all attached pins may be processed. <br>

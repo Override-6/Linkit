@@ -13,11 +13,10 @@
 package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheManager}
-import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
-import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
-import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
+import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.local.utils.ScalaUtils
 import org.jetbrains.annotations.Nullable
@@ -38,7 +37,6 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         if (handler == null)
             return this
 
-
         println(s"<$family> UPDATING CACHE $identifier")
         val content = handler.retrieveCacheContent(identifier, CacheOpenBehavior.GET_OR_CRASH)
         println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
@@ -47,7 +45,11 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         this
     }
 
-    protected def sendRequest(packet: Packet): Unit = channel.send(WrappedPacket(s"$family", WrappedPacket(identifier.toString, packet)))
+    protected def sendRequest(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
+        attributes.putAttribute("family", family)
+        attributes.putAttribute("id", identifier)
+        channel.send(packet, attributes)
+    }
 
     protected def setCurrentContent(content: Array[A]): Unit
 

@@ -14,7 +14,7 @@ package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.system.{AppLogger, ClosedException, JustifiedCloseable, Reason}
 import fr.linkit.core.local.concurrency.PacketReaderThread
 
@@ -52,8 +52,8 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
     override def canConflict(identifier: Int, scope: ChannelScope): Boolean = {
         holders
-            .get(identifier)
-            .exists(_.canConflict(scope))
+                .get(identifier)
+                .exists(_.canConflict(scope))
     }
 
     private def completeCreation[C <: PacketInjectable](scope: ChannelScope, factory: PacketInjectableFactory[C]): C = {
@@ -76,8 +76,8 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
         //Will inject every lost packets
         lostInjections
-            .get(id)
-            .foreach(_.foreach(injectable.inject))
+                .get(id)
+                .foreach(_.foreach(injectable.inject))
         lostInjections.remove(id)
     }
 
@@ -92,7 +92,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
     override def close(reason: Reason): Unit = {
         holders.values
-            .foreach(_.close(reason))
+                .foreach(_.close(reason))
         holders.clear()
         closed = true
     }
@@ -104,11 +104,11 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
             throw new ClosedException("This Traffic handler is closed")
     }
 
-    override def handleInjection(packet: Packet, coordinates: DedicatedPacketCoordinates): Unit = {
-        handleInjection(injectionContainer.makeInjection(packet, coordinates))
+    override def processInjection(packet: Packet, attr: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit = {
+        processInjection(injectionContainer.makeInjection(packet, attr, coordinates))
     }
 
-    override def handleInjection(injection: PacketInjection): Unit = {
+    override def processInjection(injection: PacketInjection): Unit = {
         if (injection.isProcessing) {
             AppLogger.error("Current thread has been discarded from injection because this injection is already processed.")
             injection.processRemainingPins()
@@ -158,16 +158,16 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
         def getInjectables(target: String): Seq[PacketInjectable] = {
             cache
-                .filter(_._1.areAuthorised(target))
-                .map(_._2)
-                .toSeq
+                    .filter(_._1.areAuthorised(target))
+                    .map(_._2)
+                    .toSeq
         }
 
         def tryRetrieveInjectable[I <: PacketInjectable : ClassTag](scope: ChannelScope): Option[I] = {
             val injectableClass = classTag[I].runtimeClass
             cache.find(tuple => tuple._1 == scope && tuple._2.getClass == injectableClass)
-                .map(_._2)
-                .asInstanceOf[Option[I]]
+                    .map(_._2)
+                    .asInstanceOf[Option[I]]
         }
 
         def register(scope: ChannelScope, injectable: PacketInjectable): Unit = {

@@ -14,7 +14,7 @@ package fr.linkit.core.connection.network.cache.map
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
-import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
@@ -142,7 +142,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         apply(k)
     }
 
-    override def handlePacket(packet: Packet, coords: PacketCoordinates): Unit = {
+    override def handlePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = {
         packet match {
             case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
         }

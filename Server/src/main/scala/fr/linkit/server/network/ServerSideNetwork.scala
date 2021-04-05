@@ -12,6 +12,7 @@
 
 package fr.linkit.server.network
 
+import fr.linkit.api.connection.network.cache.CacheOpenBehavior
 import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.core.connection.network.cache.SharedInstance
@@ -62,7 +63,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
         val serverEntity = new SelfNetworkEntity(serverConnection, ExternalConnectionState.CONNECTED, selfCache) //Server always connected to himself
         serverEntity
                 .entityCache
-                .getInstance(3, SharedInstance[ExternalConnectionState])
+                .getCache(3, SharedInstance[ExternalConnectionState], CacheOpenBehavior.AWAIT_OPEN)
                 .set(ExternalConnectionState.CONNECTED) //technically always connected
         serverEntity
     }

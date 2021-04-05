@@ -11,47 +11,66 @@ import fr.linkit.core.local.utils.ConsumerContainer
 
 import java.util.NoSuchElementException
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 
 class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
 
-    private val requestHolders      = mutable.LinkedHashMap.empty[Long, RequestHolder]
-    private val requestConsumers    = ConsumerContainer[(SubmitterPacket, DedicatedPacketCoordinates, ResponseSubmitter)]()
-    @volatile private var requestID = 0
+    private val requestHolders           = mutable.LinkedHashMap.empty[Long, RequestHolder]
+    private val requestConsumers         = ConsumerContainer[(RequestPacket, DedicatedPacketCoordinates, ResponseSubmitter)]()
+    private val storedResponseSubmitters = ListBuffer.empty[(RequestPacket, DedicatedPacketCoordinates, ResponseSubmitter)]
+    @volatile private var requestID      = 0
 
     //debug only
     private val source = scope.traffic.supportIdentifier
 
     override def handleInjection(injection: PacketInjection): Unit = {
         val coords = injection.coordinates
-        injection.attachPin(packet => {
-            AppLogger.debug(s"${currentTasksId} <> $source: INJECTING REQUEST $packet " + this)
+        injection.attachPin { (packet, attr) =>
             packet match {
                 case request: RequestPacket =>
+                    request.setAttributes(attr)
+
+                    AppLogger.debug(s"${currentTasksId} <> $source: INJECTING REQUEST $request " + this)
                     val submitter = new ResponseSubmitter(request.id, scope)
                     requestConsumers.applyAllLater((request, coords, submitter))
 
                 case response: ResponsePacket =>
+                    AppLogger.debug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response " + this)
+                    response.setAttributes(attr)
+
                     requestHolders.get(response.id) match {
                         case Some(request) => request.pushResponse(response)
                         case None          => throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requestHolders)")
                     }
             }
-        })
+        }
     }
 
-    AppLogger.fatal(s"${currentTasksId} <> $source:  CREATED INSTANCE OF REQUEST PACKET CHANNEL : " + this)
-
-    def addRequestListener(callback: (SubmitterPacket, DedicatedPacketCoordinates, ResponseSubmitter) => Unit): Unit = {
+    def addRequestListener(callback: (RequestPacket, DedicatedPacketCoordinates, ResponseSubmitter) => Unit): Unit = {
         AppLogger.fatal(s"$currentTasksId <> $source: ADDED REQUEST LISTENER : $requestHolders " + this)
         requestConsumers += (tuple => callback(tuple._1, tuple._2, tuple._3))
     }
 
-    def makeRequest(scope: ScopeFactory[_ <: ChannelScope]): RequestSubmitter = {
+    def makeRequest(scopeFactory: ScopeFactory[_ <: ChannelScope]): RequestSubmitter = {
+        val writer = traffic.newWriter(identifier)
+        makeRequest(scopeFactory(writer))
+    }
+
+    def makeRequest(scope: ChannelScope): RequestSubmitter = {
         val pool = BusyWorkerPool.ensureCurrentIsWorker()
 
         val requestID = nextRequestID
-        val writer    = traffic.newWriter(identifier)
-        new RequestSubmitter(requestID, scope(writer), pool, this)
+        new RequestSubmitter(requestID, scope, pool, this)
+    }
+
+    def storeSubmitter(packet: RequestPacket, coords: DedicatedPacketCoordinates, submitter: ResponseSubmitter): Unit = {
+        storedResponseSubmitters += ((packet, coords, submitter))
+    }
+
+    def injectStoredSubmitters(): Unit = {
+        storedResponseSubmitters.foreach(triplet => {
+            requestConsumers.applyAllLater((triplet._1, triplet._2, triplet._3))
+        })
     }
 
     private def nextRequestID: Int = {

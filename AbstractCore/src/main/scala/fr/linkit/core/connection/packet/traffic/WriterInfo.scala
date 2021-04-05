@@ -12,9 +12,6 @@
 
 package fr.linkit.core.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 
-case class WriterInfo(traffic: PacketTraffic,
-                      identifier: Int,
-                      transform: Packet => Packet)
+case class WriterInfo(traffic: PacketTraffic, identifier: Int)

@@ -15,7 +15,7 @@ package fr.linkit.core.connection.packet.traffic
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.connection.packet._
-import fr.linkit.core.connection.packet.EmptyPacketAttributes
+import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.serialization.SimpleTransferInfo
 
 class SocketPacketWriter(socket: DynamicSocket,
@@ -28,24 +28,22 @@ class SocketPacketWriter(socket: DynamicSocket,
     override val identifier       : Int           = writerInfo.identifier
 
     override def writePacket(packet: Packet, targetIDs: String*): Unit = {
-        writePacket(packet, EmptyPacketAttributes, targetIDs: _*)
+        writePacket(packet, SimplePacketAttributes.empty, targetIDs: _*)
     }
 
     override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: String*): Unit = {
-        val transformedPacket = writerInfo.transform(packet)
-
         val coords       = if (targetIDs.length == 1) {
             val target    = targetIDs.head
             val dedicated = DedicatedPacketCoordinates(identifier, targetIDs(0), supportIdentifier)
             if (target == supportIdentifier) {
-                traffic.handleInjection(transformedPacket, dedicated)
+                traffic.processInjection(packet, attributes,  dedicated)
                 return
             }
             dedicated
         } else {
             if (targetIDs.contains(supportIdentifier)) {
                 val coords = DedicatedPacketCoordinates(identifier, serverIdentifier, supportIdentifier)
-                traffic.handleInjection(transformedPacket, coords)
+                traffic.processInjection(packet, attributes,  coords)
             }
 
             BroadcastPacketCoordinates(identifier, supportIdentifier, false, targetIDs.filter(_ != supportIdentifier): _*)
@@ -57,16 +55,15 @@ class SocketPacketWriter(socket: DynamicSocket,
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: String*): Unit = {
-        val transformedPacket = writerInfo.transform(packet)
         val coords            = BroadcastPacketCoordinates(identifier, supportIdentifier, true, discardedIDs: _*)
-        val transferInfo      = SimpleTransferInfo(coords, attributes, transformedPacket)
+        val transferInfo      = SimpleTransferInfo(coords, attributes, packet)
 
         val writableBytes = translator.translate(transferInfo).writableBytes
         socket.write(writableBytes)
     }
 
     override def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit = {
-        writeBroadcastPacket(packet, EmptyPacketAttributes, discardedIDs: _*)
+        writeBroadcastPacket(packet, SimplePacketAttributes.empty, discardedIDs: _*)
     }
 
 }

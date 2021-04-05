@@ -12,8 +12,8 @@
 
 package fr.linkit.core.connection.packet.traffic.channel
 
-import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, _}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.Reason
 import fr.linkit.core.local.concurrency.PacketReaderThread
@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
 //TODO doc
 class SyncPacketChannel protected(scope: ChannelScope,
                                   providable: Boolean) extends AbstractPacketChannel(scope)
-    with PacketSender with PacketSyncReceiver {
+        with PacketSender with PacketSyncReceiver {
 
     /**
      * this blocking queue stores the received packets until they are requested
@@ -36,13 +36,13 @@ class SyncPacketChannel protected(scope: ChannelScope,
             new LinkedBlockingQueue[Packet]()
         else {
             BusyWorkerPool
-                .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
+                    .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        injection.attachPin(queue.add)
+        injection.attachPinPacket(queue.add)
     }
 
     override def send(packet: Packet): Unit = scope.sendToAll(packet)
@@ -70,6 +70,9 @@ class SyncPacketChannel protected(scope: ChannelScope,
     override def haveMorePackets: Boolean =
         !queue.isEmpty
 
+    override def send(packet: Packet, attributes: PacketAttributes): Unit = scope.sendToAll(packet, attributes)
+
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = scope.sendTo(packet, attributes, targets: _*)
 }
 
 object SyncPacketChannel extends PacketInjectableFactory[SyncPacketChannel] {

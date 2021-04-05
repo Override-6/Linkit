@@ -12,11 +12,11 @@
 
 package fr.linkit.api.connection.network.cache
 
-import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 
 trait InternalSharedCache extends SharedCache {
 
-    def handlePacket(packet: Packet, coordinates: PacketCoordinates): Unit
+    def handlePacket(packet: Packet, attributes: PacketAttributes, coordinates: PacketCoordinates): Unit
 
     def currentContent: Array[Any]
 

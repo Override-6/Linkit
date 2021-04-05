@@ -22,8 +22,8 @@ class SocketPacketTraffic(@NotNull socket: DynamicSocket,
                           @NotNull override val supportIdentifier: String,
                           @NotNull override val serverIdentifier: String) extends AbstractPacketTraffic(supportIdentifier) {
 
-    override def newWriter(identifier: Int, transform: Packet => Packet): PacketWriter = {
-        new SocketPacketWriter(socket, translator, WriterInfo(this, identifier, transform))
+    override def newWriter(identifier: Int): PacketWriter = {
+        new SocketPacketWriter(socket, translator, WriterInfo(this, identifier))
     }
 
 }

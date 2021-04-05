@@ -13,7 +13,7 @@
 package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.traffic.PacketInjection
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.traffic.ParallelInjection.{PacketBuffer, PacketInjectionNode}
@@ -28,17 +28,23 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
     private val pins                 = ArrayBuffer.empty[PacketInjectionNode]
     @volatile private var processing = false
 
-    override def attachPin(@workerExecution callback: Packet => Unit): Unit = {
+    override def attachPin(@workerExecution callback: (Packet, PacketAttributes) => Unit): Unit = {
         val pin = new PacketInjectionNode(callback)
         pins += pin
         AppLogger.debug(s"Pin attached ! [$coordinates]-($pin => $pins)")
+        if (processing)
+            buff.process(pin)
     }
 
-    def insert(packet: Packet): Unit = {
+    override def attachPinPacket(callback: Packet => Unit): Unit = {
+        attachPin((packet, _) => callback(packet))
+    }
+
+    def insert(packet: Packet, attributes: PacketAttributes): Unit = {
         if (buff.containsNumber(packet))
             return
 
-        buff.insert(packet)
+        buff.insert(packet, attributes)
     }
 
     def processRemainingPins(): Unit = {
@@ -50,6 +56,7 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
     }
 
     override def isProcessing: Boolean = processing
+
 }
 
 object ParallelInjection {
@@ -57,25 +64,25 @@ object ParallelInjection {
     @volatile private var totalProcess = 0
     private val BuffLength             = 100
 
-    private class PacketInjectionNode(callback: Packet => Unit) {
+    private class PacketInjectionNode(callback: (Packet, PacketAttributes) => Unit) {
 
         private val marks = new Array[Int](BuffLength)
         private var i     = 0
 
-        def makeProcess(packet: Packet): Unit = {
+        def makeProcess(packet: Packet, attributes: PacketAttributes): Unit = {
             if (!marks.contains(packet.number)) {
                 marks(i) = packet.number
                 AppLogger.debug(s"${currentTasksId} <> PROCESSING $packet ($totalProcess / ${packet.number})")
                 totalProcess += 1
-                callback(packet)
+                callback(packet, attributes)
                 i += 1
             }
         }
 
-        def foreachUnmarked(f: Packet => Unit, buff: Array[Packet]): Unit = {
-            buff.foreach(packet => {
-                if (!marks.contains(packet.number))
-                    f(packet)
+        def foreachUnmarked(f: (Packet, PacketAttributes) => Unit, buff: Array[(Packet, PacketAttributes)]): Unit = {
+            buff.foreach((tuple) => {
+                if (!marks.contains(tuple._1.number))
+                    f(tuple._1, tuple._2)
             })
         }
 
@@ -84,13 +91,13 @@ object ParallelInjection {
 
     class PacketBuffer {
 
-        private val buff                  = new Array[Packet](BuffLength)
+        private val buff                  = new Array[(Packet, PacketAttributes)](BuffLength)
         @volatile private var insertCount = 0
 
         def containsNumber(packet: Packet): Boolean = {
             val packetNumber = packet.number
 
-            for (packet <- buff) {
+            for ((packet, _) <- buff) {
                 if (packet == null)
                     return false //we reached the last element of this buffer.
 
@@ -100,30 +107,30 @@ object ParallelInjection {
             false
         }
 
-        def insert(packet: Packet): Unit = buff.synchronized {
+        def insert(packet: Packet, attributes: PacketAttributes): Unit = buff.synchronized {
             var index        = 0
             val packetNumber = packet.number
             AppLogger.debug(s"${currentTasksId} <> Inserting $packet ($packetNumber) in buffer ${buff.mkString("Array(", ", ", ")")}")
             while (index < buff.length) {
-                val indexPacket = buff(index)
-                if (indexPacket == null || (indexPacket eq packet)) {
+                 val pair = buff(index)
+                if (pair == null || (pair._1 eq packet)) {
                     AppLogger.debug(s"${currentTasksId} <> Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
                     insertCount += 1
-                    buff(index) = packet
+                    buff(index) = (packet, attributes)
                     return
                 }
-
+                val indexPacket = pair._1
                 val indexPacketNumber = indexPacket.number
                 if (packetNumber < indexPacketNumber) {
                     var nextIndex = index + 1
                     //println(s"nextIndex = ${nextIndex}")
                     //println(s"buff = ${buff.mkString("Array(", ", ", ")")}")
                     while (nextIndex < buff.length) {
-                        val nextPacket = buff(nextIndex)
-                        buff(index) = packet
-                        buff(nextIndex) = indexPacket
+                        val pair = buff(nextIndex)
+                        buff(index) = (packet, attributes)
+                        buff(nextIndex) = (indexPacket, attributes)
 
-                        if (nextPacket == null) {
+                        if (pair == null) {
                             AppLogger.debug(s"Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
                             insertCount += 1
                             return
@@ -149,8 +156,8 @@ object ParallelInjection {
             var i                    = 0
 
             def rectifyConcurrentInsertion(): Unit = {
-                val packetNumber     = buff(i).number
-                val nextPacketNumber = buff(i + 1).number
+                val packetNumber     = buff(i)._1.number
+                val nextPacketNumber = buff(i + 1)._1.number
 
                 if (packetNumber < nextPacketNumber) {
                     i += 1 //The insertion has been done after current packet index. So we just need to continue.
@@ -169,11 +176,11 @@ object ParallelInjection {
             }
 
             while (i <= buff.length) {
-                val packet = buff(i)
-                if (packet == null)
+                val pair = buff(i)
+                if (pair == null)
                     return //We reached the last element of this buffer.
 
-                pin.makeProcess(packet)
+                pin.makeProcess(pair._1, pair._2)
                 if (validatedInsertCount != insertCount) {
                     rectifyConcurrentInsertion()
                 } else {

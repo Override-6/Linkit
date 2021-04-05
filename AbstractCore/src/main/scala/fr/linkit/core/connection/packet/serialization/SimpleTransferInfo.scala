@@ -2,7 +2,6 @@ package fr.linkit.core.connection.packet.serialization
 
 import fr.linkit.api.connection.packet.serialization.{Serializer, TransferInfo}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
-import fr.linkit.core.connection.packet.EmptyPacketAttributes
 import fr.linkit.core.connection.packet.fundamental.EmptyPacket
 
 import scala.collection.mutable.ListBuffer
@@ -14,7 +13,7 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
     override def makeSerial(serializer: Serializer): Array[Byte] = {
         val buff = ListBuffer.empty[Serializable]
         buff += coords
-        if (attributes != EmptyPacketAttributes)
+        if (attributes.nonEmpty)
             buff += attributes
         if (packet != EmptyPacket)
             buff += packet

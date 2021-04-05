@@ -55,6 +55,10 @@ class AdaptivePacketTranslator(ownerIdentifier: String, securityManager: BytesHa
 
     override def drainAllStrategies(holder: StrategyHolder): Unit = AdaptiveSerializer.rawSerializer.drainAllStrategies(holder)
 
+    override def findSerializerFor(target: String): Option[Serializer] = {
+        AdaptiveSerializer.findSerializerFor(target)
+    }
+
     def updateCache(manager: SharedCacheManager): Unit = {
         //return
         AdaptiveSerializer.updateCache(manager)
@@ -67,6 +71,7 @@ class AdaptivePacketTranslator(ownerIdentifier: String, securityManager: BytesHa
     private object AdaptiveSerializer {
 
         val rawSerializer: RawObjectSerializer.type = RawObjectSerializer
+
         @Nullable
         @volatile private var cachedSerializer         : CachedObjectSerializer   = _ //Will be instantiated once connection with the server is handled.
         @Nullable
@@ -89,6 +94,13 @@ class AdaptivePacketTranslator(ownerIdentifier: String, securityManager: BytesHa
             }
         }
 
+        def findSerializerFor(target: String): Option[Serializer] = {
+            val serial = if (initialised && cachedSerializerWhitelist.contains(target)) {
+                cachedSerializer
+            } else rawSerializer
+            Some(serial)
+        }
+
         def deserialize(bytes: Array[Byte]): PacketTransferResult = {
             lazy val serializer = {
                 if (bytes.startsWith(RawObjectSerializer.Signature))
@@ -101,10 +113,7 @@ class AdaptivePacketTranslator(ownerIdentifier: String, securityManager: BytesHa
         }
 
         def serialize(any: Serializable, target: String): Array[Byte] = {
-            val serializer = if (initialised && cachedSerializerWhitelist.contains(target)) {
-                cachedSerializer
-            } else rawSerializer
-            serializer.serialize(any, false)
+            findSerializerFor(target).get.serialize(any, false)
         }
 
         def updateCache(cache: SharedCacheManager): Unit = {

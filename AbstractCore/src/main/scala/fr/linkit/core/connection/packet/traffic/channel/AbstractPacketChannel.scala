@@ -12,25 +12,27 @@
 
 package fr.linkit.core.connection.packet.traffic.channel
 
+import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{AppLogger, ForbiddenIdentifierException, Reason}
+import fr.linkit.core.connection.packet.AbstractAttributePresence
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel with PacketInjectable {
+abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttributePresence with PacketChannel with PacketInjectable {
 
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
-    protected val writer    : PacketWriter  = scope.writer
-    override  val ownerID   : String        = writer.serverIdentifier
-    override  val identifier: Int           = writer.identifier
-    override  val traffic   : PacketTraffic = writer.traffic
-    private   val subChannels               = mutable.Set.empty[SubInjectableContainer]
-    private   val storedPackets             = ListBuffer.empty[(Packet, DedicatedPacketCoordinates)]
+    protected val writer           : PacketWriter     = scope.writer
+    override  val ownerID          : String           = writer.serverIdentifier
+    override  val identifier       : Int              = writer.identifier
+    override  val traffic          : PacketTraffic    = writer.traffic
+    private   val subChannels                         = mutable.Set.empty[SubInjectableContainer]
+    private   val storedPackets                       = ListBuffer.empty[(Packet, PacketAttributes, DedicatedPacketCoordinates)]
 
     @volatile private var closed = true
 
@@ -55,7 +57,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         if (scopes.exists(!scope.areAuthorised(_)))
             throw new ForbiddenIdentifierException("This sub injector requests to listen to an identifier that the parent does not support.")
 
-        val subScope = ChannelScope.reserved(scopes: _*).apply(writer)
+        val subScope = ChannelScopes.reserved(scopes: _*).apply(writer)
         register(subScope, factory, transparent)
     }
 
@@ -63,7 +65,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         register(scope, factory, transparent)
     }
 
-    def storePacket(packet: Packet, coords: PacketCoordinates): Unit = {
+    def storePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = {
         storedPackets.synchronized {
             AppLogger.debug(s"$currentTasksId <> STORING PACKET $packet AND COORDS $coords INTO $storedPackets")
         }
@@ -74,6 +76,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
         val supportIdentifier = scope.writer.supportIdentifier
         val directCoords      = coords match {
             case dedicated: DedicatedPacketCoordinates =>
+                //FIXME
                 //if (dedicated.targetID != supportIdentifier) {
                 //    throw new IllegalArgumentException("Stored packet coordinates must target current connection.")
                 //}
@@ -90,12 +93,12 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
             throw new Error("Double instance packet in storage.")
 
         storedPackets.synchronized {
-            storedPackets += ((packet, directCoords))
+            storedPackets += ((packet, attributes, directCoords))
         }
     }
 
     def injectStoredPackets(): Unit = {
-        var clone: Array[(Packet, DedicatedPacketCoordinates)] = null
+        var clone: Array[(Packet, PacketAttributes, DedicatedPacketCoordinates)] = null
         storedPackets.synchronized {
 
             AppLogger.debug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedPackets")
@@ -114,7 +117,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends PacketChannel 
             if (injected.contains(stored))
                 throw new Error("Double instance packet in storage.")
 
-            val injection = traffic.injectionContainer.makeInjection(stored._1, stored._2)
+            val injection = traffic.injectionContainer.makeInjection(stored._1, stored._2, stored._3)
             inject(injection)
         })
     }

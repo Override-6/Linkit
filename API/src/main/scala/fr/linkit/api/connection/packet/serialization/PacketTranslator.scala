@@ -32,6 +32,8 @@ trait PacketTranslator extends StrategyHolder {
 
     def attachStrategy(strategy: SerialStrategy[_]): Unit
 
+    def findSerializerFor(target: String): Option[Serializer]
+
     val signature: Array[Byte]
 
 }

@@ -18,9 +18,9 @@ import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.core.connection.packet.fundamental.RefPacket.{AnyRefPacket, StringPacket}
 import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
 import fr.linkit.core.connection.packet.fundamental.{EmptyPacket, WrappedPacket}
-import fr.linkit.core.connection.packet.serialization.strategies.MapStrategy
+import fr.linkit.core.connection.packet.serialization.strategies.PacketAttributesStrategy
 import fr.linkit.core.connection.packet.serialization.{AdaptivePacketTranslator, PartialTransferInfo, SimpleTransferInfo}
-import fr.linkit.core.connection.packet.{EmptyPacketAttributes, SimplePacketAttributes}
+import fr.linkit.core.connection.packet.SimplePacketAttributes
 
 import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 
@@ -43,11 +43,11 @@ object Tests {
             val partialInfo  = PartialTransferInfo((coords, translator.translateCoords(coords)), (attributes, translator.translateAttributes(attributes)), (packet, null))
             val serialResult = translator.translate(partialInfo)
 
-            val bytes        = serialResult.bytes
+            val bytes = serialResult.bytes
             println("Compacted bytes                 = " + new String(bytes) + (s" (l: ${bytes.length})"))
 
-            MapStrategy.attachDefaultStrategies(translator)
-            val bytesStrategy        = serialResult.bytes
+            translator.attachStrategy(PacketAttributesStrategy)
+            val bytesStrategy = serialResult.bytes
             println("Compacted bytes (with strategy) = " + new String(bytesStrategy) + (s" (l: ${bytesStrategy.length})"))
 
             val result = translator.translate(bytes)

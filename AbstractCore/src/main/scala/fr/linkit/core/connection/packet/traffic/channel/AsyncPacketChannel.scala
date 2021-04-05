@@ -13,16 +13,17 @@
 package fr.linkit.core.connection.packet.traffic.channel
 
 import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
 
 import scala.util.control.NonFatal
 
 class AsyncPacketChannel protected(scope: ChannelScope)
-    extends AbstractPacketChannel(scope) with PacketSender with PacketAsyncReceiver {
+        extends AbstractPacketChannel(scope) with PacketSender with PacketAsyncReceiver {
 
     private val packetReceivedContainer: ConsumerContainer[(Packet, DedicatedPacketCoordinates)] = ConsumerContainer()
 
@@ -30,7 +31,7 @@ class AsyncPacketChannel protected(scope: ChannelScope)
     override def handleInjection(injection: PacketInjection): Unit = {
         val pool = BusyWorkerPool.currentPool().get
         pool.runLater {
-            injection.attachPin(packet => {
+            injection.attachPin((packet, attr) => {
                 try {
                     val coords = injection.coordinates
                     packetReceivedContainer.applyAll((packet, coords))
@@ -42,13 +43,17 @@ class AsyncPacketChannel protected(scope: ChannelScope)
         }
     }
 
-    override def send(packet: Packet): Unit = {
-        scope.sendToAll(packet)
+    override def send(packet: Packet, attributes: PacketAttributes): Unit = {
+        scope.sendToAll(packet, attributes)
     }
 
-    override def sendTo(packet: Packet, targets: String*): Unit = {
-        scope.sendTo(packet, targets: _*)
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = {
+        scope.sendTo(packet, attributes, targets: _*)
     }
+
+    override def send(packet: Packet): Unit = send(packet, SimplePacketAttributes.empty)
+
+    override def sendTo(packet: Packet, targets: String*): Unit = sendTo(packet, SimplePacketAttributes.empty, targets: _*)
 
     override def addOnPacketReceived(callback: (Packet, DedicatedPacketCoordinates) => Unit): Unit = {
         packetReceivedContainer += (tuple => callback(tuple._1, tuple._2))

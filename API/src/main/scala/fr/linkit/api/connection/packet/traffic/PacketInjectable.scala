@@ -12,10 +12,11 @@
 
 package fr.linkit.api.connection.packet.traffic
 
+import fr.linkit.api.connection.packet.PacketAttributesPresence
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.JustifiedCloseable
 
-trait PacketInjectable extends JustifiedCloseable {
+trait PacketInjectable extends JustifiedCloseable with PacketAttributesPresence {
 
     val identifier: Int
     val ownerID   : String

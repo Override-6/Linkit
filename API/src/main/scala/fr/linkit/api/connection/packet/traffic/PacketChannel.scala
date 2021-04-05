@@ -12,12 +12,15 @@
 
 package fr.linkit.api.connection.packet.traffic
 
+import fr.linkit.api.connection.packet.PacketAttributesPresence
 import fr.linkit.api.local.system.JustifiedCloseable
 
-trait PacketChannel extends JustifiedCloseable {
+trait PacketChannel extends JustifiedCloseable with PacketAttributesPresence {
 
     val ownerID   : String
     val traffic   : PacketTraffic
     val identifier: Int
+
+    override def getID: Int = identifier
 
 }

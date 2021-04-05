@@ -16,13 +16,13 @@ import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.fundamental.TaskInitPacket
-import fr.linkit.core.connection.packet.traffic.DirectInjectionContainer
+import fr.linkit.core.connection.packet.serialization.SimpleTransferInfo
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull
@@ -85,16 +85,18 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
                 case d: DedicatedPacketCoordinates => d
                 case _                             => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
             }
-            handlePacket(result.packet, coordinates)
+
+            handlePacket(result.packet, result.attributes, coordinates)
         }
         readThread.start()
         //Method useless but kept because services could need to be started in the future?
     }
 
-    def sendPacket(packet: Packet, channelID: Int): Unit = {
+    def sendPacket(packet: Packet, attributes: PacketAttributes, channelID: Int): Unit = {
         runLater {
-            val coords = DedicatedPacketCoordinates(channelID, boundIdentifier, server.supportIdentifier)
-            val result = translator.translate(packet, coords)
+            val coords       = DedicatedPacketCoordinates(channelID, boundIdentifier, server.supportIdentifier)
+            val transferInfo = SimpleTransferInfo(coords, attributes, packet)
+            val result       = translator.translate(transferInfo)
             session.send(result)
         }
     }
@@ -115,7 +117,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
 
     @workerExecution
-    private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates): Unit = {
+    private def handlePacket(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit = {
         if (!alive)
             return
 
@@ -123,7 +125,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
             case init: TaskInitPacket       => tasksHandler.handlePacket(init, coordinates)
             case _: Packet                  =>
-                serverTraffic.handleInjection(packet, coordinates)
+                serverTraffic.processInjection(packet, attributes, coordinates)
         }
     }
 
