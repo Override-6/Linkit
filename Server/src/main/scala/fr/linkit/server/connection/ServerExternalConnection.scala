@@ -36,7 +36,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     override val supportIdentifier: String           = server.supportIdentifier
     override val traffic          : PacketTraffic    = server.traffic
-    override val translator       : PacketTranslator = session.translator
+    override val translator       : PacketTranslator = server.translator
     override val eventNotifier    : EventNotifier    = server.eventNotifier
     override val boundIdentifier  : String           = session.boundIdentifier
     override val network          : Network          = session.network

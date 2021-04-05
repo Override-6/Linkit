@@ -14,7 +14,7 @@ package fr.linkit.server.config
 
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.local.system.security.BytesHasher
-import fr.linkit.core.connection.packet.serialization.CompactedPacketTranslator
+import fr.linkit.core.connection.packet.serialization.AdaptivePacketTranslator
 import fr.linkit.server.config.ServerConnectionConfigBuilder.count
 
 abstract class ServerConnectionConfigBuilder {
@@ -26,7 +26,7 @@ abstract class ServerConnectionConfigBuilder {
     var hasher               : BytesHasher = BytesHasher.inactive
     val identifier: String
     val port      : Int
-    lazy val translator: PacketTranslator = new CompactedPacketTranslator(identifier, hasher)
+    lazy val translator: PacketTranslator = new AdaptivePacketTranslator(identifier, hasher)
     var identifierAmbiguityStrategy: AmbiguityStrategy = AmbiguityStrategy.REJECT_NEW
 
     def build(): ServerConnectionConfiguration = {

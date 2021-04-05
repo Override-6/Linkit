@@ -12,16 +12,21 @@
 
 package fr.linkit.api.connection.packet.serialization
 
+import fr.linkit.api.connection.packet.serialization.strategy.SerialStrategy
+
 trait Serializer {
 
     val signature: Array[Byte]
 
-    def serialize(serializable: Serializable): Array[Byte]
+    def serialize(serializable: Any, withSignature: Boolean): Array[Byte]
+
+    def partialSerialize(serialized: Array[Array[Byte]], toSerialize: Array[Any]): Array[Byte]
 
     def isSameSignature(bytes: Array[Byte]): Boolean
 
     def deserialize(bytes: Array[Byte]): Any
 
     def deserializeAll(bytes: Array[Byte]): Array[Any]
+
 
 }

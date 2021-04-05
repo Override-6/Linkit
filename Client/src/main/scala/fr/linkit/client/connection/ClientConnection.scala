@@ -13,7 +13,7 @@
 package fr.linkit.client.connection
 
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
-import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketTranslator}
+import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
@@ -211,7 +211,7 @@ object ClientConnection {
         connection
     }
 
-    private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(result: PacketDeserializationResult): Unit = {
+    private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(result: PacketTransferResult): Unit = {
         val bytes  = result.bytes
         val header = bytes(0)
         if (bytes.length != 1 || (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused))

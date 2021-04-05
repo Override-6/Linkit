@@ -12,7 +12,7 @@
 
 package fr.linkit.core.local.concurrency
 
-import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
+import fr.linkit.api.connection.packet.serialization.PacketTransferResult
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, packetWorkerExecution}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
@@ -28,8 +28,8 @@ class PacketReaderThread(reader: PacketReader,
                          bound: String) extends Thread(packetReaderThreadGroup, s"$bound's Read Worker") with JustifiedCloseable {
 
     private var open = true
-    var onPacketRead   : PacketDeserializationResult => Unit = (_) => ()
-    var onReadException: () => Unit                          = () => ()
+    var onPacketRead   : PacketTransferResult => Unit = (_) => ()
+    var onReadException: () => Unit                   = () => ()
 
     override def isClosed: Boolean = open
 

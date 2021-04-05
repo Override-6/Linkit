@@ -108,7 +108,7 @@ class ServerConnection(applicationContext: ServerApplication,
             // There is nowhere to send this packet.
             return
         }
-        connectionsManager.broadcastBytes(packet, injectableID, sender, discarded.appended(supportIdentifier): _*)
+        connectionsManager.broadcastPacket(packet, injectableID, sender, discarded.appended(supportIdentifier): _*)
     }
 
     private[connection] def getSideNetwork: ServerSideNetwork = sideNetwork

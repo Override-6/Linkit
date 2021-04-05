@@ -29,13 +29,15 @@ trait Packet extends Serializable {
 
     def number: Int = id
 
-    private[packet] def prepare(): this.type = {
+    def prepare(): this.type = {
         //If the packet has been instantiated using Unsafe.allocateInstance
         //The constructor will not be called thus packetID will not be initialized.
         //This method will manually give this packet an id
-        AppLogger.trace("Preparing packet...")
-        id = nextPacketID
-        AppLogger.trace(s"id = ${packetID}; packet = $this")
+        if (id < 0) {
+            AppLogger.trace("Preparing packet...")
+            id = nextPacketID
+            AppLogger.trace(s"id = ${packetID}; packet = $this")
+        }
         this
     }
 

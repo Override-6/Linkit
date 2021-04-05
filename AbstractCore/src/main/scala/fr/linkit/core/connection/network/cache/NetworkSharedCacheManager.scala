@@ -126,15 +126,15 @@ class NetworkSharedCacheManager(override val family: String,
         println(s"HANDLING REQUEST $packet, $coords")
 
         val senderID: String = coords.senderID
-        val behavior         = packet.getProperty[CacheOpenBehavior]("behavior").get
+        /* val behavior         = packet.getProperty[CacheOpenBehavior]("behavior").get
 
-        println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
-        val content = LocalCacheHandler.getContentOrElseMock(cacheID)
-        println(s"Content = ${content.mkString("Array(", ", ", ")")}")
+         println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
+         val content = LocalCacheHandler.getContentOrElseMock(cacheID)
+         println(s"Content = ${content.mkString("Array(", ", ", ")")}")
 
-        response
-                .addPacket(ArrayObjectPacket(content))
-                .submit()
+         response
+                 .addPacket(ArrayObjectPacket(content))
+                 .submit()*/
     }
 
     private def init(): SharedMap[Long, Serializable] = {

@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 
 trait PacketWriter {
 
@@ -23,6 +23,10 @@ trait PacketWriter {
 
     def writePacket(packet: Packet, targetIDs: String*): Unit
 
+    def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: String*): Unit
+
     def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit
+
+    def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: String*): Unit
 
 }

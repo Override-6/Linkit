@@ -13,15 +13,24 @@
 package fr.linkit.api.connection.packet.serialization
 
 import fr.linkit.api.connection.network.cache.SharedCacheManager
-import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.linkit.api.connection.packet.serialization.strategy.{SerialStrategy, StrategyHolder}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 
-trait PacketTranslator {
+trait PacketTranslator extends StrategyHolder {
 
-    def translate(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult
+    def translate(packetInfo: TransferInfo): PacketSerializationResult
 
-    def translate(bytes: Array[Byte]): PacketDeserializationResult
+    def translate(bytes: Array[Byte]): PacketTransferResult
+
+    def translateCoords(coords: PacketCoordinates, target: String): Array[Byte]
+
+    def translateAttributes(attribute: PacketAttributes, target: String): Array[Byte]
+
+    def translatePacket(packet: Packet, target: String): Array[Byte]
 
     def updateCache(manager: SharedCacheManager): Unit
+
+    def attachStrategy(strategy: SerialStrategy[_]): Unit
 
     val signature: Array[Byte]
 

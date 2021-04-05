@@ -12,27 +12,10 @@
 
 package fr.linkit.api.connection.packet.serialization
 
-import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
+trait PacketSerializationResult extends PacketTransferResult {
 
-case class PacketSerializationResult(packet: Packet, coords: PacketCoordinates, serializer: () => Serializer) {
+    def getSerializer: Serializer
 
-    lazy val bytes: Array[Byte] = serializer().serialize(Array(coords, packet))
+    def writableBytes: Array[Byte]
 
-    def writableBytes: Array[Byte] = {
-        val length = bytes.length
-        Array[Byte](
-            ((length >> 24) & 0xff).toByte,
-            ((length >> 16) & 0xff).toByte,
-            ((length >> 8) & 0xff).toByte,
-            ((length >> 0) & 0xff).toByte
-        ) ++ bytes
-    }
-
-}
-
-object PacketSerializationResult {
-
-    implicit def autoUseWritableBytes(result: PacketSerializationResult): Array[Byte] = {
-        result.writableBytes
-    }
 }

@@ -28,9 +28,9 @@ object LocalCachedObjectSerializer extends ObjectSerializer {
     override def serializeType(clazz: Class[_]): Array[Byte] = {
         val name = clazz.getName
         val hash = name.hashCode
-        //println(s"name = ${name}")
-        //println(s"hash = ${hash}")
-        //println(s"cache = ${cache}")
+        println(s"name = ${name}")
+        println(s"hash = ${hash}")
+        println(s"cache = ${cache}")
 
         cache.put(hash, name)
         serializeInt(hash)
@@ -41,8 +41,8 @@ object LocalCachedObjectSerializer extends ObjectSerializer {
      * */
     override def deserializeType(bytes: Array[Byte]): (Class[_], Int) = {
         val numberLong = deserializeNumber(bytes, 0, 4)
-        //println(s"numberLong = ${numberLong}")
-        //println(s"numberInt = ${numberLong.toInt}")
+        println(s"numberLong = ${numberLong}")
+        println(s"numberInt = ${numberLong.toInt}")
         (Class.forName(cache(numberLong.toInt)), 4)
     }
 }

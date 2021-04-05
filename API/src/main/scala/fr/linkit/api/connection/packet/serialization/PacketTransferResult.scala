@@ -12,12 +12,16 @@
 
 package fr.linkit.api.connection.packet.serialization
 
-import fr.linkit.api.connection.packet.{Packet, PacketCoordinates}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 
-case class PacketDeserializationResult(serializer: () => Serializer, bytes: Array[Byte]) {
+trait PacketTransferResult {
 
-    private lazy val cache                     = serializer().deserializeAll(bytes)
-    lazy         val coords: PacketCoordinates = cache(0).asInstanceOf[PacketCoordinates]
-    lazy         val packet: Packet            = cache(1).asInstanceOf[Packet].prepare()
+    def bytes: Array[Byte]
+
+    def coords: PacketCoordinates
+
+    def attributes: PacketAttributes
+
+    def packet: Packet
 
 }

@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketTranslator}
+import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.system.AppLogger
@@ -26,11 +26,11 @@ class DefaultPacketReader(socket: DynamicSocket,
     /**
      * @return a tuple containing the next packet with its coordinates and its local number identifier
      * */
-    override def nextPacket(@workerExecution callback: PacketDeserializationResult => Unit): Unit = {
+    override def nextPacket(@workerExecution callback: PacketTransferResult => Unit): Unit = {
         nextPacketSync(a => procrastinator.runLater(callback(a)))
     }
 
-    def nextPacketSync(callback: PacketDeserializationResult => Unit): Unit = {
+    def nextPacketSync(callback: PacketTransferResult => Unit): Unit = {
         val nextLength = socket.readInt()
         if (nextLength == -1 || socket.isClosed) {
             AppLogger.error(s"PACKET READ READ WAS ABORTED : $nextLength || ${socket.isOpen}")

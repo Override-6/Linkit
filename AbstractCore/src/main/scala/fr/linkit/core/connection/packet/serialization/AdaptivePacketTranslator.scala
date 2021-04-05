@@ -14,28 +14,46 @@ package fr.linkit.core.connection.packet.serialization
 
 import fr.linkit.api.connection.network.cache.SharedCacheManager
 import fr.linkit.api.connection.packet._
-import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketSerializationResult, PacketTranslator}
+import fr.linkit.api.connection.packet.serialization._
+import fr.linkit.api.connection.packet.serialization.strategy.{SerialStrategy, StrategyHolder}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.core.connection.network.cache.collection.SharedCollection
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
 
-class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesHasher) extends PacketTranslator { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
-    override def translate(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
-        val result = AdaptiveSerializer.serialize(packet, coordinates)
+class AdaptivePacketTranslator(ownerIdentifier: String, securityManager: BytesHasher) extends PacketTranslator { //Notifier is accessible from api to reduce parameter number in (A)SyncPacketChannel
+    override def translate(info: TransferInfo): PacketSerializationResult = {
+        val result = AdaptiveSerializer.serialize(info)
         securityManager.hashBytes(result.bytes)
         result
     }
 
-    override def translate(bytes: Array[Byte]): PacketDeserializationResult = {
+    override def translate(bytes: Array[Byte]): PacketTransferResult = {
         securityManager.deHashBytes(bytes)
         AdaptiveSerializer.deserialize(bytes)
     }
 
+    override def translateCoords(coords: PacketCoordinates, target: String): Array[Byte] = {
+        AdaptiveSerializer.serialize(coords, target)
+    }
+
+    override def translateAttributes(attribute: PacketAttributes, target: String): Array[Byte] = {
+        AdaptiveSerializer.serialize(attribute, target)
+    }
+
+    override def translatePacket(packet: Packet, target: String): Array[Byte] = {
+        AdaptiveSerializer.serialize(packet, target)
+    }
+
+    override def attachStrategy(strategy: SerialStrategy[_]): Unit = {
+        AdaptiveSerializer.attachStrategy(strategy)
+    }
+
     override val signature: Array[Byte] = new Array(3)
+
+    override def drainAllStrategies(holder: StrategyHolder): Unit = AdaptiveSerializer.rawSerializer.drainAllStrategies(holder)
 
     def updateCache(manager: SharedCacheManager): Unit = {
         //return
@@ -48,30 +66,30 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
 
     private object AdaptiveSerializer {
 
-        private val rawSerializer                                                 = RawObjectSerializer
+        val rawSerializer: RawObjectSerializer.type = RawObjectSerializer
         @Nullable
         @volatile private var cachedSerializer         : CachedObjectSerializer   = _ //Will be instantiated once connection with the server is handled.
         @Nullable
         @volatile private var cachedSerializerWhitelist: SharedCollection[String] = _
 
-        def serialize(packet: Packet, coordinates: PacketCoordinates): PacketSerializationResult = {
+        def serialize(info: TransferInfo): PacketSerializationResult = {
             //Thread.dumpStack()
             lazy val serializer = if (initialised) {
                 val whiteListArray = cachedSerializerWhitelist.toArray
-                coordinates.determineSerializer(whiteListArray, rawSerializer, cachedSerializer)
+                info.coords.determineSerializer(whiteListArray, rawSerializer, cachedSerializer)
             } else {
                 rawSerializer
             }
             try {
                 //AppLogger.debug(s"${currentTasksId} <> Serializing $packet, $coordinates with serializer ${serializer.getClass.getSimpleName}")
-                PacketSerializationResult(packet, coordinates, () => serializer)
+                LazyPacketSerializationResult(info, () => serializer)
             } catch {
                 case NonFatal(e) =>
-                    throw PacketException(s"Could not serialize packet and coordinates $packet, $coordinates.", e)
+                    throw PacketException(s"Could not serialize packet info '$info'", e)
             }
         }
 
-        def deserialize(bytes: Array[Byte]): PacketDeserializationResult = {
+        def deserialize(bytes: Array[Byte]): PacketTransferResult = {
             lazy val serializer = {
                 if (bytes.startsWith(RawObjectSerializer.Signature))
                     rawSerializer
@@ -79,11 +97,19 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
                     cachedSerializer
                 else throw new IllegalStateException(s"Received unknown packet signature. (${new String(bytes)})")
             }
-            PacketDeserializationResult(() => serializer, bytes)
+            LazyPacketDeserializationResult(bytes, () => serializer)
+        }
+
+        def serialize(any: Serializable, target: String): Array[Byte] = {
+            val serializer = if (initialised && cachedSerializerWhitelist.contains(target)) {
+                cachedSerializer
+            } else rawSerializer
+            serializer.serialize(any, false)
         }
 
         def updateCache(cache: SharedCacheManager): Unit = {
             cachedSerializer = new CachedObjectSerializer(cache)
+            rawSerializer.drainAllStrategies(cachedSerializer)
 
             if (cachedSerializerWhitelist == null)
                 AppLogger.info(s"$ownerIdentifier: Stage 2 completed : Main cache manager created.")
@@ -91,6 +117,12 @@ class CompactedPacketTranslator(ownerIdentifier: String, securityManager: BytesH
             cachedSerializerWhitelist = cache.getCache(15, SharedCollection[String])
             cachedSerializerWhitelist.add(ownerIdentifier)
             cachedSerializerWhitelist.addListener((_, _, _) => AppLogger.warn(s"Whitelist : $cachedSerializerWhitelist"))
+        }
+
+        def attachStrategy(strategy: SerialStrategy[_]): Unit = {
+            rawSerializer.attachStrategy(strategy)
+            if (initialised)
+                cachedSerializer.attachStrategy(strategy)
         }
 
         def initialised: Boolean = cachedSerializerWhitelist != null

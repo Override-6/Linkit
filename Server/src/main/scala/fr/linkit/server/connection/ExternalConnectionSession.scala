@@ -34,7 +34,6 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     val network          : ServerSideNetwork          = info.network
     val connectionManager: ExternalConnectionsManager = info.manager
     val readThread       : PacketReaderThread         = info.readThread
-    val translator       : PacketTranslator           = server.translator
     val serverTraffic    : PacketTraffic              = server.traffic
     val channel          : SystemPacketChannel        = serverTraffic.getInjectable(SystemChannelID, ChannelScope.reserved(boundIdentifier), SystemPacketChannel)
     val tasksHandler     : ConnectionTasksHandler     = null //new ConnectionTasksHandler(this)

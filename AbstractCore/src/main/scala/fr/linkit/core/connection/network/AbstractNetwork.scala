@@ -109,7 +109,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                             })
             }
         }
-
+/*
         cacheCommunicator.addAsyncListener((packet, coords) => {
             findCacheToNotify(cacheCommunicator, packet, coords) {
                 (subPacket, cache) => cache.handleCachePacket(subPacket, coords)
@@ -120,7 +120,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             findCacheToNotify(cacheRequestChannel, packet, coords) {
                 (_, cache) => cache.handleRequest(packet, coords, submitter)
             }
-        })
+        })*/
 
         newCacheManager(s"Global Cache", serverIdentifier)
     }

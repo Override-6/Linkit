@@ -72,7 +72,8 @@ object PacketEvents {
     }
 
     def packetWritten(result: PacketSerializationResult): PacketWrittenEvent = {
-        PacketWrittenEvent(result.packet, result.coords, result.serializer().getClass, result.bytes)
+        //TODO PacketWrittenEvent(result.packet, result.coords, result.getSerializer().getClass, result.rawBytes)
+        null
     }
 
     def packetReceived(packet: Packet, coords: PacketCoordinates, serializer: Serializer, bytes: Array[Byte]): PacketReceivedEvent = {

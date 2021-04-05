@@ -12,8 +12,8 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.connection.packet.serialization.PacketTransferResult
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.core.local.concurrency.PacketReaderThread
@@ -105,12 +105,12 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     /**
      * Broadcast bytes sequence to every connected clients
      * */
-    def broadcastBytes(packet: Packet, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
+    def broadcastPacket(packet: Packet, attributes: PacketAttributes, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
         PacketReaderThread.checkNotCurrent()
+        val bytes = server.translator.translatePacket()
         connections.values
                 .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
                 .foreach(connection => {
-                    val translator  = connection.translator
                     val coordinates = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
                     val result      = translator.translate(packet, coordinates)
                     connection.send(result)
@@ -164,7 +164,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
      *
      * @throws NoSuchConnectionException if no connection where found for this packet.
      * */
-    private[connection] def deflect(result: PacketDeserializationResult): Unit = {
+    private[connection] def deflect(result: PacketTransferResult): Unit = {
         val target = result.coords match {
             case e: DedicatedPacketCoordinates => e.targetID
             case _ => throw new IllegalArgumentException("Direct packet must be provided with DedicatedPacketCoordinates")
