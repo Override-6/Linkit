@@ -12,8 +12,6 @@
 
 package fr.linkit.api.connection.packet.serialization
 
-import fr.linkit.api.connection.packet.serialization.strategy.SerialStrategy
-
 trait Serializer {
 
     val signature: Array[Byte]

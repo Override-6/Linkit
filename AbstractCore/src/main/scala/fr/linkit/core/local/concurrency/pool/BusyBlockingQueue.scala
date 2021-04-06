@@ -33,14 +33,14 @@ import scala.collection.mutable.ListBuffer
  * */
 class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
     private val content     = new util.LinkedList[A]()
-    private val entertainer = new WorkerController(pool)
+    private val entertainer = new DedicatedWorkerController(pool)
 
     override def add(e: A): Boolean = {
         content.synchronized {
             content.add(e)
             AppLogger.error(s"Added ${e} in content $this (${System.identityHashCode(this)})")
         }
-        entertainer.notifyFirstThread()
+        entertainer.notifyAnyThread()
         true
     }
 

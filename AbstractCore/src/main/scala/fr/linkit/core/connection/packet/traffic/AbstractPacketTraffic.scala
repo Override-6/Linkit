@@ -27,7 +27,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
     private  val holders            = mutable.Map.empty[Int, ScopesHolder]
     private  val lostInjections     = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
-    override val injectionContainer = new DirectInjectionContainer
+    override val injectionContainer = new ParallelInjectionContainer(supportIdentifier)
     @volatile private var closed    = false
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int,
@@ -57,7 +57,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
     }
 
     private def completeCreation[C <: PacketInjectable](scope: ChannelScope, factory: PacketInjectableFactory[C]): C = {
-        val channel = factory.createNew(scope)
+        val channel = factory.createNew(null, scope)
         register(scope, channel)
         channel
     }
@@ -111,7 +111,9 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
     override def processInjection(injection: PacketInjection): Unit = {
         if (injection.isProcessing) {
             AppLogger.error("Current thread has been discarded from injection because this injection is already processed.")
-            injection.processRemainingPins()
+            injection.processRemainingPinsThen {
+                //no-op
+            }
             return
         }
         val coordinates = injection.coordinates
@@ -127,8 +129,9 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
             return
         }
         injectables.foreach(_.inject(injection))
-        injection.processRemainingPins()
-        injectionContainer.removeInjection(injection)
+        injection.processRemainingPinsThen {
+            injectionContainer.removeInjection(injection)
+        }
     }
 
     protected case class ScopesHolder(identifier: Int) extends JustifiedCloseable {

@@ -30,7 +30,7 @@ import scala.util.control.NonFatal
 
 class ServerApplication private(override val configuration: ServerApplicationConfiguration) extends ApplicationContext {
 
-    private  val mainWorkerPool               = new BusyWorkerPool(configuration.mainPoolThreadCount, "Appplication")
+    private  val mainWorkerPool               = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
     override val pluginManager: PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
     private  val serverCache                  = mutable.HashMap.empty[Any, ServerConnection]
     private  val securityManager              = configuration.securityManager

@@ -12,20 +12,23 @@
 
 package fr.linkit.core.connection.packet.traffic.channel
 
+import fr.linkit.api.connection
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.connection.packet.SimplePacketAttributes
+import fr.linkit.core
+import fr.linkit.core.connection.packet.{PacketBundle, SimplePacketAttributes}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
+import org.jetbrains.annotations.Nullable
 
 import scala.util.control.NonFatal
 
-class AsyncPacketChannel protected(scope: ChannelScope)
-        extends AbstractPacketChannel(scope) with PacketSender with PacketAsyncReceiver {
+class AsyncPacketChannel protected(@Nullable parent: PacketChannel, scope: ChannelScope)
+        extends AbstractPacketChannel(parent, scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {
 
-    private val packetReceivedContainer: ConsumerContainer[(Packet, DedicatedPacketCoordinates)] = ConsumerContainer()
+    private val packetReceivedContainer: ConsumerContainer[PacketBundle] = ConsumerContainer()
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
@@ -34,7 +37,7 @@ class AsyncPacketChannel protected(scope: ChannelScope)
             injection.attachPin((packet, attr) => {
                 try {
                     val coords = injection.coordinates
-                    packetReceivedContainer.applyAll((packet, coords))
+                    packetReceivedContainer.applyAll(core.connection.packet.PacketBundle(this, packet, attr, coords))
                 } catch {
                     case NonFatal(e) =>
                         AppLogger.printStackTrace(e)
@@ -55,15 +58,15 @@ class AsyncPacketChannel protected(scope: ChannelScope)
 
     override def sendTo(packet: Packet, targets: String*): Unit = sendTo(packet, SimplePacketAttributes.empty, targets: _*)
 
-    override def addOnPacketReceived(callback: (Packet, DedicatedPacketCoordinates) => Unit): Unit = {
-        packetReceivedContainer += (tuple => callback(tuple._1, tuple._2))
+    override def addOnPacketReceived(callback: PacketBundle => Unit): Unit = {
+        packetReceivedContainer += callback
     }
 }
 
 object AsyncPacketChannel extends PacketInjectableFactory[AsyncPacketChannel] {
 
-    override def createNew(scope: ChannelScope): AsyncPacketChannel = {
-        new AsyncPacketChannel(scope)
+    override def createNew(parent: PacketChannel, scope: ChannelScope): AsyncPacketChannel = {
+        new AsyncPacketChannel(parent, scope)
     }
 
 }

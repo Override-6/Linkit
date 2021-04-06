@@ -13,17 +13,16 @@
 package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.packet.traffic.ChannelScope
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.NetworkSharedCacheManager.MockCache
 import fr.linkit.core.connection.network.cache.map.SharedMap
-import fr.linkit.core.connection.packet.AbstractAttributePresence
+import fr.linkit.core.connection.packet.PacketBundle
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
 import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
-import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
-import fr.linkit.core.connection.packet.traffic.channel.request.{RequestPacket, RequestPacketChannel, ResponseSubmitter}
+import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import java.util.NoSuchElementException
@@ -33,16 +32,16 @@ import scala.util.control.NonFatal
 
 //FIXME: Critical bug occurred when a lot of clients are connecting to the server,
 // packets begin to shift, they are injected multiple times (maybe due to packet coordinates(id/senderID) ambiguity into the PacketInjections class)
-// and this is a big problem for this class to initialise completely, which is a big problem for the network's initialisation,
-// which is a big problem for the client relay's initialisation....
+// and this is a big problem for this class to initialise completely, which thus is a big problem for the client network's initialisation,
+// which is a big problem for the client connection's initialisation....
 
 //TODO Use Array[Serializable] instead of Array[Any] for shared contents
 //TODO replace Longs with Ints (be aware that, with the current serialization algorithm,
-// primitives integers are all converted to Long, so it would cause cast problems until the algorithm is modified)
+// primitives integers are all converted to Long, so it would cause cast problems until the algorithm is fixed)
 class NetworkSharedCacheManager(override val family: String,
                                 override val ownerID: String,
                                 cacheChannel: AsyncSenderSyncReceiver,
-                                requestChannel: RequestPacketChannel) extends AbstractAttributePresence with SharedCacheManager {
+                                requestChannel: RequestPacketChannel) extends SharedCacheManager {
 
     private      val ownerScope                                       = prepareOwnerScope()
     private lazy val sharedObjects: map.SharedMap[Long, Serializable] = init()
@@ -67,7 +66,7 @@ class NetworkSharedCacheManager(override val family: String,
                     println(s"CONTENT RECEIVED (${baseContent.mkString("Array(", ", ", ")")}) FOR CACHE $cacheID")
                     val sharedCache = factory.createNew(this, cacheID, baseContent, cacheChannel)
                     LocalCacheHandler.register(cacheID, sharedCache)
-                    requestChannel.injectStoredSubmitters()
+                    requestChannel.injectStoredBundles()
                     sharedCache
                 }
     }
@@ -114,20 +113,19 @@ class NetworkSharedCacheManager(override val family: String,
         this
     }
 
-    override def getID: Int = family.hashCode
-
     def forget(cacheID: Long): Unit = {
         LocalCacheHandler.unregister(cacheID)
     }
 
-    def handleCachePacket(packet: Packet, attributes: PacketAttributes, coords: DedicatedPacketCoordinates): Unit = {
-        packet match {
-            case WrappedPacket(key, subPacket) =>
-                LocalCacheHandler.injectPacket(key.toLong, subPacket, attributes, coords)
-        }
+    def handleCachePacket(bundle: PacketBundle): Unit = {
+        val key = bundle.attributes.getAttribute[Long]("cache").get
+        LocalCacheHandler.injectBundle(key, bundle)
     }
 
-    def handleRequest(packet: RequestPacket, coords: DedicatedPacketCoordinates, response: ResponseSubmitter): Unit = {
+    def handleRequest(requestBundle: RequestBundle): Unit = {
+        val packet   = requestBundle.packet
+        val coords   = requestBundle.coords
+        val response = requestBundle.responseSubmitter
         println(s"HANDLING REQUEST $packet, $coords")
 
         val senderID: String = coords.senderID
@@ -142,21 +140,24 @@ class NetworkSharedCacheManager(override val family: String,
         } else {
             import CacheOpenBehavior._
             behavior match {
-                case GET_OR_EMPTY => response.addPacket(ArrayObjectPacket())
-                case GET_OR_CRASH => response.putAttribute("errorMsg", s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection.")
-                case AWAIT_OPEN =>
-                    requestChannel.storeSubmitter(packet, coords, response)
-                    println(s"Await open ($cacheID)...")
-                    return
+                case GET_OR_CRASH =>
+                    val msg = s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection."
+                    response.putAttribute("errorMsg", msg)
+                case GET_OR_WAIT  =>
+                    //If the requester is not the owner, wait the owner to open the cache.
+                    if (senderID != ownerID) {
+                        requestChannel.storeBundle(requestBundle)
+                        println(s"Await open ($cacheID)...")
+                        return
+                    }
+                    //The sender is the owner : this class must create the cache content.
+                    response.addPacket(ArrayObjectPacket())
+                case GET_OR_EMPTY =>
+                    response.addPacket(ArrayObjectPacket())
             }
         }
-        val content = contentOpt.get
 
-        println(s"Content = ${content.mkString("Array(", ", ", ")")}")
-
-        response
-                .addPacket(ArrayObjectPacket(content))
-                .submit()
+        response.submit()
     }
 
     private def init(): SharedMap[Long, Serializable] = {
@@ -170,7 +171,7 @@ class NetworkSharedCacheManager(override val family: String,
         * For simple, if you remove this line, a deadlock will occur.
         * */
         LocalCacheHandler
-        val content = retrieveCacheContent(1, CacheOpenBehavior.AWAIT_OPEN)
+        val content = retrieveCacheContent(1, CacheOpenBehavior.GET_OR_WAIT)
 
         val sharedObjects = SharedMap[Long, Serializable].createNew(this, 1, content, cacheChannel)
         LocalCacheHandler.register(1L, sharedObjects)
@@ -182,7 +183,7 @@ class NetworkSharedCacheManager(override val family: String,
     private def prepareOwnerScope(): ChannelScope = {
         val writer = cacheChannel.traffic.newWriter(requestChannel.identifier)
         val scope  = ChannelScopes.reserved(ownerID)(writer)
-        scope.addDefaultPresence(requestChannel, family)
+        scope.addDefaultAttribute("family", family)
         scope
     }
 
@@ -209,8 +210,8 @@ class NetworkSharedCacheManager(override val family: String,
             println(s"Cache is now $identifier")
         }
 
-        def injectPacket(cacheID: Long, packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = try {
-            localRegisteredCaches(cacheID).handlePacket(packet, attributes, coords)
+        def injectBundle(cacheID: Long, bundle: PacketBundle): Unit = try {
+            localRegisteredCaches(cacheID).handleBundle(bundle)
         } catch {
             case _: NoSuchElementException =>
                 println(s"Mocked $cacheID")
@@ -262,7 +263,7 @@ object NetworkSharedCacheManager {
 
         override var autoFlush: Boolean = false
 
-        override def handlePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = ()
+        override def handleBundle(bundle: Bundle): Unit = ()
 
         override def currentContent: Array[Any] = Array()
 

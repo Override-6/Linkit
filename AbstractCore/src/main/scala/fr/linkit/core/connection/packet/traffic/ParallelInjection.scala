@@ -31,7 +31,7 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
     override def attachPin(@workerExecution callback: (Packet, PacketAttributes) => Unit): Unit = {
         val pin = new PacketInjectionNode(callback)
         pins += pin
-        AppLogger.debug(s"Pin attached ! [$coordinates]-($pin => $pins)")
+        AppLogger.debug(s"Pin attached ! ($hashCode)[$coordinates]-($pin => $pins)")
         if (processing)
             buff.process(pin)
     }
@@ -47,11 +47,13 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
         buff.insert(packet, attributes)
     }
 
-    def processRemainingPins(): Unit = {
+    override def processRemainingPinsThen(action: => Unit): Unit = {
+        AppLogger.debug(s"processRemainingPinsThen ($hashCode)[$coordinates]-($pins)")
         processing = true
         for (i <- pins.indices) {
             buff.process(pins(i))
         }
+        action
         processing = false
     }
 
@@ -70,12 +72,15 @@ object ParallelInjection {
         private var i     = 0
 
         def makeProcess(packet: Packet, attributes: PacketAttributes): Unit = {
+            AppLogger.debug(s"PACKET NUMBER ${packet.number} - ($hashCode)")
             if (!marks.contains(packet.number)) {
                 marks(i) = packet.number
-                AppLogger.debug(s"${currentTasksId} <> PROCESSING $packet ($totalProcess / ${packet.number})")
+                AppLogger.debug(s"${currentTasksId} <> PROCESSING $packet with attributes $attributes ($totalProcess / ${packet.number})")
                 totalProcess += 1
                 callback(packet, attributes)
                 i += 1
+            } else {
+                AppLogger.debug(s"PACKET ABORTED ${packet.number} - ($hashCode)")
             }
         }
 
@@ -110,13 +115,13 @@ object ParallelInjection {
         def insert(packet: Packet, attributes: PacketAttributes): Unit = buff.synchronized {
             var index        = 0
             val packetNumber = packet.number
-            AppLogger.debug(s"${currentTasksId} <> Inserting $packet ($packetNumber) in buffer ${buff.mkString("Array(", ", ", ")")}")
+            AppLogger.debug(s"${currentTasksId} <> Inserting $packet ($packetNumber) with attributes $attributes in buffer ${buff.mkString("Array(", ", ", ")")}")
             while (index < buff.length) {
                  val pair = buff(index)
                 if (pair == null || (pair._1 eq packet)) {
-                    AppLogger.debug(s"${currentTasksId} <> Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
                     insertCount += 1
                     buff(index) = (packet, attributes)
+                    AppLogger.debug(s"${currentTasksId} <> Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
                     return
                 }
                 val indexPacket = pair._1
@@ -156,12 +161,14 @@ object ParallelInjection {
             var i                    = 0
 
             def rectifyConcurrentInsertion(): Unit = {
+                AppLogger.debug(s"BUFFER HAS BEEN MODIFIED ${buff.mkString("Array(", ", ", ")")}")
                 val packetNumber     = buff(i)._1.number
                 val nextPacketNumber = buff(i + 1)._1.number
 
                 if (packetNumber < nextPacketNumber) {
                     i += 1 //The insertion has been done after current packet index. So we just need to continue.
                     validatedInsertCount = insertCount //We have rectified insert count shift
+                    AppLogger.debug(s"RECTIFICATION DONE.")
                     return
                 }
 
@@ -172,8 +179,11 @@ object ParallelInjection {
                 buff.synchronized {
                     i += (insertCount - validatedInsertCount)
                     validatedInsertCount = insertCount //We have rectified insert count shift
+                    AppLogger.debug(s"RECTIFICATION DONE.")
                 }
             }
+
+            AppLogger.debug(s"PROCESSING ALL PACKETS OF BUFFER ${buff.mkString("Array(", ", ", ")")}")
 
             while (i <= buff.length) {
                 val pair = buff(i)

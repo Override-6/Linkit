@@ -1,6 +1,6 @@
 package fr.linkit.core.local.concurrency.pool
 
-import fr.linkit.api.local.concurrency.EntertainedThread
+import fr.linkit.api.local.concurrency.WorkerThread
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.workerThreadGroup
 
@@ -12,14 +12,20 @@ import scala.collection.mutable
  * This class contains information that need to be stored into a specific thread class.
  * */
 private[concurrency] final class BusyWorkerThread private[concurrency](target: Runnable,
-                                                                       override val owner: BusyWorkerPool,
+                                                                       override val pool: BusyWorkerPool,
                                                                        id: Int)
-        extends Thread(workerThreadGroup, target, s"${owner.name}'s Thread#$id") with EntertainedThread {
+        extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$id") with WorkerThread {
 
     private[concurrency] var isParkingForWorkflow   : Boolean                   = false
     private[concurrency] var taskRecursionDepthCount: Int                       = 0
-    private              var currentTaskID          : Int                       = -1
+    private              var currentTaskId          : Int                       = -1
     private val workflowContinueLevels              : mutable.Map[Int, Boolean] = mutable.LinkedHashMap()
+
+    override def currentTaskID: Int = currentTaskId
+
+    def isExecutingTask(taskID: Int): Boolean = workflowContinueLevels.contains(taskID)
+
+    def currentTaskIsWaiting(): Boolean = workflowContinueLevels(currentTaskID)
 
     private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
         AppLogger.error(s"$tasksId <> Entering Workflow Loop... ($currentTaskID)")
@@ -59,26 +65,23 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
             LockSupport.unpark(this)
     }
 
+
     private[concurrency] def pushTaskID(id: Int): Unit = {
         workflowContinueLevels.put(id, true)
-        currentTaskID = id
+        currentTaskId = id
         tasksIdStr = getUpdatedTasksID
     }
 
     private[concurrency] def removeTaskID(id: Int): Unit = {
         workflowContinueLevels.remove(id)
-        currentTaskID = workflowContinueLevels
+        currentTaskId = workflowContinueLevels
                 .keys
                 .lastOption
                 .getOrElse(-1)
         tasksIdStr = getUpdatedTasksID
     }
 
-    def isExecutingTask(taskID: Int): Boolean = workflowContinueLevels.contains(taskID)
 
-    def getCurrentTaskID: Int = currentTaskID
-
-    def currentTaskIsWaiting(): Boolean = workflowContinueLevels(currentTaskID)
 
     //debug only
     private var tasksIdStr: String = _
@@ -87,7 +90,7 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
         if (workflowContinueLevels.isEmpty)
             return s"[]"
 
-        val current = getCurrentTaskID
+        val current = currentTaskId
         val sb      = new StringBuilder(s"[")
         workflowContinueLevels.keys.foreach(taskID => {
             if (taskID == current) {

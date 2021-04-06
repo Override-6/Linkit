@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.PacketAttributesPresence
+import fr.linkit.api.connection.packet.{Bundle, PacketAttributesPresence}
 import fr.linkit.api.local.system.JustifiedCloseable
 
 trait PacketChannel extends JustifiedCloseable with PacketAttributesPresence {
@@ -21,6 +21,10 @@ trait PacketChannel extends JustifiedCloseable with PacketAttributesPresence {
     val traffic   : PacketTraffic
     val identifier: Int
 
-    override def getID: Int = identifier
+    def storeBundle(bundle: Bundle): Unit
+
+    def injectStoredBundles(): Unit
+
+    def getParent: Option[PacketChannel]
 
 }

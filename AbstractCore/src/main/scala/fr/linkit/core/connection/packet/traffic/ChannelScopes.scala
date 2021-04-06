@@ -2,8 +2,8 @@ package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketWriter}
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketAttributesPresence}
-import fr.linkit.core.connection.packet.{AbstractAttributePresence, SimplePacketAttributes}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
+import fr.linkit.core.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
 object ChannelScopes {
 
@@ -15,7 +15,7 @@ object ChannelScopes {
     }
 
     final case class BroadcastScope private(override val writer: PacketWriter)
-            extends AbstractAttributePresence with ChannelScope {
+            extends AbstractAttributesPresence with ChannelScope {
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
             defaultAttributes.drainAttributes(attributes)
@@ -45,11 +45,10 @@ object ChannelScopes {
 
         override def shareWriter[S <: ChannelScope](factory: ScopeFactory[S]): S = factory(writer)
 
-        override def getID: Int = writer.identifier
     }
 
     final case class ReservedScope private(override val writer: PacketWriter, authorisedIds: String*)
-            extends AbstractAttributePresence with ChannelScope {
+            extends AbstractAttributesPresence with ChannelScope {
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
             defaultAttributes.drainAttributes(attributes)
@@ -87,7 +86,6 @@ object ChannelScopes {
 
         override def shareWriter[S <: ChannelScope](factory: ScopeFactory[S]): S = factory(writer)
 
-        override def getID: Int = writer.identifier
     }
 
     def broadcast: ScopeFactory[BroadcastScope] = BroadcastScope(_)

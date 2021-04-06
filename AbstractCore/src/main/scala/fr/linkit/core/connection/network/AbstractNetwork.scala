@@ -14,26 +14,26 @@ package fr.linkit.core.connection.network
 
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, SharedCacheManager}
 import fr.linkit.api.connection.network.{Network, NetworkEntity}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, SharedCollection}
 import fr.linkit.core.connection.network.cache.{AsyncSenderSyncReceiver, NetworkSharedCacheManager}
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
+import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel
 import fr.linkit.core.connection.packet.traffic.channel.request.RequestPacketChannel
-import fr.linkit.core.connection.packet.traffic.channel.{AbstractPacketChannel, SyncAsyncPacketChannel}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable
 
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
-    private   val cacheCommunicator                           = connection.getInjectable(11, ChannelScopes.broadcast, new AsyncSenderSyncReceiver(_))
+    private   val cacheCommunicator                           = connection.getInjectable(11, ChannelScopes.broadcast, new AsyncSenderSyncReceiver(_, _))
     private   val cacheRequestChannel                         = connection.getInjectable(12, ChannelScopes.broadcast, RequestPacketChannel)
     private   val caches                                      = mutable.HashMap.empty[String, NetworkSharedCacheManager]
     override  val globalCache      : SharedCacheManager       = initCaches()
-    protected val sharedIdentifiers: SharedCollection[String] = globalCache.getCache(3, SharedCollection.set[String], CacheOpenBehavior.AWAIT_OPEN)
-    protected val communicator     : SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScopes.broadcast, SyncAsyncPacketChannel.busy)
+    protected val sharedIdentifiers : SharedCollection[String] = globalCache.getCache(3, SharedCollection.set[String], CacheOpenBehavior.GET_OR_WAIT)
+    protected val entityCommunicator: SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScopes.broadcast, SyncAsyncPacketChannel.busy)
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     postInit()
 
@@ -66,7 +66,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                         caches.put(family, cache)
                         AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
                     }
-                    cacheCommunicator.injectStoredPackets()
+                    cacheCommunicator.injectStoredBundles()
                     cache: SharedCacheManager
                 }(cache => {
                     AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: <$family, $owner> UpDaTiNg CaChE")
@@ -86,42 +86,41 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             return connectionEntity
         }
 
-        val channel = communicator.subInjectable(Array(identifier), SyncAsyncPacketChannel.busy, transparent = true)
+        val channel = entityCommunicator.subInjectable(Array(identifier), SyncAsyncPacketChannel.busy, transparent = true)
         val ent     = createEntity0(identifier, channel)
         ent
     }
 
     private def initCaches(): SharedCacheManager = {
-        def findCacheToNotify(channel: AbstractPacketChannel, packet: Packet, attr: PacketAttributes, coords: DedicatedPacketCoordinates)
-                             (notifyAction: (NetworkSharedCacheManager) => Unit): Unit = {
-            AppLogger.debug(s"packet = $packet")
-            AppLogger.debug(s"attr = $attr")
-            attr.getPresence[String](channel) match {
+        def findCacheToNotify(bundle: Bundle)
+                             (notifyAction: NetworkSharedCacheManager => Unit): Unit = {
+            val attr = bundle.attributes
+            attr.getAttribute[String]("family") match {
                 case Some(family) =>
                     val opt = caches.synchronized {
-                        AppLogger.warn(s"$currentTasksId <> ${connection.supportIdentifier}: FINDING CACHE '$family' FOR PACKET $packet into $caches")
+                        AppLogger.warn(s"$currentTasksId <> ${connection.supportIdentifier}: FINDING CACHE '$family' FOR PACKET ${bundle.packet} into $caches")
                         caches.get(family)
                     }
                     opt
                             //If cache does not contains the family tag, this mean that it could possibly be
                             //opened in the future, so received packets will be stored and reInjected every
                             //time a cache opens.
-                            .fold(channel.storePacket(packet, attr, coords))(cache => {
+                            .fold(bundle.store())(cache => {
                                 notifyAction(cache)
                             })
             }
         }
 
-        cacheCommunicator.addAsyncListener((packet, attr, coords) => {
-            findCacheToNotify(cacheCommunicator, packet, attr, coords) {
-                _.handleCachePacket(packet, attr, coords)
+        cacheCommunicator.addAsyncListener(bundle => {
+            findCacheToNotify(bundle) {
+                _.handleCachePacket(bundle)
             }
         })
 
-        cacheRequestChannel.addRequestListener((packet, coords, submitter) => {
-            AppLogger.debug(s"Request body: ${(packet, coords, submitter)}")
-            findCacheToNotify(cacheRequestChannel, packet, packet.getAttributes, coords) {
-                _.handleRequest(packet, coords, submitter)
+        cacheRequestChannel.addRequestListener(bundle => {
+            AppLogger.debug(s"Request body: ${bundle}")
+            findCacheToNotify(bundle) {
+                _.handleRequest(bundle)
             }
         })
 

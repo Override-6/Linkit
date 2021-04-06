@@ -26,7 +26,7 @@ class ConnectionNetworkEntity private[network](connection: ConnectionContext,
 
     override val network: Network = connection.network
 
-    private val stateInstance = cache.getCache(3, SharedInstance[ExternalConnectionState], CacheOpenBehavior.AWAIT_OPEN)
+    private val stateInstance = cache.getCache(3, SharedInstance[ExternalConnectionState], CacheOpenBehavior.GET_OR_WAIT)
 
     override def getConnectionState: ExternalConnectionState = stateInstance.get.get
 

@@ -12,6 +12,6 @@
 
 package fr.linkit.api.local.concurrency
 
-class IllegalThreadException(msg: String) extends RuntimeException(msg) {
+case class IllegalThreadException(msg: String) extends RuntimeException(msg) {
 
 }

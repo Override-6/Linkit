@@ -19,13 +19,14 @@ import fr.linkit.api.local.system.Reason
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ScalaUtils.ensureType
+import org.jetbrains.annotations.Nullable
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag
 
 //TODO doc
-class SyncPacketChannel protected(scope: ChannelScope,
-                                  providable: Boolean) extends AbstractPacketChannel(scope)
+class SyncPacketChannel protected(@Nullable parent: PacketChannel, scope: ChannelScope,
+                                  providable: Boolean) extends AbstractPacketChannel(parent, scope)
         with PacketSender with PacketSyncReceiver {
 
     /**
@@ -77,10 +78,10 @@ class SyncPacketChannel protected(scope: ChannelScope,
 
 object SyncPacketChannel extends PacketInjectableFactory[SyncPacketChannel] {
 
-    override def createNew(scope: ChannelScope): SyncPacketChannel = {
-        new SyncPacketChannel(scope, false)
+    override def createNew(@Nullable parent: PacketChannel, scope: ChannelScope): SyncPacketChannel = {
+        new SyncPacketChannel(parent, scope, false)
     }
 
-    def providable: PacketInjectableFactory[SyncPacketChannel] = new SyncPacketChannel(_, true)
+    def providable: PacketInjectableFactory[SyncPacketChannel] = new SyncPacketChannel(_, _, true)
 
 }

@@ -82,7 +82,7 @@ class PacketReaderThread(reader: PacketReader,
     }
 
     private def readNextPacket(): Unit = {
-        reader.nextPacket((result) => {
+        reader.nextPacket(result => {
             onPacketRead(result)
         })
     }

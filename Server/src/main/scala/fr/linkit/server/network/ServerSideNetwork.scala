@@ -63,7 +63,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
         val serverEntity = new SelfNetworkEntity(serverConnection, ExternalConnectionState.CONNECTED, selfCache) //Server always connected to himself
         serverEntity
                 .entityCache
-                .getCache(3, SharedInstance[ExternalConnectionState], CacheOpenBehavior.AWAIT_OPEN)
+                .getCache(3, SharedInstance[ExternalConnectionState], CacheOpenBehavior.GET_OR_WAIT)
                 .set(ExternalConnectionState.CONNECTED) //technically always connected
         serverEntity
     }

@@ -13,14 +13,14 @@
 package fr.linkit.prototypes
 
 import com.google.gson.Gson
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, PacketInfo}
+import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.system.security.BytesHasher
-import fr.linkit.core.connection.packet.fundamental.RefPacket.{AnyRefPacket, StringPacket}
+import fr.linkit.core.connection.packet.SimplePacketAttributes
+import fr.linkit.core.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
 import fr.linkit.core.connection.packet.fundamental.{EmptyPacket, WrappedPacket}
 import fr.linkit.core.connection.packet.serialization.strategies.PacketAttributesStrategy
-import fr.linkit.core.connection.packet.serialization.{AdaptivePacketTranslator, PartialTransferInfo, SimpleTransferInfo}
-import fr.linkit.core.connection.packet.SimplePacketAttributes
+import fr.linkit.core.connection.packet.serialization.{AdaptivePacketTranslator, SimpleTransferInfo}
 
 import java.io.{ByteArrayOutputStream, ObjectOutputStream}
 
@@ -28,10 +28,10 @@ object Tests {
 
     private val coords     = DedicatedPacketCoordinates(27, "server", "client")
     private val packet     = WrappedPacket("Hello", WrappedPacket("World", AnyRefPacket(("Damn", "How", "Are", WrappedPacket("You ?", LongPacket(8)), EmptyPacket))))
-    private val attributes = SimplePacketAttributes.from("test1" -> "wew", "test2" -> StringPacket("wuw"), "test3" -> 4)
+    private val attributes = SimplePacketAttributes.empty
 
     def main(args: Array[String]): Unit = {
-        val serialInfo = SimpleTransferInfo(coords, EmptyPacketAttributes, packet)
+        val serialInfo = SimpleTransferInfo(coords, SimplePacketAttributes.empty, packet)
 
         println("")
         println("-- Compact serializer --")
@@ -40,18 +40,18 @@ object Tests {
         //COMPACTED SERIALIZER
         {
             val translator   = new LocalCompactTranslator()
-            val partialInfo  = PartialTransferInfo((coords, translator.translateCoords(coords)), (attributes, translator.translateAttributes(attributes)), (packet, null))
-            val serialResult = translator.translate(partialInfo)
+            val serialResult = translator.translate(serialInfo)
 
             val bytes = serialResult.bytes
             println("Compacted bytes                 = " + new String(bytes) + (s" (l: ${bytes.length})"))
 
             translator.attachStrategy(PacketAttributesStrategy)
             val bytesStrategy = serialResult.bytes
-            println("Compacted bytes (with strategy) = " + new String(bytesStrategy) + (s" (l: ${bytesStrategy.length})"))
+            //println("Compacted bytes (with strategy) = " + new String(bytesStrategy) + (s" (l: ${bytesStrategy.length})"))
 
             val result = translator.translate(bytes)
-            println(s"Deserialized Info = ${PacketInfo(result)}")
+            println()
+            println(s"Deserialized Info = ${result}")
         }
 
         println("")
@@ -65,7 +65,8 @@ object Tests {
             val bytes        = serialResult.bytes
             println("Compacted bytes = " + new String(bytes) + (s" (l: ${bytes.length})"))
             val result = translator.translate(bytes)
-            println(s"Deserialized Info = ${PacketInfo(result)}")
+            println()
+            println(s"Deserialized Info = ${result}")
         }
 
         println("")

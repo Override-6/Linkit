@@ -28,9 +28,9 @@ sealed abstract class Submitter[P](id: Long, scope: ChannelScope) extends Simple
 
     def submit(): P = {
         ensureNotSubmit()
-        AppLogger.debug(s"$currentTasksId <> Submitting response ($id)... with scope $scope")
+        AppLogger.debug(s"$currentTasksId <> Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
         val result = makeSubmit()
-        AppLogger.debug(s"$currentTasksId <> Response ($id) submitted ! ")
+        AppLogger.debug(s"$currentTasksId <> Response ($id) submitted !")
         isSubmit = true
         result
     }
@@ -47,7 +47,7 @@ class ResponseSubmitter(id: Long, scope: ChannelScope) extends Submitter[Unit](i
 
     override protected def makeSubmit(): Unit = {
         val response = ResponsePacket(id, packets.toArray)
-        scope.sendToAll(response, this)
+        scope.sendToAll(response, SimplePacketAttributes(this))
     }
 }
 
@@ -58,7 +58,7 @@ class RequestSubmitter(id: Long, scope: ChannelScope, pool: BusyWorkerPool, hand
         val request = RequestPacket(id, packets.toArray)
 
         handler.addRequestHolder(holder)
-        scope.sendToAll(request, this)
+        scope.sendToAll(request, SimplePacketAttributes(this))
 
         holder
     }

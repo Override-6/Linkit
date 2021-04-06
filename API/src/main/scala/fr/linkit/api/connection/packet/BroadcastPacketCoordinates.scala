@@ -29,5 +29,14 @@ case class BroadcastPacketCoordinates(injectableID: Int, senderID: String, disca
         else alreadyConnected.filterNot(targetIDs.contains)
     }
 
+    def getDedicated(target: String): DedicatedPacketCoordinates = {
+        if (targetIDs.contains(target) == discardTargets) {
+            throw new IllegalArgumentException("Stored packet coordinates must target at least current connection.")
+        }
+
+        DedicatedPacketCoordinates(injectableID, target, senderID)
+    }
+
     override def toString: String = s"BroadcastPacketCoordinates(injectableID: $injectableID, senderID: $senderID, discardTargets: $discardTargets, targetIDs: $targetIDs)"
 }
+

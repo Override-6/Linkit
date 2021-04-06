@@ -1,18 +1,21 @@
 package fr.linkit.core.connection.packet.traffic.channel.request
 
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketAttributesPresence}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.connection.packet.AbstractAttributesPresence
 import fr.linkit.core.local.utils.ScalaUtils.ensureType
 
 import java.util.NoSuchElementException
 import scala.reflect.ClassTag
 
-sealed abstract class SubmitterPacket(packets: Array[Packet]) extends Packet with PacketAttributes {
+sealed abstract class SubmitterPacket(id: Long, packets: Array[Packet]) extends AbstractAttributesPresence with Packet {
 
     @transient private var packetIndex                  = 0
     @transient private var attributes: PacketAttributes = _
 
     @throws[NoSuchElementException]("If this method is called more times than packet array's length" + this)
     def nextPacket[P <: Packet : ClassTag]: P = {
+        AppLogger.debug(s"packetIndex: $packetIndex, packets: ${packets.mkString("Array(", ", ", ")")}")
         if (packetIndex >= packets.length)
             throw new NoSuchElementException()
 
@@ -27,39 +30,28 @@ sealed abstract class SubmitterPacket(packets: Array[Packet]) extends Packet wit
 
     def getAttributes: PacketAttributes = attributes
 
-    override def getAttribute[S <: Serializable](key: Serializable): Option[S] = attributes.getAttribute(key)
+    def getAttribute[S](key: Serializable): Option[S] = attributes.getAttribute(key)
 
-    override def getPresence[S <: Serializable](presence: PacketAttributesPresence): Option[S] = attributes.getPresence(presence)
-
-    override def putAttribute(key: Serializable, value: Serializable): this.type = {
+    def putAttribute(key: Serializable, value: Serializable): this.type = {
         attributes.putAttribute(key, value)
         this
     }
 
-    override def putPresence(presence: PacketAttributesPresence, value: Serializable): this.type = {
-        attributes.putPresence(presence, value)
-        this
-    }
-
-    override def drainAttributes(other: PacketAttributes): this.type = {
-        attributes.drainAttributes(other)
-        this
-    }
-
-    override def isEmpty: Boolean = attributes.isEmpty
-
     private[packet] def setAttributes(attributes: PacketAttributes): Unit = {
-        if (this.attributes != null)
+        if (this.attributes != null && this.attributes.ne(attributes))
             throw new IllegalStateException("Attributes already set !")
+        AppLogger.debug(s"SETTING ATTRIBUTES FOR SUBMITTER PACKET $this : $attributes")
         this.attributes = attributes
     }
+
+    override def toString: String = s"${getClass.getSimpleName}(id: $id, packets: ${packets.mkString("Array(", ", ", ")")}, attr: $attributes)"
 
 }
 
 case class ResponsePacket(id: Long, packets: Array[Packet])
-        extends SubmitterPacket(packets) {
+        extends SubmitterPacket(id, packets) {
 
 }
 
 case class RequestPacket(id: Long, packets: Array[Packet])
-        extends SubmitterPacket(packets)
+        extends SubmitterPacket(id, packets)

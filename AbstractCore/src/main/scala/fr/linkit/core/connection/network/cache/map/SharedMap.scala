@@ -13,14 +13,14 @@
 package fr.linkit.core.connection.network.cache.map
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.map.MapModification._
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, WorkerController}
+import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, GenericWorkerController}
 import fr.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -33,7 +33,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
     private val networkListeners        = ConsumerContainer[(MapModification, K, V)]()
     private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]
-    private val entertainer             = new WorkerController()
+    private val controller              = new GenericWorkerController()
 
     @volatile private var modCount: Int = 0
 
@@ -123,27 +123,14 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
     def awaitPut(k: K): V = {
         if (contains(k))
             return apply(k)
-        //println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
-
-        val worker = BusyWorkerPool.currentWorker
-        val taskID = worker.getCurrentTaskID
-
-        val listener: ((MapModification, K, V)) => Unit = t => {
-            AppLogger.debug(s"k = ${k}")
-            AppLogger.debug(s"t._2 = ${t._2}")
-            if (t._2 == k)
-                entertainer.notifyThread(worker, taskID)
-        }
-
-        addListener(listener)
-        entertainer.waitTask()
-        removeListener(listener)
+        AppLogger.trace(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
+        controller.waitTask()
         //println("Done !")
         apply(k)
     }
 
-    override def handlePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = {
-        packet match {
+    override def handleBundle(bundle: Bundle): Unit = {
+        bundle.packet match {
             case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
         }
     }
@@ -161,6 +148,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         action(LocalMap)
 
         modCount += 1
+        controller.notifyAnyThread()
         networkListeners.applyAll(mod)
     }
 

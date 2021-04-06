@@ -59,6 +59,6 @@ class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) e
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discarded: String*): Unit = {
-        serverConnection.broadcastPacketToConnections(packet, attributes, supportIdentifier, identifier, discarded: _*)
+        serverConnection.broadcastPacket(packet, attributes, supportIdentifier, identifier, discarded: _*)
     }
 }

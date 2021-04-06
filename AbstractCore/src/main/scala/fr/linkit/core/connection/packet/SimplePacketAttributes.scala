@@ -1,6 +1,6 @@
 package fr.linkit.core.connection.packet
 
-import fr.linkit.api.connection.packet.{PacketAttributes, PacketAttributesPresence}
+import fr.linkit.api.connection.packet.PacketAttributes
 import fr.linkit.api.local.system.AppLogger
 
 import scala.collection.mutable
@@ -9,7 +9,12 @@ class SimplePacketAttributes extends PacketAttributes {
 
     protected[packet] val attributes: mutable.Map[Serializable, Serializable] = mutable.HashMap[Serializable, Serializable]()
 
-    override def getAttribute[S <: Serializable](name: Serializable): Option[S] = attributes.get(name) match {
+    def this(attributes: SimplePacketAttributes) {
+        this()
+        attributes.attributes.foreachEntry(putAttribute)
+    }
+
+    override def getAttribute[S](name: Serializable): Option[S] = attributes.get(name) match {
         case o: Option[S] => o
         case _            => None
     }
@@ -30,15 +35,6 @@ class SimplePacketAttributes extends PacketAttributes {
 
     override def toString: String = attributes.mkString("SimplePacketAttributes(", ", ", ")")
 
-    override def getPresence[S <: Serializable](presence: PacketAttributesPresence): Option[S] = {
-        getAttribute(presence.getID)
-    }
-
-    override def putPresence(presence: PacketAttributesPresence, value: Serializable): this.type = {
-        putAttribute(presence.getID, value)
-        this
-    }
-
     override def drainAttributes(other: PacketAttributes): this.type = {
         attributes.foreachEntry((k, v) => other.putAttribute(k, v))
         this
@@ -52,6 +48,8 @@ object SimplePacketAttributes {
     def empty: SimplePacketAttributes = new SimplePacketAttributes
 
     def apply(): SimplePacketAttributes = empty
+
+    def apply(attributes: SimplePacketAttributes): SimplePacketAttributes = new SimplePacketAttributes(attributes)
 
     def from(tuples: (String, Serializable)*): SimplePacketAttributes = {
         val atr = empty

@@ -16,7 +16,7 @@ import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.concurrency.{packetWorkerExecution, workerExecution}
 import fr.linkit.api.local.system.AppLogger
@@ -27,7 +27,7 @@ import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.core.connection.packet.serialization.NumberSerializer
-import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DirectInjectionContainer, DynamicSocket}
+import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.system.{Rules, SystemPacket}
@@ -96,9 +96,9 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         readThread.onPacketRead = (result) => {
             val coordinates: DedicatedPacketCoordinates = result.coords match {
                 case d: DedicatedPacketCoordinates => d
-                case _ => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
+                case _                             => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
             }
-            handlePacket(result.packet, coordinates)
+            handlePacket(result.packet, result.attributes, coordinates)
         }
         readThread.start()
     }
@@ -136,13 +136,13 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         }
     }
 
-    private def handlePacket(packet: Packet, coordinates: DedicatedPacketCoordinates): Unit = {
+    private def handlePacket(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit = {
         packet match {
             //FIXME case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
             case system: SystemPacket => handleSystemPacket(system, coordinates)
-            case _: Packet =>
+            case _: Packet            =>
                 //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
-                traffic.processInjection(packet, coordinates)
+                traffic.processInjection(packet, attributes, coordinates)
             //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }

@@ -51,7 +51,7 @@ trait PacketInjection {
      * decides to do it for the current thread.
      * */
     @workerExecution
-    def processRemainingPins(): Unit
+    def processRemainingPinsThen(action: => Unit): Unit
 
     def isProcessing: Boolean
 

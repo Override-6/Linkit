@@ -12,8 +12,10 @@
 
 package fr.linkit.api.connection.packet.traffic
 
+import org.jetbrains.annotations.{NotNull, Nullable}
+
 trait PacketInjectableFactory[C <: PacketInjectable] {
 
-    def createNew(scope: ChannelScope): C
+    def createNew(@Nullable parent: PacketChannel, @NotNull scope: ChannelScope): C
 
 }

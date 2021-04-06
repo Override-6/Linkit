@@ -33,10 +33,10 @@ trait Packet extends Serializable {
         //If the packet has been instantiated using Unsafe.allocateInstance
         //The constructor will not be called thus packetID will not be initialized.
         //This method will manually give this packet an id
-        if (id < 0) {
+        if (id <= 0) {
             AppLogger.trace("Preparing packet...")
             id = nextPacketID
-            AppLogger.trace(s"id = ${packetID}; packet = $this")
+            AppLogger.trace(s"id = ${id}; packet = $this")
         }
         this
     }

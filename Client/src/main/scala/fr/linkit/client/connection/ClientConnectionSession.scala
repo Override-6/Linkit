@@ -18,7 +18,7 @@ import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
-import fr.linkit.core.connection.packet.traffic.{DynamicSocket, SocketPacketTraffic}
+import fr.linkit.core.connection.packet.traffic.{ChannelScopes, DynamicSocket, SocketPacketTraffic}
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.core.local.system.SystemPacketChannel
 import fr.linkit.core.local.system.event.DefaultEventNotifier
@@ -34,6 +34,6 @@ case class ClientConnectionSession(socket: DynamicSocket,
     val translator       : PacketTranslator              = configuration.translator
     val traffic          : PacketTraffic                 = new SocketPacketTraffic(socket, translator, supportIdentifier, serverIdentifier)
     val eventNotifier    : EventNotifier                 = new DefaultEventNotifier
-    val systemChannel    : SystemPacketChannel           = traffic.getInjectable(SystemChannelID, ChannelScope.broadcast, SystemPacketChannel)
+    val systemChannel    : SystemPacketChannel           = traffic.getInjectable(SystemChannelID, ChannelScopes.broadcast, SystemPacketChannel)
 
 }

@@ -13,8 +13,8 @@
 package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.local.utils.ConsumerContainer
@@ -41,9 +41,9 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
         instance = Option(value)
     }
 
-    override def handlePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = {
+    override def handleBundle(bundle: Bundle): Unit = {
         //println(s"<$family> Handling packet $packet")
-        packet match {
+        bundle.packet match {
             case ObjectPacket(remoteInstance: A) =>
                 this.instance = Option(remoteInstance)
                 modCount += 1

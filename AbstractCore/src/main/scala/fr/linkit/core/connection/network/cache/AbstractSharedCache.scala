@@ -47,7 +47,7 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
 
     protected def sendRequest(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
         attributes.putAttribute("family", family)
-        attributes.putAttribute("id", identifier)
+        attributes.putAttribute("cache", identifier)
         channel.send(packet, attributes)
     }
 

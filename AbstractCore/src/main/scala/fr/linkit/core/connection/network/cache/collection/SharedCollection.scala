@@ -13,8 +13,8 @@
 package fr.linkit.core.connection.network.cache.collection
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.collection.CollectionModification._
@@ -55,8 +55,8 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
 
     override def iterator: Iterator[A] = adapter.iterator
 
-    override final def handlePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = {
-        packet match {
+    override final def handleBundle(bundle: Bundle): Unit = {
+        bundle.packet match {
             case modPacket: ObjectPacket => BusyWorkerPool.runLaterOrHere {
                 handleNetworkModRequest(modPacket)
             }
@@ -136,9 +136,9 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         }
 
         kind match {
-            case CLEAR => collectionModifications.clear()
+            case CLEAR        => collectionModifications.clear()
             case SET | REMOVE => collectionModifications.filterInPlace(m => !((m._1 == SET || m._1 == REMOVE) && m._2 == index))
-            case ADD => //Do not optimise : the addition result may be different according to the order
+            case ADD          => //Do not optimise : the addition result may be different according to the order
         }
         collectionModifications += ((kind, index, value))
     }
@@ -159,10 +159,10 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         AppLogger.warn(s"<$family> Received mod request : $mod")
         AppLogger.warn(s"<$family> Current items : $this")
         val action: CollectionAdapter[A] => Unit = modKind match {
-            case CLEAR => _.clear()
-            case SET => _.set(index, item)
+            case CLEAR  => _.clear()
+            case SET    => _.set(index, item)
             case REMOVE => _.remove(index)
-            case ADD => if (index < 0) _.add(item) else _.insert(index, item)
+            case ADD    => if (index < 0) _.add(item) else _.insert(index, item)
         }
 
         try {

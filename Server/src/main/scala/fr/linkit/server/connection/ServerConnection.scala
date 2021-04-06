@@ -14,7 +14,7 @@ package fr.linkit.server.connection
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
@@ -24,7 +24,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
 import fr.linkit.core.connection.packet.traffic.{ChannelScopes, DynamicSocket}
-import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, WorkerController}
+import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, DedicatedWorkerController}
 import fr.linkit.core.local.system.event.DefaultEventNotifier
 import fr.linkit.core.local.system.{Rules, SystemPacketChannel}
 import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
@@ -48,8 +48,8 @@ class ServerConnection(applicationContext: ServerApplication,
     override val eventNotifier      : EventNotifier              = new DefaultEventNotifier
     private  val sideNetwork        : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
     override val network            : Network                    = sideNetwork
-    private  val systemChannel      : SystemPacketChannel        = new SystemPacketChannel(ChannelScopes.broadcast(traffic.newWriter(SystemChannelID)))
-    private  val initializationLocks: WorkerController           = new WorkerController(workerPool)
+    private  val systemChannel      : SystemPacketChannel       = new SystemPacketChannel(ChannelScopes.broadcast(traffic.newWriter(SystemChannelID)))
+    private  val initializationLocks: DedicatedWorkerController = new DedicatedWorkerController(workerPool)
 
     @volatile private var alive = false
 
@@ -103,12 +103,15 @@ class ServerConnection(applicationContext: ServerApplication,
 
     def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
 
-    def broadcastPacketToConnections(packet: Packet, attributes: PacketAttributes, sender: String, injectableID: Int, discarded: String*): Unit = {
-        if (connectionsManager.countConnections - discarded.length <= 0) {
+    def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, injectableID: Int, discarded: String*): Unit = {
+        if (connectionsManager.countConnections - discarded.length < 0) {
             // There is nowhere to send this packet.
             return
         }
-        connectionsManager.broadcastPacket(packet,attributes,  injectableID, sender, discarded.appended(supportIdentifier): _*)
+        connectionsManager.broadcastPacket(packet,attributes,  injectableID, sender, discarded:_*)
+        if (!discarded.contains(supportIdentifier)) {
+            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(injectableID, supportIdentifier, sender))
+        }
     }
 
     private[connection] def getSideNetwork: ServerSideNetwork = sideNetwork

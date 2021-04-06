@@ -15,10 +15,13 @@ package fr.linkit.core.connection.packet.serialization
 import fr.linkit.api.connection.network.cache.SharedCacheManager
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.core.connection.network.cache.map.{MapModification, SharedMap}
+import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.connection.packet.serialization.CachedObjectSerializer.Signature
 import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
+
+import scala.collection.mutable
 
 class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer {
 
@@ -33,10 +36,13 @@ class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer
         val hash = name.hashCode
 
         val hashBytes = serializeInt(hash)
+        println(s"hash = ${hash}")
+        println(s"clazz = ${clazz}")
         if (objectMap.contains(hash))
             return hashBytes //The type is already registered.
 
         objectMap.put(hash, name)
+        println(s"New type registered ! ($objectMap)")
         hashBytes
     }
 
@@ -53,20 +59,28 @@ class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer
     * Those types are directly registered because they are potentially used by the packet that
     * is used to notify to other relays that a new type has been registered.
     * If these types are not directly registered, the serialisation/deserialization will logically block in order
-    * to wait that one of these types are registered. But, they are used to notify that a new type has been registered.
-    * so, a sort of deadlock will occur.
+    * to wait that one of these types are registered, but they are used to notify that a new type has been registered.
+    * Therefore, a kind of deadlock will occur.
     * */
     serializeType(classOf[PacketCoordinates])
+    serializeType(classOf[SimplePacketAttributes])
     serializeType(classOf[DedicatedPacketCoordinates])
     serializeType(classOf[BroadcastPacketCoordinates])
+    serializeType(classOf[mutable.HashMap[_, _]])
+    serializeType(classOf[MapModification])
     serializeType(classOf[WrappedPacket])
     serializeType(classOf[ObjectPacket])
-    serializeType(classOf[MapModification])
     serializeType(classOf[(_, _, _)])
     serializeType(Nil.getClass)
+    serializeName("scala.collection.mutable.HashMap$Node")
+
+    private def serializeName(name: String): Unit = {
+        serializeType(Class.forName(name))
+    }
 
 }
 
 object CachedObjectSerializer {
+
     val Signature: Array[Byte] = Array(0)
 }

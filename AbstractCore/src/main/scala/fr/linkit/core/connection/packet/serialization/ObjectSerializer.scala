@@ -45,19 +45,20 @@ abstract class ObjectSerializer extends StrategicSerializer {
     override def serialize(any: Any, putSignature: Boolean): Array[Byte] = {
         //val t0 = System.currentTimeMillis()
         PacketReaderThread.checkNotCurrent()
-        println(any)
+        //println(any)
+        AppLogger.debug(s"Serializing $any, putSignature = $putSignature")
         val valBytes = serializeValue(null, any)
         val bytes = if (putSignature) signature ++ valBytes else valBytes
         /*
         val t1 = System.currentTimeMillis()
-        println(s"Serialisation took ${t1 - t0}ms")
+        //println(s"Serialisation took ${t1 - t0}ms")
         totalSerialTime += t1 - t0
-        println(s"totalSerialTime = ${totalSerialTime}")
+        //println(s"totalSerialTime = ${totalSerialTime}")
         totalSerials += 1
         totalBytesCreated += bytes.length
-        println(s"${getClass.getSimpleName} have a serial length Average of ${totalBytesCreated / totalSerials} bytes)
+        //println(s"${getClass.getSimpleName} have a serial length Average of ${totalBytesCreated / totalSerials} bytes)
         */
-        println(s"Bytes = ${new String(bytes).replace('\r', ' ')}")
+        //println(s"Bytes = ${new String(bytes).replace('\r', ' ')}")
         bytes
     }
 
@@ -74,12 +75,15 @@ abstract class ObjectSerializer extends StrategicSerializer {
     }
 
     override def partialSerialize(serialized: Array[Array[Byte]], toSerialize: Array[Any]): Array[Byte] = {
+        AppLogger.debug(s"Making partial serialize '${serialized.mkString("Array(", ", ", ")")}, ${toSerialize.mkString("Array(", ", ", ")")}'")
         signature ++ Array(AnyArrayFlag) ++ serializeAnyArray(serialized, toSerialize)
     }
 
     override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
         PacketReaderThread.checkNotCurrent()
-        deserializeArray(bytes.drop(signature.length))
+        val v = deserializeArray(bytes.drop(signature.length))
+        AppLogger.debug(s"Deserialized ${v.mkString("Array(", ", ", ")")}")
+        v
     }
 
     override def isSameSignature(bytes: Array[Byte]): Boolean = {
@@ -88,7 +92,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
 
     override def attachStrategy(strategy: SerialStrategy[_]): Unit = {
         //strategies.put(strategy.getTypeHandling, strategy)
-        println(s"Strategy put !! $strategy, $strategies")
+        //println(s"Strategy put !! $strategy, $strategies")
     }
 
     override def drainAllStrategies(holder: StrategyHolder): Unit = {
@@ -113,7 +117,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
     protected def deserializeType(bytes: Array[Byte]): (Class[_], Int)
 
     private def serializeObject(insertFlag: Boolean, any: Any): Array[Byte] = {
-        println(s"Serializing object '$any'")
+        //println(s"Serializing object '$any'")
         if (any == null)
             return NullFlagArray
 
@@ -145,7 +149,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
         val fields       = listSerializableFields(clazz)
         val fieldsLength = fields.length
 
-        println(s"fieldsLength = ${fieldsLength}")
+        //println(s"fieldsLength = ${fieldsLength}")
         if (fieldsLength == 0)
             return NoFieldFlagArray
 
@@ -155,24 +159,24 @@ abstract class ObjectSerializer extends StrategicSerializer {
         var bytes   = Array[Byte]()
         //Discard the last field, we already know his length by deducting it from previous lengths
         val lengths = new Array[Int](fieldsLength - 1)
-        println(s"fieldsLength = ${fieldsLength}")
+        //println(s"fieldsLength = ${fieldsLength}")
 
         for (i <- 0 until fieldsLength) {
             val field      = fields(i)
-            println(s"field = ${field}")
+            //println(s"field = ${field}")
             val value      = field.get(any)
-            println(s"Serializing field value '$value' of field $field")
+            //println(s"Serializing field value '$value' of field $field")
             val valueBytes = serializeValue(field.getType, value)
-            println(s"value = ${new String(valueBytes)}")
+            //println(s"value = ${new String(valueBytes)}")
             bytes ++= valueBytes
-            println(s"i = ${i}")
+            //println(s"i = ${i}")
             if (i != fieldsLength - 1) //ensure we don't hit the last field
                 lengths(i) = valueBytes.length
-            println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
+            //println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
         }
-        println(s"final lengths = ${lengths.mkString("Array(", ", ", ")")}")
+        //println(s"final lengths = ${lengths.mkString("Array(", ", ", ")")}")
         val signBytes = if (fieldsLength == 1) OneFieldFlagArray else lengths.flatMap(l => serializeNumber(l, true))
-        println(s"signBytes = ${new String(signBytes).replace('\r', ' ')}")
+        //println(s"signBytes = ${new String(signBytes).replace('\r', ' ')}")
         signBytes ++ bytes
     }
 
@@ -187,7 +191,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
     }
 
     private def serializeArray(anyArray: Array[Any]): Array[Byte] = {
-        println(s"Serializing array: ${anyArray.mkString("Array(", ", ", ")")} (${anyArray.length})")
+        //println(s"Serializing array: ${anyArray.mkString("Array(", ", ", ")")} (${anyArray.length})")
         if (anyArray == null)
             return NullFlagArray
 
@@ -195,7 +199,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
             return EmptyFlagArray
 
         val flag                 = getAppropriateFlag(anyArray)
-        println(s"flag = ${flag}")
+        //println(s"flag = ${flag}")
         val content: Array[Byte] = flag match {
             case ByteArrayFlag  =>
                 anyArray.asInstanceOf[Array[Byte]]
@@ -214,7 +218,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
             case AnyArrayFlag   =>
                 serializeAnyArray(Array(), anyArray)
         }
-        println(s"content :${new String(content)}")
+        //println(s"content :${new String(content)}")
         Array(flag) ++ content
     }
 
@@ -223,9 +227,9 @@ abstract class ObjectSerializer extends StrategicSerializer {
 
         val lengths = new Array[Int](anyArray.length + serialized.length - 1)
 
-        println(s"serialized = ${serialized.mkString("Array(", ", ", ")")} (${serialized.length})")
-        println(s"anyArray = ${anyArray.mkString("Array(", ", ", ")")} (${anyArray.length})")
-        println(s"lengths = ${lengths.mkString("Array(", ", ", ")")} (${lengths.length})")
+        //println(s"serialized = ${serialized.mkString("Array(", ", ", ")")} (${serialized.length})")
+        //println(s"anyArray = ${anyArray.mkString("Array(", ", ", ")")} (${anyArray.length})")
+        //println(s"lengths = ${lengths.mkString("Array(", ", ", ")")} (${lengths.length})")
 
         var buff = Array[Byte]()
         //TODO var lastClass: Class[_] = null
@@ -238,13 +242,13 @@ abstract class ObjectSerializer extends StrategicSerializer {
 
         for (i <- anyArray.indices) {
             val any   = anyArray(i)
-            println(s"serializing = ${any}")
+            //println(s"serializing = ${any}")
             val bytes = serializeValue(null, any)
-            println(s"serialized $any as ${new String(bytes).replace('\r', ' ')}")
+            //println(s"serialized $any as ${new String(bytes).replace('\r', ' ')}")
 
             //Add the length only if it is not the last item
             if (i + serialized.length < lengths.length) lengths(i + (serialized.length)) = bytes.length
-            println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
+            //println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
             //lastClass = currentClass
             buff ++= bytes
         }
@@ -252,17 +256,17 @@ abstract class ObjectSerializer extends StrategicSerializer {
         //                                  because it can be deducted, we add it's presence here.
         val numOfLength = serializeNumber(lengths.length + 1, true)
         val signBytes   = lengths.flatMap(l => serializeNumber(l, true))
-        println(s"For array : ${anyArray.mkString("Array(", ", ", ")")}")
-        println(s"signBytes = ${new String(signBytes)}")
-        println("buff = " + new String(buff).replace('\r', ' '))
-        println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
+        //println(s"For array : ${anyArray.mkString("Array(", ", ", ")")}")
+        //println(s"signBytes = ${new String(signBytes)}")
+        //println("buff = " + new String(buff).replace('\r', ' '))
+        //println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
         numOfLength ++ signBytes ++ buff
     }
 
     private def deserializeArray(bytes: Array[Byte]): Array[Any] = {
-        println(s"Deserializing array ${new String(bytes).replace('\r', ' ')}")
+        //println(s"Deserializing array ${new String(bytes).replace('\r', ' ')}")
         val flag    = bytes(0)
-        println(s"flag = ${flag}")
+        //println(s"flag = ${flag}")
         val content = bytes.drop(1)
         var buff    = Array[Any]()
         flag match {
@@ -277,22 +281,22 @@ abstract class ObjectSerializer extends StrategicSerializer {
                 buff ++= content.grouped(8).map(deserializeNumber(_, 0, 8))
             case AnyArrayFlag   =>
                 val (numOfLengths, numBytesLength) = deserializeFlaggedNumber(content, 0)
-                println(s"numOfLengths = ${numOfLengths}")
-                println(s"numBytesLength = ${numBytesLength}")
-                println(s"content = ${new String(content).replace('\r', ' ')}")
+                //println(s"numOfLengths = ${numOfLengths}")
+                //println(s"numBytesLength = ${numBytesLength}")
+                //println(s"content = ${new String(content).replace('\r', ' ')}")
                 val (lengths, signBytesLength)     = readSign(content, numBytesLength, numOfLengths.toInt, content.length)
-                println(s"signBytesLength = ${signBytesLength}")
+                //println(s"signBytesLength = ${signBytesLength}")
                 var currentItIndex                 = signBytesLength + numBytesLength //the total sign length
-                println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
-                println(s"signBytesLength = ${signBytesLength}")
+                //println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
+                //println(s"signBytesLength = ${signBytesLength}")
                 //TODO var lastType: Class[_] = null
                 for (itLength <- lengths) {
-                    println(s"currentItIndex = ${currentItIndex}")
+                    //println(s"currentItIndex = ${currentItIndex}")
                     val itemBytes = content.slice(currentItIndex, currentItIndex + itLength)
-                    println(s"Deserializing item ${new String(itemBytes)}")
+                    //println(s"Deserializing item ${new String(itemBytes)}")
                     //TODO val forceObj = (typeStreak && !determineForceObjDeserial(lastType)) || (!typeStreak && determineForceObjDeserial(lastType))
                     val value     = deserializeValue(null, itemBytes)
-                    println(s"value = ${value}")
+                    //println(s"value = ${value}")
                     buff = buff.appended(value)
 
                     currentItIndex += itLength
@@ -303,26 +307,26 @@ abstract class ObjectSerializer extends StrategicSerializer {
     }
 
     protected def serializeNumber(value: Long, insertFlag: Boolean): Array[Byte] = {
-        println(s"Serializing number $value, insertFlag: $insertFlag")
+        //println(s"Serializing number $value, insertFlag: $insertFlag")
 
         def flag(array: Array[Byte]): Array[Byte] = if (insertFlag) array else Array()
 
         if (Byte.MinValue < value && value < Byte.MaxValue) {
-            println("Byte")
+            //println("Byte")
             return flag(ByteFlagArray) ++ Array(value.toByte)
         }
 
         if (Short.MinValue < value && value < Short.MaxValue) {
-            println(s"Short (${value.toShort}) - " + new String(serializeShort(value.toShort)))
+            //println(s"Short (${value.toShort}) - " + new String(serializeShort(value.toShort)))
             return flag(ShortFlagArray) ++ serializeShort(value.toShort)
         }
 
         if (Int.MinValue < value && value < Int.MaxValue) {
-            println("Int")
+            //println("Int")
             return flag(IntFlagArray) ++ serializeInt(value.toInt)
         }
 
-        println("Long")
+        //println("Long")
         flag(LongFlagArray) ++ serializeLong(value)
     }
 
@@ -331,7 +335,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
             return NullFlagArray
         }
         val clazz           = value.getClass
-        println(s"Serializing value : $value of type $clazz")
+        //println(s"Serializing value : $value of type hint $clazz")
         val serializedValue = if (clazz.isArray) {
             serializeArray(value.asInstanceOf[Array[Any]])
         } else {
@@ -369,7 +373,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
                 }
             }
         }
-        println(s"Serialized Value = ${new String(serializedValue)}")
+        //println(s"Serialized Value = ${new String(serializedValue)}")
         serializedValue
     }
 
@@ -377,23 +381,23 @@ abstract class ObjectSerializer extends StrategicSerializer {
         if (to - from > JLong.BYTES)
             throw new IllegalArgumentException(s"trying to convert byte seq to long, but the provided byte seq is longer than a long size (${bytes.length})}")
 
-        println(s"Deserializing number in region ${new String(bytes.slice(from, to))}")
+        //println(s"Deserializing number in region ${new String(bytes.slice(from, to))}")
 
         var result = 0
         val limit  = to.min(bytes.length) - from
 
         if (limit == 1)
             return bytes(from)
-        println(s"from = ${from}")
+        //println(s"from = ${from}")
         for (i <- 0 until limit) {
             val byteIndex = from + ((i - limit).abs - 1)
             val b         = bytes(byteIndex)
-            println(s"i = ${i}")
-            println(s"b = ${b} ${new String(Array(b))}")
+            //println(s"i = ${i}")
+            //println(s"b = ${b} ${new String(Array(b))}")
             result |= (0xff & b) << i * 8
-            println(s"result = ${result}")
+            //println(s"result = ${result}")
         }
-        println(s"result = ${result}")
+        //println(s"result = ${result}")
 
         result
     }
@@ -402,14 +406,14 @@ abstract class ObjectSerializer extends StrategicSerializer {
      * @return a tuple of the deserialized number, and the length of the number in the array.
      * */
     protected def deserializeFlaggedNumber(bytes: Array[Byte], index: Int): (Long, Byte) = {
-        println(s"Deserializing flagged number in region ${new String(bytes.slice(index, index + 8)).replace('\r', ' ')}")
+        //println(s"Deserializing flagged number in region ${new String(bytes.slice(index, index + 8)).replace('\r', ' ')}")
         val number: (Long, Byte) = bytes(index) match {
             case ByteFlag  => (bytes(index + 1), 2)
             case ShortFlag => (deserializeNumber(bytes, index + 1, index + 3), 3)
             case IntFlag   => (deserializeNumber(bytes, index + 1, index + 5), 5)
             case LongFlag  => (deserializeNumber(bytes, index + 1, index + 9), 9)
         }
-        println(s"Deserialized number ${number._1}, ${number._1.getClass}")
+        //println(s"Deserialized number ${number._1}, ${number._1.getClass}")
         number
     }
 
@@ -417,20 +421,20 @@ abstract class ObjectSerializer extends StrategicSerializer {
         val valuesLengths = new Array[Int](numOfLengths)
         var nextIndex     = from
 
-        println(s"Reading sign ${new String(bytes.drop(from)).replace('\r', ' ')}")
+        //println(s"Reading sign ${new String(bytes.drop(from)).replace('\r', ' ')}")
 
         if (bytes(from) == OneFieldFlag)
             return (Array(lastLengthReference), 1)
 
-        println(s"valuesLengths = ${valuesLengths.mkString("Array(", ", ", ")")}")
-        println(s"nextIndex = ${nextIndex}")
-        println(s"numOfLengths = ${numOfLengths}")
+        //println(s"valuesLengths = ${valuesLengths.mkString("Array(", ", ", ")")}")
+        //println(s"nextIndex = ${nextIndex}")
+        //println(s"numOfLengths = ${numOfLengths}")
         for (i <- 0 until numOfLengths) {
-            println(s"ITEM : ${i}: ")
+            //println(s"ITEM : ${i}: ")
             val length = if (i != numOfLengths - 1) {
                 val (number, length) = deserializeFlaggedNumber(bytes, nextIndex)
                 nextIndex += length
-                println(s"nextIndex = ${nextIndex}")
+                //println(s"nextIndex = ${nextIndex}")
                 number.toInt
             } else {
                 //If we hit the last field, we deduct his length by calculating
@@ -438,13 +442,13 @@ abstract class ObjectSerializer extends StrategicSerializer {
                 lastLengthReference - valuesLengths.sum
             }
             valuesLengths(i) = length
-            println(s"valuesLengths = ${valuesLengths.mkString("Array(", ", ", ")")}")
+            //println(s"valuesLengths = ${valuesLengths.mkString("Array(", ", ", ")")}")
         }
         (valuesLengths, nextIndex - from)
     }
 
     private def deserializeObject(@Nullable typeHint: Class[_], bytes: Array[Byte]): Any = {
-        println(s"Deserializing object ${new String(bytes).replace('\r', ' ')}")
+        //println(s"Deserializing object ${new String(bytes).replace('\r', ' ')}")
 
         if (bytes sameElements NullFlagArray)
             return null
@@ -459,8 +463,8 @@ abstract class ObjectSerializer extends StrategicSerializer {
                 else throw e
         }
 
-        println(s"kindClass = ${kindClass}")
-        println(s"Getting strategy for class $kindClass in strategies $strategies")
+        //println(s"kindClass = ${kindClass}")
+        //println(s"Getting strategy for class $kindClass in strategies $strategies")
         strategies.get(kindClass).fold(defaultDeserializeObject(kindClass, kindClassLength, bytes)) {
             case strategy: SerialStrategy[_] if strategy.getTypeHandling == kindClass =>
                 strategy.deserial(bytes.drop(kindClassLength), this)
@@ -484,12 +488,12 @@ abstract class ObjectSerializer extends StrategicSerializer {
         val fieldsNumbers = fields.length
 
         //Reading Instance Sign...
-        println("Reading sign...")
+        //println("Reading sign...")
         val (valuesLengths, signBytesLength) = readSign(bytes, kindClassLength, fieldsNumbers, objectLength)
-        println("Sign read !")
-        println(s"valuesLengths = ${valuesLengths.mkString("Array(", ", ", ")")}")
-        println(s"kindClassLength = ${kindClassLength}")
-        println(s"signBytesLength = ${signBytesLength}")
+        //println("Sign read !")
+        //println(s"valuesLengths = ${valuesLengths.mkString("Array(", ", ", ")")}")
+        //println(s"kindClassLength = ${kindClassLength}")
+        //println(s"signBytesLength = ${signBytesLength}")
 
         //Writing values to the empty instance
         var currentValIndex = kindClassLength + signBytesLength
@@ -497,15 +501,15 @@ abstract class ObjectSerializer extends StrategicSerializer {
             val field       = fields(i)
             val fieldType   = field.getType
             val valueLength = valuesLengths(i)
-            println(s"field = ${field}")
-            println(s"currentValIndex = ${currentValIndex}")
-            println(s"valueLength = ${valueLength}")
+            //println(s"field = ${field}")
+            //println(s"currentValIndex = ${currentValIndex}")
+            //println(s"valueLength = ${valueLength}")
             val valueBytes  = bytes.slice(currentValIndex, currentValIndex + valueLength)
-            println(s"valueBytes = ${new String(valueBytes)}")
+            //println(s"valueBytes = ${new String(valueBytes)}")
             val value       = deserializeValue(fieldType, valueBytes)
-            println(s"value = ${value}")
+            //println(s"value = ${value}")
             if (value != null)
-            println(s"value.getClass = ${value.getClass}")
+            //println(s"value.getClass = ${value.getClass}")
                 setValue(instance, field, value)
 
             currentValIndex += valueLength
@@ -538,7 +542,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
     }
 
     protected def deserializeValue[T](@Nullable typeHint: Class[_], bytes: Array[Byte]): Any = {
-        println(s"Deserializing value of type $typeHint, bytes = ${new String(bytes).replace('\r', ' ')}")
+        //println(s"Deserializing value of type $typeHint, bytes = ${new String(bytes).replace('\r', ' ')}")
         if (bytes sameElements NullFlagArray) {
             null
         } else if (typeHint != null && typeHint.isArray) {
@@ -580,6 +584,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
     private def listSerializableFields(clazz: Class[_]): Array[Field] = {
         if (clazz == null)
             return Array()
+
         val initial = clazz.getDeclaredFields
                 .filterNot(p => Modifier.isTransient(p.getModifiers) || Modifier.isStatic(p.getModifiers))
                 .tapEach(_.setAccessible(true))

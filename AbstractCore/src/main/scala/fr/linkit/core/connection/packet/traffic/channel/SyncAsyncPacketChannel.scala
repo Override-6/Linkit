@@ -12,83 +12,85 @@
 
 package fr.linkit.core.connection.packet.traffic.channel
 
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, PacketInjection}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel, PacketInjectableFactory, PacketInjection}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.fundamental.EmptyPacket
-import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel.nextChannelNumber
+import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel.Attribute
+import fr.linkit.core.connection.packet.{PacketBundle, SimplePacketAttributes}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
 import fr.linkit.core.local.utils.ScalaUtils.ensureType
+import org.jetbrains.annotations.Nullable
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag
 
-class SyncAsyncPacketChannel(scope: ChannelScope,
+class SyncAsyncPacketChannel(@Nullable parent: PacketChannel,
+                             scope: ChannelScope,
                              busy: Boolean)
-        extends AbstractPacketChannel(scope) {
+        extends AbstractPacketChannel(parent, scope) {
 
     private val sync: BlockingQueue[Packet] = {
-        if (!busy)
+        if (!busy) {
             new LinkedBlockingQueue[Packet]()
-        else {
+        } else {
             BusyWorkerPool
                     .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 
-    private val channelNumber = nextChannelNumber
-
-    private val asyncListeners = new ConsumerContainer[(Packet, PacketAttributes, DedicatedPacketCoordinates)]
+    private val asyncListeners = new ConsumerContainer[PacketBundle]
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
         val coordinates = injection.coordinates
         injection.attachPin { (packet, attr) =>
-            attr.getPresence[String](this) match {
-                case Some(tag) =>
-                    tag match {
-                        case "s" => sync.add(packet)
-                        case "a" => asyncListeners.applyAll((packet, attr, coordinates))
-                    }
+            attr.getAttribute[Long](Attribute) match {
+                case Some(isAsync) =>
+                    if (isAsync == 1)
+                        asyncListeners.applyAll(PacketBundle(this, packet, attr, coordinates))
+                    else
+                        sync.add(packet)
             }
         }
-        //println(s"<$identifier> sync = ${sync}")
     }
 
-    def addAsyncListener(action: (Packet, PacketAttributes, DedicatedPacketCoordinates) => Unit): Unit =
-        asyncListeners += (tuple => action(tuple._1, tuple._2, tuple._3))
+    def addAsyncListener(action: PacketBundle => Unit): Unit =
+        asyncListeners += action
 
     def nextSync[P <: Packet : ClassTag]: P = {
         ensureType[P](sync.take())
     }
 
     def sendAsync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
-        attributes.putPresence(this, true)
+        attributes.putAttribute(Attribute, 1L)
+        drainAllAttributes(attributes)
         scope.sendToAll(packet, attributes)
     }
 
-    sendAsync(EmptyPacket)
-
     def sendAsync(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = {
-        attributes.putPresence(this, true)
+        attributes.putAttribute(Attribute, 1L)
+        drainAllAttributes(attributes)
         scope.sendTo(packet, attributes, targets: _*)
     }
 
     def sendSync(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = {
-        attributes.putPresence(this, true)
+        attributes.putAttribute(Attribute, 0L)
+        drainAllAttributes(attributes)
         scope.sendTo(packet, targets: _*)
     }
 
     def sendSync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
-        attributes.putPresence(this, false)
+        attributes.putAttribute(Attribute, 0L)
+        drainAllAttributes(attributes)
         scope.sendToAll(packet, attributes)
     }
 
 }
 
 object SyncAsyncPacketChannel extends PacketInjectableFactory[SyncAsyncPacketChannel] {
+
+    val Attribute: Int = 5
 
     @volatile private var channelNumber: Int = 0
 
@@ -97,10 +99,10 @@ object SyncAsyncPacketChannel extends PacketInjectableFactory[SyncAsyncPacketCha
         channelNumber
     }
 
-    override def createNew(scope: ChannelScope): SyncAsyncPacketChannel = {
-        new SyncAsyncPacketChannel(scope, false)
+    override def createNew(@Nullable parent: PacketChannel, scope: ChannelScope): SyncAsyncPacketChannel = {
+        new SyncAsyncPacketChannel(parent, scope, false)
     }
 
-    def busy: PacketInjectableFactory[SyncAsyncPacketChannel] = new SyncAsyncPacketChannel(_, true)
+    def busy: PacketInjectableFactory[SyncAsyncPacketChannel] = new SyncAsyncPacketChannel(_, _, true)
 
 }

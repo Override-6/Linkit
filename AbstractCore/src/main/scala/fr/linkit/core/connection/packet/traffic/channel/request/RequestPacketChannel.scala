@@ -1,41 +1,45 @@
 package fr.linkit.core.connection.packet.traffic.channel.request
 
-import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, PacketInjection}
+import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel, PacketInjectableFactory, PacketInjection}
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.AbstractPacketChannel
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 import fr.linkit.core.local.utils.ConsumerContainer
+import org.jetbrains.annotations.Nullable
 
 import java.util.NoSuchElementException
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
-class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(scope) {
+class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) {
 
     private val requestHolders           = mutable.LinkedHashMap.empty[Long, RequestHolder]
-    private val requestConsumers         = ConsumerContainer[(RequestPacket, DedicatedPacketCoordinates, ResponseSubmitter)]()
-    private val storedResponseSubmitters = ListBuffer.empty[(RequestPacket, DedicatedPacketCoordinates, ResponseSubmitter)]
+    private val requestConsumers         = ConsumerContainer[RequestBundle]()
     @volatile private var requestID      = 0
 
     //debug only
     private val source = scope.traffic.supportIdentifier
+
+    AppLogger.debug(s"Created $this, of parent $parent")
 
     override def handleInjection(injection: PacketInjection): Unit = {
         val coords = injection.coordinates
         injection.attachPin { (packet, attr) =>
             packet match {
                 case request: RequestPacket =>
+                    AppLogger.debug(this)
+                    AppLogger.debug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
                     request.setAttributes(attr)
 
-                    AppLogger.debug(s"${currentTasksId} <> $source: INJECTING REQUEST $request " + this)
-                    val submitter = new ResponseSubmitter(request.id, scope)
-                    requestConsumers.applyAllLater((request, coords, submitter))
+                    val submitterScope = scope.shareWriter(ChannelScopes.reserved(coords.senderID))
+                    val submitter = new ResponseSubmitter(request.id, submitterScope)
+
+                    requestConsumers.applyAllLater(RequestBundle(this, request, coords, submitter))
 
                 case response: ResponsePacket =>
-                    AppLogger.debug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response " + this)
+                    AppLogger.debug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
                     response.setAttributes(attr)
 
                     requestHolders.get(response.id) match {
@@ -46,9 +50,9 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
         }
     }
 
-    def addRequestListener(callback: (RequestPacket, DedicatedPacketCoordinates, ResponseSubmitter) => Unit): Unit = {
+    def addRequestListener(callback: RequestBundle => Unit): Unit = {
         AppLogger.fatal(s"$currentTasksId <> $source: ADDED REQUEST LISTENER : $requestHolders " + this)
-        requestConsumers += (tuple => callback(tuple._1, tuple._2, tuple._3))
+        requestConsumers += callback
     }
 
     def makeRequest(scopeFactory: ScopeFactory[_ <: ChannelScope]): RequestSubmitter = {
@@ -61,16 +65,6 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
 
         val requestID = nextRequestID
         new RequestSubmitter(requestID, scope, pool, this)
-    }
-
-    def storeSubmitter(packet: RequestPacket, coords: DedicatedPacketCoordinates, submitter: ResponseSubmitter): Unit = {
-        storedResponseSubmitters += ((packet, coords, submitter))
-    }
-
-    def injectStoredSubmitters(): Unit = {
-        storedResponseSubmitters.foreach(triplet => {
-            requestConsumers.applyAllLater((triplet._1, triplet._2, triplet._3))
-        })
     }
 
     private def nextRequestID: Int = {
@@ -90,5 +84,5 @@ class RequestPacketChannel(scope: ChannelScope) extends AbstractPacketChannel(sc
 
 object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel] {
 
-    override def createNew(scope: ChannelScope): RequestPacketChannel = new RequestPacketChannel(scope)
+    override def createNew(@Nullable parent: PacketChannel, scope: ChannelScope): RequestPacketChannel = new RequestPacketChannel(parent, scope)
 }

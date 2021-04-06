@@ -16,23 +16,24 @@ import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{AppLogger, ForbiddenIdentifierException, Reason}
-import fr.linkit.core.connection.packet.AbstractAttributePresence
+import fr.linkit.core.connection.packet.AbstractAttributesPresence
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttributePresence with PacketChannel with PacketInjectable {
+abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractAttributesPresence with PacketChannel with PacketInjectable {
 
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
-    protected val writer           : PacketWriter     = scope.writer
-    override  val ownerID          : String           = writer.serverIdentifier
-    override  val identifier       : Int              = writer.identifier
-    override  val traffic          : PacketTraffic    = writer.traffic
-    private   val subChannels                         = mutable.Set.empty[SubInjectableContainer]
-    private   val storedPackets                       = ListBuffer.empty[(Packet, PacketAttributes, DedicatedPacketCoordinates)]
+    protected val writer    : PacketWriter  = scope.writer
+    override  val ownerID   : String        = writer.serverIdentifier
+    override  val identifier: Int           = writer.identifier
+    override  val traffic   : PacketTraffic = writer.traffic
+    private   val subChannels               = mutable.Set.empty[SubInjectableContainer]
+    private   val storedBundles             = mutable.HashSet.empty[Bundle]
 
     @volatile private var closed = true
 
@@ -65,47 +66,30 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
         register(scope, factory, transparent)
     }
 
-    def storePacket(packet: Packet, attributes: PacketAttributes, coords: PacketCoordinates): Unit = {
-        storedPackets.synchronized {
-            AppLogger.debug(s"$currentTasksId <> STORING PACKET $packet AND COORDS $coords INTO $storedPackets")
+    override def getParent: Option[PacketChannel] = Option(parent)
+
+    override def storeBundle(bundle: Bundle): Unit = {
+        storedBundles.synchronized {
+            AppLogger.debug(s"$currentTasksId <> STORING BUNDLE $bundle INTO $storedBundles")
         }
-        if (coords.injectableID != identifier) {
+        if (bundle.getChannel.identifier != identifier) {
             throw new IllegalArgumentException("Stored packet coordinates must target the same injectable identifier as this channel.")
         }
 
-        val supportIdentifier = scope.writer.supportIdentifier
-        val directCoords      = coords match {
-            case dedicated: DedicatedPacketCoordinates =>
-                //FIXME
-                //if (dedicated.targetID != supportIdentifier) {
-                //    throw new IllegalArgumentException("Stored packet coordinates must target current connection.")
-                //}
-
-                dedicated
-            case broadcast: BroadcastPacketCoordinates =>
-                if (broadcast.targetIDs.contains(supportIdentifier) == broadcast.discardTargets) {
-                    throw new IllegalArgumentException("Stored packet coordinates must target at least current connection.")
-                }
-
-                DedicatedPacketCoordinates(identifier, supportIdentifier, broadcast.senderID)
-        }
-        if (storedPackets.exists(_._1 eq packet))
-            throw new Error("Double instance packet in storage.")
-
-        storedPackets.synchronized {
-            storedPackets += ((packet, attributes, directCoords))
+        storedBundles.synchronized {
+            storedBundles += bundle
         }
     }
 
-    def injectStoredPackets(): Unit = {
-        var clone: Array[(Packet, PacketAttributes, DedicatedPacketCoordinates)] = null
-        storedPackets.synchronized {
+    override def injectStoredBundles(): Unit = {
+        var clone: Array[Bundle] = null
+        storedBundles.synchronized {
 
-            AppLogger.debug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedPackets")
+            AppLogger.debug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedBundles")
 
-            clone = Array.from(storedPackets)
+            clone = Array.from(storedBundles)
 
-            storedPackets.clear()
+            storedBundles.clear()
         }
 
         val builder = ListBuffer.newBuilder
@@ -117,7 +101,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
             if (injected.contains(stored))
                 throw new Error("Double instance packet in storage.")
 
-            val injection = traffic.injectionContainer.makeInjection(stored._1, stored._2, stored._3)
+            val injection = traffic.injectionContainer.makeInjection(stored)
             inject(injection)
         })
     }
@@ -128,7 +112,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
     private def register[C <: PacketInjectable](scope: ChannelScope,
                                                 factory: PacketInjectableFactory[C],
                                                 transparent: Boolean): C = {
-        val channel = factory.createNew(scope)
+        val channel = factory.createNew(this, scope)
         subChannels += SubInjectableContainer(channel, transparent)
         channel
     }
@@ -149,7 +133,7 @@ abstract class AbstractPacketChannel(scope: ChannelScope) extends AbstractAttrib
             val injectable = container.subInjectable
             injectable.inject(injection)
 
-            authoriseInject = authoriseInject && !container.transparent
+            authoriseInject = authoriseInject && container.transparent
         }
         authoriseInject
     }

@@ -37,4 +37,5 @@ abstract class LinkitRemoteFragment extends LinkitPluginFragment with RemoteFrag
         this.channel = channel
         channel.addOnPacketReceived(handleRequest)
     }
+
 }

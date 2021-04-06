@@ -13,19 +13,28 @@
 package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.traffic.{InjectionContainer, PacketInjection}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet._
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable
 
-class DirectInjectionContainer extends InjectionContainer {
+class ParallelInjectionContainer(supportIdentifier: String) extends InjectionContainer {
 
     private val processingInjections = new mutable.LinkedHashMap[(Int, String), ParallelInjection]
 
+    override def makeInjection(bundle: Bundle): PacketInjection = {
+        val dedicated = bundle.coords match {
+            case dedicated: DedicatedPacketCoordinates => dedicated
+            case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(supportIdentifier)
+            case _                                     => throw new UnsupportedOperationException("Attempted to perform an injection with unknown PacketCoordinates implementation.")
+        }
+        makeInjection(bundle.packet, bundle.attributes, dedicated)
+    }
+
     override def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjection = this.synchronized {
         val number = packet.number
-        AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates")
+        AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates AND ATTRIBUTES $attributes")
         val id     = coordinates.injectableID
         val sender = coordinates.senderID
 
@@ -43,7 +52,7 @@ class DirectInjectionContainer extends InjectionContainer {
         injection
     }
 
-    override def isProcessing(injection: PacketInjection): Boolean = {
+    override def isInjecting(injection: PacketInjection): Boolean = {
         val coords = injection.coordinates
         val id     = coords.injectableID
         val sender = coords.senderID

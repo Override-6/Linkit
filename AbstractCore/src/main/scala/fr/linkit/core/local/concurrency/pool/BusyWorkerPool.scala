@@ -120,8 +120,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
             if (rootExecution)
                 activeThreads += 1
             try {
-                val tasks = workTaskIds.synchronized(workTaskIds.toString())
-                AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID TAKEN FROM POOL $name, TOTAL TASKS : $tasks")
+                AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID TAKEN FROM POOL $name")
                 currentWorker.pushTaskID(submittedTaskID)
                 task
                 currentWorker.removeTaskID(submittedTaskID)
@@ -146,12 +145,12 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) Task $submittedTaskID will be submitted...")
 
         val tasks = workTaskIds.synchronized {
-            AppLogger.discoverLines(0, 4)
+            AppLogger.discoverLines(0, 6)
             workTaskIds += submittedTaskID
             workTaskIds.toString()
         }
         executor.submit(runnable)
-        AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID SUBMIT TO POOL $name, TOTAL TASKS : $tasks")
+        AppLogger.warn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID SUBMIT TO POOL $name, TOTAL TASKS : $tasks ($workQueue) (${System.identityHashCode(workQueue)}), $this")
         //If there is one busy thread that is waiting for a new task to be performed,
         //It would instantly execute the current task.
         unparkBusyThread()
@@ -202,6 +201,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * */
     def waitCurrentTask(): Unit = {
         AppLogger.error(s"${currentTasksId} <> This Thread will execute remaining tasks or wait.")
+        AppLogger.discoverLines(0, 7)
         executeRemainingTasks()
 
         currentWorker.workflowLoop(LockSupport.park()) { _ =>
@@ -217,8 +217,8 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * @param millis the number of milliseconds the thread must be busy.
      * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
      * */
-    def timedExecuteRemainingTasks(millis: Long): Unit = {
-        ensureCurrentIsWorker()
+    def waitCurrentTaskForAtLeast(millis: Long): Unit = {
+        ensureCurrentThreadOwned()
 
         var busiedMillis: Long = 0
         while (!workQueue.isEmpty && busiedMillis <= millis) {
@@ -237,7 +237,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     }
 
     def checkCurrentThreadNotOwned(): Unit = {
-        ensureCurrentThreadOwned(s"Current thread is owned by worker pool '$name'")
+        checkCurrentThreadNotOwned(s"Current thread is owned by worker pool '$name'")
     }
 
     def checkCurrentThreadNotOwned(msg: String): Unit = {
@@ -266,7 +266,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * */
     @workerExecution
     def currentTaskExecutionDepth: Int = {
-        ensureCurrentIsWorker("This action is only permitted to relay threads")
+        ensureCurrentThreadOwned(s"This action is only permitted to relay threads of thread pool $name")
         currentWorker.taskRecursionDepth
     }
 
@@ -296,8 +296,10 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
      * */
     private def executeRemainingTasks(): Unit = {
-        ensureCurrentIsWorker()
-        AppLogger.debug(s"EXECUTING ALL REMAINING TASKS $workQueue")
+        ensureCurrentThreadOwned()
+        AppLogger.debug(s"EXECUTING ALL REMAINING TASKS $workQueue (${System.identityHashCode(workQueue)}), $this")
+        AppLogger.debug(s"workQueue.isEmpty = ${workQueue.isEmpty}")
+        AppLogger.debug(s"currentWorker.currentTaskIsWaiting = ${currentWorker.currentTaskIsWaiting()}")
         while (!workQueue.isEmpty && currentWorker.currentTaskIsWaiting()) {
             val task = workQueue.poll()
             if (task != null) {
@@ -402,7 +404,7 @@ object BusyWorkerPool {
      * */
     def currentPool(): Option[BusyWorkerPool] = {
         currentThread match {
-            case worker: BusyWorkerThread => Some(worker.owner)
+            case worker: BusyWorkerThread => Some(worker.pool)
             case _                        => None
         }
     }

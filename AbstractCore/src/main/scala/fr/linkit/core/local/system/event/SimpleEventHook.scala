@@ -26,7 +26,7 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
     override def await(): Unit = {
         val pool = BusyWorkerPool.ensureCurrentIsWorker()
         val worker = BusyWorkerPool.currentWorker
-        val taskID = worker.getCurrentTaskID
+        val taskID = worker.currentTaskID
         addOnce {
             BusyWorkerPool.notifyTask(worker, taskID)
         }
