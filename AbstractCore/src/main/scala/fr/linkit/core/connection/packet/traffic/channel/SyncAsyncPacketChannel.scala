@@ -12,14 +12,15 @@
 
 package fr.linkit.core.connection.packet.traffic.channel
 
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel, PacketInjectableFactory, PacketInjection}
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
+import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel, PacketInjectableFactory}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel.Attribute
 import fr.linkit.core.connection.packet.{PacketBundle, SimplePacketAttributes}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
-import fr.linkit.core.local.utils.ScalaUtils.ensureType
+import fr.linkit.core.local.utils.ScalaUtils.ensurePacketType
 import org.jetbrains.annotations.Nullable
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
@@ -59,7 +60,7 @@ class SyncAsyncPacketChannel(@Nullable parent: PacketChannel,
         asyncListeners += action
 
     def nextSync[P <: Packet : ClassTag]: P = {
-        ensureType[P](sync.take())
+        ensurePacketType[P](sync.take())
     }
 
     def sendAsync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {

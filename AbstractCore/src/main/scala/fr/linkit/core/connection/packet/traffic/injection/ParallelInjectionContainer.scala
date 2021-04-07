@@ -1,19 +1,20 @@
 /*
- * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can only use it for personal uses, studies or documentation.
- * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *  This code is free software; you can only use it for personal uses, studies or documentation.
+ *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- * Please contact maximebatista18@gmail.com if you need additional information or have any
- * questions.
+ *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  questions.
  */
 
-package fr.linkit.core.connection.packet.traffic
+package fr.linkit.core.connection.packet.traffic.injection
 
-import fr.linkit.api.connection.packet.traffic.{InjectionContainer, PacketInjection}
 import fr.linkit.api.connection.packet._
+import fr.linkit.api.connection.packet.traffic.InjectionContainer
+import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
@@ -23,7 +24,7 @@ class ParallelInjectionContainer(supportIdentifier: String) extends InjectionCon
 
     private val processingInjections = new mutable.LinkedHashMap[(Int, String), ParallelInjection]
 
-    override def makeInjection(bundle: Bundle): PacketInjection = {
+    override def makeInjection(bundle: Bundle): PacketInjectionController = {
         val dedicated = bundle.coords match {
             case dedicated: DedicatedPacketCoordinates => dedicated
             case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(supportIdentifier)
@@ -32,8 +33,10 @@ class ParallelInjectionContainer(supportIdentifier: String) extends InjectionCon
         makeInjection(bundle.packet, bundle.attributes, dedicated)
     }
 
-    override def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjection = this.synchronized {
-        val number = packet.number
+    override def makeInjection(packet: Packet,
+                               attributes: PacketAttributes,
+                               coordinates: DedicatedPacketCoordinates): PacketInjectionController = this.synchronized {
+        val number = packet.getHelper.number
         AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates AND ATTRIBUTES $attributes")
         val id     = coordinates.injectableID
         val sender = coordinates.senderID
@@ -44,9 +47,10 @@ class ParallelInjectionContainer(supportIdentifier: String) extends InjectionCon
                 value
             case None        =>
                 AppLogger.debug(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
-                new ParallelInjection(coordinates)
+                val injection = new ParallelInjection(coordinates)
+                processingInjections.put((id, sender), injection)
+                injection
         }
-        processingInjections.put((id, sender), injection)
 
         injection.insert(packet, attributes)
         injection
@@ -59,7 +63,7 @@ class ParallelInjectionContainer(supportIdentifier: String) extends InjectionCon
         processingInjections.contains((id, sender))
     }
 
-    def removeInjection(injection: PacketInjection): Unit = {
+    def removeInjection(injection: PacketInjectionController): Unit = {
         val coords = injection.coordinates
         val id     = coords.injectableID
         val sender = coords.senderID

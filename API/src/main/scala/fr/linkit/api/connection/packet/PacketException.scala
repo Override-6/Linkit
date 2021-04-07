@@ -12,7 +12,10 @@
 
 package fr.linkit.api.connection.packet
 
-class PacketException(msg: String, cause: Throwable = null) extends Exception(msg, cause) {
+import fr.linkit.api.local.system.AppException
+
+//TODO add packet, coords and attributes parameters.
+class PacketException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }
 

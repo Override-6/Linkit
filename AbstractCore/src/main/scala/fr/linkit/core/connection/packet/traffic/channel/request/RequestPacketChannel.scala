@@ -1,7 +1,8 @@
 package fr.linkit.core.connection.packet.traffic.channel.request
 
 import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel, PacketInjectableFactory, PacketInjection}
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
+import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel, PacketInjectableFactory}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.AbstractPacketChannel

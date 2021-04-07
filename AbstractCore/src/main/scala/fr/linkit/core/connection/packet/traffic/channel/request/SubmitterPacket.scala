@@ -3,7 +3,7 @@ package fr.linkit.core.connection.packet.traffic.channel.request
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.AbstractAttributesPresence
-import fr.linkit.core.local.utils.ScalaUtils.ensureType
+import fr.linkit.core.local.utils.ScalaUtils.ensurePacketType
 
 import java.util.NoSuchElementException
 import scala.reflect.ClassTag
@@ -16,12 +16,13 @@ sealed abstract class SubmitterPacket(id: Long, packets: Array[Packet]) extends 
     @throws[NoSuchElementException]("If this method is called more times than packet array's length" + this)
     def nextPacket[P <: Packet : ClassTag]: P = {
         AppLogger.debug(s"packetIndex: $packetIndex, packets: ${packets.mkString("Array(", ", ", ")")}")
+//        Thread.dumpStack()
         if (packetIndex >= packets.length)
             throw new NoSuchElementException()
 
         val packet = packets(packetIndex)
         packetIndex += 1
-        ensureType[P](packet)
+        ensurePacketType[P](packet)
     }
 
     def foreach(action: Packet => Unit): Unit = {

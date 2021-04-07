@@ -18,7 +18,7 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
             buff += attributes
         if (packet != EmptyPacket)
             buff += packet
-        AppLogger.debug(s"buff = $buff")
+        AppLogger.error(s"Making simple serialize $buff")
         serializer.serialize(buff.toArray, true)
     }
 }

@@ -12,9 +12,11 @@
 
 package fr.linkit.client.network
 
-import fr.linkit.api.connection.network.NetworkEntity
+import fr.linkit.api.connection.network.cache.CacheOpenBehavior
+import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.client.connection.ClientConnection
+import fr.linkit.core.connection.network.cache.SharedInstance
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
 import fr.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
 import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel
@@ -23,7 +25,7 @@ import java.sql.Timestamp
 
 class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
 
-    override val connectionEntity: SelfNetworkEntity = initDefaultEntity
+    override val connectionEntity: SelfNetworkEntity = initSelfEntity
 
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
@@ -39,7 +41,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
     override def startUpDate: Timestamp = globalCache(2)
 
     override def createEntity0(identifier: String, communicator: SyncAsyncPacketChannel): NetworkEntity = {
-        val entityCache = newCacheManager(identifier, identifier)
+        val entityCache = newCachesManager(identifier, identifier)
         new ConnectionNetworkEntity(connection, identifier, entityCache)
     }
 
@@ -48,10 +50,13 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
         connectionEntity.update()
     }
 
-    def initDefaultEntity: SelfNetworkEntity = {
-        val identifier  = connection.supportIdentifier
-        val sharedCache = newCacheManager(identifier, identifier)
-        new SelfNetworkEntity(connection, connection.getState, sharedCache)
+    def initSelfEntity: SelfNetworkEntity = {
+        val identifier   = connection.supportIdentifier
+        val sharedCaches = newCachesManager(identifier, identifier)
+        sharedCaches
+                .getCache(3, SharedInstance[ExternalConnectionState], CacheOpenBehavior.GET_OR_WAIT)
+                .set(ExternalConnectionState.CONNECTED) //technically always connected to himself
+        new SelfNetworkEntity(connection, connection.getState, sharedCaches)
     }
 
     private[client] def handshake(): Unit = {

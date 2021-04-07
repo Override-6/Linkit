@@ -12,7 +12,6 @@
 
 package fr.linkit.core.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.PacketWriter
 import org.jetbrains.annotations.NotNull

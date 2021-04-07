@@ -18,12 +18,14 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.serialization.NumberSerializer._
 import fr.linkit.core.connection.packet.serialization.ObjectSerializer._
 import fr.linkit.core.local.concurrency.PacketReaderThread
+import fr.linkit.core.local.utils.ScalaUtils
 import org.jetbrains.annotations.Nullable
 import sun.misc.Unsafe
 
 import java.lang.reflect.{Field, Modifier}
 import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Short => JShort}
 import java.nio.ByteBuffer
+import java.util
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
@@ -46,7 +48,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
         //val t0 = System.currentTimeMillis()
         PacketReaderThread.checkNotCurrent()
         //println(any)
-        AppLogger.debug(s"Serializing $any, putSignature = $putSignature")
+        AppLogger.error(s"Serializing ${ScalaUtils.deepToString(any)}, putSignature = $putSignature")
         val valBytes = serializeValue(null, any)
         val bytes = if (putSignature) signature ++ valBytes else valBytes
         /*
@@ -68,21 +70,22 @@ abstract class ObjectSerializer extends StrategicSerializer {
         PacketReaderThread.checkNotCurrent()
 
         //val t0 = System.currentTimeMillis()
-        val instance = deserializeObject(null, bytes.drop(signature.length))
+        val instance = deserializeValue(null, bytes.drop(signature.length))
         /*val t1 = System.currentTimeMillis()
         totalSerialTime += t1 - t0*/
         instance
     }
 
     override def partialSerialize(serialized: Array[Array[Byte]], toSerialize: Array[Any]): Array[Byte] = {
-        AppLogger.debug(s"Making partial serialize '${serialized.mkString("Array(", ", ", ")")}, ${toSerialize.mkString("Array(", ", ", ")")}'")
+        AppLogger.error(s"Making partial serialize '${serialized.mkString("Array(", ", ", ")")}, ${toSerialize.mkString("Array(", ", ", ")")}'")
         signature ++ Array(AnyArrayFlag) ++ serializeAnyArray(serialized, toSerialize)
     }
 
     override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
         PacketReaderThread.checkNotCurrent()
         val v = deserializeArray(bytes.drop(signature.length))
-        AppLogger.debug(s"Deserialized ${v.mkString("Array(", ", ", ")")}")
+        AppLogger.error(s"Deserialized ${ScalaUtils.deepToString(v)}")
+        AppLogger.error(s"So ${v.mkString("Array(", ", ", ")")}")
         v
     }
 
@@ -222,7 +225,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
         Array(flag) ++ content
     }
 
-    def serializeAnyArray(serialized: Array[Array[Byte]], anyArray: Array[Any]): Array[Byte] = {
+    private def serializeAnyArray(serialized: Array[Array[Byte]], anyArray: Array[Any]): Array[Byte] = {
         //discard the last element length, because it can be deducted from the total length
 
         val lengths = new Array[Int](anyArray.length + serialized.length - 1)
@@ -453,8 +456,8 @@ abstract class ObjectSerializer extends StrategicSerializer {
         if (bytes sameElements NullFlagArray)
             return null
 
-        if (isArray(bytes))
-            return deserializeArray(bytes)
+        //if (isArray(bytes))
+        //    return deserializeArray(bytes)
 
         val (kindClass, kindClassLength) = try deserializeType(bytes) catch {
             case NonFatal(e) =>

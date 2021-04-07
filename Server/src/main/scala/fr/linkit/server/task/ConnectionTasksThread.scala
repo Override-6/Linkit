@@ -12,7 +12,7 @@
 
 package fr.linkit.server.task
 
-import fr.linkit.api.connection.packet.traffic.PacketInjection
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.core.connection.task.TaskTicket
 

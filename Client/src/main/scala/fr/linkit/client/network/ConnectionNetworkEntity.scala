@@ -15,7 +15,6 @@ package fr.linkit.client.network
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, SharedCacheManager}
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
-import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.AbstractRemoteEntity
 import fr.linkit.core.connection.network.cache.SharedInstance
 

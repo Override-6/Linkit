@@ -216,7 +216,6 @@ class NetworkSharedCacheManager(override val family: String,
             case _: NoSuchElementException =>
                 println(s"Mocked $cacheID")
                 registerMock(cacheID)
-            case NonFatal(e)               => e.printStackTrace(Console.out)
         }
 
         def registerMock(identifier: Long): Unit = {

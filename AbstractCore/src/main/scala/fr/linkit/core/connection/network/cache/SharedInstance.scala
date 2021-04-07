@@ -50,7 +50,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
                 listeners.applyAll(remoteInstance)
             //println(s"<$family> INSTANCE IS NOW (network): $instance")
 
-            case _ => throw UnexpectedPacketException("Unable to handle a non-ObjectPacket into SharedInstance")
+            case _ => throw UnexpectedPacketException("Unable to handle a non ObjectPacket into SharedInstance")
         }
     }
 
@@ -58,7 +58,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 
     override def currentContent: Array[Any] = Array(instance.orNull)
 
-    override def toString: String = s"SharedInstance($instance)"
+    override def toString: String = s"SharedInstance(${instance.orNull})"
 
     override protected def setCurrentContent(content: Array[A]): Unit = {
         content.ensuring(_.length <= 1)
@@ -82,7 +82,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
     }
 
     override def flush(): this.type = {
-        sendRequest(ObjectPacket(instance))
+        sendRequest(ObjectPacket(instance.orNull))
         this
     }
 

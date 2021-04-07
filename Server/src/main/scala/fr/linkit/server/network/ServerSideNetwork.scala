@@ -44,7 +44,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
     override def serverEntity: NetworkEntity = connectionEntity
 
     override def createEntity0(identifier: String, communicator: SyncAsyncPacketChannel): NetworkEntity = {
-        val entityCache = newCacheManager(identifier, identifier)
+        val entityCache = newCachesManager(identifier, identifier)
         val v           = new ExternalConnectionNetworkEntity(serverConnection, identifier, entityCache)
         v
     }

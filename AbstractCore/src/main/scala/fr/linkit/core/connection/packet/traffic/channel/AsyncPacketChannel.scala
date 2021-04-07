@@ -14,6 +14,7 @@ package fr.linkit.core.connection.packet.traffic.channel
 
 import fr.linkit.api.connection
 import fr.linkit.api.connection.packet.traffic._
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger

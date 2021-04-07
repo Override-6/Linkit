@@ -2,27 +2,35 @@ package fr.linkit.core.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.{WorkerController, WorkerThread, workerExecution}
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.local.concurrency.pool.AbstractWorkerController.ControlTicket
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable
 
 abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerController[W] {
 
-    private val entertainedThreads = new mutable.HashMap[Int, W]()
+    private val entertainedThreads = new mutable.HashMap[Int, ControlTicket[W]]()
 
     @workerExecution
     override def waitTask(): Unit = {
+        //unlock condition as true means that we can be unlocked at any time.
+        waitTask(true)
+    }
+
+    @workerExecution
+    override def waitTask(notifyCondition: => Boolean): Unit = {
         val worker      = currentWorker
         val currentTask = worker.currentTaskID
-        entertainedThreads.put(currentTask, worker)
+        entertainedThreads.put(currentTask, new ControlTicket[W](worker, notifyCondition))
         waitCurrentTask()
     }
 
     @workerExecution
-    override def waitTask(millis: Long): Unit = {
+    override def waitTaskForAtLeast(millis: Long): Unit = {
         val worker      = currentWorker
         val currentTask = worker.currentTaskID
-        entertainedThreads.put(currentTask, worker)
+        val lockDate    = System.currentTimeMillis()
+        entertainedThreads.put(currentTask, new ControlTicket[W](worker, System.currentTimeMillis() - lockDate <= millis))
         waitCurrentTask(millis)
     }
 
@@ -35,15 +43,15 @@ abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerControl
     @workerExecution
     override def notifyAnyThread(): Unit = {
         AppLogger.error(s"$currentTasksId <> entertainedThreads = " + entertainedThreads)
-        val opt = entertainedThreads.headOption
+        val opt = entertainedThreads.find(entry => entry._2.canBeNotified)
         if (opt.isEmpty)
             return
 
         val entry  = opt.get
-        val worker = entry._2
+        val ticket = entry._2
         val taskID = entry._1
 
-        notifyWorkerTask(worker, taskID)
+        notifyWorkerTask(ticket.getWorker, taskID)
         entertainedThreads -= taskID
     }
 
@@ -56,9 +64,9 @@ abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerControl
             return //Instructions below could throw NoSuchElementException when removing unamused list to entertainedThreads.
         }
 
-        for ((taskID, worker) <- entertainedThreads.clone()) {
+        for ((taskID, ticket) <- entertainedThreads.clone()) {
             if (taskIds.contains(taskID)) {
-                notifyWorkerTask(worker, taskID)
+                notifyWorkerTask(ticket.getWorker, taskID)
                 entertainedThreads -= taskID
             }
         }
@@ -78,5 +86,15 @@ abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerControl
     def waitCurrentTask(): Unit
 
     def waitCurrentTask(millis: Long): Unit
+
+}
+
+object AbstractWorkerController {
+
+    private class ControlTicket[W <: WorkerThread](worker: W, notifyCondition: => Boolean) {
+        def canBeNotified: Boolean = notifyCondition
+
+        def getWorker: W = worker
+    }
 
 }

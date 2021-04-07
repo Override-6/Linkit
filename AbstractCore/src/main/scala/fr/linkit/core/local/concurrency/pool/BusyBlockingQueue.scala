@@ -75,7 +75,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
         //the lock object will be notified if an object has been inserted in the list.
         if (content.isEmpty)
-            entertainer.waitTask(toWait)
+            entertainer.waitTaskForAtLeast(toWait)
         //will return the current head or null if the list is empty
         poll()
     }

@@ -13,6 +13,7 @@
 package fr.linkit.api.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.PacketAttributesPresence
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.JustifiedCloseable
 

@@ -1,37 +1,40 @@
 /*
- * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- * This code is free software; you can only use it for personal uses, studies or documentation.
- * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *  This code is free software; you can only use it for personal uses, studies or documentation.
+ *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- * Please contact maximebatista18@gmail.com if you need additional information or have any
- * questions.
+ *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  questions.
  */
 
-package fr.linkit.core.connection.packet.traffic
+package fr.linkit.core.connection.packet.traffic.injection
 
-import fr.linkit.api.connection.packet.traffic.PacketInjection
+import fr.linkit.api.connection.packet.traffic.PacketInjectable
+import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.connection.packet.traffic.ParallelInjection.{PacketBuffer, PacketInjectionNode}
+import fr.linkit.core.connection.packet.traffic.injection.ParallelInjection.{PacketBuffer, PacketInjectionNode}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import java.nio.BufferOverflowException
 import scala.collection.mutable.ArrayBuffer
 
-class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) extends PacketInjection {
+class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) extends PacketInjection with PacketInjectionController {
 
     private val buff                 = new PacketBuffer
     private val pins                 = ArrayBuffer.empty[PacketInjectionNode]
     @volatile private var processing = false
+    @volatile private var performedPinAttach = false
 
     override def attachPin(@workerExecution callback: (Packet, PacketAttributes) => Unit): Unit = {
+
         val pin = new PacketInjectionNode(callback)
         pins += pin
-        AppLogger.debug(s"Pin attached ! ($hashCode)[$coordinates]-($pin => $pins)")
+        AppLogger.debug(s"Pin attached ! ($hashCode)(${pin.hashCode()})[$coordinates]-($pin => $pins)")
         if (processing)
             buff.process(pin)
     }
@@ -40,24 +43,46 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
         attachPin((packet, _) => callback(packet))
     }
 
-    def insert(packet: Packet, attributes: PacketAttributes): Unit = {
-        if (buff.containsNumber(packet))
-            return
+    override def processRemainingPins(): Unit = {
 
-        buff.insert(packet, attributes)
-    }
-
-    override def processRemainingPinsThen(action: => Unit): Unit = {
-        AppLogger.debug(s"processRemainingPinsThen ($hashCode)[$coordinates]-($pins)")
-        processing = true
+        AppLogger.debug(s"processRemainingPins ($hashCode)[$coordinates]-($pins)")
         for (i <- pins.indices) {
             buff.process(pins(i))
+        }
+    }
+
+    override def isProcessing: Boolean = this.synchronized {
+        processing
+    }
+
+    override def performPinAttach(injectables: Iterable[PacketInjectable]): Boolean = {
+        var tookEffect = false
+        if (!performedPinAttach) {
+            injectables.foreach(_.inject(this))
+            performedPinAttach = true
+            tookEffect = true
+        }
+        tookEffect
+    }
+
+    override def process(action: => Unit): Unit = {
+
+        this.synchronized {
+            if (processing)
+                throw InjectionAlreadyProcessingException(this, "Attempted to call PacketInjectionController#process while another process is handled.")
+            processing = true
         }
         action
         processing = false
     }
 
-    override def isProcessing: Boolean = processing
+    def insert(packet: Packet, attributes: PacketAttributes): Unit = {
+
+        if (buff.containsNumber(packet))
+            return
+
+        buff.insert(packet, attributes)
+    }
 
 }
 
@@ -72,21 +97,22 @@ object ParallelInjection {
         private var i     = 0
 
         def makeProcess(packet: Packet, attributes: PacketAttributes): Unit = {
-            AppLogger.debug(s"PACKET NUMBER ${packet.number} - ($hashCode)")
-            if (!marks.contains(packet.number)) {
-                marks(i) = packet.number
-                AppLogger.debug(s"${currentTasksId} <> PROCESSING $packet with attributes $attributes ($totalProcess / ${packet.number})")
-                totalProcess += 1
-                callback(packet, attributes)
+            val number = packet.getHelper.number
+            AppLogger.debug(s"PACKET NUMBER ${number} - ($hashCode)")
+            if (!marks.contains(number)) {
+                marks(i) = number
                 i += 1
+                totalProcess += 1
+                AppLogger.debug(s"${currentTasksId} <> PROCESSING $packet with attributes $attributes ($totalProcess / ${number})")
+                callback(packet, attributes)
             } else {
-                AppLogger.debug(s"PACKET ABORTED ${packet.number} - ($hashCode)")
+                AppLogger.debug(s"PACKET ABORTED ${number} - ($hashCode)")
             }
         }
 
         def foreachUnmarked(f: (Packet, PacketAttributes) => Unit, buff: Array[(Packet, PacketAttributes)]): Unit = {
-            buff.foreach((tuple) => {
-                if (!marks.contains(tuple._1.number))
+            buff.foreach(tuple => {
+                if (!marks.contains(tuple._1.getHelper.number))
                     f(tuple._1, tuple._2)
             })
         }
@@ -100,13 +126,13 @@ object ParallelInjection {
         @volatile private var insertCount = 0
 
         def containsNumber(packet: Packet): Boolean = {
-            val packetNumber = packet.number
+            val packetNumber = packet.getHelper.number
 
             for ((packet, _) <- buff) {
                 if (packet == null)
                     return false //we reached the last element of this buffer.
 
-                if (packet.number == packetNumber)
+                if (packet.getHelper.number == packetNumber)
                     return true
             }
             false
@@ -114,18 +140,18 @@ object ParallelInjection {
 
         def insert(packet: Packet, attributes: PacketAttributes): Unit = buff.synchronized {
             var index        = 0
-            val packetNumber = packet.number
+            val packetNumber = packet.getHelper.number
             AppLogger.debug(s"${currentTasksId} <> Inserting $packet ($packetNumber) with attributes $attributes in buffer ${buff.mkString("Array(", ", ", ")")}")
             while (index < buff.length) {
-                 val pair = buff(index)
+                val pair = buff(index)
                 if (pair == null || (pair._1 eq packet)) {
                     insertCount += 1
                     buff(index) = (packet, attributes)
                     AppLogger.debug(s"${currentTasksId} <> Insertion done ! ${buff.mkString("Array(", ", ", ")")}")
                     return
                 }
-                val indexPacket = pair._1
-                val indexPacketNumber = indexPacket.number
+                val indexPacket       = pair._1
+                val indexPacketNumber = indexPacket.getHelper.number
                 if (packetNumber < indexPacketNumber) {
                     var nextIndex = index + 1
                     //println(s"nextIndex = ${nextIndex}")
@@ -162,13 +188,16 @@ object ParallelInjection {
 
             def rectifyConcurrentInsertion(): Unit = {
                 AppLogger.debug(s"BUFFER HAS BEEN MODIFIED ${buff.mkString("Array(", ", ", ")")}")
-                val packetNumber     = buff(i)._1.number
-                val nextPacketNumber = buff(i + 1)._1.number
+                val packetNumber     = buff(i)._1.getHelper.number
+                val nextPacketNumber = buff(i + 1)._1.getHelper.number
 
                 if (packetNumber < nextPacketNumber) {
-                    i += 1 //The insertion has been done after current packet index. So we just need to continue.
-                    validatedInsertCount = insertCount //We have rectified insert count shift
-                    AppLogger.debug(s"RECTIFICATION DONE.")
+                    //Synchronize buffer in order to prone any insertion during this operation.
+                    buff.synchronized {
+                        i += 1 //The insertion has been done after current packet index. So we just need to continue.
+                        validatedInsertCount = insertCount //We have rectified insert count shift
+                        AppLogger.debug(s"RECTIFICATION DONE.")
+                    }
                     return
                 }
 

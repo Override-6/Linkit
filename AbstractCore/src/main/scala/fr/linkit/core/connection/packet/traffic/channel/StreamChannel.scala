@@ -13,7 +13,8 @@
 package fr.linkit.core.connection.packet.traffic.channel
 
 import fr.linkit.api.connection.packet.Packet
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel, PacketInjection}
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
+import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel}
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import org.jetbrains.annotations.Nullable

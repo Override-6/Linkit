@@ -36,13 +36,10 @@ class CachedObjectSerializer(cache: SharedCacheManager) extends ObjectSerializer
         val hash = name.hashCode
 
         val hashBytes = serializeInt(hash)
-        println(s"hash = ${hash}")
-        println(s"clazz = ${clazz}")
         if (objectMap.contains(hash))
             return hashBytes //The type is already registered.
 
         objectMap.put(hash, name)
-        println(s"New type registered ! ($objectMap)")
         hashBytes
     }
 

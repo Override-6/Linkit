@@ -29,6 +29,9 @@ object LocalCachedObjectSerializer extends ObjectSerializer {
         val name = clazz.getName
         val hash = name.hashCode
 
+        println(s"name = ${name}")
+        println(s"hash = ${hash}")
+
         cache.put(hash, name)
         serializeInt(hash)
     }

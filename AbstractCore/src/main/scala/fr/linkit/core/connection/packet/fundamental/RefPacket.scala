@@ -52,8 +52,7 @@ object RefPacket {
      * */
     //TODO Fix Array[Serializable] and Array[Any] cast exception
     case class ArrayRefPacket[A <: Any](override val value: Array[A]) extends RefPacket[Array[A]] {
-
-        def apply(i: Int): Any = value(i)
+                def apply(i: Int): Any = value(i)
 
         def isEmpty: Boolean = value.isEmpty
 
@@ -76,6 +75,7 @@ object RefPacket {
     class ArrayObjectPacket(array: Array[Any] = Array()) extends ArrayRefPacket[Any](array)
 
     object ArrayObjectPacket {
+
         def apply(array: Array[Any] = Array()): ArrayObjectPacket = new ArrayObjectPacket(array)
     }
 

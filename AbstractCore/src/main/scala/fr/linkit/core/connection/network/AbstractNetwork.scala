@@ -48,10 +48,10 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     override def newCacheManager(family: String, owner: ConnectionContext): SharedCacheManager = {
-        newCacheManager(family, owner.supportIdentifier)
+        newCachesManager(family, owner.supportIdentifier)
     }
 
-    protected def newCacheManager(family: String, owner: String): SharedCacheManager = {
+    protected def newCachesManager(family: String, owner: String): SharedCacheManager = {
         if (family == null || owner == null)
             throw new NullPointerException("Family or owner is null.")
 
@@ -76,7 +76,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     override def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager = {
-        newCacheManager(family, owner.boundIdentifier)
+        newCachesManager(family, owner.boundIdentifier)
     }
 
     protected def createEntity0(identifier: String, communicationChannel: SyncAsyncPacketChannel): NetworkEntity
@@ -124,7 +124,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             }
         })
 
-        newCacheManager(s"Global Cache", serverIdentifier)
+        newCachesManager(s"Global Cache", serverIdentifier)
     }
 
     private def postInit(): Unit = {

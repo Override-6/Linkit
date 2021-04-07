@@ -12,26 +12,24 @@
 
 package fr.linkit.prototypes
 
-import com.google.gson.Gson
+import fr.linkit.api.connection.network.ExternalConnectionState
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.fundamental.RefPacket.AnyRefPacket
-import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
-import fr.linkit.core.connection.packet.fundamental.{EmptyPacket, WrappedPacket}
+import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayRefPacket
+import fr.linkit.core.connection.packet.serialization.{LocalCachedObjectSerializer, ObjectSerializer, SimpleTransferInfo}
 import fr.linkit.core.connection.packet.serialization.strategies.PacketAttributesStrategy
-import fr.linkit.core.connection.packet.serialization.{AdaptivePacketTranslator, SimpleTransferInfo}
-
-import java.io.{ByteArrayOutputStream, ObjectOutputStream}
+import fr.linkit.core.connection.packet.traffic.channel.request.ResponsePacket
 
 object Tests {
 
-    private val coords     = DedicatedPacketCoordinates(27, "server", "client")
-    private val packet     = WrappedPacket("Hello", WrappedPacket("World", AnyRefPacket(("Damn", "How", "Are", WrappedPacket("You ?", LongPacket(8)), EmptyPacket))))
+    import ExternalConnectionState._
+
+    private val coords     = DedicatedPacketCoordinates(12, "s1", "TestServer1")
+    private val packet     = ResponsePacket(6, Array(ArrayRefPacket[ExternalConnectionState](Array(CONNECTED))))
     private val attributes = SimplePacketAttributes.empty
 
     def main(args: Array[String]): Unit = {
-        val serialInfo = SimpleTransferInfo(coords, SimplePacketAttributes.empty, packet)
+        val serialInfo = SimpleTransferInfo(coords, attributes, packet)
 
         println("")
         println("-- Compact serializer --")
@@ -45,53 +43,23 @@ object Tests {
             val bytes = serialResult.bytes
             println("Compacted bytes                 = " + new String(bytes) + (s" (l: ${bytes.length})"))
 
-            translator.attachStrategy(PacketAttributesStrategy)
-            val bytesStrategy = serialResult.bytes
-            //println("Compacted bytes (with strategy) = " + new String(bytesStrategy) + (s" (l: ${bytesStrategy.length})"))
-
             val result = translator.translate(bytes)
             println()
-            println(s"Deserialized Info = ${result}")
+            println(s"Deserialized Info = (${result.coords}, ${result.attributes}, ${result.packet})")
+
         }
-
         println("")
-        println("-- Raw serializer --")
+        println("")
         println("")
 
-        //RAW SERIALIZER
         {
-            val translator   = new AdaptivePacketTranslator("owner", BytesHasher.inactive)
-            val serialResult = translator.translate(serialInfo)
-            val bytes        = serialResult.bytes
-            println("Compacted bytes = " + new String(bytes) + (s" (l: ${bytes.length})"))
-            val result = translator.translate(bytes)
-            println()
-            println(s"Deserialized Info = ${result}")
+            val bytes = LocalCachedObjectSerializer.serialize(Array(coords, attributes, packet), true)
+            println(s"new String(bytes) = ${new String(bytes)}")
+
+            val result = LocalCachedObjectSerializer.deserializeAll(bytes)
+            println(s"result = ${result.mkString("Array(", ", ", ")")}")
         }
 
-        println("")
-        println("-- Gson serializer --")
-        println("")
-
-        //GSON
-        {
-            val gson  = new Gson()
-            val bytes = gson.toJson(Array(coords, attributes, packet))
-            println("Json bytes = " + new String(bytes) + (s" (l: ${bytes.length})"))
-        }
-
-        println("")
-        println("-- Java serializer --")
-        println("")
-
-        //JAVA
-        {
-            val baos = new ByteArrayOutputStream()
-            val out  = new ObjectOutputStream(baos)
-            out.writeObject(Array(coords, attributes, packet))
-            val bytes = baos.toByteArray
-            println("Java bytes = " + new String(bytes) + (s" (l: ${bytes.length})"))
-        }
     }
 
 }

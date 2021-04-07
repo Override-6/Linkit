@@ -38,12 +38,30 @@ object ScalaUtils {
         }
     }
 
-    def ensureType[P <: Packet : ClassTag](packet: Packet): P = {
+    def ensurePacketType[P <: Packet : ClassTag](packet: Packet): P = {
         val rClass = classTag[P].runtimeClass
         packet match {
             case p: P => p
             case null => throw new NullPointerException("Received null packet.")
             case p    => throw UnexpectedPacketException(s"Received unexpected packet type (${p.getClass.getName}), requested : ${rClass.getName}")
+        }
+    }
+
+    implicit def deepToString(array: Array[Any]): String = {
+        val sb = new StringBuilder("Array(")
+        array.foreach {
+            case subArray: Array[Any] => sb.append(deepToString(subArray))
+            case any: Any => sb.append(any).append(", ")
+        }
+        sb.dropRight(2) //remove last ", " string.
+                .append(')')
+                .toString()
+    }
+
+    implicit def deepToString(any: Any): String = {
+        any match {
+            case array: Array[Any] => deepToString(array)
+            case any => any.toString
         }
     }
 

@@ -12,33 +12,35 @@
 
 package fr.linkit.api.connection.packet
 
-import fr.linkit.api.connection.packet.Packet.{nextPacketID, packetID}
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.connection.packet.Packet.nextPacketID
+import fr.linkit.api.connection.packet.traffic.injection.InjectionHelper
 
 //TODO Doc
 trait Packet extends Serializable {
 
     @volatile
-    @transient private var id = {
-        val n = nextPacketID
-        AppLogger.trace(s"id = ${n}; packet = $this")
-        n
-    }
+    @transient private var id = nextPacketID
+
+    @volatile
+    @transient private var helper: InjectionHelper = InjectionHelper(id)
 
     def className: String = getClass.getSimpleName
 
-    def number: Int = id
-
-    def prepare(): this.type = {
-        //If the packet has been instantiated using Unsafe.allocateInstance
-        //The constructor will not be called thus packetID will not be initialized.
-        //This method will manually give this packet an id
-        if (id <= 0) {
-            AppLogger.trace("Preparing packet...")
+    /**
+     * If the packet has been instantiated using Unsafe.allocateInstance
+     * The constructor will not be called thus his helper is not initialized.
+     * This method will manually give this packet a helper, but calling this method
+     * takes effect only once.
+     *
+     * The helper is used by traffic classes and more specifically for Injection.
+     * It contains the packet number and determines if this packet could be injected multiple times.
+     * */
+    def getHelper: InjectionHelper = {
+        if (helper == null) {
             id = nextPacketID
-            AppLogger.trace(s"id = ${id}; packet = $this")
+            helper = InjectionHelper(id)
         }
-        this
+        helper
     }
 
 }

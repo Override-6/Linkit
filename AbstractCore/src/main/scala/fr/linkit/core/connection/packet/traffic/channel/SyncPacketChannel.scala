@@ -12,13 +12,14 @@
 
 package fr.linkit.core.connection.packet.traffic.channel
 
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectableFactory, _}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.Reason
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.utils.ScalaUtils.ensureType
+import fr.linkit.core.local.utils.ScalaUtils.ensurePacketType
 import org.jetbrains.annotations.Nullable
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
@@ -62,7 +63,7 @@ class SyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Channe
             PacketReaderThread.checkNotCurrent()
 
         val packet = queue.take()
-        ensureType[P](packet)
+        ensurePacketType[P](packet)
     }
 
     /**

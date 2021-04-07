@@ -20,7 +20,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.map.MapModification._
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, GenericWorkerController}
+import fr.linkit.core.local.concurrency.pool.GenericWorkerController
 import fr.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -124,8 +124,8 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         if (contains(k))
             return apply(k)
         AppLogger.trace(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
-        controller.waitTask()
-        //println("Done !")
+        controller.waitTask(notifyCondition = contains(k))
+        println("Done !")
         apply(k)
     }
 
