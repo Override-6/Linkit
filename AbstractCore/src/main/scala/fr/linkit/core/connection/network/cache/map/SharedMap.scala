@@ -121,11 +121,12 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
     @workerExecution
     def awaitPut(k: K): V = {
-        if (contains(k))
+        if (contains(k)) {
             return apply(k)
-        AppLogger.trace(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
+        }
+        //println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
         controller.waitTask(notifyCondition = contains(k))
-        println("Done !")
+        //println("Done !")
         apply(k)
     }
 
@@ -146,6 +147,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
             case REMOVE => _.remove(key)
         }
         action(LocalMap)
+        //println(s"Received modification: $mod, $this, $hashCode, ${LocalMap.hashCode()}")
 
         modCount += 1
         controller.notifyAnyThread()
@@ -166,9 +168,15 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
     }
 
     private def flushModification(mod: (MapModification, Any, Any)): Unit = {
-        sendRequest(ObjectPacket(mod))
+//        Thread.dumpStack()
+        //println(s"Flushed $mod, $this, $hashCode, ${LocalMap.hashCode()}")
+        sendModification(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
         modCount += 1
+    }
+
+    private def println(msg: String): Unit = {
+        Console.println(s"<$family, $identifier> $msg")
     }
 
     override def currentContent: Array[Any] = LocalMap.toArray
@@ -195,7 +203,9 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
         def get(k: K): Option[V] = mainMap.get(k)
 
-        def apply(k: K): V = mainMap(k)
+        def apply(k: K): V = {
+            mainMap(k)
+        }
 
         def clear(): Unit = {
             mainMap.clear()

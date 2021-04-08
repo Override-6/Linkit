@@ -9,4 +9,5 @@ include 'LinkitPlugins:CLICommands'
 findProject(':LinkitPlugins:CLICommands')?.name = 'CLICommands'
 include 'Traffic-Debugger'
 include 'Traffic-Debugger'
+include 'LinkitAgent'
 

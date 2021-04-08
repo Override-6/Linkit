@@ -33,7 +33,7 @@ class AsyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Chann
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val pool = BusyWorkerPool.currentPool().get
+        val pool = BusyWorkerPool.currentPool.get
         pool.runLater {
             injection.attachPin((packet, attr) => {
                 try {

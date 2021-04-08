@@ -21,8 +21,6 @@ object HashCodeTypesObjectSerializer extends ObjectSerializer {
 
     override def serializeType(clazz: Class[_]): Array[Byte] = {
         val hashCode = clazz.getName.hashCode
-        //println(s"clazz = ${clazz}")
-        //println(s"hashCode = ${hashCode}")
         NumberSerializer.serializeInt(hashCode)
     }
 

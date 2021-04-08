@@ -28,12 +28,7 @@ import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 import java.util.NoSuchElementException
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
-import scala.util.control.NonFatal
 
-//FIXME: Critical bug occurred when a lot of clients are connecting to the server,
-// packets begin to shift, they are injected multiple times (maybe due to packet coordinates(id/senderID) ambiguity into the PacketInjections class)
-// and this is a big problem for this class to initialise completely, which thus is a big problem for the client network's initialisation,
-// which is a big problem for the client connection's initialisation....
 
 //TODO Use Array[Serializable] instead of Array[Any] for shared contents
 //TODO replace Longs with Ints (be aware that, with the current serialization algorithm,
@@ -53,7 +48,10 @@ class NetworkSharedCacheManager(override val family: String,
 
     override def getInstance[A <: Serializable](key: Long): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
 
-    override def getInstanceOrWait[A <: Serializable](key: Long): A = sharedObjects.getOrWait(key).asInstanceOf[A]
+    override def getInstanceOrWait[A <: Serializable](key: Long): A = {
+        val obj = sharedObjects.getOrWait(key)
+        obj.asInstanceOf[A]
+    }
 
     override def apply[A <: Serializable](key: Long): A = sharedObjects(key).asInstanceOf[A]
 
@@ -133,12 +131,14 @@ class NetworkSharedCacheManager(override val family: String,
         val cacheID          = packet.nextPacket[LongPacket].value
 
         println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
+        println(s"Behavior = $behavior")
         val contentOpt = LocalCacheHandler.getContent(cacheID)
 
         if (contentOpt.isDefined) {
             response.addPacket(ArrayObjectPacket(contentOpt.get))
         } else {
             import CacheOpenBehavior._
+
             behavior match {
                 case GET_OR_CRASH =>
                     val msg = s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection."
@@ -156,7 +156,7 @@ class NetworkSharedCacheManager(override val family: String,
                     response.addPacket(ArrayObjectPacket())
             }
         }
-
+        println(s"Content Response for cache $cacheID = $response.")
         response.submit()
     }
 
@@ -249,7 +249,7 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     private def println(msg: String): Unit = {
-        AppLogger.vTrace(s"$currentTasksId <> <$family, $ownerID> $msg")
+        //AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
 }

@@ -41,6 +41,9 @@ sealed abstract class Submitter[P](id: Long, scope: ChannelScope) extends Simple
         if (isSubmit)
             throw new IllegalStateException("Response was already sent." + this)
     }
+
+    override def toString: String = s"${getClass.getSimpleName}(id: $id, packets: $packets, isSubmit: $isSubmit)"
+
 }
 
 class ResponseSubmitter(id: Long, scope: ChannelScope) extends Submitter[Unit](id, scope) {

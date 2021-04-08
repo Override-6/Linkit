@@ -29,7 +29,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
     override           val connectionEntity: NetworkEntity                              = createServerEntity()
     override protected val entities        : BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
-                //.addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
+                .addListener((_, _, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
                 .add(serverIdentifier)
                 .flush()
                 .mapped(createEntity)

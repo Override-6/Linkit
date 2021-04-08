@@ -104,8 +104,10 @@ object AppLogger {
         else if (printVerbosesOnKill) verboseLines.synchronized {
             verboseLines += (() => action)
             totalVerbPrints += 1
-            if (totalVerbPrints > 200)
-                verboseLines.dropRightInPlace(1)
+            if (totalVerbPrints > 200 + 500) {
+                verboseLines.dropRightInPlace(500)
+                totalVerbPrints -= 500
+            }
         }
     }
 

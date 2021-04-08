@@ -37,7 +37,11 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     postInit()
 
-    override def listEntities: List[NetworkEntity] = entities.to(List)
+    override def listEntities: List[NetworkEntity] = {
+        println(s"entities = ${entities}")
+        println(s"sharedIdentifiers = ${sharedIdentifiers}")
+        entities.toList
+    }
 
     override def isConnected(identifier: String): Boolean = getEntity(identifier).isDefined
 
@@ -128,7 +132,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def postInit(): Unit = {
-        sharedIdentifiers.addListener((_, _, _) => AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: SharedIdentifiers Updated : $sharedIdentifiers"))
+        sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: SharedIdentifiers Updated : $sharedIdentifiers"))
         connection.translator.updateCache(globalCache)
     }
 

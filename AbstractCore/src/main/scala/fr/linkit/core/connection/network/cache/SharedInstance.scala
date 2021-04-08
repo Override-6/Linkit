@@ -82,7 +82,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
     }
 
     override def flush(): this.type = {
-        sendRequest(ObjectPacket(instance.orNull))
+        sendModification(ObjectPacket(instance.orNull))
         this
     }
 

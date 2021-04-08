@@ -166,7 +166,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     }
 
     override def isCurrentThreadOwned: Boolean = {
-        currentPool().exists(_ eq this)
+        currentPool.exists(_ eq this)
     }
 
     def taskParkingThreads: Iterable[BusyWorkerThread] = {
@@ -323,7 +323,7 @@ object BusyWorkerPool {
      * @param action the action to perform
      * */
     def runLaterOrHere(action: => Unit): Unit = {
-        ifCurrentWorkerOrElse(_.runLater(action), action)
+        currentPool.fold(action)(_.runLater(action))
     }
 
     @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
@@ -339,7 +339,7 @@ object BusyWorkerPool {
     def ensureCurrentIsWorker(): BusyWorkerPool = {
         if (!isCurrentWorkerThread)
             throw IllegalThreadException("This action must be performed by a Worker thread !")
-        currentPool().get
+        currentPool.get
     }
 
     /**
@@ -350,7 +350,7 @@ object BusyWorkerPool {
     def ensureCurrentIsWorker(msg: String): BusyWorkerPool = {
         if (!isCurrentWorkerThread)
             throw IllegalThreadException(s"This action must be performed by a Worker thread ! ($msg)")
-        currentPool().get
+        currentPool.get
     }
 
     /**
@@ -388,7 +388,7 @@ object BusyWorkerPool {
      *
      * */
     def ifCurrentWorkerOrElse[A](ifCurrent: BusyWorkerPool => A, orElse: => A): A = {
-        val pool = currentPool()
+        val pool = currentPool
 
         if (pool.isDefined) {
             ifCurrent(pool.get)
@@ -400,7 +400,7 @@ object BusyWorkerPool {
     /**
      * @return Some if the current thread is a member of a [[BusyWorkerPool]], None instead
      * */
-    def currentPool(): Option[BusyWorkerPool] = {
+    def currentPool: Option[BusyWorkerPool] = {
         currentThread match {
             case worker: BusyWorkerThread => Some(worker.pool)
             case _                        => None

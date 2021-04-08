@@ -25,7 +25,7 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
 
     def isExecutingTask(taskID: Int): Boolean = workflowContinueLevels.contains(taskID)
 
-    def currentTaskIsWaiting(): Boolean = workflowContinueLevels(currentTaskID)
+    def currentTaskIsWaiting(): Boolean = workflowContinueLevels.getOrElse(currentTaskID, false)
 
     private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
         AppLogger.vError(s"$tasksId <> Entering Workflow Loop... ($currentTaskID)")

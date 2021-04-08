@@ -13,11 +13,11 @@
 package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheManager}
-import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
+import fr.linkit.core.connection.packet.traffic.channel.request.RequestPacketChannel
 import fr.linkit.core.local.utils.ScalaUtils
 import org.jetbrains.annotations.Nullable
 
@@ -25,7 +25,7 @@ import scala.reflect.ClassTag
 
 abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handler: SharedCacheManager,
                                                                  identifier: Long,
-                                                                 channel: PacketSender with PacketSyncReceiver) extends InternalSharedCache with JustifiedCloseable {
+                                                                 channel: RequestPacketChannel) extends InternalSharedCache with JustifiedCloseable {
 
     override val family: String = if (handler == null) "" else handler.family
 
@@ -45,10 +45,14 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         this
     }
 
-    protected def sendRequest(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
-        attributes.putAttribute("family", family)
-        attributes.putAttribute("cache", identifier)
-        channel.send(packet, attributes)
+    protected def sendModification(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
+        val request = channel
+                .makeRequest(ChannelScopes.broadcast)
+                .addPacket(packet)
+                .putAttribute("family", family)
+                .putAttribute("cache", identifier)
+        attributes.drainAttributes(request)
+        request.submit()
     }
 
     protected def setCurrentContent(content: Array[A]): Unit

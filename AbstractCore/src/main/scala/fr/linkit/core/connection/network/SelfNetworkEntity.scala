@@ -15,12 +15,15 @@ package fr.linkit.core.connection.network
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.network.cache.SharedCacheManager
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network, NetworkEntity}
+import fr.linkit.api.local.system.AppLogger
 
 import java.sql.Timestamp
 
 class SelfNetworkEntity(connection: ConnectionContext,
                         state: => ExternalConnectionState,
                         override val entityCache: SharedCacheManager) extends NetworkEntity {
+
+    AppLogger.warn(s"CREATING SELF ENTITY ${connection.supportIdentifier}")
 
     override val identifier: String = connection.supportIdentifier
 

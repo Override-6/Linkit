@@ -144,7 +144,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
     }
 
     private def flushModification(mod: (CollectionModification, Long, Any)): Unit = {
-        sendRequest(ObjectPacket(mod))
+        sendModification(ObjectPacket(mod))
         networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Long, A)])
         modCount += 1
         AppLogger.vWarn(s"<$family> (${channel.traffic.supportIdentifier}) COLLECTION IS NOW (local): " + this)
@@ -286,12 +286,11 @@ object SharedCollection {
 
         private[SharedCollection] def get(): S[A] = mainCollection
 
-        private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit =
-            BusyWorkerPool.runLaterOrHere {
-                mainCollection.synchronized {
-                    Array.from(boundedCollections)
-                }.foreach(action)
-            }
+        private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit = {
+            mainCollection.synchronized {
+                Array.from(boundedCollections)
+            }.foreach(action)
+        }
     }
 
 }
