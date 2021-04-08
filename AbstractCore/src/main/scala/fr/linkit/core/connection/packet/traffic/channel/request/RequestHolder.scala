@@ -11,9 +11,9 @@ case class RequestHolder(id: Long, queue: BlockingQueue[SubmitterPacket], handle
     private val responseConsumer = ConsumerContainer[SubmitterPacket]()
 
     def nextResponse: SubmitterPacket = {
-        AppLogger.debug(s"$currentTasksId <> Waiting for response... ($id) " + this)
+        AppLogger.vDebug(s"$currentTasksId <> Waiting for response... ($id) " + this)
         val response = queue.take()
-        AppLogger.error(s"$currentTasksId <> RESPONSE ($id) RECEIVED ! $response, $queue")
+        AppLogger.vError(s"$currentTasksId <> RESPONSE ($id) RECEIVED ! $response, $queue")
         response
     }
 
@@ -24,10 +24,10 @@ case class RequestHolder(id: Long, queue: BlockingQueue[SubmitterPacket], handle
     def delete(): Unit = handler.removeRequestHolder(this)
 
     private[request] def pushResponse(response: SubmitterPacket): Unit = {
-        AppLogger.error(s"$currentTasksId <> ADDING RESPONSE $response FOR REQUEST $this")
+        AppLogger.vError(s"$currentTasksId <> ADDING RESPONSE $response FOR REQUEST $this")
         queue.add(response)
         responseConsumer.applyAllLater(response)
-        AppLogger.error(s"$currentTasksId <> RESPONSE $response ADDED TO REQUEST $this")
+        AppLogger.vError(s"$currentTasksId <> RESPONSE $response ADDED TO REQUEST $this")
     }
 
 }

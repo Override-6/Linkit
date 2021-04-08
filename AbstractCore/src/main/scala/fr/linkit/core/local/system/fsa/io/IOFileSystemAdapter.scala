@@ -16,6 +16,7 @@ import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.core.local.system.fsa.AbstractFileSystemAdapter
 
 import java.io.{File, InputStream, OutputStream}
+import java.net.URI
 
 class IOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
@@ -61,4 +62,6 @@ class IOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
         }
 
     }
+
+    override protected def createAdapter(uri: URI): FileAdapter = IOFileAdapter(new File(uri), this)
 }

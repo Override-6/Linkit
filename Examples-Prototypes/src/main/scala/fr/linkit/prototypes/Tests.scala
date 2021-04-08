@@ -14,11 +14,13 @@ package fr.linkit.prototypes
 
 import fr.linkit.api.connection.network.ExternalConnectionState
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
+import fr.linkit.api.local.ApplicationContext
+import fr.linkit.core.connection.network.AbstractNetwork
 import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayRefPacket
-import fr.linkit.core.connection.packet.serialization.{LocalCachedObjectSerializer, ObjectSerializer, SimpleTransferInfo}
-import fr.linkit.core.connection.packet.serialization.strategies.PacketAttributesStrategy
 import fr.linkit.core.connection.packet.traffic.channel.request.ResponsePacket
+import fr.linkit.core.local.mapping.ClassMapEngine
+import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
 
 object Tests {
 
@@ -28,38 +30,15 @@ object Tests {
     private val packet     = ResponsePacket(6, Array(ArrayRefPacket[ExternalConnectionState](Array(CONNECTED))))
     private val attributes = SimplePacketAttributes.empty
 
+    private val fsa = JDKFileSystemAdapters.Nio
+
     def main(args: Array[String]): Unit = {
-        val serialInfo = SimpleTransferInfo(coords, attributes, packet)
-
-        println("")
-        println("-- Compact serializer --")
-        println("")
-
-        //COMPACTED SERIALIZER
-        {
-            val translator   = new LocalCompactTranslator()
-            val serialResult = translator.translate(serialInfo)
-
-            val bytes = serialResult.bytes
-            println("Compacted bytes                 = " + new String(bytes) + (s" (l: ${bytes.length})"))
-
-            val result = translator.translate(bytes)
-            println()
-            println(s"Deserialized Info = (${result.coords}, ${result.attributes}, ${result.packet})")
-
-        }
-        println("")
-        println("")
-        println("")
-
-        {
-            val bytes = LocalCachedObjectSerializer.serialize(Array(coords, attributes, packet), true)
-            println(s"new String(bytes) = ${new String(bytes)}")
-
-            val result = LocalCachedObjectSerializer.deserializeAll(bytes)
-            println(s"result = ${result.mkString("Array(", ", ", ")")}")
-        }
-
+        println("Performing Linkit classes mapping...")
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, getClass, classOf[ApplicationContext], classOf[AbstractNetwork])
+        println("Performing JDK classes mapping...")
+        //ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources: _*)
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, getClass, ClassMapEngine.getClass, classOf[ApplicationContext])
+        ClassMapEngine.mapJDK(fsa)
     }
 
 }

@@ -29,7 +29,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
 
     override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
         sharedIdentifiers
-                .addListener((_, _, _) => if (entities != null) AppLogger.debug("entities are now : " + entities)) //debug purposes
+                .addListener((_, _, _) => if (entities != null) AppLogger.vDebug("entities are now : " + entities)) //debug purposes
                 .mapped(createEntity)
                 .addListener(handleTraffic)
     }
@@ -60,11 +60,11 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
     }
 
     private[client] def handshake(): Unit = {
-        AppLogger.debug("HANDSHAKING...")
+        //AppLogger.debug("HANDSHAKING...")
         val identifier = connection.supportIdentifier
         if (!sharedIdentifiers.contains(identifier))
             sharedIdentifiers.add(identifier)
-        AppLogger.debug("HANDSHAKE MADE !")
+        //AppLogger.debug("HANDSHAKE MADE !")
     }
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {

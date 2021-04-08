@@ -4,46 +4,73 @@ import fr.linkit.api.local.ApplicationContext
 import org.apache.log4j.{Level, Logger}
 import org.jetbrains.annotations.Nullable
 
+import scala.collection.mutable.ListBuffer
+
 object AppLogger {
 
-    var NetworkPreviewLength: Int = 1000
+    var networkPreviewLength: Int = 1000
+
+    var useVerbose         : Boolean = false
+    var printVerbosesOnKill: Boolean = false
 
     val logger: Logger = Logger.getLogger(classOf[ApplicationContext])
 
     def trace(msg: AnyRef): Unit = logger.trace(msg)
 
-    def trace(msg: AnyRef, throwable: Throwable): Unit = logger.trace(msg, throwable)
+    def vTrace(msg: => AnyRef): Unit = verbose {
+        trace(msg)
+    }
+
+    def trace(msg: AnyRef, throwable: Throwable): Unit = {
+        logger.trace(msg, throwable)
+    }
 
     def info(msg: AnyRef): Unit = logger.info(msg)
+
+    def vInfo(msg: => AnyRef): Unit = verbose {
+        info(msg)
+    }
 
     def info(msg: AnyRef, throwable: Throwable): Unit = logger.info(msg, throwable)
 
     def warn(msg: AnyRef): Unit = logger.warn(msg)
 
+    def vWarn(msg: => AnyRef): Unit = verbose {
+        warn(msg)
+    }
+
     def warn(msg: AnyRef, throwable: Throwable): Unit = logger.warn(msg, throwable)
 
     def error(msg: AnyRef): Unit = logger.error(msg)
+
+    def vError(msg: => AnyRef): Unit = verbose {
+        error(msg)
+    }
 
     def error(msg: AnyRef, throwable: Throwable): Unit = logger.error(msg, throwable)
 
     def fatal(msg: AnyRef): Unit = logger.fatal(msg)
 
-    def fatal(msg: AnyRef, throwable: Throwable): Unit = logger.fatal(msg, throwable)
+    def vFatal(msg: => AnyRef): Unit = verbose {
+        fatal(msg)
+    }
 
     def debug(msg: AnyRef): Unit = logger.debug(msg)
 
-    def debug(msg: AnyRef, throwable: Throwable): Unit = logger.debug(msg, throwable)
+    def vDebug(msg: => AnyRef): Unit = verbose {
+        debug(msg)
+    }
 
     def logUpload(target: String, bytes: Array[Byte]): Unit = {
         if (logger.isDebugEnabled) {
-            val preview = new String(bytes.take(NetworkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
+            val preview = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
             debug(s"${Console.MAGENTA}Written : ↑ $target ↑ $preview (l: ${bytes.length})")
         }
     }
 
     def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = {
         if (logger.isDebugEnabled) {
-            val preview     = new String(bytes.take(NetworkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
+            val preview     = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
             val finalTarget = if (target == null) "" else target
             debug(s"${Console.CYAN}Received: ↓ $finalTarget ↓ $preview (l: ${bytes.length})")
         }
@@ -58,14 +85,35 @@ object AppLogger {
         e.printStackTrace()
     }
 
-    def discoverLines(from: Int, to: Int): Unit = {
-        val currentThread = Thread.currentThread()
+    def discoverLines(from: Int, to: Int): Unit = verbose {
+        /*val currentThread = Thread.currentThread()
         val stackTrace    = currentThread.getStackTrace
 
         debug(s"RETRIEVING ${to - from} STACK LINES FOR THREAD ${currentThread.getName} :")
         for (i <- (from + 2) to to.min(stackTrace.length - 2) + 1) {
             println("\t" + stackTrace(i))
+        }*/
+    }
+
+    private var totalVerbPrints = 0
+    private val verboseLines = ListBuffer.empty[() => Unit]
+
+    private def verbose(action: => Unit): Unit = {
+        if (useVerbose)
+            action
+        else if (printVerbosesOnKill) verboseLines.synchronized {
+            verboseLines += (() => action)
+            totalVerbPrints += 1
+            if (totalVerbPrints > 200)
+                verboseLines.dropRightInPlace(1)
         }
     }
+
+    Runtime.getRuntime.addShutdownHook(new Thread(() => {
+        if (printVerbosesOnKill)
+            verboseLines.synchronized {
+                verboseLines.foreach(_.apply())
+            }
+    }))
 
 }

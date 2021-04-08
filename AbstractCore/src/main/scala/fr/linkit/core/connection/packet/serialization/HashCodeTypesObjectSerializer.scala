@@ -12,22 +12,30 @@
 
 package fr.linkit.core.connection.packet.serialization
 
-object RawObjectSerializer extends ObjectSerializer {
+import fr.linkit.api.connection.packet.PacketException
+import fr.linkit.core.local.mapping.ClassMappings
 
-    val Separator: Array[Byte] = ";".getBytes
+object HashCodeTypesObjectSerializer extends ObjectSerializer {
+
     val Signature: Array[Byte] = Array(1)
 
     override def serializeType(clazz: Class[_]): Array[Byte] = {
-        clazz.getName.getBytes ++ Separator
+        val hashCode = clazz.getName.hashCode
+        //println(s"clazz = ${clazz}")
+        //println(s"hashCode = ${hashCode}")
+        NumberSerializer.serializeInt(hashCode)
     }
 
     /**
      * @return a tuple with the Class and his value length into the array
      * */
     override def deserializeType(bytes: Array[Byte]): (Class[_], Int) = {
-        val length    = bytes.indexOfSlice(Separator)
-        val className = new String(bytes.take(length))
-        (Class.forName(className), length + 1) //add the ';' character
+        val hash = NumberSerializer.deserializeInt(bytes, 0)
+        val name = ClassMappings.getClassName(hash)
+        if (name == null)
+            throw new PacketException(s"Received unmapped class hashcode ($hash)")
+
+        (Class.forName(name), 4) //4 is the byte length of one integer
     }
 
     override val signature: Array[Byte] = Signature

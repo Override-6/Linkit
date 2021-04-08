@@ -15,6 +15,7 @@ package fr.linkit.core.local.system.fsa
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 
 import java.io.File
+import java.net.URI
 import scala.collection.mutable
 
 abstract class AbstractFileSystemAdapter extends FileSystemAdapter {
@@ -33,6 +34,14 @@ abstract class AbstractFileSystemAdapter extends FileSystemAdapter {
         adapter
     }
 
+    override def getAdapter(uri: URI): FileAdapter = {
+        val adapter = createAdapter(uri)
+        adapters.put(uri.getPath, adapter)
+        adapter
+    }
+
     protected def createAdapter(path: String): FileAdapter
+
+    protected def createAdapter(uri: URI): FileAdapter
 
 }

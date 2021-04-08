@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.packet
 
 import fr.linkit.api.connection.packet.Packet.nextPacketID
-import fr.linkit.api.connection.packet.traffic.injection.InjectionHelper
+import fr.linkit.api.local.system.AppLogger
 
 //TODO Doc
 trait Packet extends Serializable {
@@ -21,26 +21,23 @@ trait Packet extends Serializable {
     @volatile
     @transient private var id = nextPacketID
 
-    @volatile
-    @transient private var helper: InjectionHelper = InjectionHelper(id)
-
     def className: String = getClass.getSimpleName
+
+    def number: Int = id
 
     /**
      * If the packet has been instantiated using Unsafe.allocateInstance
-     * The constructor will not be called thus his helper is not initialized.
-     * This method will manually give this packet a helper, but calling this method
+     * The constructor will not be called thus his number identifier is not attributed.
+     * This method will manually give this packet an identifier, but calling this method
      * takes effect only once.
      *
-     * The helper is used by traffic classes and more specifically for Injection.
-     * It contains the packet number and determines if this packet could be injected multiple times.
+     * The number is used by traffic classes and more specifically during Injection.
      * */
-    def getHelper: InjectionHelper = {
-        if (helper == null) {
+    def prepare(): this.type = {
+        if (id <= 0) {
             id = nextPacketID
-            helper = InjectionHelper(id)
         }
-        helper
+        this
     }
 
 }

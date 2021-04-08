@@ -4,13 +4,34 @@ plugins {
 }
 
 group 'fr.linkit'
-version '1.0-SNAPSHOT'
+version ''
 
 repositories {
     mavenCentral()
 }
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = ["-feature", "-language:implicitConversions", "-language:postfixOps", "-language:existentials"]
+}
+
+jar {
+    manifest {
+        attributes(
+                'Main-Class': 'fr.linkit.client.ClientLauncher',
+        )
+    }
+}
+
+task fatJar(type: Jar) {
+    manifest.from jar.manifest
+    classifier = 'all'
+    from {
+        configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) }
+    } {
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
+    with jar
 }
 
 dependencies {

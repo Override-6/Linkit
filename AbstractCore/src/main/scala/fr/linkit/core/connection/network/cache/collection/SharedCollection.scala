@@ -129,7 +129,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
     }
 
     private def addLocalModification(@NotNull kind: CollectionModification, @Nullable index: Int, @Nullable value: Any): Unit = {
-        AppLogger.debug(s"<$family> Local modification : ${(kind, index, value)}")
+        AppLogger.vDebug(s"<$family> Local modification : ${(kind, index, value)}")
         if (autoFlush) {
             flushModification((kind, index, value))
             return
@@ -147,7 +147,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         sendRequest(ObjectPacket(mod))
         networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Long, A)])
         modCount += 1
-        AppLogger.warn(s"<$family> (${channel.traffic.supportIdentifier}) COLLECTION IS NOW (local): " + this)
+        AppLogger.vWarn(s"<$family> (${channel.traffic.supportIdentifier}) COLLECTION IS NOW (local): " + this)
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
@@ -156,8 +156,8 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         val index                                        = mod._2.toInt
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed (could occur to NPE)
 
-        AppLogger.warn(s"<$family> Received mod request : $mod")
-        AppLogger.warn(s"<$family> Current items : $this")
+        AppLogger.vWarn(s"<$family> Received mod request : $mod")
+        AppLogger.vWarn(s"<$family> Current items : $this")
         val action: CollectionAdapter[A] => Unit = modKind match {
             case CLEAR  => _.clear()
             case SET    => _.set(index, item)
@@ -168,12 +168,14 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         try {
             action(adapter)
         } catch {
-            case NonFatal(e) => AppLogger.printStackTrace(e)
+            case NonFatal(e) =>
+                AppLogger.printStackTrace(e)
+                System.exit(1)
         }
         modCount += 1
 
         networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Long, A)])
-        AppLogger.warn(s"<$family> COLLECTION IS NOW (network) $this")
+        AppLogger.vWarn(s"<$family> COLLECTION IS NOW (network) $this")
     }
 }
 
@@ -222,58 +224,73 @@ object SharedCollection {
         def createBoundedCollection[B](map: A => B): BoundedCollection.Immutable[B] = {
             val boundedCollection = new BoundedCollection[A, B](map)
             boundedCollections += boundedCollection.asInstanceOf[BoundedCollection[A, X]]
-
-            val mainContent = mainCollection.toArray[Any].asInstanceOf[Array[A]]
+            val mainContent = mainCollection.synchronized {
+                mainCollection.toArray[Any].asInstanceOf[Array[A]]
+            }
             boundedCollection.set(mainContent)
             boundedCollection
         }
 
         def clear(): Unit = {
-            mainCollection.clear()
+            mainCollection.synchronized {
+                mainCollection.clear()
+            }
             foreachCollection(_.clear())
         }
 
         def set(i: Int, it: A): Unit = {
-            mainCollection.update(i, it)
+            mainCollection.synchronized {
+                mainCollection.update(i, it)
+            }
             foreachCollection(_.add(i, it))
         }
 
         def insert(i: Int, it: A): Unit = {
             if (!insertFilter(it))
                 return
-
-            mainCollection.insert(i, it)
+            mainCollection.synchronized {
+                mainCollection.insert(i, it)
+            }
             foreachCollection(_.add(i, it))
         }
 
         def add(it: A): Int = {
             if (!insertFilter(it))
                 return -1
-
-            mainCollection += it
+            mainCollection.synchronized {
+                mainCollection += it
+            }
             foreachCollection(_.add(it))
             mainCollection.size - 1
         }
 
         def set(array: Array[A]): Unit = {
-            mainCollection.clear()
-            mainCollection ++= array
+            mainCollection.synchronized {
+                mainCollection.clear()
+                mainCollection ++= array
+            }
             foreachCollection(_.set(array))
         }
 
         def remove(i: Int): A = {
-            val removed = mainCollection.remove(i)
+            val removed = mainCollection.synchronized {
+                mainCollection.remove(i)
+            }
             foreachCollection(_.remove(i))
             removed
         }
 
-        def contains(a: Any): Boolean = mainCollection.contains(a)
+        def contains(a: Any): Boolean = mainCollection.synchronized {
+            mainCollection.contains(a)
+        }
 
         private[SharedCollection] def get(): S[A] = mainCollection
 
         private def foreachCollection(action: BoundedCollection.Mutator[A] => Unit): Unit =
             BusyWorkerPool.runLaterOrHere {
-                Array.from(boundedCollections).foreach(action)
+                mainCollection.synchronized {
+                    Array.from(boundedCollections)
+                }.foreach(action)
             }
     }
 

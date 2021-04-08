@@ -28,39 +28,39 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     def currentTaskIsWaiting(): Boolean = workflowContinueLevels(currentTaskID)
 
     private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
-        AppLogger.error(s"$tasksId <> Entering Workflow Loop... ($currentTaskID)")
+        AppLogger.vError(s"$tasksId <> Entering Workflow Loop... ($currentTaskID)")
         while (workflowContinueLevels(currentTaskID)) {
-            AppLogger.error(s"$tasksId <> Workflow Loop continuing... ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> Workflow Loop continuing... ($currentTaskID)")
             isParkingForWorkflow = true
-            AppLogger.error(s"$tasksId <> Parking... ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> Parking... ($currentTaskID)")
             val t = parkAction
-            AppLogger.error(s"$tasksId <> This thread has been unparked. ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> This thread has been unparked. ($currentTaskID)")
             isParkingForWorkflow = false
 
             if (!workflowContinueLevels(currentTaskID)) {
-                AppLogger.error(s"Workflow returned... ($currentTaskID)")
+                AppLogger.vError(s"Workflow returned... ($currentTaskID)")
                 workflowContinueLevels(currentTaskID) = true
                 return
             }
 
-            AppLogger.error(s"$tasksId <> Continue workflow... ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> Continue workflow... ($currentTaskID)")
             workflow(t)
-            AppLogger.error(s"$tasksId <> Workflow have ended ! ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> Workflow have ended ! ($currentTaskID)")
         }
         this.workflowContinueLevels(currentTaskID) = true //set it to true in case if stopWorkflowLoop has been called.
-        AppLogger.error(s"$tasksId <> Exit Worker Loop ($currentTaskID)")
+        AppLogger.vError(s"$tasksId <> Exit Worker Loop ($currentTaskID)")
     }
 
     private[concurrency] def stopWorkflowLoop(taskID: Int): Unit = {
         val continueWorkflow = workflowContinueLevels.get(taskID)
-        AppLogger.error(s"stopWorkflowLoop($taskID) called for thread $getName.")
+        AppLogger.vError(s"stopWorkflowLoop($taskID) called for thread $getName.")
         if (continueWorkflow.isEmpty)
             return
         if (continueWorkflow.get)
             this.workflowContinueLevels(taskID) = false
 
-        AppLogger.error(s"$getName <-- This thread will be unparked for task $taskID because stopWorkflowLoop has been invoked.")
-        AppLogger.error(s"workflowContinueLevels = $workflowContinueLevels")
+        AppLogger.vError(s"$getName <-- This thread will be unparked for task $taskID because stopWorkflowLoop has been invoked.")
+        AppLogger.vError(s"workflowContinueLevels = $workflowContinueLevels")
         if (currentTaskID == taskID)
             LockSupport.unpark(this)
     }

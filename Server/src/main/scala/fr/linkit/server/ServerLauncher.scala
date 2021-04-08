@@ -12,7 +12,6 @@
 
 package fr.linkit.server
 
-import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
@@ -25,16 +24,18 @@ object ServerLauncher {
 
         val config           = new ServerApplicationConfigBuilder {
             pluginsFolder = None //userDefinedPluginFolder
+            mainPoolThreadCount = 1
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = "TestServer1"
                     override val port      : Int    = 48484
+                    nWorkerThreadFunction = _ + 1 //Two threads per connections.
 
                     configName = "config1"
                 }
             }
         }
-        val serverAppContext = ServerApplication.launch(config)
+        val serverAppContext = ServerApplication.launch(config, getClass)
         AppLogger.trace(s"Build complete: $serverAppContext")
         val pluginManager = serverAppContext.pluginManager
         pluginManager.loadAllClass(Array(

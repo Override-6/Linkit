@@ -21,8 +21,7 @@ class SimplePacketAttributes extends PacketAttributes {
 
     override def putAttribute(name: Serializable, value: Serializable): this.type = {
         attributes.put(name, value)
-        AppLogger.warn(s"Attribute put ($name -> $value), $attributes")
-        AppLogger.discoverLines(0, 5)
+        AppLogger.vError(s"Attribute put ($name -> $value), $attributes")
         this
     }
 

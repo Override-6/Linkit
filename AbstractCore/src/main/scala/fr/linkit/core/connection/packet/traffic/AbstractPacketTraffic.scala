@@ -16,6 +16,7 @@ import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.api.local.system.{AppLogger, ClosedException, JustifiedCloseable, Reason}
 import fr.linkit.core.connection.packet.traffic.injection.ParallelInjectionContainer
 import fr.linkit.core.local.concurrency.PacketReaderThread
@@ -26,7 +27,7 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
-abstract class AbstractPacketTraffic(override val supportIdentifier: String) extends PacketTraffic {
+abstract class AbstractPacketTraffic(override val supportIdentifier: String, procrastinator: Procrastinator) extends PacketTraffic {
 
     private  val holders            = mutable.Map.empty[Int, ScopesHolder]
     private  val lostInjections     = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
@@ -113,12 +114,12 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
 
     override def processInjection(injection: PacketInjectionController): Unit = {
         if (injection.isProcessing) {
-            AppLogger.error(s"$currentTasksId <> Current thread has been discarded from injection because this injection is already processed.")
+            AppLogger.vError(s"$currentTasksId <> Current thread has been discarded from injection because this injection is already processed.")
             injection.processRemainingPins()
             return
         }
         injection.process {
-            AppLogger.error(s"$currentTasksId <> PROCESSING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
+            AppLogger.vError(s"$currentTasksId <> PROCESSING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
             val coordinates = injection.coordinates
             PacketReaderThread.checkNotCurrent()
             ensureOpen()
@@ -131,13 +132,16 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String) ext
                 lostInjections.getOrElseUpdate(id, ListBuffer.empty) += injection
                 return
             }
-            AppLogger.error(s"$currentTasksId <> PERFORMING PIN ATTACHMENT '${injection.coordinates}' - ${injection.hashCode()}")
+            AppLogger.vError(s"$currentTasksId <> PERFORMING PIN ATTACHMENT '${injection.coordinates}' - ${injection.hashCode()}")
             injection.performPinAttach(injectables)
-            AppLogger.error(s"$currentTasksId <> PERFORMING PIN INJECTIONS '${injection.coordinates}' - ${injection.hashCode()}")
+            AppLogger.vError(s"$currentTasksId <> PERFORMING PIN INJECTIONS '${injection.coordinates}' - ${injection.hashCode()}")
             injection.processRemainingPins()
-            AppLogger.error(s"$currentTasksId <> REMOVING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
-            injectionContainer.removeInjection(injection)
-            AppLogger.error(s"$currentTasksId <> REMOVED INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
+
+            procrastinator.runLater {
+                AppLogger.vError(s"$currentTasksId <> REMOVING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
+                injectionContainer.removeInjection(injection)
+                AppLogger.vError(s"$currentTasksId <> REMOVED INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
+            }
         }
     }
 

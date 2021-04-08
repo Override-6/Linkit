@@ -20,7 +20,7 @@ import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
 
 class ClientApplicationConfigBuilder {
 
-    private final var enableEventHandling: Boolean = false //still in development
+    private final val enableEventHandling: Boolean = false //still in development
 
     var loadSchematic        : AppSchematic[ClientApplication] = new EmptySchematic()
     var nWorkerThreadFunction: Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 thread for application.

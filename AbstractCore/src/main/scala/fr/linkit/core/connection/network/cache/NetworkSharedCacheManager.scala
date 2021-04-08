@@ -249,7 +249,7 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     private def println(msg: String): Unit = {
-        AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
+        AppLogger.vTrace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
 }

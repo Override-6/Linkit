@@ -13,7 +13,7 @@ case class LazyPacketDeserializationResult(override val bytes: Array[Byte],
     private lazy  val cache                         = serializer().deserializeAll(bytes)
     override lazy val coords    : PacketCoordinates = extract[PacketCoordinates](null)
     override lazy val attributes: PacketAttributes  = extract[PacketAttributes](SimplePacketAttributes.empty)
-    override lazy val packet    : Packet            = extract[Packet](EmptyPacket)
+    override lazy val packet    : Packet            = extract[Packet](EmptyPacket).prepare()
 
     private def extract[T <: Serializable : ClassTag](orElse: => T): T = {
         val clazz       = classTag[T].runtimeClass
@@ -25,7 +25,6 @@ case class LazyPacketDeserializationResult(override val bytes: Array[Byte],
                 throw MalFormedPacketException(bytes, s"Received unknown packet array (${cache.mkString("Array(", ", ", ")")})")
             else return alternative
         }
-        println(s"cache($coordsIndex) = ${cache(coordsIndex)}")
         cache(coordsIndex) match {
             case e: T => e
         }

@@ -48,7 +48,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
         //val t0 = System.currentTimeMillis()
         PacketReaderThread.checkNotCurrent()
         //println(any)
-        AppLogger.error(s"Serializing ${ScalaUtils.deepToString(any)}, putSignature = $putSignature")
+        AppLogger.vError(s"Serializing ${ScalaUtils.deepToString(any)}, putSignature = $putSignature")
         val valBytes = serializeValue(null, any)
         val bytes = if (putSignature) signature ++ valBytes else valBytes
         /*
@@ -77,15 +77,15 @@ abstract class ObjectSerializer extends StrategicSerializer {
     }
 
     override def partialSerialize(serialized: Array[Array[Byte]], toSerialize: Array[Any]): Array[Byte] = {
-        AppLogger.error(s"Making partial serialize '${serialized.mkString("Array(", ", ", ")")}, ${toSerialize.mkString("Array(", ", ", ")")}'")
+        AppLogger.vError(s"Making partial serialize '${serialized.mkString("Array(", ", ", ")")}, ${toSerialize.mkString("Array(", ", ", ")")}'")
         signature ++ Array(AnyArrayFlag) ++ serializeAnyArray(serialized, toSerialize)
     }
 
     override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
         PacketReaderThread.checkNotCurrent()
         val v = deserializeArray(bytes.drop(signature.length))
-        AppLogger.error(s"Deserialized ${ScalaUtils.deepToString(v)}")
-        AppLogger.error(s"So ${v.mkString("Array(", ", ", ")")}")
+        AppLogger.vError(s"Deserialized ${ScalaUtils.deepToString(v)}")
+        AppLogger.vError(s"So ${v.mkString("Array(", ", ", ")")}")
         v
     }
 

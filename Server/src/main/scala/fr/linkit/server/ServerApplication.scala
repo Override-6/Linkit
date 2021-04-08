@@ -20,10 +20,12 @@ import fr.linkit.api.local.system.{AppException, AppLogger}
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.security.ConnectionSecurityException
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.mapping.{ClassMapEngine, ClassMappings}
 import fr.linkit.core.local.plugin.LinkitPluginManager
 import fr.linkit.core.local.system.Rules
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
+import jdk.internal.reflect.Reflection
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
@@ -188,9 +190,16 @@ object ServerApplication {
 
     @volatile private var initialized = false
 
-    def launch(config: ServerApplicationConfiguration): ServerApplication = {
+    def launch(config: ServerApplicationConfiguration, otherSources: Class[_]*): ServerApplication = {
         if (initialized)
             throw new IllegalStateException("Application was already launched !")
+
+        AppLogger.info("Mapping classes, this task may take a time.")
+
+        val fsa = config.fsAdapter
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources: _*)
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext])
+        ClassMapEngine.mapJDK(fsa)
 
         val serverAppContext = try {
             AppLogger.info("Instantiating Server application...")
@@ -228,7 +237,7 @@ object ServerApplication {
         serverAppContext
     }
 
-    def launch(builder: ServerApplicationConfigBuilder): ServerApplication = {
-        launch(builder.buildConfig())
+    def launch(builder: ServerApplicationConfigBuilder, caller: Class[_]): ServerApplication = {
+        launch(builder.buildConfig(), caller)
     }
 }

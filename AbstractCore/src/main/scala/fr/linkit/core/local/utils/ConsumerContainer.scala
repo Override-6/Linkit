@@ -78,12 +78,11 @@ class ConsumerContainer[A]() {
     }
 
     def applyAll(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        AppLogger.debug(consumers)
         Array.from(consumers).foreach(consumer => {
             try {
-                AppLogger.debug(s"EXECUTING $consumer")
+                AppLogger.vDebug(s"EXECUTING $consumer")
                 consumer.execute(t)
-                AppLogger.debug(s"Consumer $consumer executed !")
+                AppLogger.vDebug(s"Consumer $consumer executed !")
             } catch {
                 case NonFatal(e) =>
                     onException(e)

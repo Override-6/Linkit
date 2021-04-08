@@ -44,7 +44,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
 
             totalWriteTime += t1 - t0
             //NETWORK-DEBUG-MARK
-            AppLogger.logUpload(boundIdentifier, buff)
+            //AppLogger.logUpload(boundIdentifier, buff)
         } catch {
             case e@(_: ConnectException | _: IOException) =>
 

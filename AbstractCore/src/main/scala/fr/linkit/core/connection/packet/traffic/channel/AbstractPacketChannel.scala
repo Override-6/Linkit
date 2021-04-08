@@ -71,7 +71,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
 
     override def storeBundle(bundle: Bundle): Unit = {
         storedBundles.synchronized {
-            AppLogger.debug(s"$currentTasksId <> STORING BUNDLE $bundle INTO $storedBundles")
+            AppLogger.vDebug(s"$currentTasksId <> STORING BUNDLE $bundle INTO $storedBundles")
         }
         if (bundle.getChannel.identifier != identifier) {
             throw new IllegalArgumentException("Stored packet coordinates must target the same injectable identifier as this channel.")
@@ -86,7 +86,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
         var clone: Array[Bundle] = null
         storedBundles.synchronized {
 
-            AppLogger.debug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedBundles")
+            AppLogger.vDebug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedBundles")
 
             clone = Array.from(storedBundles)
 
@@ -98,7 +98,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
         val injected = builder.result()
 
         clone.foreach(stored => {
-            AppLogger.debug(s"$currentTasksId <> Reinjecting stored = $stored")
+            AppLogger.vDebug(s"$currentTasksId <> Reinjecting stored = $stored")
             if (injected.contains(stored))
                 throw new Error("Double instance packet in storage.")
 

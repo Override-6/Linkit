@@ -28,9 +28,9 @@ sealed abstract class Submitter[P](id: Long, scope: ChannelScope) extends Simple
 
     def submit(): P = {
         ensureNotSubmit()
-        AppLogger.debug(s"$currentTasksId <> Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
+        AppLogger.vDebug(s"$currentTasksId <> Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
         val result = makeSubmit()
-        AppLogger.debug(s"$currentTasksId <> ${getClass.getSimpleName} ($id) submitted !")
+        AppLogger.vDebug(s"$currentTasksId <> ${getClass.getSimpleName} ($id) submitted !")
         isSubmit = true
         result
     }

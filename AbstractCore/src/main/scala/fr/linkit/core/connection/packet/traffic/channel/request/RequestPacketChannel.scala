@@ -23,15 +23,15 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
     //debug only
     private val source = scope.traffic.supportIdentifier
 
-    AppLogger.debug(s"Created $this, of parent $parent")
+    AppLogger.vDebug(s"Created $this, of parent $parent")
 
     override def handleInjection(injection: PacketInjection): Unit = {
         val coords = injection.coordinates
         injection.attachPin { (packet, attr) =>
             packet match {
                 case request: RequestPacket =>
-                    AppLogger.debug(this)
-                    AppLogger.debug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
+                    AppLogger.vDebug(this)
+                    AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
                     request.setAttributes(attr)
 
                     val submitterScope = scope.shareWriter(ChannelScopes.reserved(coords.senderID))
@@ -40,7 +40,7 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
                     requestConsumers.applyAllLater(RequestBundle(this, request, coords, submitter))
 
                 case response: ResponsePacket =>
-                    AppLogger.debug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
+                    AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
                     response.setAttributes(attr)
 
                     requestHolders.get(response.id) match {
@@ -52,7 +52,6 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
     }
 
     def addRequestListener(callback: RequestBundle => Unit): Unit = {
-        AppLogger.fatal(s"$currentTasksId <> $source: ADDED REQUEST LISTENER : $requestHolders " + this)
         requestConsumers += callback
     }
 

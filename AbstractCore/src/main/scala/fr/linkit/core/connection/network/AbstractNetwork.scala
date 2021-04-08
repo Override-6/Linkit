@@ -57,19 +57,19 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
         caches.get(family)
                 .fold {
-                    AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
+                    AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
                     val cache = new NetworkSharedCacheManager(family, owner, cacheCommunicator, cacheRequestChannel)
 
                     //Will inject all packet that the new cache have possibly missed.
                     caches.synchronized {
-                        AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: PUTTING CACHE <$family, $owner> INTO CACHES")
+                        AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: PUTTING CACHE <$family, $owner> INTO CACHES")
                         caches.put(family, cache)
-                        AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
+                        AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
                     }
                     cacheCommunicator.injectStoredBundles()
                     cache: SharedCacheManager
                 }(cache => {
-                    AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: <$family, $owner> UpDaTiNg CaChE")
+                    AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: <$family, $owner> UpDaTiNg CaChE")
                     cache.update()
                     cache
                 })
@@ -98,7 +98,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             attr.getAttribute[String]("family") match {
                 case Some(family) =>
                     val opt = caches.synchronized {
-                        AppLogger.warn(s"$currentTasksId <> ${connection.supportIdentifier}: FINDING CACHE '$family' FOR PACKET ${bundle.packet} into $caches")
+                        AppLogger.vWarn(s"$currentTasksId <> ${connection.supportIdentifier}: FINDING CACHE '$family' FOR PACKET ${bundle.packet} into $caches")
                         caches.get(family)
                     }
                     opt
@@ -118,7 +118,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         })
 
         cacheRequestChannel.addRequestListener(bundle => {
-            AppLogger.debug(s"Request body: ${bundle}")
+            AppLogger.vDebug(s"Request body: ${bundle}")
             findCacheToNotify(bundle) {
                 _.handleRequest(bundle)
             }
@@ -128,7 +128,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def postInit(): Unit = {
-        sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: SharedIdentifiers Updated : $sharedIdentifiers"))
+        sharedIdentifiers.addListener((_, _, _) => AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: SharedIdentifiers Updated : $sharedIdentifiers"))
         connection.translator.updateCache(globalCache)
     }
 

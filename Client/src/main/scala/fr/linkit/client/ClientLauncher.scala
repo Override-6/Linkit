@@ -60,6 +60,7 @@ object ClientLauncher {
                raidCount: Int): Unit = {
 
         val config = new ClientApplicationConfigBuilder {
+            nWorkerThreadFunction = _ + 1
             loadSchematic = new ScalaClientAppSchematic {
                 for (i <- 1 to raidCount) {
                     clients += new ClientConnectionConfigBuilder {
@@ -71,7 +72,7 @@ object ClientLauncher {
             }
         }
 
-        val client = ClientApplication.launch(config)
+        val client = ClientApplication.launch(config, getClass)
         AppLogger.debug(s"Build completed: $client")
         val pluginManager = client.pluginManager
         pluginManager.loadAllClass(Array(

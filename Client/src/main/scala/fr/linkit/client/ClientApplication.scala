@@ -16,24 +16,27 @@ import fr.linkit.api.connection.{ConnectionContext, ConnectionException, Connect
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.system.{AppException, AppLogger}
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
+import fr.linkit.api.local.system.{AppException, AppLogger}
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
+import fr.linkit.core.local.system.Rules
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
 class ClientApplication private(override val configuration: ClientApplicationConfiguration) extends ApplicationContext with Procrastinator {
 
-    private  val workerPool                    = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
-    private  val connectionCache               = mutable.HashMap.empty[Any, ExternalConnection]
-    override val pluginManager : PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
-    @volatile private var alive: Boolean       = false
+    private  val workerPool                              = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
+    private  val connectionCache                         = mutable.HashMap.empty[Any, ExternalConnection]
+    override val pluginManager           : PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
+    @volatile private var alive          : Boolean       = false
+    @volatile private var connectionCount: Int           = 0
 
-    override def countConnections: Int = connectionCache.size
+    override def countConnections: Int = connectionCount
 
     @workerExecution
     override def shutdown(): Unit = {
@@ -45,6 +48,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
             try {
                 //Connections will unregister themself from connectionCache automatically
                 connection.shutdown()
+                connectionCount -= 1
             } catch {
                 case NonFatal(e) => AppLogger.printStackTrace(e)
             }
@@ -75,7 +79,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
             case Some(path) =>
                 val adapter = configuration.fsAdapter.getAdapter(path)
                 adapter.getAbsolutePath //converting to absolute path.
-            case None => null
+            case None       => null
         }
         if (pluginFolder != null) {
             val pluginCount = pluginManager.loadAll(pluginFolder).length
@@ -98,8 +102,11 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         workerPool.ensureCurrentThreadOwned("Connection creation must be executed by the client application's thread pool")
 
         val identifier = config.identifier
-        //      if (!Rules.IdentifierPattern.matcher(identifier).matches())
-        //            throw new ConnectionInitialisationException("Provided identifier does not matches Client's rules.")
+        if (!Rules.IdentifierPattern.matcher(identifier).matches())
+            throw new ConnectionInitialisationException("Provided identifier does not matches Client's rules.")
+
+        connectionCount += 1
+        workerPool.setThreadCount(configuration.nWorkerThreadFunction(connectionCount)) //expand the pool for the new connection that will be opened
 
         AppLogger.info(s"Creating connection with address '${config.remoteAddress}'")
         val address       = config.remoteAddress
@@ -107,17 +114,19 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         dynamicSocket.reconnectionPeriod = config.reconnectionMillis
         dynamicSocket.connect("UnknownServerIdentifier")
         AppLogger.trace("Socket accepted !")
-        workerPool.setThreadCount(configuration.nWorkerThreadFunction(countConnections + 1)) //expand the pool for the new connection that will be opened
 
         val connection = try {
             ClientConnection.open(dynamicSocket, this, config)
         } catch {
-            case e: ConnectionException => throw e
-            case NonFatal(e) =>
+            case e: ConnectionException =>
+                connectionCount -= 1
+                throw e
+            case NonFatal(e)            =>
                 runLater {
                     AppLogger.fatal("EXITING...")
                     System.exit(1)
                 }
+                connectionCount -= 1
                 throw new ConnectionInitialisationException(s"Could not open connection with server $address : ${e.getMessage}", e)
         }
 
@@ -152,9 +161,16 @@ object ClientApplication {
 
     @volatile private var initialized = false
 
-    def launch(config: ClientApplicationConfiguration): ClientApplication = {
+    def launch(config: ClientApplicationConfiguration, otherSources: Class[_]*): ClientApplication = {
         if (initialized)
             throw new IllegalStateException("Client Application is already launched.")
+
+        AppLogger.info("Mapping classes, this task may take a time.")
+
+        val fsa = config.fsAdapter
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources: _*)
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext])
+        ClassMapEngine.mapJDK(fsa)
 
         val clientApp = try {
             AppLogger.info("Instantiating Client application...")
@@ -176,7 +192,7 @@ object ClientApplication {
             } catch {
                 case NonFatal(e) =>
                     exception = e
-                case e =>
+                case e           =>
                     exception = e
                     throw e
             } finally {

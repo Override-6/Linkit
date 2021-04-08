@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.traffic.PacketWriter
 import fr.linkit.core.connection.packet.traffic.{AbstractPacketTraffic, WriterInfo}
 import fr.linkit.server.connection.ServerConnection
 
-class ServerPacketTraffic(serverConnection: ServerConnection) extends AbstractPacketTraffic(serverConnection.supportIdentifier) {
+class ServerPacketTraffic(serverConnection: ServerConnection) extends AbstractPacketTraffic(serverConnection.supportIdentifier, serverConnection) {
 
     override val supportIdentifier: String = serverConnection.supportIdentifier
     override val serverIdentifier : String = supportIdentifier

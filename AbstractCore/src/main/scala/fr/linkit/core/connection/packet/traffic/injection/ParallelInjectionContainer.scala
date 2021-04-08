@@ -36,17 +36,17 @@ class ParallelInjectionContainer(supportIdentifier: String) extends InjectionCon
     override def makeInjection(packet: Packet,
                                attributes: PacketAttributes,
                                coordinates: DedicatedPacketCoordinates): PacketInjectionController = this.synchronized {
-        val number = packet.getHelper.number
-        AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates AND ATTRIBUTES $attributes")
+        val number = packet.number
+        AppLogger.vDebug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates AND ATTRIBUTES $attributes")
         val id     = coordinates.injectableID
         val sender = coordinates.senderID
 
         val injection = processingInjections.get((id, sender)) match {
             case Some(value) =>
-                AppLogger.debug(s"${currentTasksId} <> $number -> INJECTION ALREADY EXISTS, ADDING PACKET.")
+                AppLogger.vError(s"${currentTasksId} <> $number -> INJECTION ALREADY EXISTS, ADDING PACKET.")
                 value
             case None        =>
-                AppLogger.debug(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
+                AppLogger.vError(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
                 val injection = new ParallelInjection(coordinates)
                 processingInjections.put((id, sender), injection)
                 injection
@@ -63,7 +63,7 @@ class ParallelInjectionContainer(supportIdentifier: String) extends InjectionCon
         processingInjections.contains((id, sender))
     }
 
-    def removeInjection(injection: PacketInjectionController): Unit = {
+    def removeInjection(injection: PacketInjectionController): Unit = this.synchronized {
         val coords = injection.coordinates
         val id     = coords.injectableID
         val sender = coords.senderID

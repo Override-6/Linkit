@@ -42,7 +42,7 @@ abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerControl
 
     @workerExecution
     override def notifyAnyThread(): Unit = {
-        AppLogger.error(s"$currentTasksId <> entertainedThreads = " + entertainedThreads)
+        AppLogger.vError(s"$currentTasksId <> entertainedThreads = " + entertainedThreads)
         val opt = entertainedThreads.find(entry => entry._2.canBeNotified)
         if (opt.isEmpty)
             return
@@ -57,10 +57,10 @@ abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerControl
 
     @workerExecution
     override def notifyThreadsTasks(taskIds: Int*): Unit = {
-        AppLogger.error(s"$currentTasksId <> entertainedThreads = " + entertainedThreads)
+        AppLogger.vError(s"$currentTasksId <> entertainedThreads = " + entertainedThreads)
 
         if (entertainedThreads.isEmpty) {
-            AppLogger.error("THREADS ARE EMPTY !")
+            AppLogger.vError("THREADS ARE EMPTY !")
             return //Instructions below could throw NoSuchElementException when removing unamused list to entertainedThreads.
         }
 

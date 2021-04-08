@@ -16,6 +16,7 @@ import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.core.local.system.fsa.AbstractFileSystemAdapter
 
 import java.io.{InputStream, OutputStream}
+import java.net.URI
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 
 class NIOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
@@ -41,7 +42,9 @@ class NIOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
     private def getAdapter(path: Path): FileAdapter = super.getAdapter(path.toString)
 
-    override def createAdapter(path: String): FileAdapter = new NIOFileAdapter(Paths.get(path), this)
+    override def createAdapter(path: String): FileAdapter = NIOFileAdapter(Paths.get(path), this)
+
+    override def createAdapter(uri: URI): FileAdapter = NIOFileAdapter(Paths.get(uri), this)
 
     override def move(from: FileAdapter, to: FileAdapter): Unit = Files.move(from, to, StandardCopyOption.ATOMIC_MOVE)
 

@@ -24,30 +24,36 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
     private val collection: ListBuffer[B]  = ListBuffer.empty
     private val listeners                  = ConsumerContainer[(CollectionModification, Int, Option[B])]()
     @volatile private var specificModCount = 0
+    @volatile private var size0 = 0
 
     override def iterator: Iterator[B] = collection.iterator
 
     override def set(array: Array[A]): Unit = {
         specificModCount += 1
         collection.clear()
+        size0 = array.length
         array.foreach(add)
     }
 
     override def add(e: A): Unit = {
         val el = safeMap(e)
-        listeners.applyAll((ADD, size - 1, Option(el)))
+
+        size0 += 1
+        listeners.applyAll((ADD, size0 - 1, Option(el)))
         collection += el
     }
 
     override def add(a: Int, e: A): Unit = {
-
         val el = safeMap(e)
+
+        size0 += 1
         listeners.applyAll((ADD, a, Option(el)))
         collection.insert(a, el)
     }
 
     override def remove(i: Int): Unit = {
         specificModCount += 1
+        size0 -= 1
 
         val el = collection.remove(i)
         listeners.applyAll((REMOVE, i, Option(el)))
@@ -55,6 +61,7 @@ class BoundedCollection[A, B](map: A => B) extends Mutator[A] with Immutable[B] 
 
     override def clear(): Unit = {
         specificModCount += 1
+        size0 = 0
 
         listeners.applyAll((CLEAR, -1, None))
         collection.clear()

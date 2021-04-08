@@ -13,6 +13,7 @@
 package fr.linkit.api.local.system.fsa
 
 import java.io.{IOException, InputStream, OutputStream}
+import java.net.URI
 
 /**
  * <p>
@@ -31,6 +32,8 @@ trait FileSystemAdapter {
     val name: String
 
     implicit def getAdapter(path: String): FileAdapter
+
+    implicit def getAdapter(uri: URI): FileAdapter
 
     def createDirectories(path: String): Unit = createDirectories(getAdapter(path))
 
