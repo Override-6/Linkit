@@ -1,6 +1,6 @@
 package fr.linkit.core.connection.packet.traffic.channel.request
 
-import fr.linkit.api.connection.packet.traffic.PacketChannel
+import fr.linkit.api.connection.packet.channel.PacketChannel
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, PacketAttributes}
 import fr.linkit.core.connection.packet.AbstractBundle
 

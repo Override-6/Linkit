@@ -12,7 +12,8 @@
 
 package fr.linkit.core.connection.packet.traffic.channel
 
-import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.local.concurrency.workerExecution

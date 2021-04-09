@@ -13,7 +13,7 @@
 package fr.linkit.core.connection.packet
 
 import fr.linkit.api.connection.packet.Bundle
-import fr.linkit.api.connection.packet.traffic.PacketChannel
+import fr.linkit.api.connection.packet.channel.PacketChannel
 
 abstract class AbstractBundle(channel: PacketChannel) extends Bundle {
 

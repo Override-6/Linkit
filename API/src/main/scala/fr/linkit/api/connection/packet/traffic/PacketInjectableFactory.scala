@@ -12,6 +12,7 @@
 
 package fr.linkit.api.connection.packet.traffic
 
+import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
 trait PacketInjectableFactory[C <: PacketInjectable] {

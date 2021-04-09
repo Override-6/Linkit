@@ -17,8 +17,8 @@ import fr.linkit.api.connection.network.{Network, NetworkEntity}
 import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.connection.network.cache.NetworkSharedCacheManager
 import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, SharedCollection}
-import fr.linkit.core.connection.network.cache.{AsyncSenderSyncReceiver, NetworkSharedCacheManager}
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel
 import fr.linkit.core.connection.packet.traffic.channel.request.RequestPacketChannel
@@ -28,7 +28,6 @@ import scala.collection.mutable
 
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
-    private   val cacheCommunicator                           = connection.getInjectable(11, ChannelScopes.broadcast, new AsyncSenderSyncReceiver(_, _))
     private   val cacheRequestChannel                         = connection.getInjectable(12, ChannelScopes.broadcast, RequestPacketChannel)
     private   val caches                                      = mutable.HashMap.empty[String, NetworkSharedCacheManager]
     override  val globalCache      : SharedCacheManager       = initCaches()
@@ -62,7 +61,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         caches.get(family)
                 .fold {
                     AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
-                    val cache = new NetworkSharedCacheManager(family, owner, cacheCommunicator, cacheRequestChannel)
+                    val cache = new NetworkSharedCacheManager(family, owner, connection, cacheRequestChannel)
 
                     //Will inject all packet that the new cache have possibly missed.
                     caches.synchronized {
@@ -70,7 +69,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                         caches.put(family, cache)
                         AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
                     }
-                    cacheCommunicator.injectStoredBundles()
+                    cacheRequestChannel.injectStoredBundles()
                     cache: SharedCacheManager
                 }(cache => {
                     AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: <$family, $owner> UpDaTiNg CaChE")
@@ -114,12 +113,6 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                             })
             }
         }
-
-        cacheCommunicator.addAsyncListener(bundle => {
-            findCacheToNotify(bundle) {
-                _.handleCachePacket(bundle)
-            }
-        })
 
         cacheRequestChannel.addRequestListener(bundle => {
             AppLogger.vDebug(s"Request body: ${bundle}")

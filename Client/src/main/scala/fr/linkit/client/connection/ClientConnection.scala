@@ -13,8 +13,9 @@
 package fr.linkit.client.connection
 
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
+import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, PacketTranslator}
-import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}

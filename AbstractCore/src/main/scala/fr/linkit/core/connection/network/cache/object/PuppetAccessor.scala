@@ -15,7 +15,10 @@ package fr.linkit.core.connection.network.cache.`object`
 import java.lang.reflect.{Field, Method}
 
 class PuppetAccessor private(sharedFields: Map[String, Field],
-                             sharedMethods: Map[String, Method]) {
+                             sharedMethods: Map[String, Method],
+                             autoFlush: Boolean) {
+
+    def isAutoFlush: Boolean = autoFlush
 
     def getSharedField(name: String): Option[Field] = Option(sharedFields(name))
 
@@ -27,8 +30,8 @@ class PuppetAccessor private(sharedFields: Map[String, Field],
 
 object PuppetAccessor {
 
-    def ofRef(anyRef: AnyRef): PuppetAccessor = {
-        val clazz        = anyRef.getClass
+    def ofRef(anyRef: Serializable): PuppetAccessor = {
+        val clazz = anyRef.getClass
 
         val sharedFields = clazz.getDeclaredFields
                 .filter(_.isAnnotationPresent(classOf[Shared]))
@@ -42,6 +45,10 @@ object PuppetAccessor {
                 .map(method => (method.getName, method))
                 .toMap
 
-        new PuppetAccessor(sharedFields, sharedMethods)
+        val isAutoFlush = clazz
+                .getAnnotation(classOf[SharedObject])
+                .autoFlush()
+
+        new PuppetAccessor(sharedFields, sharedMethods, isAutoFlush)
     }
 }

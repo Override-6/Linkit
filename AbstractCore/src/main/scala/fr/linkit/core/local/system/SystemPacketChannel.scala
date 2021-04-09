@@ -12,7 +12,8 @@
 
 package fr.linkit.core.local.system
 
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel, PacketInjectableFactory}
+import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
+import fr.linkit.api.connection.packet.traffic.PacketInjectableFactory
 import fr.linkit.api.local.system.Reason
 import fr.linkit.core.connection.packet.traffic.channel.SyncPacketChannel
 

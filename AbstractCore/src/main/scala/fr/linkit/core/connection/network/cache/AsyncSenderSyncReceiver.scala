@@ -12,7 +12,8 @@
 
 package fr.linkit.core.connection.network.cache
 
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketChannel, PacketSender, PacketSyncReceiver}
+import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
+import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel

@@ -12,6 +12,7 @@
 
 package fr.linkit.api.connection.packet.traffic
 
+import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjectionController
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution

@@ -12,11 +12,7 @@
 
 package fr.linkit.api.connection.network.cache
 
-import fr.linkit.api.connection.packet.Bundle
-
 trait InternalSharedCache extends SharedCache {
-
-    def handleBundle(bundle: Bundle): Unit
 
     def currentContent: Array[Any]
 

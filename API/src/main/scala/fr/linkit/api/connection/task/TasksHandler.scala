@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.task
 
-import fr.linkit.api.connection.packet.traffic.PacketChannel
+import fr.linkit.api.connection.packet.channel.PacketChannel
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.system.Reason
 

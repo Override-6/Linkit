@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.packet
 
-import fr.linkit.api.connection.packet.traffic.PacketChannel
+import fr.linkit.api.connection.packet.channel.PacketChannel
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 
 case class PacketBundle(private val channel: PacketChannel,

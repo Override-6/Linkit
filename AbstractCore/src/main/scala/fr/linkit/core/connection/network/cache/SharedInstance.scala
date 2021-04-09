@@ -13,17 +13,19 @@
 package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
-import fr.linkit.api.connection.packet.Bundle
-import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
+import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
+import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
 import fr.linkit.core.local.utils.ConsumerContainer
 
 import scala.reflect.ClassTag
 
 class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheManager,
                                                            identifier: Long,
-                                                           channel: PacketSender with PacketSyncReceiver)
+                                                           channel: RequestPacketChannel)
         extends AbstractSharedCache[A](handler, identifier, channel) {
 
     override var autoFlush: Boolean = true
@@ -35,15 +37,15 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 
     def this(handler: SharedCacheManager,
              identifier: Long,
-             channel: PacketSender with PacketSyncReceiver,
+             channel: RequestPacketChannel,
              value: A = null) = {
         this(handler, identifier, channel)
         instance = Option(value)
     }
 
-    override def handleBundle(bundle: Bundle): Unit = {
+    override def handleBundle(bundle: RequestBundle): Unit = {
         //println(s"<$family> Handling packet $packet")
-        bundle.packet match {
+        bundle.packet.nextPacket[Packet] match {
             case ObjectPacket(remoteInstance: A) =>
                 this.instance = Option(remoteInstance)
                 modCount += 1
@@ -95,7 +97,8 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 object SharedInstance {
 
     def apply[A <: Serializable : ClassTag]: SharedCacheFactory[SharedInstance[A]] = {
-        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender with PacketSyncReceiver) => {
+        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer) => {
+            val channel = container.getInjectable(5, ChannelScopes.broadcast, RequestPacketChannel)
             if (baseContent.isEmpty)
                 new SharedInstance[A](handler, identifier, channel)
             else new SharedInstance[A](handler, identifier, channel, baseContent(0).asInstanceOf[A])

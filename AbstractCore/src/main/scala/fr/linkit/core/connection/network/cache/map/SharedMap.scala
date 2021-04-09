@@ -13,13 +13,15 @@
 package fr.linkit.core.connection.network.cache.map
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
-import fr.linkit.api.connection.packet.Bundle
-import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
+import fr.linkit.api.connection.packet.{Bundle, Packet}
+import fr.linkit.api.connection.packet.traffic.{PacketInjectableContainer, PacketSender, PacketSyncReceiver}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.map.MapModification._
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
+import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
 import fr.linkit.core.local.concurrency.pool.GenericWorkerController
 import fr.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
@@ -28,7 +30,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
-                      baseContent: Array[(K, V)], channel: PacketSender with PacketSyncReceiver)
+                      baseContent: Array[(K, V)], channel: RequestPacketChannel)
         extends AbstractSharedCache[(K, V)](handler, identifier, channel) {
 
     private val networkListeners        = ConsumerContainer[(MapModification, K, V)]()
@@ -130,8 +132,8 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         apply(k)
     }
 
-    override def handleBundle(bundle: Bundle): Unit = {
-        bundle.packet match {
+    override protected def handleBundle(bundle: RequestBundle): Unit = {
+        bundle.packet.nextPacket[Packet] match {
             case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
         }
     }
@@ -259,7 +261,8 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 object SharedMap {
 
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender with PacketSyncReceiver) => {
+        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer) => {
+            val channel = container.getInjectable(5, ChannelScopes.broadcast, RequestPacketChannel)
             new SharedMap[K, V](handler, identifier, ScalaUtils.slowCopy(baseContent), channel)
         }
     }

@@ -1,7 +1,9 @@
 package fr.linkit.core.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketWriter}
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.traffic.PacketWriter
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.core.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 

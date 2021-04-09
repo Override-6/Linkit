@@ -13,11 +13,13 @@
 package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheManager}
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketAttributesPresence}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
-import fr.linkit.core.connection.packet.SimplePacketAttributes
+import fr.linkit.core.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
-import fr.linkit.core.connection.packet.traffic.channel.request.RequestPacketChannel
+import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel, RequestSubmitter}
 import fr.linkit.core.local.utils.ScalaUtils
 import org.jetbrains.annotations.Nullable
 
@@ -25,7 +27,7 @@ import scala.reflect.ClassTag
 
 abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handler: SharedCacheManager,
                                                                  identifier: Long,
-                                                                 channel: RequestPacketChannel) extends InternalSharedCache with JustifiedCloseable {
+                                                                 channel: RequestPacketChannel) extends AbstractAttributesPresence with InternalSharedCache with JustifiedCloseable {
 
     override val family: String = if (handler == null) "" else handler.family
 
@@ -45,16 +47,35 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         this
     }
 
+    protected def handleBundle(bundle: RequestBundle): Unit
+
     protected def sendModification(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
-        val request = channel
-                .makeRequest(ChannelScopes.broadcast)
+        val request = makeRequest(ChannelScopes.broadcast)
                 .addPacket(packet)
-                .putAttribute("family", family)
-                .putAttribute("cache", identifier)
         attributes.drainAttributes(request)
         request.submit()
     }
 
+    protected def makeRequest(scopeFactory: ScopeFactory[_ <: ChannelScope]): RequestSubmitter = {
+        val request = channel.makeRequest(scopeFactory)
+        drainAllAttributes(request)
+        request
+    }
+
     protected def setCurrentContent(content: Array[A]): Unit
+
+
+
+    channel.addRequestListener(bundle => {
+        val attr = bundle.attributes
+
+        def isPresent(name: String, value: Any): Boolean = attr.getAttribute(name).contains(value)
+
+        if (isPresent("family", family) && isPresent("cache", identifier))
+            handleBundle(bundle)
+    })
+
+    addDefaultAttribute("family", family)
+    addDefaultAttribute("cache", identifier)
 
 }

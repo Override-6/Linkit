@@ -12,7 +12,8 @@
 
 package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 
 import scala.reflect.ClassTag
 

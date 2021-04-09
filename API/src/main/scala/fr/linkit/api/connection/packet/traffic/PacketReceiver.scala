@@ -12,6 +12,7 @@
 
 package fr.linkit.api.connection.packet.traffic
 
+import fr.linkit.api.connection.packet.channel.PacketChannel
 import fr.linkit.api.connection.packet.{Bundle, Packet}
 
 import scala.reflect.ClassTag

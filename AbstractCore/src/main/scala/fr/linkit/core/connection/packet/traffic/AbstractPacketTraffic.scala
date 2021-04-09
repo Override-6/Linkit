@@ -12,7 +12,8 @@
 
 package fr.linkit.core.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}

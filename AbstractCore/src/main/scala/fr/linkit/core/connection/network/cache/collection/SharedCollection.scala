@@ -13,13 +13,15 @@
 package fr.linkit.core.connection.network.cache.collection
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
-import fr.linkit.api.connection.packet.Bundle
-import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
+import fr.linkit.api.connection.packet.{Bundle, Packet}
+import fr.linkit.api.connection.packet.traffic.{PacketInjectableContainer, PacketSender, PacketSyncReceiver}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.collection.CollectionModification._
 import fr.linkit.core.connection.network.cache.collection.SharedCollection.CollectionAdapter
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
+import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
@@ -32,7 +34,7 @@ import scala.util.control.NonFatal
 class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager,
                                                      identifier: Long,
                                                      adapter: CollectionAdapter[A],
-                                                     channel: PacketSender with PacketSyncReceiver)
+                                                     channel: RequestPacketChannel)
         extends AbstractSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
@@ -55,8 +57,8 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
 
     override def iterator: Iterator[A] = adapter.iterator
 
-    override final def handleBundle(bundle: Bundle): Unit = {
-        bundle.packet match {
+    override final def handleBundle(bundle: RequestBundle): Unit = {
+        bundle.packet.nextPacket[Packet] match {
             case modPacket: ObjectPacket => BusyWorkerPool.runLaterOrHere {
                 handleNetworkModRequest(modPacket)
             }
@@ -200,9 +202,10 @@ object SharedCollection {
      * The insertFilter must be true in order to authorise the insertion
      * */
     def ofInsertFilter[A <: Serializable : ClassTag](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
-        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], channel: PacketSender with PacketSyncReceiver) => {
+        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
+            val channel = container.getInjectable(5, ChannelScopes.broadcast, RequestPacketChannel)
 
             new SharedCollection[A](handler, identifier, adapter, channel)
         }

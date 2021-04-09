@@ -14,9 +14,11 @@ package fr.linkit.core.connection.network.cache.`object`
 
 import java.lang.reflect.Modifier
 
-class Puppeteer[S <: AnyRef] private(puppet: S) {
+class Puppeteer[S <: Serializable] private(puppet: S) {
 
     private val accessor = PuppetAccessor.ofRef(puppet)
+
+    val autoFlush: Boolean = accessor.isAutoFlush
 
     def updateField(fieldName: String, value: Any): Unit = {
         accessor.getSharedField(fieldName)
@@ -25,7 +27,7 @@ class Puppeteer[S <: AnyRef] private(puppet: S) {
                 }
     }
 
-    def updateAll(obj: S): Unit = {
+    def updateAllFields(obj: Serializable): Unit = {
         accessor.foreachSharedFields(field => {
             val value = field.get(obj)
             field.set(puppet, value)
@@ -47,12 +49,13 @@ class Puppeteer[S <: AnyRef] private(puppet: S) {
 
 object Puppeteer {
 
-    def apply[S <: AnyRef](puppet: S): Puppeteer[S] = {
+    def apply[S <: Serializable](puppet: S): Puppeteer[S] = {
         if (puppet == null)
-            throw new NullPointerException("Marionette is null !")
+            throw new NullPointerException("puppet is null !")
         val clazz = puppet.getClass
         if (!clazz.isAnnotationPresent(classOf[SharedObject]))
-            throw new IllegalPuppetException("This puppet's class must be annotated with @SharedObject in order to be manipulated by a chip.")
+            throw new IllegalPuppetException(s"$clazz: This puppet's class must be annotated with @SharedObject in order to be manipulated by a chip.")
+
         if (Modifier.isFinal(clazz.getModifiers))
             throw new IllegalPuppetException("Puppet can't be final.")
 

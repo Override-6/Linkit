@@ -21,7 +21,7 @@ case class RequestHolder(id: Long, queue: BlockingQueue[SubmitterPacket], handle
         responseConsumer += callback
     }
 
-    def delete(): Unit = handler.removeRequestHolder(this)
+    def detach(): Unit = handler.removeRequestHolder(this)
 
     private[request] def pushResponse(response: SubmitterPacket): Unit = {
         AppLogger.vError(s"$currentTasksId <> ADDING RESPONSE $response FOR REQUEST $this")

@@ -14,11 +14,12 @@ package fr.linkit.server.connection
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.network.Network
+import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
-import fr.linkit.api.connection.packet.traffic.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketInjectable, PacketInjectableFactory, PacketTraffic}
+import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier

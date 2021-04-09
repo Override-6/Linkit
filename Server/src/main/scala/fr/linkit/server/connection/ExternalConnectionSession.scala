@@ -15,7 +15,7 @@ package fr.linkit.server.connection
 import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
-import fr.linkit.api.connection.packet.traffic.{ChannelScope, PacketTraffic}
+import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.core.connection.packet.serialization.NumberSerializer

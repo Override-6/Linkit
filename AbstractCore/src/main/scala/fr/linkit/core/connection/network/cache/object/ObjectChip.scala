@@ -12,55 +12,42 @@
 
 package fr.linkit.core.connection.network.cache.`object`
 
-import fr.linkit.api.connection.network.cache.SharedCacheManager
-import fr.linkit.api.connection.packet.Bundle
-import fr.linkit.core.connection.network.cache.{AbstractSharedCache, AsyncSenderSyncReceiver}
-import fr.linkit.core.connection.packet.UnexpectedPacketException
+import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacket, RequestPacketChannel}
 
 import scala.collection.mutable.ListBuffer
-import scala.reflect.ClassTag
 
-class ObjectChip[S <: Serializable : ClassTag](handler: SharedCacheManager,
+class ObjectChip[S <: Serializable](channel: RequestPacketChannel,
                                                id: Long,
-                                               channel: RequestPacketChannel,
-                                               override val family: String,
-                                               val puppet: S)
-        extends AbstractSharedCache[S](handler, id, channel) {
+                                               val owner: String,
+                                               val puppet: S) {
 
+    private val ownerScope          = prepareOwnerScope()
     private val puppetModifications = ListBuffer.empty[(String, Any)]
-    private val puppeteer           = Puppeteer(puppet)
-    private var modCount            = 0
+    private val puppeteer           = Puppeteer[S](puppet)
 
-    override var autoFlush: Boolean = true
+    def sendInvoke(methodName: String, args: Any*): Any = {
+        channel.makeRequest(ownerScope)
+                .addPacket(ObjectPacket((methodName, Array(args: _*))))
+                .submit()
+                .detach()
 
-    override protected def setCurrentContent(content: Array[S]): Unit = {
-        val clone = content(0)
-        puppeteer.updateAll(clone)
     }
 
-    override def handleBundle(bundle: Bundle): Unit = {
-        bundle match {
-            case rb: RequestBundle => handleRequestBundle(rb)
-            case _                 => throw UnexpectedPacketException("Expected RequestBundle for ObjectChip.")
-        }
+    def addFieldUpdate(fieldName: String, newValue: Any): Unit = {
+        if (puppeteer.autoFlush)
+            flushModification((fieldName, newValue))
+        else puppetModifications += ((fieldName, newValue))
     }
 
-    override def currentContent: Array[Any] = Array(puppet)
-
-    override def flush(): this.type = {
-        puppetModifications.foreach(flushModification)
-        puppetModifications.clear()
-        this
+    def updatePuppet(clone: Serializable): Unit = {
+        puppeteer.updateAllFields(clone)
     }
 
-    override def modificationCount(): Int = {
-        modCount
-    }
-
-    private def handleRequestBundle(requestBundle: RequestBundle): Unit = {
-        requestBundle.packet match {
+    private[`object`] def handleBundle(bundle: RequestBundle): Unit = {
+        bundle.packet match {
             case RequestPacket(_, Array(ObjectPacket((fieldName: String, value: Any)))) =>
                 puppeteer.updateField(fieldName, value)
 
@@ -69,14 +56,31 @@ class ObjectChip[S <: Serializable : ClassTag](handler: SharedCacheManager,
                 if (puppeteer.canCallMethod(methodName)) {
                     result = puppeteer.callMethod(methodName, args)
                 }
-                requestBundle.responseSubmitter
+                bundle.responseSubmitter
                         .addPacket(ObjectPacket(result))
                         .submit()
         }
     }
 
-    private def flushModification(mod: (String, Any)): Unit = {
+    def flush(): this.type = {
+        puppetModifications.foreach(flushModification)
+        puppetModifications.clear()
+        this
+    }
 
+    private def flushModification(mod: (String, Any)): Unit = {
+        channel.makeRequest(ChannelScopes.broadcast)
+                .addPacket(ObjectPacket(mod))
+                .submit()
+                .detach()
+    }
+
+    private def prepareOwnerScope(): ChannelScope = {
+        val writer = channel.traffic.newWriter(channel.identifier)
+        val scope  = ChannelScopes.reserved(owner).apply(writer)
+        scope
+                .addDefaultAttribute("owner", owner)
+                .addDefaultAttribute("id", id)
     }
 
 }

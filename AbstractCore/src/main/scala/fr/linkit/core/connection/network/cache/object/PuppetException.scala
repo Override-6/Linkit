@@ -14,6 +14,6 @@ package fr.linkit.core.connection.network.cache.`object`
 
 import fr.linkit.api.local.system.AppException
 
-class PuppetException(msg: String, cause: Throwable = null extends AppException(msg, cause) {
+class PuppetException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

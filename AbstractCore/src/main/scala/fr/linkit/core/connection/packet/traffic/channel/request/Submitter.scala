@@ -1,7 +1,7 @@
 package fr.linkit.core.connection.packet.traffic.channel.request
 
 import fr.linkit.api.connection.packet.Packet
-import fr.linkit.api.connection.packet.traffic.ChannelScope
+import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool

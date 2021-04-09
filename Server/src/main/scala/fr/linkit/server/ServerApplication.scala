@@ -133,9 +133,11 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             AppLogger.debug("Server started !")
             startLock.synchronized {
                 startLock.notify()
+                AppLogger.vDebug("App opener thread notified.")
             }
         }
         startLock.synchronized {
+            AppLogger.vDebug("Waiting for server's connection to open completely...")
             startLock.wait()
         }
         try {

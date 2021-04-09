@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet
 
-import fr.linkit.api.connection.packet.traffic.PacketChannel
+import fr.linkit.api.connection.packet.channel.PacketChannel
 
 /**
  * a Bundle is a class that contains a defined amount of typed items.

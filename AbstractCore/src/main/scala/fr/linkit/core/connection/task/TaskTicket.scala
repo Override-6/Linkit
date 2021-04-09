@@ -13,7 +13,7 @@
 package fr.linkit.core.connection.task
 
 import fr.linkit.api.connection.ConnectionContext
-import fr.linkit.api.connection.packet.traffic.ChannelScope
+import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.task.{Fallible, TaskException, TaskExecutor, TaskOperationFailException}
 import fr.linkit.api.local.system.{AppLogger, Reason}
 import fr.linkit.core.connection.packet.traffic.ChannelScopes

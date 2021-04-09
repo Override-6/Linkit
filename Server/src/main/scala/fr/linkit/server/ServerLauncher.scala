@@ -12,14 +12,19 @@
 
 package fr.linkit.server
 
+import fr.linkit.api.connection.network.cache.CacheOpenBehavior
+import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.connection.network.cache.`object`.{Cached, Shared, SharedObject, SharedObjectsCache}
 import fr.linkit.plugin.controller.ControllerExtension
 import fr.linkit.plugin.debug.DebugExtension
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
 object ServerLauncher {
+
+    private val DefaultServerID = "TestServer1"
 
     def main(args: Array[String]): Unit = {
         AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
@@ -30,7 +35,7 @@ object ServerLauncher {
             mainPoolThreadCount = 1
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
-                    override val identifier: String = "TestServer1"
+                    override val identifier: String = DefaultServerID
                     override val port      : Int    = 48484
                     nWorkerThreadFunction = _ + 1 //Two threads per connections.
 
@@ -45,7 +50,14 @@ object ServerLauncher {
             classOf[ControllerExtension]: Class[_ <: Plugin],
             classOf[DebugExtension]: Class[_ <: Plugin],
         ))
+        AppLogger.info("Server Application launched.")
+
+        serverAppContext.runLater {
+            postLaunch(serverAppContext)
+        }
+
     }
+
 
     //noinspection SameParameterValue
     private def getOrElse(args: Array[String], key: String, defaultValue: String): String = {

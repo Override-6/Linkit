@@ -14,7 +14,8 @@ package fr.linkit.core.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Bundle
-import fr.linkit.api.connection.packet.traffic.ChannelScope
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.NetworkSharedCacheManager.MockCache
 import fr.linkit.core.connection.network.cache.map.SharedMap
@@ -35,7 +36,7 @@ import scala.reflect.{ClassTag, classTag}
 // primitives integers are all converted to Long, so it would cause cast problems until the algorithm is fixed)
 class NetworkSharedCacheManager(override val family: String,
                                 override val ownerID: String,
-                                cacheChannel: AsyncSenderSyncReceiver,
+                                container: PacketInjectableContainer,
                                 requestChannel: RequestPacketChannel) extends SharedCacheManager {
 
     private      val ownerScope                                       = prepareOwnerScope()
@@ -62,7 +63,7 @@ class NetworkSharedCacheManager(override val family: String,
                     println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
                     val baseContent = retrieveCacheContent(cacheID, behavior)
                     println(s"CONTENT RECEIVED (${baseContent.mkString("Array(", ", ", ")")}) FOR CACHE $cacheID")
-                    val sharedCache = factory.createNew(this, cacheID, baseContent, cacheChannel)
+                    val sharedCache = factory.createNew(this, cacheID, baseContent, container)
                     LocalCacheHandler.register(cacheID, sharedCache)
                     requestChannel.injectStoredBundles()
                     sharedCache
@@ -91,7 +92,7 @@ class NetworkSharedCacheManager(override val family: String,
             }
 
             val content = response.nextPacket[ArrayObjectPacket].value
-            request.delete()
+            request.detach()
 
             println(s"Content '$cacheID' received ! (${content.mkString("Array(", ", ", ")")})")
             content
@@ -113,11 +114,6 @@ class NetworkSharedCacheManager(override val family: String,
 
     def forget(cacheID: Long): Unit = {
         LocalCacheHandler.unregister(cacheID)
-    }
-
-    def handleCachePacket(bundle: PacketBundle): Unit = {
-        val key = bundle.attributes.getAttribute[Long]("cache").get
-        LocalCacheHandler.injectBundle(key, bundle)
     }
 
     def handleRequest(requestBundle: RequestBundle): Unit = {
@@ -173,7 +169,7 @@ class NetworkSharedCacheManager(override val family: String,
         LocalCacheHandler
         val content = retrieveCacheContent(1, CacheOpenBehavior.GET_OR_WAIT)
 
-        val sharedObjects = SharedMap[Long, Serializable].createNew(this, 1, content, cacheChannel)
+        val sharedObjects = SharedMap[Long, Serializable].createNew(this, 1, content, container)
         LocalCacheHandler.register(1L, sharedObjects)
         sharedObjects.foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
         println("Shared objects : " + sharedObjects)
@@ -181,8 +177,9 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     private def prepareOwnerScope(): ChannelScope = {
-        val writer = cacheChannel.traffic.newWriter(requestChannel.identifier)
-        val scope  = ChannelScopes.reserved(ownerID)(writer)
+        val traffic = requestChannel.traffic
+        val writer = traffic.newWriter(requestChannel.identifier)
+        val scope  = ChannelScopes.reserved(ownerID).apply(writer)
         scope.addDefaultAttribute("family", family)
         scope
     }
@@ -208,14 +205,6 @@ class NetworkSharedCacheManager(override val family: String,
             println(s"Removing cache $identifier")
             localRegisteredCaches.remove(identifier)
             println(s"Cache is now $identifier")
-        }
-
-        def injectBundle(cacheID: Long, bundle: PacketBundle): Unit = try {
-            localRegisteredCaches(cacheID).handleBundle(bundle)
-        } catch {
-            case _: NoSuchElementException =>
-                println(s"Mocked $cacheID")
-                registerMock(cacheID)
         }
 
         def registerMock(identifier: Long): Unit = {
@@ -256,13 +245,11 @@ class NetworkSharedCacheManager(override val family: String,
 
 object NetworkSharedCacheManager {
 
-    object MockCache extends AbstractSharedCache[Nothing](null, -1, null) {
+    object MockCache extends InternalSharedCache {
 
         override val family: String = ""
 
         override var autoFlush: Boolean = false
-
-        override def handleBundle(bundle: Bundle): Unit = ()
 
         override def currentContent: Array[Any] = Array()
 
@@ -271,8 +258,6 @@ object NetworkSharedCacheManager {
         override def modificationCount(): Int = -1
 
         override def update(): this.type = this
-
-        override protected def setCurrentContent(content: Array[Nothing]): Unit = ()
     }
 
 }
