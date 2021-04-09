@@ -89,11 +89,12 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         }
     }
 
-    def getConnection(identifier: String): ExternalConnection = {
-        val opt = connectionCache.get(identifier)
-        if (opt.isEmpty)
-            throw new IllegalArgumentException(s"No connection found for identifier $identifier")
-        opt.get
+    override def getConnection(identifier: String): Option[ExternalConnection] = {
+        connectionCache.get(identifier)
+    }
+
+    override def getConnection(port: Int): Option[ExternalConnection] = {
+        connectionCache.values.find(_.port == port)
     }
 
     @throws[ConnectionInitialisationException]("If something went wrong during the connection's opening")
@@ -155,6 +156,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         if (!alive)
             throw new IllegalStateException("Client Application is shutdown.")
     }
+
 }
 
 object ClientApplication {

@@ -22,6 +22,8 @@ trait ConnectionContext extends PacketInjectableContainer with Procrastinator {
 
     val supportIdentifier: String
 
+    def port: Int
+
     def traffic: PacketTraffic
 
     def translator: PacketTranslator

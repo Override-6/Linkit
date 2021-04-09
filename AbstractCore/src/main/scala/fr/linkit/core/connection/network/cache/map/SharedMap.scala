@@ -13,8 +13,8 @@
 package fr.linkit.core.connection.network.cache.map
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
-import fr.linkit.api.connection.packet.{Bundle, Packet}
-import fr.linkit.api.connection.packet.traffic.{PacketInjectableContainer, PacketSender, PacketSyncReceiver}
+import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
@@ -56,19 +56,30 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
      * (_, K, _) : the key affected (is null for mod kinds that does not specify any key such as CLEAR)<p>
      * (_, _, V) : The value affected (is null for mod kinds that does not specify any value such as CLEAR, or REMOVE)<p>
      * */
-    def addListener(action: ((MapModification, K, V)) => Unit): this.type = {
-        networkListeners += action
+    def addListener(action: (MapModification, K, V) => Unit): this.type = {
+        networkListeners += (triple => action(triple._1, triple._2, triple._3))
         this
     }
 
-    def removeListener(action: ((MapModification, K, V)) => Unit): this.type = {
-        networkListeners -= action
+    //FIXME remove would not work as we are creating a wrapper for this lambda att add and remove.
+    def removeListener(action: (MapModification, K, V) => Unit): this.type = {
+        networkListeners -= (triple => action(triple._1, triple._2, triple._3))
+        this
+    }
+
+    override def link(action: ((K, V)) => Unit): this.type = {
+        foreach((k, v) => action(k, v))
+        links += action
         this
     }
 
     def get(k: K): Option[V] = LocalMap.get(k)
 
     def getOrWait(k: K): V = awaitPut(k)
+
+    def getOrElse(id: K, default: => V): V = {
+        get(id).getOrElse(default)
+    }
 
     def apply(k: K): V = LocalMap(k)
 
@@ -79,6 +90,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
     def put(k: K, v: V): Unit = {
         LocalMap.put(k, v)
+        links.applyAllLater((k, v))
         addLocalModification(PUT, k, v)
     }
 
@@ -170,7 +182,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
     }
 
     private def flushModification(mod: (MapModification, Any, Any)): Unit = {
-//        Thread.dumpStack()
+        //        Thread.dumpStack()
         //println(s"Flushed $mod, $this, $hashCode, ${LocalMap.hashCode()}")
         sendModification(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
@@ -178,7 +190,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
     }
 
     private def println(msg: String): Unit = {
-        Console.println(s"<$family, $identifier> $msg")
+        AppLogger.vTrace(s"<$family, $identifier> $msg")
     }
 
     override def currentContent: Array[Any] = LocalMap.toArray

@@ -12,15 +12,14 @@
 
 package fr.linkit.server
 
-import fr.linkit.api.connection.network.cache.CacheOpenBehavior
-import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.connection.network.cache.`object`.{Cached, Shared, SharedObject, SharedObjectsCache}
 import fr.linkit.plugin.controller.ControllerExtension
 import fr.linkit.plugin.debug.DebugExtension
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
+
+import java.util.concurrent.locks.LockSupport
 
 object ServerLauncher {
 
@@ -28,6 +27,8 @@ object ServerLauncher {
 
     def main(args: Array[String]): Unit = {
         AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
+        val mainThread = Thread.currentThread()
+
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
 
         val config           = new ServerApplicationConfigBuilder {
@@ -45,19 +46,19 @@ object ServerLauncher {
         }
         val serverAppContext = ServerApplication.launch(config, getClass)
         AppLogger.trace(s"Build complete: $serverAppContext")
-        val pluginManager = serverAppContext.pluginManager
-        pluginManager.loadAllClass(Array(
-            classOf[ControllerExtension]: Class[_ <: Plugin],
-            classOf[DebugExtension]: Class[_ <: Plugin],
-        ))
-        AppLogger.info("Server Application launched.")
 
         serverAppContext.runLater {
-            postLaunch(serverAppContext)
+            val pluginManager = serverAppContext.pluginManager
+            pluginManager.loadAllClass(Array(
+                classOf[ControllerExtension]: Class[_ <: Plugin],
+                classOf[DebugExtension]: Class[_ <: Plugin],
+            ))
+            LockSupport.unpark(mainThread)
         }
+        LockSupport.park()
+        AppLogger.info("Server Application launched.")
 
     }
-
 
     //noinspection SameParameterValue
     private def getOrElse(args: Array[String], key: String, defaultValue: String): String = {

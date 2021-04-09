@@ -20,7 +20,7 @@ import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.core.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel, RequestSubmitter}
-import fr.linkit.core.local.utils.ScalaUtils
+import fr.linkit.core.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.Nullable
 
 import scala.reflect.ClassTag
@@ -28,6 +28,12 @@ import scala.reflect.ClassTag
 abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handler: SharedCacheManager,
                                                                  identifier: Long,
                                                                  channel: RequestPacketChannel) extends AbstractAttributesPresence with InternalSharedCache with JustifiedCloseable {
+
+    /**
+     * Consumers of this container are called when a new item get inserted into the cache.
+     * Or for all items already present.
+     * */
+    protected val links: ConsumerContainer[A] = ConsumerContainer[A]()
 
     override val family: String = if (handler == null) "" else handler.family
 
@@ -46,6 +52,8 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         setCurrentContent(ScalaUtils.slowCopy(content))
         this
     }
+
+    def link(action: A => Unit): this.type
 
     protected def handleBundle(bundle: RequestBundle): Unit
 

@@ -26,14 +26,14 @@ class SharedObjectsCache(handler: SharedCacheManager,
                          identifier: Long,
                          channel: RequestPacketChannel) extends AbstractSharedCache[Serializable](handler, identifier, channel) {
 
-    private val localChips       = new mutable.HashMap[Int, ObjectChip[_ <: Serializable]]()
-    private val unFlushedPuppets = new mutable.HashSet[(Int, Serializable)]
+    private val localChips       = new mutable.HashMap[Long, ObjectChip[_ <: Serializable]]()
+    private val unFlushedPuppets = new mutable.HashSet[(Long, Serializable)]
 
-    def chipObject[S <: Serializable](id: Int, any: S): _ <: S = {
+    def chipObject[S <: Serializable](id: Long, any: S): S = {
         chipObject(id, any, channel.traffic.supportIdentifier)
     }
 
-    def getChip[S <: Serializable](id: Int): Option[ObjectChip[S]] = {
+    def getChip[S <: Serializable](id: Long): Option[ObjectChip[S]] = {
         localChips.get(id) match {
             case None       => None
             case Some(chip) => chip match {
@@ -43,28 +43,28 @@ class SharedObjectsCache(handler: SharedCacheManager,
         }
     }
 
-    def getChippedObject[S <: Serializable](id: Int): Option[S] = {
+    def getChippedObject[S <: Serializable](id: Long): Option[S] = {
         getChip[S](id).map(_.puppet)
     }
 
     override protected def handleBundle(bundle: RequestBundle): Unit = {
         val response = bundle.packet
-        val id       = response.getAttribute[Int]("id").get
+        val id       = response.getAttribute[Long]("id").get
         val owner    = bundle.coords.senderID
 
         bundle.packet.nextPacket[Packet] match {
-            case ObjectPacket((id: Int, puppet: Serializable)) =>
+            case ObjectPacket((id: Long, puppet: Serializable)) =>
                 if (!localChips.contains(id))
                     chipObject(id, puppet, owner)
 
-            case _ => localChips.get(id).fold() { chip =>
+            case _ => localChips.get(id.toLong).fold() { chip =>
                 chip.handleBundle(bundle)
             }
         }
     }
 
     override protected def setCurrentContent(content: Array[Serializable]): Unit = {
-        val contentMap = content.asInstanceOf[Array[(Int, (Serializable, String))]]
+        val contentMap = content.asInstanceOf[Array[(Long, (Serializable, String))]]
                 .toMap
         contentMap.foreachEntry((id, pair) => {
             localChips.get(id) match {
@@ -88,7 +88,7 @@ class SharedObjectsCache(handler: SharedCacheManager,
 
     override def modificationCount(): Int = -1
 
-    private def chipObject[S <: Serializable](id: Int, puppet: S, owner: String): _ <: S = {
+    private def chipObject[S <: Serializable](id: Long, puppet: S, owner: String): S = {
         val chip = new ObjectChip[S](channel, id, owner, puppet)
         if (autoFlush)
             flushPuppet(id, puppet)
@@ -100,7 +100,7 @@ class SharedObjectsCache(handler: SharedCacheManager,
         puppet
     }
 
-    private def flushPuppet(id: Int, puppet: Serializable): Unit = {
+    private def flushPuppet(id: Long, puppet: Serializable): Unit = {
         makeRequest(ChannelScopes.broadcast)
                 .addPacket(ObjectPacket((id, puppet)))
                 .putAttribute("id", id)

@@ -15,6 +15,7 @@ package fr.linkit.core.local.plugin
 import fr.linkit.api.local.plugin.{LinkitPlugin, Plugin, PluginLoadException}
 import fr.linkit.api.local.system.AppException
 import fr.linkit.api.local.system.fsa.FileAdapter
+import fr.linkit.core.local.mapping.ClassMappings
 import fr.linkit.core.local.plugin.PluginClassLoader.{MainClassField, PropertiesFileName}
 
 import java.net.URLClassLoader
@@ -33,12 +34,14 @@ class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bri
     }
 
     override def loadClass(name: String, resolve: Boolean): Class[_] = {
-        try {
+        val clazz = try {
             super.loadClass(name, resolve)
         } catch {
             case e: ClassNotFoundException =>
                 bridge.loadClass(name, this)
         }
+        ClassMappings.putClass(clazz)
+        clazz
     }
 
     def loadMainClass(file: FileAdapter): Class[_ <: Plugin] = {

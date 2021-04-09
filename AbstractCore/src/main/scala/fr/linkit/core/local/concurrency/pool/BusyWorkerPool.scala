@@ -228,10 +228,15 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
             busiedMillis += (t1 - t0)
         }
 
+        val worker = currentWorker
         var toWait = millis - busiedMillis
         while (toWait > 0) {
-            currentWorker.workflowLoop(timedPark(toWait)) { waited =>
+            val currentTask = worker.currentTaskID
+            worker.workflowLoop(timedPark(toWait)) { waited =>
                 toWait -= waited
+                if (toWait <= 0) {
+                    worker.stopWorkflowLoop(currentTask)
+                }
             }
         }
     }

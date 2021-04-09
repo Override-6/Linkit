@@ -42,8 +42,8 @@ class ObjectChip[S <: Serializable](channel: RequestPacketChannel,
         else puppetModifications += ((fieldName, newValue))
     }
 
-    def updatePuppet(clone: Serializable): Unit = {
-        puppeteer.updateAllFields(clone)
+    def updatePuppet(newVersion: Serializable): Unit = {
+        puppeteer.updateAllFields(newVersion)
     }
 
     private[`object`] def handleBundle(bundle: RequestBundle): Unit = {

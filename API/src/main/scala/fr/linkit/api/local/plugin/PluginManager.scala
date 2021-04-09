@@ -12,16 +12,21 @@
 
 package fr.linkit.api.local.plugin
 
+import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.fragment.FragmentManager
 
 trait PluginManager {
 
+    @workerExecution
     def load(file: String): Plugin
 
+    @workerExecution
     def loadClass(clazz: Class[_ <: Plugin]): Plugin
 
+    @workerExecution
     def loadAll(folder: String): Array[Plugin]
 
+    @workerExecution
     def loadAllClass(classes: Array[Class[_ <: Plugin]]): Array[Plugin]
 
     def countPlugins: Int

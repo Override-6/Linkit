@@ -27,6 +27,7 @@ import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicatio
 import fr.linkit.server.connection.ServerConnection
 import jdk.internal.reflect.Reflection
 
+import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
@@ -173,11 +174,11 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         serverCache.remove(identifier)
     }
 
-    def getServerConnection(identifier: String): Option[ServerConnection] = {
+    override def getConnection(identifier: String): Option[ServerConnection] = {
         serverCache.get(identifier)
     }
 
-    def getServerConnection(port: Int): Option[ServerConnection] = {
+    override def getConnection(port: Int): Option[ServerConnection] = {
         serverCache.get(port)
     }
 
@@ -211,6 +212,7 @@ object ServerApplication {
                 throw new ApplicationInstantiationException("Could not instantiate Server Application.", e)
         }
 
+        val loaderThread = Thread.currentThread()
         @volatile var exception: Throwable = null
         serverAppContext.runLater {
             try {
@@ -225,13 +227,10 @@ object ServerApplication {
                     exception = e
                     AppLogger.printStackTrace(e)
             }
-            serverAppContext.synchronized {
-                serverAppContext.notify()
-            }
+            LockSupport.unpark(loaderThread)
         }
-        serverAppContext.synchronized {
-            serverAppContext.wait()
-        }
+        LockSupport.park()
+
         if (exception != null)
             throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
 

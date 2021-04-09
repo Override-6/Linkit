@@ -12,8 +12,6 @@
 
 package fr.linkit.core.local
 
-import sun.misc.Unsafe
-
 import java.util.concurrent.locks.LockSupport
 
 /**
@@ -45,7 +43,7 @@ package object concurrency {
      * */
     def timedPark(timeout: Long): Long = {
         val t0 = now()
-        LockSupport.parkUntil(timeout)
+        LockSupport.parkNanos(timeout * 1000000)
         val t1 = now()
         t1 - t0
     }

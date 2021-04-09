@@ -13,6 +13,7 @@
 package fr.linkit.api.local.plugin
 
 import fr.linkit.api.local.ApplicationContext
+import fr.linkit.api.local.concurrency.workerExecution
 
 trait Plugin {
 
@@ -20,10 +21,13 @@ trait Plugin {
 
     val configuration: PluginConfiguration
 
+    @workerExecution
     def onLoad(): Unit
 
+    @workerExecution
     def onEnable(): Unit
 
+    @workerExecution
     def onDisable(): Unit
 
     @throws[IllegalStateException]("If the plugin is already initialized")

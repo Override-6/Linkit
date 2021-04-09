@@ -13,10 +13,13 @@
 package fr.linkit.core.local.plugin
 
 import fr.linkit.api.local.ApplicationContext
+import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.fragment.FragmentManager
 import fr.linkit.api.local.plugin.{Plugin, PluginLoader, PluginManager}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.fragment.SimpleFragmentManager
 
 import java.nio.file.{NoSuchFileException, NotDirectoryException}
@@ -30,7 +33,9 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
 
     override val fragmentManager: FragmentManager = new SimpleFragmentManager
 
+    @workerExecution
     override def load(file: String): Plugin = {
+        BusyWorkerPool.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         AppLogger.debug(s"Plugin $file is preparing to be loaded.")
 
         val adapter = fsa.getAdapter(file)
@@ -43,8 +48,11 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
         enablePlugins(pluginLoader).head
     }
 
+    @workerExecution
     override def loadAll(folder: String): Array[Plugin] = {
+        BusyWorkerPool.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         AppLogger.debug(s"Plugins into folder '$folder' are preparing to be loaded.")
+
         val adapter = fsa.getAdapter(folder)
         if (adapter.notExists)
             throw new NoSuchFileException(folder)
@@ -56,14 +64,18 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
         enablePlugins(pluginLoader)
     }
 
+    @workerExecution
     override def loadClass(clazz: Class[_ <: Plugin]): Plugin = {
         loadAllClass(Array(clazz): Array[Class[_ <: Plugin]]).head
     }
 
+    @workerExecution
     override def loadAllClass(classes: Array[Class[_ <: Plugin]]): Array[Plugin] = {
         if (classes.isEmpty)
             return Array()
 
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, classes: _*)
+        BusyWorkerPool.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         val pluginLoader = new DirectPluginLoader(context, classes)
         enablePlugins(pluginLoader)
     }

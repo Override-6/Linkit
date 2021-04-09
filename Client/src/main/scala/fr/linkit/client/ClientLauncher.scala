@@ -12,12 +12,16 @@
 
 package fr.linkit.client
 
-import java.net.InetSocketAddress
-import java.util.Scanner
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.client.config.schematic.ScalaClientAppSchematic
 import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
+import fr.linkit.plugin.controller.ControllerExtension
+import fr.linkit.plugin.debug.DebugExtension
+
+import java.net.InetSocketAddress
+import java.util.Scanner
+import java.util.concurrent.locks.LockSupport
 
 object ClientLauncher {
 
@@ -59,6 +63,8 @@ object ClientLauncher {
                identifier0: String,
                raidCount: Int): Unit = {
 
+        val launcherThread = Thread.currentThread()
+
         val config = new ClientApplicationConfigBuilder {
             nWorkerThreadFunction = _ + 1
             loadSchematic = new ScalaClientAppSchematic {
@@ -73,11 +79,16 @@ object ClientLauncher {
         }
 
         val client = ClientApplication.launch(config, getClass)
-        AppLogger.debug(s"Build completed: $client")
-        val pluginManager = client.pluginManager
-        pluginManager.loadAllClass(Array(
-           // classOf[ControllerExtension]: Class[_ <: Plugin],
-            //classOf[DebugExtension]: Class[_ <: Plugin],
-        ))
+        AppLogger.trace(s"Build completed: $client")
+        client.runLater {
+            val pluginManager = client.pluginManager
+            pluginManager.loadAllClass(Array(
+                classOf[ControllerExtension]: Class[_ <: Plugin],
+                classOf[DebugExtension]: Class[_ <: Plugin],
+            ))
+            LockSupport.unpark(launcherThread)
+        }
+        LockSupport.park()
+        AppLogger.info("Client Application launched.")
     }
 }

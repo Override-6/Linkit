@@ -15,19 +15,18 @@ package fr.linkit.server.connection
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
+import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
-import fr.linkit.core.connection.packet.traffic.{ChannelScopes, DynamicSocket}
-import fr.linkit.core.local.concurrency.pool.{BusyWorkerPool, DedicatedWorkerController}
+import fr.linkit.core.connection.packet.traffic.DynamicSocket
+import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.system.Rules
 import fr.linkit.core.local.system.event.DefaultEventNotifier
-import fr.linkit.core.local.system.{Rules, SystemPacketChannel}
 import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.network.ServerSideNetwork
 import fr.linkit.server.{ServerApplication, ServerException, ServerPacketTraffic}
@@ -40,24 +39,24 @@ import scala.util.control.NonFatal
 class ServerConnection(applicationContext: ServerApplication,
                        val configuration: ServerConnectionConfiguration) extends ConnectionContext {
 
-    override val supportIdentifier  : String                     = configuration.identifier
-    override val translator         : PacketTranslator           = configuration.translator
-    private  val workerPool         : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier.toString)
-    private  val serverSocket       : ServerSocket               = new ServerSocket(configuration.port)
-    private  val connectionsManager : ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    override val traffic            : PacketTraffic              = new ServerPacketTraffic(this)
-    override val eventNotifier      : EventNotifier              = new DefaultEventNotifier
-    private  val sideNetwork        : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
-    override val network            : Network                    = sideNetwork
-    private  val systemChannel      : SystemPacketChannel       = new SystemPacketChannel(ChannelScopes.broadcast(traffic.newWriter(SystemChannelID)))
-    private  val initializationLocks: DedicatedWorkerController = new DedicatedWorkerController(workerPool)
+    override val supportIdentifier : String                     = configuration.identifier
+    override val translator        : PacketTranslator           = configuration.translator
+    override val port              : Int                        = configuration.port
+    private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier.toString)
+    private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
+    private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
+    override val traffic           : PacketTraffic              = new ServerPacketTraffic(this)
+    override val eventNotifier     : EventNotifier              = new DefaultEventNotifier
+    private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
+    override val network           : Network                    = sideNetwork
+    //FIXME private  val systemChannel      : SystemPacketChannel        = new SystemPacketChannel(ChannelScopes.broadcast(traffic.newWriter(SystemChannelID)))
 
     @volatile private var alive = false
 
     @workerExecution
     override def shutdown(): Unit = {
         BusyWorkerPool.ensureCurrentIsWorker("Must shutdown server connection in a worker thread.")
-        AppLogger.error("SHUTING DOWN SERVER...")
+        AppLogger.error("SHUTTING DOWN SERVER...")
         if (!alive)
             return
 
@@ -109,7 +108,7 @@ class ServerConnection(applicationContext: ServerApplication,
             // There is nowhere to send this packet.
             return
         }
-        connectionsManager.broadcastPacket(packet,attributes,  injectableID, sender, discarded:_*)
+        connectionsManager.broadcastPacket(packet, attributes, injectableID, sender, discarded: _*)
         if (!discarded.contains(supportIdentifier)) {
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(injectableID, supportIdentifier, sender))
         }

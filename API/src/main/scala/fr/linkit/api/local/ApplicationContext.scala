@@ -42,4 +42,8 @@ trait ApplicationContext extends Procrastinator {
 
     def listConnections: Iterable[ConnectionContext]
 
+    def getConnection(identifier: String): Option[ConnectionContext]
+
+    def getConnection(port: Int): Option[ConnectionContext]
+
 }

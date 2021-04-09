@@ -14,8 +14,8 @@ package fr.linkit.server.connection
 
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
@@ -39,8 +39,9 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override val traffic          : PacketTraffic    = server.traffic
     override val translator       : PacketTranslator = server.translator
     override val eventNotifier    : EventNotifier    = server.eventNotifier
-    override val boundIdentifier  : String           = session.boundIdentifier
     override val network          : Network          = session.network
+    override val port             : Int              = server.port
+    override val boundIdentifier  : String           = session.boundIdentifier
 
     @volatile private var alive = false
 
@@ -95,10 +96,10 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     def sendPacket(packet: Packet, attributes: PacketAttributes, channelID: Int): Unit = {
         //runLater {
-            val coords       = DedicatedPacketCoordinates(channelID, boundIdentifier, server.supportIdentifier)
-            val transferInfo = SimpleTransferInfo(coords, attributes, packet)
-            val result       = translator.translate(transferInfo)
-            session.send(result)
+        val coords       = DedicatedPacketCoordinates(channelID, boundIdentifier, server.supportIdentifier)
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet)
+        val result       = translator.translate(transferInfo)
+        session.send(result)
         //}
     }
 

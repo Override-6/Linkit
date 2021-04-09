@@ -14,8 +14,8 @@ package fr.linkit.client.connection
 
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
@@ -42,11 +42,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     initPacketReader()
 
-    override val traffic          : PacketTraffic     = session.traffic
     override val supportIdentifier: String            = configuration.identifier
-    override val boundIdentifier  : String            = serverIdentifier
     override val translator       : PacketTranslator  = configuration.translator
+    override val port             : Int               = configuration.remoteAddress.getPort
     override val eventNotifier    : EventNotifier     = session.eventNotifier
+    override val traffic          : PacketTraffic     = session.traffic
+    override val boundIdentifier  : String            = serverIdentifier
     private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(this)
     override val network          : Network           = sideNetwork
     @volatile private var alive                       = true
