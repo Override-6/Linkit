@@ -188,18 +188,15 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
 
     /**
      * Keep executing tasks contained in the workQueue while
-     * it is full and the provided condition is true.
-     * If the condition keeps being true,
-     * but there is no task that can be processed, the thread will wait
-     * on the lock until he gets notified by the user or by the [[runLater()]] method.
+     * it is full and not notified by [[BusyWorkerThread.stopWorkflowLoop()]]
      *
      * in plain language, this method will make the thread execute tasks
-     * while the provided condition is true.
-     * or, if the thread can't process other tasks, will wait until a task get submitted.
+     * as long as it is not stopped by an auxiliary thread.
+     * However, if the thread can't process other tasks, and still not stopped, it will wait until a task get submitted.
      *
      * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
      * */
-    def waitCurrentTask(): Unit = {
+    def pauseCurrentTask(): Unit = {
         AppLogger.vError(s"${currentTasksId} <> This Thread will execute remaining tasks or wait.")
         AppLogger.discoverLines(0, 7)
         executeRemainingTasks()
@@ -207,7 +204,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         currentWorker.workflowLoop(LockSupport.park()) { _ =>
             executeRemainingTasks()
         }
-        AppLogger.vError(s"${currentTasksId} <> executeRemainingTasksOrWait just ended.")
+        AppLogger.vError(s"${currentTasksId} <> pauseCurrentTask just ended.")
     }
 
     /**
@@ -217,7 +214,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * @param millis the number of milliseconds the thread must be busy.
      * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
      * */
-    def waitCurrentTaskForAtLeast(millis: Long): Unit = {
+    def pauseCurrentTaskForAtLeast(millis: Long): Unit = {
         ensureCurrentThreadOwned()
 
         var busiedMillis: Long = 0
@@ -296,12 +293,13 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
 
     /**
      * Executes all tasks contained in the workQueue
-     * until the queue is empty or the condition returns false
+     * until the queue is empty.
      *
      * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
      * */
     private def executeRemainingTasks(): Unit = {
         ensureCurrentThreadOwned()
+
         AppLogger.vDebug(s"EXECUTING ALL REMAINING TASKS (${System.identityHashCode(workQueue)}), $this")
         while (!workQueue.isEmpty && currentWorker.currentTaskIsWaiting()) {
             val task = workQueue.poll()
@@ -420,7 +418,7 @@ object BusyWorkerPool {
         }
     }
 
-    def notifyTask(thread: BusyWorkerThread, taskID: Int): Unit = {
+    def unpauseTask(thread: BusyWorkerThread, taskID: Int): Unit = {
         thread.stopWorkflowLoop(taskID)
     }
 

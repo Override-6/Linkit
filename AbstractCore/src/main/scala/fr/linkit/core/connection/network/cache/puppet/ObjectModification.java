@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.object;
+package fr.linkit.core.connection.network.cache.puppet;
 
 public enum ObjectModification {
 

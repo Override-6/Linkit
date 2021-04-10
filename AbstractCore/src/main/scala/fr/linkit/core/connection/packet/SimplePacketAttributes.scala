@@ -21,7 +21,7 @@ class SimplePacketAttributes extends PacketAttributes {
 
     override def putAttribute(name: Serializable, value: Serializable): this.type = {
         attributes.put(name, value)
-        AppLogger.vError(s"Attribute put ($name -> $value), $attributes")
+        AppLogger.vError(s"Attribute put ($name -> $value), $attributes - $hashCode")
         this
     }
 
@@ -35,7 +35,11 @@ class SimplePacketAttributes extends PacketAttributes {
     override def toString: String = attributes.mkString("SimplePacketAttributes(", ", ", ")")
 
     override def drainAttributes(other: PacketAttributes): this.type = {
-        attributes.foreachEntry((k, v) => other.putAttribute(k, v))
+        foreachAttributes((k, v) => other.putAttribute(k, v))
+    }
+
+    override def foreachAttributes(f: (Serializable, Serializable) => Unit): this.type = {
+        attributes.foreachEntry(f)
         this
     }
 

@@ -22,14 +22,14 @@ class ReservedWorkerController extends AbstractWorkerController[BusyWorkerThread
 
     override def currentWorker: BusyWorkerThread = BusyWorkerPool.currentWorker
 
-    override def notifyWorker(worker: BusyWorkerThread, taskID: Int): Unit = BusyWorkerPool.notifyTask(worker, taskID)
+    override def notifyWorker(worker: BusyWorkerThread, taskID: Int): Unit = BusyWorkerPool.unpauseTask(worker, taskID)
 
     override def waitCurrentTask(): Unit = {
-        getCurrentPool.waitCurrentTask()
+        getCurrentPool.pauseCurrentTask()
     }
 
     override def waitCurrentTask(millis: Long): Unit = {
-        getCurrentPool.waitCurrentTaskForAtLeast(millis)
+        getCurrentPool.pauseCurrentTaskForAtLeast(millis)
     }
 
     def addPool(pool: BusyWorkerPool): Unit = pools += pool

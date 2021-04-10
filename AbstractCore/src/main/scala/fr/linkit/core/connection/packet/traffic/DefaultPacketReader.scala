@@ -39,7 +39,7 @@ class DefaultPacketReader(socket: DynamicSocket,
 
         val bytes  = hasher.deHashBytes(socket.read(nextLength))
         //NETWORK-DEBUG-MARK
-        //AppLogger.logDownload(socket.boundIdentifier, bytes)
+        AppLogger.logDownload(socket.boundIdentifier, bytes)
         val result = translator.translate(bytes)
         callback(result)
     }

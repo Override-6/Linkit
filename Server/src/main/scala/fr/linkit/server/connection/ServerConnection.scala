@@ -49,7 +49,7 @@ class ServerConnection(applicationContext: ServerApplication,
     override val eventNotifier     : EventNotifier              = new DefaultEventNotifier
     private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
     override val network           : Network                    = sideNetwork
-    //FIXME private  val systemChannel      : SystemPacketChannel        = new SystemPacketChannel(ChannelScopes.broadcast(traffic.newWriter(SystemChannelID)))
+    //FIXME private  val systemChannel      : SystemPacketChannel        = new SystemPacketChannel(ChannelScopes.discardCurrent(traffic.newWriter(SystemChannelID)))
 
     @volatile private var alive = false
 

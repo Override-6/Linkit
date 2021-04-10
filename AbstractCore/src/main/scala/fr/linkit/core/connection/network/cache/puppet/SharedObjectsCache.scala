@@ -10,11 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.`object`
+package fr.linkit.core.connection.network.cache.puppet
 
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
@@ -48,17 +49,18 @@ class SharedObjectsCache(handler: SharedCacheManager,
     }
 
     override protected def handleBundle(bundle: RequestBundle): Unit = {
+        AppLogger.vDebug(s"Processing bundle = ${bundle}")
         val response = bundle.packet
         val id       = response.getAttribute[Long]("id").get
         val owner    = bundle.coords.senderID
 
-        bundle.packet.nextPacket[Packet] match {
+        response.nextPacket[Packet] match {
             case ObjectPacket((id: Long, puppet: Serializable)) =>
                 if (!localChips.contains(id))
                     chipObject(id, puppet, owner)
 
-            case _ => localChips.get(id.toLong).fold() { chip =>
-                chip.handleBundle(bundle)
+            case reqPacket => localChips.get(id.toLong).fold() { chip =>
+                chip.handleRequest(reqPacket, bundle.responseSubmitter)
             }
         }
     }
@@ -88,9 +90,16 @@ class SharedObjectsCache(handler: SharedCacheManager,
 
     override def modificationCount(): Int = -1
 
+    override def link(action: Serializable => Unit): this.type = {
+        links += action
+        localChips.foreachEntry((_, chip) => action(chip.puppet))
+        unFlushedPuppets.foreach(pair => action(pair._2))
+        this
+    }
+
     private def chipObject[S <: Serializable](id: Long, puppet: S, owner: String): S = {
-        val chip = new ObjectChip[S](channel, id, owner, puppet)
-        if (autoFlush)
+        val chip = new ObjectChip[S](channel, this, id, owner, puppet)
+        if (autoFlush && owner == this.channel.traffic.supportIdentifier)
             flushPuppet(id, puppet)
         else unFlushedPuppets += ((id, puppet))
 
@@ -101,7 +110,8 @@ class SharedObjectsCache(handler: SharedCacheManager,
     }
 
     private def flushPuppet(id: Long, puppet: Serializable): Unit = {
-        makeRequest(ChannelScopes.broadcast)
+        AppLogger.vTrace(s"Flushing puppet $puppet for id $id...")
+        makeRequest(ChannelScopes.discardCurrent)
                 .addPacket(ObjectPacket((id, puppet)))
                 .putAttribute("id", id)
                 .submit()
@@ -114,7 +124,7 @@ object SharedObjectsCache extends SharedCacheFactory[SharedObjectsCache] {
     override def createNew(handler: SharedCacheManager,
                            identifier: Long, baseContent: Array[Any],
                            container: PacketInjectableContainer): SharedObjectsCache = {
-        val channel = container.getInjectable(5, ChannelScopes.broadcast, RequestPacketChannel)
+        val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
         new SharedObjectsCache(handler, identifier, channel)
     }
 

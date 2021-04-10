@@ -10,21 +10,27 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.`object`
+package fr.linkit.core.connection.network.cache.puppet
 
 import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.{Packet, PacketAttributesPresence}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
-import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacket, RequestPacketChannel}
+import fr.linkit.core.connection.packet.traffic.channel.request.{RequestPacket, RequestPacketChannel, ResponseSubmitter}
 
 import scala.collection.mutable.ListBuffer
 
 class ObjectChip[S <: Serializable](channel: RequestPacketChannel,
-                                               id: Long,
-                                               val owner: String,
-                                               val puppet: S) {
+                                    presence: PacketAttributesPresence,
+                                    id: Long,
+                                    val owner: String,
+                                    val puppet: S) {
 
-    private val ownerScope          = prepareOwnerScope()
+    private val ownerScope = prepareScope(ChannelScopes.retains(owner))
+    private val bcScope    = prepareScope(ChannelScopes.discardCurrent)
+
     private val puppetModifications = ListBuffer.empty[(String, Any)]
     private val puppeteer           = Puppeteer[S](puppet)
 
@@ -37,6 +43,7 @@ class ObjectChip[S <: Serializable](channel: RequestPacketChannel,
     }
 
     def addFieldUpdate(fieldName: String, newValue: Any): Unit = {
+        AppLogger.vDebug(s"Field '$fieldName' of object $puppet took value $newValue")
         if (puppeteer.autoFlush)
             flushModification((fieldName, newValue))
         else puppetModifications += ((fieldName, newValue))
@@ -46,17 +53,21 @@ class ObjectChip[S <: Serializable](channel: RequestPacketChannel,
         puppeteer.updateAllFields(newVersion)
     }
 
-    private[`object`] def handleBundle(bundle: RequestBundle): Unit = {
-        bundle.packet match {
-            case RequestPacket(_, Array(ObjectPacket((fieldName: String, value: Any)))) =>
+    def sendUpdatePuppet(newVersion: Serializable): Unit = {
+        puppeteer.accessor.foreachSharedFields(field => addFieldUpdate(field.getName, field.get(newVersion)))
+    }
+
+    private[puppet] def handleRequest(packet: Packet, submitter: ResponseSubmitter): Unit = {
+        packet match {
+            case ObjectPacket((fieldName: String, value: Any)) =>
                 puppeteer.updateField(fieldName, value)
 
-            case RequestPacket(_, Array(ObjectPacket((methodName: String, args: Array[Any])))) =>
+            case ObjectPacket((methodName: String, args: Array[Any])) =>
                 var result: Serializable = null
                 if (puppeteer.canCallMethod(methodName)) {
                     result = puppeteer.callMethod(methodName, args)
                 }
-                bundle.responseSubmitter
+                submitter
                         .addPacket(ObjectPacket(result))
                         .submit()
         }
@@ -69,15 +80,16 @@ class ObjectChip[S <: Serializable](channel: RequestPacketChannel,
     }
 
     private def flushModification(mod: (String, Any)): Unit = {
-        channel.makeRequest(ChannelScopes.broadcast)
+        channel.makeRequest(bcScope)
                 .addPacket(ObjectPacket(mod))
                 .submit()
                 .detach()
     }
 
-    private def prepareOwnerScope(): ChannelScope = {
+    private def prepareScope(factory: ScopeFactory[_ <: ChannelScope]): ChannelScope = {
         val writer = channel.traffic.newWriter(channel.identifier)
-        val scope  = ChannelScopes.reserved(owner).apply(writer)
+        val scope  = factory.apply(writer)
+        presence.drainAllDefaultAttributes(scope)
         scope
                 .addDefaultAttribute("owner", owner)
                 .addDefaultAttribute("id", id)

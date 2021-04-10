@@ -95,12 +95,12 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     }
 
     def sendPacket(packet: Packet, attributes: PacketAttributes, channelID: Int): Unit = {
-        //runLater {
-        val coords       = DedicatedPacketCoordinates(channelID, boundIdentifier, server.supportIdentifier)
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet)
-        val result       = translator.translate(transferInfo)
-        session.send(result)
-        //}
+        runLater {
+            val coords       = DedicatedPacketCoordinates(channelID, boundIdentifier, server.supportIdentifier)
+            val transferInfo = SimpleTransferInfo(coords, attributes, packet)
+            val result       = translator.translate(transferInfo)
+            session.send(result)
+        }
     }
 
     override def isConnected: Boolean = getState == ExternalConnectionState.CONNECTED

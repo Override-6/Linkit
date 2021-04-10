@@ -10,8 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.`object`
+package fr.linkit.core.connection.network.cache.puppet;
 
-class IllegalPuppetException(msg: String) extends PuppetException(msg) {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface SharedObject {
+
+    boolean autoFlush() default true;
 
 }

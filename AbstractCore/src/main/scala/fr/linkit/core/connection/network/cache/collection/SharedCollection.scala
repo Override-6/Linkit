@@ -67,6 +67,12 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
 
     override protected def setCurrentContent(content: Array[A]): Unit = set(content)
 
+    override def link(action: A => Unit): this.type = {
+        links += action
+        foreach(action)
+        this
+    }
+
     def contains(a: Any): Boolean = adapter.contains(a)
 
     def add(t: A): this.type = {
@@ -179,6 +185,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Long, A)])
         AppLogger.vWarn(s"<$family> COLLECTION IS NOW (network) $this")
     }
+
 }
 
 object SharedCollection {
@@ -205,7 +212,7 @@ object SharedCollection {
         (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
-            val channel = container.getInjectable(5, ChannelScopes.broadcast, RequestPacketChannel)
+            val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
 
             new SharedCollection[A](handler, identifier, adapter, channel)
         }

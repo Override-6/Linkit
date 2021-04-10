@@ -22,12 +22,13 @@ import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import java.nio.BufferOverflowException
 import scala.collection.mutable.ArrayBuffer
+import scala.util.control.Breaks.{break, breakable}
 
 class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) extends PacketInjection with PacketInjectionController {
 
-    private val buff                 = new PacketBuffer
-    private val pins                 = ArrayBuffer.empty[PacketInjectionNode]
-    @volatile private var processing = false
+    private val buff                         = new PacketBuffer
+    private val pins                         = ArrayBuffer.empty[PacketInjectionNode]
+    @volatile private var processing         = false
     @volatile private var performedPinAttach = false
 
     override def attachPin(@workerExecution callback: (Packet, PacketAttributes) => Unit): Unit = {
@@ -99,21 +100,25 @@ object ParallelInjection {
         def makeProcess(packet: Packet, attributes: PacketAttributes): Unit = {
             val number = packet.number
             AppLogger.vDebug(s"PACKET NUMBER ${number} - ($hashCode)")
-            if (!marks.contains(number)) {
+            val canProcess = marks.synchronized {
+                val contains = marks.contains(number)
                 marks(i) = number
+                !contains
+            }
+            if (canProcess) {
                 i += 1
                 totalProcess += 1
-                AppLogger.vDebug(s"${currentTasksId} <> PROCESSING $packet with attributes $attributes ($totalProcess / ${number})")
+                AppLogger.vDebug(s"${currentTasksId} <> PROCESSING ($number) $packet with attributes $attributes ($totalProcess / ${number})")
                 callback(packet, attributes)
             } else {
                 AppLogger.vDebug(s"PACKET ABORTED ${number} - ($hashCode)")
             }
         }
 
-        def foreachUnmarked(f: (Packet, PacketAttributes) => Unit, buff: Array[(Packet, PacketAttributes)]): Unit = {
+        def foreachUnmarked(f: (Packet, PacketAttributes) => Unit, buff: Array[(Packet, PacketAttributes)]): Unit = breakable {
             buff.foreach(tuple => {
                 if (tuple == null)
-                    return //we have reached the end of the tuple.
+                    break //we have reached the end of the tuple.
                 if (!marks.contains(tuple._1.number))
                     f(tuple._1, tuple._2)
             })

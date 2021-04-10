@@ -61,14 +61,14 @@ object AppLogger {
         debug(msg)
     }
 
-    def logUpload(target: String, bytes: Array[Byte]): Unit = {
+    def logUpload(target: String, bytes: Array[Byte]): Unit = verbose {
         if (logger.isDebugEnabled) {
             val preview = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
             debug(s"${Console.MAGENTA}Written : ↑ $target ↑ $preview (l: ${bytes.length})")
         }
     }
 
-    def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = {
+    def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = verbose {
         if (logger.isDebugEnabled) {
             val preview     = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
             val finalTarget = if (target == null) "" else target

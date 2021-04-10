@@ -113,13 +113,13 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String, pro
         processInjection(injectionContainer.makeInjection(packet, attr, coordinates))
     }
 
-    override def processInjection(injection: PacketInjectionController): Unit = {
+    override def processInjection(injection: PacketInjectionController): Unit = procrastinator.runLater {
         if (injection.isProcessing) {
             AppLogger.vError(s"$currentTasksId <> Current thread has been discarded from injection because this injection is already processed.")
             injection.processRemainingPins()
-            return
         }
-        injection.process {
+        else injection.process {
+
             AppLogger.vError(s"$currentTasksId <> PROCESSING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
             val coordinates = injection.coordinates
             PacketReaderThread.checkNotCurrent()

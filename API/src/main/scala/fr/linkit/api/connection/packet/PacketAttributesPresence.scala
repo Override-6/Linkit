@@ -8,8 +8,12 @@ trait PacketAttributesPresence {
 
     //def addDefaultPresence(presence: PacketAttributesPresence, value: Serializable): this.type
 
-    def getDefaultProperty[S](key: Serializable): Option[S]
+    def getDefaultAttribute[S](key: Serializable): Option[S]
 
     //def getDefaultPresence[S](presence: PacketAttributesPresence): Option[S]
+
+    def drainAllAttributes(packetAttributes: PacketAttributes): this.type
+
+    def drainAllDefaultAttributes(packetAttributes: PacketAttributesPresence): this.type
 
 }

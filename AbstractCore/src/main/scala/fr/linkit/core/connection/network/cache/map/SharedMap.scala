@@ -68,8 +68,8 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
     }
 
     override def link(action: ((K, V)) => Unit): this.type = {
-        foreach((k, v) => action(k, v))
         links += action
+        foreach((k, v) => action(k, v))
         this
     }
 
@@ -274,7 +274,7 @@ object SharedMap {
 
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
         (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer) => {
-            val channel = container.getInjectable(5, ChannelScopes.broadcast, RequestPacketChannel)
+            val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             new SharedMap[K, V](handler, identifier, ScalaUtils.slowCopy(baseContent), channel)
         }
     }

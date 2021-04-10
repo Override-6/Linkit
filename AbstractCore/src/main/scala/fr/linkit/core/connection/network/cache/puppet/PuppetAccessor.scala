@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.`object`
+package fr.linkit.core.connection.network.cache.puppet
 
 import java.lang.reflect.{Field, Method}
 
@@ -20,11 +20,15 @@ class PuppetAccessor private(sharedFields: Map[String, Field],
 
     def isAutoFlush: Boolean = autoFlush
 
-    def getSharedField(name: String): Option[Field] = Option(sharedFields(name))
+    def getSharedField(name: String): Option[Field] = {
+        sharedFields.get(name)
+    }
 
-    def getSharedMethod(name: String): Option[Method] = Option(sharedMethods(name))
+    def getSharedMethod(name: String): Option[Method] = sharedMethods.get(name)
 
-    def foreachSharedFields(action: Field => Unit): Unit = sharedFields.values.foreach(action)
+    def foreachSharedFields(action: Field => Unit): Unit = {
+        sharedFields.values.foreach(action)
+    }
 
 }
 

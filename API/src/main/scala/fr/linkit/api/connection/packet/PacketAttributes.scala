@@ -12,6 +12,8 @@ trait PacketAttributes extends Serializable {
 
     def drainAttributes(other: PacketAttributes): this.type
 
+    def foreachAttributes(f: (Serializable, Serializable) => Unit): this.type
+
     def isEmpty: Boolean
 
     def nonEmpty: Boolean = !isEmpty

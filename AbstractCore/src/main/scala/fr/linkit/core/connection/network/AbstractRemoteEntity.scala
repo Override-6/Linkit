@@ -21,8 +21,6 @@ import java.sql.Timestamp
 abstract class AbstractRemoteEntity(override val identifier: String,
                                     override val entityCache: SharedCacheManager) extends NetworkEntity {
 
-    AppLogger.warn(s"CREATING REMOTE ENTITY ${identifier}")
-
     override def connectionDate: Timestamp = entityCache.getInstanceOrWait[Timestamp](2)
 
     override def update(): this.type = {

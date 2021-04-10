@@ -62,6 +62,12 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 
     override def toString: String = s"SharedInstance(${instance.orNull})"
 
+    override def link(action: A => Unit): this.type = {
+        links += action
+        action(instance.getOrElse(null.asInstanceOf[A]))
+        this
+    }
+
     override protected def setCurrentContent(content: Array[A]): Unit = {
         content.ensuring(_.length <= 1)
         if (content.isEmpty) {
@@ -98,7 +104,7 @@ object SharedInstance {
 
     def apply[A <: Serializable : ClassTag]: SharedCacheFactory[SharedInstance[A]] = {
         (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer) => {
-            val channel = container.getInjectable(5, ChannelScopes.broadcast, RequestPacketChannel)
+            val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             if (baseContent.isEmpty)
                 new SharedInstance[A](handler, identifier, channel)
             else new SharedInstance[A](handler, identifier, channel, baseContent(0).asInstanceOf[A])

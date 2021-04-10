@@ -16,7 +16,7 @@ import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalShared
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketAttributesPresence}
-import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
+import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.core.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel, RequestSubmitter}
@@ -58,7 +58,7 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
     protected def handleBundle(bundle: RequestBundle): Unit
 
     protected def sendModification(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
-        val request = makeRequest(ChannelScopes.broadcast)
+        val request = makeRequest(ChannelScopes.discardCurrent)
                 .addPacket(packet)
         attributes.drainAttributes(request)
         request.submit()
@@ -72,18 +72,17 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
 
     protected def setCurrentContent(content: Array[A]): Unit
 
-
+    addDefaultAttribute("family", family)
+    addDefaultAttribute("cache", identifier)
 
     channel.addRequestListener(bundle => {
         val attr = bundle.attributes
 
         def isPresent(name: String, value: Any): Boolean = attr.getAttribute(name).contains(value)
 
-        if (isPresent("family", family) && isPresent("cache", identifier))
+        if (isPresent("cache", identifier) && isPresent("family", family))
             handleBundle(bundle)
     })
 
-    addDefaultAttribute("family", family)
-    addDefaultAttribute("cache", identifier)
 
 }

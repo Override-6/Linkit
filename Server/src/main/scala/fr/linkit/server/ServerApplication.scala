@@ -16,16 +16,15 @@ import fr.linkit.api.connection.NoSuchConnectionException
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.system.{AppException, AppLogger}
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.security.ConnectionSecurityException
+import fr.linkit.api.local.system.{AppException, AppLogger}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.mapping.{ClassMapEngine, ClassMappings}
+import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
 import fr.linkit.core.local.system.Rules
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
-import jdk.internal.reflect.Reflection
 
 import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
@@ -57,8 +56,10 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         mainWorkerPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
         AppLogger.info("Server application is shutting down...")
-        var downCount = 0
-        val downLock  = new Object
+        val totalConnectionCount = countConnections
+        var downCount            = 0
+        val shutdownThread       = BusyWorkerPool.currentWorker
+        val shutdownTask         = shutdownThread.currentTaskID
 
         listConnections.foreach((serverConnection: ServerConnection) => serverConnection.runLater {
             try {
@@ -66,14 +67,12 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             } catch {
                 case NonFatal(e) => AppLogger.printStackTrace(e)
             }
-            downLock.synchronized {
-                downCount += 1
-                downCount.notify()
-            }
+            downCount += 1
+            if (downCount == totalConnectionCount)
+                BusyWorkerPool.unpauseTask(shutdownThread, shutdownTask)
         })
-        while (downCount < countConnections) downLock.synchronized {
-            downLock.wait()
-        }
+        mainWorkerPool.pauseCurrentTask()
+
         alive = false
         AppLogger.info("Server application successfully shutdown.")
     }
@@ -89,7 +88,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             case Some(path) =>
                 val adapter = configuration.fsAdapter.getAdapter(path)
                 adapter.getAbsolutePath //converting to absolute path.
-            case None => null
+            case None       => null
         }
         if (pluginFolder != null) {
             val pluginCount = pluginManager.loadAll(pluginFolder).length
@@ -120,6 +119,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         * and to ensure that no server would be open during shutdown.
         * */
         mainWorkerPool.ensureCurrentThreadOwned("Open server connection must be performed into Application's pool.")
+
         ensureAlive()
         if (configuration.identifier.length > Rules.MaxConnectionIDLength)
             throw new IllegalArgumentException(s"Server identifier length > ${Rules.MaxConnectionIDLength}")
@@ -127,20 +127,17 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         securityManager.checkConnectionConfig(configuration)
         AppLogger.debug("Instantiating server connection...")
         val serverConnection = new ServerConnection(this, configuration)
-        val startLock        = new Object
+        val openerThread     = BusyWorkerPool.currentWorker
+        val openerTask       = openerThread.currentTaskID
+
         serverConnection.runLater {
             AppLogger.debug("Starting server...")
             serverConnection.start()
             AppLogger.debug("Server started !")
-            startLock.synchronized {
-                startLock.notify()
-                AppLogger.vDebug("App opener thread notified.")
-            }
+            BusyWorkerPool.unpauseTask(openerThread, openerTask)
         }
-        startLock.synchronized {
-            AppLogger.vDebug("Waiting for server's connection to open completely...")
-            startLock.wait()
-        }
+        mainWorkerPool.pauseCurrentTask()
+
         try {
             securityManager.checkConnection(serverConnection)
         } catch {
@@ -212,7 +209,7 @@ object ServerApplication {
                 throw new ApplicationInstantiationException("Could not instantiate Server Application.", e)
         }
 
-        val loaderThread = Thread.currentThread()
+        val loaderThread                   = Thread.currentThread()
         @volatile var exception: Throwable = null
         serverAppContext.runLater {
             try {

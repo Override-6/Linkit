@@ -28,9 +28,9 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
         val worker = BusyWorkerPool.currentWorker
         val taskID = worker.currentTaskID
         addOnce {
-            BusyWorkerPool.notifyTask(worker, taskID)
+            BusyWorkerPool.unpauseTask(worker, taskID)
         }
-        pool.waitCurrentTask()
+        pool.pauseCurrentTask()
     }
 
     override def add(action: E => Unit): Unit = consumers += action

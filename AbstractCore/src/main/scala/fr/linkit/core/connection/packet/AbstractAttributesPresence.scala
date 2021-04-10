@@ -11,12 +11,17 @@ abstract class AbstractAttributesPresence extends PacketAttributesPresence {
         this
     }
 
-    override def getDefaultProperty[S](key: Serializable): Option[S] = {
+    override def getDefaultAttribute[S](key: Serializable): Option[S] = {
         defaultAttributes.getAttribute(key)
     }
 
-    protected def drainAllAttributes(attributes: PacketAttributes): this.type = {
+    override def drainAllAttributes(attributes: PacketAttributes): this.type = {
         defaultAttributes.drainAttributes(attributes)
+        this
+    }
+
+    override def drainAllDefaultAttributes(attributes: PacketAttributesPresence): this.type = {
+        defaultAttributes.foreachAttributes((k, v) => attributes.addDefaultAttribute(k, v))
         this
     }
 

@@ -179,7 +179,7 @@ class NetworkSharedCacheManager(override val family: String,
     private def prepareOwnerScope(): ChannelScope = {
         val traffic = requestChannel.traffic
         val writer = traffic.newWriter(requestChannel.identifier)
-        val scope  = ChannelScopes.reserved(ownerID).apply(writer)
+        val scope  = ChannelScopes.retains(ownerID).apply(writer)
         scope.addDefaultAttribute("family", family)
         scope
     }

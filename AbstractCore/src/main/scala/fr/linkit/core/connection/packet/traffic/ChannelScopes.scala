@@ -2,26 +2,18 @@ package fr.linkit.core.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.PacketWriter
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.core.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
 object ChannelScopes {
 
-    @volatile private var scopeNumber = 0
-
-    private def nextID: Int = {
-        scopeNumber += 1
-        scopeNumber
-    }
-
-    final case class BroadcastScope private(override val writer: PacketWriter)
+    final case class BroadcastScope private(override val writer: PacketWriter, discarded: String*)
             extends AbstractAttributesPresence with ChannelScope {
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
             defaultAttributes.drainAttributes(attributes)
-            writer.writeBroadcastPacket(packet, attributes)
+            writer.writeBroadcastPacket(packet, attributes, discarded: _*)
         }
 
         override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: String*): Unit = {
@@ -49,7 +41,7 @@ object ChannelScopes {
 
     }
 
-    final case class ReservedScope private(override val writer: PacketWriter, authorisedIds: String*)
+    final case class RetainScope private(override val writer: PacketWriter, authorisedIds: String*)
             extends AbstractAttributesPresence with ChannelScope {
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
@@ -81,8 +73,8 @@ object ChannelScopes {
 
         override def equals(obj: Any): Boolean = {
             obj match {
-                case s: ReservedScope => s.authorisedIds == this.authorisedIds
-                case _                => false
+                case s: RetainScope => s.authorisedIds == this.authorisedIds
+                case _              => false
             }
         }
 
@@ -92,6 +84,10 @@ object ChannelScopes {
 
     def broadcast: ScopeFactory[BroadcastScope] = BroadcastScope(_)
 
-    def reserved(authorised: String*): ScopeFactory[ReservedScope] = ReservedScope(_, authorised: _*)
+    def discardCurrent: ScopeFactory[BroadcastScope] = writer => BroadcastScope(writer, writer.supportIdentifier)
+
+    def discards(discarded: String*): ScopeFactory[BroadcastScope] = BroadcastScope(_, discarded: _*)
+
+    def retains(authorised: String*): ScopeFactory[RetainScope] = RetainScope(_, authorised: _*)
 
 }

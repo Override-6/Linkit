@@ -10,27 +10,27 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.`object`
+package fr.linkit.core.connection.network.cache.puppet
+
+import fr.linkit.core.local.utils.ScalaUtils
 
 import java.lang.reflect.Modifier
 
 class Puppeteer[S <: Serializable] private(puppet: S) {
 
-    private val accessor = PuppetAccessor.ofRef(puppet)
+    val accessor: PuppetAccessor = PuppetAccessor.ofRef(puppet)
 
     val autoFlush: Boolean = accessor.isAutoFlush
 
     def updateField(fieldName: String, value: Any): Unit = {
         accessor.getSharedField(fieldName)
-                .fold() { field =>
-                    field.set(puppet, value)
-                }
+                .fold()(ScalaUtils.setValue(_, puppet, value))
     }
 
     def updateAllFields(obj: Serializable): Unit = {
         accessor.foreachSharedFields(field => {
             val value = field.get(obj)
-            field.set(puppet, value)
+            ScalaUtils.setValue(field, puppet, value)
         })
     }
 

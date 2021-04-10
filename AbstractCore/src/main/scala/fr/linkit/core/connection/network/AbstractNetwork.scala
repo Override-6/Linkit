@@ -28,11 +28,11 @@ import scala.collection.mutable
 
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
-    private   val cacheRequestChannel                         = connection.getInjectable(12, ChannelScopes.broadcast, RequestPacketChannel)
+    private   val cacheRequestChannel                         = connection.getInjectable(12, ChannelScopes.discardCurrent, RequestPacketChannel)
     private   val caches                                      = mutable.HashMap.empty[String, NetworkSharedCacheManager]
     override  val globalCache      : SharedCacheManager       = initCaches()
     protected val sharedIdentifiers : SharedCollection[String] = globalCache.getCache(3, SharedCollection.set[String], CacheOpenBehavior.GET_OR_WAIT)
-    protected val entityCommunicator: SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScopes.broadcast, SyncAsyncPacketChannel.busy)
+    protected val entityCommunicator: SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScopes.discardCurrent, SyncAsyncPacketChannel.busy)
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
     postInit()
 
@@ -125,7 +125,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def postInit(): Unit = {
-        sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: SharedIdentifiers Updated : $sharedIdentifiers"))
+        //sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: SharedIdentifiers Updated : $sharedIdentifiers"))
         connection.translator.updateCache(globalCache)
     }
 

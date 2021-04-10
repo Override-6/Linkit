@@ -36,7 +36,7 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
                     AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
                     request.setAttributes(attr)
 
-                    val submitterScope = scope.shareWriter(ChannelScopes.reserved(coords.senderID))
+                    val submitterScope = scope.shareWriter(ChannelScopes.retains(coords.senderID))
                     val submitter = new ResponseSubmitter(request.id, submitterScope)
 
                     requestConsumers.applyAllLater(RequestBundle(this, request, coords, submitter))

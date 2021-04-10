@@ -10,7 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.object;
+package fr.linkit.core.connection.network.cache.puppet
 
-public @interface Shared {
+import scala.annotation.meta.field
+
+object AnnotationHelper {
+
+    type SharedObject = fr.linkit.core.connection.network.cache.puppet.SharedObject@field
+    type Shared = fr.linkit.core.connection.network.cache.puppet.Shared@field
+    type Cached = fr.linkit.core.connection.network.cache.puppet.Cached@field
+
 }

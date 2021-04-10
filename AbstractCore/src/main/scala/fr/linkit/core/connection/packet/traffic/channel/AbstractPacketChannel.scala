@@ -60,7 +60,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
         if (scopes.exists(!scope.areAuthorised(_)))
             throw new ForbiddenIdentifierException("This sub injector requests to listen to an identifier that the parent does not support.")
 
-        val subScope = ChannelScopes.reserved(scopes: _*).apply(writer)
+        val subScope = ChannelScopes.retains(scopes: _*).apply(writer)
         register(subScope, factory, transparent)
     }
 

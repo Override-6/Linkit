@@ -15,6 +15,7 @@ package fr.linkit.core.local.utils
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 
+import java.lang.reflect.Field
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
@@ -51,7 +52,7 @@ object ScalaUtils {
         val sb = new StringBuilder("Array(")
         array.foreach {
             case subArray: Array[Any] => sb.append(deepToString(subArray))
-            case any: Any => sb.append(any).append(", ")
+            case any: Any             => sb.append(any).append(", ")
         }
         sb.dropRight(2) //remove last ", " string.
                 .append(')')
@@ -61,7 +62,21 @@ object ScalaUtils {
     implicit def deepToString(any: Any): String = {
         any match {
             case array: Array[Any] => deepToString(array)
-            case any => any.toString
+            case any               => any.toString
+        }
+    }
+
+    def setValue(field: Field, owner: Any, value: Any): Unit = {
+        value match {
+            case v: Int => field.setInt(owner, v)
+            case v: Long => field.setLong(owner, v)
+            case v: Double => field.setDouble(owner, v)
+            case v: Float => field.setFloat(owner, v)
+            case v: Boolean => field.setBoolean(owner, v)
+            case v: Byte => field.setByte(owner, v)
+            case v: Short => field.setShort(owner, v)
+            case v: Char => field.set(owner, v)
+            case _ => field.set(owner, value)
         }
     }
 

@@ -25,7 +25,6 @@ import sun.misc.Unsafe
 import java.lang.reflect.{Field, Modifier}
 import java.lang.{Boolean => JBoolean, Byte => JByte, Double => JDouble, Float => JFloat, Integer => JInt, Long => JLong, Short => JShort}
 import java.nio.ByteBuffer
-import java.util
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
@@ -50,7 +49,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
         //println(any)
         AppLogger.vError(s"Serializing ${ScalaUtils.deepToString(any)}, putSignature = $putSignature")
         val valBytes = serializeValue(null, any)
-        val bytes = if (putSignature) signature ++ valBytes else valBytes
+        val bytes    = if (putSignature) signature ++ valBytes else valBytes
         /*
         val t1 = System.currentTimeMillis()
         //println(s"Serialisation took ${t1 - t0}ms")
@@ -105,7 +104,7 @@ abstract class ObjectSerializer extends StrategicSerializer {
     override def deserializeObject[S <: Serializable : ClassTag](array: Array[Byte], @Nullable typeHint: Class[S]): S = {
         deserializeValue(typeHint, array) match {
             case s: S => s
-            case o => throw new PacketException(s"Required type (${classTag[S].runtimeClass.getSimpleName}) but deserialized ${o.getClass.getSimpleName}")
+            case o    => throw new PacketException(s"Required type (${classTag[S].runtimeClass.getSimpleName}) but deserialized ${o.getClass.getSimpleName}")
         }
     }
 
@@ -526,14 +525,15 @@ abstract class ObjectSerializer extends StrategicSerializer {
         def casted[A]: A = value.asInstanceOf[A]
 
         val action: (Any, Long) => Unit = field.getType match {
-            case JInt.TYPE     => TheUnsafe.putInt(_, _, casted[Long].toInt)
-            case JByte.TYPE    => TheUnsafe.putByte(_, _, casted[Long].toByte)
-            case JShort.TYPE   => TheUnsafe.putShort(_, _, casted[Long].toShort)
-            case JLong.TYPE    => TheUnsafe.putLong(_, _, casted[Long])
-            case JDouble.TYPE  => TheUnsafe.putDouble(_, _, casted)
-            case JFloat.TYPE   => TheUnsafe.putFloat(_, _, casted)
-            case JBoolean.TYPE => TheUnsafe.putBoolean(_, _, casted)
-            case _             => TheUnsafe.putObject(_, _, casted)
+            case JInt.TYPE      => TheUnsafe.putInt(_, _, casted[Long].toInt)
+            case JByte.TYPE     => TheUnsafe.putByte(_, _, casted[Long].toByte)
+            case JShort.TYPE    => TheUnsafe.putShort(_, _, casted[Long].toShort)
+            case JLong.TYPE     => TheUnsafe.putLong(_, _, casted[Long])
+            case JDouble.TYPE   => TheUnsafe.putDouble(_, _, casted)
+            case JFloat.TYPE    => TheUnsafe.putFloat(_, _, casted)
+            case JBoolean.TYPE  => TheUnsafe.putBoolean(_, _, casted)
+            case Character.TYPE => TheUnsafe.putChar(_, _, casted)
+            case _              => TheUnsafe.putObject(_, _, casted)
         }
         action(instance, fieldOffset)
     }

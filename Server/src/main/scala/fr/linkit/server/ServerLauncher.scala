@@ -33,7 +33,7 @@ object ServerLauncher {
 
         val config           = new ServerApplicationConfigBuilder {
             pluginsFolder = None //userDefinedPluginFolder
-            mainPoolThreadCount = 1
+            mainPoolThreadCount = 2
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = DefaultServerID

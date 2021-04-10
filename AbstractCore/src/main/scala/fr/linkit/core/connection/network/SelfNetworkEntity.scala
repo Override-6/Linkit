@@ -23,8 +23,6 @@ class SelfNetworkEntity(connection: ConnectionContext,
                         state: => ExternalConnectionState,
                         override val entityCache: SharedCacheManager) extends NetworkEntity {
 
-    AppLogger.warn(s"CREATING SELF ENTITY ${connection.supportIdentifier}")
-
     override val identifier: String = connection.supportIdentifier
 
     override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())

@@ -59,6 +59,8 @@ class SocketPacketWriter(socket: DynamicSocket,
         val transferInfo      = SimpleTransferInfo(coords, attributes, packet)
 
         val writableBytes = translator.translate(transferInfo).writableBytes
+        if (!discardedIDs.contains(supportIdentifier))
+            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(coords.injectableID, supportIdentifier, supportIdentifier))
         socket.write(writableBytes)
     }
 
