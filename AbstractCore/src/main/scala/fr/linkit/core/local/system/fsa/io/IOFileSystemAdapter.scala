@@ -22,11 +22,11 @@ class IOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
     override val name: String = "java.io"
 
-    override def createAdapter(path: String): FileAdapter = new IOFileAdapter(path, this)
+    override protected def createAdapter(path: String): FileAdapter = IOFileAdapter(path, this)
 
     override def createDirectories(path: FileAdapter): Unit = path.getPath.mkdirs()
 
-    override def create(path: FileAdapter): Unit = path.getPath.createNewFile()
+    override def create(path: FileAdapter): Unit = path.getAbsolutePath.createNewFile()
 
     override def list(path: FileAdapter): Array[FileAdapter] = {
         val files = path.getPath.listFiles()

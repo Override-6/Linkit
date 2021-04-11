@@ -10,8 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.puppet
+package fr.linkit.core.connection.network.cache.puppet;
 
-trait PuppetObject extends Serializable {
-
+public interface PuppetObject {
 }

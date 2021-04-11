@@ -43,10 +43,10 @@ class PuppetClassFields private(sharedFields: Map[String, Field],
 object PuppetClassFields {
 
     def ofRef(anyRef: Serializable): PuppetClassFields = {
-        ofRef(anyRef.getClass)
+        ofClass(anyRef.getClass)
     }
 
-    def ofRef[S <: Serializable](clazz: Class[S]): PuppetClassFields = {
+    def ofClass[S <: Serializable](clazz: Class[S]): PuppetClassFields = {
         val sharedFields = clazz.getDeclaredFields
                 .filter(_.isAnnotationPresent(classOf[Shared]))
                 .tapEach(_.setAccessible(true))

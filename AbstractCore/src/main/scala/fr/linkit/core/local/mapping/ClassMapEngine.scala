@@ -35,6 +35,7 @@ object ClassMapEngine {
             val root     = fsa.getAdapter(url.toURI)
             val rootPath = root.getAbsolutePath
             AppLogger.debug(s"Mapping source $rootPath...")
+            ClassMappings.putSourceCode(source)
 
             mapDirectory(fsa, rootPath, root, EmptyFilter)
         })

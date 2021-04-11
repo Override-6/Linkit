@@ -15,16 +15,25 @@ package fr.linkit.core.local.mapping
 import fr.linkit.api.connection.packet.serialization.Serializer
 
 import java.io.OutputStream
+import java.security.CodeSource
 import java.util
+import scala.collection.mutable
 
 object ClassMappings {
 
     private val classes = new util.HashMap[Int, String]()
+    private val sources = mutable.HashSet.empty[CodeSource]
 
     def putClass(className: String): Unit = {
         classes.put(className.hashCode, className)
         //println(s"Class put ! $className (${className.hashCode})")
     }
+
+    def putSourceCode(source: CodeSource): Unit = {
+        sources += source
+    }
+
+    def getSources: List[CodeSource] = sources.toList
 
     def putClass(clazz: Class[_]): Unit = putClass(clazz.getName)
 

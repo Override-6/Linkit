@@ -42,7 +42,7 @@ class NIOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
     private def getAdapter(path: Path): FileAdapter = super.getAdapter(path.toString)
 
-    override def createAdapter(path: String): FileAdapter = NIOFileAdapter(Paths.get(path), this)
+    override protected def createAdapter(path: String): FileAdapter = NIOFileAdapter(Paths.get(path), this)
 
     override def createAdapter(uri: URI): FileAdapter = NIOFileAdapter(Paths.get(uri), this)
 

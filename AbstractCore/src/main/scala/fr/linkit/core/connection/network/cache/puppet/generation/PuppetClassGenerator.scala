@@ -12,23 +12,22 @@
 
 package fr.linkit.core.connection.network.cache.puppet.generation
 
-import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, PuppetObject, Puppeteer, Shared}
-import javassist._
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.core.connection.network.cache.puppet.AnnotationHelper.Shared
+import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, PuppetObject, Puppeteer}
+import fr.linkit.core.local.mapping.ClassMappings
 
-import java.lang.reflect.{Method, Modifier}
-import javax.tools.JavaCompiler
+import java.io.File
+import java.lang.reflect.Method
+import java.nio.file.{Files, Path}
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import scala.util.control.Breaks.break
 
 object PuppetClassGenerator {
 
-    val GeneratedClassesPrefix: String = "fr.linkit.core.generated.puppet"
-    private val PrivateFinal = Modifier.PRIVATE & Modifier.FINAL
-    private val RootPool     = {
-        val pool = ClassPool.getDefault
-        pool.appendClassPath(getClass.getProtectionDomain.getCodeSource.getLocation.getPath)
-        pool
-    }
+    val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
+    val GeneratedClassesFolder : String = getClass.getProtectionDomain.getCodeSource.getLocation.getPath.drop(1).replace('/', '\\') + "generated\\"
+    val EnqueueingSourcesFolder: String = GeneratedClassesFolder + "\\queue\\"
 
     private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetObject]]()
 
@@ -36,94 +35,133 @@ object PuppetClassGenerator {
         generatedClasses.getOrElseUpdate(clazz, genPuppetClass(clazz)).asInstanceOf[Class[S with PuppetObject]]
     }
 
-    private def genPuppetClass[S <: Serializable](clazz: Class[S]): Class[S with PuppetObject] = {
-        implicit val classPool: ClassPool = new ClassPool(RootPool)
+    private def genPuppetClass[S <: Serializable](clazz: Class[_ <: S]): Class[_ <: PuppetObject] = {
+        val s          = '\"'
+        val classPaths = ClassMappings.getSources.map(source => s"$s${source.getLocation.getPath.drop(1)}$s").mkString(";")
+        val sourceCode = genPuppetClassSourceCode[S](clazz)
 
-        val desc     = PuppetClassFields.ofRef(clazz)
-        val puppetClassName = s"Puppet${clazz.getSimpleName}"
-        val ctPuppet = classPool.makeClass(GeneratedClassesPrefix + s".$puppetClassName")
+        val puppetClassName = "Puppet" + clazz.getSimpleName
+        val path = Path.of(EnqueueingSourcesFolder + puppetClassName + ".java")
+        println(s"path = ${path}")
+        if (Files.notExists(path)) {
+            Files.createDirectories(path.getParent)
+            Files.createFile(path)
+        }
+        Files.write(path, sourceCode.getBytes)
 
-        ctPuppet.setSuperclass(toCtClass(clazz))
-        ctPuppet.addInterface(toCtClass(classOf[PuppetObject]))
+        val javacProcess = new ProcessBuilder("javac", "-d", GeneratedClassesFolder, s"-cp", classPaths, path.toString)
+        javacProcess.redirectOutput(ProcessBuilder.Redirect.INHERIT)
+        javacProcess.redirectError(ProcessBuilder.Redirect.INHERIT)
+        javacProcess.directory(new File(GeneratedClassesFolder))
 
-        putField(ctPuppet, "puppeteer", classOf[Puppeteer[S]])
-        val constructor = new CtConstructor(Array(toCtClass(classOf[Puppeteer[S]]), toCtClass(clazz)), ctPuppet)
-        constructor.setBody(
-            """{
-              |    super($2);
-              |    this.puppeteer = $1;
-              |    this.puppeteer.init(this);
-              |}""".stripMargin)
-        ctPuppet.addConstructor(constructor)
-
-        desc.foreachSharedMethods(putMethod(_, ctPuppet))
-        ctPuppet.toClass.asInstanceOf[Class[S with PuppetObject]]
+        AppLogger.debug(s"Compiling Puppet class for ${clazz.getSimpleName}...")
+        val exitValue = javacProcess.start().waitFor()
+        if (exitValue != 0)
+            throw new InvalidPuppetDefException(s"Javac rejected compilation of class $puppetClassName, check above error prints for further details.")
+        AppLogger.debug(s"Compilation done.")
+        Class.forName()
+        break
     }
 
-    private def putMethod(method: Method, ctPuppet: CtClass)(implicit classPool: ClassPool): Unit = {
+    def genConstantGettersFields(desc: PuppetClassFields): String = {
+        val fieldBuilder = new StringBuilder()
+        desc.foreachSharedMethods(method => {
+            val isConstant = method.getAnnotation(classOf[Shared]).constant()
+            if (isConstant) {
+                val fieldName = s"${method.getName}_0" //TODO support polymorphism
+                val fieldType = method.getReturnType.getName
+                fieldBuilder.append(s"private $fieldType $fieldName;")
+            }
+        })
+        fieldBuilder.toString()
+    }
+
+    private def genPuppetClassSourceCode[S <: Serializable](clazz: Class[_ <: S]): String = {
+        val sourceBuilder = new StringBuilder()
+        val desc          = PuppetClassFields.ofClass(clazz)
+
+        val puppetClassSimpleName = s"Puppet${clazz.getSimpleName}"
+        val superClassName        = clazz.getCanonicalName
+        val puppetClassName       = GeneratedClassesPackage + '.' + puppetClassSimpleName
+        val constantGettersFields = genConstantGettersFields(desc)
+        val puppeteerType         = classOf[Puppeteer[S]].getName + s"<$superClassName>"
+        sourceBuilder.append(
+            s"""
+               |package $GeneratedClassesPackage;
+               |
+               |public class $puppetClassSimpleName extends $superClassName implements ${classOf[PuppetObject].getName} {
+               |
+               |private final $puppeteerType puppeteer;
+               |$constantGettersFields
+               |
+               |public $puppetClassSimpleName($puppeteerType puppeteer, $superClassName clone) {
+               |    super(clone);
+               |    this.puppeteer = puppeteer;
+               |    this.puppeteer.init(this);
+               |}
+               |
+               |public boolean canEqual(Object that) {
+               |     return that instanceof $puppetClassName;
+               |}
+               |
+               |public int productArity() {
+               |     return 0;
+               |}
+               |
+               |public Object productElement(int n) {
+               |     return null;
+               |}
+               |
+               |""".stripMargin)
+
+        desc.foreachSharedMethods(method => {
+            val name       = method.getName
+            var i          = 0
+            val parameters = method.getParameterTypes.map(parameterType => {
+                i += 1
+                parameterType.getName + s" $$$i"
+            }).mkString(",")
+
+            val body       = genMethodBody(method)
+            val returnType = method.getReturnType.getName
+            sourceBuilder.append(
+                s"""
+                   |public $returnType $name($parameters) {
+                   |    $body
+                   |}
+                   |""".stripMargin)
+        })
+        sourceBuilder.append('}') // Closing class
+                .toString()
+    }
+
+    private def genMethodBody(method: Method): String = {
+        val isConstant = method.getAnnotation(classOf[Shared]).constant()
         val name       = method.getName
-        val isConstant = method.getAnnotation[Shared](classOf[Shared]).constant()
-        val returnType = method.getReturnType
-        val ctMethod   = new CtMethod(toCtClass(returnType), name, toCtClasses(method.getParameterTypes), ctPuppet)
 
+        val returnType  = method.getReturnType
         val returnsVoid = Array(classOf[Unit], classOf[Nothing], Void.TYPE).contains(returnType)
-        val parameters  = ListBuffer[String]()
 
-        for (i <- 0 until method.getParameterCount)
-            parameters += s"$$$i"
+        val parametersNames = for (i <- 1 to method.getParameterCount) yield {
+            s"$$$i"
+        }
 
-        val paramsInput = s"new Object[]{${parameters.mkString(",")}}"
+        val paramsInput = s"new Object[]{${parametersNames.mkString(",")}}"
 
         val invokeLine = {
             val invokeMethodSuffix = if (returnsVoid) "" else "AndReturn"
             val s                  = '\"'
-            s"(${returnType.getName}) puppeteer.sendInvoke${invokeMethodSuffix}($s${name}$s, $paramsInput)"
+            s"puppeteer.sendInvoke${invokeMethodSuffix}($s${name}$s, $paramsInput)"
         }
-
         if (isConstant) {
-            if (returnsVoid)
-                throw new InvalidPuppetDefException("Shared method defined as constant getter returns void.")
-
-            val varName = s"${name}_0"
-            println(s"varName = ${varName}")
-            ctPuppet.debugWriteFile()
-            putField(ctPuppet, varName, returnType, Modifier.PRIVATE)
-            val body = s"""{
-                          |    if ($varName == null) {
-                          |        $varName = $invokeLine;
-                          |    }
-                          |    return $varName;
-                          |}""".stripMargin
-            println(s"body = ${body}")
-            ctMethod.setBody(body)
-        } else {
-            ctMethod.setBody(s"{$invokeLine;}")
-        }
-        ctPuppet.addMethod(ctMethod)
-    }
-
-    private def putField(owner: CtClass, name: String, fieldType: Class[_], modifiers: Int = PrivateFinal)(implicit pool: ClassPool): Unit = {
-        val puppeteerField = new CtField(toCtClass(fieldType), name, owner)
-        puppeteerField.setModifiers(modifiers)
-        owner.addField(puppeteerField)
-    }
-
-    private def toCtClass(clazz: Class[_])(implicit pool: ClassPool): CtClass = {
-        try {
-            pool.get(clazz.getName)
-        } catch {
-            case e: NotFoundException =>
-                RootPool.appendClassPath(clazz.getProtectionDomain.getCodeSource.getLocation.getPath)
-                /*
-                 * Do not use recursion because, if NotFoundException persists after class path is appended to the pool,
-                 * it would throw a StackOverflowError.
-                 */
-                pool.get(clazz.getName)
-        }
-    }
-
-    private def toCtClasses(classes: Array[Class[_]])(implicit pool: ClassPool): Array[CtClass] = {
-        classes.map(toCtClass)
+            val varName = s"${name}_0" //TODO support polymorphism.
+            s"""
+               |if ($varName == null) {
+               |    $varName = $invokeLine;
+               |}
+               |return $varName;
+               |""".stripMargin
+        } else invokeLine + ';'
     }
 
 }
