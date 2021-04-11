@@ -16,10 +16,11 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.puppet.AnnotationHelper.Shared
 import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, PuppetObject, Puppeteer}
 import fr.linkit.core.local.mapping.ClassMappings
-
 import java.io.File
 import java.lang.reflect.Method
+import java.net.{URI, URL, URLClassLoader}
 import java.nio.file.{Files, Path}
+
 import scala.collection.mutable
 import scala.util.control.Breaks.break
 
@@ -28,6 +29,7 @@ object PuppetClassGenerator {
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val GeneratedClassesFolder : String = getClass.getProtectionDomain.getCodeSource.getLocation.getPath.drop(1).replace('/', '\\') + "generated\\"
     val EnqueueingSourcesFolder: String = GeneratedClassesFolder + "\\queue\\"
+    private val classLoader = new URLClassLoader(Array(URI.create(GeneratedClassesFolder).toURL))
 
     private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetObject]]()
 
@@ -59,8 +61,8 @@ object PuppetClassGenerator {
         if (exitValue != 0)
             throw new InvalidPuppetDefException(s"Javac rejected compilation of class $puppetClassName, check above error prints for further details.")
         AppLogger.debug(s"Compilation done.")
-        Class.forName()
-        break
+        classLoader.loadClass(GeneratedClassesPackage + "." + puppetClassName)
+            .asInstanceOf[Class[_ <: PuppetObject]]
     }
 
     def genConstantGettersFields(desc: PuppetClassFields): String = {

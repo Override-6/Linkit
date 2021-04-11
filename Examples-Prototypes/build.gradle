@@ -41,6 +41,6 @@ dependencies {
 
     implementation project(':AbstractCore')
     implementation project(':API')
-    implementation project(':LinkitPlugins:DebugExtension')
-    implementation project(':LinkitPlugins:CLICommands')
+//    implementation project(':LinkitPlugins:DebugExtension')
+//    implementation project(':LinkitPlugins:CLICommands')
 }
