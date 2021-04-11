@@ -10,22 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.agent
+package fr.linkit.core.connection.network.cache.puppet
 
-import java.lang.instrument.Instrumentation
-
-object LinkitAgent {
-
-    @volatile private var loaded = false
-
-    def premain(agentArgs: String, inst: Instrumentation): Unit = {
-        if (loaded)
-            return
-        println("[Agent] In premain method")
-
-
-
-        loaded = true
-    }
+trait PuppetObject extends Serializable {
 
 }

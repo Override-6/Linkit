@@ -12,87 +12,71 @@
 
 package fr.linkit.core.connection.network.cache.puppet
 
-import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.{Packet, PacketAttributesPresence}
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.connection.packet.Packet
+import fr.linkit.core.connection.packet.fundamental.RefPacket
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.core.connection.packet.traffic.ChannelScopes
-import fr.linkit.core.connection.packet.traffic.channel.request.{RequestPacket, RequestPacketChannel, ResponseSubmitter}
+import fr.linkit.core.connection.packet.traffic.channel.request.ResponseSubmitter
+import fr.linkit.core.local.utils.ScalaUtils
 
-import scala.collection.mutable.ListBuffer
+import java.lang.reflect.Modifier
 
-class ObjectChip[S <: Serializable](channel: RequestPacketChannel,
-                                    presence: PacketAttributesPresence,
-                                    id: Long,
-                                    val owner: String,
-                                    val puppet: S) {
+case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
 
-    private val ownerScope = prepareScope(ChannelScopes.retains(owner))
-    private val bcScope    = prepareScope(ChannelScopes.discardCurrent)
+    private val desc = PuppetClassFields.ofRef(puppet)
 
-    private val puppetModifications = ListBuffer.empty[(String, Any)]
-    private val puppeteer           = Puppeteer[S](puppet)
-
-    def sendInvoke(methodName: String, args: Any*): Any = {
-        channel.makeRequest(ownerScope)
-                .addPacket(ObjectPacket((methodName, Array(args: _*))))
-                .submit()
-                .detach()
-
+    def updateField(fieldName: String, value: Any): Unit = {
+        desc.getSharedField(fieldName)
+                .fold()(ScalaUtils.setFieldValue(_, puppet, value))
     }
 
-    def addFieldUpdate(fieldName: String, newValue: Any): Unit = {
-        AppLogger.vDebug(s"Field '$fieldName' of object $puppet took value $newValue")
-        if (puppeteer.autoFlush)
-            flushModification((fieldName, newValue))
-        else puppetModifications += ((fieldName, newValue))
+    def updateAllFields(obj: Serializable): Unit = {
+        desc.foreachSharedFields(field => {
+            val value = field.get(obj)
+            ScalaUtils.setFieldValue(field, puppet, value)
+        })
     }
 
-    def updatePuppet(newVersion: Serializable): Unit = {
-        puppeteer.updateAllFields(newVersion)
+    def canCallMethod(methodName: String): Boolean = desc.getSharedMethod(methodName).isDefined
+
+    def callMethod(methodName: String, params: Serializable*): Serializable = {
+        if (!canCallMethod(methodName))
+            throw new PuppetException(s"Attempted to invoke cached method '$methodName'")
+
+        val method = desc.getSharedMethod(methodName).get
+        method.invoke(methodName, params)
+                .asInstanceOf[Serializable]
     }
 
-    def sendUpdatePuppet(newVersion: Serializable): Unit = {
-        puppeteer.accessor.foreachSharedFields(field => addFieldUpdate(field.getName, field.get(newVersion)))
-    }
-
-    private[puppet] def handleRequest(packet: Packet, submitter: ResponseSubmitter): Unit = {
+    private[puppet] def handleBundle(packet: Packet, submitter: ResponseSubmitter): Unit = {
         packet match {
             case ObjectPacket((fieldName: String, value: Any)) =>
-                puppeteer.updateField(fieldName, value)
+                val field = desc.getSharedField(fieldName).get
+                ScalaUtils.setFieldValue(field, puppet, value)
 
             case ObjectPacket((methodName: String, args: Array[Any])) =>
                 var result: Serializable = null
-                if (puppeteer.canCallMethod(methodName)) {
-                    result = puppeteer.callMethod(methodName, args)
+                if (canCallMethod(methodName)) {
+                    result = callMethod(methodName, args)
                 }
                 submitter
-                        .addPacket(ObjectPacket(result))
+                        .addPacket(RefPacket(result))
                         .submit()
         }
     }
 
-    def flush(): this.type = {
-        puppetModifications.foreach(flushModification)
-        puppetModifications.clear()
-        this
-    }
+}
 
-    private def flushModification(mod: (String, Any)): Unit = {
-        channel.makeRequest(bcScope)
-                .addPacket(ObjectPacket(mod))
-                .submit()
-                .detach()
-    }
+object ObjectChip {
 
-    private def prepareScope(factory: ScopeFactory[_ <: ChannelScope]): ChannelScope = {
-        val writer = channel.traffic.newWriter(channel.identifier)
-        val scope  = factory.apply(writer)
-        presence.drainAllDefaultAttributes(scope)
-        scope
-                .addDefaultAttribute("owner", owner)
-                .addDefaultAttribute("id", id)
+    def apply[S <: Serializable](owner: String, puppet: S): ObjectChip[S] = {
+        if (puppet == null)
+            throw new NullPointerException("puppet is null !")
+        val clazz = puppet.getClass
+
+        if (Modifier.isFinal(clazz.getModifiers))
+            throw new IllegalPuppetException("Puppet can't be final.")
+
+        new ObjectChip[S](owner, puppet)
     }
 
 }

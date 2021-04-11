@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.puppet;
+package fr.linkit.core.connection.network.cache.puppet.generation
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import fr.linkit.api.local.system.AppException
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
-public @interface Cached {
+class InvalidPuppetDefException(msg: String) extends AppException(msg) {
+
 }

@@ -16,8 +16,10 @@ import scala.annotation.meta.field
 
 object AnnotationHelper {
 
-    type SharedObject = fr.linkit.core.connection.network.cache.puppet.SharedObject@field
-    type Shared = fr.linkit.core.connection.network.cache.puppet.Shared@field
-    type Cached = fr.linkit.core.connection.network.cache.puppet.Cached@field
+    import fr.linkit.core.connection.network.cache.puppet
+
+    type SharedObject = puppet.SharedObject@field
+    type Shared = puppet.Shared@field
+    type Hidden = puppet.Hidden@field
 
 }
