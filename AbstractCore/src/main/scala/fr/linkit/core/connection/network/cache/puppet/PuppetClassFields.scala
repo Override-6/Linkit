@@ -63,13 +63,12 @@ object PuppetClassFields {
                 .getAnnotation(classOf[SharedObject])
                 .autoFlush()
 
-        val simpleName = clazz.getSimpleName
+        val simpleName        = clazz.getSimpleName
         val puppetConstructor = clazz.getDeclaredConstructors
-                .find({ constructor =>
-                    val args = constructor.getParameterTypes
-                    args.length == 2 && args.contains(clazz)
-                }).getOrElse(throw new InvalidPuppetDefException(
-            s"""This puppet must contain an accessible constructor 'x $simpleName($simpleName other)' in order to be extended by a generated class.
+                .find(_.getParameterTypes sameElements Array(clazz))
+                .getOrElse(throw new InvalidPuppetDefException(
+            s"""For puppet class $clazz
+               |This puppet must contain an accessible constructor 'x $simpleName($simpleName other)' in order to be extended by a generated class.
                | If you are not the maintainer of this class, you can simply extend the class, define the appointed constructor and give the implementation
                | to the puppet generator.
                |""".stripMargin))

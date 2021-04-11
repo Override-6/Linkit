@@ -36,7 +36,7 @@ class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
 
     def getPuppet: S = puppet
 
-    def sendInvokeAndReturn[R <: Serializable](methodName: String, args: Any*): R = {
+    def sendInvokeAndReturn[R <: Serializable](methodName: String, args: Array[Any]): R = {
         channel.makeRequest(ownerScope)
                 .addPacket(ObjectPacket((methodName, Array(args: _*))))
                 .submit()
@@ -44,7 +44,7 @@ class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
                 .nextPacket[RefPacket[R]].value
     }
 
-    def sendInvoke(methodName: String, args: Any*): Unit = {
+    def sendInvoke(methodName: String, args: Array[Any]): Unit = {
         channel.makeRequest(ownerScope)
                 .addPacket(ObjectPacket((methodName, Array(args: _*))))
                 .submit()
