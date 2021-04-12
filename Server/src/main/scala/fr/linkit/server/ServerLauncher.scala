@@ -16,6 +16,8 @@ import java.util.concurrent.locks.LockSupport
 
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.plugin.controller.ControllerExtension
+import fr.linkit.plugin.debug.DebugExtension
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
@@ -48,8 +50,8 @@ object ServerLauncher {//
         serverAppContext.runLater {
             val pluginManager = serverAppContext.pluginManager
             pluginManager.loadAllClass(Array(
-        //        classOf[ControllerExtension]: Class[_ <: Plugin],
-        //        classOf[DebugExtension]: Class[_ <: Plugin],
+                classOf[ControllerExtension]: Class[_ <: Plugin],
+                classOf[DebugExtension]: Class[_ <: Plugin],
             ))
             LockSupport.unpark(mainThread)
         }

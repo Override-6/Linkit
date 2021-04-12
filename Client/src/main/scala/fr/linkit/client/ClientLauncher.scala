@@ -78,6 +78,8 @@ object ClientLauncher {
             }
         }
 
+        Product1
+
         val client = ClientApplication.launch(config, getClass)
         AppLogger.trace(s"Build completed: $client")
         client.runLater {

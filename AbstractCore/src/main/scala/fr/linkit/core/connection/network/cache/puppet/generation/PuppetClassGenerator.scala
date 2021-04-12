@@ -27,9 +27,9 @@ import scala.util.control.Breaks.break
 object PuppetClassGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
-    val GeneratedClassesFolder : String = getClass.getProtectionDomain.getCodeSource.getLocation.getPath.drop(1).replace('/', '\\') + "generated\\"
-    val EnqueueingSourcesFolder: String = GeneratedClassesFolder + "\\queue\\"
-    private val classLoader = new URLClassLoader(Array(URI.create(GeneratedClassesFolder).toURL))
+    val GeneratedClassesFolder : String =  "/generated/"
+    val EnqueueingSourcesFolder: String = GeneratedClassesFolder + "/queue/"
+    private val classLoader = new URLClassLoader(Array(Path.of(GeneratedClassesFolder).toUri.toURL))
 
     private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetObject]]()
 
@@ -43,7 +43,7 @@ object PuppetClassGenerator {
         val sourceCode = genPuppetClassSourceCode[S](clazz)
 
         val puppetClassName = "Puppet" + clazz.getSimpleName
-        val path = Path.of(EnqueueingSourcesFolder + puppetClassName + ".java")
+        val path = Path.of(EnqueueingSourcesFolder + puppetClassName + ".java").toAbsolutePath
         println(s"path = ${path}")
         if (Files.notExists(path)) {
             Files.createDirectories(path.getParent)
