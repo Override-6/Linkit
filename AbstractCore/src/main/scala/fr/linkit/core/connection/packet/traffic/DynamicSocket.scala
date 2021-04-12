@@ -15,8 +15,7 @@ package fr.linkit.core.connection.packet.traffic
 import fr.linkit.api.connection.network.ExternalConnectionState
 import fr.linkit.api.local.concurrency.packetWorkerExecution
 import fr.linkit.api.local.system.{AppException, AppLogger, IllegalCloseException, JustifiedCloseable, Reason}
-import fr.linkit.core.connection.packet.serialization.NumberSerializer
-import fr.linkit.core.local.utils.ConsumerContainer
+import fr.linkit.core.local.utils.{ConsumerContainer, NumberSerializer}
 
 import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}

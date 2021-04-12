@@ -26,6 +26,7 @@ dependencies {
     implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.5'
     implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
     //implementation group: 'org.javassist', name: 'javassist', version: '3.22.0-GA'
+    implementation group: 'io.suzaku', name: 'boopickle_2.12', version: '1.3.3'
 
 
     implementation project(':API')

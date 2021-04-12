@@ -13,13 +13,11 @@
 package fr.linkit.prototypes
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.api.local.ApplicationContext
-import fr.linkit.core.connection.network.AbstractNetwork
 import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayRefPacket
-import fr.linkit.core.connection.packet.serialization.HashCodeTypesObjectSerializer
+import fr.linkit.core.connection.packet.fundamental.RefPacket.{ArrayRefPacket, ObjectPacket}
+import fr.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.linkit.core.connection.packet.serialization.v2.tree.ClassTree
 import fr.linkit.core.connection.packet.traffic.channel.request.ResponsePacket
-import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
 
 import java.sql.Timestamp
@@ -28,21 +26,16 @@ import java.time.Instant
 object Tests {
 
     private val coords     = DedicatedPacketCoordinates(12, "s1", "TestServer1")
-    private val packet     = ResponsePacket(6, Array(ArrayRefPacket(Array(2, Timestamp.from(Instant.now())))))
+    private val packet     = WrappedPacket("Hey", WrappedPacket("World", ObjectPacket(Array(("How", 15), ("Are", 50), ("freaking", 48), "you?"))))
     private val attributes = SimplePacketAttributes.empty
 
     private val fsa = JDKFileSystemAdapters.Nio
 
     def main(args: Array[String]): Unit = {
-        /*println("Performing Linkit classes mapping...")
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, getClass, classOf[ApplicationContext], Predef.getClass, classOf[AbstractNetwork])
-        println("Performing JDK classes mapping...")
-        ClassMapEngine.mapJDK(fsa)
-
-        val bytes = HashCodeTypesObjectSerializer.serialize(Array(coords, packet, attributes), true)
-        println(s"new String(bytes) = ${new String(bytes)} (l: ${bytes.length}) ")
-        val obj = HashCodeTypesObjectSerializer.deserializeAll(bytes)
-        println(s"obj = ${obj.mkString("Array(", ", ", ")")}")*/
+        val tree = new ClassTree
+        val node = tree.getNodeForRef(packet)
+        val bytes = node.serialize(packet, true)
+        println(s"new String(bytes) = ${new String(bytes)} (${bytes.length})")
     }
 
 }

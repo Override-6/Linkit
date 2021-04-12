@@ -39,6 +39,8 @@ object ClassMappings {
 
     def getClassName(hashCode: Int): String = classes.get(hashCode)
 
+    def getClass(hashCode: Int): Class[_] = Class.forName(getClassName(hashCode))
+
     def getClassNameOpt(hashCode: Int): Option[String] = Option(classes.get(hashCode))
 
     def serialize(serializer: Serializer, out: OutputStream): Unit = {

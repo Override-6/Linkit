@@ -16,20 +16,19 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.puppet.AnnotationHelper.Shared
 import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, PuppetObject, Puppeteer}
 import fr.linkit.core.local.mapping.ClassMappings
+
 import java.io.File
 import java.lang.reflect.Method
-import java.net.{URI, URL, URLClassLoader}
+import java.net.URLClassLoader
 import java.nio.file.{Files, Path}
-
 import scala.collection.mutable
-import scala.util.control.Breaks.break
 
 object PuppetClassGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val GeneratedClassesFolder : String =  "/generated/"
     val EnqueueingSourcesFolder: String = GeneratedClassesFolder + "/queue/"
-    private val classLoader = new URLClassLoader(Array(Path.of(GeneratedClassesFolder).toUri.toURL))
+    private val classLoader = new URLClassLoader(Array(Path.of(GeneratedClassesFolder).toRealPath().toUri.toURL))
 
     private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetObject]]()
 
@@ -60,6 +59,7 @@ object PuppetClassGenerator {
         val exitValue = javacProcess.start().waitFor()
         if (exitValue != 0)
             throw new InvalidPuppetDefException(s"Javac rejected compilation of class $puppetClassName, check above error prints for further details.")
+
         AppLogger.debug(s"Compilation done.")
         classLoader.loadClass(GeneratedClassesPackage + "." + puppetClassName)
             .asInstanceOf[Class[_ <: PuppetObject]]

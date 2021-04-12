@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization
+package fr.linkit.core.local.utils
 
 object NumberSerializer {
 
@@ -65,6 +65,57 @@ object NumberSerializer {
                 ((0xff & bytes(index + 5)) << 16) |
                 ((0xff & bytes(index + 6)) << 8) |
                 ((0xff & bytes(index + 7)) << 0)
+    }
+
+    def serializeNumber(value: Long, insertFlag: Boolean = false): Array[Byte] = {
+        //println(s"Serializing number $value, insertFlag: $insertFlag")
+
+        def flagged(array: Array[Byte]): Array[Byte] = (if (insertFlag) Array(array.length.toByte) else Array()) ++ array
+
+        if (Byte.MinValue < value && value < Byte.MaxValue) {
+            //println("Byte")
+            return flagged(Array(value.toByte))
+        }
+
+        if (Short.MinValue < value && value < Short.MaxValue) {
+            //println(s"Short (${value.toShort}) - " + new String(serializeShort(value.toShort)))
+            return flagged(serializeShort(value.toShort))
+        }
+
+        if (Int.MinValue < value && value < Int.MaxValue) {
+            //println("Int")
+            return flagged(serializeInt(value.toInt))
+        }
+
+        //println("Long")
+        flagged(serializeLong(value))
+    }
+
+    /**
+     * @return a pair with the deserialized number at left, and his length in the array at right.
+     * */
+    def deserializeFlaggedNumber[@specialized(Byte) T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
+
+        //println(s"Deserializing number in region ${new String(bytes.slice(from, to))}")
+
+        var result       = 0
+        val numberLength = bytes(start)
+        if (numberLength == 1)
+            return (bytes(start + 1).asInstanceOf[T], 2)
+
+        val limit = start + numberLength
+
+        //println(s"from = ${from}")
+        for (i <- (start + 1) to limit) {
+            val b = bytes(i)
+            //println(s"i = ${i}")
+            //println(s"b = ${b} ${new String(Array(b))}")
+            result |= (0xff & b) << i * 8
+            //println(s"result = ${result}")
+        }
+        //println(s"result = ${result}")
+
+        (result.asInstanceOf[T], (numberLength + 1).toByte)
     }
 
     def convertToShortArray(array: Array[Byte]): Array[Short] = {

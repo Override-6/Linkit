@@ -18,10 +18,10 @@ import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
-import fr.linkit.core.connection.packet.serialization.NumberSerializer
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.core.local.system.SystemPacketChannel
+import fr.linkit.core.local.utils.NumberSerializer
 import fr.linkit.server.network.ServerSideNetwork
 import fr.linkit.server.task.ConnectionTasksHandler
 

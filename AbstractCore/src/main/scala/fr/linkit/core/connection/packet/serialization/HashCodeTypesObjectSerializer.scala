@@ -14,6 +14,7 @@ package fr.linkit.core.connection.packet.serialization
 
 import fr.linkit.api.connection.packet.PacketException
 import fr.linkit.core.local.mapping.ClassMappings
+import fr.linkit.core.local.utils.NumberSerializer
 
 object HashCodeTypesObjectSerializer extends ObjectSerializer {
 

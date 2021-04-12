@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.packet.serialization
 
-import fr.linkit.core.connection.packet.serialization.NumberSerializer.serializeInt
+import fr.linkit.core.local.utils.NumberSerializer.serializeInt
 
 import scala.collection.mutable
 

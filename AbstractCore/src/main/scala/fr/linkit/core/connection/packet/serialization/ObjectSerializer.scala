@@ -15,7 +15,7 @@ package fr.linkit.core.connection.packet.serialization
 import fr.linkit.api.connection.packet.PacketException
 import fr.linkit.api.connection.packet.serialization.strategy.{SerialStrategy, StrategicSerializer, StrategyHolder}
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.connection.packet.serialization.NumberSerializer._
+import fr.linkit.core.local.utils.NumberSerializer._
 import fr.linkit.core.connection.packet.serialization.ObjectSerializer._
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.core.local.utils.ScalaUtils
