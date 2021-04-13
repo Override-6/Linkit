@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.packet.serialization.v2.tree
 
-import org.jetbrains.annotations.{NotNull, Nullable}
+import org.jetbrains.annotations.Nullable
 
 trait SerialNode[T] {
 

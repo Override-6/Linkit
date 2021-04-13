@@ -13,7 +13,7 @@
 package fr.linkit.core.connection.packet.serialization.v2.tree
 
 import fr.linkit.core.connection.packet.serialization.v2.tree.ClassTree.MegaByte
-import fr.linkit.core.local.utils.NumberSerializer
+import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 
 object PrimitiveNode {
 
@@ -28,10 +28,11 @@ object PrimitiveNode {
 
     val Flags: Array[Byte] = Array(CharFlag, IntFlag, FloatFlag, LongFlag, ShortFlag, ByteFlag, DoubleFlag, BooleanFlag)
 
+    private val OtherWrapperClasses: Array[Class[_]] = Array(classOf[Character], classOf[Boolean])
+
     def apply[T <: AnyVal]: NodeFactory[T] = new NodeFactory[T] {
         override def canHandle(clazz: Class[_]): Boolean = {
-            println(s"clazz = ${clazz}")
-            clazz.isPrimitive
+            clazz.isPrimitive || (classOf[Number].isAssignableFrom(clazz) && clazz.getPackageName == "java.lang") || OtherWrapperClasses.contains(clazz)
         }
 
         override def canHandle(bytes: Array[Byte]): Boolean = bytes.nonEmpty && Flags.contains(bytes(0))
@@ -68,17 +69,18 @@ object PrimitiveNode {
     class PrimitiveDeserialNode[T <: AnyVal](bytes: Array[Byte], override val parent: DeserialNode[_]) extends DeserialNode[T] {
 
         override def deserialize(): T = {
+            println(s"Deserializing primitive of bytes ${ScalaUtils.toPresentableString(bytes)}")
             val flag = bytes(0)
             println(s"flag = ${flag}")
             val v = flag match {
                 case ByteFlag    => bytes(1)
-                case IntFlag     => NumberSerializer.deserializeInt(bytes, 0)
-                case ShortFlag   => NumberSerializer.deserializeShort(bytes, 0)
-                case LongFlag    => NumberSerializer.deserializeLong(bytes, 0)
-                case DoubleFlag  => java.lang.Double.longBitsToDouble(NumberSerializer.deserializeLong(bytes, 0))
-                case FloatFlag   => java.lang.Float.intBitsToFloat(NumberSerializer.deserializeInt(bytes, 0))
-                case BooleanFlag => bytes(1) == 1
-                case CharFlag    => NumberSerializer.deserializeInt(bytes, 0).toChar
+                case IntFlag     => NumberSerializer.deserializeFlaggedNumber[Int](bytes, 0)._1
+                case ShortFlag   => NumberSerializer.deserializeFlaggedNumber[Short](bytes, 0)._1
+                case LongFlag    => NumberSerializer.deserializeFlaggedNumber[Long](bytes, 0)._1
+                case DoubleFlag  => java.lang.Double.longBitsToDouble(NumberSerializer.deserializeFlaggedNumber[Long](bytes, 0)._1)
+                case FloatFlag   => java.lang.Float.intBitsToFloat(NumberSerializer.deserializeFlaggedNumber[Int](bytes, 0)._1)
+                case BooleanFlag => NumberSerializer.deserializeFlaggedNumber[Byte](bytes, 0)._1
+                case CharFlag    => NumberSerializer.deserializeFlaggedNumber[Int](bytes, 0)._1.toChar
             }
             v.asInstanceOf[T]
         }

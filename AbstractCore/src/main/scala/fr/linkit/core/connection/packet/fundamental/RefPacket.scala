@@ -28,6 +28,14 @@ sealed trait RefPacket[A <: Serializable] extends Packet {
     val value: A
 
     def casted[C <: A]: C = value.asInstanceOf[C]
+
+    override def toString: String = {
+        val valueString = value match {
+            case array: Array[Any] => array.mkString("Array(", ", ", ")")
+            case obj => obj.toString
+        }
+        getClass.getSimpleName + s"($valueString)"
+    }
 }
 
 object RefPacket {

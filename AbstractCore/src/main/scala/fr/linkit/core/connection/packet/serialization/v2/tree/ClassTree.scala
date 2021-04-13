@@ -29,7 +29,7 @@ class ClassTree {
                 .newNode(this, getDesc(clazz), parent)
     }
 
-    def getNodeForRef[T](any: T): SerialNode[T] = {
+    def getSerialNodeForRef[T](any: T): SerialNode[T] = {
         getNodeForClass[T](any.getClass.asInstanceOf[Class[_]])
     }
 
@@ -43,7 +43,6 @@ class ClassTree {
 
     def listNodes(desc: SerializableClassDescription, obj: Any, parent: SerialNode[_]): List[SerialNode[_]] = {
         val fields = desc.serializableFields
-        println(s"fields = ${fields}")
         fields.map(field => getNodeForClass(field.get(obj).getClass, parent))
     }
 
@@ -51,7 +50,7 @@ class ClassTree {
         descriptions.getOrElseUpdate(clazz, new SerializableClassDescription(clazz))
     }
 
-    def getNodeFor(bytes: Array[Byte], parent: DeserialNode[_] = null): DeserialNode[_] = {
+    def getDeserialNodeFor(bytes: Array[Byte], parent: DeserialNode[_] = null): DeserialNode[_] = {
         userFactories.find(_.canHandle(bytes))
                 .getOrElse(getDefaultFactory(bytes))
                 .newNode(this, bytes, parent)
@@ -64,15 +63,17 @@ class ClassTree {
     }
 
     private def getDefaultFactory[T](bytes: Array[Byte]): NodeFactory[T] = {
-        defaultFactories.find(_.canHandle(bytes))
+         defaultFactories.find(_.canHandle(bytes))
                 .get
                 .asInstanceOf[NodeFactory[T]]
     }
 
-    defaultFactories += ObjectNode.apply
-    defaultFactories += PrimitiveNode.apply
-    defaultFactories += EnumNode.apply
+    //The order of registration have an effect.
     defaultFactories += ArrayNode
+    defaultFactories += PrimitiveNode.apply
+    defaultFactories += ObjectNode.apply
+    defaultFactories += EnumNode.apply
+    defaultFactories += StringNode
 
 }
 

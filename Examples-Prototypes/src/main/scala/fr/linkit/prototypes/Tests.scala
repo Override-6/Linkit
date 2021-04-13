@@ -13,15 +13,15 @@
 package fr.linkit.prototypes
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
+import fr.linkit.api.local.ApplicationContext
 import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.fundamental.RefPacket.{ArrayRefPacket, ObjectPacket}
+import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.linkit.core.connection.packet.serialization.LocalCachedObjectSerializer
 import fr.linkit.core.connection.packet.serialization.v2.tree.ClassTree
-import fr.linkit.core.connection.packet.traffic.channel.request.ResponsePacket
+import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
-
-import java.sql.Timestamp
-import java.time.Instant
+import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
 
 object Tests {
 
@@ -32,10 +32,27 @@ object Tests {
     private val fsa = JDKFileSystemAdapters.Nio
 
     def main(args: Array[String]): Unit = {
-        val tree = new ClassTree
-        val node = tree.getNodeForRef(packet)
-        val bytes = node.serialize(packet, true)
-        println(s"new String(bytes) = ${new String(bytes)} (${bytes.length})")
+        doMappings()
+
+        {
+            val tree  = new ClassTree
+            val node  = tree.getSerialNodeForRef(packet)
+            val bytes = node.serialize(packet, true)
+            println(s"New : String(bytes) = ${toPresentableString(bytes)} (l: ${bytes.length})")
+            val result = tree.getDeserialNodeFor(bytes).deserialize()
+            println(s"result = ${result}")
+        }
+        {
+            val bytes = LocalCachedObjectSerializer.serialize(packet, true)
+            println(s"Old : String(bytes) = ${toPresentableString(bytes)} (l: ${bytes.length})")
+        }
+
+        println(s"ORIGIN IS : $packet")
+    }
+
+    private def doMappings(): Unit = {
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext])
+        ClassMapEngine.mapJDK(fsa)
     }
 
 }

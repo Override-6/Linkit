@@ -80,4 +80,10 @@ object ScalaUtils {
         }
     }
 
+    implicit def toPresentableString(bytes: Array[Byte]): String = {
+        new String(bytes)
+                .replace("\r", "R")
+                .replace("\n", "N")
+    }
+
 }

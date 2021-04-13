@@ -23,14 +23,11 @@ object LocalCachedObjectSerializer extends ObjectSerializer {
 
     private val cache = new mutable.HashMap[Int, String]()
 
-    override val signature: Array[Byte] = Array(0)
+    override val signature: Array[Byte] = Array(12)
 
     override def serializeType(clazz: Class[_]): Array[Byte] = {
         val name = clazz.getName
         val hash = name.hashCode
-
-        println(s"name = ${name}")
-        println(s"hash = ${hash}")
 
         cache.put(hash, name)
         serializeInt(hash)

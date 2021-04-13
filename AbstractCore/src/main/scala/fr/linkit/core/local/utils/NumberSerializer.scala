@@ -49,10 +49,13 @@ object NumberSerializer {
     }
 
     def deserializeInt(bytes: Array[Byte], index: Int): Int = {
-        (0xff & bytes(index)) << 24 |
+        println(s"Deserializing int from byte array ${ScalaUtils.toPresentableString(bytes.take(index + 4))}")
+        val result = (0xff & bytes(index)) << 24 |
                 ((0xff & bytes(index + 1)) << 16) |
                 ((0xff & bytes(index + 2)) << 8) |
                 ((0xff & bytes(index + 3)) << 0)
+        println(s"result = ${result}")
+        result
     }
 
     def deserializeLong(bytes: Array[Byte], index: Int): Long = {
@@ -94,7 +97,7 @@ object NumberSerializer {
     /**
      * @return a pair with the deserialized number at left, and his length in the array at right.
      * */
-    def deserializeFlaggedNumber[@specialized(Byte) T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
+    def deserializeFlaggedNumber[@specialized() T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
 
         //println(s"Deserializing number in region ${new String(bytes.slice(from, to))}")
 

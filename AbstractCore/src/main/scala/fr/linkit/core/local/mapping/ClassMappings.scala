@@ -21,7 +21,7 @@ import scala.collection.mutable
 
 object ClassMappings {
 
-    private val classes = new util.HashMap[Int, String]()
+    private val classes = new mutable.HashMap[Int, String]()
     private val sources = mutable.HashSet.empty[CodeSource]
 
     def putClass(className: String): Unit = {
@@ -37,11 +37,22 @@ object ClassMappings {
 
     def putClass(clazz: Class[_]): Unit = putClass(clazz.getName)
 
-    def getClassName(hashCode: Int): String = classes.get(hashCode)
+    def getClassName(hashCode: Int): String = classes(hashCode)
 
     def getClass(hashCode: Int): Class[_] = Class.forName(getClassName(hashCode))
 
-    def getClassNameOpt(hashCode: Int): Option[String] = Option(classes.get(hashCode))
+    def getClassOpt(hashCode: Int): Option[Class[_]] = {
+        getClassNameOpt(hashCode)
+                .map(Class.forName)
+    }
+
+    def getClassNameOpt(hashCode: Int): Option[String] = classes.get(hashCode)
+
+    def isRegistered(hashCode: Int): Boolean = classes.contains(hashCode)
+
+    def isRegistered(clazz: Class[_]): Boolean = isRegistered(clazz.getName)
+
+    def isRegistered(className: String): Boolean = classes.contains(className.hashCode)
 
     def serialize(serializer: Serializer, out: OutputStream): Unit = {
         val bytes = serializer.serialize(classes, true)

@@ -12,12 +12,20 @@
 
 package fr.linkit.core.connection.packet.serialization.v2.tree
 
-import fr.linkit.core.local.utils.NumberSerializer
+import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 
 case class LengthSign(lengths: Array[Int], childrenBytes: Array[Array[Byte]]) {
 
     def toBytes: Array[Byte] = {
-        lengths.flatMap(l => NumberSerializer.serializeNumber(l, true)) ++ childrenBytes.flatten
+        println("toBytes invoked:")
+        println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
+        val lengthsBytes = lengths.flatMap(l => NumberSerializer.serializeNumber(l, true))
+        println(s"lengthsBytes = ${ScalaUtils.toPresentableString(lengthsBytes)}")
+        println(s"children bytes = ${ScalaUtils.toPresentableString(childrenBytes.flatten)}")
+        val result = lengthsBytes ++ childrenBytes.flatten
+        println("Result = " + ScalaUtils.toPresentableString(result))
+        println("End.")
+        result
     }
 
 }
@@ -25,45 +33,72 @@ case class LengthSign(lengths: Array[Int], childrenBytes: Array[Array[Byte]]) {
 object LengthSign {
 
     def of(root: Any, desc: SerializableClassDescription, children: Iterable[SerialNode[_]]): LengthSign = {
+        println()
+        println(s"--- Creating sign for object $root")
         val lengths    = new Array[Int](children.size - 1) //Discard the last field, we already know his length by deducting it from previous lengths
         val byteArrays = new Array[Array[Byte]](children.size)
 
         val fieldValues = desc.serializableFields
                 .map(_.get(root))
 
+        println(s"fieldValues = ${fieldValues}")
+
         var i = 0
+        println("-- Setting children")
         for (child <- children) {
+            println(s"- For child $child ($i): ")
             val fieldValue = fieldValues(i)
             println(s"fieldValue = ${fieldValue}")
             println(s"child = ${child}")
             val bytes = child.serialize(cast(fieldValue), true)
+            println(s"child bytes = ${ScalaUtils.toPresentableString(bytes)}")
 
             byteArrays(i) = bytes
             if (i < lengths.length)
                 lengths(i) = bytes.length
+            println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
             i += 1
         }
+        println("Done.")
+        println()
         LengthSign(lengths, byteArrays)
     }
 
     def from(signItemCount: Int, bytes: Array[Byte], totalObjectLength: Int, start: Int): LengthSign = {
+        println()
+        println(s"--- Reading sign from bytes ${ScalaUtils.toPresentableString(bytes)}")
+        println(s"signItemCount = ${signItemCount}")
+        println(s"totalObjectLength = ${totalObjectLength}")
+        println(s"start = ${start}")
         val lengths            = new Array[Int](signItemCount) //Discard the last field, we already know his length by deducting it from totalObjectLength
         val childrenByteArrays = new Array[Array[Byte]](signItemCount + 1)
 
         var currentIndex = start
+        println("-- Reading lengths ")
         for (i <- 0 until signItemCount) {
-            val (length, lengthByteCount) = NumberSerializer.deserializeFlaggedNumber(bytes, currentIndex)
+            println(s"FOR LENGTH ${i}: ")
+            val (length, lengthByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, currentIndex)
             lengths(i) = length
+            println(s"length = ${length}")
+            println(s"lengthByteCount = ${lengthByteCount}")
+            println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
             currentIndex += lengthByteCount
+            println(s"currentIndex is now = ${currentIndex}")
         }
 
-        for (i <- 0 until (signItemCount + 1)) {
-            val childrenSize = if (i == lengths.length) currentIndex - totalObjectLength else lengths(i)
-
+        println("-- Reading children bytes")
+        for (i <- 0 to signItemCount) {
+            println(s"- FOR CHILD ${i}: ")
+            val childrenSize = if (i == lengths.length) totalObjectLength - currentIndex else lengths(i)
+            println(s"childrenSize = ${childrenSize}")
+            println(s"currentIndex = ${currentIndex}")
             val childrenBytes = bytes.slice(currentIndex, currentIndex + childrenSize)
+            println(s"childrenBytes = ${ScalaUtils.toPresentableString(childrenBytes)}")
             childrenByteArrays(i) = childrenBytes
+            String.valueOf()
             currentIndex += childrenSize
         }
+        println()
         LengthSign(lengths, childrenByteArrays)
     }
 
