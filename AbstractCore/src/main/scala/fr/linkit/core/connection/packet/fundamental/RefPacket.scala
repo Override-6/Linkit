@@ -13,6 +13,7 @@
 package fr.linkit.core.connection.packet.fundamental
 
 import fr.linkit.api.connection.packet.Packet
+import fr.linkit.core.local.utils.NumberSerializer
 
 import java.io.Serializable
 

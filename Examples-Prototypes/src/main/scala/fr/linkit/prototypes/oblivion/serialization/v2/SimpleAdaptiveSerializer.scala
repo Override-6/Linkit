@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2
+package fr.linkit.prototypes.oblivion.serialization.v2
 
 import scala.collection.mutable.ListBuffer
 

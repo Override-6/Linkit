@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2.tree
+package fr.linkit.prototypes.oblivion.serialization.v2.tree
 
 object StringNode extends NodeFactory[String] {
 
@@ -27,7 +27,7 @@ object StringNode extends NodeFactory[String] {
 
     override def canHandle(bytes: Array[Byte]): Boolean = true
 
-    override def newNode(tree: ClassTree, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[String] = new StringSerialNode(parent)
+    override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[String] = new StringSerialNode(parent)
 
-    override def newNode(tree: ClassTree, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[String] = new StringDeserialNode(parent, bytes)
+    override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[String] = new StringDeserialNode(parent, bytes)
 }

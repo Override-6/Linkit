@@ -49,17 +49,17 @@ object NumberSerializer {
     }
 
     def deserializeInt(bytes: Array[Byte], index: Int): Int = {
-        println(s"Deserializing int from byte array ${ScalaUtils.toPresentableString(bytes.take(index + 4))}")
+        //println(s"Deserializing int from byte array ${ScalaUtils.toPresentableString(bytes.take(index + 4))}")
         val result = (0xff & bytes(index)) << 24 |
                 ((0xff & bytes(index + 1)) << 16) |
                 ((0xff & bytes(index + 2)) << 8) |
                 ((0xff & bytes(index + 3)) << 0)
-        println(s"result = ${result}")
+        //println(s"result = ${result}")
         result
     }
 
     def deserializeLong(bytes: Array[Byte], index: Int): Long = {
-        //println("Deserializing int in zone " + new String(bytes.slice(index, index + 8)))
+        ////println("Deserializing int in zone " + new String(bytes.slice(index, index + 8)))
         (0xff & bytes(index)) << 52 |
                 (0xff & bytes(index + 1)) << 48 |
                 (0xff & bytes(index + 2)) << 40 |
@@ -71,44 +71,46 @@ object NumberSerializer {
     }
 
     def serializeNumber(value: Long, insertFlag: Boolean = false): Array[Byte] = {
-        //println(s"Serializing number $value, insertFlag: $insertFlag")
+        ////println(s"Serializing number $value, insertFlag: $insertFlag")
 
         def flagged(array: Array[Byte]): Array[Byte] = (if (insertFlag) Array(array.length.toByte) else Array()) ++ array
 
         if (Byte.MinValue < value && value < Byte.MaxValue) {
-            //println("Byte")
+            ////println("Byte")
             return flagged(Array(value.toByte))
         }
 
         if (Short.MinValue < value && value < Short.MaxValue) {
-            //println(s"Short (${value.toShort}) - " + new String(serializeShort(value.toShort)))
+            ////println(s"Short (${value.toShort}) - " + new String(serializeShort(value.toShort)))
             return flagged(serializeShort(value.toShort))
         }
 
         if (Int.MinValue < value && value < Int.MaxValue) {
-            //println("Int")
+            ////println("Int")
             return flagged(serializeInt(value.toInt))
         }
 
-        //println("Long")
+        ////println("Long")
         flagged(serializeLong(value))
     }
 
     /**
      * @return a pair with the deserialized number at left, and his length in the array at right.
      * */
-    def deserializeFlaggedNumber[@specialized() T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
+    def deserializeFlaggedNumber[@specialized(Int, Short, Byte, Long) T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
 
-        //println(s"Deserializing number in region ${new String(bytes.slice(from, to))}")
 
-        var result       = 0
+        var result: Int       = 0
         val numberLength = bytes(start)
+        //println(s"Deserializing number in region ${new String(bytes.slice(start, start + numberLength))}")
         if (numberLength == 1)
             return (bytes(start + 1).asInstanceOf[T], 2)
 
         val limit = start + numberLength
 
-        //println(s"from = ${from}")
+        //println(s"from = ${start + 1}")
+        //println(s"limit = $limit")
+
         for (i <- (start + 1) to limit) {
             val b = bytes(i)
             //println(s"i = ${i}")
@@ -117,6 +119,7 @@ object NumberSerializer {
             //println(s"result = ${result}")
         }
         //println(s"result = ${result}")
+        //println(s"result.getClass = ${result.getClass}")
 
         (result.asInstanceOf[T], (numberLength + 1).toByte)
     }

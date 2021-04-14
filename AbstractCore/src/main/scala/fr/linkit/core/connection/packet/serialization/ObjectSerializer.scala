@@ -34,6 +34,7 @@ import scala.util.control.NonFatal
 //TODO Deducting number types from their lengths instead of putting a flag MIGHT BE NOT POSSIBLE EVERYWHERE
 //TODO work with byte buffers.
 //TODO Make SerialStrategy usable.
+@deprecated
 abstract class ObjectSerializer extends StrategicSerializer {
 
     private val strategies = mutable.HashMap.empty[Class[_], SerialStrategy[_]]

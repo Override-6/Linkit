@@ -14,7 +14,6 @@ package fr.linkit.client.config
 
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.local.system.security.BytesHasher
-import fr.linkit.core.connection.packet.serialization.AdaptivePacketTranslator
 
 import java.net.{InetSocketAddress, Socket}
 

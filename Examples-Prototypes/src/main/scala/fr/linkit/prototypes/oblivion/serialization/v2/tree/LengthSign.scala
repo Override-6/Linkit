@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2.tree
+package fr.linkit.prototypes.oblivion.serialization.v2.tree
 
 import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 
@@ -77,7 +77,8 @@ object LengthSign {
         println("-- Reading lengths ")
         for (i <- 0 until signItemCount) {
             println(s"FOR LENGTH ${i}: ")
-            val (length, lengthByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, currentIndex)
+            println(i.getClass)
+            val (length, lengthByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, currentIndex: Int)
             lengths(i) = length
             println(s"length = ${length}")
             println(s"lengthByteCount = ${lengthByteCount}")

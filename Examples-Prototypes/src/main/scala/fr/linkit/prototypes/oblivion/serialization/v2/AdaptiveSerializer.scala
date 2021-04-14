@@ -10,13 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2.tree
+package fr.linkit.prototypes.oblivion.serialization.v2
 
-import org.jetbrains.annotations.Nullable
+import fr.linkit.api.connection.packet.serialization.Serializer
 
-trait SerialNode[T] {
+trait AdaptiveSerializer extends Serializer {
 
-    @Nullable val parent: SerialNode[_]
+    def attachAlternative(alternative: SerialAlternative[_]): Unit
 
-    def serialize(t: T, putTypeHint: Boolean): Array[Byte]
 }

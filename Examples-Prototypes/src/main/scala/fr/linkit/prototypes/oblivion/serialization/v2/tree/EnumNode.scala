@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2.tree
+package fr.linkit.prototypes.oblivion.serialization.v2.tree
 
 import fr.linkit.core.local.mapping.ClassMappings
 import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
@@ -28,11 +28,11 @@ object EnumNode {
             ClassMappings.isRegistered(number) && ClassMappings.getClass(number).isInstanceOf[Class[E]]
         }
 
-        override def newNode(tree: ClassTree, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[E] = {
+        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[E] = {
             new EnumSerialNode[E](parent)
         }
 
-        override def newNode(tree: ClassTree, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[E] = {
+        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[E] = {
             new EnumDeserialNode[E](parent, bytes)
         }
     }

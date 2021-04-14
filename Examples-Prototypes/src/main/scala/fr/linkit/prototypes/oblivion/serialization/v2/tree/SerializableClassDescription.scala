@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2.tree
+package fr.linkit.prototypes.oblivion.serialization.v2.tree
 
 import fr.linkit.core.local.utils.NumberSerializer
 

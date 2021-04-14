@@ -10,15 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2.tree
+package fr.linkit.prototypes.oblivion.serialization.v2.tree
 
-import fr.linkit.core.connection.packet.serialization.v2.tree.ClassTree.MegaByte
+import NodeFinder.MegaByte
+import ObjectNode.NullObjectFlag
 import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
+
 
 object ArrayNode extends NodeFactory[Array[_]] {
 
     val ArrayFlag: Byte = -54
+    val EmptyFlag: Byte = -53
 
     override def canHandle(clazz: Class[_]): Boolean = {
         clazz.isArray
@@ -28,18 +31,21 @@ object ArrayNode extends NodeFactory[Array[_]] {
         bytes.nonEmpty && bytes(0) == ArrayFlag
     }
 
-    override def newNode(tree: ClassTree, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Array[_]] = {
-        new ArraySerialNode(parent, tree)
+    override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Array[_]] = {
+        new ArraySerialNode(parent, finder)
     }
 
-    override def newNode(tree: ClassTree, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Array[_]] = {
-        new ArrayDeserialNode(parent, bytes, tree)
+    override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Array[_]] = {
+        new ArrayDeserialNode(parent, bytes, finder)
     }
 
-    class ArraySerialNode(val parent: SerialNode[_], tree: ClassTree) extends SerialNode[Array[_]] {
+    class ArraySerialNode(val parent: SerialNode[_], tree: NodeFinder) extends SerialNode[Array[_]] {
 
         override def serialize(array: Array[_], putTypeHint: Boolean): Array[Byte] = {
             println(s"Serializing array ${array.mkString("Array(", ", ", ")")}")
+            if (array.isEmpty) {
+                return ArrayFlag /\ EmptyFlag
+            }
             val lengths    = new Array[Int](array.length - 1) //Discard the last field, we already know his length by deducting it from previous lengths
             val byteArrays = new Array[Array[Byte]](array.length)
 
@@ -48,6 +54,17 @@ object ArrayNode extends NodeFactory[Array[_]] {
 
             var i = 0
             for (item <- array) {
+                serializeItem(item)
+                i += 1
+            }
+
+            def serializeItem(item: Any): Unit = {
+                if (item == null) {
+                    byteArrays(i) = Array(NullObjectFlag)
+                    if (i != lengths.length)
+                        lengths(i) = 1
+                    return
+                }
                 val itemClass  = item.getClass
                 val typeChange = itemClass != lastClass
                 if (typeChange)
@@ -60,10 +77,9 @@ object ArrayNode extends NodeFactory[Array[_]] {
                 if (i != lengths.length)
                     lengths(i) = bytes.length
 
-                i += 1
-
                 lastClass = itemClass
             }
+
             println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
             val sign = lengths.flatMap(i => NumberSerializer.serializeNumber(i, true))
             println(s"array sign = ${toPresentableString(sign)}")
@@ -79,15 +95,18 @@ object ArrayNode extends NodeFactory[Array[_]] {
         }
     }
 
-    class ArrayDeserialNode(val parent: DeserialNode[_], bytes: Array[Byte], tree: ClassTree) extends DeserialNode[Array[_]] {
+    class ArrayDeserialNode(val parent: DeserialNode[_], bytes: Array[Byte], tree: NodeFinder) extends DeserialNode[Array[_]] {
 
         override def deserialize(): Array[_] = {
-            println(s"Deserializing array into bytes ${ScalaUtils.toPresentableString(bytes)}")
-            val (signItemCount, sizeByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, 1) //starting from 1 because first byte is the array flag.
+            if (bytes(1) == EmptyFlag)
+                return Array.empty
+
+            println(s"Deserializing array into bytes ${toPresentableString(bytes)}")
+            val (signItemCount, sizeByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, 1: Int) //starting from 1 because first byte is the array flag.
             println(s"signItemCount = ${signItemCount}")
             println(s"sizeByteCount = ${sizeByteCount}")
-            val sign                   = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 1)
-            val result                 = new Array[Any](sign.childrenBytes.length)
+            val sign   = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 1)
+            val result = new Array[Any](sign.childrenBytes.length)
 
             var i = 0
             for (childBytes <- sign.childrenBytes) {

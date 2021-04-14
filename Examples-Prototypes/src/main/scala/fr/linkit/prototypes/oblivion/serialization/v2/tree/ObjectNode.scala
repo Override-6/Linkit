@@ -1,16 +1,16 @@
 /*
  *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *  
+ *
  *  This code is free software; you can only use it for personal uses, studies or documentation.
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
- *  
+ *
  *  Please contact maximebatista18@gmail.com if you need additional information or have any
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2.tree
+package fr.linkit.prototypes.oblivion.serialization.v2.tree
 
 import fr.linkit.core.local.mapping.ClassMappings
 import fr.linkit.core.local.utils.NumberSerializer
@@ -18,10 +18,12 @@ import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
 import sun.misc.Unsafe
 
 import java.lang.reflect.Field
+import scala.reflect.{ClassTag, classTag}
 
 object ObjectNode {
 
-    val Constraints: Array[Class[_] => Boolean] = Array(_.isPrimitive, _.isArray, _.isEnum, _ == classOf[String])
+    val Constraints   : Array[Class[_] => Boolean] = Array(_.isPrimitive, _.isArray, _.isEnum, _ == classOf[String])
+    val NullObjectFlag: Byte                       = -76
 
     def apply: NodeFactory[Serializable] = new NodeFactory[Serializable] {
         override def canHandle(clazz: Class[_]): Boolean = {
@@ -29,15 +31,15 @@ object ObjectNode {
         }
 
         override def canHandle(bytes: Array[Byte]): Boolean = {
-            bytes.length >= 4 && ClassMappings.getClassNameOpt(NumberSerializer.deserializeInt(bytes, 0)).isDefined
+            (bytes.nonEmpty && bytes(0) == NullObjectFlag) || (bytes.length >= 4 && ClassMappings.getClassNameOpt(NumberSerializer.deserializeInt(bytes, 0)).isDefined)
         }
 
-        override def newNode(tree: ClassTree, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Serializable] = {
-            new ObjectSerialNode(parent, desc, tree)
+        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Serializable] = {
+            new ObjectSerialNode(parent, desc, finder)
         }
 
-        override def newNode(tree: ClassTree, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Serializable] = {
-            new ObjectDeserialNode(parent, bytes, tree)
+        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Serializable] = {
+            new ObjectDeserialNode(parent, bytes, finder)
         }
     }
 
@@ -55,10 +57,12 @@ object ObjectNode {
         throw new IllegalStateException("No instance of Unsafe found")
     }
 
-    class ObjectSerialNode(override val parent: SerialNode[_], desc: SerializableClassDescription, tree: ClassTree) extends SerialNode[Serializable] {
+    class ObjectSerialNode(override val parent: SerialNode[_], desc: SerializableClassDescription, tree: NodeFinder) extends SerialNode[Serializable] {
 
         override def serialize(t: Serializable, putTypeHint: Boolean): Array[Byte] = {
             println(s"Serializing Object ${t}")
+            if (t == null)
+                return Array(NullObjectFlag)
             val children = tree.listNodes(desc, t, this)
             println(s"children = ${children}")
 
@@ -72,9 +76,12 @@ object ObjectNode {
         }
     }
 
-    class ObjectDeserialNode(override val parent: DeserialNode[_], bytes: Array[Byte], tree: ClassTree) extends DeserialNode[Serializable] {
+    class ObjectDeserialNode(override val parent: DeserialNode[_], bytes: Array[Byte], tree: NodeFinder) extends DeserialNode[Serializable] {
 
         override def deserialize(): Serializable = {
+            if (bytes(0) == NullObjectFlag)
+                return null
+
             println(s"Deserializing object from bytes ${toPresentableString(bytes)}")
             val objectType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
             val desc       = tree.getDesc(objectType)
@@ -103,16 +110,22 @@ object ObjectNode {
         private def setValue(instance: AnyRef, field: Field, value: Any): Unit = {
             val fieldOffset = TheUnsafe.objectFieldOffset(field)
 
-            val action: (Any, Long) => Unit = value match {
-                case i: Int     => TheUnsafe.putInt(_, _, i)
-                case b: Byte    => TheUnsafe.putByte(_, _, b)
-                case s: Short   => TheUnsafe.putShort(_, _, s)
-                case l: Long    => TheUnsafe.putLong(_, _, l)
-                case d: Double  => TheUnsafe.putDouble(_, _, d)
-                case f: Float   => TheUnsafe.putFloat(_, _, f)
-                case b: Boolean => TheUnsafe.putBoolean(_, _, b)
-                case c: Char    => TheUnsafe.putChar(_, _, c)
-                case obj        => TheUnsafe.putObject(_, _, obj)
+            import java.lang
+
+            println(s"value.getClass = ${value.getClass}")
+
+            def isFieldOfType[T: ClassTag]: Boolean = field.getType == classTag[T].runtimeClass
+
+            val action: (AnyRef, Long) => Unit = value match {
+                case i: Integer if isFieldOfType[Int]          => TheUnsafe.putInt(_, _, i)
+                case b: lang.Byte if isFieldOfType[Byte]       => TheUnsafe.putByte(_, _, b)
+                case s: lang.Short if isFieldOfType[Short]     => TheUnsafe.putShort(_, _, s)
+                case l: lang.Long if isFieldOfType[Long]       => TheUnsafe.putLong(_, _, l)
+                case d: lang.Double if isFieldOfType[Double]   => TheUnsafe.putDouble(_, _, d)
+                case f: lang.Float if isFieldOfType[Float]     => TheUnsafe.putFloat(_, _, f)
+                case b: lang.Boolean if isFieldOfType[Boolean] => TheUnsafe.putBoolean(_, _, b)
+                case c: Character if isFieldOfType[Char]       => TheUnsafe.putChar(_, _, c)
+                case obj                                       => TheUnsafe.putObject(_, _, obj)
             }
             action(instance, fieldOffset)
         }

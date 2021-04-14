@@ -10,12 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2.tree
+package fr.linkit.prototypes.oblivion.serialization.v2.tree
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class ClassTree {
+class NodeFinder {
 
     private val userFactories    = ListBuffer.empty[NodeFactory[_]]
     private val defaultFactories = ListBuffer.empty[NodeFactory[_]]
@@ -50,9 +50,10 @@ class ClassTree {
         descriptions.getOrElseUpdate(clazz, new SerializableClassDescription(clazz))
     }
 
-    def getDeserialNodeFor(bytes: Array[Byte], parent: DeserialNode[_] = null): DeserialNode[_] = {
+    def getDeserialNodeFor[T](bytes: Array[Byte], parent: DeserialNode[T] = null): DeserialNode[T] = {
         userFactories.find(_.canHandle(bytes))
                 .getOrElse(getDefaultFactory(bytes))
+                .asInstanceOf[NodeFactory[T]]
                 .newNode(this, bytes, parent)
     }
 
@@ -63,13 +64,15 @@ class ClassTree {
     }
 
     private def getDefaultFactory[T](bytes: Array[Byte]): NodeFactory[T] = {
-         defaultFactories.find(_.canHandle(bytes))
+        defaultFactories.find(_.canHandle(bytes))
                 .get
                 .asInstanceOf[NodeFactory[T]]
     }
 
     //The order of registration have an effect.
     defaultFactories += ArrayNode
+    defaultFactories += MapNode.ofMutable
+    defaultFactories += MapNode.ofImmutable
     defaultFactories += PrimitiveNode.apply
     defaultFactories += ObjectNode.apply
     defaultFactories += EnumNode.apply
@@ -77,7 +80,7 @@ class ClassTree {
 
 }
 
-object ClassTree {
+object NodeFinder {
 
     implicit class MegaByte(self: Byte) {
 

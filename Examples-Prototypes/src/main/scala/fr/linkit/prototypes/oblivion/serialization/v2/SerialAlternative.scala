@@ -10,12 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2
+package fr.linkit.prototypes.oblivion.serialization.v2
 
-import fr.linkit.api.connection.packet.serialization.Serializer
+trait SerialAlternative[A <: Serializable] {
 
-trait AdaptiveSerializer extends Serializer {
+    def canSerialize(any: Any): Boolean
 
-    def attachAlternative(alternative: SerialAlternative[_]): Unit
+    def canDeserialize(clazz: Class[_]): Boolean
+
+    def serialize(any: A): Array[Byte]
+
+    def deserialize(bytes: Array[Byte]): A
 
 }

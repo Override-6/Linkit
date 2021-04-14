@@ -10,14 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.v2.tree
+package fr.linkit.prototypes.oblivion.serialization.v2.tree
 
-import org.jetbrains.annotations.Nullable
+trait SerialNode[T] {
 
-trait DeserialNode[T] {
+    val parent: SerialNode[_]
 
-    @Nullable val parent: DeserialNode[_]
-
-    def deserialize(): T
-
+    def serialize(t: T, putTypeHint: Boolean): Array[Byte]
 }
