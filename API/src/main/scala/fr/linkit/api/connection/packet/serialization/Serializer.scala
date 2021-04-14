@@ -16,9 +16,9 @@ trait Serializer {
 
     val signature: Array[Byte]
 
-    def serialize(serializable: Any, withSignature: Boolean): Array[Byte]
+    def serialize(serializable: Serializable, withSignature: Boolean): Array[Byte]
 
-    def partialSerialize(serialized: Array[Array[Byte]], toSerialize: Array[Any]): Array[Byte]
+    //def partialSerialize(serialized: Array[Array[Byte]], toSerialize: Array[Serializable]): Array[Byte]
 
     def isSameSignature(bytes: Array[Byte]): Boolean
 

@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, Seri
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
-import fr.linkit.core.connection.packet.serialization.PartialTransferInfo
+import fr.linkit.core.connection.packet.serialization.SimpleTransferInfo
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
 import org.jetbrains.annotations.Nullable
@@ -126,7 +126,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
                 attributesCache.put(serializer, translator.translateAttributes(attributes, connectionID))
 
             val coords = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
-            val transferInfo = PartialTransferInfo((coords, null), (attributes, attributesCache(serializer)), (packet, packetCache(serializer)))
+            val transferInfo = SimpleTransferInfo(coords, attributes, packet)
             val result      = translator.translate(transferInfo)
             connection.send(result)
         })

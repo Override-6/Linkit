@@ -17,7 +17,6 @@ import fr.linkit.api.local.ApplicationContext
 import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
-import fr.linkit.core.connection.packet.serialization.LocalCachedObjectSerializer
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
 import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
@@ -46,12 +45,6 @@ object Tests {
             val result = tree.getDeserialNodeFor[Array[Any]](bytes).deserialize()
             println(s"result = ${result.mkString("Array(", ", ", ")")}")
         }*/
-
-        {
-
-            val bytes = LocalCachedObjectSerializer.serialize(array, true)
-            println(s"Old : String(bytes) = ${toPresentableString(bytes)} (l: ${bytes.length})")
-        }
 
         println(s"ORIGIN IS : ${array.mkString("Array(", ", ", ")")}")
     }

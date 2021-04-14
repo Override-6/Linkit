@@ -12,7 +12,7 @@
 
 include 'API'
 include 'AbstractCore'
-include 'Examples-Prototypes'
+include 'Tests-Codebin'
 include 'Client'
 include 'Server'
 include 'LinkitPlugins:DebugExtension'

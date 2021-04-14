@@ -19,8 +19,8 @@ import fr.linkit.core.connection.packet.fundamental.EmptyPacket
 
 import scala.reflect.{ClassTag, classTag}
 
-case class LazyPacketDeserializationResult(override val bytes: Array[Byte],
-                                           serializer: () => Serializer) extends PacketTransferResult {
+class LazyPacketDeserializationResult(override val bytes: Array[Byte],
+                                      serializer: () => Serializer) extends PacketTransferResult {
 
     private lazy  val cache                         = serializer().deserializeAll(bytes)
     override lazy val coords    : PacketCoordinates = extract[PacketCoordinates](null)

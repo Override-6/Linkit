@@ -14,6 +14,7 @@ package fr.linkit.client.config
 
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.local.system.security.BytesHasher
+import fr.linkit.core.connection.packet.serialization.SimplePacketTranslator
 
 import java.net.{InetSocketAddress, Socket}
 
@@ -24,7 +25,7 @@ abstract class ClientConnectionConfigBuilder {
     var configName        : String                      = "simple-config"
     var hasher            : BytesHasher                 = BytesHasher.inactive
     val identifier: String
-    lazy val translator: PacketTranslator = new AdaptivePacketTranslator(identifier, hasher)
+    lazy val translator: PacketTranslator = new SimplePacketTranslator(hasher)
     val remoteAddress: InetSocketAddress
 
     /**

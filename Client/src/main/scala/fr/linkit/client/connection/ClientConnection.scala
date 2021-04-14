@@ -27,11 +27,11 @@ import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.prototypes.serialization.NumberSerializer
 import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.system.{Rules, SystemPacket}
+import fr.linkit.core.local.utils.NumberSerializer
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag

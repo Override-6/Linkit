@@ -10,15 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization
+package fr.linkit.prototypes.oblivion.serialization.v2
 
 import fr.linkit.api.connection.packet.serialization.{Serializer, TransferInfo}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.connection.packet.fundamental.EmptyPacket
 
 import scala.collection.mutable.ListBuffer
 
+@deprecated
 case class PartialTransferInfo(coordsTuple: (PacketCoordinates, Array[Byte]),
                                attributesTuple: (PacketAttributes, Array[Byte]),
                                packetTuple: (Packet, Array[Byte])) extends TransferInfo {
@@ -32,7 +31,6 @@ case class PartialTransferInfo(coordsTuple: (PacketCoordinates, Array[Byte]),
     val packetBytes    : Option[Array[Byte]] = Option(packetTuple._2)
 
     override def makeSerial(serializer: Serializer): Array[Byte] = {
-
 
         val toSerialize = ListBuffer.empty[Serializable]
         val serialized  = ListBuffer.empty[Array[Byte]]
@@ -52,7 +50,7 @@ case class PartialTransferInfo(coordsTuple: (PacketCoordinates, Array[Byte]),
         if (packet != EmptyPacket)
             alternate(packetBytes, packet)
 
-        serializer.partialSerialize(serialized.toArray, toSerialize.toArray)
+        ???
     }
 
 }

@@ -10,15 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.serialization.strategy
+package fr.linkit.core.connection.packet.serialization
 
-import fr.linkit.api.connection.packet.serialization.Serializer
-import org.jetbrains.annotations.Nullable
+import fr.linkit.api.local.system.AppException
 
-import scala.reflect.ClassTag
-
-trait StrategicSerializer extends Serializer with StrategyHolder {
-
-    def deserializeObject[S <: Serializable : ClassTag](array: Array[Byte], @Nullable typeHint: Class[S] = null): S
+class IllegalSignatureException(msg: String) extends AppException(msg) {
 
 }

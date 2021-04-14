@@ -13,10 +13,9 @@
 package fr.linkit.api.connection.packet.serialization
 
 import fr.linkit.api.connection.network.cache.SharedCacheManager
-import fr.linkit.api.connection.packet.serialization.strategy.{SerialStrategy, StrategyHolder}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 
-trait PacketTranslator extends StrategyHolder {
+trait PacketTranslator {
 
     def translate(packetInfo: TransferInfo): PacketSerializationResult
 
@@ -29,8 +28,6 @@ trait PacketTranslator extends StrategyHolder {
     def translatePacket(packet: Packet, target: String): Array[Byte]
 
     def updateCache(manager: SharedCacheManager): Unit
-
-    def attachStrategy(strategy: SerialStrategy[_]): Unit
 
     def findSerializerFor(target: String): Option[Serializer]
 

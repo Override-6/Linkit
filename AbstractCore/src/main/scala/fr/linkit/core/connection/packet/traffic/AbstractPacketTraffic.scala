@@ -131,18 +131,22 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String, pro
             val injectables = getInjectables(id, sender)
             if (injectables.isEmpty) {
                 lostInjections.getOrElseUpdate(id, ListBuffer.empty) += injection
-                return
+            } else {
+                performInjection(injection, injectables)
             }
-            AppLogger.vError(s"$currentTasksId <> PERFORMING PIN ATTACHMENT '${injection.coordinates}' - ${injection.hashCode()}")
-            injection.performPinAttach(injectables)
-            AppLogger.vError(s"$currentTasksId <> PERFORMING PIN INJECTIONS '${injection.coordinates}' - ${injection.hashCode()}")
-            injection.processRemainingPins()
+        }
+    }
 
-            procrastinator.runLater {
-                AppLogger.vError(s"$currentTasksId <> REMOVING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
-                injectionContainer.removeInjection(injection)
-                AppLogger.vError(s"$currentTasksId <> REMOVED INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
-            }
+    private def performInjection(injection: PacketInjectionController, injectables: Iterable[PacketInjectable]): Unit = {
+        AppLogger.vError(s"$currentTasksId <> PERFORMING PIN ATTACHMENT '${injection.coordinates}' - ${injection.hashCode()}")
+        injection.performPinAttach(injectables)
+        AppLogger.vError(s"$currentTasksId <> PERFORMING PIN INJECTIONS '${injection.coordinates}' - ${injection.hashCode()}")
+        injection.processRemainingPins()
+
+        procrastinator.runLater {
+            AppLogger.vError(s"$currentTasksId <> REMOVING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
+            injectionContainer.removeInjection(injection)
+            AppLogger.vError(s"$currentTasksId <> REMOVED INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
         }
     }
 

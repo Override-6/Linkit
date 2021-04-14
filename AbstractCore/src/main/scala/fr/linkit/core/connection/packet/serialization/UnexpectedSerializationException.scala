@@ -10,12 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.serialization.strategy
+package fr.linkit.core.connection.packet.serialization
 
-trait StrategyHolder {
+import fr.linkit.api.local.system.AppException
 
-    def drainAllStrategies(holder: StrategyHolder): Unit
-
-    def attachStrategy(strategy: SerialStrategy[_]): Unit
+class UnexpectedSerializationException(msg: String, cause: Throwable = null) extends AppException(msg, cause){
 
 }
