@@ -10,12 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.puppet;
+package fr.linkit.api.local.resource
 
-import java.io.Serializable;
+trait ResourcesMaintainer {
 
-public interface PuppetObject<T extends Serializable> extends Serializable  {
+    def getResources: ExternalResourceFolder
 
-    void initPuppet(Puppeteer<T> puppeteer);
+    def isRemoteResource(name: String): Boolean
+
+    def isKnown(name: String): Boolean
+
+    def isPresentOnDrive(name: String): Boolean
+
+    def registerResource(name: String): ExternalResourceFile
 
 }

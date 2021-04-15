@@ -145,8 +145,8 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         import connectionContext.{boundIdentifier, supportIdentifier}
 
         connectionCache.remove(supportIdentifier)
-
-        val newThreadCount = configuration.nWorkerThreadFunction(connectionCache.size)
+        connectionCount -= 1
+        val newThreadCount = configuration.nWorkerThreadFunction(connectionCount)
         workerPool.setThreadCount(newThreadCount)
 
         AppLogger.info(s"Connection '$supportIdentifier' bound to $boundIdentifier was detached from application.")

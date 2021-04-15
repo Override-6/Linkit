@@ -14,6 +14,7 @@ package fr.linkit.prototypes
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.ApplicationContext
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
@@ -35,6 +36,7 @@ object Tests {
 
     def main(args: Array[String]): Unit = {
         doMappings()
+        AppLogger.trace("Hello")
         val array = Array(coords, attributes, packet)
 
         /*{

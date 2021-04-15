@@ -33,12 +33,12 @@ class SharedObjectsCache(handler: SharedCacheManager,
     private val unFlushedPuppets  = new mutable.HashSet[(Long, Serializable)]
     private val supportIdentifier = channel.traffic.supportIdentifier
 
-    def postCloudObject[S <: Serializable](id: Long, obj: S): S with PuppetObject = {
+    def postCloudObject[S <: Serializable](id: Long, obj: S): S with PuppetObject[S] = {
         chipObject(id, obj)
         genPuppetObject[S](id, supportIdentifier, obj)
     }
 
-    def findCloudObject[P <: PuppetObject](id: Long): Option[P] = {
+    def findCloudObject[P <: PuppetObject[_]](id: Long): Option[P] = {
         puppeteers.get(id) match {
             case None            => None
             case Some(puppeteer) => puppeteer match {
@@ -131,7 +131,7 @@ class SharedObjectsCache(handler: SharedCacheManager,
         this
     }
 
-    private def genPuppetObject[S <: Serializable](id: Long, owner: String, puppet: S): S with PuppetObject = {
+    private def genPuppetObject[S <: Serializable](id: Long, owner: String, puppet: S): S with PuppetObject[S] = {
         val fields    = PuppetClassFields.ofRef(puppet)
         val puppeteer = new Puppeteer[S](channel, this, id, owner, fields)
         puppeteers.put(id, puppeteer)
@@ -141,7 +141,7 @@ class SharedObjectsCache(handler: SharedCacheManager,
         instantiatePuppet[S](puppeteer, puppet, puppetClass)
     }
 
-    private def instantiatePuppet[S <: Serializable](puppeteer: Puppeteer[S], clone: S, puppetClass: Class[S with PuppetObject]): S with PuppetObject = {
+    private def instantiatePuppet[S <: Serializable](puppeteer: Puppeteer[S], clone: S, puppetClass: Class[S with PuppetObject[S]]): S with PuppetObject[S] = {
         val constructor = puppetClass.getConstructor(puppeteer.getClass, clone.getClass)
         constructor.newInstance(puppeteer, clone)
     }

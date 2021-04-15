@@ -10,12 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.puppet;
+package fr.linkit.api.local.resource
 
-import java.io.Serializable;
+import java.io.{InputStream, OutputStream}
 
-public interface PuppetObject<T extends Serializable> extends Serializable  {
+trait ExternalResourceFile extends ExternalResource {
 
-    void initPuppet(Puppeteer<T> puppeteer);
+    def openInputStream: InputStream
+
+    def openOutputStream: OutputStream
 
 }

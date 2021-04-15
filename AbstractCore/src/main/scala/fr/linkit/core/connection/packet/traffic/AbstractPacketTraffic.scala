@@ -80,10 +80,11 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String, pro
         val id = injectable.identifier
 
         //Will inject every lost packets
-        lostInjections
-                .get(id)
-                .foreach(_.foreach(injectable.inject))
-        lostInjections.remove(id)
+        val opt = lostInjections.get(id)
+        if (opt.isDefined) lostInjections.synchronized {
+            opt.get.foreach(injectable.inject)
+            lostInjections.remove(id)
+        }
     }
 
     private def getInjectables(identifier: Int, target: String): Iterable[PacketInjectable] = {
@@ -129,7 +130,7 @@ abstract class AbstractPacketTraffic(override val supportIdentifier: String, pro
 
             val sender      = coordinates.senderID
             val injectables = getInjectables(id, sender)
-            if (injectables.isEmpty) {
+            if (injectables.isEmpty) lostInjections.synchronized {
                 lostInjections.getOrElseUpdate(id, ListBuffer.empty) += injection
             } else {
                 performInjection(injection, injectables)

@@ -10,12 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.puppet;
+package fr.linkit.api.connection.resource
 
-import java.io.Serializable;
+import fr.linkit.api.connection.ConnectionContext
+import fr.linkit.api.local.resource.ExternalResourceFolder
 
-public interface PuppetObject<T extends Serializable> extends Serializable  {
+trait ConnectionResources extends ExternalResourceFolder {
 
-    void initPuppet(Puppeteer<T> puppeteer);
+    def getConnectionOwner: ConnectionContext
 
 }

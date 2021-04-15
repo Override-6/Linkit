@@ -21,6 +21,7 @@ import java.io.File
 import java.lang.reflect.Method
 import java.net.URLClassLoader
 import java.nio.file.{Files, Path}
+import javax.annotation.processing.Generated
 import scala.collection.mutable
 
 object PuppetClassGenerator {
@@ -30,13 +31,13 @@ object PuppetClassGenerator {
     val EnqueueingSourcesFolder: String = GeneratedClassesFolder + "/queue/"
     private val classLoader = new URLClassLoader(Array(Path.of(GeneratedClassesFolder).toRealPath().toUri.toURL))
 
-    private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetObject]]()
+    private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetObject[_]]]()
 
-    def getOrGenerate[S <: Serializable](clazz: Class[_ <: S]): Class[S with PuppetObject] = {
-        generatedClasses.getOrElseUpdate(clazz, genPuppetClass(clazz)).asInstanceOf[Class[S with PuppetObject]]
+    def getOrGenerate[S <: Serializable](clazz: Class[_ <: S]): Class[S with PuppetObject[S]] = {
+        generatedClasses.getOrElseUpdate(clazz, genPuppetClass(clazz)).asInstanceOf[Class[S with PuppetObject[S]]]
     }
 
-    private def genPuppetClass[S <: Serializable](clazz: Class[_ <: S]): Class[_ <: PuppetObject] = {
+    private def genPuppetClass[S <: Serializable](clazz: Class[_ <: S]): Class[_ <: PuppetObject[_]] = {
         val s          = '\"'
         val classPaths = ClassMappings.getSources.map(source => s"$s${source.getLocation.getPath.drop(1)}$s").mkString(";")
         val sourceCode = genPuppetClassSourceCode[S](clazz)
@@ -62,7 +63,7 @@ object PuppetClassGenerator {
 
         AppLogger.debug(s"Compilation done.")
         classLoader.loadClass(GeneratedClassesPackage + "." + puppetClassName)
-            .asInstanceOf[Class[_ <: PuppetObject]]
+            .asInstanceOf[Class[_ <: PuppetObject[S]]]
     }
 
     def genConstantGettersFields(desc: PuppetClassFields): String = {
@@ -86,20 +87,30 @@ object PuppetClassGenerator {
         val superClassName        = clazz.getCanonicalName
         val puppetClassName       = GeneratedClassesPackage + '.' + puppetClassSimpleName
         val constantGettersFields = genConstantGettersFields(desc)
-        val puppeteerType         = classOf[Puppeteer[S]].getName + s"<$superClassName>"
+        val puppeteerType         = s"Puppeteer<$superClassName>"
         sourceBuilder.append(
             s"""
                |package $GeneratedClassesPackage;
                |
-               |public class $puppetClassSimpleName extends $superClassName implements ${classOf[PuppetObject].getName} {
+               |import fr.linkit.core.connection.network.cache.puppet.Puppeteer;
+               |import fr.linkit.core.connection.network.cache.puppet.PuppetObject;
+               |import fr.linkit.core.connection.network.cache.puppet.generation.PuppetAlreadyInitialisedException;
                |
-               |private final $puppeteerType puppeteer;
+               |public class $puppetClassSimpleName extends $superClassName implements PuppetObject<$superClassName> {
+               |
+               |private transient $puppeteerType puppeteer;
                |$constantGettersFields
                |
                |public $puppetClassSimpleName($puppeteerType puppeteer, $superClassName clone) {
                |    super(clone);
                |    this.puppeteer = puppeteer;
                |    this.puppeteer.init(this);
+               |}
+               |
+               |public void initPuppet(Puppeteer<$superClassName> puppeteer) throws PuppetAlreadyInitialisedException {
+               |    if (this.puppeteer != null)
+               |        throw new PuppetAlreadyInitialisedException("This puppet is already initialized !");
+               |    this.puppeteer = puppeteer;
                |}
                |
                |public boolean canEqual(Object that) {

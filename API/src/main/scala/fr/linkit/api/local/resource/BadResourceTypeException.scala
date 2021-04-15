@@ -10,12 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.puppet;
+package fr.linkit.api.local.resource
 
-import java.io.Serializable;
-
-public interface PuppetObject<T extends Serializable> extends Serializable  {
-
-    void initPuppet(Puppeteer<T> puppeteer);
+/**
+ * Thrown if the expected resource kind was not the same as it's actual type.
+ * ex: request resource of type [[ExternalResourceFile]] but it's actual type is [[ExternalResourceFolder]]
+ * */
+class BadResourceTypeException {
 
 }

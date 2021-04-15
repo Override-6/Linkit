@@ -154,7 +154,7 @@ object ParallelInjection {
                 if (pair == null || (pair._1 eq packet)) {
                     insertCount += 1
                     buff(index) = (packet, attributes)
-                    AppLogger.vDebug(s"${currentTasksId} <> Insertion done !")
+                    AppLogger.vDebug(s"${currentTasksId} <> Insertion done ! (${buff.mkString("Array(", ", ", ")")})")
                     return
                 }
                 val indexPacket       = pair._1

@@ -14,6 +14,7 @@ package fr.linkit.prototypes.oblivion.serialization.v2
 
 import fr.linkit.api.connection.packet.serialization.{Serializer, TransferInfo}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.core.connection.packet.fundamental.EmptyPacket
 
 import scala.collection.mutable.ListBuffer
 

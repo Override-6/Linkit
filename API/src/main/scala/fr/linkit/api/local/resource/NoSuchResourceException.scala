@@ -10,12 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.puppet;
+package fr.linkit.api.local.resource
 
-import java.io.Serializable;
+import fr.linkit.api.local.system.AppException
 
-public interface PuppetObject<T extends Serializable> extends Serializable  {
-
-    void initPuppet(Puppeteer<T> puppeteer);
+class NoSuchResourceException(msg: String, cause: Throwable = null) extends AppException(msg, cause){
 
 }

@@ -10,12 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.puppet;
+package fr.linkit.api.local.resource
 
-import java.io.Serializable;
+import fr.linkit.api.local.system.Version
 
-public interface PuppetObject<T extends Serializable> extends Serializable  {
+trait ResourceVersions {
 
-    void initPuppet(Puppeteer<T> puppeteer);
+    def apiVersion: Version
+
+    def coreVersion: Version
+
+    def implementationVersion: Version
 
 }

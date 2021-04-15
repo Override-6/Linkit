@@ -10,12 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.network.cache.puppet;
+package fr.linkit.core.connection.network.cache.puppet.generation
 
-import java.io.Serializable;
-
-public interface PuppetObject<T extends Serializable> extends Serializable  {
-
-    void initPuppet(Puppeteer<T> puppeteer);
+class PuppetAlreadyInitialisedException(msg: String) extends RuntimeException(msg) {
 
 }

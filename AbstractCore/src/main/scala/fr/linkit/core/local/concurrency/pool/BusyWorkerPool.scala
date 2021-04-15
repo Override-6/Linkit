@@ -182,8 +182,8 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
 
     def setThreadCount(newCount: Int): Unit = {
         executor.setMaximumPoolSize(newCount)
-        executor.setCorePoolSize(newCount)
         AppLogger.trace(s"$name's core pool size is set to $newCount")
+        executor.setCorePoolSize(newCount)
     }
 
     /**
