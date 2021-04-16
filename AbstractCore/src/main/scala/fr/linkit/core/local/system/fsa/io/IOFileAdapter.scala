@@ -32,6 +32,8 @@ case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) exten
         fsa.getAdapter(parent.toString)
     }
 
+    override def getName: String = file.getName
+
     override def toUri: URI = file.toURI
 
     override def resolveSibling(path: String): FileAdapter = fsa.getAdapter(getPath + File.separatorChar + path)
@@ -49,6 +51,13 @@ case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) exten
     override def exists: Boolean = file.exists()
 
     override def notExists: Boolean = !exists
+
+    override def create(): this.type = {
+        if (notExists) {
+            file.createNewFile()
+        }
+        this
+    }
 
     override def newInputStream(append: Boolean = false): InputStream = new FileInputStream(file)
 

@@ -12,17 +12,8 @@
 
 package fr.linkit.api.local.resource
 
-import org.jetbrains.annotations.NotNull
+import fr.linkit.api.local.system.AppException
 
-/**
- * depicts a class that represents a resource file.
- * */
-trait ExternalResourceFile extends ExternalResource {
-
-    /**
-     * @return The folder resource where this file is stored.
-     *         The parent can't be null.
-     * */
-    @NotNull def getParent: ExternalResourceFolder
+class IncompatibleResourceTypeException(msg: String) extends AppException(msg) {
 
 }

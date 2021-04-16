@@ -10,19 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.core.local.system
 
-import org.jetbrains.annotations.NotNull
+import fr.linkit.api.local.system.{Version, Versions}
 
-/**
- * depicts a class that represents a resource file.
- * */
-trait ExternalResourceFile extends ExternalResource {
-
-    /**
-     * @return The folder resource where this file is stored.
-     *         The parent can't be null.
-     * */
-    @NotNull def getParent: ExternalResourceFolder
-
+case class StaticVersions(override val apiVersion: Version,
+                          override val abstractCoreVersion: Version,
+                          override val implementationVersion: Version) extends Versions {
 }

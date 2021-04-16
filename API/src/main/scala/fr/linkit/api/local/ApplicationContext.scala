@@ -15,21 +15,17 @@ package fr.linkit.api.local
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.system.Version
 import fr.linkit.api.local.system.config.ApplicationConfiguration
+import fr.linkit.api.local.system.{Version, Versions}
 
 //TODO Recap :
-//TODO Rewrite/write Doc and README of API, RelayServer and RelayPoint
+//TODO Rewrite/write Doc and README of API
 //TODO Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
-//TODO Replace all Any types by Serializable types into network.cache
-object ApplicationContext {
-
-    val ApiVersion: Version = Version(name = "API", code = "0.20.0", stable = false)
-}
-
 trait ApplicationContext extends Procrastinator {
 
     val configuration: ApplicationConfiguration
+
+    val versions: Versions
 
     def pluginManager: PluginManager
 

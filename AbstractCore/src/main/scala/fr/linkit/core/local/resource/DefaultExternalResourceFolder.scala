@@ -1,0 +1,109 @@
+/*
+ *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ *  This code is free software; you can only use it for personal uses, studies or documentation.
+ *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  questions.
+ */
+
+package fr.linkit.core.local.resource
+
+import fr.linkit.api.local.resource._
+import fr.linkit.api.local.system.Versions
+import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
+
+import scala.collection.mutable
+import scala.reflect.{ClassTag, classTag}
+
+class DefaultExternalResourceFolder(fsa: FileSystemAdapter, path: String, parent: ExternalResourceFolder) extends ExternalResourceFolder {
+
+    private val location   = fsa.getAdapter(path).create()
+    private val maintainer = new ResourceFolderMaintainer(this)
+    private val resources  = new mutable.HashMap[String, ResourceRepresentations]()
+
+    override val name: String = getAdapter.getName
+
+    override def getMaintainer: ResourcesMaintainer = maintainer
+
+    override def getLocation: String = location.getAbsolutePath
+
+    override def getParent: ExternalResourceFolder = parent
+
+    override def getAdapter: FileAdapter = location
+
+    override def get[R <: ExternalResource : ClassTag](name: String): R = {
+        resources
+                .get(name)
+                .fold(throw new NoSuchResourceException(s"Resource $name not registered in resource folder '$getLocation'")) { res =>
+                    res
+                            .get[R]
+                            .getOrElse(throw new BadResourceTypeException(s"No factory of resource representation '${classTag[R].runtimeClass} was registered for resource ${res.path}"))
+                }
+    }
+
+    override def find[R <: ExternalResource : ClassTag](name: String): Option[R] = {
+        resources.get(name).flatMap(_.get[R])
+    }
+
+    override def getLastModified: Versions = maintainer.getLastModified(name)
+
+    override def getChecksum: Long = {
+        resources.values
+                .map(_.resource.getChecksum)
+                .sum
+    }
+
+    override def getLastChecksum: Long = {
+        resources.values
+                .map(_.resource.getLastChecksum)
+                .sum
+    }
+
+    override def register(name: String, localOnly: Boolean): Unit = {
+        val resourcePath = getLocation + "/" + name
+        val adapter      = fsa.getAdapter(getLocation + "/" + name)
+        if (adapter.notExists)
+            throw new NoSuchResourceException(s"Resource $resourcePath not found.")
+
+        val defaultResource = if (adapter.isDirectory) {
+            new DefaultExternalResourceFolder(fsa, resourcePath, this)
+        } else {
+            new DefaultExternalResourceFile(this, adapter)
+        }
+        resources.put(name, new ResourceRepresentations(defaultResource))
+    }
+
+    override def attachFactory[R <: ExternalResource : ClassTag](name: String, factory: ResourceFactory[R]): Unit = {
+        def abort(requested: String, found: String): Unit =
+            throw new IncompatibleResourceTypeException(s"Attempted to attach a $requested resource representation to a $found.")
+
+        resources
+                .get(name)
+                .fold(throw new NoSuchResourceException(s"Resource $name not found in folder $getLocation.")) { res =>
+                    val rClass = classTag[R].runtimeClass
+                    res.resource match {
+                        case _: ExternalResourceFile   =>
+                            if (!classOf[ExternalResourceFile].isAssignableFrom(rClass))
+                                abort("folder", "file")
+                        case _: ExternalResourceFolder =>
+                            if (!classOf[ExternalResourceFolder].isAssignableFrom(rClass))
+                                abort("file", "folder")
+                    }
+
+                    res.attach(factory)
+                }
+
+    }
+
+    override def scan(callback: String => Unit): Unit = {
+        fsa.list(getAdapter)
+                .map(_.getName)
+                .filterNot(maintainer.isKnown)
+                .foreach(callback)
+    }
+
+}

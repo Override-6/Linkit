@@ -12,10 +12,12 @@
 
 package fr.linkit.api.local.resource
 
+import fr.linkit.api.local.system.AppException
+
 /**
  * Thrown if the expected resource kind was not the same as it's actual type.
  * ex: request resource of type [[ExternalResourceFile]] but it's actual type is [[ExternalResourceFolder]]
  * */
-class BadResourceTypeException {
+class BadResourceTypeException(msg: String) extends AppException(msg) {
 
 }

@@ -12,17 +12,11 @@
 
 package fr.linkit.core.local.resource
 
-import fr.linkit.api.local.resource.{ExternalResourceFolder, ExternalResourceFile, ResourcesMaintainer}
+import fr.linkit.api.local.system.Versions
 
-class AppResourcesMaintainer extends ResourcesMaintainer {
+abstract class ResourceItem(val name: String) {
 
-    override def getResources: ExternalResourceFolder = ???
-
-    override def isRemoteResource(name: String): Boolean = ???
-
-    override def isKnown(name: String): Boolean = ???
-
-    override def isPresent(name: String): Boolean = ???
-
-    override def registerResource(name: String): ExternalResourceFile = ???
+    var isLocalOnly: Boolean
+    var lastChecksum: Long
+    var lastModified: Versions
 }

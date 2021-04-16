@@ -12,14 +12,10 @@
 
 package fr.linkit.api.local.resource
 
-import fr.linkit.api.local.system.Version
+import fr.linkit.api.local.system.fsa.FileAdapter
 
-trait ResourceVersions {
+trait ResourceFactory[R <: ExternalResource] {
 
-    def apiVersion: Version
-
-    def coreVersion: Version
-
-    def implementationVersion: Version
+    def apply(adapter: FileAdapter, parent: ExternalResourceFolder): R
 
 }

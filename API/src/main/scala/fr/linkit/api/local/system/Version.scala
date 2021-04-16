@@ -36,8 +36,9 @@ object Version {
         Version(name, major, minor, patch, stable)
     }
 
-    @throws[IllegalArgumentException]("If the version object could not be built from this string")
-    def fromString(implicit str: String): Version = {
+    @throws[IllegalArgumentException]("If the Version object could not be built from this string")
+    def apply(expr: String): Version = {
+        implicit val str: String = expr
         val expressions = str.split(' ')
         checkPattern(expressions.length == 2)
 

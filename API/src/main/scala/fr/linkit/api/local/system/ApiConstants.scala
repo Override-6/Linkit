@@ -10,19 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.api.local.system
 
-import org.jetbrains.annotations.NotNull
+import fr.linkit.api.local.system
 
-/**
- * depicts a class that represents a resource file.
- * */
-trait ExternalResourceFile extends ExternalResource {
+object ApiConstants {
 
-    /**
-     * @return The folder resource where this file is stored.
-     *         The parent can't be null.
-     * */
-    @NotNull def getParent: ExternalResourceFolder
+    val Version: Version = system.Version(name = "API", code = "1.0.0", stable = false)
 
 }

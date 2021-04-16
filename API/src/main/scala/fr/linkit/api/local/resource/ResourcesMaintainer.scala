@@ -12,16 +12,49 @@
 
 package fr.linkit.api.local.resource
 
+import fr.linkit.api.local.system.Versions
+
+/**
+ * A Resource Maintainer is a helper for [[ExternalResourceFolder]] which contains information
+ * about all sub files/folders being stored into the folder that they are maintaining.
+ * The way that resources information is managed is implementation-specific.
+ *
+ * Information could either be for files stored on the current machine, or for distant files.
+ * Resources Maintainers of a folder (distant or physical) must be synchronised.
+ *
+ * Files and folders are not necessarily known by this maintainer. Some files could be completely
+ * hidden from the extern
+ * */
 trait ResourcesMaintainer {
 
+    /**
+     * Return the resources folder that this maintainer handles.
+     * */
     def getResources: ExternalResourceFolder
 
+    /**
+     * @param name the name of file/folder to test.
+     * @return {{{true}}} if the resource is stored distantly, {{{false}}} instead.
+     * */
     def isRemoteResource(name: String): Boolean
 
+    /**
+     * @param name the name of file/folder to test.
+     * @return true if this resource name is registered in the maintainer, false instead.
+     * */
     def isKnown(name: String): Boolean
 
-    def isPresentOnDrive(name: String): Boolean
+    /**
+     * The last checksum known by the maintainer.
+     * */
+    @throws[NoSuchResourceException]("If the resource name is unknown.")
+    def getLastChecksum(name: String): Long
 
-    def registerResource(name: String): ExternalResourceFile
+    /**
+     * The Versions of the last Linkit Framework which modified the resource.
+     * @param name the resource name to find versions of the last Linkit Framework instance which modified it.
+     * */
+    @throws[NoSuchResourceException]("If the resource name is unknown.")
+    def getLastModified(name: String): Versions
 
 }

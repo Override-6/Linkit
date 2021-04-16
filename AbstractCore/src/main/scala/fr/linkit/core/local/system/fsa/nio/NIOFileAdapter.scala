@@ -34,6 +34,8 @@ case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) ex
         fsa.getAdapter(parent.toString)
     }
 
+    override def getName: String = path.getFileName.toString
+
     override def toUri: URI = path.toUri
 
     override def resolveSibling(path: String): FileAdapter = resolveSiblings(fsa.getAdapter(path))
@@ -54,6 +56,14 @@ case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) ex
     override def exists: Boolean = Files.exists(path)
 
     override def notExists: Boolean = Files.notExists(path)
+
+    override def create(): this.type = {
+        if (notExists) {
+            Files.createDirectories(path.getParent)
+            Files.createFile(path)
+        }
+        this
+    }
 
     override def newInputStream(append: Boolean = false): InputStream = {
         Files.newInputStream(path, options(append): _*)

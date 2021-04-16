@@ -12,6 +12,7 @@
 
 package fr.linkit.api.local.resource
 
+import fr.linkit.api.local.system.Versions
 import fr.linkit.api.local.system.fsa.FileAdapter
 
 /**
@@ -20,13 +21,21 @@ import fr.linkit.api.local.system.fsa.FileAdapter
  * into a distant driver.
  * */
 trait ExternalResource {
+
+    val name: String
+
     /**
      * Each times a resource is modified from a LinkitApplication,
      * its ResourceVersion must be updated by the modifier application.
      * This can be useful to determine if a resource is obsolete depending on his
-     * utilisation (example: a file used by the core which have not the same [[ResourceVersions.coreVersion]] could be out of date)
+     * utilisation (example: a file used by the core which have not the same [[Versions.abstractCoreVersion]] could be out of date)
      * */
-    def getLastModified: ResourceVersions
+    def getLastModified: Versions
+
+    /**
+     * @return the parent folder of this resource.
+     * */
+    def getParent: ExternalResourceFolder
 
     /**
      * @return The file adapter that represent this resource on the os's File System
@@ -37,5 +46,10 @@ trait ExternalResource {
      * @return The checksum of this resource.
      * */
     def getChecksum: Long
+
+    /**
+     * @return The last known checksum of this resource.
+     * */
+    def getLastChecksum: Long
 
 }

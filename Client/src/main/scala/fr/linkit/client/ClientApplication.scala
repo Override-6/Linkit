@@ -13,17 +13,18 @@
 package fr.linkit.client
 
 import fr.linkit.api.connection.{ConnectionContext, ConnectionException, ConnectionInitialisationException, ExternalConnection}
-import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
+import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
-import fr.linkit.api.local.system.{AppException, AppLogger}
+import fr.linkit.api.local.{ApplicationContext, system}
+import fr.linkit.client.ClientApplication.Version
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.system.Rules
+import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 
 import scala.collection.mutable
 import scala.util.control.NonFatal
@@ -37,6 +38,8 @@ class ClientApplication private(override val configuration: ClientApplicationCon
     @volatile private var connectionCount: Int           = 0
 
     override def countConnections: Int = connectionCount
+
+    override val versions: Versions = StaticVersions(ApiConstants.Version, AbstractCoreConstants.Version, Version)
 
     @workerExecution
     override def shutdown(): Unit = {
@@ -161,11 +164,19 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
 object ClientApplication {
 
+    val Version: Version = system.Version("Client", "1.0.0", false)
+
     @volatile private var initialized = false
 
     def launch(config: ClientApplicationConfiguration, otherSources: Class[_]*): ClientApplication = {
         if (initialized)
             throw new IllegalStateException("Client Application is already launched.")
+
+        AppLogger.info("-------------------------- Linkit Framework --------------------------")
+        AppLogger.info(s"\tApi Version            : ${ApiConstants.Version}")
+        AppLogger.info(s"\tAbstractCore Version   : ${AbstractCoreConstants.Version}")
+        AppLogger.info(s"\tImplementation Version : ${Version}")
+        AppLogger.info(s"\tCurrent JDK Version    : ${System.getProperty("java.version")}")
 
         AppLogger.info("Mapping classes, this task may take a time.")
 

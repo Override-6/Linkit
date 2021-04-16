@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.local.system;
+package fr.linkit.api.local.resource
 
-public enum RelayState {
+trait ResourcesMaintainerInformer {
 
-    INACTIVE,
-    CRASHED,
-    CLOSED,
-    ENABLED,
-    ENABLING
+    def informLocalModification(name: String): Unit
 
 }

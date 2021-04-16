@@ -10,19 +10,26 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
-
-import org.jetbrains.annotations.NotNull
+package fr.linkit.api.local.system
 
 /**
- * depicts a class that represents a resource file.
+ * A Data class description that stores information about all the Framework's layers versions.
  * */
-trait ExternalResourceFile extends ExternalResource {
+trait Versions {
 
     /**
-     * @return The folder resource where this file is stored.
-     *         The parent can't be null.
+     * The version of the Linkit Framework API
      * */
-    @NotNull def getParent: ExternalResourceFolder
+    def apiVersion: Version
+
+    /**
+     * The version of the Linkit Framework Abstract Core
+     * */
+    def abstractCoreVersion: Version
+
+    /**
+     * The version of the Linkit Framework Implementation.
+     * */
+    def implementationVersion: Version
 
 }

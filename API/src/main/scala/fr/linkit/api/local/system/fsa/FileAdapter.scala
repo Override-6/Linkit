@@ -26,6 +26,8 @@ trait FileAdapter {
 
     def getAbsolutePath: String
 
+    def getName: String
+
     def getSize: Long
 
     def getParent: FileAdapter = getParent(1)
@@ -49,6 +51,8 @@ trait FileAdapter {
     def exists: Boolean
 
     def notExists: Boolean
+
+    def create(): this.type
 
     def newInputStream(append: Boolean = false): InputStream
 
