@@ -53,7 +53,7 @@ trait ExternalResourceFolder extends ExternalResource {
 
     /**
      * No matter if a file is registered by the maintainer or not, this method
-     * will return true if any file or folder with the provided name is stored into
+     * must return true if any file or folder with the provided name is stored into
      * the handled folder.
      * @param name the file/folder name to test.
      * @return {{{true}}} if any file/folder is stored on the current machine, {{{false}}} instead.
@@ -112,8 +112,8 @@ trait ExternalResourceFolder extends ExternalResource {
      * The callback will determine whether the hit resource must be registered or not, attached to
      * any representation kind, or destroyed...
      *
-     * @param callback the action to perform on each new resource.
+     * @param scanningAction the action to perform on each new resource.
      * */
-    def scan(callback: String => Unit): Unit
+    def scan(scanningAction: String => Unit): Unit
 
 }

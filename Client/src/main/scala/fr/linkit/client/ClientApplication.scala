@@ -15,6 +15,7 @@ package fr.linkit.client
 import fr.linkit.api.connection.{ConnectionContext, ConnectionException, ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
+import fr.linkit.api.local.resource.ExternalResourceFolder
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.{ApplicationContext, system}
@@ -24,6 +25,7 @@ import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
+import fr.linkit.core.local.resource.{DefaultExternalResourceFolder, ResourceListener}
 import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 
 import scala.collection.mutable
@@ -33,6 +35,8 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     private  val workerPool                              = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
     private  val connectionCache                         = mutable.HashMap.empty[Any, ExternalConnection]
+    private  val resourceListener                        = new ResourceListener(configuration.resourceFolder)
+    private  val resources                               = prepareAppResources()
     override val pluginManager           : PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
     @volatile private var alive          : Boolean       = false
     @volatile private var connectionCount: Int           = 0
@@ -40,6 +44,8 @@ class ClientApplication private(override val configuration: ClientApplicationCon
     override def countConnections: Int = connectionCount
 
     override val versions: Versions = StaticVersions(ApiConstants.Version, AbstractCoreConstants.Version, Version)
+
+    override def getAppResources: ExternalResourceFolder = resources
 
     @workerExecution
     override def shutdown(): Unit = {
@@ -77,7 +83,6 @@ class ClientApplication private(override val configuration: ClientApplicationCon
             throw new AppException("Client is already started")
         }
         alive = true
-        AppLogger.info("Starting Client Application...")
         val pluginFolder = configuration.pluginFolder match {
             case Some(path) =>
                 val adapter = configuration.fsAdapter.getAdapter(path)
@@ -87,7 +92,6 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         if (pluginFolder != null) {
             val pluginCount = pluginManager.loadAll(pluginFolder).length
             configuration.fsAdapter.getAdapter(pluginFolder)
-
             AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
         }
     }
@@ -160,6 +164,25 @@ class ClientApplication private(override val configuration: ClientApplicationCon
             throw new IllegalStateException("Client Application is shutdown.")
     }
 
+    private def prepareAppResources(): ExternalResourceFolder = {
+        AppLogger.trace("Loading app resources...")
+        resourceListener.startWatchService()
+
+        val root = new DefaultExternalResourceFolder(configuration.fsAdapter, configuration.resourceFolder, resourceListener, null)
+        recursiveScan(root)
+
+        def recursiveScan(folder: ExternalResourceFolder): Unit = {
+            folder.scan(folder.register(_, false))
+            configuration.fsAdapter.list(folder.getAdapter).foreach { sub =>
+                if (sub.isDirectory) {
+                    recursiveScan(folder)
+                }
+            }
+        }
+        AppLogger.trace("App resources successfully loaded.")
+        root
+    }
+
 }
 
 object ClientApplication {
@@ -172,11 +195,13 @@ object ClientApplication {
         if (initialized)
             throw new IllegalStateException("Client Application is already launched.")
 
+        System.setProperty(AbstractCoreConstants.ImplVersionProperty, Version.toString)
+
         AppLogger.info("-------------------------- Linkit Framework --------------------------")
-        AppLogger.info(s"\tApi Version            : ${ApiConstants.Version}")
-        AppLogger.info(s"\tAbstractCore Version   : ${AbstractCoreConstants.Version}")
-        AppLogger.info(s"\tImplementation Version : ${Version}")
-        AppLogger.info(s"\tCurrent JDK Version    : ${System.getProperty("java.version")}")
+        AppLogger.info(s"\tApi Version            | ${ApiConstants.Version}")
+        AppLogger.info(s"\tAbstractCore Version   | ${AbstractCoreConstants.Version}")
+        AppLogger.info(s"\tImplementation Version | ${Version}")
+        AppLogger.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
 
         AppLogger.info("Mapping classes, this task may take a time.")
 

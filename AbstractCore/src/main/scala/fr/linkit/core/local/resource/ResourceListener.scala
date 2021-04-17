@@ -13,37 +13,40 @@
 package fr.linkit.core.local.resource
 
 import fr.linkit.api.local.resource.{ResourcesMaintainer, ResourcesMaintainerInformer}
-import fr.linkit.api.local.system.fsa.FileSystemAdapter
 
 import java.nio.file._
 import java.util
 import scala.collection.mutable
 
-class MaintainerNotifier(fsa: FileSystemAdapter, path: String) {
+class ResourceListener(resourcePath: String) {
 
+    private val rootPath              = Path.of(resourcePath)
     private val watcher: WatchService = FileSystems.getDefault.newWatchService()
-    private val maintainers           = new mutable.HashMap[String, ResourcesMaintainer with ResourcesMaintainerInformer]()
+    private val informers           = new mutable.HashMap[String, ResourcesMaintainerInformer]()
 
-    @volatile private var alive = true
+    @volatile private var alive = false
 
     def startWatchService(): Unit = {
         if (alive)
             throw new IllegalStateException("This Resource folder event listener is already alive !")
+        alive = true
         new Thread(() => {
             while (alive) {
-                val key    = watcher.poll()
+                val key    = watcher.take()
                 val events = key.pollEvents().asInstanceOf[util.List[WatchEvent[Path]]]
                 events.forEach(event => {
-                    val path = event.context().toAbsolutePath
+                    val path   = rootPath.resolve(event.context())
+
                     val folder = path.getParent
-                    maintainers.get(folder.toString).fold() { maintainer =>
-                        maintainer.informLocalModification(path.getFileName.toString)
+                    println(s"file updated ${path}")
+                    println(s"in folder $folder")
+                    informers.get(folder.toString).fold() { informer =>
+                        informer.informLocalModification(path.getFileName.toString)
                     }
                 })
                 key.reset()
             }
         }, "Resources Maintainers Listener").start()
-        alive = true
     }
 
     def close(): Unit = {
@@ -51,12 +54,16 @@ class MaintainerNotifier(fsa: FileSystemAdapter, path: String) {
         watcher.close()
     }
 
-    def addMaintainer(maintainer: ResourcesMaintainer with ResourcesMaintainerInformer): Unit = {
+    def addMaintainer(maintainer: ResourcesMaintainer with ResourcesMaintainerInformer, behaviorOptions: AutomaticBehaviorOptions*): Unit = {
+
+        if (behaviorOptions.isEmpty)
+            return
+
         val location = maintainer.getResources.getLocation
-        maintainers.put(location, maintainer)
+        informers.put(location, maintainer)
         val path = Path.of(location)
-        import StandardWatchEventKinds._
-        path.register(watcher, ENTRY_MODIFY)
+
+        path.register(watcher, behaviorOptions.map(_.getWatchEventKind): _*)
     }
 
 }

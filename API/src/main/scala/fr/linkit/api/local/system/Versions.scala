@@ -32,4 +32,20 @@ trait Versions {
      * */
     def implementationVersion: Version
 
+
+}
+
+object Versions {
+
+    /**
+     * Represents a collection of unknown versions.
+     * */
+    object Unknown extends Versions {
+
+        override def apiVersion: Version = Version.Unknown
+
+        override def abstractCoreVersion: Version = Version.Unknown
+
+        override def implementationVersion: Version = Version.Unknown
+    }
 }

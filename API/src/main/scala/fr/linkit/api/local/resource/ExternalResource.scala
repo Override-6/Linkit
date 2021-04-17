@@ -24,6 +24,8 @@ trait ExternalResource {
 
     val name: String
 
+    def getLocation: String
+
     /**
      * Each times a resource is modified from a LinkitApplication,
      * its ResourceVersion must be updated by the modifier application.
@@ -51,5 +53,7 @@ trait ExternalResource {
      * @return The last known checksum of this resource.
      * */
     def getLastChecksum: Long
+
+    def markAsModifiedByCurrent(): Unit
 
 }

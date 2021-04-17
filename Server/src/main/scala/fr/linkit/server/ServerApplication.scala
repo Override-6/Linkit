@@ -15,6 +15,7 @@ package fr.linkit.server
 import fr.linkit.api.connection.NoSuchConnectionException
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.PluginManager
+import fr.linkit.api.local.resource.ExternalResourceFolder
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.security.ConnectionSecurityException
@@ -22,6 +23,7 @@ import fr.linkit.api.local.{ApplicationContext, system}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
+import fr.linkit.core.local.resource.{DefaultExternalResourceFolder, ResourceListener}
 import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 import fr.linkit.server.ServerApplication.Version
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
@@ -35,6 +37,8 @@ class ServerApplication private(override val configuration: ServerApplicationCon
 
     private  val mainWorkerPool               = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
     override val pluginManager: PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
+    private  val resourceListener             = new ResourceListener(configuration.resourceFolder)
+    private  val resources                    = prepareAppResources()
     private  val serverCache                  = mutable.HashMap.empty[Any, ServerConnection]
     private  val securityManager              = configuration.securityManager
     @volatile private var alive               = false
@@ -48,6 +52,8 @@ class ServerApplication private(override val configuration: ServerApplicationCon
          */
         serverCache.size / 2
     }
+
+    override def getAppResources: ExternalResourceFolder = resources
 
     @workerExecution
     override def shutdown(): Unit = this.synchronized {
@@ -187,6 +193,26 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             throw new IllegalStateException("Server Application is shutdown.")
     }
 
+    private def prepareAppResources(): ExternalResourceFolder = {
+        AppLogger.trace("Loading app resources...")
+        resourceListener.startWatchService()
+
+        val root = new DefaultExternalResourceFolder(configuration.fsAdapter, configuration.resourceFolder, resourceListener, null)
+        recursiveScan(root)
+
+        def recursiveScan(folder: ExternalResourceFolder): Unit = {
+            folder.scan(folder.register(_, false))
+            configuration.fsAdapter.list(folder.getAdapter).foreach { sub =>
+                if (sub.isDirectory) {
+                    recursiveScan(folder)
+                }
+            }
+        }
+
+        AppLogger.trace("App resources successfully loaded.")
+        root
+    }
+
 }
 
 object ServerApplication {
@@ -198,11 +224,13 @@ object ServerApplication {
         if (initialized)
             throw new IllegalStateException("Application was already launched !")
 
+        System.setProperty(AbstractCoreConstants.ImplVersionProperty, Version.toString)
+
         AppLogger.info("-------------------------- Linkit Framework --------------------------")
-        AppLogger.info(s"\tApi Version            : ${ApiConstants.Version}")
-        AppLogger.info(s"\tAbstractCore Version   : ${AbstractCoreConstants.Version}")
-        AppLogger.info(s"\tImplementation Version : ${Version}")
-        AppLogger.info(s"\tCurrent JDK Version    : ${System.getProperty("java.version")}")
+        AppLogger.info(s"\tApi Version            | ${ApiConstants.Version}")
+        AppLogger.info(s"\tAbstractCore Version   | ${AbstractCoreConstants.Version}")
+        AppLogger.info(s"\tImplementation Version | ${Version}")
+        AppLogger.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
 
         AppLogger.info("Mapping classes, this task may take a time.")
 

@@ -15,6 +15,7 @@ package fr.linkit.api.local
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
+import fr.linkit.api.local.resource.ExternalResourceFolder
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.{Version, Versions}
 
@@ -30,6 +31,8 @@ trait ApplicationContext extends Procrastinator {
     def pluginManager: PluginManager
 
     def countConnections: Int
+
+    def getAppResources: ExternalResourceFolder
 
     @workerExecution
     def shutdown(): Unit

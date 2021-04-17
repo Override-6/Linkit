@@ -14,13 +14,11 @@ package fr.linkit.prototypes
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
-import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
 
 object Tests {
 
@@ -36,19 +34,9 @@ object Tests {
 
     def main(args: Array[String]): Unit = {
         doMappings()
-        AppLogger.trace("Hello")
-        val array = Array(coords, attributes, packet)
+        println(System.getenv())
+        println(System.getenv("LinkitHome"))
 
-        /*{
-            val tree  = new NodeFinder
-            val node  = tree.getSerialNodeForRef(array)
-            val bytes = node.serialize(array, true)
-            println(s"New : String(bytes) = ${toPresentableString(bytes)} (l: ${bytes.length})")
-            val result = tree.getDeserialNodeFor[Array[Any]](bytes).deserialize()
-            println(s"result = ${result.mkString("Array(", ", ", ")")}")
-        }*/
-
-        println(s"ORIGIN IS : ${array.mkString("Array(", ", ", ")")}")
     }
 
     private def doMappings(): Unit = {

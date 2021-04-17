@@ -36,6 +36,8 @@ case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) ex
 
     override def getName: String = path.getFileName.toString
 
+    override def getContentString: String = Files.readString(path)
+
     override def toUri: URI = path.toUri
 
     override def resolveSibling(path: String): FileAdapter = resolveSiblings(fsa.getAdapter(path))

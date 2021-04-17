@@ -12,11 +12,53 @@
 
 package fr.linkit.core.local.system
 
+import com.google.gson._
 import fr.linkit.api.local.system
-import fr.linkit.api.local.system.Version
+import fr.linkit.api.local.system.{Version, Versions}
+
+import java.lang.reflect.Type
 
 object AbstractCoreConstants {
 
-    val Version: Version = system.Version(name = "AC", code = "1.0.0", stable = false)
+    val Version: Version    = system.Version(name = "AC", code = "1.0.0", stable = false)
+    val ImplVersionProperty = "LinkitImplementationVersion"
+
+    val Gson: Gson = new GsonBuilder()
+            .registerTypeAdapter(classOf[Versions], VersionsAdapter)
+            .registerTypeAdapter(classOf[Version], VersionAdapter)
+            .create()
+
+    val UserGson: Gson = Gson.newBuilder()
+            .setPrettyPrinting()
+            .setLenient()
+            .create()
+
+    object VersionsAdapter extends InstanceCreator[Versions] {
+
+        override def createInstance(`type`: Type): Versions = new DynamicVersions()
+    }
+
+    object VersionAdapter extends JsonDeserializer[Version] with JsonSerializer[Version] {
+
+        override def deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): Version = {
+            val pattern = json.getAsJsonObject.get("version").getAsString
+            system.Version(pattern)
+        }
+
+        override def serialize(src: Version, typeOfSrc: Type, context: JsonSerializationContext): JsonElement = {
+            val element = new JsonObject()
+            element.addProperty("version", src.toString)
+            element
+        }
+    }
+
+    object BufferAdapter extends JsonDeserializer[Version] with JsonSerializer[Version] {
+
+        override def deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): Version = {
+
+        }
+
+        override def serialize(src: Version, typeOfSrc: Type, context: JsonSerializationContext): JsonElement = ???
+    }
 
 }

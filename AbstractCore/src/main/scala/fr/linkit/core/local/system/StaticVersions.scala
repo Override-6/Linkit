@@ -12,9 +12,28 @@
 
 package fr.linkit.core.local.system
 
-import fr.linkit.api.local.system.{Version, Versions}
+import fr.linkit.api.local.system.{ApiConstants, Version, Versions}
 
 case class StaticVersions(override val apiVersion: Version,
                           override val abstractCoreVersion: Version,
                           override val implementationVersion: Version) extends Versions {
+}
+
+object StaticVersions {
+
+    private var currentVersions: StaticVersions = _
+
+    def currentVersion: Versions = {
+
+        if (currentVersions != null)
+            return currentVersions
+
+        val implVersionString = System.getProperty(AbstractCoreConstants.ImplVersionProperty)
+        if (implVersionString == null)
+            throw new IllegalStateException(s"System property ${AbstractCoreConstants.ImplVersionProperty} was not found !")
+
+        val implVersion = Version(implVersionString)
+        currentVersions = StaticVersions(ApiConstants.Version, AbstractCoreConstants.Version, implVersion)
+        currentVersions
+    }
 }

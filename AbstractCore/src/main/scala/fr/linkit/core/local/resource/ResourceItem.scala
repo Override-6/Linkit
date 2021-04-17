@@ -12,11 +12,32 @@
 
 package fr.linkit.core.local.resource
 
-import fr.linkit.api.local.system.Versions
+import fr.linkit.api.local.resource.ExternalResource
+import fr.linkit.core.local.system.DynamicVersions
 
-abstract class ResourceItem(val name: String) {
+case class ResourceItem(name: String) extends Serializable {
 
-    var isLocalOnly: Boolean
-    var lastChecksum: Long
-    var lastModified: Versions
+    def this() = {
+        this("")
+    }
+
+    var isLocalOnly : Boolean         = false
+    var lastChecksum: Long            = -1
+    var lastModified: DynamicVersions = DynamicVersions.unknown
+
+}
+
+object ResourceItem {
+
+    def apply(resource: ExternalResource, isLocalOnly: Boolean): ResourceItem = {
+        val item = new ResourceItem(resource.name)
+        item.isLocalOnly = isLocalOnly
+        item.lastChecksum = resource.getLastChecksum
+        item.lastModified = resource.getLastModified match {
+            case null                     => DynamicVersions.unknown
+            case dynamic: DynamicVersions => dynamic
+            case other                    => DynamicVersions.from(other)
+        }
+        item
+    }
 }

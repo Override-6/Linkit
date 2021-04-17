@@ -13,21 +13,30 @@
 package fr.linkit.core.local.resource
 
 import fr.linkit.api.local.resource._
-import fr.linkit.api.local.system.Versions
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
+import fr.linkit.core.local.system.{DynamicVersions, StaticVersions}
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-class DefaultExternalResourceFolder(fsa: FileSystemAdapter, path: String, parent: ExternalResourceFolder) extends ExternalResourceFolder {
+class DefaultExternalResourceFolder(fsa: FileSystemAdapter,
+                                    path: String,
+                                    listener: ResourceListener,
+                                    parent: ExternalResourceFolder,
+                                    options: AutomaticBehaviorOptions*) extends ExternalResourceFolder {
+
+    println(s"Creating resource Folder $path...")
 
     private val location   = fsa.getAdapter(path).create()
-    private val maintainer = new ResourceFolderMaintainer(this)
     private val resources  = new mutable.HashMap[String, ResourceRepresentations]()
+    private val maintainer = new ResourceFolderMaintainer(this, fsa)
 
-    override val name: String = getAdapter.getName
+    override val name: String = location.getName
+    private  val lastModified = maintainer.getLastModified(name)
 
-    override def getMaintainer: ResourcesMaintainer = maintainer
+    listener.addMaintainer(maintainer, options: _*)
+
+    override def getMaintainer: ResourceFolderMaintainer = maintainer
 
     override def getLocation: String = location.getAbsolutePath
 
@@ -49,7 +58,7 @@ class DefaultExternalResourceFolder(fsa: FileSystemAdapter, path: String, parent
         resources.get(name).flatMap(_.get[R])
     }
 
-    override def getLastModified: Versions = maintainer.getLastModified(name)
+    override def getLastModified: DynamicVersions = lastModified
 
     override def getChecksum: Long = {
         resources.values
@@ -63,18 +72,29 @@ class DefaultExternalResourceFolder(fsa: FileSystemAdapter, path: String, parent
                 .sum
     }
 
+    override def markAsModifiedByCurrent(): Unit = {
+        lastModified.setAll(StaticVersions.currentVersion)
+        if (getParent != null)
+            getParent.markAsModifiedByCurrent()
+    }
+
     override def register(name: String, localOnly: Boolean): Unit = {
+        register(name, localOnly, true)
+    }
+
+    private def register(name: String, localOnly: Boolean, save: Boolean): Unit = {
         val resourcePath = getLocation + "/" + name
         val adapter      = fsa.getAdapter(getLocation + "/" + name)
         if (adapter.notExists)
             throw new NoSuchResourceException(s"Resource $resourcePath not found.")
 
         val defaultResource = if (adapter.isDirectory) {
-            new DefaultExternalResourceFolder(fsa, resourcePath, this)
+            new DefaultExternalResourceFolder(fsa, resourcePath, listener, this)
         } else {
             new DefaultExternalResourceFile(this, adapter)
         }
         resources.put(name, new ResourceRepresentations(defaultResource))
+        maintainer.registerResource(defaultResource, localOnly)
     }
 
     override def attachFactory[R <: ExternalResource : ClassTag](name: String, factory: ResourceFactory[R]): Unit = {
@@ -99,11 +119,12 @@ class DefaultExternalResourceFolder(fsa: FileSystemAdapter, path: String, parent
 
     }
 
-    override def scan(callback: String => Unit): Unit = {
+    override def scan(scanningAction: String => Unit): Unit = {
         fsa.list(getAdapter)
                 .map(_.getName)
                 .filterNot(maintainer.isKnown)
-                .foreach(callback)
+                .foreach(scanningAction)
     }
 
+    override def isPresentOnDrive(name: String): Boolean = fsa.exists(getLocation + "/" + name)
 }

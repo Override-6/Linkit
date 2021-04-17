@@ -22,7 +22,9 @@ case class Version(name: String, major: Byte, minor: Byte, patch: Byte, stable: 
 
 object Version {
 
-    private val PATTERN = "name: x.y.z-<stable|unstable>"
+    val Unknown: Version = Version("Unknown", "0.0.0", false)
+
+    private val PATTERN = "name: vX.Y.Z-<stable|unstable>"
 
     def apply(name: String, code: String, stable: Boolean): Version = {
         val args = code.split('.')

@@ -10,21 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.local.system.config
+package fr.linkit.core.local.resource
 
-import fr.linkit.api.local.system.fsa.FileSystemAdapter
-import fr.linkit.api.local.system.security.ApplicationSecurityManager
-import org.jetbrains.annotations.{NotNull, Nullable}
+import fr.linkit.api.local.system.AppException
 
-trait ApplicationConfiguration {
-
-    val pluginFolder: Option[String] //can be relative or global
-
-    @NotNull val resourceFolder: String
-
-    @NotNull val fsAdapter: FileSystemAdapter
-
-    @NotNull val securityManager: ApplicationSecurityManager
-
+class ResourceLoadException(msg: String, cause: Throwable = null) extends AppException(msg, cause){
 
 }

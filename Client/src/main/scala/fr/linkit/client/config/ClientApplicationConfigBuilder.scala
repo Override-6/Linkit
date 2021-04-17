@@ -18,12 +18,13 @@ import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.client.ClientApplication
 import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
 
-class ClientApplicationConfigBuilder {
+abstract class ClientApplicationConfigBuilder {
 
     private final val enableEventHandling: Boolean = false //still in development
 
+    val resourcesFolder: String
     var loadSchematic        : AppSchematic[ClientApplication] = new EmptySchematic()
-    var nWorkerThreadFunction: Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 thread for application.
+    var nWorkerThreadFunction: Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 threads for application.
     var pluginFolder         : Option[String]                  = Some("/Plugins")
     var fsAdapter            : FileSystemAdapter               = JDKFileSystemAdapters.Nio
     var securityManager      : ApplicationSecurityManager      = ApplicationSecurityManager.none
@@ -35,6 +36,7 @@ class ClientApplicationConfigBuilder {
             override val enableEventHandling  : Boolean                         = builder.enableEventHandling
             override val nWorkerThreadFunction: Int => Int                      = builder.nWorkerThreadFunction
             override val pluginFolder         : Option[String]                  = builder.pluginFolder
+            override val resourceFolder       : String                          = builder.resourcesFolder
             override val fsAdapter            : FileSystemAdapter               = builder.fsAdapter
             override val securityManager      : ApplicationSecurityManager      = builder.securityManager
         }

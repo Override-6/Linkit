@@ -28,6 +28,10 @@ trait FileAdapter {
 
     def getName: String
 
+    def getContentString: String
+
+    def getLines: Array[String] = getContentString.split("\n")
+
     def getSize: Long
 
     def getParent: FileAdapter = getParent(1)

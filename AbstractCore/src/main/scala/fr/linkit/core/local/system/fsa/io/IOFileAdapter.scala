@@ -34,6 +34,13 @@ case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) exten
 
     override def getName: String = file.getName
 
+    override def getContentString: String = {
+        val in = newInputStream()
+        val str = new String(in.readAllBytes())
+        in.close()
+        str
+    }
+
     override def toUri: URI = file.toURI
 
     override def resolveSibling(path: String): FileAdapter = fsa.getAdapter(getPath + File.separatorChar + path)

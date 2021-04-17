@@ -12,31 +12,43 @@
 
 package fr.linkit.core.local.resource
 
-import fr.linkit.api.local.resource.{ExternalResourceFile, ExternalResourceFolder}
+import fr.linkit.api.local.resource.ExternalResourceFile
 import fr.linkit.api.local.system.Versions
 import fr.linkit.api.local.system.fsa.FileAdapter
+import fr.linkit.core.local.system.{DynamicVersions, StaticVersions}
 import org.jetbrains.annotations.NotNull
 
-import java.util.zip.CRC32
+import java.util.zip.Adler32
 
-class DefaultExternalResourceFile(@NotNull parent: ExternalResourceFolder, adapter: FileAdapter) extends ExternalResourceFile {
+class DefaultExternalResourceFile(@NotNull parent: DefaultExternalResourceFolder, adapter: FileAdapter) extends ExternalResourceFile {
 
-    @NotNull override def getParent: ExternalResourceFolder = parent
-    private val maintainer = parent.getMaintainer
+    println(s"Creating resource File $adapter...")
 
+    private  val maintainer   = parent.getMaintainer
     override val name: String = adapter.getName
+    private  val lastModified = maintainer.getLastModified(name)
 
-    override def getLastModified: Versions = maintainer.getLastModified(name)
+    override def getLocation: String = adapter.getAbsolutePath
+
+    @NotNull override def getParent: DefaultExternalResourceFolder = parent
+
+    override def markAsModifiedByCurrent(): Unit = {
+        lastModified.setAll(StaticVersions.currentVersion)
+        getParent.markAsModifiedByCurrent()
+    }
+
+    override def getLastModified: DynamicVersions = lastModified
 
     override def getLastChecksum: Long = maintainer.getLastChecksum(name)
 
     override def getAdapter: FileAdapter = adapter
 
     override def getChecksum: Long = {
-        val crc32 = new CRC32()
-        val in = adapter.newInputStream()
+        val crc32 = new Adler32()
+        val in    = adapter.newInputStream()
         crc32.update(in.readAllBytes())
         in.close()
         crc32.getValue
     }
+
 }
