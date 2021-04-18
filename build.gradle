@@ -12,8 +12,7 @@ repositories {
     mavenCentral()
 }
 
-allprojects {
-
+subprojects {
     apply plugin: 'scala'
     apply plugin: 'maven'
     apply plugin: 'maven-publish'
