@@ -1,5 +1,7 @@
 plugins {
     id 'java'
+    id 'scala'
+    id 'maven'
 }
 
 group 'fr.override.linkit'
@@ -10,6 +12,10 @@ repositories {
 }
 
 allprojects {
+
+    apply plugin: 'scala'
+    apply plugin: 'maven'
+
     sourceCompatibility = 14
     targetCompatibility = 14
 }
