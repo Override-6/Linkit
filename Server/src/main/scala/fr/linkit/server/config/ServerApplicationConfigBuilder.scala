@@ -22,6 +22,7 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 
 abstract class ServerApplicationConfigBuilder {
 
+    @NotNull val resourceFolder: String
               var mainPoolThreadCount: Int                             = 2
     @Nullable var pluginsFolder      : Option[String]                  = Some("/Plugins")
     @NotNull  var fsAdapter          : FileSystemAdapter               = JDKFileSystemAdapters.Nio
@@ -33,6 +34,7 @@ abstract class ServerApplicationConfigBuilder {
         val builder = this
         new ServerApplicationConfiguration {
             override val pluginFolder       : Option[String]                  = builder.pluginsFolder
+            override val resourceFolder     : String                          = builder.resourceFolder
             override val fsAdapter          : FileSystemAdapter               = builder.fsAdapter
             override val securityManager    : ApplicationSecurityManager      = builder.securityManager
             override val mainPoolThreadCount: Int                             = builder.mainPoolThreadCount
