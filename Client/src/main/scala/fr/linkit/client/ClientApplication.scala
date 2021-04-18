@@ -15,7 +15,7 @@ package fr.linkit.client
 import fr.linkit.api.connection.{ConnectionContext, ConnectionException, ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.resource.ExternalResourceFolder
+import fr.linkit.api.local.resource.{AutomaticBehaviorOption, ExternalResourceFolder}
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.{ApplicationContext, system}
@@ -168,7 +168,13 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         AppLogger.trace("Loading app resources...")
         resourceListener.startWatchService()
 
-        val root = new DefaultExternalResourceFolder(configuration.fsAdapter, configuration.resourceFolder, resourceListener, null)
+        val root = DefaultExternalResourceFolder(
+            configuration.fsAdapter,
+            configuration.resourceFolder,
+            resourceListener,
+            null,
+            Seq(AutomaticBehaviorOption.AUTO_UPDATE)
+        )
         recursiveScan(root)
 
         def recursiveScan(folder: ExternalResourceFolder): Unit = {
@@ -179,6 +185,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
                 }
             }
         }
+
         AppLogger.trace("App resources successfully loaded.")
         root
     }

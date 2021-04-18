@@ -10,22 +10,22 @@
  *  questions.
  */
 
-package fr.linkit.core.local.resource;
+package fr.linkit.api.local.resource;
 
 import java.nio.file.Path;
 import java.nio.file.WatchEvent;
 
 import static java.nio.file.StandardWatchEventKinds.*;
 
-public enum AutomaticBehaviorOptions {
+public enum AutomaticBehaviorOption {
 
     AUTO_REGISTER(ENTRY_CREATE),
     AUTO_UNREGISTER(ENTRY_DELETE),
-    AUTO_UPDATE_CHECKSUM(ENTRY_MODIFY);
+    AUTO_UPDATE(ENTRY_MODIFY);
 
     private final WatchEvent.Kind<Path> watchEventKind;
 
-    AutomaticBehaviorOptions(WatchEvent.Kind<Path> watchEventKind) {
+    AutomaticBehaviorOption(WatchEvent.Kind<Path> watchEventKind) {
         this.watchEventKind = watchEventKind;
     }
 

@@ -51,7 +51,7 @@ trait TasksHandler extends Closeable {
     def schedule(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit
 
     /**
-     * Suddenly stop a task execution and execute his successor.
+     * Suddenly stop a task execution and execute its successor.
      * */
     def skipCurrent(reason: Reason): Unit
 }

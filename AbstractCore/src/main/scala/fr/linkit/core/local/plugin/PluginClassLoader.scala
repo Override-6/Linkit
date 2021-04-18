@@ -57,7 +57,7 @@ class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bri
         val propertyFile = jarFile.getEntry(PropertiesFileName)
         //Checking property presence
         if (propertyFile == null)
-            throw PluginLoadException(s"Jar file $adapter must have a file called '$PropertiesFileName' in his root")
+            throw PluginLoadException(s"Jar file $adapter must have a file called '$PropertiesFileName' in its root")
 
         //Checking property content
         val property = new Properties()

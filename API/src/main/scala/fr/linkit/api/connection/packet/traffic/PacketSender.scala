@@ -19,12 +19,12 @@ trait PacketSender extends PacketChannel {
 
     def send(packet: Packet, attributes: PacketAttributes): Unit
 
-    @throws[IllegalArgumentException]("If targets contains an identifier that is not authorised by his scope.")
+    @throws[IllegalArgumentException]("If targets contains an identifier that is not authorised by its scope.")
     def sendTo(packet: Packet, attributes: PacketAttributes, targets: String*): Unit
 
     def send(packet: Packet): Unit
 
-    @throws[IllegalArgumentException]("If targets contains an identifier that is not authorised by his scope.")
+    @throws[IllegalArgumentException]("If targets contains an identifier that is not authorised by its scope.")
     def sendTo(packet: Packet, targets: String*): Unit
 
 }

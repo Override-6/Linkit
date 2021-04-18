@@ -41,7 +41,7 @@ The API is a bag of features and definitions of behavior that a Relay implementa
 Some features are pre-implemented and handled by the api, such as the [extension](TODO), the [event handling system](TODO) or the [Packet handling](TODO) and [Task scheduling](TODO) which are partially implemented.  
 All of those features are accessible from the Relay interface.  
 
-(see [API README](https://github.com/Override-6/Linkit/tree/master/API) to get further details)  
+(see [API README](https://github.com/Override-6/Linkit/finder.master/API) to get further details)  
 
 ### Packet handling
 
@@ -52,7 +52,7 @@ Protocol Used : TCP
 ## The Client  
 The Client, or RelayPoint, is one implementation of the Relay interface, which can connect to any server implementation, as long as they comply with the same mutual initialisation rules.  
 In order to instantiate a RelayPoint, you need a RelayPointConfiguration.  
-The different option explications of a RelayPointConfiguration can be find in the [RelayPoint README](https://github.com/Override-6/Linkit/tree/master/RelayPoint), but here, we will focus on how to create a default RelayPoint by using its builder :  
+The different option explications of a RelayPointConfiguration can be find in the [RelayPoint README](https://github.com/Override-6/Linkit/finder.master/RelayPoint), but here, we will focus on how to create a default RelayPoint by using its builder :  
 
 ```scala
 val relayPoint: RelayPoint = new RelayPointBuilder {
@@ -131,7 +131,7 @@ Here is an exaustive list of options contained in the default RelayPointConfigur
 * defaultContainerPacketCacheSize (FOR REMOVAL)
 * maxPacketContainerCacheSize (FOR REMOVAL)
 
-You can find the list of [RelayPoint](https://github.com/Override-6/Linkit/tree/master/RelayPoint) and [RelayServer](https://github.com/Override-6/Linkit/tree/master/RelayServer) configuration options in their respective readme.  
+You can find the list of [RelayPoint](https://github.com/Override-6/Linkit/finder.master/RelayPoint) and [RelayServer](https://github.com/Override-6/Linkit/finder.master/RelayServer) configuration options in their respective readme.  
 
 ## Setup
 The setup is very simple; you just have to download / compile the source code of RelayPoint or RelayServer, then create a RelayPoint/Server instance with a RelayPoint/ServerBuilder. In order to start your relay, you'll must call the Relay#start method in the [BusyWorkerPool](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/concurrency/BusyWorkerPool.scala) of the relay. In order to retrieve the thread pool execution, simply use Relay#runLater.

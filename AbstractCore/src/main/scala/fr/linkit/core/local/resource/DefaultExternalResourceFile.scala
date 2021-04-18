@@ -32,9 +32,9 @@ class DefaultExternalResourceFile(@NotNull parent: DefaultExternalResourceFolder
 
     @NotNull override def getParent: DefaultExternalResourceFolder = parent
 
-    override def markAsModifiedByCurrent(): Unit = {
+    override def markAsModifiedByCurrentApp(): Unit = {
         lastModified.setAll(StaticVersions.currentVersion)
-        getParent.markAsModifiedByCurrent()
+        getParent.markAsModifiedByCurrentApp()
     }
 
     override def getLastModified: DynamicVersions = lastModified

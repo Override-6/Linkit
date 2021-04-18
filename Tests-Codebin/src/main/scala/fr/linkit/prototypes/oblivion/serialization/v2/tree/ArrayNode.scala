@@ -46,7 +46,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
             if (array.isEmpty) {
                 return ArrayFlag /\ EmptyFlag
             }
-            val lengths    = new Array[Int](array.length - 1) //Discard the last field, we already know his length by deducting it from previous lengths
+            val lengths    = new Array[Int](array.length - 1) //Discard the last field, we already know its length by deducting it from previous lengths
             val byteArrays = new Array[Array[Byte]](array.length)
 
             var lastClass: Class[_]      = null

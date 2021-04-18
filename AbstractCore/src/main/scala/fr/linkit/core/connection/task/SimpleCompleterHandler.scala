@@ -49,7 +49,7 @@ class SimpleCompleterHandler extends TaskCompleterHandler {
     }
 
     /**
-     * To be extensible, the user need to add Completer suppliers to handlers in order to inject his own tasks into the program.
+     * To be extensible, the user need to add Completer suppliers to handlers in order to inject its own tasks into the program.
      * @param taskType the task type for what the supplier will be called.
      * @param supplier this lambda takes a [[TaskInitPacket]] the Tasks Handler and the init packet sender identifier
      *                 and the task owner identifier

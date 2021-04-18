@@ -67,7 +67,7 @@ import scala.collection.mutable.ListBuffer
  * notified, and will wait until a thread is free to process the injection.<br>
  * But we have to rely on the fact that the first thread is doing noting.<br>
  * So, we have a thread that is waiting for a packet to be provided, and will do
- * absolutely nothing until he does not received his wants,
+ * absolutely nothing until he does not received its wants,
  * where he can take the time he is sleeping for executing other
  * tasks in the pool ? What a lazy thread !
  * </p>
@@ -248,7 +248,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     }
 
     /**
-     * Creates a blocking queue that keep busy his thread instead of make it waiting
+     * Creates a blocking queue that keep busy its thread instead of make it waiting
      * the provided queue will use the busy threading system for concurrent operations such as
      * [[BlockingQueue#take()]]
      *

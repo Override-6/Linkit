@@ -33,6 +33,17 @@ trait ResourcesMaintainer {
     def getResources: ExternalResourceFolder
 
     /**
+     * @return a list of the automatic behavior of this folder maintainer regarding to
+     *         its resources management.
+     */
+    def getBehaviors: Array[AutomaticBehaviorOption]
+
+    /**
+     * @param behaviorOptions the new automatic behaviors to apply instantly.
+     */
+    def setBehaviors(behaviorOptions: Seq[AutomaticBehaviorOption]): Unit
+
+    /**
      * @param name the name of file/folder to test.
      * @return {{{true}}} if the resource is stored distantly, {{{false}}} instead.
      * */
@@ -52,6 +63,7 @@ trait ResourcesMaintainer {
 
     /**
      * The Versions of the last Linkit Framework which modified the resource.
+     *
      * @param name the resource name to find versions of the last Linkit Framework instance which modified it.
      * */
     @throws[NoSuchResourceException]("If the resource name is unknown.")

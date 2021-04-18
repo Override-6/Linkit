@@ -12,11 +12,13 @@
 
 package fr.linkit.core.local.system
 
+import java.lang.reflect.Type
+
 import com.google.gson._
 import fr.linkit.api.local.system
 import fr.linkit.api.local.system.{Version, Versions}
 
-import java.lang.reflect.Type
+import scala.collection.mutable.ArrayBuffer
 
 object AbstractCoreConstants {
 
@@ -24,14 +26,15 @@ object AbstractCoreConstants {
     val ImplVersionProperty = "LinkitImplementationVersion"
 
     val Gson: Gson = new GsonBuilder()
-            .registerTypeAdapter(classOf[Versions], VersionsAdapter)
-            .registerTypeAdapter(classOf[Version], VersionAdapter)
-            .create()
+        .registerTypeAdapter(classOf[Versions], VersionsAdapter)
+        .registerTypeAdapter(classOf[Version], VersionAdapter)
+        .registerTypeAdapter(classOf[ArrayBuffer[Any]], ArrayBufferAdapter)
+        .create()
 
     val UserGson: Gson = Gson.newBuilder()
-            .setPrettyPrinting()
-            .setLenient()
-            .create()
+        .setPrettyPrinting()
+        .setLenient()
+        .create()
 
     object VersionsAdapter extends InstanceCreator[Versions] {
 
@@ -41,24 +44,32 @@ object AbstractCoreConstants {
     object VersionAdapter extends JsonDeserializer[Version] with JsonSerializer[Version] {
 
         override def deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): Version = {
-            val pattern = json.getAsJsonObject.get("version").getAsString
-            system.Version(pattern)
+            system.Version(json.getAsString)
         }
 
         override def serialize(src: Version, typeOfSrc: Type, context: JsonSerializationContext): JsonElement = {
-            val element = new JsonObject()
-            element.addProperty("version", src.toString)
-            element
+            context.serialize(src.toString)
         }
     }
 
-    object BufferAdapter extends JsonDeserializer[Version] with JsonSerializer[Version] {
+    object ArrayBufferAdapter extends JsonDeserializer[ArrayBuffer[Any]] with JsonSerializer[ArrayBuffer[Any]] {
 
-        override def deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): Version = {
-
+        override def deserialize(json: JsonElement, typeOfT: Type, context: JsonDeserializationContext): ArrayBuffer[Any] = {
+            val buffer = new ArrayBuffer[Any]()
+            json.getAsJsonArray
+                .forEach(element => {
+                    buffer += element
+                })
+            buffer
         }
 
-        override def serialize(src: Version, typeOfSrc: Type, context: JsonSerializationContext): JsonElement = ???
+        override def serialize(src: ArrayBuffer[Any], typeOfSrc: Type, context: JsonSerializationContext): JsonElement = {
+            val array = new JsonArray(src.size)
+            src.foreach(any => {
+                array.add(context.serialize(any))
+            })
+            array
+        }
     }
 
 }

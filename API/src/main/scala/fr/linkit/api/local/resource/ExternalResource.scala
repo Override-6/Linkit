@@ -54,6 +54,6 @@ trait ExternalResource {
      * */
     def getLastChecksum: Long
 
-    def markAsModifiedByCurrent(): Unit
+    def markAsModifiedByCurrentApp(): Unit
 
 }

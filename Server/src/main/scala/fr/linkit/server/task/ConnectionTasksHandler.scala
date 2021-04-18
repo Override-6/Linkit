@@ -67,7 +67,7 @@ class ConnectionTasksHandler(session: ExternalConnectionSession) extends TasksHa
     }
 
     /**
-     * Suddenly stop a task execution and execute his successor.
+     * Suddenly stop a task execution and execute its successor.
      * */
     override def skipCurrent(reason: Reason): Unit = {
         //Restarting the thread causes the current task to be skipped

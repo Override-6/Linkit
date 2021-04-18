@@ -175,7 +175,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     override def isClosed: Boolean = closed
 
     /**
-     * Deflects a packet to his associated [[ServerExternalConnection]]
+     * Deflects a packet to its associated [[ServerExternalConnection]]
      *
      * @throws NoSuchConnectionException if no connection where found for this packet.
      * */

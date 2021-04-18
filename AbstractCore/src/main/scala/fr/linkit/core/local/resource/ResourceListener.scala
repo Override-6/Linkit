@@ -12,10 +12,11 @@
 
 package fr.linkit.core.local.resource
 
-import fr.linkit.api.local.resource.{ResourcesMaintainer, ResourcesMaintainerInformer}
-
 import java.nio.file._
 import java.util
+
+import fr.linkit.api.local.resource.{ResourcesMaintainer, ResourcesMaintainerInformer}
+
 import scala.collection.mutable
 
 class ResourceListener(resourcePath: String) {
@@ -54,8 +55,9 @@ class ResourceListener(resourcePath: String) {
         watcher.close()
     }
 
-    def addMaintainer(maintainer: ResourcesMaintainer with ResourcesMaintainerInformer, behaviorOptions: AutomaticBehaviorOptions*): Unit = {
+    def putMaintainer(maintainer: ResourcesMaintainer with ResourcesMaintainerInformer): Unit = {
 
+        val behaviorOptions = maintainer.getBehaviors
         if (behaviorOptions.isEmpty)
             return
 

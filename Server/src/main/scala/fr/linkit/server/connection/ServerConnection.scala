@@ -164,7 +164,7 @@ class ServerConnection(applicationContext: ServerApplication,
     /**
      * Reads a welcome packet from a connection.<br>
      * The Welcome packet is the first packet that a connection must send
-     * in order to provide his identifier to the server and his hasher & translator signature.
+     * in order to provide its identifier to the server and its hasher & translator signature.
      *
      * @return the identifier bound with the socket
      * */

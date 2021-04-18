@@ -35,7 +35,7 @@ object LengthSign {
     def of(root: Any, desc: SerializableClassDescription, children: Iterable[SerialNode[_]]): LengthSign = {
         println()
         println(s"--- Creating sign for object $root")
-        val lengths    = new Array[Int](children.size - 1) //Discard the last field, we already know his length by deducting it from previous lengths
+        val lengths    = new Array[Int](children.size - 1) //Discard the last field, we already know its length by deducting it from previous lengths
         val byteArrays = new Array[Array[Byte]](children.size)
 
         val fieldValues = desc.serializableFields
@@ -70,7 +70,7 @@ object LengthSign {
         println(s"signItemCount = ${signItemCount}")
         println(s"totalObjectLength = ${totalObjectLength}")
         println(s"start = ${start}")
-        val lengths            = new Array[Int](signItemCount) //Discard the last field, we already know his length by deducting it from totalObjectLength
+        val lengths            = new Array[Int](signItemCount) //Discard the last field, we already know its length by deducting it from totalObjectLength
         val childrenByteArrays = new Array[Array[Byte]](signItemCount + 1)
 
         var currentIndex = start

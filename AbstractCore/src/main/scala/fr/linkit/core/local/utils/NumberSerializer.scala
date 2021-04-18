@@ -95,7 +95,7 @@ object NumberSerializer {
     }
 
     /**
-     * @return a pair with the deserialized number at left, and his length in the array at right.
+     * @return a pair with the deserialized number at left, and its length in the array at right.
      * */
     def deserializeFlaggedNumber[@specialized(Int, Short, Byte, Long) T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
 

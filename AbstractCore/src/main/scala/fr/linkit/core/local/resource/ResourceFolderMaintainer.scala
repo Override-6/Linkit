@@ -20,7 +20,7 @@ import fr.linkit.core.local.system.{AbstractCoreConstants, DynamicVersions}
 
 import scala.collection.mutable.ArrayBuffer
 
-class ResourceFolderMaintainer(maintained: ExternalResourceFolder, fsa: FileSystemAdapter) extends ResourcesMaintainer with ResourcesMaintainerInformer {
+class ResourceFolderMaintainer(maintained: ExternalResourceFolder, listener: ResourceListener, fsa: FileSystemAdapter) extends ResourcesMaintainer with ResourcesMaintainerInformer {
 
     protected val gson     : Gson       = AbstractCoreConstants.UserGson
     private   val maintainerFileAdapter = fsa.getAdapter(maintained.getLocation + "/" + MaintainerFileName)
@@ -28,40 +28,53 @@ class ResourceFolderMaintainer(maintained: ExternalResourceFolder, fsa: FileSyst
 
     override def getResources: ExternalResourceFolder = maintained
 
+    override def getBehaviors: Array[AutomaticBehaviorOption] = {
+        println(s"resources.options = ${resources.options}")
+        resources.options.toArray
+    }
+
+    override def setBehaviors(behaviorOptions: Seq[AutomaticBehaviorOption]): Unit = {
+        val options = resources.options
+        options.clear()
+        options.addAll(behaviorOptions)
+        listener.putMaintainer(this)
+        updateFile()
+    }
+
     override def isRemoteResource(name: String): Boolean = isKnown(name) && !maintained.isPresentOnDrive(name)
 
     override def isKnown(name: String): Boolean = name == MaintainerFileName || resources.children.exists(_.name == name)
 
     override def getLastChecksum(name: String): Long = {
         resources
-                .children
-                .find(_.name == name)
-                .map(_.lastChecksum)
-                .getOrElse {
-                    if (name == maintained.name) {
-                        resources.folder.lastChecksum
-                    } else {
-                        throw new NoSuchResourceException(s"Resource $name is unknown for folder resource ${maintained.getLocation}")
-                    }
+            .children
+            .find(_.name == name)
+            .map(_.lastChecksum)
+            .getOrElse {
+                if (name == maintained.name) {
+                    resources.folder.lastChecksum
+                } else {
+                    throw new NoSuchResourceException(s"Resource $name is unknown for folder resource ${maintained.getLocation}")
                 }
+            }
     }
 
     override def getLastModified(name: String): DynamicVersions = {
         println(s"name = ${name}")
         println(s"resources = ${resources}")
         resources
-                .children
-                .find(_.name == name)
-                .map(_.lastModified)
-                .getOrElse {
-                    if (maintained.isPresentOnDrive(name)) {
-                        DynamicVersions.unknown
-                    } else if (name == maintained.name) {
-                        resources.folder.lastModified
-                    } else {
-                        throw new NoSuchResourceException(s"Resource $name is unknown for folder resource ${maintained.getLocation}")
-                    }
+            .children
+            .find(_.name == name)
+            .map(_.lastModified)
+            .getOrElse {
+                if (maintained.isPresentOnDrive(name)) {
+                    DynamicVersions.unknown
+                } else if (name == maintained.name) {
+                    resources.folder.lastModified
+                } else {
+                    throw new NoSuchResourceException(s"Resource $name is unknown for folder resource ${maintained.getLocation}")
                 }
+            }
     }
 
     override def informLocalModification(name: String): Unit = {
@@ -98,12 +111,12 @@ class ResourceFolderMaintainer(maintained: ExternalResourceFolder, fsa: FileSyst
     private def loadResources: Resources = {
         if (maintainerFileAdapter.notExists) {
             maintainerFileAdapter.create()
-            return Resources(ResourceItem(maintained, true))
+            return Resources(ResourceItem(maintained, true), ArrayBuffer.empty)
         }
         val json      = maintainerFileAdapter.getContentString
         val resources = gson.fromJson(json, classOf[Resources])
         if (resources == null)
-            return Resources(ResourceItem(maintained, true))
+            return Resources(ResourceItem(maintained, true), ArrayBuffer.empty)
 
         resources
     }
@@ -114,7 +127,7 @@ object ResourceFolderMaintainer {
 
     val MaintainerFileName: String = "maintainer.json"
 
-    case class Resources(folder: ResourceItem) {
+    case class Resources(folder: ResourceItem, options: ArrayBuffer[AutomaticBehaviorOption]) {
 
         val children: ArrayBuffer[ResourceItem] = ArrayBuffer.empty
     }

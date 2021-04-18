@@ -27,7 +27,7 @@ trait Packet extends Serializable {
 
     /**
      * If the packet has been instantiated using Unsafe.allocateInstance
-     * The constructor will not be called thus his number identifier is not attributed.
+     * The constructor will not be called thus its number identifier is not attributed.
      * This method will manually give this packet an identifier, but calling this method
      * takes effect only once.
      *
