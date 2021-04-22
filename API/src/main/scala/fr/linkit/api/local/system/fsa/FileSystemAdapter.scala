@@ -14,6 +14,7 @@ package fr.linkit.api.local.system.fsa
 
 import java.io.{IOException, InputStream, OutputStream}
 import java.net.URI
+import scala.util.Try
 
 /**
  * <p>
@@ -71,9 +72,9 @@ trait FileSystemAdapter {
         }
     }
 
-    def exists(path: String): Boolean = getAdapter(path).exists
+    def exists(path: String): Boolean = Try(getAdapter(path).exists).getOrElse(false)
 
-    def notExists(path: String): Boolean = getAdapter(path).notExists
+    def notExists(path: String): Boolean = Try(getAdapter(path).notExists).getOrElse(false)
 
     def deleteIfExists(path: String): Unit = delete(getAdapter(path))
 

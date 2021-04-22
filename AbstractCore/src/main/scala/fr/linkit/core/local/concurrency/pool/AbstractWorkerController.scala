@@ -25,16 +25,15 @@ abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerControl
 
     @workerExecution
     override def waitTask(): Unit = {
-        //unlock condition as true means that we can be unlocked at any time.
-        waitTask(true)
+        //unlock condition as false means that we can be unlocked at any time.
+        createControlTicket(false)
     }
 
     @workerExecution
-    override def waitTask(notifyCondition: => Boolean): Unit = {
-        val worker      = currentWorker
-        val currentTask = worker.currentTaskID
-        entertainedThreads.put(currentTask, new ControlTicket[W](worker, notifyCondition))
-        waitCurrentTask()
+    override def waitTaskWhile(condition: => Boolean): Unit = {
+        if (!condition)
+            return
+        createControlTicket(condition)
     }
 
     @workerExecution
@@ -99,12 +98,19 @@ abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerControl
 
     def waitCurrentTask(millis: Long): Unit
 
+    private def createControlTicket(waitCondition: => Boolean): Unit = {
+        val worker      = currentWorker
+        val currentTask = worker.currentTaskID
+        entertainedThreads.put(currentTask, new ControlTicket[W](worker, waitCondition))
+        waitCurrentTask()
+    }
+
 }
 
 object AbstractWorkerController {
 
-    private class ControlTicket[W <: WorkerThread](worker: W, notifyCondition: => Boolean) {
-        def canBeNotified: Boolean = notifyCondition
+    private class ControlTicket[W <: WorkerThread](worker: W, condition: => Boolean) {
+        def canBeNotified: Boolean = !condition
 
         def getWorker: W = worker
     }

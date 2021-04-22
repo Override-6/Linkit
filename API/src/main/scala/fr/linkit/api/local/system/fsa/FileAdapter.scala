@@ -56,7 +56,9 @@ trait FileAdapter {
 
     def notExists: Boolean
 
-    def create(): this.type
+    def createAsFile(): this.type
+
+    def createAsFolder(): this.type
 
     def newInputStream(append: Boolean = false): InputStream
 

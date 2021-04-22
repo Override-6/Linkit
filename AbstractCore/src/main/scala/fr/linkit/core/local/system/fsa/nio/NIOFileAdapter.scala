@@ -59,10 +59,17 @@ case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) ex
 
     override def notExists: Boolean = Files.notExists(path)
 
-    override def create(): this.type = {
+    override def createAsFile(): this.type = {
         if (notExists) {
             Files.createDirectories(path.getParent)
             Files.createFile(path)
+        }
+        this
+    }
+
+    override def createAsFolder(): this.type = {
+        if (notExists) {
+            Files.createDirectories(path)
         }
         this
     }

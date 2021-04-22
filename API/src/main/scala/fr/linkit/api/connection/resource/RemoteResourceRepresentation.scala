@@ -10,19 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.api.connection.resource
 
-import org.jetbrains.annotations.NotNull
+import fr.linkit.api.local.resource.representation.ResourceRepresentation
 
-/**
- * depicts a class that represents a resource file.
- * */
-trait ExternalResourceFile extends ExternalResource {
-
-    /**
-     * @return The folder resource where this file is stored.
-     *         The parent can't be null.
-     * */
-    @NotNull def getParent: ExternalResourceFolder
+trait RemoteResourceRepresentation extends ResourceRepresentation {
 
 }

@@ -10,8 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.api.local.resource.representation
 
-case class NoSuchResourceException(msg: String, cause: Throwable = null) extends ResourceException(msg, cause) {
+import fr.linkit.api.local.system.fsa.FileAdapter
+
+trait ResourceRepresentationFactory[R <: ResourceRepresentation] {
+
+    def apply(adapter: FileAdapter, parent: ResourceFolder): R
 
 }

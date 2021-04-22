@@ -18,7 +18,7 @@ trait WorkerController[W <: WorkerThread] {
     def waitTask(): Unit
 
     @workerExecution
-    def waitTask(notifyCondition: => Boolean): Unit
+    def waitTaskWhile(notifyCondition: => Boolean): Unit
 
     @workerExecution
     def waitTaskForAtLeast(millis: Long): Unit

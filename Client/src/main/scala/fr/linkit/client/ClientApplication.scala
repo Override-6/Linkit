@@ -15,7 +15,8 @@ package fr.linkit.client
 import fr.linkit.api.connection.{ConnectionContext, ConnectionException, ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.resource.{AutomaticBehaviorOption, ExternalResourceFolder}
+import fr.linkit.api.local.resource.AutomaticBehaviorOption
+import fr.linkit.api.local.resource.representation.ResourceFolder
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.{ApplicationContext, system}
@@ -25,7 +26,7 @@ import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.resource.{DefaultExternalResourceFolder, ResourceListener}
+import fr.linkit.core.local.resource.{DefaultResourceFolder, ResourceListener}
 import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 
 import scala.collection.mutable
@@ -45,7 +46,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     override val versions: Versions = StaticVersions(ApiConstants.Version, AbstractCoreConstants.Version, Version)
 
-    override def getAppResources: ExternalResourceFolder = resources
+    override def getAppResources: ResourceFolder = resources
 
     @workerExecution
     override def shutdown(): Unit = {
@@ -164,11 +165,11 @@ class ClientApplication private(override val configuration: ClientApplicationCon
             throw new IllegalStateException("Client Application is shutdown.")
     }
 
-    private def prepareAppResources(): ExternalResourceFolder = {
+    private def prepareAppResources(): ResourceFolder = {
         AppLogger.trace("Loading app resources...")
         resourceListener.startWatchService()
 
-        val root = DefaultExternalResourceFolder(
+        val root = DefaultResourceFolder(
             configuration.fsAdapter,
             configuration.resourceFolder,
             resourceListener,
@@ -177,8 +178,8 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         )
         recursiveScan(root)
 
-        def recursiveScan(folder: ExternalResourceFolder): Unit = {
-            folder.scan(folder.register(_, false))
+        def recursiveScan(folder: ResourceFolder): Unit = {
+            folder.scan(folder.registerFile(_, false))
             configuration.fsAdapter.list(folder.getAdapter).foreach { sub =>
                 if (sub.isDirectory) {
                     recursiveScan(folder)

@@ -40,27 +40,27 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     def currentTaskIsWaiting(): Boolean = workflowContinueLevels.getOrElse(currentTaskID, false)
 
     private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
-        AppLogger.vError(s"$tasksId <> Entering Workflow Loop... ($currentTaskID)")
+        AppLogger.vError(s"$tasksId <> Entering Workflow Loop... ")
         while (workflowContinueLevels(currentTaskID)) {
-            AppLogger.vError(s"$tasksId <> Workflow Loop continuing... ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> Workflow Loop continuing... ")
             isParkingForWorkflow = true
-            AppLogger.vError(s"$tasksId <> Parking... ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> Parking... ")
             val t = parkAction
-            AppLogger.vError(s"$tasksId <> This thread has been unparked. ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> This thread has been unparked. ")
             isParkingForWorkflow = false
 
             if (!workflowContinueLevels(currentTaskID)) {
-                AppLogger.vError(s"Workflow returned... ($currentTaskID)")
+                AppLogger.vError(s"Workflow returned... ")
                 workflowContinueLevels(currentTaskID) = true
                 return
             }
 
-            AppLogger.vError(s"$tasksId <> Continue workflow... ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> Continue workflow... ")
             workflow(t)
-            AppLogger.vError(s"$tasksId <> Workflow have ended ! ($currentTaskID)")
+            AppLogger.vError(s"$tasksId <> Workflow have ended ! ")
         }
         this.workflowContinueLevels(currentTaskID) = true //set it to true in case if stopWorkflowLoop has been called.
-        AppLogger.vError(s"$tasksId <> Exit Worker Loop ($currentTaskID)")
+        AppLogger.vError(s"$tasksId <> Exit Worker Loop ")
     }
 
     private[concurrency] def stopWorkflowLoop(taskID: Int): Unit = {

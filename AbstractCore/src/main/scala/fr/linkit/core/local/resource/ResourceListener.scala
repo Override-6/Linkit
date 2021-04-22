@@ -39,10 +39,12 @@ class ResourceListener(resourcePath: String) {
                     val path   = rootPath.resolve(event.context())
 
                     val folder = path.getParent
-                    println(s"file updated ${path}")
-                    println(s"in folder $folder")
-                    informers.get(folder.toString).fold() { informer =>
-                        informer.informLocalModification(path.getFileName.toString)
+                    if (path.getFileName.toString != ResourceFolderMaintainer.MaintainerFileName) {
+                        println(s"file updated ${path}")
+                        println(s"in folder $folder")
+                        informers.get(folder.toString).fold() { informer =>
+                            informer.informLocalModification(path.getFileName.toString)
+                        }
                     }
                 })
                 key.reset()

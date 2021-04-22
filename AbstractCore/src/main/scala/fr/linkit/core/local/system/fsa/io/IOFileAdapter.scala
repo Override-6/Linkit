@@ -35,7 +35,7 @@ case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) exten
     override def getName: String = file.getName
 
     override def getContentString: String = {
-        val in = newInputStream()
+        val in  = newInputStream()
         val str = new String(in.readAllBytes())
         in.close()
         str
@@ -43,7 +43,7 @@ case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) exten
 
     override def toUri: URI = file.toURI
 
-    override def resolveSibling(path: String): FileAdapter = fsa.getAdapter(getPath + File.separatorChar + path)
+    override def resolveSibling(path: String): FileAdapter = fsa.getAdapter(getPath + File.separatorChar + path) //FIXME WTF
 
     override def resolveSiblings(path: FileAdapter): FileAdapter = resolveSibling(path.getPath)
 
@@ -59,9 +59,16 @@ case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) exten
 
     override def notExists: Boolean = !exists
 
-    override def create(): this.type = {
+    override def createAsFile(): this.type = {
         if (notExists) {
             file.createNewFile()
+        }
+        this
+    }
+
+    override def createAsFolder(): IOFileAdapter.this.type = {
+        if (notExists) {
+            file.mkdirs()
         }
         this
     }

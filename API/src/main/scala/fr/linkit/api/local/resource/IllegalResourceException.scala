@@ -12,6 +12,6 @@
 
 package fr.linkit.api.local.resource
 
-case class NoSuchResourceException(msg: String, cause: Throwable = null) extends ResourceException(msg, cause) {
+class IllegalResourceException(msg: String, cause: Throwable = null) extends ResourceException(msg, cause) {
 
 }

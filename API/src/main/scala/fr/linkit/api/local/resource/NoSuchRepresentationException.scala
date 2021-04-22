@@ -12,10 +12,6 @@
 
 package fr.linkit.api.local.resource
 
-import fr.linkit.api.local.system.fsa.FileAdapter
-
-trait ResourceFactory[R <: ExternalResource] {
-
-    def apply(adapter: FileAdapter, parent: ExternalResourceFolder): R
+case class NoSuchRepresentationException(msg: String, cause: Throwable = null) extends ResourceException(msg, cause) {
 
 }

@@ -12,10 +12,11 @@
 
 package fr.linkit.api.local.resource
 
+import fr.linkit.api.local.resource.representation.ResourceFolder
 import fr.linkit.api.local.system.Versions
 
 /**
- * A Resource Maintainer is a helper for [[ExternalResourceFolder]] which contains information
+ * A Resource Maintainer is a helper for [[ResourceFolder]] which contains information
  * about all sub files/folders being stored into the folder that they are maintaining.
  * The way that resources information is managed is implementation-specific.
  *
@@ -30,7 +31,7 @@ trait ResourcesMaintainer {
     /**
      * Return the resources folder that this maintainer handles.
      * */
-    def getResources: ExternalResourceFolder
+    def getResources: ResourceFolder
 
     /**
      * @return a list of the automatic behavior of this folder maintainer regarding to

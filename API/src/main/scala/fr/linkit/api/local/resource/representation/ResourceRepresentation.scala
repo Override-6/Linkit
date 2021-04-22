@@ -10,17 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.api.local.resource.representation
 
 import fr.linkit.api.local.system.Versions
 import fr.linkit.api.local.system.fsa.FileAdapter
+import org.jetbrains.annotations.{NotNull, Nullable}
 
 /**
  * An external resource is considered as external as long as it is not stored into an archived file.
  * The resource can be partially present on a driver of the current machine, or can be partially stored
  * into a distant driver.
  * */
-trait ExternalResource {
+trait ResourceRepresentation {
 
     val name: String
 
@@ -37,7 +38,11 @@ trait ExternalResource {
     /**
      * @return the parent folder of this resource.
      * */
-    def getParent: ExternalResourceFolder
+    @Nullable
+    def getParent: ResourceFolder
+
+    @NotNull
+    def getRoot: ResourceFolder
 
     /**
      * @return The file adapter that represent this resource on the os's File System

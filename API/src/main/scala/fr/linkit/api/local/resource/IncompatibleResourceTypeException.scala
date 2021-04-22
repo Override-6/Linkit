@@ -12,8 +12,6 @@
 
 package fr.linkit.api.local.resource
 
-import fr.linkit.api.local.system.AppException
-
-class IncompatibleResourceTypeException(msg: String) extends AppException(msg) {
+class IncompatibleResourceTypeException(msg: String) extends ResourceException(msg) {
 
 }
