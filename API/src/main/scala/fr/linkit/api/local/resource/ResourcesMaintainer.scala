@@ -12,7 +12,8 @@
 
 package fr.linkit.api.local.resource
 
-import fr.linkit.api.local.resource.representation.ResourceFolder
+import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.api.local.resource.exception.NoSuchResourceException
 import fr.linkit.api.local.system.Versions
 
 /**
@@ -32,17 +33,6 @@ trait ResourcesMaintainer {
      * Return the resources folder that this maintainer handles.
      * */
     def getResources: ResourceFolder
-
-    /**
-     * @return a list of the automatic behavior of this folder maintainer regarding to
-     *         its resources management.
-     */
-    def getBehaviors: Array[AutomaticBehaviorOption]
-
-    /**
-     * @param behaviorOptions the new automatic behaviors to apply instantly.
-     */
-    def setBehaviors(behaviorOptions: Seq[AutomaticBehaviorOption]): Unit
 
     /**
      * @param name the name of file/folder to test.

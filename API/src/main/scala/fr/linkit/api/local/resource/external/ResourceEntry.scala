@@ -10,9 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.api.local.resource.external
 
-import fr.linkit.api.local.resource.representation.{ResourceFolder, ResourceRepresentation, ResourceRepresentationFactory}
+import fr.linkit.api.local.resource.ResourceRepresentationFactory
+import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException, NoSuchRepresentationException}
+import fr.linkit.api.local.resource.representation.ResourceRepresentation
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
@@ -20,9 +22,9 @@ import scala.reflect.ClassTag
 /**
  * This class is an entry for resources that transforms an actual file/folder into
  * any resource representation.
- * Default representations of type [[ResourceRepresentation]] may be automatically attached.
+ * Default representations of type [[ExternalResource]] may be automatically attached.
  * */
-trait ResourceEntry {
+trait ResourceEntry[E <: ExternalResource] {
 
     /**
      * This resource name
@@ -32,7 +34,7 @@ trait ResourceEntry {
     /**
      * A representation of the folder that contains this resource.
      * */
-    def owner: ResourceFolder
+    def getResource: ExternalResource
 
     /**
      * Links a resource with a resource class which represent it and make the resource manipulable from the code.
@@ -44,7 +46,7 @@ trait ResourceEntry {
      *                                           as the resource can't be handled as a folder, the implementation may throw this exception.
      */
     @throws[IncompatibleResourceTypeException]("If the requested resource type is incompatible with the resource it targets.")
-    def attachRepresentation[R <: ResourceRepresentation : ClassTag](factory: ResourceRepresentationFactory[R]): Unit
+    def attachRepresentation[R <: ResourceRepresentation : ClassTag](factory: ResourceRepresentationFactory[R, E]): Unit
 
     /**
      * Retrieves the wanted representation of the resource.

@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.api.local.resource.exception
 
 class IncompatibleResourceTypeException(msg: String) extends ResourceException(msg) {
 

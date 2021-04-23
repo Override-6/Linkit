@@ -32,6 +32,11 @@ trait Versions {
      * */
     def implementationVersion: Version
 
+    def sameVersions(other: Versions): Boolean = {
+        other.apiVersion == apiVersion &&
+                other.abstractCoreVersion == abstractCoreVersion &&
+                other.implementationVersion == implementationVersion
+    }
 
 }
 
@@ -48,4 +53,5 @@ object Versions {
 
         override def implementationVersion: Version = Version.Unknown
     }
+
 }

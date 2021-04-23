@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.resource
 
 import fr.linkit.api.connection.ConnectionContext
-import fr.linkit.api.local.resource.representation.ResourceFolder
+import fr.linkit.api.local.resource.external.ResourceFolder
 
 trait ConnectionResources extends ResourceFolder {
 

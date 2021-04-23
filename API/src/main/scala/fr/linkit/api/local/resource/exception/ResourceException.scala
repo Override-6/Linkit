@@ -10,8 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.api.local.resource.exception
 
-case class NoSuchRepresentationException(msg: String, cause: Throwable = null) extends ResourceException(msg, cause) {
+import fr.linkit.api.local.system.AppException
+
+class ResourceException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

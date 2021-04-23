@@ -10,10 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.resource
+package fr.linkit.api.local.resource.exception
 
-import fr.linkit.api.local.resource.external.ExternalResource
-
-trait RemoteResourceRepresentation extends ExternalResource {
+case class ResourceAlreadyPresentException(msg: String, cause: Throwable = null) extends ResourceException(msg, cause) {
 
 }

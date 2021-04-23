@@ -10,12 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource.representation
+package fr.linkit.core.local.resource
 
-import fr.linkit.api.local.system.fsa.FileAdapter
-
-trait ResourceRepresentationFactory[R <: ResourceRepresentation] {
-
-    def apply(adapter: FileAdapter, parent: ResourceFolder): R
+class SimpleResourceListener {
 
 }

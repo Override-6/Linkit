@@ -12,7 +12,7 @@
 
 package fr.linkit.core.local.resource
 
-import fr.linkit.api.local.resource.representation.ResourceRepresentation
+import fr.linkit.api.local.resource.external.ExternalResource
 import fr.linkit.core.local.system.DynamicVersions
 
 case class ResourceItem(name: String) extends Serializable {
@@ -21,7 +21,6 @@ case class ResourceItem(name: String) extends Serializable {
         this("")
     }
 
-    var isLocalOnly : Boolean         = false
     var lastChecksum: Long            = -1
     var lastModified: DynamicVersions = DynamicVersions.unknown
 
@@ -29,15 +28,12 @@ case class ResourceItem(name: String) extends Serializable {
 
 object ResourceItem {
 
-    def minimal(resource: ResourceRepresentation, isLocalOnly: Boolean): ResourceItem = {
-        val item = new ResourceItem(resource.name)
-        item.isLocalOnly = isLocalOnly
-        item
+    def minimal(resource: ExternalResource): ResourceItem = {
+        new ResourceItem(resource.name)
     }
 
-    def apply(resource: ResourceRepresentation, isLocalOnly: Boolean): ResourceItem = {
+    def apply(resource: ExternalResource): ResourceItem = {
         val item = new ResourceItem(resource.name)
-        item.isLocalOnly = isLocalOnly
         item.lastChecksum = resource.getLastChecksum
         item.lastModified = resource.getLastModified match {
             case null                     => DynamicVersions.unknown

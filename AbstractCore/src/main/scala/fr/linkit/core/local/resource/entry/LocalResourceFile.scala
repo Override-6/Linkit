@@ -10,17 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.core.local.resource
+package fr.linkit.core.local.resource.entry
 
-import fr.linkit.api.local.resource.representation.ResourceFile
+import fr.linkit.api.local.resource.external.{ResourceEntry, ResourceFile}
 import fr.linkit.api.local.system.fsa.FileAdapter
+import fr.linkit.core.local.resource.ResourceFolderMaintainer
 import org.jetbrains.annotations.NotNull
 
 import java.util.zip.Adler32
 
-class DefaultResourceFile(@NotNull parent: DefaultResourceFolder, adapter: FileAdapter) extends AbstractResourceRepresentation(parent, adapter) with ResourceFile {
+class LocalResourceFile(@NotNull parent: LocalResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile {
 
     println(s"Created resource File $getLocation")
+
 
     override def getChecksum: Long = {
         val crc32 = new Adler32()

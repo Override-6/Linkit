@@ -15,7 +15,7 @@ package fr.linkit.api.local
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.resource.representation.ResourceFolder
+import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.{Version, Versions}
 

@@ -10,10 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.resource
+package fr.linkit.api.local.resource.representation
 
-import fr.linkit.api.local.resource.external.ExternalResource
+import fr.linkit.api.local.resource.external.ResourceFolder
 
-trait RemoteResourceRepresentation extends ExternalResource {
+trait FolderRepresentation extends ResourceRepresentation {
+
+    override def getResource: ResourceFolder
 
 }

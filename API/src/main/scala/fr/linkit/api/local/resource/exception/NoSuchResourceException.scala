@@ -10,20 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource.representation
+package fr.linkit.api.local.resource.exception
 
-import org.jetbrains.annotations.NotNull
-
-/**
- * depicts a class that represents a resource file.
- * */
-trait ResourceFile extends ResourceRepresentation {
-
-    /**
-     * @return The folder resource where this file is stored.
-     *         The parent can't be null.
-     * */
-    @NotNull
-    def getParent: ResourceFolder
+case class NoSuchResourceException(msg: String, cause: Throwable = null) extends ResourceException(msg, cause) {
 
 }

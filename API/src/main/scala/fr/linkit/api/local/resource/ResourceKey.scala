@@ -12,8 +12,12 @@
 
 package fr.linkit.api.local.resource
 
-import fr.linkit.api.local.system.AppException
+trait ResourceKey {
 
-class ResourceException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+    def onModify(name: String): Unit
+
+    def onDelete(name: String): Unit
+
+    def onCreate(name: String): Unit
 
 }

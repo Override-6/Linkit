@@ -12,18 +12,17 @@
 
 package fr.linkit.core.local.resource
 
+import fr.linkit.api.local.resource.{ResourceKey, ResourcesMaintainer}
+
 import java.nio.file._
 import java.util
-
-import fr.linkit.api.local.resource.{ResourcesMaintainer, ResourcesMaintainerInformer}
-
 import scala.collection.mutable
 
 class ResourceListener(resourcePath: String) {
 
     private val rootPath              = Path.of(resourcePath)
     private val watcher: WatchService = FileSystems.getDefault.newWatchService()
-    private val informers           = new mutable.HashMap[String, ResourcesMaintainerInformer]()
+    private val keys                  = new mutable.HashMap[String, (ResourceKey, WatchKey)]()
 
     @volatile private var alive = false
 
@@ -36,14 +35,21 @@ class ResourceListener(resourcePath: String) {
                 val key    = watcher.take()
                 val events = key.pollEvents().asInstanceOf[util.List[WatchEvent[Path]]]
                 events.forEach(event => {
-                    val path   = rootPath.resolve(event.context())
+                    val path = rootPath.resolve(event.context())
 
                     val folder = path.getParent
                     if (path.getFileName.toString != ResourceFolderMaintainer.MaintainerFileName) {
                         println(s"file updated ${path}")
                         println(s"in folder $folder")
-                        informers.get(folder.toString).fold() { informer =>
-                            informer.informLocalModification(path.getFileName.toString)
+                        import StandardWatchEventKinds._
+                        keys.get(folder.toString).fold() { pair =>
+                            val key                    = pair._1
+                            val action: String => Unit = event.kind() match {
+                                case ENTRY_MODIFY => key.onModify
+                                case ENTRY_DELETE => key.onDelete
+                                case ENTRY_CREATE => key.onCreate
+                            }
+                            action(folder.getFileName.toString)
                         }
                     }
                 })
@@ -57,17 +63,18 @@ class ResourceListener(resourcePath: String) {
         watcher.close()
     }
 
-    def putMaintainer(maintainer: ResourcesMaintainer with ResourcesMaintainerInformer): Unit = {
+    def putMaintainer(maintainer: ResourcesMaintainer, resourceKey: ResourceKey): Unit = {
 
-        val behaviorOptions = maintainer.getBehaviors
-        if (behaviorOptions.isEmpty)
-            return
+        val location = maintainer.getResources.getAdapter.getAbsolutePath
 
-        val location = maintainer.getResources.getLocation
-        informers.put(location, maintainer)
+        if (keys.contains(location)) {
+            keys(location)._2.cancel()
+        }
+
         val path = Path.of(location)
-
-        path.register(watcher, behaviorOptions.map(_.getWatchEventKind): _*)
+        import StandardWatchEventKinds._
+        val watchKey = path.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
+        keys.put(location, (resourceKey, watchKey))
     }
 
 }

@@ -10,8 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.api.local.resource.representation
 
-case class NoSuchResourceException(msg: String, cause: Throwable = null) extends ResourceException(msg, cause) {
+import fr.linkit.api.local.resource.external.ResourceFile
+
+trait FileRepresentation extends ResourceRepresentation {
+
+    override def getResource: ResourceFile
 
 }

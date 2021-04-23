@@ -16,7 +16,7 @@ import fr.linkit.api.connection.{ConnectionContext, ConnectionException, Connect
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.AutomaticBehaviorOption
-import fr.linkit.api.local.resource.representation.ResourceFolder
+import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.{ApplicationContext, system}
@@ -26,7 +26,7 @@ import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.resource.{DefaultResourceFolder, ResourceListener}
+import fr.linkit.core.local.resource.ResourceListener
 import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 
 import scala.collection.mutable

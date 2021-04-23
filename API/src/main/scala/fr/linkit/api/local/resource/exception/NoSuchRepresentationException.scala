@@ -10,10 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource
+package fr.linkit.api.local.resource.exception
 
-trait ResourcesMaintainerInformer {
-
-    def informLocalModification(name: String): Unit
+case class NoSuchRepresentationException(msg: String, cause: Throwable = null) extends ResourceException(msg, cause) {
 
 }

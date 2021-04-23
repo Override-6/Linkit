@@ -10,21 +10,26 @@
  *  questions.
  */
 
-package fr.linkit.core.local.resource
+package fr.linkit.core.local.resource.entry
 
-import fr.linkit.api.local.resource.representation.{ResourceFolder, ResourceRepresentation}
+import fr.linkit.api.local.resource.external.{ExternalResource, ResourceEntry, ResourceFolder}
 import fr.linkit.api.local.system.Versions
 import fr.linkit.api.local.system.fsa.FileAdapter
+import fr.linkit.core.local.resource.ResourceFolderMaintainer
 import fr.linkit.core.local.system.StaticVersions
-import org.jetbrains.annotations.{NotNull, Nullable}
+import org.jetbrains.annotations.Nullable
 
-abstract class AbstractResourceRepresentation(@Nullable parent: ResourceFolder, adapter: FileAdapter) extends ResourceRepresentation {
+abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileAdapter) extends ExternalResource {
 
     override val name: String = adapter.getName
+
+    protected val entry = new DefaultResourceEntry[this.type](this)
 
     private val lastModified = getMaintainer.getLastModified(name)
 
     protected def getMaintainer: ResourceFolderMaintainer
+
+    def getEntry: ResourceEntry[this.type] = entry
 
     override def getLocation: String = {
         if (parent == null)
