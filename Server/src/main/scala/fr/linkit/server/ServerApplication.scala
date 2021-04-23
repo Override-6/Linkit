@@ -23,8 +23,8 @@ import fr.linkit.api.local.{ApplicationContext, system}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.resource.ResourceListener
-import fr.linkit.core.local.resource.entry.LocalResourceFolder
+import fr.linkit.core.local.resource.SimpleResourceListener
+import fr.linkit.core.local.resource.entry.{LocalResourceFactories, LocalResourceFolder}
 import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 import fr.linkit.server.ServerApplication.Version
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
@@ -38,7 +38,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
 
     private  val mainWorkerPool               = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
     override val pluginManager: PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
-    private  val resourceListener             = new ResourceListener(configuration.resourceFolder)
+    private  val resourceListener             = new SimpleResourceListener(configuration.resourceFolder)
     private  val resources                    = prepareAppResources()
     private  val serverCache                  = mutable.HashMap.empty[Any, ServerConnection]
     private  val securityManager              = configuration.securityManager
@@ -197,18 +197,18 @@ class ServerApplication private(override val configuration: ServerApplicationCon
     private def prepareAppResources(): ResourceFolder = {
         AppLogger.trace("Loading app resources...")
         resourceListener.startWatchService()
-        val fsa = configuration.fsAdapter
+        val fsa         = configuration.fsAdapter
+        val rootAdapter = fsa.getAdapter(configuration.resourceFolder)
 
         val root = LocalResourceFolder(
-            fsa,
-            configuration.resourceFolder,
-            resourceListener,
-            null
+            adapter = rootAdapter,
+            listener = resourceListener,
+            parent = null
         )
         recursiveScan(root)
 
         def recursiveScan(folder: ResourceFolder): Unit = {
-            folder.scan(folder.register)
+            folder.scan(folder.register(_, LocalResourceFactories.adaptive))
 
             fsa.list(folder.getAdapter).foreach { sub =>
                 if (sub.isDirectory) {

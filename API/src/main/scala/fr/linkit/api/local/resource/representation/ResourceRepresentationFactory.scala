@@ -10,13 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource.external
+package fr.linkit.api.local.resource.representation
 
-import fr.linkit.api.local.resource.ResourceListener
-import fr.linkit.api.local.system.fsa.FileAdapter
+import fr.linkit.api.local.resource.external.ExternalResource
 
-trait ExternalResourceFactory[+R <: ExternalResource] {
+trait ResourceRepresentationFactory[R <: ResourceRepresentation, E <: ExternalResource] {
 
-    def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): R
+    def apply(resource: E): R
 
 }

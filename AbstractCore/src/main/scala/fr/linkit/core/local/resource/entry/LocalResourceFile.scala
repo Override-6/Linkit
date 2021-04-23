@@ -12,17 +12,16 @@
 
 package fr.linkit.core.local.resource.entry
 
-import fr.linkit.api.local.resource.external.{ResourceEntry, ResourceFile}
+import fr.linkit.api.local.resource.external.{ExternalResourceFactory, ResourceEntry, ResourceFile, ResourceFolder}
+import fr.linkit.api.local.resource.{ResourceListener, ResourcesMaintainer}
 import fr.linkit.api.local.system.fsa.FileAdapter
-import fr.linkit.core.local.resource.ResourceFolderMaintainer
 import org.jetbrains.annotations.NotNull
 
 import java.util.zip.Adler32
 
-class LocalResourceFile(@NotNull parent: LocalResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile {
+class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile {
 
     println(s"Created resource File $getLocation")
-
 
     protected val entry = new DefaultResourceEntry[ResourceFile](this)
 
@@ -36,5 +35,14 @@ class LocalResourceFile(@NotNull parent: LocalResourceFolder, adapter: FileAdapt
         crc32.getValue
     }
 
-    override protected def getMaintainer: ResourceFolderMaintainer = parent.getMaintainer
+    override protected def getMaintainer: ResourcesMaintainer = parent.getMaintainer
+}
+
+object LocalResourceFile extends ExternalResourceFactory[ResourceFile] {
+
+    override def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): ResourceFile = {
+        apply(parent, adapter)
+    }
+
+    def apply(parent: ResourceFolder, adapter: FileAdapter): ResourceFile = new LocalResourceFile(parent, adapter)
 }

@@ -12,6 +12,71 @@
 
 package fr.linkit.core.local.resource
 
-class SimpleResourceListener {
+import fr.linkit.api.local.resource.{ResourceKey, ResourceListener, ResourcesMaintainer}
+
+import java.io.Closeable
+import java.nio.file._
+import java.util
+import scala.collection.mutable
+
+class SimpleResourceListener(resourcePath: String) extends ResourceListener with Closeable {
+
+    private val rootPath              = Path.of(resourcePath)
+    private val watcher: WatchService = FileSystems.getDefault.newWatchService()
+    private val keys                  = new mutable.HashMap[String, (ResourceKey, WatchKey)]()
+
+    @volatile private var alive = false
+
+    def startWatchService(): Unit = {
+        if (alive)
+            throw new IllegalStateException("This Resource folder event listener is already alive !")
+        alive = true
+        new Thread(() => {
+            while (alive) {
+                val key    = watcher.take()
+                val events = key.pollEvents().asInstanceOf[util.List[WatchEvent[Path]]]
+                events.forEach(event => {
+                    val path = rootPath.resolve(event.context())
+
+                    val folder = path.getParent
+                    if (path.getFileName.toString != ResourceFolderMaintainer.MaintainerFileName) {
+                        println(s"file updated ${path}")
+                        println(s"in folder $folder")
+                        import StandardWatchEventKinds._
+                        println(s"keys = ${keys}")
+                        keys.get(folder.toString).fold() { pair =>
+                            val key                    = pair._1
+                            val action: String => Unit = event.kind() match {
+                                case ENTRY_MODIFY => key.onModify
+                                case ENTRY_DELETE => key.onDelete
+                                case ENTRY_CREATE => key.onCreate
+                            }
+                            action(path.getFileName.toString)
+                        }
+                    }
+                })
+                key.reset()
+            }
+        }, "Resources Maintainers Listener").start()
+    }
+
+    override def close(): Unit = {
+        alive = false
+        watcher.close()
+    }
+
+    override def putMaintainer(maintainer: ResourcesMaintainer, resourceKey: ResourceKey): Unit = {
+
+        val location = maintainer.getResources.getAdapter.getAbsolutePath
+
+        if (keys.contains(location)) {
+            keys(location)._2.cancel()
+        }
+
+        val path = Path.of(location)
+        import StandardWatchEventKinds._
+        val watchKey = path.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
+        keys.put(location, (resourceKey, watchKey))
+    }
 
 }

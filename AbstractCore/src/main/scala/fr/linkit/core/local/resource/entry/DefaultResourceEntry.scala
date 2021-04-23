@@ -12,10 +12,9 @@
 
 package fr.linkit.core.local.resource.entry
 
-import fr.linkit.api.local.resource.ResourceRepresentationFactory
 import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException, NoSuchRepresentationException}
 import fr.linkit.api.local.resource.external.{ExternalResource, ResourceEntry, ResourceFile, ResourceFolder}
-import fr.linkit.api.local.resource.representation.ResourceRepresentation
+import fr.linkit.api.local.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
 import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable

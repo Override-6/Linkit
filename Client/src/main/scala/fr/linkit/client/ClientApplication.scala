@@ -26,7 +26,7 @@ import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.resource.ResourceListener
+import fr.linkit.core.local.resource.SimpleResourceListener
 import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 
 import scala.collection.mutable
@@ -36,7 +36,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     private  val workerPool                              = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
     private  val connectionCache                         = mutable.HashMap.empty[Any, ExternalConnection]
-    private  val resourceListener                        = new ResourceListener(configuration.resourceFolder)
+    private  val resourceListener                        = new SimpleResourceListener(configuration.resourceFolder)
     private  val resources                               = prepareAppResources()
     override val pluginManager           : PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
     @volatile private var alive          : Boolean       = false

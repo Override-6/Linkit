@@ -12,11 +12,12 @@
 
 package fr.linkit.core.local.resource.entry
 
+import fr.linkit.api.local.resource.ResourceListener
 import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException, _}
 import fr.linkit.api.local.resource.external.{ExternalResource, ExternalResourceFactory, ResourceEntry, ResourceFolder}
 import fr.linkit.api.local.system.fsa.FileAdapter
+import fr.linkit.core.local.resource.ResourceFolderMaintainer
 import fr.linkit.core.local.resource.entry.LocalResourceFolder.checkResourceName
-import fr.linkit.core.local.resource.{ResourceFolderMaintainer, ResourceListener}
 import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
@@ -82,7 +83,7 @@ class LocalResourceFolder private(adapter: FileAdapter,
         if (adapter.notExists)
             throw NoSuchResourceException(s"Resource $resourcePath not found.")
 
-        val resource = factory(adapter, this)
+        val resource = factory(adapter, listener, this)
         resources.put(name, resource)
         maintainer.registerResource(resource)
         resource
@@ -118,11 +119,11 @@ class LocalResourceFolder private(adapter: FileAdapter,
 
 }
 
-object LocalResourceFolder {
+object LocalResourceFolder extends ExternalResourceFactory[ResourceFolder] {
 
-    def apply(adapter: FileAdapter,
+    override def apply(adapter: FileAdapter,
               listener: ResourceListener,
-              parent: ResourceFolder): LocalResourceFolder = {
+              parent: ResourceFolder): ResourceFolder = {
         new LocalResourceFolder(adapter, listener, parent)
     }
 

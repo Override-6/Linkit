@@ -12,11 +12,8 @@
 
 package fr.linkit.api.local.resource
 
-import fr.linkit.api.local.resource.external.ExternalResource
-import fr.linkit.api.local.resource.representation.ResourceRepresentation
+trait ResourceListener {
 
-trait ResourceRepresentationFactory[R <: ResourceRepresentation, E <: ExternalResource] {
-
-    def apply(resource: E): R
+    def putMaintainer(maintainer: ResourcesMaintainer, resourceKey: ResourceKey): Unit
 
 }

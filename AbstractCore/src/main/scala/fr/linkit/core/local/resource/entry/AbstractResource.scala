@@ -12,11 +12,11 @@
 
 package fr.linkit.core.local.resource.entry
 
+import fr.linkit.api.local.resource.ResourcesMaintainer
 import fr.linkit.api.local.resource.external.{ExternalResource, ResourceFolder}
 import fr.linkit.api.local.system.Versions
 import fr.linkit.api.local.system.fsa.FileAdapter
-import fr.linkit.core.local.resource.ResourceFolderMaintainer
-import fr.linkit.core.local.system.StaticVersions
+import fr.linkit.core.local.system.{DynamicVersions, StaticVersions}
 import org.jetbrains.annotations.Nullable
 
 abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileAdapter) extends ExternalResource {
@@ -25,8 +25,7 @@ abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileA
 
     private val lastModified = getMaintainer.getLastModified(name)
 
-    protected def getMaintainer: ResourceFolderMaintainer
-
+    protected def getMaintainer: ResourcesMaintainer
 
     override def getLocation: String = {
         if (parent == null)
@@ -52,7 +51,12 @@ abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileA
     override def getLastChecksum: Long = getMaintainer.getLastChecksum(name)
 
     override def markAsModifiedByCurrentApp(): Unit = {
-        lastModified.setAll(StaticVersions.currentVersion)
+        lastModified match {
+            case dynamic: DynamicVersions => dynamic.setAll(StaticVersions.currentVersion)
+            case _                        =>
+                //If the Versions implementation isn't dynamic, this means that we may not
+                //Update the versions.
+        }
         if (getParent != null)
             getParent.markAsModifiedByCurrentApp()
     }

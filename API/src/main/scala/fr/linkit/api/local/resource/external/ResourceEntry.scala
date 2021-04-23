@@ -12,9 +12,8 @@
 
 package fr.linkit.api.local.resource.external
 
-import fr.linkit.api.local.resource.ResourceRepresentationFactory
 import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException, NoSuchRepresentationException}
-import fr.linkit.api.local.resource.representation.ResourceRepresentation
+import fr.linkit.api.local.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag

@@ -17,6 +17,7 @@ import fr.linkit.api.local.resource.exception.NoSuchResourceException
 import fr.linkit.api.local.resource.external.{ExternalResource, ResourceFolder}
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.core.local.resource.ResourceFolderMaintainer.{MaintainerFileName, Resources, loadResources}
+import fr.linkit.core.local.resource.entry.LocalResourceFactories
 import fr.linkit.core.local.system.AbstractCoreConstants.{UserGson => Gson}
 import fr.linkit.core.local.system.{DynamicVersions, StaticVersions}
 
@@ -114,7 +115,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
         override def onCreate(name: String): Unit = {
             if (isKnown(name))
                 return
-            maintained.register(name)
+            maintained.register(name, LocalResourceFactories.adaptive)
             updateFile()
             println(s"Registered $name")
         }
@@ -134,7 +135,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
             }
             if (item.isDefined && resource.isEmpty) {
                 if (maintained.isPresentOnDrive(name)) {
-                    maintained.register(name)
+                    maintained.register(name, LocalResourceFactories.adaptive)
                 } else {
                     unregisterResource(name)
                 }
@@ -170,7 +171,7 @@ object ResourceFolderMaintainer {
                 return
             }
 
-            maintained.register(name)
+            maintained.register(name, LocalResourceFactories.adaptive)
         }
 
         resources.foreach(handleItem)
