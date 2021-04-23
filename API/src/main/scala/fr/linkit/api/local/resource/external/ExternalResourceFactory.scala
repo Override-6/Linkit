@@ -10,8 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource.exception
+package fr.linkit.api.local.resource.external
 
-case class IncompatibleResourceTypeException(msg: String) extends ResourceException(msg) {
+import fr.linkit.api.local.system.fsa.FileAdapter
+
+trait ExternalResourceFactory[+R <: ExternalResource] {
+
+    def apply(adapter: FileAdapter, parent: ExternalResource): R
 
 }

@@ -42,6 +42,7 @@ class ResourceListener(resourcePath: String) {
                         println(s"file updated ${path}")
                         println(s"in folder $folder")
                         import StandardWatchEventKinds._
+                        println(s"keys = ${keys}")
                         keys.get(folder.toString).fold() { pair =>
                             val key                    = pair._1
                             val action: String => Unit = event.kind() match {
@@ -49,7 +50,7 @@ class ResourceListener(resourcePath: String) {
                                 case ENTRY_DELETE => key.onDelete
                                 case ENTRY_CREATE => key.onCreate
                             }
-                            action(folder.getFileName.toString)
+                            action(path.getFileName.toString)
                         }
                     }
                 })

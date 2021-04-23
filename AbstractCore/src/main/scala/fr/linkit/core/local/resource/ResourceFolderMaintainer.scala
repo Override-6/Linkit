@@ -91,28 +91,35 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
 
     object MaintainerKey extends ResourceKey {
 
-        override def onModify(name: String): Unit = handle(name) { (resource, item) =>
+        override def onModify(name: String): Unit = runIfKnown(name) { (resource, item) =>
             if (!item.lastModified.sameVersions(StaticVersions.currentVersion)) {
                 item.lastModified.setAll(StaticVersions.currentVersion)
             }
+            def itemChecksum = item.lastChecksum
+            val itemFolder = resources.folder
+            itemFolder.lastChecksum -= itemChecksum
             item.lastChecksum = resource.getChecksum
+            itemFolder.lastChecksum += itemChecksum
+
             updateFile()
             println(s"item = ${item}")
         }
 
-        override def onDelete(name: String): Unit = handle(name) { (_, _) =>
+        override def onDelete(name: String): Unit = runIfKnown(name) { (_, _) =>
             maintained.unregister(name)
             updateFile()
             println(s"Unregistered $name")
         }
 
-        override def onCreate(name: String): Unit = handle(name) { (_, _) =>
+        override def onCreate(name: String): Unit = {
+            if (isKnown(name))
+                return
             maintained.register(name)
             updateFile()
             println(s"Registered $name")
         }
 
-        private def handle(name: String)(callback: (ExternalResource, ResourceItem) => Unit): Unit = {
+        private def runIfKnown(name: String)(callback: (ExternalResource, ResourceItem) => Unit): Unit = {
             val resource = maintained.find[ExternalResource](name)
             val item     = resources.get(name)
 

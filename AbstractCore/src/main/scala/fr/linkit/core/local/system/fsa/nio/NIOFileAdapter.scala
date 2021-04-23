@@ -12,7 +12,7 @@
 
 package fr.linkit.core.local.system.fsa.nio
 
-import fr.linkit.api.local.system.fsa.FileAdapter
+import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 
 import java.io.{InputStream, OutputStream}
 import java.net.URI
@@ -21,6 +21,8 @@ import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
 case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) extends FileAdapter {
 
     override def getPath: String = path.toString
+
+    override def getFSAdapter: FileSystemAdapter = fsa
 
     override def getAbsolutePath: String = path.toAbsolutePath.toString
 

@@ -12,7 +12,7 @@
 
 package fr.linkit.core.local.resource.entry
 
-import fr.linkit.api.local.resource.external.{ExternalResource, ResourceEntry, ResourceFolder}
+import fr.linkit.api.local.resource.external.{ExternalResource, ResourceFolder}
 import fr.linkit.api.local.system.Versions
 import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.core.local.resource.ResourceFolderMaintainer
@@ -23,13 +23,10 @@ abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileA
 
     override val name: String = adapter.getName
 
-    protected val entry = new DefaultResourceEntry[this.type](this)
-
     private val lastModified = getMaintainer.getLastModified(name)
 
     protected def getMaintainer: ResourceFolderMaintainer
 
-    def getEntry: ResourceEntry[this.type] = entry
 
     override def getLocation: String = {
         if (parent == null)

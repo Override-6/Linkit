@@ -24,6 +24,10 @@ class LocalResourceFile(@NotNull parent: LocalResourceFolder, adapter: FileAdapt
     println(s"Created resource File $getLocation")
 
 
+    protected val entry = new DefaultResourceEntry[ResourceFile](this)
+
+    override def getEntry: ResourceEntry[ResourceFile] = entry
+
     override def getChecksum: Long = {
         val crc32 = new Adler32()
         val in    = adapter.newInputStream()

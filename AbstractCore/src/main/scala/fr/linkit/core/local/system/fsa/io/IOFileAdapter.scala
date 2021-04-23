@@ -12,12 +12,14 @@
 
 package fr.linkit.core.local.system.fsa.io
 
-import fr.linkit.api.local.system.fsa.FileAdapter
+import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 
 import java.io._
 import java.net.URI
 
 case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) extends FileAdapter {
+
+    override def getFSAdapter: FileSystemAdapter = fsa
 
     override def getPath: String = file.getPath
 

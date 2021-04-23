@@ -24,6 +24,7 @@ import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
 import fr.linkit.core.local.resource.ResourceListener
+import fr.linkit.core.local.resource.entry.LocalResourceFolder
 import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 import fr.linkit.server.ServerApplication.Version
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
@@ -207,7 +208,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         recursiveScan(root)
 
         def recursiveScan(folder: ResourceFolder): Unit = {
-            folder.scan(folder.register(_, true))
+            folder.scan(folder.register)
 
             fsa.list(folder.getAdapter).foreach { sub =>
                 if (sub.isDirectory) {

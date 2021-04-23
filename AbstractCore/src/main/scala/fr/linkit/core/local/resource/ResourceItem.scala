@@ -21,7 +21,7 @@ case class ResourceItem(name: String) extends Serializable {
         this("")
     }
 
-    var lastChecksum: Long            = -1
+    var lastChecksum: Long            = 0
     var lastModified: DynamicVersions = DynamicVersions.unknown
 
 }

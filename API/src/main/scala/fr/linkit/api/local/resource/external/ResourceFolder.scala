@@ -14,6 +14,9 @@ package fr.linkit.api.local.resource.external
 
 import fr.linkit.api.local.resource.ResourcesMaintainer
 import fr.linkit.api.local.resource.exception._
+import org.jetbrains.annotations.NotNull
+
+import scala.reflect.ClassTag
 
 /**
  * This interface depicts a [[ResourceFile]] that contains other sub [[ResourceFile]].
@@ -54,24 +57,14 @@ trait ResourceFolder extends ExternalResource {
     /**
      * Opens a resource folder located under this folder's path.
      * @param name the relative path in which the resource will be stored.
-     * @return an instance of [[ResourceFile]], which is default representation of the resource file.
+     * @tparam R the kind of resource that must be opened.
+     * @return an instance of [[R]], which is the resource file.
      * @throws ResourceAlreadyPresentException if name is already registered for the resource folder.
      * @throws IllegalResourceException If the provided name contains invalid character.
      * */
     @throws[ResourceAlreadyPresentException]("If the subPath targets a resource that is already registered.")
     @throws[IllegalResourceException]("If the provided name contains invalid character")
-    def openResourceFile(name: String): ResourceFile
-
-    /**
-     * Opens a resource folder located under this folder's path.
-     * @param name the relative path in which the resource will be stored.
-     * @return an instance of [[ResourceFolder]], which is default representation of the resource folder.
-     * @throws ResourceAlreadyPresentException if name is already registered for the resource folder.
-     * @throws IllegalResourceException If the provided name contains invalid character.
-     * */
-    @throws[ResourceAlreadyPresentException]("If the subPath targets a resource that is already registered.")
-    @throws[IllegalResourceException]("If the provided name contains invalid character")
-    def openResourceFolder(name: String): ResourceFolder
+    def openResource[R <: ExternalResource : ClassTag](name: String, factory: ExternalResourceFactory[R]): R
 
     /**
      * No matter if a file is registered by the maintainer or not, this method
@@ -89,20 +82,27 @@ trait ResourceFolder extends ExternalResource {
     def isKnown(name: String): Boolean = getMaintainer.isKnown(name)
 
     /**
-     * Tries to retrieve a resource folder from the provided name.
-     * if a resource was found, but isn't a folder, the returned value is [[None]]
-     * @param name the resource's name
-     * @return Some [[ResourceFolder]] if the provided names target a known resource folder
+     * Retrieves an [[ExternalResource]] of the name and it's representation type [[R]].
+     *
+     * @param name the name associated with the requested resource.
+     * @tparam R the type of resource expected.
+     * @throws NoSuchResourceException  if no resource was found with the provided name.
+     * @throws IncompatibleResourceTypeException if a resource is not the same type of [[R]].
+     * @return the expected resource representation.
      * */
-    def findFolder(name: String): Option[ResourceFolder]
+    @throws[NoSuchResourceException]("If no resource was found with the provided name")
+    @throws[IncompatibleResourceTypeException]("If a resource was found but with another type than R.")
+    @NotNull
+    def get[R <: ExternalResource : ClassTag](name: String): R
 
     /**
-     * Tries to retrieve a resource folder from the provided name.
-     * if a resource was found, but isn't a file, the returned value is [[None]]
-     * @param name the resource's name
-     * @return Some [[ResourceFolder]] if the provided names target a known resource file
+     * Tries to retrieve an [[ExternalResource]] with the same name and kind than the ones provided.
+     *
+     * @param name the name associated with the requested resource.
+     * @tparam R the kind of resource expected.
+     * @return [[Some]] instance if the resource was found AND have the same kind, or [[None]] instead
      * */
-    def findFile(name: String): Option[ResourceFile]
+    def find[R <: ExternalResource : ClassTag](name: String): Option[R]
 
     /**
      * Registers a resource folder.
@@ -115,7 +115,7 @@ trait ResourceFolder extends ExternalResource {
      * */
     @throws[NoSuchResourceException]("If file/folder was not physically found into the maintained folder.")
     @throws[IllegalResourceException]("If the provided name contains invalid character")
-    def register(name: String): ExternalResource
+    def register[R <: ExternalResource](name: String, factory: ExternalResourceFactory[R]): R
 
     /**
      * Unregisters a resource.

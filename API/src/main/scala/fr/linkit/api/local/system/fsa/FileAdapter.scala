@@ -22,6 +22,8 @@ trait FileAdapter {
 
     override def equals(obj: Any): Boolean = obj != null && obj.getClass == getClass && obj.toString == toString
 
+    def getFSAdapter: FileSystemAdapter
+
     def getPath: String
 
     def getAbsolutePath: String

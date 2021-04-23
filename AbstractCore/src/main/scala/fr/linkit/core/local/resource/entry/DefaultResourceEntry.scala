@@ -32,7 +32,7 @@ class DefaultResourceEntry[E <: ExternalResource](val resource: E) extends Resou
 
     override def attachRepresentation[R <: ResourceRepresentation : ClassTag](factory: ResourceRepresentationFactory[R, E]): Unit = {
         def abort(requested: String, found: String): Unit = {
-            throw new IncompatibleResourceTypeException(s"Attempted to attach a $requested resource representation to a $found.")
+            throw IncompatibleResourceTypeException(s"Attempted to attach a $requested resource representation to a $found.")
         }
 
         val rClass = classTag[R].runtimeClass
@@ -48,7 +48,7 @@ class DefaultResourceEntry[E <: ExternalResource](val resource: E) extends Resou
         representations.put(classTag[R].runtimeClass, factory(resource))
     }
 
-    override def findRepresentation[R <: ExternalResource : ClassTag]: Option[R] = {
+    override def findRepresentation[R <: ResourceRepresentation : ClassTag]: Option[R] = {
         representations.get(classTag[R].runtimeClass) match {
             case opt: Some[R] => opt
             case _            => resource match {
@@ -60,7 +60,7 @@ class DefaultResourceEntry[E <: ExternalResource](val resource: E) extends Resou
 
     @throws[NoSuchRepresentationException]("If a resource was found but with another type than R.")
     @NotNull
-    override def getRepresentation[R <: ExternalResource : ClassTag]: R = {
+    override def getRepresentation[R <: ResourceRepresentation : ClassTag]: R = {
         findRepresentation[R].getOrElse {
             throw NoSuchRepresentationException(s"No resource representation '${classTag[R].runtimeClass.getSimpleName}' was registered for resource ${resource.getLocation}")
         }
