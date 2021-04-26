@@ -18,7 +18,9 @@ import java.io.File
 import java.net.URI
 import scala.collection.mutable
 
-abstract class AbstractFileSystemAdapter extends FileSystemAdapter {
+abstract class AbstractFileSystemAdapter extends FileSystemAdapter with Serializable {
+
+    override val name: String = getClass.getSimpleName
 
     private val adapters = mutable.Map.empty[String, FileAdapter]
 
@@ -40,8 +42,8 @@ abstract class AbstractFileSystemAdapter extends FileSystemAdapter {
         adapter
     }
 
-    protected def createAdapter(path: String): FileAdapter
+    def createAdapter(path: String): FileAdapter
 
-    protected def createAdapter(uri: URI): FileAdapter
+    def createAdapter(uri: URI): FileAdapter
 
 }

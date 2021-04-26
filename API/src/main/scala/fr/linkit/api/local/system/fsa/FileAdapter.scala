@@ -16,13 +16,15 @@ import java.io.{InputStream, OutputStream}
 import java.net.URI
 
 //TODO implements more methods from java.nio.file.Path
-trait FileAdapter {
+trait FileAdapter extends Serializable {
 
     override def toString: String = getAbsolutePath
 
     override def equals(obj: Any): Boolean = obj != null && obj.getClass == getClass && obj.toString == toString
 
     def getFSAdapter: FileSystemAdapter
+
+    def isPresentOnDisk: Boolean
 
     def getPath: String
 

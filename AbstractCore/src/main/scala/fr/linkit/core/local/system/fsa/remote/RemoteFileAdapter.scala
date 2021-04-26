@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.resource
+package fr.linkit.core.local.system.fsa.remote
 
-import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.api.local.system.fsa.FileAdapter
 
-trait RemoteResourceFolder extends ResourceFolder with RemoteResource {
+trait RemoteFileAdapter extends FileAdapter {
 
 }

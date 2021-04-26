@@ -17,11 +17,14 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
+import fr.linkit.core.connection.network.cache.puppet.SharedObjectsCache.FieldRestorer
 import fr.linkit.core.connection.network.cache.puppet.generation.PuppetClassGenerator
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
+import fr.linkit.core.local.utils.ScalaUtils
 
+import java.lang.reflect.Field
 import scala.collection.mutable
 
 class SharedObjectsCache(handler: SharedCacheManager,
@@ -31,6 +34,7 @@ class SharedObjectsCache(handler: SharedCacheManager,
     private val localChips        = new mutable.HashMap[Long, ObjectChip[_ <: Serializable]]()
     private val puppeteers        = new mutable.HashMap[Long, Puppeteer[_ <: Serializable]]()
     private val unFlushedPuppets  = new mutable.HashSet[(Long, Serializable)]
+    private val fieldRestorer     = new FieldRestorer
     private val supportIdentifier = channel.traffic.supportIdentifier
 
     def postCloudObject[S <: Serializable](id: Long, obj: S): S with PuppetObject[S] = {
@@ -68,6 +72,10 @@ class SharedObjectsCache(handler: SharedCacheManager,
         }
     }
 
+    def mapField(field: Field, value: Any): Unit = {
+        fieldRestorer.putValue(field, value)
+    }
+
     override protected def handleBundle(bundle: RequestBundle): Unit = {
         AppLogger.vDebug(s"Processing bundle = ${bundle}")
         val response = bundle.packet
@@ -76,8 +84,10 @@ class SharedObjectsCache(handler: SharedCacheManager,
 
         response.nextPacket[Packet] match {
             case ObjectPacket((id: Long, puppet: Serializable)) =>
-                if (!localChips.contains(id))
+                if (!localChips.contains(id)) {
+                    fieldRestorer.restoreFields(puppet)
                     genPuppetObject(id, owner, puppet)
+                }
 
             case reqPacket => localChips.get(id.toLong).fold() { chip =>
                 chip.handleBundle(reqPacket, bundle.responseSubmitter)
@@ -168,6 +178,30 @@ object SharedObjectsCache extends SharedCacheFactory[SharedObjectsCache] {
                            container: PacketInjectableContainer): SharedObjectsCache = {
         val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
         new SharedObjectsCache(handler, identifier, channel)
+    }
+
+    class FieldRestorer {
+
+        private val values = mutable.HashMap.empty[Field, Any]
+
+        def putValue(field: Field, value: Any): Unit = {
+            field.setAccessible(true)
+            values.put(field, value)
+        }
+
+        def restoreFields(any: Any): Unit = {
+            val clazz = any.getClass
+
+            listRestorableFields(clazz).foreach(field => {
+                ScalaUtils.setFieldValue(field, any, values(field))
+            })
+        }
+
+        private def listRestorableFields(clazz: Class[_]): Array[Field] = {
+            clazz.getDeclaredFields.filter(values.contains) ++
+                    listRestorableFields(clazz.getSuperclass) ++
+                    clazz.getInterfaces.flatMap(listRestorableFields)
+        }
     }
 
 }

@@ -59,19 +59,24 @@ object PuppetClassFields {
                 .map(method => (method.getName, method))
                 .toMap
 
-        val isAutoFlush = clazz
+        val annotation  = clazz
                 .getAnnotation(classOf[SharedObject])
-                .autoFlush()
+        val isAutoFlush = if (annotation != null) {
+            annotation.autoFlush()
+        } else {
+            true
+        }
+
 
         val simpleName        = clazz.getSimpleName
         val puppetConstructor = clazz.getDeclaredConstructors
                 .find(_.getParameterTypes sameElements Array(clazz))
                 .getOrElse(throw new InvalidPuppetDefException(
-            s"""For puppet class $clazz
-               |This puppet must contain an accessible constructor 'x $simpleName($simpleName other)' in order to be extended by a generated class.
-               | If you are not the maintainer of this class, you can simply extend the class, define the appointed constructor and give the implementation
-               | to the puppet generator.
-               |""".stripMargin))
+                    s"""For puppet class $clazz
+                       |This puppet must contain an accessible constructor 'x $simpleName($simpleName other)' in order to be extended by a generated class.
+                       | If you are not the maintainer of this class, you can simply extend the class, define the appointed constructor and give the implementation
+                       | to the puppet generator.
+                       |""".stripMargin))
 
         new PuppetClassFields(sharedFields, sharedMethods, clazz, puppetConstructor, isAutoFlush)
     }

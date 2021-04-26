@@ -14,8 +14,7 @@ package fr.linkit.core.local
 
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system.ApiConstants.Version
+import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppLogger, Version}
@@ -84,12 +83,12 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration) extend
         )
         recursiveScan(root)
 
-        def recursiveScan(folder: ResourceFolder): Unit = {
+        def recursiveScan(folder: LocalExternalFolder): Unit = {
             folder.scan(folder.register(_, LocalResourceFactories.adaptive))
 
             fsa.list(folder.getAdapter).foreach { sub =>
                 if (sub.isDirectory) {
-                    recursiveScan(folder.get[ResourceFolder](sub.getName))
+                    recursiveScan(folder.get[LocalExternalFolder](sub.getName))
                 }
             }
         }
@@ -109,7 +108,7 @@ object LinkitApplication {
         if (this.instance != null)
             throw new IllegalAccessError("Only one LinkitApplication per Java process is permitted.")
         if (!isPrepared)
-            throw new IllegalStateException("Application must be prepared before any launch. Please use LinkitApplication.prepareApplication ")
+            throw new IllegalStateException("Application must be prepared before any launch. Please use LinkitApplication.prepareApplication.")
         this.instance = instance
     }
 

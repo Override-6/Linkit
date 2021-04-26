@@ -10,10 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.resource
+package fr.linkit.core.local.system.fsa
 
-import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.core.local.system.fsa.io.IOFileSystemAdapter
+import fr.linkit.core.local.system.fsa.nio.NIOFileSystemAdapter
 
-trait RemoteResourceFolder extends ResourceFolder with RemoteResource {
+object LocalFileSystemAdapters {
+
+    lazy val Nio = new NIOFileSystemAdapter
+    lazy val Io  = new IOFileSystemAdapter
 
 }

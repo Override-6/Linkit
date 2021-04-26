@@ -10,14 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.core.local.system.fsa
+package fr.linkit.api.connection.resource
 
-import fr.linkit.core.local.system.fsa.io.IOFileSystemAdapter
-import fr.linkit.core.local.system.fsa.nio.NIOFileSystemAdapter
+import fr.linkit.api.connection.ConnectionContext
+import fr.linkit.api.local.resource.external.ExternalResource
 
-object JDKFileSystemAdapters {
+trait RemoteResource extends ExternalResource {
 
-    lazy val Nio = new NIOFileSystemAdapter
-    lazy val Io  = new IOFileSystemAdapter
+    def getConnectionOwner: ConnectionContext
 
 }

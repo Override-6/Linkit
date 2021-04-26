@@ -16,7 +16,7 @@ import fr.linkit.api.local.system.config.schematic.{AppSchematic, EmptySchematic
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.client.ClientApplication
-import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
+import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
 
 abstract class ClientApplicationConfigBuilder {
 
@@ -26,7 +26,7 @@ abstract class ClientApplicationConfigBuilder {
     var loadSchematic        : AppSchematic[ClientApplication] = new EmptySchematic()
     var nWorkerThreadFunction: Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 threads for application.
     var pluginFolder         : Option[String]                  = Some("/Plugins")
-    var fsAdapter            : FileSystemAdapter               = JDKFileSystemAdapters.Nio
+    var fsAdapter            : FileSystemAdapter               = LocalFileSystemAdapters.Nio
     var securityManager      : ApplicationSecurityManager      = ApplicationSecurityManager.none
 
     def buildConfig(): ClientApplicationConfiguration = {

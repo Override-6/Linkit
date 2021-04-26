@@ -26,6 +26,8 @@ import fr.linkit.core.connection.packet.traffic.DynamicSocket
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.core.local.system.Rules
 import fr.linkit.core.local.system.event.DefaultEventNotifier
+import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.core.local.system.fsa.remote.RemoteFileSystemAdapter
 import fr.linkit.core.local.utils.NumberSerializer.serializeInt
 import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.network.ServerSideNetwork
@@ -53,6 +55,8 @@ class ServerConnection(applicationContext: ServerApplication,
 
     @volatile private var alive = false
 
+    //override def getResources: RemoteResourceFolder = null
+
     @workerExecution
     override def shutdown(): Unit = {
         BusyWorkerPool.ensureCurrentIsWorker("Must shutdown server connection in a worker thread.")
@@ -76,6 +80,8 @@ class ServerConnection(applicationContext: ServerApplication,
             throw new ServerException(this, "Server is already started.")
         AppLogger.info(s"Server '$supportIdentifier' starts on port ${configuration.port}")
         AppLogger.trace(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
+
+        RemoteFileSystemAdapter.open(LocalFileSystemAdapters.Nio, this)
 
         try {
             loadSocketListener()

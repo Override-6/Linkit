@@ -20,9 +20,11 @@ import java.net.URI
 
 class IOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
-    override val name: String = "java.io"
+    def this(other: IOFileSystemAdapter) = {
+        this()
+    }
 
-    override protected def createAdapter(path: String): FileAdapter = IOFileAdapter(path, this)
+    override def createAdapter(path: String): FileAdapter = IOFileAdapter(path, this)
 
     override def createDirectories(path: FileAdapter): Unit = path.getPath.mkdirs()
 
@@ -63,5 +65,5 @@ class IOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
     }
 
-    override protected def createAdapter(uri: URI): FileAdapter = IOFileAdapter(new File(uri), this)
+    override def createAdapter(uri: URI): FileAdapter = IOFileAdapter(new File(uri), this)
 }

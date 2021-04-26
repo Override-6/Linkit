@@ -12,22 +12,18 @@
 
 package fr.linkit.core.connection.resource
 
-import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
+import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.resource.RemoteResourceFolder
 import fr.linkit.api.local.resource.ResourceListener
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.fsa.FileAdapter
-import fr.linkit.core.local.resource.local.LocalResourceFolder
+import fr.linkit.core.local.resource.base.BaseResourceFolder
 
 class SimpleRemoteResourceFolder(adapter: FileAdapter,
                                  listener: ResourceListener,
                                  parent: ResourceFolder,
                                  owner: ConnectionContext)
-        extends LocalResourceFolder(adapter, listener, parent) with RemoteResourceFolder {
+        extends BaseResourceFolder(parent, listener, adapter) with RemoteResourceFolder {
 
     override def getConnectionOwner: ConnectionContext = owner
-
-    override def getResourcesOf(connection: ExternalConnection): ResourceFolder = ???
-
-    override def getResourcesOf(connectionIdentifier: String): ResourceFolder = ???
 }

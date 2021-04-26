@@ -18,7 +18,7 @@ import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.fundamental.WrappedPacket
 import fr.linkit.core.local.mapping.ClassMapEngine
-import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
+import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
 
 object Tests {
 
@@ -26,7 +26,7 @@ object Tests {
     private val packet     = WrappedPacket("Hey", WrappedPacket("World", ObjectPacket(KillerClass(KillerClass(KillerClass(null))))))
     private val attributes = SimplePacketAttributes.empty
 
-    private val fsa = JDKFileSystemAdapters.Nio
+    private val fsa = LocalFileSystemAdapters.Nio
 
     case class KillerClass(other: KillerClass) extends Serializable {
 

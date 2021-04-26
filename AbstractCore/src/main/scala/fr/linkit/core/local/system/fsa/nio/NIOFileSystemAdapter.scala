@@ -21,7 +21,9 @@ import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 
 class NIOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
-    override val name: String = "java.nio.file"
+    def this(other: NIOFileSystemAdapter) = {
+        this()
+    }
 
     override def createDirectories(path: FileAdapter): Unit = Files.createDirectories(path)
 
@@ -42,7 +44,7 @@ class NIOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
     private def getAdapter(path: Path): FileAdapter = super.getAdapter(path.toString)
 
-    override protected def createAdapter(path: String): FileAdapter = {
+    override def createAdapter(path: String): FileAdapter = {
         NIOFileAdapter(Paths.get(path
                 .replace("\\", File.separator)
                 .replace("/", File.separator)

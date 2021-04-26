@@ -17,7 +17,11 @@ import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 import java.io._
 import java.net.URI
 
-case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) extends FileAdapter {
+case class IOFileAdapter private[io](file: File, @transient fsa: IOFileSystemAdapter) extends FileAdapter {
+
+    def this(other: IOFileAdapter) = {
+        this(other.file, other.fsa)
+    }
 
     override def getFSAdapter: FileSystemAdapter = fsa
 
@@ -68,7 +72,7 @@ case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) exten
         this
     }
 
-    override def createAsFolder(): IOFileAdapter.this.type = {
+    override def createAsFolder(): this.type = {
         if (notExists) {
             file.mkdirs()
         }
@@ -88,4 +92,5 @@ case class IOFileAdapter private[io](file: File, fsa: IOFileSystemAdapter) exten
         }
     }
 
+    override def isPresentOnDisk: Boolean = exists
 }

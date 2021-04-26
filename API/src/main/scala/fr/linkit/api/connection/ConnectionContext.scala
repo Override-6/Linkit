@@ -27,7 +27,7 @@ trait ConnectionContext extends PacketInjectableContainer with Procrastinator {
 
     def traffic: PacketTraffic
 
-    def getResources(): RemoteResourceFolder
+    //def getResources: RemoteResourceFolder
 
     def translator: PacketTranslator
 

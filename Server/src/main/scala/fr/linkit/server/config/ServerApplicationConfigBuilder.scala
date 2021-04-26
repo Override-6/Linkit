@@ -16,7 +16,7 @@ import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.config.schematic.{AppSchematic, EmptySchematic}
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
-import fr.linkit.core.local.system.fsa.JDKFileSystemAdapters
+import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.server.ServerApplication
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -25,7 +25,7 @@ abstract class ServerApplicationConfigBuilder {
     @NotNull val resourceFolder: String
               var mainPoolThreadCount: Int                             = 2
     @Nullable var pluginsFolder      : Option[String]                  = Some("/Plugins")
-    @NotNull  var fsAdapter          : FileSystemAdapter               = JDKFileSystemAdapters.Nio
+    @NotNull  var fsAdapter          : FileSystemAdapter               = LocalFileSystemAdapters.Nio
     @NotNull  var securityManager    : ApplicationSecurityManager      = ApplicationSecurityManager.none
     @NotNull  var loadSchematic      : AppSchematic[ServerApplication] = EmptySchematic[ServerApplication]
 

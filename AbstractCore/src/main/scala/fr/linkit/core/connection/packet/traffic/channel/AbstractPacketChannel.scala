@@ -86,11 +86,8 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
     override def injectStoredBundles(): Unit = {
         var clone: Array[Bundle] = null
         storedBundles.synchronized {
-
             AppLogger.vDebug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedBundles")
-
             clone = Array.from(storedBundles)
-
             storedBundles.clear()
         }
 

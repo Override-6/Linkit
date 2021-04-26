@@ -18,7 +18,11 @@ import java.io.{InputStream, OutputStream}
 import java.net.URI
 import java.nio.file._
 
-case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) extends FileAdapter {
+case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystemAdapter) extends FileAdapter {
+
+    def this(other: NIOFileAdapter) = {
+        this(other.path, other.fsa)
+    }
 
     override def getPath: String = path.toString
 
@@ -76,6 +80,8 @@ case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) ex
         }
         this
     }
+
+    override def isPresentOnDisk: Boolean = exists
 
     override def newInputStream(append: Boolean = false): InputStream = {
         Files.newInputStream(path, options(append): _*)
