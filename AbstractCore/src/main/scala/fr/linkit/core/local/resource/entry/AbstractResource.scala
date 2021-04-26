@@ -22,8 +22,7 @@ import org.jetbrains.annotations.Nullable
 abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileAdapter) extends ExternalResource {
 
     override val name: String = adapter.getName
-
-    private val lastModified = getMaintainer.getLastModified(name)
+    private lazy val lastModified = getMaintainer.getLastModified(name)
 
     protected def getMaintainer: ResourcesMaintainer
 

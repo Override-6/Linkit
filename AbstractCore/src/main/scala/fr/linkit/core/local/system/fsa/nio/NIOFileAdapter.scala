@@ -16,7 +16,7 @@ import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 
 import java.io.{InputStream, OutputStream}
 import java.net.URI
-import java.nio.file.{Files, OpenOption, Path, StandardOpenOption}
+import java.nio.file._
 
 case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) extends FileAdapter {
 
@@ -63,7 +63,8 @@ case class NIOFileAdapter private[nio](path: Path, fsa: NIOFileSystemAdapter) ex
 
     override def createAsFile(): this.type = {
         if (notExists) {
-            Files.createDirectories(path.getParent)
+            if (Files.notExists(path.getParent))
+                Files.createDirectories(path.getParent)
             Files.createFile(path)
         }
         this

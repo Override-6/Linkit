@@ -10,21 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.core.local.utils;
+package fr.linkit.api.local.resource.external
 
-import java.io.PrintStream;
+trait LocalExternalResource extends ExternalResource {
 
-public class JavaUtils {
+    if (getAdapter.notExists)
+        createOnDisk()
 
-    private JavaUtils() {
-        //no instance
-    }
-
-    public static void printStackTrace(StackTraceElement[] trace, PrintStream out) {
-        for (StackTraceElement traceElement : trace)
-            out.println("\tat " + traceElement);
-    }
-
-
+    def createOnDisk(): Unit
 
 }

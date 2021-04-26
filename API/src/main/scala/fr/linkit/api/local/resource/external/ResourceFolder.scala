@@ -110,10 +110,8 @@ trait ResourceFolder extends ExternalResource {
      * No distant resource can be registered by a distant machine.
      *
      * @param name      The name of the resource to register.
-     * @throws NoSuchResourceException if no resource with this name was found into the resource folder.
      * @throws IllegalResourceException If the provided name contains invalid character.
      * */
-    @throws[NoSuchResourceException]("If file/folder was not physically found into the maintained folder.")
     @throws[IllegalResourceException]("If the provided name contains invalid character")
     def register[R <: ExternalResource](name: String, factory: ExternalResourceFactory[R]): R
 

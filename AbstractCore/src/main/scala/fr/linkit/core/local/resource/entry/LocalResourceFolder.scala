@@ -14,30 +14,35 @@ package fr.linkit.core.local.resource.entry
 
 import fr.linkit.api.local.resource.ResourceListener
 import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException, _}
-import fr.linkit.api.local.resource.external.{ExternalResource, ExternalResourceFactory, ResourceEntry, ResourceFolder}
+import fr.linkit.api.local.resource.external._
 import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.core.local.resource.ResourceFolderMaintainer
 import fr.linkit.core.local.resource.entry.LocalResourceFolder.checkResourceName
 import org.jetbrains.annotations.NotNull
 
+import java.io.File
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 class LocalResourceFolder private(adapter: FileAdapter,
                                   listener: ResourceListener,
-                                  parent: ResourceFolder) extends AbstractResource(parent, adapter.createAsFolder()) with ResourceFolder {
+                                  parent: ResourceFolder) extends AbstractResource(parent, adapter.createAsFolder()) with ResourceFolder with LocalExternalResource {
 
     println(s"Creating resource folder $getLocation...")
 
-    private      val fsa        = adapter.getFSAdapter
-    private      val resources  = new mutable.HashMap[String, ExternalResource]()
-    private lazy val maintainer = new ResourceFolderMaintainer(this, listener, fsa)
+    private val fsa        = adapter.getFSAdapter
+    private val resources  = new mutable.HashMap[String, ExternalResource]()
+    private val maintainer = this.synchronized {
+        new ResourceFolderMaintainer(this, listener, fsa)
+    }
 
     protected val entry = new DefaultResourceEntry[ResourceFolder](this)
 
     override def getEntry: ResourceEntry[ResourceFolder] = entry
 
     override def getMaintainer: ResourceFolderMaintainer = maintainer
+
+    override def createOnDisk(): Unit = getAdapter.createAsFolder()
 
     @throws[NoSuchResourceException]("If no resource was found with the provided name")
     @throws[IncompatibleResourceTypeException]("If a resource was found but with another type than R.")
@@ -75,17 +80,22 @@ class LocalResourceFolder private(adapter: FileAdapter,
         maintainer.unregisterResource(name)
     }
 
-    override def register[R <: ExternalResource](name: String, factory: ExternalResourceFactory[R]): R = {
+    @throws[IllegalResourceException]("If the provided name contains invalid character")
+    override def register[R <: ExternalResource](name: String, factory: ExternalResourceFactory[R]): R = this.synchronized {
         checkResourceName(name)
 
-        val resourcePath = getAdapter.getAbsolutePath + "/" + name
+        val resourcePath = getAdapter.getAbsolutePath + File.separator + name
         val adapter      = fsa.getAdapter(resourcePath)
-        if (adapter.notExists)
-            throw NoSuchResourceException(s"Resource $resourcePath not found.")
+        val resource     = factory(adapter, listener, this)
 
-        val resource = factory(adapter, listener, this)
         resources.put(name, resource)
-        maintainer.registerResource(resource)
+        //If maintainer is null, that's mean that this method is called during it's initialization.
+        //And, therefore the maintainer of this folder have invoked this method.
+        //Thus the registration is partially handled by the maintainer and just want
+        //the ResourceFolder to add the resource in it's memory.
+        //The execution of "maintainer.registerResource(resource)" will be manually handled by the maintainer.
+        if (maintainer != null)
+            maintainer.registerResource(resource)
         resource
     }
 
@@ -101,20 +111,18 @@ class LocalResourceFolder private(adapter: FileAdapter,
     @throws[ResourceAlreadyPresentException]("If the subPath targets a resource that is already registered or opened.")
     @throws[IllegalResourceException]("If the provided name contains invalid character")
     override def openResource[R <: ExternalResource : ClassTag](name: String, factory: ExternalResourceFactory[R]): R = {
-        val adapter = ensureResourceOpenable(name)
+        ensureResourceOpenable(name)
+        println(s"Opening resource $name, ${classTag[R].runtimeClass}")
 
-        adapter.createAsFile()
         register(name, factory)
     }
 
-    private def ensureResourceOpenable(name: String): FileAdapter = {
+    private def ensureResourceOpenable(name: String): Unit = {
         checkResourceName(name)
 
         val adapter = fsa.getAdapter(getAdapter.getAbsolutePath + "/" + name)
         if (adapter.exists)
             throw ResourceAlreadyPresentException("The requested resource already exists on this machine's drive.")
-
-        adapter
     }
 
 }
@@ -122,8 +130,8 @@ class LocalResourceFolder private(adapter: FileAdapter,
 object LocalResourceFolder extends ExternalResourceFactory[ResourceFolder] {
 
     override def apply(adapter: FileAdapter,
-              listener: ResourceListener,
-              parent: ResourceFolder): ResourceFolder = {
+                       listener: ResourceListener,
+                       parent: ResourceFolder): ResourceFolder = {
         new LocalResourceFolder(adapter, listener, parent)
     }
 

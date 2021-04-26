@@ -16,7 +16,7 @@ import fr.linkit.api.local.resource._
 import fr.linkit.api.local.resource.exception.NoSuchResourceException
 import fr.linkit.api.local.resource.external.{ExternalResource, ResourceFolder}
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
-import fr.linkit.core.local.resource.ResourceFolderMaintainer.{MaintainerFileName, Resources, loadResources}
+import fr.linkit.core.local.resource.ResourceFolderMaintainer.{MaintainerFileName, Resources}
 import fr.linkit.core.local.resource.entry.LocalResourceFactories
 import fr.linkit.core.local.system.AbstractCoreConstants.{UserGson => Gson}
 import fr.linkit.core.local.system.{DynamicVersions, StaticVersions}
@@ -28,8 +28,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
                                fsa: FileSystemAdapter) extends ResourcesMaintainer {
 
     private   val maintainerFileAdapter = fsa.getAdapter(maintained.getAdapter.getAbsolutePath + "/" + MaintainerFileName)
-    protected val resources: Resources  = loadResources(fsa, maintained)
-    updateFile()
+    protected val resources: Resources  = loadResources()
     listener.putMaintainer(this, MaintainerKey)
 
     override def getResources: ResourceFolder = maintained
@@ -74,16 +73,24 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
         if (resource.getParent.ne(maintained))
             throw new IllegalArgumentException("Given resource's parent folder is not handled by this maintainer.")
 
+        if (resources.get(resource.name).isDefined)
+            return
+
         val item = ResourceItem(resource.name)
         item.lastChecksum = resource.getChecksum
         item.lastModified = DynamicVersions.from(StaticVersions.currentVersion)
+        println(s"Registered item $item")
+
+        if (resources.get(item.name).exists(_.lastChecksum == item.lastChecksum)) {
+            return
+        }
 
         resources put item
         updateFile()
     }
 
-    private def updateFile(): Unit = {
-        println(s"Saving resources = ${resources}")
+    private def updateFile(resources: Resources = this.resources): Unit = {
+        println(s"Saving resources for folder : ${resources.folder}")
         val json = Gson.toJson(resources)
         val out  = maintainerFileAdapter.newOutputStream()
         out.write(json.getBytes())
@@ -96,7 +103,9 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
             if (!item.lastModified.sameVersions(StaticVersions.currentVersion)) {
                 item.lastModified.setAll(StaticVersions.currentVersion)
             }
+
             def itemChecksum = item.lastChecksum
+
             val itemFolder = resources.folder
             itemFolder.lastChecksum -= itemChecksum
             item.lastChecksum = resource.getChecksum
@@ -108,16 +117,16 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
 
         override def onDelete(name: String): Unit = runIfKnown(name) { (_, _) =>
             maintained.unregister(name)
-            updateFile()
             println(s"Unregistered $name")
+            updateFile()
         }
 
         override def onCreate(name: String): Unit = {
             if (isKnown(name))
                 return
             maintained.register(name, LocalResourceFactories.adaptive)
-            updateFile()
             println(s"Registered $name")
+            updateFile()
         }
 
         private def runIfKnown(name: String)(callback: (ExternalResource, ResourceItem) => Unit): Unit = {
@@ -145,45 +154,58 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
         }
     }
 
+    def loadResources(): Resources = {
+        val maintainerPath        = maintained.getAdapter.getAbsolutePath + "/" + MaintainerFileName
+        val maintainerFileAdapter = fsa.getAdapter(maintainerPath)
+        if (maintainerFileAdapter.notExists) {
+            maintainerFileAdapter.createAsFile()
+            val resources = Resources(ResourceItem.minimal(maintained))
+            updateFile(resources)
+            return resources
+        }
+        val json      = maintainerFileAdapter.getContentString
+        val resources = Gson.fromJson(json, classOf[Resources])
+        if (resources == null) {
+            val resources = Resources(ResourceItem.minimal(maintained))
+            updateFile(resources)
+            return resources
+        }
+
+        var modified = false
+
+        def handleItem(item: ResourceItem): Unit = {
+            val name    = item.name
+            val adapter = fsa.getAdapter(maintained.getAdapter.getAbsolutePath + "/" + name)
+            if (adapter.notExists) {
+                resources -= item
+                modified = true
+                return
+            }
+
+            println(s"handling item = ${item}")
+            maintained.register(name, LocalResourceFactories.adaptive)
+        }
+
+        resources.foreach(handleItem)
+        if (modified)
+            updateFile(resources)
+
+        resources
+    }
+
 }
 
 object ResourceFolderMaintainer {
 
     val MaintainerFileName: String = "maintainer.json"
 
-    private def loadResources(fsa: FileSystemAdapter, maintained: ResourceFolder): Resources = {
-        val maintainerPath        = maintained.getAdapter.getAbsolutePath + "/" + MaintainerFileName
-        val maintainerFileAdapter = fsa.getAdapter(maintainerPath)
-        if (maintainerFileAdapter.notExists) {
-            maintainerFileAdapter.createAsFile()
-            return Resources(ResourceItem.minimal(maintained))
-        }
-        val json      = maintainerFileAdapter.getContentString
-        val resources = Gson.fromJson(json, classOf[Resources])
-        if (resources == null)
-            return Resources(ResourceItem.minimal(maintained))
-
-        def handleItem(item: ResourceItem): Unit = {
-            val name    = item.name
-            val adapter = fsa.getAdapter(maintainerFileAdapter.getAbsolutePath + "/" + name)
-            if (adapter.notExists) {
-                resources -= item
-                return
-            }
-
-            maintained.register(name, LocalResourceFactories.adaptive)
-        }
-
-        resources.foreach(handleItem)
-
-        resources
-    }
-
     case class Resources(folder: ResourceItem) {
 
         private val children: util.HashMap[String, ResourceItem] = new util.HashMap()
 
-        def get(name: String): Option[ResourceItem] = Option(children.get(name))
+        def get(name: String): Option[ResourceItem] = {
+            Option(children.get(name))
+        }
 
         def foreach(action: ResourceItem => Unit): Unit = {
             children.values.toArray(Array[ResourceItem]()).foreach(action)
@@ -194,6 +216,8 @@ object ResourceFolderMaintainer {
         def -=(item: ResourceItem): Unit = children.remove(item.name)
 
         def -=(itemName: String): Unit = children.remove(itemName)
+
+        override def toString: String = s"Resources(folder: $folder, children: ${children.values()})"
     }
 
 }

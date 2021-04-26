@@ -15,7 +15,7 @@ package fr.linkit.core.local.system.fsa.nio
 import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.core.local.system.fsa.AbstractFileSystemAdapter
 
-import java.io.{InputStream, OutputStream}
+import java.io.{File, InputStream, OutputStream}
 import java.net.URI
 import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 
@@ -42,7 +42,12 @@ class NIOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
     private def getAdapter(path: Path): FileAdapter = super.getAdapter(path.toString)
 
-    override protected def createAdapter(path: String): FileAdapter = NIOFileAdapter(Paths.get(path), this)
+    override protected def createAdapter(path: String): FileAdapter = {
+        NIOFileAdapter(Paths.get(path
+                .replace("\\", File.separator)
+                .replace("/", File.separator)
+        ), this)
+    }
 
     override def createAdapter(uri: URI): FileAdapter = NIOFileAdapter(Paths.get(uri), this)
 

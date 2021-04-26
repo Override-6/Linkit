@@ -12,14 +12,15 @@
 
 package fr.linkit.core.local.resource.entry
 
-import fr.linkit.api.local.resource.external.{ExternalResourceFactory, ResourceEntry, ResourceFile, ResourceFolder}
+import fr.linkit.api.local.resource.external._
 import fr.linkit.api.local.resource.{ResourceListener, ResourcesMaintainer}
 import fr.linkit.api.local.system.fsa.FileAdapter
 import org.jetbrains.annotations.NotNull
 
+import java.nio.file.FileSystemException
 import java.util.zip.Adler32
 
-class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile {
+class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile with LocalExternalResource {
 
     println(s"Created resource File $getLocation")
 
@@ -27,15 +28,19 @@ class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) e
 
     override def getEntry: ResourceEntry[ResourceFile] = entry
 
-    override def getChecksum: Long = {
+    override def getChecksum: Long = try {
         val crc32 = new Adler32()
         val in    = adapter.newInputStream()
         crc32.update(in.readAllBytes())
         in.close()
         crc32.getValue
+    } catch {
+        case _: FileSystemException => 0L
     }
 
     override protected def getMaintainer: ResourcesMaintainer = parent.getMaintainer
+
+    override def createOnDisk(): Unit = getAdapter.createAsFile()
 }
 
 object LocalResourceFile extends ExternalResourceFactory[ResourceFile] {
