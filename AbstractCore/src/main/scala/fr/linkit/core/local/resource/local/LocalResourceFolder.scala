@@ -10,14 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.core.local.resource.entry
+package fr.linkit.core.local.resource.local
 
 import fr.linkit.api.local.resource.ResourceListener
 import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException, _}
 import fr.linkit.api.local.resource.external._
 import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.core.local.resource.ResourceFolderMaintainer
-import fr.linkit.core.local.resource.entry.LocalResourceFolder.checkResourceName
+import fr.linkit.core.local.resource.local.LocalResourceFolder.checkResourceName
 import org.jetbrains.annotations.NotNull
 
 import java.io.File
@@ -28,7 +28,7 @@ class LocalResourceFolder private(adapter: FileAdapter,
                                   listener: ResourceListener,
                                   parent: ResourceFolder) extends AbstractResource(parent, adapter.createAsFolder()) with ResourceFolder with LocalExternalResource {
 
-    println(s"Creating resource folder $getLocation...")
+    //println(s"Creating resource folder $getLocation...")
 
     private val fsa        = adapter.getFSAdapter
     private val resources  = new mutable.HashMap[String, ExternalResource]()
@@ -125,6 +125,10 @@ class LocalResourceFolder private(adapter: FileAdapter,
             throw ResourceAlreadyPresentException("The requested resource already exists on this machine's drive.")
     }
 
+    override def close(): Unit = {
+        resources.foreachEntry((_, resource) => resource.close())
+        entry.close()
+    }
 }
 
 object LocalResourceFolder extends ExternalResourceFactory[ResourceFolder] {

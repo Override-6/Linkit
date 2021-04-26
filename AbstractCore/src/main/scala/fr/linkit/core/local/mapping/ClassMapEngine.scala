@@ -41,7 +41,7 @@ object ClassMapEngine {
         })
     }
 
-    def mapAllSourcesOfClasses(fsa: FileSystemAdapter, classes: Class[_]*): Unit = {
+    def mapAllSourcesOfClasses(fsa: FileSystemAdapter, classes: Seq[Class[_]]): Unit = {
         val sources = classes.map(_.getProtectionDomain.getCodeSource).distinct
         mapAllSources(fsa, sources: _*)
     }

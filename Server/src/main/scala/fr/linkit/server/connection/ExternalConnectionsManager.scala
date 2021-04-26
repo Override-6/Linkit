@@ -42,7 +42,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
 
     override def close(reason: Reason): Unit = {
         for ((_, connection) <- connections) try {
-            AppLogger.trace(s"Closing '${connection.supportIdentifier}'...")
+            AppLogger.trace(s"Shutting down connection '${connection.boundIdentifier}'...")
             connection.shutdown()
         } catch {
             case NonFatal(e) => AppLogger.printStackTrace(e)

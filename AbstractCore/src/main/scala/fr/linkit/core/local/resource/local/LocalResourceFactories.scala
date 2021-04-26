@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.local.resource.entry
+package fr.linkit.core.local.resource.local
 
 import fr.linkit.api.local.resource.external.{ExternalResource, ExternalResourceFactory, ResourceFile, ResourceFolder}
 

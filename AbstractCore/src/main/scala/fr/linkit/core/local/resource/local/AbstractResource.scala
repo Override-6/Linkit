@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.local.resource.entry
+package fr.linkit.core.local.resource.local
 
 import fr.linkit.api.local.resource.ResourcesMaintainer
 import fr.linkit.api.local.resource.external.{ExternalResource, ResourceFolder}
@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable
 
 abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileAdapter) extends ExternalResource {
 
-    override val name: String = adapter.getName
+    override     val name: String = adapter.getName
     private lazy val lastModified = getMaintainer.getLastModified(name)
 
     protected def getMaintainer: ResourcesMaintainer
@@ -53,10 +53,11 @@ abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileA
         lastModified match {
             case dynamic: DynamicVersions => dynamic.setAll(StaticVersions.currentVersion)
             case _                        =>
-                //If the Versions implementation isn't dynamic, this means that we may not
-                //Update the versions.
+            //If the Versions implementation isn't dynamic, this means that we may not
+            //Update the versions.
         }
         if (getParent != null)
             getParent.markAsModifiedByCurrentApp()
     }
+
 }

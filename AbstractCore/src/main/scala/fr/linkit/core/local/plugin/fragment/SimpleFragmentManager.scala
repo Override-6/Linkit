@@ -69,12 +69,18 @@ class SimpleFragmentManager() extends FragmentManager {
         count
     }
 
-    private[plugin] def startFragments(extensionClass: Class[_ <: LinkitPlugin]): Unit = {
+    private[plugin] def startAllFragments(extensionClass: Class[_ <: LinkitPlugin]): Unit = {
         fragmentMap.get(extensionClass).foreach(_.startAll())
     }
 
-    private[plugin] def destroyFragments(): Unit = {
+    private[plugin] def destroyFragments(extensionClass: Class[_ <: Plugin]): Unit = {
+        fragmentMap.get(extensionClass).foreach(_.destroyAll())
+        fragmentMap.remove(extensionClass)
+    }
+
+    private[plugin] def destroyAllFragments(): Unit = {
         fragmentMap.values.foreach(_.destroyAll())
+        fragmentMap.clear()
     }
 
     private class PluginFragments {
@@ -116,6 +122,7 @@ class SimpleFragmentManager() extends FragmentManager {
          * */
         def destroyAll(): Unit = {
             fragments.values.foreach(_.destroy())
+            fragments.clear()
         }
 
         def list(): Iterable[PluginFragment] = {

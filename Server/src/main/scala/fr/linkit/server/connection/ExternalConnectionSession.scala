@@ -42,7 +42,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     @workerExecution
     override def close(reason: Reason): Unit = {
         socket.close(reason)
-        tasksHandler.close()
+        //tasksHandler.close()
         network.removeEntity(boundIdentifier)
         serverTraffic.close(reason)
     }

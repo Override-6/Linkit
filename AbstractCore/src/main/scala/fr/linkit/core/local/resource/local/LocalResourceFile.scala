@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.core.local.resource.entry
+package fr.linkit.core.local.resource.local
 
 import fr.linkit.api.local.resource.external._
 import fr.linkit.api.local.resource.{ResourceListener, ResourcesMaintainer}
@@ -21,8 +21,6 @@ import java.nio.file.FileSystemException
 import java.util.zip.Adler32
 
 class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile with LocalExternalResource {
-
-    println(s"Created resource File $getLocation")
 
     protected val entry = new DefaultResourceEntry[ResourceFile](this)
 
@@ -41,6 +39,8 @@ class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) e
     override protected def getMaintainer: ResourcesMaintainer = parent.getMaintainer
 
     override def createOnDisk(): Unit = getAdapter.createAsFile()
+
+    override def close(): Unit = entry.close()
 }
 
 object LocalResourceFile extends ExternalResourceFactory[ResourceFile] {

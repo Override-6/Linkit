@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.local.resource.representation
+package fr.linkit.core.connection.packet.traffic
 
-import fr.linkit.api.local.resource.external.ExternalResource
+import fr.linkit.api.local.system.AppException
 
-trait ResourceRepresentation extends AutoCloseable {
-
-    def getResource: ExternalResource
-
-    override def close(): Unit = ()
+class SocketClosedException(msg: String) extends AppException(msg) {
 
 }

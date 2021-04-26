@@ -14,7 +14,6 @@ package fr.linkit.core.local.plugin
 
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.api.local.plugin.fragment.FragmentManager
 import fr.linkit.api.local.plugin.{Plugin, PluginLoader, PluginManager}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
@@ -31,7 +30,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
     private val bridge  = new PluginClassLoaderBridge
     private val plugins = ListBuffer.empty[Plugin]
 
-    override val fragmentManager: FragmentManager = new SimpleFragmentManager
+    override val fragmentManager: SimpleFragmentManager = new SimpleFragmentManager
 
     @workerExecution
     override def load(file: String): Plugin = {
@@ -74,7 +73,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
         if (classes.isEmpty)
             return Array()
 
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, classes: _*)
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, classes)
         BusyWorkerPool.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         val pluginLoader = new DirectPluginLoader(context, classes)
         enablePlugins(pluginLoader)
@@ -100,20 +99,31 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
             }
         })
 
-        AppLogger.debug(s"Loading plugins...")
+        AppLogger.trace(s"Loading plugins...")
         perform(implicit plugin => {
-            AppLogger.debug(s"Loading ${pluginName}...")
+            AppLogger.trace(s"Loading ${pluginName}...")
             plugin.onLoad()
         })
 
-        AppLogger.debug(s"Enabling plugins...")
+        AppLogger.trace(s"Enabling plugins...")
         perform(implicit plugin => {
-            AppLogger.debug(s"Enabling ${pluginName}...")
+            AppLogger.trace(s"Enabling ${pluginName}...")
             plugin.onEnable()
         })
 
         plugins ++= buffer
         buffer
+    }
+
+    override def close(): Unit = {
+        AppLogger.trace(s"Disabling plugins...")
+        plugins.foreach { plugin =>
+            AppLogger.trace(s"Disabling plugin ${plugin.name}...")
+            plugin.onDisable()
+            fragmentManager.destroyFragments(plugin.getClass)
+        }
+        plugins.clear()
+        fragmentManager.destroyAllFragments()
     }
 
 }

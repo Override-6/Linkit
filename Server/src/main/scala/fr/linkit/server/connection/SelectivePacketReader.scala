@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
+import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket, SocketClosedException}
 
 import java.net.SocketException
 import scala.util.control.NonFatal
@@ -44,7 +44,8 @@ class SelectivePacketReader(socket: DynamicSocket,
             handleSerialResult(result, callback)
         })
     } catch {
-        case NonFatal(e) => e.printStackTrace(Console.out)
+        case e: SocketClosedException => Console.err.println(e)
+        case NonFatal(e) => e.printStackTrace()
     }
 
     private def handleSerialResult(result: PacketTransferResult, callback: PacketTransferResult => Unit): Unit = {

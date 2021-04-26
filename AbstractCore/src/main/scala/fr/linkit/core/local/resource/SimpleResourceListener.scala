@@ -13,6 +13,7 @@
 package fr.linkit.core.local.resource
 
 import fr.linkit.api.local.resource.{ResourceKey, ResourceListener, ResourcesMaintainer}
+import fr.linkit.api.local.system.AppLogger
 
 import java.io.Closeable
 import java.nio.file._
@@ -32,33 +33,42 @@ class SimpleResourceListener(resourcePath: String) extends ResourceListener with
             throw new IllegalStateException("This Resource folder event listener is already alive !")
         alive = true
         new Thread(() => {
-            while (alive) {
-                val key    = watcher.take()
-                val events = key.pollEvents().asInstanceOf[util.List[WatchEvent[Path]]]
-                println(s"events = ${events.stream().map(_.kind().name()).toArray.mkString("Array(", ", ", ")")}")
-                events.forEach(event => {
-
-                    val folder = key.watchable().asInstanceOf[Path]
-                    val path = folder.resolve(event.context())
-
-                    if (path.getFileName.toString != ResourceFolderMaintainer.MaintainerFileName) {
-                        println(s"file updated ${path}")
-                        println(s"in folder $folder")
-                        import StandardWatchEventKinds._
-                        keys.get(folder.toString).fold() { pair =>
-                            val key                    = pair._1
-                            val action: String => Unit = event.kind() match {
-                                case ENTRY_MODIFY => key.onModify
-                                case ENTRY_DELETE => key.onDelete
-                                case ENTRY_CREATE => key.onCreate
-                            }
-                            action(path.getFileName.toString)
-                        }
-                    }
-                })
-                key.reset()
+            try {
+                while (alive) {
+                    listen()
+                }
+            } catch {
+                case _: ClosedWatchServiceException =>
+                    AppLogger.trace("Resources Listener has been closed.")
             }
         }, "Resources Maintainers Listener").start()
+    }
+
+    private def listen(): Unit = {
+        val key    = watcher.take()
+        val events = key.pollEvents().asInstanceOf[util.List[WatchEvent[Path]]]
+        //println(s"events = ${events.stream().map(_.kind().name()).toArray.mkString("Array(", ", ", ")")}")
+        events.forEach(event => {
+
+            val folder = key.watchable().asInstanceOf[Path]
+            val path   = folder.resolve(event.context())
+
+            if (path.getFileName.toString != ResourceFolderMaintainer.MaintainerFileName) {
+                //println(s"file updated ${path}")
+                //println(s"in folder $folder")
+                import StandardWatchEventKinds._
+                keys.get(folder.toString).fold() { pair =>
+                    val key                    = pair._1
+                    val action: String => Unit = event.kind() match {
+                        case ENTRY_MODIFY => key.onModify
+                        case ENTRY_DELETE => key.onDelete
+                        case ENTRY_CREATE => key.onCreate
+                    }
+                    action(path.getFileName.toString)
+                }
+            }
+        })
+        key.reset()
     }
 
     override def close(): Unit = {

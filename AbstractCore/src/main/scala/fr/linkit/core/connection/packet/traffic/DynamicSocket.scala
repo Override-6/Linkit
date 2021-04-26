@@ -209,7 +209,7 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
             if (state == newState)
                 return
             if (isClosed)
-                throw new IllegalStateException("This socket is definitely closed.")
+                throw new SocketClosedException("This socket is definitely closed.")
 
             listeners.applyAll(newState)
             state = newState

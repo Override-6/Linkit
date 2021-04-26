@@ -15,7 +15,9 @@ package fr.linkit.api.local.plugin
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.fragment.FragmentManager
 
-trait PluginManager {
+import java.io.Closeable
+
+trait PluginManager extends Closeable {
 
     @workerExecution
     def load(file: String): Plugin

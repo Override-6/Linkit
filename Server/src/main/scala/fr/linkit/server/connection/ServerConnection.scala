@@ -56,9 +56,9 @@ class ServerConnection(applicationContext: ServerApplication,
     @workerExecution
     override def shutdown(): Unit = {
         BusyWorkerPool.ensureCurrentIsWorker("Must shutdown server connection in a worker thread.")
-        AppLogger.error("SHUTTING DOWN SERVER...")
         if (!alive)
             return
+        alive = false
 
         val port = configuration.port
 
@@ -66,7 +66,6 @@ class ServerConnection(applicationContext: ServerApplication,
         applicationContext.unregister(this)
 
         connectionsManager.close()
-        alive = false
         AppLogger.info(s"Server '$supportIdentifier' shutdown.")
     }
 
@@ -130,6 +129,9 @@ class ServerConnection(applicationContext: ServerApplication,
             val port = configuration.port
             AppLogger.debug(s"Ready to accept next connection on port $port")
             val clientSocket = serverSocket.accept()
+            if (!alive)
+                return
+
             socketContainer.set(clientSocket)
             AppLogger.debug(s"Socket accepted ($clientSocket)")
             runLater {

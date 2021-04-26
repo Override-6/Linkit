@@ -14,39 +14,29 @@ package fr.linkit.client
 
 import fr.linkit.api.connection.{ConnectionContext, ConnectionException, ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
-import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.resource.AutomaticBehaviorOption
-import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.api.local.system
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
-import fr.linkit.api.local.{ApplicationContext, system}
 import fr.linkit.client.ClientApplication.Version
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
+import fr.linkit.core.local.LinkitApplication
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.mapping.ClassMapEngine
-import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.resource.SimpleResourceListener
 import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 
+import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
-class ClientApplication private(override val configuration: ClientApplicationConfiguration) extends ApplicationContext with Procrastinator {
+class ClientApplication private(override val configuration: ClientApplicationConfiguration) extends LinkitApplication(configuration) with Procrastinator {
 
-    private  val workerPool                              = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
-    private  val connectionCache                         = mutable.HashMap.empty[Any, ExternalConnection]
-    private  val resourceListener                        = new SimpleResourceListener(configuration.resourceFolder)
-    private  val resources                               = prepareAppResources()
-    override val pluginManager           : PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
-    @volatile private var alive          : Boolean       = false
-    @volatile private var connectionCount: Int           = 0
+    private val workerPool                     = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
+    private val connectionCache                = mutable.HashMap.empty[Any, ExternalConnection]
+    @volatile private var connectionCount: Int = 0
 
     override def countConnections: Int = connectionCount
 
     override val versions: Versions = StaticVersions(ApiConstants.Version, AbstractCoreConstants.Version, Version)
-
-    override def getAppResources: ResourceFolder = resources
 
     @workerExecution
     override def shutdown(): Unit = {
@@ -65,8 +55,6 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         })
     }
 
-    override def isAlive: Boolean = alive
-
     override def listConnections: Iterable[ConnectionContext] = connectionCache.values.toSet
 
     override def runLater(@workerExecution task: => Unit): Unit = workerPool.runLater(task)
@@ -78,7 +66,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
     override def isCurrentThreadOwned: Boolean = workerPool.isCurrentThreadOwned
 
     @workerExecution
-    def start(): Unit = {
+    private def start(): Unit = {
         workerPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
         if (alive) {
             throw new AppException("Client is already started")
@@ -160,37 +148,6 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         AppLogger.info(s"Connection '$supportIdentifier' bound to $boundIdentifier was detached from application.")
     }
 
-    private def ensureAlive(): Unit = {
-        if (!alive)
-            throw new IllegalStateException("Client Application is shutdown.")
-    }
-
-    private def prepareAppResources(): ResourceFolder = {
-        AppLogger.trace("Loading app resources...")
-        resourceListener.startWatchService()
-
-        val root = DefaultResourceFolder(
-            configuration.fsAdapter,
-            configuration.resourceFolder,
-            resourceListener,
-            null,
-            Seq(AutomaticBehaviorOption.AUTO_UPDATE)
-        )
-        recursiveScan(root)
-
-        def recursiveScan(folder: ResourceFolder): Unit = {
-            folder.scan(folder.registerFile(_, false))
-            configuration.fsAdapter.list(folder.getAdapter).foreach { sub =>
-                if (sub.isDirectory) {
-                    recursiveScan(folder)
-                }
-            }
-        }
-
-        AppLogger.trace("App resources successfully loaded.")
-        root
-    }
-
 }
 
 object ClientApplication {
@@ -203,20 +160,7 @@ object ClientApplication {
         if (initialized)
             throw new IllegalStateException("Client Application is already launched.")
 
-        System.setProperty(AbstractCoreConstants.ImplVersionProperty, Version.toString)
-
-        AppLogger.info("-------------------------- Linkit Framework --------------------------")
-        AppLogger.info(s"\tApi Version            | ${ApiConstants.Version}")
-        AppLogger.info(s"\tAbstractCore Version   | ${AbstractCoreConstants.Version}")
-        AppLogger.info(s"\tImplementation Version | ${Version}")
-        AppLogger.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
-
-        AppLogger.info("Mapping classes, this task may take a time.")
-
-        val fsa = config.fsAdapter
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources: _*)
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext])
-        ClassMapEngine.mapJDK(fsa)
+        LinkitApplication.prepareApplication(Version, config.fsAdapter, otherSources)
 
         val clientApp = try {
             AppLogger.info("Instantiating Client application...")
@@ -226,6 +170,7 @@ object ClientApplication {
                 throw new ApplicationInstantiationException("Could not instantiate Client Application.", e)
         }
 
+        val loaderThread                   = Thread.currentThread()
         @volatile var exception: Throwable = null
         clientApp.runLater {
             try {
@@ -238,15 +183,10 @@ object ClientApplication {
             } catch {
                 case NonFatal(e) =>
                     exception = e
-                case e           =>
-                    exception = e
-                    throw e
-            } finally {
-                clientApp.synchronized {
-                    clientApp.notify()
-                }
             }
+            LockSupport.unpark(loaderThread)
         }
+        LockSupport.park()
 
         clientApp.synchronized {
             clientApp.wait()

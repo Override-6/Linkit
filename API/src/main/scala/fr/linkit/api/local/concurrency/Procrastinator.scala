@@ -12,8 +12,6 @@
 
 package fr.linkit.api.local.concurrency
 
-import java.util.concurrent.locks.LockSupport
-
 trait Procrastinator {
 
     def runLater(@workerExecution task: => Unit): Unit

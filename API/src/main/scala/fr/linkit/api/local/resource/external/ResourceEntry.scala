@@ -16,6 +16,7 @@ import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException
 import fr.linkit.api.local.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
 import org.jetbrains.annotations.NotNull
 
+import java.io.Closeable
 import scala.reflect.ClassTag
 
 /**
@@ -23,7 +24,7 @@ import scala.reflect.ClassTag
  * any resource representation.
  * Default representations of type [[ExternalResource]] may be automatically attached.
  * */
-trait ResourceEntry[E <: ExternalResource] {
+trait ResourceEntry[E <: ExternalResource] extends Closeable {
 
     /**
      * This resource name

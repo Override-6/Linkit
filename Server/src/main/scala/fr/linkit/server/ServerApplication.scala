@@ -14,17 +14,12 @@ package fr.linkit.server
 
 import fr.linkit.api.connection.NoSuchConnectionException
 import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.api.local.system
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.security.ConnectionSecurityException
-import fr.linkit.api.local.{ApplicationContext, system}
+import fr.linkit.core.local.LinkitApplication
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.mapping.ClassMapEngine
-import fr.linkit.core.local.plugin.LinkitPluginManager
-import fr.linkit.core.local.resource.SimpleResourceListener
-import fr.linkit.core.local.resource.entry.{LocalResourceFactories, LocalResourceFolder}
 import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
 import fr.linkit.server.ServerApplication.Version
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
@@ -34,15 +29,11 @@ import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
 import scala.util.control.NonFatal
 
-class ServerApplication private(override val configuration: ServerApplicationConfiguration) extends ApplicationContext {
+class ServerApplication private(override val configuration: ServerApplicationConfiguration) extends LinkitApplication(configuration) {
 
-    private  val mainWorkerPool               = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
-    override val pluginManager: PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
-    private  val resourceListener             = new SimpleResourceListener(configuration.resourceFolder)
-    private  val resources                    = prepareAppResources()
-    private  val serverCache                  = mutable.HashMap.empty[Any, ServerConnection]
-    private  val securityManager              = configuration.securityManager
-    @volatile private var alive               = false
+    private val mainWorkerPool  = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
+    private val serverCache     = mutable.HashMap.empty[Any, ServerConnection]
+    private val securityManager = configuration.securityManager
 
     override val versions: Versions = StaticVersions(ApiConstants.Version, AbstractCoreConstants.Version, Version)
 
@@ -54,8 +45,6 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         serverCache.size / 2
     }
 
-    override def getAppResources: ResourceFolder = resources
-
     @workerExecution
     override def shutdown(): Unit = this.synchronized {
         /*
@@ -66,16 +55,15 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         mainWorkerPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
         AppLogger.info("Server application is shutting down...")
+
         val totalConnectionCount = countConnections
         var downCount            = 0
         val shutdownThread       = BusyWorkerPool.currentWorker
         val shutdownTask         = shutdownThread.currentTaskID
 
         listConnections.foreach((serverConnection: ServerConnection) => serverConnection.runLater {
-            try {
+            wrapCloseAction(s"Server connection ${serverConnection.supportIdentifier}") {
                 serverConnection.shutdown()
-            } catch {
-                case NonFatal(e) => AppLogger.printStackTrace(e)
             }
             downCount += 1
             if (downCount == totalConnectionCount)
@@ -107,8 +95,6 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
         }
     }
-
-    override def isAlive: Boolean = alive
 
     override def listConnections: Iterable[ServerConnection] = {
         serverCache.values.toSet
@@ -189,38 +175,6 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         serverCache.get(port)
     }
 
-    private def ensureAlive(): Unit = {
-        if (!alive)
-            throw new IllegalStateException("Server Application is shutdown.")
-    }
-
-    private def prepareAppResources(): ResourceFolder = {
-        AppLogger.trace("Loading app resources...")
-        resourceListener.startWatchService()
-        val fsa         = configuration.fsAdapter
-        val rootAdapter = fsa.getAdapter(configuration.resourceFolder)
-
-        val root = LocalResourceFolder(
-            adapter = rootAdapter,
-            listener = resourceListener,
-            parent = null
-        )
-        recursiveScan(root)
-
-        def recursiveScan(folder: ResourceFolder): Unit = {
-            folder.scan(folder.register(_, LocalResourceFactories.adaptive))
-
-            fsa.list(folder.getAdapter).foreach { sub =>
-                if (sub.isDirectory) {
-                    recursiveScan(folder.get[ResourceFolder](sub.getName))
-                }
-            }
-        }
-
-        AppLogger.trace("App resources successfully loaded.")
-        root
-    }
-
 }
 
 object ServerApplication {
@@ -228,24 +182,11 @@ object ServerApplication {
     @volatile private var initialized = false
     val Version: Version = system.Version(name = "Server", "1.0.0", false)
 
-    def launch(config: ServerApplicationConfiguration, otherSources: Class[_]*): ServerApplication = {
+    def launch(config: ServerApplicationConfiguration, otherSources: Class[_]*): ServerApplication = this.synchronized {
         if (initialized)
-            throw new IllegalStateException("Application was already launched !")
+            throw new IllegalStateException("ServerApplication was already launched !")
 
-        System.setProperty(AbstractCoreConstants.ImplVersionProperty, Version.toString)
-
-        AppLogger.info("-------------------------- Linkit Framework --------------------------")
-        AppLogger.info(s"\tApi Version            | ${ApiConstants.Version}")
-        AppLogger.info(s"\tAbstractCore Version   | ${AbstractCoreConstants.Version}")
-        AppLogger.info(s"\tImplementation Version | ${Version}")
-        AppLogger.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
-
-        AppLogger.info("Mapping classes, this task may take a time.")
-
-        val fsa = config.fsAdapter
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources: _*)
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext])
-        ClassMapEngine.mapJDK(fsa)
+        LinkitApplication.prepareApplication(Version, config.fsAdapter, otherSources)
 
         val serverAppContext = try {
             AppLogger.info("Instantiating Server application...")
@@ -268,7 +209,6 @@ object ServerApplication {
             } catch {
                 case NonFatal(e) =>
                     exception = e
-                    AppLogger.printStackTrace(e)
             }
             LockSupport.unpark(loaderThread)
         }

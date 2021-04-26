@@ -16,6 +16,7 @@ import fr.linkit.api.local.resource.ResourcesMaintainer
 import fr.linkit.api.local.resource.exception._
 import org.jetbrains.annotations.NotNull
 
+import java.io.Closeable
 import scala.reflect.ClassTag
 
 /**

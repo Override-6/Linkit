@@ -21,7 +21,7 @@ import org.jetbrains.annotations.{NotNull, Nullable}
  * The resource can be partially present on a driver of the current machine, or can be partially stored
  * into a distant driver.
  * */
-trait ExternalResource {
+trait ExternalResource extends AutoCloseable {
 
     val name: String
 

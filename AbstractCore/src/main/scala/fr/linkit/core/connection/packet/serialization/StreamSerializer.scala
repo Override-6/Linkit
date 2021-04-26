@@ -14,6 +14,7 @@ package fr.linkit.core.connection.packet.serialization
 
 import fr.linkit.api.connection.packet.serialization.Serializer
 import fr.linkit.api.local.system.security.BytesHasher
+import fr.linkit.core.local.utils.ScalaUtils
 
 import java.io.{ByteArrayInputStream, ByteArrayOutputStream, ObjectInputStream, ObjectOutputStream}
 
@@ -31,7 +32,7 @@ class StreamSerializer(hasher: BytesHasher) extends Serializer {
 
     override def deserialize(bytes: Array[Byte]): Any = {
         if (!isSameSignature(bytes))
-            throw new IllegalSignatureException("Signature mismatches")
+            throw new IllegalSignatureException(s"Signature mismatches (${ScalaUtils.toPresentableString(bytes)}")
         deserializeObj(hasher.deHashBytes(bytes.drop(1)))
     }
 
