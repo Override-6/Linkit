@@ -12,8 +12,8 @@
 
 package fr.linkit.api.connection.resource
 
-import fr.linkit.api.local.resource.external.ExternalResource
+import fr.linkit.api.local.resource.representation.ResourceRepresentation
 
-trait RemoteResourceRepresentation extends ExternalResource {
+trait RemoteResourceRepresentation extends ResourceRepresentation {
 
 }

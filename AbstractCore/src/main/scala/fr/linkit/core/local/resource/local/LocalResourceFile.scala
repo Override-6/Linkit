@@ -15,6 +15,7 @@ package fr.linkit.core.local.resource.local
 import fr.linkit.api.local.resource.external._
 import fr.linkit.api.local.resource.{ResourceListener, ResourcesMaintainer}
 import fr.linkit.api.local.system.fsa.FileAdapter
+import fr.linkit.core.local.resource.base.AbstractResource
 import org.jetbrains.annotations.NotNull
 
 import java.nio.file.FileSystemException

@@ -65,6 +65,8 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     override def isCurrentThreadOwned: Boolean = workerPool.isCurrentThreadOwned
 
+
+
     @workerExecution
     private def start(): Unit = {
         workerPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
@@ -95,7 +97,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     @throws[ConnectionInitialisationException]("If something went wrong during the connection's opening")
     @workerExecution
-    def newConnection(config: ClientConnectionConfiguration): ExternalConnection = {
+    def openConnection(config: ClientConnectionConfiguration): ExternalConnection = {
         workerPool.ensureCurrentThreadOwned("Connection creation must be executed by the client application's thread pool")
 
         val identifier = config.identifier

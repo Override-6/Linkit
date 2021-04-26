@@ -15,6 +15,7 @@ package fr.linkit.api.connection
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectableContainer, PacketTraffic}
+import fr.linkit.api.connection.resource.RemoteResourceFolder
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.system.event.EventNotifier
 
@@ -25,6 +26,8 @@ trait ConnectionContext extends PacketInjectableContainer with Procrastinator {
     def port: Int
 
     def traffic: PacketTraffic
+
+    def getResources(): RemoteResourceFolder
 
     def translator: PacketTranslator
 

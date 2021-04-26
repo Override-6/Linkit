@@ -12,11 +12,15 @@
 
 package fr.linkit.api.connection.resource
 
-import fr.linkit.api.connection.ConnectionContext
+import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.resource.external.ResourceFolder
 
-trait ConnectionResources extends ResourceFolder {
+trait RemoteResourceFolder extends ResourceFolder {
 
     def getConnectionOwner: ConnectionContext
+
+    def getResourcesOf(connection: ExternalConnection): ResourceFolder
+
+    def getResourcesOf(connectionIdentifier: String): ResourceFolder
 
 }

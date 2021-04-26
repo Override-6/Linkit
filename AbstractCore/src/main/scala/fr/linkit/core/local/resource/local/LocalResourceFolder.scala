@@ -17,6 +17,7 @@ import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException
 import fr.linkit.api.local.resource.external._
 import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.core.local.resource.ResourceFolderMaintainer
+import fr.linkit.core.local.resource.base.AbstractResource
 import fr.linkit.core.local.resource.local.LocalResourceFolder.checkResourceName
 import org.jetbrains.annotations.NotNull
 
@@ -24,9 +25,9 @@ import java.io.File
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-class LocalResourceFolder private(adapter: FileAdapter,
-                                  listener: ResourceListener,
-                                  parent: ResourceFolder) extends AbstractResource(parent, adapter.createAsFolder()) with ResourceFolder with LocalExternalResource {
+class LocalResourceFolder protected(adapter: FileAdapter,
+                                    listener: ResourceListener,
+                                    parent: ResourceFolder) extends AbstractResource(parent, adapter.createAsFolder()) with ResourceFolder with LocalExternalResource {
 
     //println(s"Creating resource folder $getLocation...")
 
@@ -141,8 +142,5 @@ object LocalResourceFolder extends ExternalResourceFactory[ResourceFolder] {
 
     val ForbiddenChars: Array[Char] = Array('\\', '/', ':', '?', '"', '<', '>', '|')
 
-    private def checkResourceName(name: String): Unit = {
-        name.exists(ForbiddenChars.contains)
-    }
 
 }

@@ -15,19 +15,17 @@ package fr.linkit.core.local.resource
 import fr.linkit.api.local.resource._
 import fr.linkit.api.local.resource.exception.NoSuchResourceException
 import fr.linkit.api.local.resource.external.{ExternalResource, ResourceFolder}
-import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.core.local.resource.ResourceFolderMaintainer.{MaintainerFileName, Resources}
 import fr.linkit.core.local.resource.local.LocalResourceFactories
 import fr.linkit.core.local.system.AbstractCoreConstants.{UserGson => Gson}
 import fr.linkit.core.local.system.{DynamicVersions, StaticVersions}
 
-import java.nio.file.NoSuchFileException
 import java.util
 
 class ResourceFolderMaintainer(maintained: ResourceFolder,
-                               listener: ResourceListener,
-                               fsa: FileSystemAdapter) extends ResourcesMaintainer {
+                               listener: ResourceListener) extends ResourcesMaintainer {
 
+    private   val fsa                   = maintained.getAdapter.getFSAdapter
     private   val maintainerFileAdapter = fsa.getAdapter(maintained.getAdapter.getAbsolutePath + "/" + MaintainerFileName)
     protected val resources: Resources  = loadResources()
     listener.putMaintainer(this, MaintainerKey)
@@ -107,7 +105,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
                 item.lastModified.setAll(StaticVersions.currentVersion)
             }
 
-            def itemChecksum = item.lastChecksum
+            def itemChecksum: Long = item.lastChecksum
 
             val itemFolder = resources.folder
             itemFolder.lastChecksum -= itemChecksum

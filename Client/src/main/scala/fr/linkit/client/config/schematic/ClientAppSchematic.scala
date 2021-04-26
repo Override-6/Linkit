@@ -29,7 +29,7 @@ abstract class ClientAppSchematic extends AppSchematic[ClientApplication] {
     override def setup(a: ClientApplication): Unit = {
         for (configuration <- serverConfigs) a.runLater {
             try {
-                a.newConnection(configuration)
+                a.openConnection(configuration)
             } catch {
                 case NonFatal(e) =>
                     val name: String = configuration.configName

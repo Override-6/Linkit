@@ -42,7 +42,7 @@ class ServerConnection(applicationContext: ServerApplication,
     override val supportIdentifier : String                     = configuration.identifier
     override val translator        : PacketTranslator           = configuration.translator
     override val port              : Int                        = configuration.port
-    private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier.toString)
+    private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), supportIdentifier)
     private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     override val traffic           : PacketTraffic              = new ServerPacketTraffic(this)

@@ -110,10 +110,6 @@ class ServerApplication private(override val configuration: ServerApplicationCon
 
     @workerExecution
     def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = /*this.synchronized*/ {
-        /*
-        * This method is synchronized in order to prone parallel server initializations
-        * and to ensure that no server would be open during shutdown.
-        * */
         mainWorkerPool.ensureCurrentThreadOwned("Open server connection must be performed into Application's pool.")
 
         ensureAlive()
