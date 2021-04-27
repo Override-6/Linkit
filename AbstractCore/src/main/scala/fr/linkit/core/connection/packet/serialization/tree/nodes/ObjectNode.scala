@@ -10,15 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.prototypes.oblivion.serialization.v2.tree
+package fr.linkit.core.connection.packet.serialization.tree.nodes
 
+import fr.linkit.core.connection.packet.serialization.tree._
 import fr.linkit.core.local.mapping.ClassMappings
 import fr.linkit.core.local.utils.NumberSerializer
 import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
 import sun.misc.Unsafe
 
 import java.lang.reflect.Field
-import scala.reflect.{ClassTag, classTag}
+import scala.util.Try
 
 object ObjectNode {
 
@@ -31,6 +32,7 @@ object ObjectNode {
         }
 
         override def canHandle(bytes: Array[Byte]): Boolean = {
+            //TODO Optimize NumberSerialier.deserializeInt use
             (bytes.nonEmpty && bytes(0) == NullObjectFlag) || (bytes.length >= 4 && ClassMappings.getClassNameOpt(NumberSerializer.deserializeInt(bytes, 0)).isDefined)
         }
 
@@ -60,18 +62,19 @@ object ObjectNode {
     class ObjectSerialNode(override val parent: SerialNode[_], desc: SerializableClassDescription, tree: NodeFinder) extends SerialNode[Serializable] {
 
         override def serialize(t: Serializable, putTypeHint: Boolean): Array[Byte] = {
-            println(s"Serializing Object ${t}")
+            //println(s"Serializing Object ${t}")
             if (t == null)
                 return Array(NullObjectFlag)
+            //println(s"t.getClass = ${t.getClass}")
             val children = tree.listNodes(desc, t, this)
-            println(s"children = ${children}")
+            //println(s"children = ${children}")
 
             val classType = desc.classSignature
-            println(s"classType = ${toPresentableString(classType)}")
+            //println(s"classType = ${toPresentableString(classType)}")
             val sign = LengthSign.of(t, desc, children).toBytes
-            println(s"sign = ${toPresentableString(sign)}")
+            //println(s"sign = ${toPresentableString(sign)}")
             val bytes = classType ++ sign
-            println(s"Result of Object ${t} = ${toPresentableString(bytes)}")
+            //println(s"Result of Object ${t} = ${toPresentableString(bytes)}")
             bytes
         }
     }
@@ -82,28 +85,30 @@ object ObjectNode {
             if (bytes(0) == NullObjectFlag)
                 return null
 
-            println(s"Deserializing object from bytes ${toPresentableString(bytes)}")
+            //println(s"Deserializing object from bytes ${toPresentableString(bytes)}")
             val objectType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
-            val desc       = tree.getDesc(objectType)
+            //println(s"objectType = ${objectType}")
+            val desc = tree.getDesc(objectType)
 
             val sign     = LengthSign.from(desc.signItemCount, bytes, bytes.length, 4)
             val instance = TheUnsafe.allocateInstance(desc.clazz)
 
             var i = 0
             for (childBytes <- sign.childrenBytes) {
-                println(s"For object field number $i: ")
-                println(s"Field bytes = ${toPresentableString(childBytes)}")
+                //println(s"For object field number $i: ")
+                //println(s"Field bytes = ${toPresentableString(childBytes)}")
                 val node = tree.getDeserialNodeFor(childBytes, this)
-                println(s"node = ${node}")
+                //println(s"node = ${node}")
                 val field = desc.serializableFields(i)
-                println(s"field = ${field}")
+                //println(s"field = ${field}")
                 val fieldValue = node.deserialize()
-                println(s"Deserialized value : $fieldValue")
+                //println(s"Deserialized value : $fieldValue")
                 setValue(instance, field, fieldValue)
 
                 i += 1
             }
-            println(s"Instance = $instance")
+            //println(s"(objectType) = ${objectType}")
+            //println(s"Instance = $instance")
             instance.asInstanceOf[Serializable]
         }
 
@@ -112,21 +117,19 @@ object ObjectNode {
 
             import java.lang
 
-            println(s"value.getClass = ${value.getClass}")
-
-            def isFieldOfType[T: ClassTag]: Boolean = field.getType == classTag[T].runtimeClass
-
-            val action: (AnyRef, Long) => Unit = value match {
-                case i: Integer if isFieldOfType[Int]          => TheUnsafe.putInt(_, _, i)
-                case b: lang.Byte if isFieldOfType[Byte]       => TheUnsafe.putByte(_, _, b)
-                case s: lang.Short if isFieldOfType[Short]     => TheUnsafe.putShort(_, _, s)
-                case l: lang.Long if isFieldOfType[Long]       => TheUnsafe.putLong(_, _, l)
-                case d: lang.Double if isFieldOfType[Double]   => TheUnsafe.putDouble(_, _, d)
-                case f: lang.Float if isFieldOfType[Float]     => TheUnsafe.putFloat(_, _, f)
-                case b: lang.Boolean if isFieldOfType[Boolean] => TheUnsafe.putBoolean(_, _, b)
-                case c: Character if isFieldOfType[Char]       => TheUnsafe.putChar(_, _, c)
-                case obj                                       => TheUnsafe.putObject(_, _, obj)
-            }
+            //println(s"value.getClass = ${Try(value.getClass).getOrElse(null)}")
+            val action: (AnyRef, Long) => Unit = if (field.getType.isPrimitive) {
+                value match {
+                    case i: Integer      => TheUnsafe.putInt(_, _, i)
+                    case b: lang.Byte    => TheUnsafe.putByte(_, _, b)
+                    case s: lang.Short   => TheUnsafe.putShort(_, _, s)
+                    case l: lang.Long    => TheUnsafe.putLong(_, _, l)
+                    case d: lang.Double  => TheUnsafe.putDouble(_, _, d)
+                    case f: lang.Float   => TheUnsafe.putFloat(_, _, f)
+                    case b: lang.Boolean => TheUnsafe.putBoolean(_, _, b)
+                    case c: Character    => TheUnsafe.putChar(_, _, c)
+                }
+            } else TheUnsafe.putObject(_, _, value)
             action(instance, fieldOffset)
         }
     }

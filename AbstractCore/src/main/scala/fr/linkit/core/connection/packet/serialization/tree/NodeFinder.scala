@@ -10,18 +10,21 @@
  *  questions.
  */
 
-package fr.linkit.prototypes.oblivion.serialization.v2.tree
+package fr.linkit.core.connection.packet.serialization.tree
+
+import fr.linkit.core.connection.packet.serialization.tree.nodes._
+import fr.linkit.core.local.utils.ScalaUtils
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class NodeFinder {
+class NodeFinder extends NodeHolder {
 
     private val userFactories    = ListBuffer.empty[NodeFactory[_]]
     private val defaultFactories = ListBuffer.empty[NodeFactory[_]]
     private val descriptions     = new mutable.HashMap[Class[_], SerializableClassDescription]
 
-    def getNodeForClass[T](clazz: Class[_], parent: SerialNode[_] = null): SerialNode[T] = {
+    def getSerialNodeForType[T](clazz: Class[_], parent: SerialNode[_] = null): SerialNode[T] = {
         userFactories
                 .find(_.canHandle(clazz))
                 .getOrElse(getDefaultFactory(clazz))
@@ -30,7 +33,11 @@ class NodeFinder {
     }
 
     def getSerialNodeForRef[T](any: T): SerialNode[T] = {
-        getNodeForClass[T](any.getClass.asInstanceOf[Class[_]])
+        if (any == null)
+            return NullNode
+                    .newNode(this, null: SerializableClassDescription, null)
+                    .asInstanceOf[SerialNode[T]]
+        getSerialNodeForType[T](any.getClass.asInstanceOf[Class[_]])
     }
 
     def attachFactory(factory: NodeFactory[_]): Unit = {
@@ -43,7 +50,13 @@ class NodeFinder {
 
     def listNodes(desc: SerializableClassDescription, obj: Any, parent: SerialNode[_]): List[SerialNode[_]] = {
         val fields = desc.serializableFields
-        fields.map(field => getNodeForClass(field.get(obj).getClass, parent))
+        fields.map(field => {
+            val fieldValue = field.get(obj)
+            if (fieldValue == null)
+                getSerialNodeForRef(null)
+            else
+                getSerialNodeForType(fieldValue.getClass, parent)
+        })
     }
 
     def getDesc(clazz: Class[_]): SerializableClassDescription = {
@@ -65,18 +78,21 @@ class NodeFinder {
 
     private def getDefaultFactory[T](bytes: Array[Byte]): NodeFactory[T] = {
         defaultFactories.find(_.canHandle(bytes))
-                .get
+                .getOrElse(throw new NoSuchElementException(s"Could not find factory for bytes '${ScalaUtils.toPresentableString(bytes)}'"))
                 .asInstanceOf[NodeFactory[T]]
     }
 
     //The order of registration have an effect.
+    defaultFactories += NullNode
     defaultFactories += ArrayNode
+    defaultFactories += StringNode
+    defaultFactories += PrimitiveNode.apply
+    defaultFactories += EnumNode.apply
+    defaultFactories += SeqNode.ofMutable
+    defaultFactories += SeqNode.ofImmutable
     defaultFactories += MapNode.ofMutable
     defaultFactories += MapNode.ofImmutable
-    defaultFactories += PrimitiveNode.apply
     defaultFactories += ObjectNode.apply
-    defaultFactories += EnumNode.apply
-    defaultFactories += StringNode
 
 }
 
@@ -89,7 +105,7 @@ object NodeFinder {
         }
 
         def /\(other: Byte): Array[Byte] = {
-            other /\ Array(other)
+            self /\ Array(other)
         }
     }
 

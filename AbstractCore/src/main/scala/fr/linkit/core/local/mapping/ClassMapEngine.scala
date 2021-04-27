@@ -29,31 +29,34 @@ object ClassMapEngine {
     val EmptyFilter   = new MapEngineFilters(null)
     val DefaultFilter = new MapEngineFilters(getClass.getResourceAsStream("/mapEngineFilter.txt"))
 
-    def mapAllSources(fsa: FileSystemAdapter, sources: CodeSource*): Unit = {
-        sources.foreach(source => {
-            val url      = source.getLocation
-            val root     = fsa.getAdapter(url.toURI)
-            val rootPath = root.getAbsolutePath
+    def mapAllSources(fsa: FileSystemAdapter, sources: (CodeSource, ClassLoader)*): Unit = {
+        sources.foreach((pair) => {
+            val source      = pair._1
+            val classLoader = pair._2
+            val url         = source.getLocation
+            val root        = fsa.getAdapter(url.toURI)
+            val rootPath    = root.getAbsolutePath
             AppLogger.debug(s"Mapping source $rootPath...")
             ClassMappings.putSourceCode(source)
 
-            mapDirectory(fsa, rootPath, root, EmptyFilter)
+            mapDirectory(fsa, rootPath, root, classLoader, EmptyFilter)
         })
     }
 
     def mapAllSourcesOfClasses(fsa: FileSystemAdapter, classes: Seq[Class[_]]): Unit = {
-        val sources = classes.map(_.getProtectionDomain.getCodeSource).distinct
+        val sources = classes.map(cl => (cl.getProtectionDomain.getCodeSource, cl.getClassLoader)).distinct
         mapAllSources(fsa, sources: _*)
     }
 
     def mapJDK(fsa: FileSystemAdapter): Unit = {
         val jdkRoot = System.getProperty("java.home")
         val adapter = fsa.getAdapter(jdkRoot)
-        ClassMapEngine.mapDir(fsa, adapter)
+        mapDir(fsa, adapter, getClass.getClassLoader)
     }
 
-    def mapDir(fsa: FileSystemAdapter, directory: FileAdapter, filters: MapEngineFilters = DefaultFilter): Unit = {
-        mapDirectory(fsa, directory.getAbsolutePath, directory, filters)
+    def mapDir(fsa: FileSystemAdapter, directory: FileAdapter,
+               classLoader: ClassLoader, filters: MapEngineFilters = DefaultFilter): Unit = {
+        mapDirectory(fsa, directory.getAbsolutePath, directory, classLoader, filters)
     }
 
     private def isZipFile(directory: FileAdapter): Boolean = {
@@ -62,7 +65,8 @@ object ClassMapEngine {
     }
 
     private def mapDirectory(fsa: FileSystemAdapter, root: String,
-                             directory: FileAdapter, filters: MapEngineFilters): Unit = {
+                             directory: FileAdapter, classLoader: ClassLoader,
+                             filters: MapEngineFilters): Unit = {
         if (isZipFile(directory)) {
             val dirPath  = directory.getAbsolutePath
             val isInJMod = dirPath.endsWith(".jmod")
@@ -72,23 +76,23 @@ object ClassMapEngine {
                     .forEachRemaining(entry => {
                         val entryName = entry.getName
                         val classPath = if (isInJMod) entryName.drop(JModRelativeClassesDirectory.length) else entryName
-                        mapPath(0, classPath, filters)
+                        mapPath(0, classLoader, classPath, filters)
                     })
             //jarFile.close()
             return
         }
         fsa.list(directory).foreach(adapter => {
             if (adapter.isDirectory) {
-                mapDirectory(fsa, root, adapter, filters)
+                mapDirectory(fsa, root, adapter, classLoader, filters)
             } else if (isZipFile(adapter)) {
-                mapDirectory(fsa, root, adapter, filters)
+                mapDirectory(fsa, root, adapter, classLoader, filters)
             } else {
-                mapPath(root.length + 1, adapter.getAbsolutePath, filters)
+                mapPath(root.length + 1, classLoader, adapter.getAbsolutePath, filters)
             }
         })
     }
 
-    private def mapPath(rootCutLength: Int, path: String, filters: MapEngineFilters): Unit = {
+    private def mapPath(rootCutLength: Int, classLoader: ClassLoader, path: String, filters: MapEngineFilters): Unit = {
         if (path.endsWith(".class")) {
             val classPath = path.substring(rootCutLength)
             val className = classPath
@@ -96,7 +100,7 @@ object ClassMapEngine {
                     .replace('/', '.')
                     .replace(".class", "")
             if (filters.canMap(className)) {
-                ClassMappings.putClass(className)
+                ClassMappings.putClass(className, classLoader)
             }
         }
     }

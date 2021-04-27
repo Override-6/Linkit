@@ -10,20 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.serialization
+package fr.linkit.core.connection.packet.serialization.tree
 
-trait Serializer {
+trait NodeHolder {
 
-    val signature: Array[Byte]
-
-    def serialize(serializable: Serializable, withSignature: Boolean): Array[Byte]
-
-    //def partialSerialize(serialized: Array[Array[Byte]], toSerialize: Array[Serializable]): Array[Byte]
-
-    def isSameSignature(bytes: Array[Byte]): Boolean
-
-    def deserialize(bytes: Array[Byte]): Any
-
-    def deserializeAll(bytes: Array[Byte]): Array[Any]
+    def attachFactory(nodeFactory: NodeFactory[_]): Unit
 
 }

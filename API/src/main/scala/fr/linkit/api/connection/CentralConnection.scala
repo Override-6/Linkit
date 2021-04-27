@@ -10,12 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.prototypes.oblivion.serialization.v2.tree
+package fr.linkit.api.connection
 
-trait DeserialNode[T] {
+trait CentralConnection extends ConnectionContext {
 
-    val parent: DeserialNode[_]
+    def getConnection(identifier: String): Option[ExternalConnection]
 
-    def deserialize(): T
+    def countConnections: Int
 
 }

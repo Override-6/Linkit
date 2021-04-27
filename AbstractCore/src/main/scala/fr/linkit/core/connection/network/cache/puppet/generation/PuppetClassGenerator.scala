@@ -14,20 +14,20 @@ package fr.linkit.core.connection.network.cache.puppet.generation
 
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.puppet.AnnotationHelper.Shared
-import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, PuppetObject, Puppeteer}
+import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, PuppetObject}
 import fr.linkit.core.local.mapping.ClassMappings
 
 import java.io.File
 import java.lang.reflect.Method
 import java.net.URLClassLoader
 import java.nio.file.{Files, Path}
-import javax.annotation.processing.Generated
 import scala.collection.mutable
 
+//FIXME potential Collision if two classes of the same name, but not the same package are generated.
 object PuppetClassGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
-    val GeneratedClassesFolder : String =  "/generated/"
+    val GeneratedClassesFolder : String = "/generated/"
     val EnqueueingSourcesFolder: String = GeneratedClassesFolder + "/queue/"
     private val classLoader = new URLClassLoader(Array(Path.of(GeneratedClassesFolder).toRealPath().toUri.toURL))
 
@@ -43,12 +43,12 @@ object PuppetClassGenerator {
         val sourceCode = genPuppetClassSourceCode[S](clazz)
 
         val puppetClassName = "Puppet" + clazz.getSimpleName
-        val path = Path.of(EnqueueingSourcesFolder + puppetClassName + ".java").toAbsolutePath
-        println(s"path = ${path}")
+        val path            = Path.of(EnqueueingSourcesFolder + puppetClassName + ".java").toAbsolutePath
         if (Files.notExists(path)) {
             Files.createDirectories(path.getParent)
             Files.createFile(path)
         }
+        println(s"path = ${path}")
         Files.write(path, sourceCode.getBytes)
 
         val javacProcess = new ProcessBuilder("javac", "-d", GeneratedClassesFolder, s"-cp", classPaths, path.toString)
@@ -62,11 +62,12 @@ object PuppetClassGenerator {
             throw new InvalidPuppetDefException(s"Javac rejected compilation of class $puppetClassName, check above error prints for further details.")
 
         AppLogger.debug(s"Compilation done.")
-        classLoader.loadClass(GeneratedClassesPackage + "." + puppetClassName)
-            .asInstanceOf[Class[_ <: PuppetObject[S]]]
+        val puppetClass = classLoader.loadClass(GeneratedClassesPackage + "." + puppetClassName)
+        ClassMappings.putClass(puppetClass)
+        puppetClass.asInstanceOf[Class[_ <: PuppetObject[S]]]
     }
 
-    def genConstantGettersFields(desc: PuppetClassFields): String = {
+    private def genConstantGettersFields(desc: PuppetClassFields): String = {
         val fieldBuilder = new StringBuilder()
         desc.foreachSharedMethods(method => {
             val isConstant = method.getAnnotation(classOf[Shared]).constant()

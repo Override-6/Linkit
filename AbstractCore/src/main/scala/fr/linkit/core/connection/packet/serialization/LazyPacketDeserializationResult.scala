@@ -37,9 +37,10 @@ class LazyPacketDeserializationResult(override val bytes: Array[Byte],
                 throw MalFormedPacketException(bytes, s"Received unknown packet array (${cache.mkString("Array(", ", ", ")")})")
             else return alternative
         }
-        cache(coordsIndex) match {
+        val result = cache(coordsIndex) match {
             case e: T => e
         }
+        result
     }
 
 }

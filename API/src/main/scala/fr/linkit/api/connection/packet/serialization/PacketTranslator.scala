@@ -27,8 +27,10 @@ trait PacketTranslator {
 
     def translatePacket(packet: Packet, target: String): Array[Byte]
 
+    @deprecated
     def updateCache(manager: SharedCacheManager): Unit
 
+    @deprecated
     def findSerializerFor(target: String): Option[Serializer]
 
     val signature: Array[Byte]

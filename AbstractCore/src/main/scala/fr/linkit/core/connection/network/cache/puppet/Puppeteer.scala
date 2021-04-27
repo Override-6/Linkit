@@ -82,6 +82,8 @@ class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
     }
 
     private def prepareScope(factory: ScopeFactory[_ <: ChannelScope]): ChannelScope = {
+        if (channel == null)
+            return null
         val writer = channel.traffic.newWriter(channel.identifier)
         val scope  = factory.apply(writer)
         presence.drainAllDefaultAttributes(scope)

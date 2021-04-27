@@ -10,12 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.prototypes.oblivion.serialization.v2
+package fr.linkit.api.connection.packet.serialization
 
-import fr.linkit.api.connection.packet.serialization.Serializer
+trait StringRepresentable[T] {
 
-trait AdaptiveSerializer extends Serializer {
+    def getRepresentation(t: T): String
 
-    def attachAlternative(alternative: SerialAlternative[_]): Unit
+    @throws[IllegalArgumentException]("If the object could not be built from this string")
+    def fromRepresentation(str: String): T
 
 }

@@ -10,11 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.prototypes.oblivion.serialization.v2.tree
+package fr.linkit.core.connection.packet.serialization.tree
 
-trait SerialNode[T] {
+trait NodeFactory[T] {
 
-    val parent: SerialNode[_]
+    def canHandle(clazz: Class[_]): Boolean
 
-    def serialize(t: T, putTypeHint: Boolean): Array[Byte]
+    def canHandle(bytes: Array[Byte]): Boolean
+
+    def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[T]
+
+    def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[T]
+
 }

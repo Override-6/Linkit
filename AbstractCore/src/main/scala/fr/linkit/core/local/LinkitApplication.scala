@@ -13,17 +13,21 @@
 package fr.linkit.core.local
 
 import fr.linkit.api.local.ApplicationContext
+import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppLogger, Version}
+import fr.linkit.core.connection.network.cache.puppet.generation.PuppetClassGenerator
 import fr.linkit.core.local.LinkitApplication.setInstance
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.plugin.LinkitPluginManager
 import fr.linkit.core.local.resource.SimpleResourceListener
 import fr.linkit.core.local.resource.local.{LocalResourceFactories, LocalResourceFolder}
 import fr.linkit.core.local.system.AbstractCoreConstants
+import fr.linkit.core.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
+import fr.linkit.core.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
 
 import scala.util.control.NonFatal
 
@@ -128,8 +132,14 @@ object LinkitApplication {
         ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources)
         ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
         ClassMapEngine.mapJDK(fsa)
+
+        PuppetClassGenerator.getOrGenerate(classOf[NIOFileAdapter])
+        PuppetClassGenerator.getOrGenerate(classOf[IOFileAdapter])
+        PuppetClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
+        PuppetClassGenerator.getOrGenerate(classOf[IOFileSystemAdapter])
     }
 
+    @workerExecution
     def exitApplication(code: Int): Unit = this.synchronized {
         if (instance == null) {
             Runtime.getRuntime.halt(code)

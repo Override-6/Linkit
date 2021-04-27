@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordina
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.fundamental.EmptyPacket
 
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ArrayBuffer
 
 case class SimpleTransferInfo(override val coords: PacketCoordinates,
                               override val attributes: PacketAttributes,
@@ -30,7 +30,7 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
             buff += attributes
         if (packet != EmptyPacket)
             buff += packet
-        AppLogger.vError(s"Making simple serialize $buff")
+        AppLogger.debug(s"Making simple serialize $buff...")
         serializer.serialize(buff.toArray, true)
     }
 }

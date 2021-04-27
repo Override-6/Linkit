@@ -37,6 +37,8 @@ class SharedObjectsCache(handler: SharedCacheManager,
     private val fieldRestorer     = new FieldRestorer
     private val supportIdentifier = channel.traffic.supportIdentifier
 
+    AppLogger.trace(s"Shared Object cache opened (id: $identifier, family: ${handler.family}, owner: ${handler.ownerID})")
+
     def postCloudObject[S <: Serializable](id: Long, obj: S): S with PuppetObject[S] = {
         chipObject(id, obj)
         genPuppetObject[S](id, supportIdentifier, obj)

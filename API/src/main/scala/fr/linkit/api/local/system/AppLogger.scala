@@ -73,14 +73,14 @@ object AppLogger {
         debug(msg)
     }
 
-    def logUpload(target: String, bytes: Array[Byte]): Unit = verbose {
+    def logUpload(target: String, bytes: Array[Byte]): Unit = /*verbose*/ {
         if (logger.isDebugEnabled) {
             val preview = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
             debug(s"${Console.MAGENTA}Written : ↑ $target ↑ $preview (l: ${bytes.length})")
         }
     }
 
-    def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = verbose {
+    def logDownload(@Nullable target: String, bytes: Array[Byte]): Unit = /*verbose*/ {
         if (logger.isDebugEnabled) {
             val preview     = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
             val finalTarget = if (target == null) "" else target
@@ -97,7 +97,7 @@ object AppLogger {
         e.printStackTrace()
     }
 
-    def discoverLines(from: Int, to: Int): Unit = verbose {
+    def discoverLines(from: Int, to: Int): Unit = /*verbose*/ {
         /*val currentThread = Thread.currentThread()
         val stackTrace    = currentThread.getStackTrace
 

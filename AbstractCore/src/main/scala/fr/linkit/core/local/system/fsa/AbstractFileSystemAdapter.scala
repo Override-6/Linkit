@@ -22,7 +22,7 @@ abstract class AbstractFileSystemAdapter extends FileSystemAdapter with Serializ
 
     override val name: String = getClass.getSimpleName
 
-    private val adapters = mutable.Map.empty[String, FileAdapter]
+    @transient private val adapters = mutable.Map.empty[String, FileAdapter]
 
     override def getAdapter(path: String): FileAdapter = {
         val formatted = path
@@ -41,6 +41,8 @@ abstract class AbstractFileSystemAdapter extends FileSystemAdapter with Serializ
         adapters.put(uri.getPath, adapter)
         adapter
     }
+
+    override def clearAdapters(): Unit = adapters.clear()
 
     def createAdapter(path: String): FileAdapter
 

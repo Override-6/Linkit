@@ -13,6 +13,7 @@
 package fr.linkit.core.local.system.fsa.remote
 
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
+import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 import fr.linkit.core.connection.network.cache.puppet.{Hidden, SharedObjectsCache}
 import fr.linkit.core.local.system.fsa.AbstractFileSystemAdapter
@@ -73,6 +74,7 @@ class RemoteFileSystemAdapter private(delegateFSA: AbstractFileSystemAdapter,
 
 object RemoteFileSystemAdapter {
 
+    @workerExecution
     def connect(delegateFSA: Class[_ <: FileSystemAdapter],
                 connection: ExternalConnection): FileSystemAdapter = {
 
@@ -82,10 +84,11 @@ object RemoteFileSystemAdapter {
         val cache         = connection.network.globalCache
         val sharedObjects = cache.getCache(27, SharedObjectsCache)
         val remoteFSA     = sharedObjects.findCloudObject(delegateFSA.getName.hashCode)
-                .getOrElse(throw new UnsupportedOperationException(s"RemoteFileSystemAdapter not found for connection ${connection.boundIdentifier}"))
+                .getOrElse(throw new UnsupportedOperationException(s"${delegateFSA.getSimpleName} not found for connection ${connection.boundIdentifier}"))
         new RemoteFileSystemAdapter(remoteFSA, sharedObjects)
     }
 
+    @workerExecution
     def open(delegateFSA: AbstractFileSystemAdapter, selfConnection: ConnectionContext): FileSystemAdapter = {
         if (delegateFSA.isInstanceOf[RemoteFileSystemAdapter])
             throw new IllegalArgumentException("Delegate FSA can't be a RemoteFileSystemAdapter.")

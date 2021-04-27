@@ -98,9 +98,9 @@ object NumberSerializer {
      * @return a pair with the deserialized number at left, and its length in the array at right.
      * */
     def deserializeFlaggedNumber[@specialized(Int, Short, Byte, Long) T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
-
-
-        var result: Int       = 0
+        var result: Int = 0
+        //println(s"Number:|:${bytes.slice(start, start + 4).mkString("Array(", ", ", ")")}")
+        //println(s"Number:|:${new String(bytes.slice(start, start + 4))}")
         val numberLength = bytes(start)
         //println(s"Deserializing number in region ${new String(bytes.slice(start, start + numberLength))}")
         if (numberLength == 1)

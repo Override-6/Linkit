@@ -76,7 +76,7 @@ object ScalaUtils {
             case v: Boolean => field.setBoolean(owner, v)
             case v: Byte    => field.setByte(owner, v)
             case v: Short   => field.setShort(owner, v)
-            case v: Char    => field.set(owner, v)
+            case v: Char    => field.setChar(owner, v)
             case _          => field.set(owner, value)
         }
     }

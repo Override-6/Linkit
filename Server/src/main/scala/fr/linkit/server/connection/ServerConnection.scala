@@ -12,7 +12,7 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.ConnectionContext
+import fr.linkit.api.connection.{CentralConnection, ConnectionContext}
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
@@ -39,7 +39,7 @@ import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class ServerConnection(applicationContext: ServerApplication,
-                       val configuration: ServerConnectionConfiguration) extends ConnectionContext {
+                       val configuration: ServerConnectionConfiguration) extends CentralConnection {
 
     override val supportIdentifier : String                     = configuration.identifier
     override val translator        : PacketTranslator           = configuration.translator
@@ -106,7 +106,9 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def isCurrentThreadOwned: Boolean = workerPool.isCurrentThreadOwned
 
-    def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
+    override def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
+
+    override def countConnections: Int = connectionsManager.countConnections
 
     def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, injectableID: Int, discarded: String*): Unit = {
         if (connectionsManager.countConnections - discarded.length < 0) {

@@ -10,10 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.prototypes.oblivion.serialization.v2.tree
+package fr.linkit.core.connection.packet.serialization.tree.nodes
 
+import fr.linkit.core.connection.packet.serialization.tree._
 import fr.linkit.core.local.mapping.ClassMappings
-import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
+import fr.linkit.core.local.utils.NumberSerializer
 import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
 
 object EnumNode {
@@ -25,7 +26,7 @@ object EnumNode {
             if (bytes.length < 4)
                 return false
             val number = NumberSerializer.deserializeInt(bytes, 0)
-            ClassMappings.isRegistered(number) && ClassMappings.getClass(number).isInstanceOf[Class[E]]
+            ClassMappings.isRegistered(number) && ClassMappings.getClass(number).isEnum
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[E] = {
@@ -40,11 +41,11 @@ object EnumNode {
     class EnumSerialNode[E <: Enum[E]](override val parent: SerialNode[_]) extends SerialNode[E] {
 
         override def serialize(t: E, putTypeHint: Boolean): Array[Byte] = {
-            println(s"Serializing enum ${t}")
+            //println(s"Serializing enum ${t}")
             val name     = t.name()
             val enumType = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
-            val result = enumType ++ name.getBytes
-            println(s"Result = ${toPresentableString(result)} (type: ${toPresentableString(enumType)}, name: $name)")
+            val result   = enumType ++ name.getBytes
+            //println(s"Result = ${toPresentableString(result)} (type: ${toPresentableString(enumType)}, name: $name)")
             result
         }
     }
@@ -52,10 +53,10 @@ object EnumNode {
     class EnumDeserialNode[E <: Enum[E]](override val parent: DeserialNode[_], bytes: Array[Byte]) extends DeserialNode[E] {
 
         override def deserialize(): E = {
-            println(s"Deserializing enum ${toPresentableString(bytes)}")
+            //println(s"Deserializing enum ${toPresentableString(bytes)}")
             val enumType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
-            val name     = new String(bytes.take(4))
-            println(s"Name = $name")
+            val name     = new String(bytes.drop(4))
+            //println(s"Name = $name")
             Enum.valueOf(enumType.asInstanceOf[Class[E]], name)
         }
     }

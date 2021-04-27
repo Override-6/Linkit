@@ -10,10 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.prototypes.oblivion.serialization.v2.tree
+package fr.linkit.core.connection.packet.serialization.tree.nodes
 
+import fr.linkit.core.connection.packet.serialization.tree._
 import fr.linkit.core.local.mapping.ClassMappings
-import fr.linkit.core.local.utils.NumberSerializer
+import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.collection.{MapFactory, mutable}
@@ -21,7 +22,9 @@ import scala.collection.{MapFactory, mutable}
 object MapNode {
 
     def ofMutable: NodeFactory[mutable.Map[_, _]] = new NodeFactory[mutable.Map[_, _]] {
-        override def canHandle(clazz: Class[_]): Boolean = findFactory(clazz).isDefined
+        override def canHandle(clazz: Class[_]): Boolean = {
+            classOf[mutable.Map[_, _]].isAssignableFrom(clazz)
+        }
 
         override def canHandle(bytes: Array[Byte]): Boolean = {
             if (bytes.length < 4)
@@ -39,8 +42,10 @@ object MapNode {
         }
     }
 
-    def ofImmutable : NodeFactory[Map[_, _]] = new NodeFactory[Map[_, _]] {
-        override def canHandle(clazz: Class[_]): Boolean = findFactory(clazz).isDefined
+    def ofImmutable: NodeFactory[Map[_, _]] = new NodeFactory[Map[_, _]] {
+        override def canHandle(clazz: Class[_]): Boolean = {
+            classOf[Map[_, _]].isAssignableFrom(clazz)
+        }
 
         override def canHandle(bytes: Array[Byte]): Boolean = {
             if (bytes.length < 4)
@@ -64,7 +69,7 @@ object MapNode {
         override def serialize(t: mutable.Map[_, _], putTypeHint: Boolean): Array[Byte] = {
             val content      = t.toArray
             val mapTypeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
-            println(s"content = ${content.mkString("Array(", ", ", ")")}")
+            //println(s"content = ${content.mkString("Array(", ", ", ")")}")
             mapTypeBytes ++ finder.getSerialNodeForRef(content).serialize(awfulCast(content), putTypeHint)
         }
     }
@@ -73,10 +78,16 @@ object MapNode {
 
         override def deserialize(): mutable.Map[_, _] = {
             val mapType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
+            //println(s"mapType = ${mapType}")
             val factory = findFactory(mapType)
-            println(s"bytes.drop(4) = ${new String(bytes.drop(4))}")
-            val content = finder.getDeserialNodeFor[Array[(_, _)]](bytes.drop(4)).deserialize()
-            awfulCast(factory.get.from(ArrayBuffer.from(content)))
+            //println(s"factory = ${factory}")
+            //println(s"bytes.drop(4) = ${new String(bytes.drop(4))}")
+            val content = finder.getDeserialNodeFor[Array[Any]](bytes.drop(4)).deserialize()
+            //println(s"content = ${content.mkString("Array(", ", ", ")")}")
+            if (content.isEmpty)
+                return awfulCast(mapType.getConstructor().newInstance())
+
+            awfulCast(factory.get.from(ArrayBuffer.from(ScalaUtils.slowCopy[(_, _)](content))))
         }
     }
 

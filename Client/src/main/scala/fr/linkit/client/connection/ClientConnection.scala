@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketException}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.concurrency.{packetWorkerExecution, workerExecution}
 import fr.linkit.api.local.system.AppLogger
@@ -30,11 +30,14 @@ import fr.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 import fr.linkit.core.local.concurrency.PacketReaderThread
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.core.local.system.fsa.remote.RemoteFileSystemAdapter
 import fr.linkit.core.local.system.{Rules, SystemPacket}
-import fr.linkit.core.local.utils.NumberSerializer
+import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
+import scala.util.control.NonFatal
 
 class ClientConnection private(session: ClientConnectionSession) extends ExternalConnection {
 
@@ -51,6 +54,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(this)
     override val network          : Network           = sideNetwork
     @volatile private var alive                       = true
+
+    postInit()
 
     /*
     * This will have for consequence to add the current connection's presence to the whole network.
@@ -88,6 +93,11 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     }
 
     @workerExecution
+    private def postInit(): Unit = {
+        RemoteFileSystemAdapter.open(LocalFileSystemAdapters.Nio, this)
+    }
+
+    @workerExecution
     private def initPacketReader(): Unit = {
         BusyWorkerPool.ensureCurrentIsWorker("Can't start in a non worker pool !")
         if (alive)
@@ -96,11 +106,15 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
         socket.addConnectionStateListener(tryReconnect)
         readThread.onPacketRead = (result) => {
-            val coordinates: DedicatedPacketCoordinates = result.coords match {
-                case d: DedicatedPacketCoordinates => d
-                case _                             => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
+            try {
+                val coordinates: DedicatedPacketCoordinates = result.coords match {
+                    case d: DedicatedPacketCoordinates => d
+                    case _                             => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
+                }
+                handlePacket(result.packet, result.attributes, coordinates)
+            } catch {
+                case NonFatal(e) => throw new PacketException(s"Could not deserialize '${ScalaUtils.toPresentableString(result.bytes)}'", e)
             }
-            handlePacket(result.packet, result.attributes, coordinates)
         }
         readThread.start()
     }

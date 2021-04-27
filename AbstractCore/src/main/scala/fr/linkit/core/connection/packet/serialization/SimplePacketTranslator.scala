@@ -19,32 +19,30 @@ import fr.linkit.api.local.system.security.BytesHasher
 
 class SimplePacketTranslator(hasher: BytesHasher) extends PacketTranslator {
 
-    private val serializer = new StreamSerializer(hasher)
-
     override def translate(packetInfo: TransferInfo): PacketSerializationResult = {
-        new LazyPacketSerializationResult(packetInfo, () => serializer)
+        new LazyPacketSerializationResult(packetInfo, () => DefaultSerializer)
     }
 
     //TODO Create trait named "PacketDeserializationResult" even if it is empty.
     override def translate(bytes: Array[Byte]): PacketTransferResult = {
-        new LazyPacketDeserializationResult(bytes, () => serializer)
+        new LazyPacketDeserializationResult(bytes, () => DefaultSerializer)
     }
 
     override def translateCoords(coords: PacketCoordinates, target: String): Array[Byte] = {
-        serializer.serialize(coords, false)
+        DefaultSerializer.serialize(coords, false)
     }
 
     override def translateAttributes(attribute: PacketAttributes, target: String): Array[Byte] = {
-        serializer.serialize(attribute, false)
+        DefaultSerializer.serialize(attribute, false)
     }
 
     override def translatePacket(packet: Packet, target: String): Array[Byte] = {
-        serializer.serialize(packet, false)
+        DefaultSerializer.serialize(packet, false)
     }
 
     override def updateCache(manager: SharedCacheManager): Unit = ()
 
-    override def findSerializerFor(target: String): Option[Serializer] = Some(serializer)
+    override def findSerializerFor(target: String): Option[Serializer] = Some(DefaultSerializer)
 
-    override val signature: Array[Byte] = serializer.signature
+    override val signature: Array[Byte] = DefaultSerializer.signature
 }

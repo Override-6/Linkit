@@ -27,7 +27,7 @@ class DefaultPacketReader(socket: DynamicSocket,
      * @return a tuple containing the next packet with its coordinates and its local number identifier
      * */
     override def nextPacket(@workerExecution callback: PacketTransferResult => Unit): Unit = {
-        nextPacketSync(a => procrastinator.runLater(callback(a)))
+        nextPacketSync(result => procrastinator.runLater(callback(result)))
     }
 
     def nextPacketSync(callback: PacketTransferResult => Unit): Unit = {

@@ -16,16 +16,15 @@ import fr.linkit.api.connection.packet.serialization.Serializer
 
 import java.io.OutputStream
 import java.security.CodeSource
-import java.util
 import scala.collection.mutable
 
 object ClassMappings {
 
-    private val classes = new mutable.HashMap[Int, String]()
+    private val classes = new mutable.HashMap[Int, (String, ClassLoader)]()
     private val sources = mutable.HashSet.empty[CodeSource]
 
-    def putClass(className: String): Unit = {
-        classes.put(className.hashCode, className)
+    def putClass(className: String, loader: ClassLoader): Unit = {
+        classes.put(className.hashCode, (className, loader))
         //println(s"Class put ! $className (${className.hashCode})")
     }
 
@@ -35,18 +34,21 @@ object ClassMappings {
 
     def getSources: List[CodeSource] = sources.toList
 
-    def putClass(clazz: Class[_]): Unit = putClass(clazz.getName)
+    def putClass(clazz: Class[_]): Unit = putClass(clazz.getName, clazz.getClassLoader)
 
-    def getClassName(hashCode: Int): String = classes(hashCode)
-
-    def getClass(hashCode: Int): Class[_] = Class.forName(getClassName(hashCode))
+    def getClassName(hashCode: Int): String = classes(hashCode)._1
 
     def getClassOpt(hashCode: Int): Option[Class[_]] = {
-        getClassNameOpt(hashCode)
-                .map(Class.forName)
+        classes.get(hashCode).map(pair => {
+            Class.forName(pair._1, false, pair._2)
+        })
     }
 
-    def getClassNameOpt(hashCode: Int): Option[String] = classes.get(hashCode)
+    def getClass(hashCode: Int): Class[_] = {
+        getClassOpt(hashCode).get
+    }
+
+    def getClassNameOpt(hashCode: Int): Option[String] = classes.get(hashCode).map(_._1)
 
     def isRegistered(hashCode: Int): Boolean = classes.contains(hashCode)
 

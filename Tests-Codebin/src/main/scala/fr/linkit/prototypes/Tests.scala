@@ -12,36 +12,55 @@
 
 package fr.linkit.prototypes
 
+import fr.linkit.api.connection.network.cache.CacheOpenBehavior
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.ApplicationContext
+import fr.linkit.core.connection.network.cache.puppet.generation.PuppetClassGenerator
+import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, Puppeteer}
 import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.core.connection.packet.fundamental.WrappedPacket
+import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayRefPacket
+import fr.linkit.core.connection.packet.serialization.DefaultSerializer
+import fr.linkit.core.connection.packet.traffic.channel.request.ResponsePacket
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.core.local.system.fsa.nio.NIOFileSystemAdapter
+import fr.linkit.core.local.utils.ScalaUtils
 
 object Tests {
 
-    private val coords     = DedicatedPacketCoordinates(12, "s1", "TestServer1")
-    private val packet     = WrappedPacket("Hey", WrappedPacket("World", ObjectPacket(KillerClass(KillerClass(KillerClass(null))))))
-    private val attributes = SimplePacketAttributes.empty
-
     private val fsa = LocalFileSystemAdapters.Nio
 
-    case class KillerClass(other: KillerClass) extends Serializable {
+    doMappings()
 
-    }
+    private val generatedPuppet = getTestPuppet
+
+    private val coords     = DedicatedPacketCoordinates(12, "TestServer1", "s1")
+    private val packet     = ResponsePacket(7, Array(ArrayRefPacket(Array((-192009448, LocalFileSystemAdapters.Nio), (-192009448, generatedPuppet)))))
+    private val attributes = SimplePacketAttributes.from("family" -> "Global Cache", "behavior" -> CacheOpenBehavior.GET_OR_WAIT)
+
 
     def main(args: Array[String]): Unit = {
-        doMappings()
-        println(System.getenv())
-        println(System.getenv("LinkitHome"))
-
+        val ref = Array(coords, attributes, packet)
+        val bytes  = DefaultSerializer.serialize(ref, true)
+        println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (l: ${bytes.length})")
+        val result = DefaultSerializer.deserializeAll(bytes)
+        println(s"result = ${result.mkString("Array(", ", ", ")")}")
     }
 
     private def doMappings(): Unit = {
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext])
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
         ClassMapEngine.mapJDK(fsa)
     }
 
+
+    private def getTestPuppet: NIOFileSystemAdapter = {
+        val clazz = PuppetClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
+        clazz.getConstructor(classOf[Puppeteer[_]], classOf[NIOFileSystemAdapter]).newInstance(new Puppeteer[NIOFileSystemAdapter](
+            null,
+            null,
+            -4,
+            "stp",
+            PuppetClassFields.ofClass(classOf[NIOFileSystemAdapter]
+            )), LocalFileSystemAdapters.Nio)
+    }
 }

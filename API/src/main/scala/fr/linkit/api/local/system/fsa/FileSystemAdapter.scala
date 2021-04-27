@@ -36,6 +36,8 @@ trait FileSystemAdapter {
 
     implicit def getAdapter(uri: URI): FileAdapter
 
+    def clearAdapters(): Unit
+
     def createDirectories(path: String): Unit = createDirectories(getAdapter(path))
 
     def createDirectories(fa: FileAdapter): Unit

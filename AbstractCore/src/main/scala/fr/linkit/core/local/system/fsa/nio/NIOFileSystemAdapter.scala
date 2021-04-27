@@ -21,7 +21,7 @@ import java.nio.file.{Files, Path, Paths, StandardCopyOption}
 
 class NIOFileSystemAdapter private[fsa]() extends AbstractFileSystemAdapter {
 
-    def this(other: NIOFileSystemAdapter) = {
+    protected def this(other: NIOFileSystemAdapter) = {
         this()
     }
 
