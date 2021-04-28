@@ -27,10 +27,8 @@ object ArrayNode extends NodeFactory[Array[_]] {
         clazz.isArray
     }
 
-    override def canHandle(bytes: Array[Byte]): Boolean = {
-        println(s"bytes = ${new String(bytes)}")
-        println(s"bytes = ${bytes.mkString("Array(", ", ", ")")}")
-        bytes.nonEmpty && bytes(0) == ArrayFlag
+    override def canHandle(bytes: ByteSeqInfo): Boolean = {
+        bytes.sameFlag(ArrayFlag)
     }
 
     override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Array[_]] = {

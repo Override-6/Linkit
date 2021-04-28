@@ -26,11 +26,8 @@ object MapNode {
             classOf[mutable.Map[_, _]].isAssignableFrom(clazz)
         }
 
-        override def canHandle(bytes: Array[Byte]): Boolean = {
-            if (bytes.length < 4)
-                return false
-            val clazzInt = NumberSerializer.deserializeInt(bytes, 0)
-            ClassMappings.getClassOpt(clazzInt).exists(findFactory(_).isDefined)
+        override def canHandle(bytes: ByteSeqInfo): Boolean = {
+            bytes.classExists(cl => classOf[mutable.Map[_, _]].isAssignableFrom(cl) && findFactory(cl).isDefined)
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[mutable.Map[_, _]] = {
@@ -47,12 +44,8 @@ object MapNode {
             classOf[Map[_, _]].isAssignableFrom(clazz)
         }
 
-        override def canHandle(bytes: Array[Byte]): Boolean = {
-            if (bytes.length < 4)
-                return false
-
-            val clazzInt = NumberSerializer.deserializeInt(bytes, 0)
-            ClassMappings.getClassOpt(clazzInt).exists(findFactory(_).isDefined)
+        override def canHandle(bytes: ByteSeqInfo): Boolean = {
+            bytes.classExists(cl => classOf[Map[_, _]].isAssignableFrom(cl) && findFactory(cl).isDefined)
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Map[_, _]] = {

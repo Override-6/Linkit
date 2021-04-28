@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
-import fr.linkit.core.connection.packet.serialization.tree.{DeserialNode, NodeFactory, NodeFinder, SerialNode, SerializableClassDescription}
+import fr.linkit.core.connection.packet.serialization.tree.{ByteSeqInfo, DeserialNode, NodeFactory, NodeFinder, SerialNode, SerializableClassDescription}
 
 object StringNode extends NodeFactory[String] {
 
@@ -20,7 +20,7 @@ object StringNode extends NodeFactory[String] {
 
     override def canHandle(clazz: Class[_]): Boolean = clazz == classOf[String]
 
-    override def canHandle(bytes: Array[Byte]): Boolean = bytes.nonEmpty && bytes(0) == StringFlag(0)
+    override def canHandle(bytes: ByteSeqInfo): Boolean = bytes.sameFlag(StringFlag(0))
 
     override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[String] = new StringSerialNode(parent)
 

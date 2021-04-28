@@ -27,8 +27,8 @@ object StringRepresentableNode {
 
         override def canHandle(clazz: Class[_]): Boolean = this.clazz.isAssignableFrom(clazz)
 
-        override def canHandle(bytes: Array[Byte]): Boolean = {
-            bytes.nonEmpty && bytes(0) == SRFlag(0)
+        override def canHandle(bytes: ByteSeqInfo): Boolean = {
+            bytes.sameFlag(SRFlag(0))
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[T] = {

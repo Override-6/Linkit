@@ -26,13 +26,8 @@ object SeqNode {
             clazz != classOf[::[_]] && clazz != Nil.getClass && classOf[mutable.Seq[_]].isAssignableFrom(clazz)
         }
 
-        override def canHandle(bytes: Array[Byte]): Boolean = {
-            if (bytes.length < 4)
-                return false
-            val clazzInt = NumberSerializer.deserializeInt(bytes, 0)
-            ClassMappings.getClassOpt(clazzInt).exists(clazz => {
-                classOf[mutable.Seq[_]].isAssignableFrom(clazz) && findFactory(clazz).isDefined
-            })
+        override def canHandle(bytes: ByteSeqInfo): Boolean = {
+            bytes.classExists(cl => classOf[mutable.Seq[_]].isAssignableFrom(cl) && findFactory(cl).isDefined)
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[mutable.Seq[_]] = {
@@ -49,14 +44,8 @@ object SeqNode {
             clazz != classOf[::[_]] && clazz != Nil.getClass && classOf[Seq[_]].isAssignableFrom(clazz)
         }
 
-        override def canHandle(bytes: Array[Byte]): Boolean = {
-            if (bytes.length < 4)
-                return false
-
-            val clazzInt = NumberSerializer.deserializeInt(bytes, 0)
-            ClassMappings.getClassOpt(clazzInt).exists(clazz => {
-                classOf[Seq[_]].isAssignableFrom(clazz) && findFactory(clazz).isDefined
-            })
+        override def canHandle(bytes: ByteSeqInfo): Boolean = {
+            bytes.classExists(cl => classOf[mutable.Seq[_]].isAssignableFrom(cl) && findFactory(cl).isDefined)
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Seq[_]] = {

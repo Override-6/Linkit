@@ -45,7 +45,7 @@ object ClassMappings {
     }
 
     def getClass(hashCode: Int): Class[_] = {
-        getClassOpt(hashCode).get
+        getClassOpt(hashCode).orNull
     }
 
     def getClassNameOpt(hashCode: Int): Option[String] = classes.get(hashCode).map(_._1)

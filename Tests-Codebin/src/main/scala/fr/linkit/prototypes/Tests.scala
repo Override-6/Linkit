@@ -12,15 +12,13 @@
 
 package fr.linkit.prototypes
 
-import fr.linkit.api.connection.network.cache.CacheOpenBehavior
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.core.connection.network.cache.puppet.generation.PuppetClassGenerator
 import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, Puppeteer}
 import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayRefPacket
+import fr.linkit.core.connection.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
 import fr.linkit.core.connection.packet.serialization.DefaultSerializer
-import fr.linkit.core.connection.packet.traffic.channel.request.ResponsePacket
 import fr.linkit.core.local.mapping.ClassMapEngine
 import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.core.local.system.fsa.nio.NIOFileSystemAdapter
@@ -32,26 +30,25 @@ object Tests {
 
     doMappings()
 
-    private val generatedPuppet = getTestPuppet
+    //private val generatedPuppet = getTestPuppet
 
     private val coords     = DedicatedPacketCoordinates(12, "TestServer1", "s1")
-    private val packet     = ResponsePacket(7, Array(ArrayRefPacket(Array((-192009448, LocalFileSystemAdapters.Nio), (-192009448, generatedPuppet)))))
-    private val attributes = SimplePacketAttributes.empty
-
+    private val packet     = ObjectPacket(15L)
+    private val attributes = SimplePacketAttributes.from("25L" -> 25L)
 
     def main(args: Array[String]): Unit = {
-        val ref = Array(coords, attributes, packet)
-        val bytes  = DefaultSerializer.serialize(ref, true)
+        val ref   = Array(coords, attributes, packet)
+        val bytes = DefaultSerializer.serialize(ref, true)
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (l: ${bytes.length})")
         val result = DefaultSerializer.deserializeAll(bytes)
         println(s"result = ${result.mkString("Array(", ", ", ")")}")
+        println(s"result(2).getAttribute(25L) = ${result(2).asInstanceOf[SimplePacketAttributes].getAttribute("25L")}")
     }
 
     private def doMappings(): Unit = {
         ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
         ClassMapEngine.mapJDK(fsa)
     }
-
 
     private def getTestPuppet: NIOFileSystemAdapter = {
         val clazz = PuppetClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])

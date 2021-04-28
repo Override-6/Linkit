@@ -12,14 +12,21 @@
 
 package fr.linkit.core.connection.packet.serialization.tree
 
-trait NodeFactory[T] {
+import fr.linkit.core.local.mapping.ClassMappings
+import fr.linkit.core.local.utils.NumberSerializer
 
-    def canHandle(clazz: Class[_]): Boolean
+case class ByteSeqInfo(bytes: Array[Byte]) {
 
-    def canHandle(info: ByteSeqInfo): Boolean
+    lazy val classType: Option[Class[_]] = {
+        if (bytes.length < 4)
+            None
+        else
+            ClassMappings.getClassOpt(NumberSerializer.deserializeInt(bytes, 0))
+    }
 
-    def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[T]
+    def isClassDefined: Boolean = classType.isDefined
 
-    def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[T]
+    def classExists(f: Class[_] => Boolean): Boolean = classType exists f
 
+    def sameFlag(flag: Byte): Boolean = bytes.nonEmpty && bytes(0) == flag
 }

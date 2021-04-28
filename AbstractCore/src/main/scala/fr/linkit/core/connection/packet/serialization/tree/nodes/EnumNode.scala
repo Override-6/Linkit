@@ -22,11 +22,8 @@ object EnumNode {
     def apply[E <: Enum[E]]: NodeFactory[E] = new NodeFactory[E] {
         override def canHandle(clazz: Class[_]): Boolean = clazz.isEnum
 
-        override def canHandle(bytes: Array[Byte]): Boolean = {
-            if (bytes.length < 4)
-                return false
-            val number = NumberSerializer.deserializeInt(bytes, 0)
-            ClassMappings.isRegistered(number) && ClassMappings.getClass(number).isEnum
+        override def canHandle(bytes: ByteSeqInfo): Boolean = {
+            bytes.classExists(_.isEnum)
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[E] = {

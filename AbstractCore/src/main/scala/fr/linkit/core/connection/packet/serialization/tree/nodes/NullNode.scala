@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
-import fr.linkit.core.connection.packet.serialization.tree.{DeserialNode, NodeFactory, NodeFinder, SerialNode, SerializableClassDescription}
+import fr.linkit.core.connection.packet.serialization.tree.{ByteSeqInfo, DeserialNode, NodeFactory, NodeFinder, SerialNode, SerializableClassDescription}
 
 object NullNode extends NodeFactory[Null] {
 
@@ -30,7 +30,7 @@ object NullNode extends NodeFactory[Null] {
 
     override def canHandle(clazz: Class[_]): Boolean = clazz == null
 
-    override def canHandle(bytes: Array[Byte]): Boolean = bytes.nonEmpty && bytes(0) == NullFlag(0)
+    override def canHandle(bytes: ByteSeqInfo): Boolean = bytes.sameFlag(NullFlag(0))
 
     override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Null] = {
         new NullSerial(parent)

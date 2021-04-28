@@ -31,9 +31,8 @@ object ObjectNode {
             !Constraints.exists(_ (clazz))
         }
 
-        override def canHandle(bytes: Array[Byte]): Boolean = {
-            //TODO Optimize NumberSerialier.deserializeInt use
-            (bytes.nonEmpty && bytes(0) == NullObjectFlag) || (bytes.length >= 4 && ClassMappings.getClassNameOpt(NumberSerializer.deserializeInt(bytes, 0)).isDefined)
+        override def canHandle(bytes: ByteSeqInfo): Boolean = {
+            bytes.sameFlag(NullObjectFlag) || bytes.isClassDefined
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Serializable] = {
@@ -139,14 +138,15 @@ object ObjectNode {
                     case c: Character    => TheUnsafe.putChar(_, _, c)
                 }
             } else field.getType match {
-                case _: Class[Integer]      => TheUnsafe.putObject(_, _, convertValue(_.intValue))
-                case _: Class[lang.Byte]    => TheUnsafe.putObject(_, _, convertValue(_.byteValue))
-                case _: Class[lang.Short]   => TheUnsafe.putObject(_, _, convertValue(_.shortValue))
-                case _: Class[lang.Long]    => TheUnsafe.putObject(_, _, convertValue(_.longValue))
-                case _: Class[lang.Double]  => TheUnsafe.putObject(_, _, convertValue(_.doubleValue))
-                case _: Class[lang.Float]   => TheUnsafe.putObject(_, _, convertValue(_.floatValue))
-                case _: Class[lang.Boolean] => TheUnsafe.putObject(_, _, convertValue(_.booleanValue))
-                case _: Class[Character] => TheUnsafe.putObject(_, _, convertValue(_.shortValue))
+                case c if c eq classOf[Integer]      => TheUnsafe.putObject(_, _, convertValue(_.intValue))
+                case c if c eq classOf[lang.Byte]    => TheUnsafe.putObject(_, _, convertValue(_.byteValue))
+                case c if c eq classOf[lang.Short]   => TheUnsafe.putObject(_, _, convertValue(_.shortValue))
+                case c if c eq classOf[lang.Long]    => TheUnsafe.putObject(_, _, convertValue(_.longValue))
+                case c if c eq classOf[lang.Double]  => TheUnsafe.putObject(_, _, convertValue(_.doubleValue))
+                case c if c eq classOf[lang.Float]   => TheUnsafe.putObject(_, _, convertValue(_.floatValue))
+                case c if c eq classOf[lang.Boolean] => TheUnsafe.putObject(_, _, convertValue(_.booleanValue))
+                case c if c eq classOf[Character]    => TheUnsafe.putObject(_, _, convertValue(_.shortValue))
+                case _                               => TheUnsafe.putObject(_, _, value)
             }
             action(instance, fieldOffset)
         }
@@ -188,7 +188,7 @@ object ObjectNode {
 
         override def charValue: Char = if (b) 'y' else 'n'
     }
-    
+
     private class NumberWrapper(n: Number) extends PrimitiveWrapper {
 
         override def booleanValue: Boolean = intValue == 1
