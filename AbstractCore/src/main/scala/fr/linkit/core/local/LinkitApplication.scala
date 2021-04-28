@@ -26,6 +26,7 @@ import fr.linkit.core.local.plugin.LinkitPluginManager
 import fr.linkit.core.local.resource.SimpleResourceListener
 import fr.linkit.core.local.resource.local.{LocalResourceFactories, LocalResourceFolder}
 import fr.linkit.core.local.system.AbstractCoreConstants
+import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.core.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
 import fr.linkit.core.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
 
@@ -132,9 +133,9 @@ object LinkitApplication {
         ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources)
         ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
         ClassMapEngine.mapJDK(fsa)
+        LocalFileSystemAdapters.Nio.clearAdapters()
+        LocalFileSystemAdapters.Io.clearAdapters()
 
-        PuppetClassGenerator.getOrGenerate(classOf[NIOFileAdapter])
-        PuppetClassGenerator.getOrGenerate(classOf[IOFileAdapter])
         PuppetClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
         PuppetClassGenerator.getOrGenerate(classOf[IOFileSystemAdapter])
     }

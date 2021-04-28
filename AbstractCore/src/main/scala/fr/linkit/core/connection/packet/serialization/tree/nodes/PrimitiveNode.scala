@@ -42,7 +42,7 @@ object PrimitiveNode {
     class PrimitiveSerialNode[T <: AnyVal](override val parent: SerialNode[_]) extends SerialNode[T] {
 
         override def serialize(t: T, putTypeHint: Boolean): Array[Byte] = {
-            //println(s"Serializing primitive ${t}")
+            println(s"Serializing primitive ${t}")
             val bytes = t match {
                 case i: Int     => NumberSerializer.serializeNumber(i, true)
                 case b: Byte    => NumberSerializer.serializeNumber(b, true)
@@ -62,7 +62,7 @@ object PrimitiveNode {
     class PrimitiveDeserialNode[T <: AnyVal](bytes: Array[Byte], override val parent: DeserialNode[_]) extends DeserialNode[T] {
 
         override def deserialize(): T = {
-            //println(s"Deserializing primitive of bytes ${toPresentableString(bytes)}")
+            println(s"Deserializing primitive of bytes ${toPresentableString(bytes)}")
             NumberSerializer.deserializeFlaggedNumber(bytes, 1)._1
         }
     }

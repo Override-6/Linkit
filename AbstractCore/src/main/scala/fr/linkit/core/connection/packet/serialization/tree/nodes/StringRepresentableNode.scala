@@ -44,7 +44,7 @@ object StringRepresentableNode {
 
         override def serialize(t: T, putTypeHint: Boolean): Array[Byte] = {
             val node = finder.getSerialNodeForType[String](classOf[String], parent)
-            //println(s"node = ${node}")
+            println(s"node = ${node}")
             //Thread.dumpStack()
             SRFlag ++ node.serialize(repr.getRepresentation(t), putTypeHint)
         }

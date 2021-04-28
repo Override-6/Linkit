@@ -36,7 +36,7 @@ object Tests {
 
     private val coords     = DedicatedPacketCoordinates(12, "TestServer1", "s1")
     private val packet     = ResponsePacket(7, Array(ArrayRefPacket(Array((-192009448, LocalFileSystemAdapters.Nio), (-192009448, generatedPuppet)))))
-    private val attributes = SimplePacketAttributes.from("family" -> "Global Cache", "behavior" -> CacheOpenBehavior.GET_OR_WAIT)
+    private val attributes = SimplePacketAttributes.empty
 
 
     def main(args: Array[String]): Unit = {

@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
-import fr.linkit.core.connection.packet.serialization.tree.{DeserialNode, NodeFactory, NodeFinder, SerialNode, SerializableClassDescription}
+import fr.linkit.core.connection.packet.serialization.tree._
 import fr.linkit.core.local.mapping.ClassMappings
 import fr.linkit.core.local.utils.NumberSerializer
 
@@ -30,7 +30,9 @@ object SeqNode {
             if (bytes.length < 4)
                 return false
             val clazzInt = NumberSerializer.deserializeInt(bytes, 0)
-            ClassMappings.getClassOpt(clazzInt).exists(findFactory(_).isDefined)
+            ClassMappings.getClassOpt(clazzInt).exists(clazz => {
+                classOf[mutable.Seq[_]].isAssignableFrom(clazz) && findFactory(clazz).isDefined
+            })
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[mutable.Seq[_]] = {
@@ -52,7 +54,9 @@ object SeqNode {
                 return false
 
             val clazzInt = NumberSerializer.deserializeInt(bytes, 0)
-            ClassMappings.getClassOpt(clazzInt).exists(findFactory(_).isDefined)
+            ClassMappings.getClassOpt(clazzInt).exists(clazz => {
+                classOf[Seq[_]].isAssignableFrom(clazz) && findFactory(clazz).isDefined
+            })
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Seq[_]] = {
@@ -71,7 +75,7 @@ object SeqNode {
         override def serialize(t: mutable.Seq[_], putTypeHint: Boolean): Array[Byte] = {
             val content      = t.toArray
             val seqTypeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
-            //println(s"content = ${content.mkString("Array(", ", ", ")")}")
+            println(s"content = ${content.mkString("Array(", ", ", ")")}")
             seqTypeBytes ++ finder.getSerialNodeForRef(content).serialize(awfulCast(content), putTypeHint)
         }
     }
@@ -80,12 +84,12 @@ object SeqNode {
 
         override def deserialize(): mutable.Seq[_] = {
             val seqType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
-            //println(s"List type = ${seqType}")
+            println(s"List type = ${seqType}")
             val factory = findFactory(seqType)
-            //println(s"factory = ${factory}")
-            //println(s"bytes.drop(4) = ${new String(bytes.drop(4))}")
+            println(s"factory = ${factory}")
+            println(s"bytes.drop(4) = ${new String(bytes.drop(4))}")
             val content = finder.getDeserialNodeFor[Array[Any]](bytes.drop(4)).deserialize()
-            //println(s"SeqNode: content = ${content.mkString("Array(", ", ", ")")}")
+            println(s"SeqNode: content = ${content.mkString("Array(", ", ", ")")}")
             if (content.isEmpty)
                 return awfulCast(seqType.getConstructor().newInstance())
 
@@ -116,7 +120,7 @@ object SeqNode {
         try {
             val companionClass = Class.forName(seqType.getName + "$")
             val companion      = companionClass.getField("MODULE$").get(null)
-            //println(s"companion = ${companion}")
+            println(s"companion = ${companion}")
             companion match {
                 case e: SeqFactory[CC] => Option(e)
                 case _                 => None

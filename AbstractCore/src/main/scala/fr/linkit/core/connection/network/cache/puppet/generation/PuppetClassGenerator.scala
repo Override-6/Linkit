@@ -48,7 +48,6 @@ object PuppetClassGenerator {
             Files.createDirectories(path.getParent)
             Files.createFile(path)
         }
-        println(s"path = ${path}")
         Files.write(path, sourceCode.getBytes)
 
         val javacProcess = new ProcessBuilder("javac", "-d", GeneratedClassesFolder, s"-cp", classPaths, path.toString)
