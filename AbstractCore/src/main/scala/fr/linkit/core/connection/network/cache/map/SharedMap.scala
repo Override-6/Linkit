@@ -29,7 +29,7 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
+class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
                       baseContent: Array[(K, V)], channel: RequestPacketChannel)
         extends AbstractSharedCache[(K, V)](handler, identifier, channel) {
 
@@ -138,9 +138,9 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
         if (contains(k)) {
             return apply(k)
         }
-        //println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
+        println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
         controller.waitTaskWhile(!contains(k))
-        //println("Done !")
+        println("Done !")
         apply(k)
     }
 
@@ -161,7 +161,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
             case REMOVE => _.remove(key)
         }
         action(LocalMap)
-        //println(s"Received modification: $mod, $this, $hashCode, ${LocalMap.hashCode()}")
+        println(s"Received modification: $mod, $this, $hashCode, ${LocalMap.hashCode()}")
 
         modCount += 1
         controller.notifyAnyThread()
@@ -183,7 +183,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 
     private def flushModification(mod: (MapModification, Any, Any)): Unit = {
         //        Thread.dumpStack()
-        //println(s"Flushed $mod, $this, $hashCode, ${LocalMap.hashCode()}")
+        println(s"Flushed $mod, $this, $hashCode, ${LocalMap.hashCode()}")
         sendModification(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
         modCount += 1
@@ -273,7 +273,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Long,
 object SharedMap {
 
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer) => {
+        (handler: SharedCacheManager, identifier: Int, baseContent: Array[Any], container: PacketInjectableContainer) => {
             val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             new SharedMap[K, V](handler, identifier, ScalaUtils.slowCopy(baseContent), channel)
         }

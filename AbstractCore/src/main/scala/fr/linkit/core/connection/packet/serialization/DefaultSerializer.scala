@@ -13,7 +13,7 @@
 package fr.linkit.core.connection.packet.serialization
 
 import fr.linkit.api.connection.packet.serialization.{Serializer, StringRepresentable}
-import fr.linkit.api.local.system.{AppLogger, Version}
+import fr.linkit.api.local.system.Version
 import fr.linkit.core.connection.packet.serialization.tree.nodes.StringRepresentableNode
 import fr.linkit.core.connection.packet.serialization.tree.{NodeFactory, NodeFinder, NodeHolder}
 
@@ -26,7 +26,6 @@ object DefaultSerializer extends Serializer with NodeHolder {
     override val signature: Array[Byte] = Array(4)
 
     override def serialize(serializable: Serializable, withSignature: Boolean): Array[Byte] = {
-        AppLogger.debug(s"Serializing $serializable.")
         val node  = nodeFinder.getSerialNodeForRef(serializable)
         val bytes = node.serialize(serializable, true)
 

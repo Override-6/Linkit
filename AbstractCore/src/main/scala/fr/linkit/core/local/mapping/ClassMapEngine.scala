@@ -30,7 +30,7 @@ object ClassMapEngine {
     val DefaultFilter = new MapEngineFilters(getClass.getResourceAsStream("/mapEngineFilter.txt"))
 
     def mapAllSources(fsa: FileSystemAdapter, sources: (CodeSource, ClassLoader)*): Unit = {
-        sources.foreach((pair) => {
+        sources.foreach(pair => {
             val source      = pair._1
             val classLoader = pair._2
             val url         = source.getLocation
@@ -51,7 +51,12 @@ object ClassMapEngine {
     def mapJDK(fsa: FileSystemAdapter): Unit = {
         val jdkRoot = System.getProperty("java.home")
         val adapter = fsa.getAdapter(jdkRoot)
-        mapDir(fsa, adapter, getClass.getClassLoader)
+        AppLogger.debug(s"Mapping JDK ($adapter)...")
+        mapDir(fsa, adapter, getClass.getClassLoader, DefaultFilter)
+        AppLogger.debug("JDK Mapping done, classes were mapped in packages : ")
+        DefaultFilter.filters.foreach(filter => {
+            AppLogger.debug(s"\t${filter.line}")
+        })
     }
 
     def mapDir(fsa: FileSystemAdapter, directory: FileAdapter,
@@ -67,6 +72,7 @@ object ClassMapEngine {
     private def mapDirectory(fsa: FileSystemAdapter, root: String,
                              directory: FileAdapter, classLoader: ClassLoader,
                              filters: MapEngineFilters): Unit = {
+        println(s"directory = ${directory}")
         if (isZipFile(directory)) {
             val dirPath  = directory.getAbsolutePath
             val isInJMod = dirPath.endsWith(".jmod")
@@ -107,34 +113,37 @@ object ClassMapEngine {
 
     class MapEngineFilters(@Nullable in: InputStream) {
 
-        private lazy val filters = {
-            new String(in.readAllBytes())
+        lazy val filters: Array[MapEngineFilter] = {
+            new String(in.readAllBytes(), "ASCII")
                     .split('\n')
-                    .filterNot(_.trim.startsWith("#"))
-                    .map(new MapEngineFilter(_))
+                    .filterNot(_.isBlank)
+                    .filterNot(_.strip().startsWith("#"))
+                    .map(_.takeWhile(!_.isControl))
+                    .map(MapEngineFilter)
         }
 
         def canMap(className: String): Boolean = {
             if (in == null)
                 return true
+            println(s"filters = ${filters.mkString("Array(", ", ", ")")}")
             filters.exists(_.isAuthorised(className))
         }
 
     }
 
-    class MapEngineFilter(line: String) {
+    case class MapEngineFilter(line: String) {
 
         private val isGeneralized = line.endsWith(".*")
-        private val packageName   = if (isGeneralized) line.dropRight(1) else line
+        private val packageName   = if (isGeneralized) line.dropRight(2) else line
 
         def isAuthorised(className: String): Boolean = {
-            //println(s"className = ${className}")
-            //println(s"packageName = ${packageName}")
+            println(s"className = ${className}")
+            println(s"packageName = ${packageName}")
             if (isGeneralized)
                 className.startsWith(packageName)
             else {
                 val folder = className.take(className.lastIndexOf("."))
-                //println(s"folder = ${folder}")
+                println(s"folder = ${folder}")
                 packageName == folder
             }
         }

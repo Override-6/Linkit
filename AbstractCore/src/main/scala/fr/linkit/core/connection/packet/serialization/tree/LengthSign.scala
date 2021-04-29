@@ -58,6 +58,7 @@ object LengthSign {
             println(s"    child = ${child}")
             val bytes = child.serialize(cast(fieldValue), true)
             println(s"    child bytes = ${ScalaUtils.toPresentableString(bytes)}")
+            println(s"    raw child bytes = ${bytes.mkString("Array(", ", ", ")")}")
 
             byteArrays(i) = bytes
             if (i < lengths.length)

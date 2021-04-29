@@ -21,7 +21,7 @@ import fr.linkit.core.local.utils.ScalaUtils.ensurePacketType
 import java.util.NoSuchElementException
 import scala.reflect.ClassTag
 
-sealed abstract class SubmitterPacket(@LinkDescendant id: Long, @LinkDescendant packets: Array[Packet]) extends AbstractAttributesPresence with Packet {
+sealed abstract class SubmitterPacket(@LinkDescendant id: Int, @LinkDescendant packets: Array[Packet]) extends AbstractAttributesPresence with Packet {
 
     @transient private var packetIndex                  = 0
     @transient private var attributes: PacketAttributes = _
@@ -62,10 +62,10 @@ sealed abstract class SubmitterPacket(@LinkDescendant id: Long, @LinkDescendant 
 
 }
 
-case class ResponsePacket(id: Long, packets: Array[Packet])
+case class ResponsePacket(id: Int, packets: Array[Packet])
         extends SubmitterPacket(id, packets) {
 
 }
 
-case class RequestPacket(id: Long, packets: Array[Packet])
+case class RequestPacket(id: Int, packets: Array[Packet])
         extends SubmitterPacket(id, packets)

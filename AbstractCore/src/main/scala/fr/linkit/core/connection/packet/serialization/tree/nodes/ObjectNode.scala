@@ -70,7 +70,9 @@ object ObjectNode {
             println(s"children = ${children}")
 
             val classType = desc.classSignature
+            println(s"t.getClass.getName.hashCode = ${t.getClass.getName.hashCode}")
             println(s"classType = ${toPresentableString(classType)}")
+            println(s"NumberSerializer.deserializeInt(classType) = ${NumberSerializer.deserializeInt(classType, 0)}")
             val sign = LengthSign.of(t, desc, children).toBytes
             println(s"sign = ${toPresentableString(sign)}")
             val bytes = classType ++ sign
@@ -96,9 +98,12 @@ object ObjectNode {
 
             val fieldValues = for (childBytes <- sign.childrenBytes) yield {
                 println(s"Field bytes = ${toPresentableString(childBytes)}")
+                println(s"childBytes = ${childBytes.mkString("Array(", ", ", ")")}")
                 val node = tree.getDeserialNodeFor(childBytes, this)
                 println(s"node = ${node}")
-                node.deserialize()
+                val result = node.deserialize()
+                println(s"result = ${result}")
+                result
             }
 
             desc.foreachDeserializableFields { (i, field) =>

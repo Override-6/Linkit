@@ -14,15 +14,18 @@ package fr.linkit.prototypes
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.core.connection.network.cache.puppet.generation.PuppetClassGenerator
+import fr.linkit.core.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
 import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, Puppeteer}
 import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
+import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.serialization.DefaultSerializer
-import fr.linkit.core.local.mapping.ClassMapEngine
+import fr.linkit.core.local.mapping.{ClassMapEngine, ClassMappings}
 import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.core.local.system.fsa.nio.NIOFileSystemAdapter
 import fr.linkit.core.local.utils.ScalaUtils
+
+import java.sql.Timestamp
+import java.time.Instant
 
 object Tests {
 
@@ -33,16 +36,21 @@ object Tests {
     //private val generatedPuppet = getTestPuppet
 
     private val coords     = DedicatedPacketCoordinates(12, "TestServer1", "s1")
-    private val packet     = ObjectPacket(15L)
     private val attributes = SimplePacketAttributes.from("25L" -> 25L)
+    private val packet     = ObjectPacket(Timestamp.from(Instant.now()))
 
     def main(args: Array[String]): Unit = {
+
+        ClassMappings.getClassOpt(classOf[Timestamp].getName.hashCode()).get
+
         val ref   = Array(coords, attributes, packet)
         val bytes = DefaultSerializer.serialize(ref, true)
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (l: ${bytes.length})")
         val result = DefaultSerializer.deserializeAll(bytes)
         println(s"result = ${result.mkString("Array(", ", ", ")")}")
         println(s"result(1).getAttribute(25L) = ${result(1).asInstanceOf[SimplePacketAttributes].getAttribute("25L")}")
+        println(s"result(2).toLocalDateTime = ${result(2).asInstanceOf[ObjectPacket].casted[Timestamp].toLocalDateTime}")
+        println(s"result(2) = ${result(2).asInstanceOf[ObjectPacket].casted[Timestamp]}")
     }
 
     private def doMappings(): Unit = {
@@ -51,7 +59,7 @@ object Tests {
     }
 
     private def getTestPuppet: NIOFileSystemAdapter = {
-        val clazz = PuppetClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
+        val clazz = PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
         clazz.getConstructor(classOf[Puppeteer[_]], classOf[NIOFileSystemAdapter]).newInstance(new Puppeteer[NIOFileSystemAdapter](
             null,
             null,

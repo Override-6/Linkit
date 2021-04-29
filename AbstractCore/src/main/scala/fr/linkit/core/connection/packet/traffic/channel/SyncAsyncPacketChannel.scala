@@ -13,8 +13,8 @@
 package fr.linkit.core.connection.packet.traffic.channel
 
 import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
-import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.connection.packet.traffic.PacketInjectableFactory
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel.Attribute
@@ -47,9 +47,9 @@ class SyncAsyncPacketChannel(@Nullable parent: PacketChannel,
     override def handleInjection(injection: PacketInjection): Unit = {
         val coordinates = injection.coordinates
         injection.attachPin { (packet, attr) =>
-            attr.getAttribute[Long](Attribute) match {
+            attr.getAttribute[Boolean](Attribute) match {
                 case Some(isAsync) =>
-                    if (isAsync == 1)
+                    if (isAsync)
                         asyncListeners.applyAll(PacketBundle(this, packet, attr, coordinates))
                     else
                         sync.add(packet)
@@ -65,25 +65,25 @@ class SyncAsyncPacketChannel(@Nullable parent: PacketChannel,
     }
 
     def sendAsync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
-        attributes.putAttribute(Attribute, 1L)
+        attributes.putAttribute(Attribute, true)
         drainAllAttributes(attributes)
         scope.sendToAll(packet, attributes)
     }
 
     def sendAsync(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = {
-        attributes.putAttribute(Attribute, 1L)
+        attributes.putAttribute(Attribute, true)
         drainAllAttributes(attributes)
         scope.sendTo(packet, attributes, targets: _*)
     }
 
     def sendSync(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = {
-        attributes.putAttribute(Attribute, 0L)
+        attributes.putAttribute(Attribute, false)
         drainAllAttributes(attributes)
         scope.sendTo(packet, targets: _*)
     }
 
     def sendSync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
-        attributes.putAttribute(Attribute, 0L)
+        attributes.putAttribute(Attribute, false)
         drainAllAttributes(attributes)
         scope.sendToAll(packet, attributes)
     }

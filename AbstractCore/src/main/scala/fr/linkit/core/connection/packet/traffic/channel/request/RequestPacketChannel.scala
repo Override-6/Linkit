@@ -30,7 +30,7 @@ import scala.collection.mutable
 
 class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) {
 
-    private val requestHolders           = mutable.LinkedHashMap.empty[Long, RequestHolder]
+    private val requestHolders           = mutable.LinkedHashMap.empty[Int, RequestHolder]
     private val requestConsumers         = ConsumerContainer[RequestBundle]()
     @volatile private var requestID      = 0
 

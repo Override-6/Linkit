@@ -40,7 +40,7 @@ class PacketReaderThread(reader: PacketReader,
     override def run(): Unit = {
         try {
             while (open) {
-                //println("Waiting for next packet...")
+                println("Waiting for next packet...")
                 refresh()
             }
         } catch {
@@ -48,7 +48,7 @@ class PacketReaderThread(reader: PacketReader,
                 AppLogger.error("Packet reading threw an error", e)
                 open = false
         } finally {
-            //println("STOPPED PACKET WORKER")
+            println("STOPPED PACKET WORKER")
         }
     }
 
@@ -129,7 +129,7 @@ object PacketReaderThread {
     /**
      * Handles a lock if the current thread is not a [[PacketReaderThread]], otherwise, throw an [[IllegalThreadException]]
      * */
-    def safeLock(anyRef: AnyRef, timeout: Long = 0): Unit = {
+    def safeLock(anyRef: AnyRef, timeout: Int = 0): Unit = {
         checkNotCurrent()
         anyRef.synchronized {
             anyRef.wait(timeout)

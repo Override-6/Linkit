@@ -25,16 +25,21 @@ import scala.collection.mutable.ListBuffer
 
 class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
                                    presence: PacketAttributesPresence,
-                                   id: Long, val owner: String, val desc: PuppetClassFields) {
+                                   id: Int, val owner: String, val desc: PuppetClassFields) {
+
+    type SW <: S with PuppetWrapper[S]
 
     private val ownerScope = prepareScope(ChannelScopes.retains(owner))
     private val bcScope    = prepareScope(ChannelScopes.discardCurrent)
 
     private val puppetModifications = ListBuffer.empty[(String, Any)]
 
-    private var puppet: S = _
+    private var puppet       : S  = _
+    private var puppetWrapper: SW = _
 
     def getPuppet: S = puppet
+
+    def getPuppetWrapper: SW = puppetWrapper
 
     def sendInvokeAndReturn[R <: Serializable](methodName: String, args: Array[Any]): R = {
         channel.makeRequest(ownerScope)
@@ -67,10 +72,11 @@ class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
         this
     }
 
-    def init(puppet: S): Unit = {
-        if (this.puppet != null) {
+    def init(wrapper: SW, puppet: S): Unit = {
+        if (this.puppet != null || this.puppetWrapper != null) {
             throw new IllegalStateException("This Puppeteer already controls a puppet instance !")
         }
+        this.puppetWrapper = wrapper
         this.puppet = puppet
     }
 

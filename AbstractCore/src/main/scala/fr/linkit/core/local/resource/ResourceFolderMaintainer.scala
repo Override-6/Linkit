@@ -78,7 +78,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
         val item = ResourceItem(resource.name)
         item.lastChecksum = resource.getChecksum
         item.lastModified = DynamicVersions.from(StaticVersions.currentVersion)
-        //println(s"Registered item $item")
+        println(s"Registered item $item")
 
         if (resources.get(item.name).exists(_.lastChecksum == item.lastChecksum)) {
             return
@@ -91,7 +91,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
     private def updateFile(resources: Resources = this.resources): Unit = try {
         if (maintainerFileAdapter.notExists)
             maintainerFileAdapter.createAsFile()
-        //println(s"Saving resources for folder : ${resources.folder}")
+        println(s"Saving resources for folder : ${resources.folder}")
         val json = Gson.toJson(resources)
         val out  = maintainerFileAdapter.newOutputStream()
         out.write(json.getBytes())
@@ -113,12 +113,12 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
             itemFolder.lastChecksum += itemChecksum
 
             updateFile()
-            //println(s"item = ${item}")
+            println(s"item = ${item}")
         }
 
         override def onDelete(name: String): Unit = runIfKnown(name) { (_, _) =>
             maintained.unregister(name)
-            //println(s"Unregistered $name")
+            println(s"Unregistered $name")
             updateFile()
         }
 
@@ -126,7 +126,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
             if (isKnown(name))
                 return
             maintained.register(name, LocalResourceFactories.adaptive)
-            //println(s"Registered $name")
+            println(s"Registered $name")
             updateFile()
         }
 
@@ -183,7 +183,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
                 return
             }
 
-            //println(s"handling item = ${item}")
+            println(s"handling item = ${item}")
             maintained.register(name, LocalResourceFactories.adaptive)
         }
 

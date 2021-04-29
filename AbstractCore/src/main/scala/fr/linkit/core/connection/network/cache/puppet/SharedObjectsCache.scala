@@ -18,7 +18,7 @@ import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
 import fr.linkit.core.connection.network.cache.puppet.SharedObjectsCache.FieldRestorer
-import fr.linkit.core.connection.network.cache.puppet.generation.PuppetClassGenerator
+import fr.linkit.core.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
@@ -26,35 +26,38 @@ import fr.linkit.core.local.utils.ScalaUtils
 
 import java.lang.reflect.Field
 import scala.collection.mutable
+import scala.reflect.{ClassTag, classTag}
 
 class SharedObjectsCache(handler: SharedCacheManager,
-                         identifier: Long,
+                         identifier: Int,
                          channel: RequestPacketChannel) extends AbstractSharedCache[Serializable](handler, identifier, channel) {
 
-    private val localChips        = new mutable.HashMap[Long, ObjectChip[_ <: Serializable]]()
-    private val puppeteers        = new mutable.HashMap[Long, Puppeteer[_ <: Serializable]]()
-    private val unFlushedPuppets  = new mutable.HashSet[(Long, Serializable)]
+    private val localChips        = new mutable.HashMap[Int, ObjectChip[_ <: Serializable]]()
+    private val puppeteers        = new mutable.HashMap[Int, Puppeteer[_ <: Serializable]]()
+    private val unFlushedPuppets  = new mutable.HashSet[(Int, Serializable)]
     private val fieldRestorer     = new FieldRestorer
     private val supportIdentifier = channel.traffic.supportIdentifier
 
     AppLogger.trace(s"Shared Object cache opened (id: $identifier, family: ${handler.family}, owner: ${handler.ownerID})")
 
-    def postCloudObject[S <: Serializable](id: Long, obj: S): S with PuppetObject[S] = {
+    def postCloudObject[S <: Serializable](id: Int, obj: S): S with PuppetWrapper[S] = {
         chipObject(id, obj)
-        genPuppetObject[S](id, supportIdentifier, obj)
+        val wrapper = genPuppetObject[S](id, supportIdentifier, obj)
+        flushPuppet(id, obj)
+        wrapper
     }
 
-    def findCloudObject[P <: PuppetObject[_]](id: Long): Option[P] = {
+    def findCloudObject[S <: Serializable : ClassTag](id: Int): Option[S] = {
         puppeteers.get(id) match {
             case None            => None
-            case Some(puppeteer) => puppeteer match {
-                case pup: P => Option(pup)
+            case Some(puppeteer) => puppeteer.getPuppet match {
+                case _: S => Option(puppeteer.getPuppetWrapper.asInstanceOf[S])
                 case _      => None
             }
         }
     }
 
-    def getChip[S <: Serializable](id: Long): Option[ObjectChip[S]] = {
+    def getChip[S <: Serializable](id: Int): Option[ObjectChip[S]] = {
         localChips.get(id) match {
             case None       => None
             case Some(chip) => chip match {
@@ -64,7 +67,7 @@ class SharedObjectsCache(handler: SharedCacheManager,
         }
     }
 
-    def getPuppeteer[S <: Serializable](id: Long): Option[Puppeteer[S]] = {
+    def getPuppeteer[S <: Serializable](id: Int): Option[Puppeteer[S]] = {
         puppeteers.get(id) match {
             case None            => None
             case Some(puppeteer) => puppeteer match {
@@ -98,7 +101,9 @@ class SharedObjectsCache(handler: SharedCacheManager,
     }
 
     override protected def setCurrentContent(content: Array[Serializable]): Unit = {
-        val contentMap = content.asInstanceOf[Array[(Long, (Serializable, String))]]
+        if (content.isEmpty)
+            return
+        val contentMap: Map[Int, (Serializable, String)] = ScalaUtils.slowCopy(content)
                 .toMap
         contentMap.foreachEntry((id, pair) => {
             val obj   = pair._1
@@ -118,12 +123,9 @@ class SharedObjectsCache(handler: SharedCacheManager,
     }
 
     override def currentContent: Array[Any] = {
-        val any1 = localChips
-                .map(pair => (pair._1, (pair._2.puppet, pair._2.owner)))
+        puppeteers
+                .map(pair => (pair._1, (pair._2.getPuppet, pair._2.owner)))
                 .toArray
-        val any2 = puppeteers.map(pair => (pair._1, (pair._2.getPuppet, pair._2.owner)))
-                .toArray
-        (any1 ++ any2).asInstanceOf[Array[Any]]
     }
 
     override var autoFlush: Boolean = true
@@ -143,27 +145,26 @@ class SharedObjectsCache(handler: SharedCacheManager,
         this
     }
 
-    private def genPuppetObject[S <: Serializable](id: Long, owner: String, puppet: S): S with PuppetObject[S] = {
+    private def genPuppetObject[S <: Serializable](id: Int, owner: String, puppet: S): S with PuppetWrapper[S] = {
         val fields    = PuppetClassFields.ofRef(puppet)
         val puppeteer = new Puppeteer[S](channel, this, id, owner, fields)
         puppeteers.put(id, puppeteer)
-        flushPuppet(id, puppet)
 
-        val puppetClass = PuppetClassGenerator.getOrGenerate[S](puppet.getClass)
+        val puppetClass = PuppetWrapperClassGenerator.getOrGenerate[S](puppet.getClass)
         instantiatePuppet[S](puppeteer, puppet, puppetClass)
     }
 
-    private def instantiatePuppet[S <: Serializable](puppeteer: Puppeteer[S], clone: S, puppetClass: Class[S with PuppetObject[S]]): S with PuppetObject[S] = {
+    private def instantiatePuppet[S <: Serializable](puppeteer: Puppeteer[S], clone: S, puppetClass: Class[S with PuppetWrapper[S]]): S with PuppetWrapper[S] = {
         val constructor = puppetClass.getConstructor(puppeteer.getClass, clone.getClass)
         constructor.newInstance(puppeteer, clone)
     }
 
-    private def chipObject[S <: Serializable](id: Long, puppet: S): Unit = {
+    private def chipObject[S <: Serializable](id: Int, puppet: S): Unit = {
         val chip = ObjectChip[S](supportIdentifier, puppet)
         localChips.put(id, chip)
     }
 
-    private def flushPuppet(id: Long, puppet: Serializable): Unit = {
+    private def flushPuppet(id: Int, puppet: Serializable): Unit = {
         AppLogger.vTrace(s"Flushing puppet $puppet for id $id...")
         makeRequest(ChannelScopes.discardCurrent)
                 .addPacket(ObjectPacket((id, puppet)))
@@ -176,10 +177,12 @@ class SharedObjectsCache(handler: SharedCacheManager,
 object SharedObjectsCache extends SharedCacheFactory[SharedObjectsCache] {
 
     override def createNew(handler: SharedCacheManager,
-                           identifier: Long, baseContent: Array[Any],
+                           identifier: Int, baseContent: Array[Any],
                            container: PacketInjectableContainer): SharedObjectsCache = {
         val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
-        new SharedObjectsCache(handler, identifier, channel)
+        val cache   = new SharedObjectsCache(handler, identifier, channel)
+        cache.setCurrentContent(ScalaUtils.slowCopy[Serializable](baseContent))
+        cache
     }
 
     class FieldRestorer {
@@ -200,6 +203,8 @@ object SharedObjectsCache extends SharedCacheFactory[SharedObjectsCache] {
         }
 
         private def listRestorableFields(clazz: Class[_]): Array[Field] = {
+            if (clazz == null)
+                return Array.empty
             clazz.getDeclaredFields.filter(values.contains) ++
                     listRestorableFields(clazz.getSuperclass) ++
                     clazz.getInterfaces.flatMap(listRestorableFields)

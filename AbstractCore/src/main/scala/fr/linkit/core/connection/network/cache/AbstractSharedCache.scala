@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable
 import scala.reflect.ClassTag
 
 abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handler: SharedCacheManager,
-                                                                 identifier: Long,
+                                                                 identifier: Int,
                                                                  channel: RequestPacketChannel) extends AbstractAttributesPresence with InternalSharedCache with JustifiedCloseable {
 
     /**
@@ -45,9 +45,9 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         if (handler == null)
             return this
 
-        //println(s"<$family> UPDATING CACHE $identifier")
+        println(s"<$family> UPDATING CACHE $identifier")
         val content = handler.retrieveCacheContent(identifier, CacheOpenBehavior.GET_OR_CRASH)
-        //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
+        println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
 
         setCurrentContent(ScalaUtils.slowCopy(content))
         this

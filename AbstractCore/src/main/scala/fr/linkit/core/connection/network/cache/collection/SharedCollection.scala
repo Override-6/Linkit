@@ -32,7 +32,7 @@ import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager,
-                                                     identifier: Long,
+                                                     identifier: Int,
                                                      adapter: CollectionAdapter[A],
                                                      channel: RequestPacketChannel)
         extends AbstractSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
@@ -155,7 +155,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         sendModification(ObjectPacket(mod))
         networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
-        AppLogger.vWarn(s"<$family> (${channel.traffic.supportIdentifier}) COLLECTION IS NOW (local): " + this)
+        AppLogger.vTrace(s"<$family> (${channel.traffic.supportIdentifier}) COLLECTION IS NOW (local): " + this)
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
@@ -164,8 +164,8 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         val index                                        = mod._2.toInt
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed (could occur to NPE)
 
-        AppLogger.vWarn(s"<$family> Received mod request : $mod")
-        AppLogger.vWarn(s"<$family> Current items : $this")
+        AppLogger.vTrace(s"<$family> Received mod request : $mod")
+        AppLogger.vTrace(s"<$family> Current items : $this")
         val action: CollectionAdapter[A] => Unit = modKind match {
             case CLEAR  => _.clear()
             case SET    => _.set(index, item)
@@ -183,7 +183,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         modCount += 1
 
         networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Int, A)])
-        AppLogger.vWarn(s"<$family> COLLECTION IS NOW (network) $this")
+        AppLogger.vTrace(s"<$family> COLLECTION IS NOW (network) $this")
     }
 
 }
@@ -209,7 +209,7 @@ object SharedCollection {
      * The insertFilter must be true in order to authorise the insertion
      * */
     def ofInsertFilter[A <: Serializable : ClassTag](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
-        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer) => {
+        (handler: SharedCacheManager, identifier: Int, baseContent: Array[Any], container: PacketInjectableContainer) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
             val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)

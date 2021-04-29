@@ -13,8 +13,8 @@
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
 import fr.linkit.api.connection.packet.serialization.StringRepresentable
-import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.serialization.tree._
+import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 
 import scala.reflect.{ClassTag, classTag}
 
@@ -28,7 +28,13 @@ object StringRepresentableNode {
         override def canHandle(clazz: Class[_]): Boolean = this.clazz.isAssignableFrom(clazz)
 
         override def canHandle(bytes: ByteSeqInfo): Boolean = {
-            bytes.sameFlag(SRFlag(0))
+            println(s"bytes = ${ScalaUtils.toPresentableString(bytes.bytes)}")
+            println(s"raw bytes = ${bytes.bytes.mkString("Array(", ", ", ")")}")
+            bytes.sameFlag(SRFlag(0)) && bytes.classExists(1, s => {
+                println(s"clazz = ${clazz}")
+                println(s"s = ${s}")
+                clazz.isAssignableFrom(s)
+            })
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[T] = {
@@ -44,9 +50,10 @@ object StringRepresentableNode {
 
         override def serialize(t: T, putTypeHint: Boolean): Array[Byte] = {
             val node = finder.getSerialNodeForType[String](classOf[String], parent)
+            val typeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
             println(s"node = ${node}")
             //Thread.dumpStack()
-            SRFlag ++ node.serialize(repr.getRepresentation(t), putTypeHint)
+            SRFlag ++ typeBytes ++ node.serialize(repr.getRepresentation(t), putTypeHint)
         }
     }
 

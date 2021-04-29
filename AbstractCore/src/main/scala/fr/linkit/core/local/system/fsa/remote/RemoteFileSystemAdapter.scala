@@ -15,14 +15,16 @@ package fr.linkit.core.local.system.fsa.remote
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
-import fr.linkit.core.connection.network.cache.puppet.{Hidden, SharedObjectsCache}
+import fr.linkit.core.connection.network.cache.puppet.{Hidden, SharedObject, SharedObjectsCache}
 import fr.linkit.core.local.system.fsa.AbstractFileSystemAdapter
 import fr.linkit.core.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
 import fr.linkit.core.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
+import sun.misc.Unsafe
 
 import java.io.{InputStream, OutputStream}
 import java.net.URI
 
+@SharedObject
 class RemoteFileSystemAdapter private(delegateFSA: AbstractFileSystemAdapter,
                                       sharedAdapters: SharedObjectsCache) extends AbstractFileSystemAdapter {
 
@@ -81,9 +83,15 @@ object RemoteFileSystemAdapter {
         if (classOf[RemoteFileSystemAdapter].isAssignableFrom(delegateFSA))
             throw new IllegalArgumentException("Delegate FSA can't be a RemoteFileSystemAdapter.")
 
-        val cache         = connection.network.globalCache
+        val cache = connection
+                .network
+                .getEntity(connection.boundIdentifier)
+                .get
+                .entityCache
+
         val sharedObjects = cache.getCache(27, SharedObjectsCache)
-        val remoteFSA     = sharedObjects.findCloudObject(delegateFSA.getName.hashCode)
+        println(s"sharedObjects = ${sharedObjects}")
+        val remoteFSA = sharedObjects.findCloudObject[AbstractFileSystemAdapter](delegateFSA.getName.hashCode)
                 .getOrElse(throw new UnsupportedOperationException(s"${delegateFSA.getSimpleName} not found for connection ${connection.boundIdentifier}"))
         new RemoteFileSystemAdapter(remoteFSA, sharedObjects)
     }
@@ -93,7 +101,7 @@ object RemoteFileSystemAdapter {
         if (delegateFSA.isInstanceOf[RemoteFileSystemAdapter])
             throw new IllegalArgumentException("Delegate FSA can't be a RemoteFileSystemAdapter.")
 
-        val cache         = selfConnection.network.globalCache
+        val cache         = selfConnection.network.connectionEntity.entityCache
         val sharedObjects = cache.getCache(27, SharedObjectsCache)
         val puppetFSA     = sharedObjects.postCloudObject(delegateFSA.getClass.getName.hashCode, delegateFSA)
         new RemoteFileSystemAdapter(puppetFSA, sharedObjects)

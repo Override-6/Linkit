@@ -21,7 +21,7 @@ class LocalResourceFolder protected(adapter: FileAdapter,
                                     listener: ResourceListener,
                                     parent: ResourceFolder) extends BaseResourceFolder(parent, listener, adapter) with LocalExternalFolder {
 
-    //println(s"Creating resource folder $getLocation...")
+    println(s"Creating resource folder $getLocation...")
 
 
     override def createOnDisk(): Unit = getAdapter.createAsFolder()

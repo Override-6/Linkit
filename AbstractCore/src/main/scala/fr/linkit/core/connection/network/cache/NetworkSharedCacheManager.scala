@@ -21,7 +21,7 @@ import fr.linkit.core.connection.network.cache.NetworkSharedCacheManager.MockCac
 import fr.linkit.core.connection.network.cache.map.SharedMap
 import fr.linkit.core.connection.packet.PacketBundle
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ArrayObjectPacket
-import fr.linkit.core.connection.packet.fundamental.ValPacket.LongPacket
+import fr.linkit.core.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
 import fr.linkit.core.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
 import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
@@ -31,32 +31,29 @@ import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 
-//TODO Use Array[Serializable] instead of Array[Any] for shared contents
-//TODO replace Longs with Ints (be aware that, with the current serialization algorithm,
-// primitives integers are all converted to Long, so it would cause cast problems until the algorithm is fixed)
 class NetworkSharedCacheManager(override val family: String,
                                 override val ownerID: String,
                                 container: PacketInjectableContainer,
                                 requestChannel: RequestPacketChannel) extends SharedCacheManager {
 
     private      val ownerScope                                       = prepareOwnerScope()
-    private lazy val sharedObjects: map.SharedMap[Long, Serializable] = init()
+    private lazy val sharedObjects: map.SharedMap[Int, Serializable] = init()
 
-    override def postInstance[A <: Serializable](key: Long, value: A): A = {
+    override def postInstance[A <: Serializable](key: Int, value: A): A = {
         sharedObjects.put(key, value)
         value
     }
 
-    override def getInstance[A <: Serializable](key: Long): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
+    override def getInstance[A <: Serializable](key: Int): Option[A] = sharedObjects.get(key).asInstanceOf[Option[A]]
 
-    override def getInstanceOrWait[A <: Serializable](key: Long): A = {
+    override def getInstanceOrWait[A <: Serializable](key: Int): A = {
         val obj = sharedObjects.getOrWait(key)
         obj.asInstanceOf[A]
     }
 
-    override def apply[A <: Serializable](key: Long): A = sharedObjects(key).asInstanceOf[A]
+    override def apply[A <: Serializable](key: Int): A = sharedObjects(key).asInstanceOf[A]
 
-    override def getCache[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior): A = {
+    override def getCache[A <: InternalSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior): A = {
         LocalCacheHandler
                 .findCache[A](cacheID)
                 .getOrElse {
@@ -70,16 +67,16 @@ class NetworkSharedCacheManager(override val family: String,
                 }
     }
 
-    override def getUpdated[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior): A = {
+    override def getUpdated[A <: InternalSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior): A = {
         getCache(cacheID, factory, behavior).update()
     }
 
-    override def retrieveCacheContent(cacheID: Long, behavior: CacheOpenBehavior): Array[Any] = {
+    override def retrieveCacheContent(cacheID: Int, behavior: CacheOpenBehavior): Array[Any] = {
         println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
         val request = requestChannel
                 .makeRequest(ownerScope)
                 .putAttribute("behavior", behavior)
-                .addPacket(LongPacket(cacheID))
+                .addPacket(IntPacket(cacheID))
                 .submit()
 
         try {
@@ -112,7 +109,7 @@ class NetworkSharedCacheManager(override val family: String,
         this
     }
 
-    def forget(cacheID: Long): Unit = {
+    def forget(cacheID: Int): Unit = {
         LocalCacheHandler.unregister(cacheID)
     }
 
@@ -124,7 +121,7 @@ class NetworkSharedCacheManager(override val family: String,
 
         val senderID: String = coords.senderID
         val behavior         = packet.getAttribute[CacheOpenBehavior]("behavior").get
-        val cacheID          = packet.nextPacket[LongPacket].value
+        val cacheID          = packet.nextPacket[IntPacket].value
 
         println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
         println(s"Behavior = $behavior")
@@ -156,7 +153,7 @@ class NetworkSharedCacheManager(override val family: String,
         response.submit()
     }
 
-    private def init(): SharedMap[Long, Serializable] = {
+    private def init(): SharedMap[Int, Serializable] = {
         /*
         * Don't touch, scala objects works as a lazy val, and all lazy val are synchronized on the instance that
         * they are computing. If you remove this line, NetworkSCManager could some times be deadlocked because retrieveCacheContent
@@ -169,8 +166,8 @@ class NetworkSharedCacheManager(override val family: String,
         LocalCacheHandler
         val content = retrieveCacheContent(1, CacheOpenBehavior.GET_OR_WAIT)
 
-        val sharedObjects = SharedMap[Long, Serializable].createNew(this, 1, content, container)
-        LocalCacheHandler.register(1L, sharedObjects)
+        val sharedObjects = SharedMap[Int, Serializable].createNew(this, 1, content, container)
+        LocalCacheHandler.register(1, sharedObjects)
         sharedObjects.foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
         println("Shared objects : " + sharedObjects)
         sharedObjects
@@ -186,7 +183,7 @@ class NetworkSharedCacheManager(override val family: String,
 
     protected object LocalCacheHandler {
 
-        private val localRegisteredCaches = mutable.Map.empty[Long, InternalSharedCache]
+        private val localRegisteredCaches = mutable.Map.empty[Int, InternalSharedCache]
 
         def updateAll(): Unit = {
             println(s"updating cache ($localRegisteredCaches)...")
@@ -195,31 +192,31 @@ class NetworkSharedCacheManager(override val family: String,
             println(s"cache updated ! ($localRegisteredCaches)")
         }
 
-        def register(identifier: Long, cache: InternalSharedCache): Unit = {
+        def register(identifier: Int, cache: InternalSharedCache): Unit = {
             println(s"Registering $identifier into local cache.")
             localRegisteredCaches.put(identifier, cache)
             println(s"Local cache is now $localRegisteredCaches")
         }
 
-        def unregister(identifier: Long): Unit = {
+        def unregister(identifier: Int): Unit = {
             println(s"Removing cache $identifier")
             localRegisteredCaches.remove(identifier)
             println(s"Cache is now $identifier")
         }
 
-        def registerMock(identifier: Long): Unit = {
+        def registerMock(identifier: Int): Unit = {
             localRegisteredCaches.put(identifier, MockCache)
         }
 
-        def getContent(cacheID: Long): Option[Array[Any]] = {
+        def getContent(cacheID: Int): Option[Array[Any]] = {
             localRegisteredCaches.get(cacheID).map(_.currentContent)
         }
 
-        def isRegistered(cacheID: Long): Boolean = {
+        def isRegistered(cacheID: Int): Boolean = {
             localRegisteredCaches.contains(cacheID)
         }
 
-        def findCache[A: ClassTag](cacheID: Long): Option[A] = {
+        def findCache[A: ClassTag](cacheID: Int): Option[A] = {
             val opt = localRegisteredCaches.get(cacheID).asInstanceOf[Option[A]]
             if (opt.exists(_.isInstanceOf[MockCache.type]))
                 return None
@@ -238,7 +235,7 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     private def println(msg: String): Unit = {
-        //AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
+        AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
 }

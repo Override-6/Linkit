@@ -66,7 +66,7 @@ class NodeFinder extends NodeHolder {
     def getDeserialNodeFor[T](bytes: Array[Byte], parent: DeserialNode[T] = null): DeserialNode[T] = {
         val info = ByteSeqInfo(bytes)
         userFactories.find(_.canHandle(info))
-                .getOrElse(getDefaultFactory(bytes))
+                .getOrElse(getDefaultFactory(info))
                 .asInstanceOf[NodeFactory[T]]
                 .newNode(this, bytes, parent)
     }
@@ -77,10 +77,9 @@ class NodeFinder extends NodeHolder {
                 .asInstanceOf[NodeFactory[T]]
     }
 
-    private def getDefaultFactory[T](bytes: Array[Byte]): NodeFactory[T] = {
-        val info = ByteSeqInfo(bytes)
+    private def getDefaultFactory[T](info: ByteSeqInfo): NodeFactory[T] = {
         defaultFactories.find(_.canHandle(info))
-                .getOrElse(throw new NoSuchElementException(s"Could not find factory for bytes '${ScalaUtils.toPresentableString(bytes)}'"))
+                .getOrElse(throw new NoSuchElementException(s"Could not find factory for bytes '${ScalaUtils.toPresentableString(info.bytes)}'"))
                 .asInstanceOf[NodeFactory[T]]
     }
 
@@ -94,6 +93,7 @@ class NodeFinder extends NodeHolder {
     defaultFactories += MapNode.ofMutable
     defaultFactories += MapNode.ofImmutable
     defaultFactories += PrimitiveNode.apply
+    defaultFactories += DateNode
     defaultFactories += ObjectNode.apply
 
 }

@@ -88,7 +88,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
     }
 
     override def getConnection(identifier: String): Option[ExternalConnection] = {
-        connectionCache.get(identifier)
+        connectionCache.get(identifier).orElse(connectionCache.find(_._2.boundIdentifier == identifier).map(_._2))
     }
 
     override def getConnection(port: Int): Option[ExternalConnection] = {
@@ -189,11 +189,6 @@ object ClientApplication {
             LockSupport.unpark(loaderThread)
         }
         LockSupport.park()
-
-        clientApp.synchronized {
-            clientApp.wait()
-        }
-
         if (exception != null)
             throw new ApplicationInstantiationException("Could not instantiate Client Application.", exception)
 

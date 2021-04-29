@@ -18,7 +18,7 @@ import fr.linkit.core.local.utils.ConsumerContainer
 
 import java.util.concurrent.BlockingQueue
 
-case class RequestHolder(id: Long, queue: BlockingQueue[SubmitterPacket], handler: RequestPacketChannel) {
+case class RequestHolder(id: Int, queue: BlockingQueue[SubmitterPacket], handler: RequestPacketChannel) {
 
     private val responseConsumer = ConsumerContainer[SubmitterPacket]()
 

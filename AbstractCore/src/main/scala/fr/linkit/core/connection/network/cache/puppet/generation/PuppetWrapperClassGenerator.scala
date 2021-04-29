@@ -14,17 +14,18 @@ package fr.linkit.core.connection.network.cache.puppet.generation
 
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.puppet.AnnotationHelper.Shared
-import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, PuppetObject}
+import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, PuppetWrapper}
 import fr.linkit.core.local.mapping.ClassMappings
 
 import java.io.File
+import java.lang.annotation.Annotation
 import java.lang.reflect.Method
 import java.net.URLClassLoader
 import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
 //FIXME potential Collision if two classes of the same name, but not the same package are generated.
-object PuppetClassGenerator {
+object PuppetWrapperClassGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val GeneratedClassesFolder : String = "/generated/"
@@ -34,13 +35,13 @@ object PuppetClassGenerator {
         Files.createDirectories(path)
     private val classLoader = new URLClassLoader(Array(path.toUri.toURL))
 
-    private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetObject[_]]]()
+    private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetWrapper[_]]]()
 
-    def getOrGenerate[S <: Serializable](clazz: Class[_ <: S]): Class[S with PuppetObject[S]] = {
-        generatedClasses.getOrElseUpdate(clazz, genPuppetClass(clazz)).asInstanceOf[Class[S with PuppetObject[S]]]
+    def getOrGenerate[S <: Serializable](clazz: Class[_ <: S]): Class[S with PuppetWrapper[S]] = {
+        generatedClasses.getOrElseUpdate(clazz, genPuppetClass(clazz)).asInstanceOf[Class[S with PuppetWrapper[S]]]
     }
 
-    private def genPuppetClass[S <: Serializable](clazz: Class[_ <: S]): Class[_ <: PuppetObject[_]] = {
+    private def genPuppetClass[S <: Serializable](clazz: Class[_ <: S]): Class[_ <: PuppetWrapper[_]] = {
         val s          = '\"'
         val classPaths = ClassMappings.getSources.map(source => s"$s${source.getLocation.getPath.drop(1)}$s").mkString(";")
         val sourceCode = genPuppetClassSourceCode[S](clazz)
@@ -66,16 +67,16 @@ object PuppetClassGenerator {
         AppLogger.debug(s"Compilation done.")
         val puppetClass = classLoader.loadClass(GeneratedClassesPackage + "." + puppetClassName)
         ClassMappings.putClass(puppetClass)
-        puppetClass.asInstanceOf[Class[_ <: PuppetObject[S]]]
+        puppetClass.asInstanceOf[Class[_ <: PuppetWrapper[S]]]
     }
 
     private def genConstantGettersFields(desc: PuppetClassFields): String = {
         val fieldBuilder = new StringBuilder()
         desc.foreachSharedMethods(method => {
-            val isConstant = method.getAnnotation(classOf[Shared]).constant()
-            if (isConstant) {
+            val isConstantGetter = getSharedAnnotation(method).constant()
+            if (isConstantGetter) {
                 val fieldName = s"${method.getName}_0" //TODO support polymorphism
-                val fieldType = method.getReturnType.getName
+                val fieldType = method.getReturnType.getTypeName
                 fieldBuilder.append(s"private $fieldType $fieldName;")
             }
         })
@@ -96,10 +97,10 @@ object PuppetClassGenerator {
                |package $GeneratedClassesPackage;
                |
                |import fr.linkit.core.connection.network.cache.puppet.Puppeteer;
-               |import fr.linkit.core.connection.network.cache.puppet.PuppetObject;
+               |import fr.linkit.core.connection.network.cache.puppet.PuppetWrapper;
                |import fr.linkit.core.connection.network.cache.puppet.generation.PuppetAlreadyInitialisedException;
                |
-               |public class $puppetClassSimpleName extends $superClassName implements PuppetObject<$superClassName> {
+               |public class $puppetClassSimpleName extends $superClassName implements PuppetWrapper<$superClassName> {
                |
                |private transient $puppeteerType puppeteer;
                |$constantGettersFields
@@ -107,7 +108,7 @@ object PuppetClassGenerator {
                |public $puppetClassSimpleName($puppeteerType puppeteer, $superClassName clone) {
                |    super(clone);
                |    this.puppeteer = puppeteer;
-               |    this.puppeteer.init(this);
+               |    this.puppeteer.init(this, clone);
                |}
                |
                |public void initPuppet(Puppeteer<$superClassName> puppeteer) throws PuppetAlreadyInitialisedException {
@@ -128,6 +129,7 @@ object PuppetClassGenerator {
                |     return null;
                |}
                |
+               |//Overrode methods will be generated here
                |""".stripMargin)
 
         desc.foreachSharedMethods(method => {
@@ -135,11 +137,10 @@ object PuppetClassGenerator {
             var i          = 0
             val parameters = method.getParameterTypes.map(parameterType => {
                 i += 1
-                parameterType.getName + s" $$$i"
+                parameterType.getTypeName + s" $$$i"
             }).mkString(",")
-
             val body       = genMethodBody(method)
-            val returnType = method.getReturnType.getName
+            val returnType = method.getReturnType.getTypeName
             sourceBuilder.append(
                 s"""
                    |public $returnType $name($parameters) {
@@ -148,11 +149,11 @@ object PuppetClassGenerator {
                    |""".stripMargin)
         })
         sourceBuilder.append('}') // Closing class
-            .toString()
+                .toString()
     }
 
     private def genMethodBody(method: Method): String = {
-        val isConstant = method.getAnnotation(classOf[Shared]).constant()
+        val isConstant = getSharedAnnotation(method).constant()
         val name       = method.getName
 
         val returnType  = method.getReturnType
@@ -177,7 +178,21 @@ object PuppetClassGenerator {
                |}
                |return $varName;
                |""".stripMargin
-        } else invokeLine + ';'
+        } else {
+            val returnStatement = if (returnsVoid) "" else "return"
+            s"$returnStatement $invokeLine;"
+        }
+    }
+
+    private def getSharedAnnotation(method: Method): Shared = {
+        val annotation = method.getAnnotation(classOf[Shared])
+        if (annotation == null)
+            return new Shared {
+                override def constant(): Boolean = false
+
+                override def annotationType(): Class[_ <: Annotation] = getClass
+            }
+        annotation
     }
 
 }

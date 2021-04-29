@@ -15,6 +15,7 @@ package fr.linkit.core.connection.network.cache
 import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.packet.UnexpectedPacketException
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
@@ -24,7 +25,7 @@ import fr.linkit.core.local.utils.ConsumerContainer
 import scala.reflect.ClassTag
 
 class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheManager,
-                                                           identifier: Long,
+                                                           identifier: Int,
                                                            channel: RequestPacketChannel)
         extends AbstractSharedCache[A](handler, identifier, channel) {
 
@@ -36,7 +37,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
     @volatile private var instance: Option[A] = None
 
     def this(handler: SharedCacheManager,
-             identifier: Long,
+             identifier: Int,
              channel: RequestPacketChannel,
              value: A = null) = {
         this(handler, identifier, channel)
@@ -44,13 +45,13 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
     }
 
     override def handleBundle(bundle: RequestBundle): Unit = {
-        //println(s"<$family> Handling packet $packet")
+        AppLogger.vTrace(s"<$family> Handling packet $bundle")
         bundle.packet.nextPacket[Packet] match {
             case ObjectPacket(remoteInstance: A) =>
                 this.instance = Option(remoteInstance)
                 modCount += 1
                 listeners.applyAll(remoteInstance)
-            //println(s"<$family> INSTANCE IS NOW (network): $instance")
+                AppLogger.vTrace(s"<$family> INSTANCE IS NOW (network): $instance")
 
             case _ => throw UnexpectedPacketException("Unable to handle a non ObjectPacket into SharedInstance")
         }
@@ -83,7 +84,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
         instance = Option(t)
         modCount += 1
         listeners.applyAll(t)
-        //println(s"INSTANCE IS NOW (local) : $instance $autoFlush")
+        AppLogger.vTrace(s"INSTANCE IS NOW (local) : $instance $autoFlush")
         if (autoFlush)
             flush()
         this
@@ -103,7 +104,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 object SharedInstance {
 
     def apply[A <: Serializable : ClassTag]: SharedCacheFactory[SharedInstance[A]] = {
-        (handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer) => {
+        (handler: SharedCacheManager, identifier: Int, baseContent: Array[Any], container: PacketInjectableContainer) => {
             val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             if (baseContent.isEmpty)
                 new SharedInstance[A](handler, identifier, channel)

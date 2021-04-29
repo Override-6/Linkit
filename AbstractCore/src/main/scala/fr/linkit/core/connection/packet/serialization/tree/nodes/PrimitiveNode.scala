@@ -76,18 +76,21 @@ object PrimitiveNode {
             println(s"Deserializing primitive number from bytes ${ScalaUtils.toPresentableString(bytes)}")
             println(s"raw bytes = ${bytes.mkString("Array(", ", ", ")")}")
             import NumberSerializer.{convertValue, deserializeFlaggedNumber}
-            val value = deserializeFlaggedNumber[AnyVal](bytes, 1)._1
+            val value  = deserializeFlaggedNumber[AnyVal](bytes, 1)._1
+            println(s"value = ${value}")
             val result = bytes(0) match {
                 case IntFlag     => convertValue(value, _.intValue)
                 case ByteFlag    => convertValue(value, _.byteValue)
                 case ShortFlag   => convertValue(value, _.shortValue)
                 case FloatFlag   => convertValue(value, _.floatValue)
+                case LongFlag    => convertValue(value, _.longValue)
                 case DoubleFlag  => convertValue(value, _.doubleValue)
                 case CharFlag    => convertValue(value, _.charValue)
                 case BooleanFlag => convertValue(value, _.booleanValue)
             }
             println(s"result = ${result}")
             println(s"result.getClass = ${result.getClass}")
+            result
         }
     }
 

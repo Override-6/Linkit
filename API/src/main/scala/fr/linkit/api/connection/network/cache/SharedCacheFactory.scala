@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 
 trait SharedCacheFactory[A <: SharedCache] {
 
-    def createNew(handler: SharedCacheManager, identifier: Long, baseContent: Array[Any], container: PacketInjectableContainer): A
+    def createNew(handler: SharedCacheManager, identifier: Int, baseContent: Array[Any], container: PacketInjectableContainer): A
 
     final def factory: this.type = this //for Java users
 

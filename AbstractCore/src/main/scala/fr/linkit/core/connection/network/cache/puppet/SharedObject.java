@@ -23,4 +23,6 @@ public @interface SharedObject {
 
     boolean autoFlush() default true;
 
+    boolean shareAllMethods() default true;
+
 }

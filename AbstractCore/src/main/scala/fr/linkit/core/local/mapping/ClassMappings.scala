@@ -16,6 +16,7 @@ import fr.linkit.api.connection.packet.serialization.Serializer
 
 import java.io.OutputStream
 import java.security.CodeSource
+import java.sql.Timestamp
 import scala.collection.mutable
 
 object ClassMappings {
@@ -24,8 +25,10 @@ object ClassMappings {
     private val sources = mutable.HashSet.empty[CodeSource]
 
     def putClass(className: String, loader: ClassLoader): Unit = {
+        /*if (classes.contains(className.hashCode)) {
+            throw new IllegalArgumentException(s"This hash code is already registered ! (found $className, registered ${classes(className.hashCode)}")
+        }*/
         classes.put(className.hashCode, (className, loader))
-        //println(s"Class put ! $className (${className.hashCode})")
     }
 
     def putSourceCode(source: CodeSource): Unit = {

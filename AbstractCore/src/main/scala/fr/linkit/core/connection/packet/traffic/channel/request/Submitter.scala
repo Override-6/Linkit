@@ -21,7 +21,7 @@ import fr.linkit.core.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
 import scala.collection.mutable.ListBuffer
 
-sealed abstract class Submitter[P](id: Long, scope: ChannelScope) extends SimplePacketAttributes {
+sealed abstract class Submitter[P](id: Int, scope: ChannelScope) extends SimplePacketAttributes {
 
     protected val packets: ListBuffer[Packet] = ListBuffer.empty[Packet]
     @volatile private var isSubmit            = false
@@ -58,7 +58,7 @@ sealed abstract class Submitter[P](id: Long, scope: ChannelScope) extends Simple
 
 }
 
-class ResponseSubmitter(id: Long, scope: ChannelScope) extends Submitter[Unit](id, scope) {
+class ResponseSubmitter(id: Int, scope: ChannelScope) extends Submitter[Unit](id, scope) {
 
     override protected def makeSubmit(): Unit = {
         val response = ResponsePacket(id, packets.toArray)
@@ -66,7 +66,7 @@ class ResponseSubmitter(id: Long, scope: ChannelScope) extends Submitter[Unit](i
     }
 }
 
-class RequestSubmitter(id: Long, scope: ChannelScope, pool: BusyWorkerPool, handler: RequestPacketChannel) extends Submitter[RequestHolder](id, scope) {
+class RequestSubmitter(id: Int, scope: ChannelScope, pool: BusyWorkerPool, handler: RequestPacketChannel) extends Submitter[RequestHolder](id, scope) {
 
     override protected def makeSubmit(): RequestHolder = {
         val holder  = RequestHolder(id, pool.newBusyQueue, handler)

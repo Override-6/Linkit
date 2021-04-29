@@ -21,18 +21,18 @@ trait SharedCacheManager extends Updatable {
     val family : String
     val ownerID: String
 
-    def postInstance[A <: Serializable](key: Long, value: A): A
+    def postInstance[A <: Serializable](key: Int, value: A): A
 
-    def getInstance[A <: Serializable](key: Long): Option[A]
+    def getInstance[A <: Serializable](key: Int): Option[A]
 
-    def getInstanceOrWait[A <: Serializable](key: Long): A
+    def getInstanceOrWait[A <: Serializable](key: Int): A
 
-    def apply[A <: Serializable](key: Long): A
+    def apply[A <: Serializable](key: Int): A
 
-    def getCache[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior = CacheOpenBehavior.GET_OR_EMPTY): A
+    def getCache[A <: InternalSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior = CacheOpenBehavior.GET_OR_EMPTY): A
 
-    def getUpdated[A <: InternalSharedCache : ClassTag](cacheID: Long, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior = CacheOpenBehavior.GET_OR_EMPTY): A
+    def getUpdated[A <: InternalSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior = CacheOpenBehavior.GET_OR_EMPTY): A
 
-    def retrieveCacheContent(cacheID: Long, behavior: CacheOpenBehavior): Array[Any]
+    def retrieveCacheContent(cacheID: Int, behavior: CacheOpenBehavior): Array[Any]
 
 }

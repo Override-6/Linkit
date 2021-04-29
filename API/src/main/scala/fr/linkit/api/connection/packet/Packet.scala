@@ -13,7 +13,6 @@
 package fr.linkit.api.connection.packet
 
 import fr.linkit.api.connection.packet.Packet.nextPacketID
-import fr.linkit.api.local.system.AppLogger
 
 //TODO Doc
 trait Packet extends Serializable {

@@ -13,71 +13,82 @@
 package fr.linkit.core.connection.network.cache.puppet
 
 import fr.linkit.core.connection.network.cache.puppet.generation.InvalidPuppetDefException
+import org.jetbrains.annotations.Nullable
 
-import java.lang.reflect.{Constructor, Field, Method}
+import java.lang.annotation.Annotation
+import java.lang.reflect._
 
-class PuppetClassFields private(sharedFields: Map[String, Field],
-                                sharedMethods: Map[String, Method],
-                                val chippedClass: Class[_],
+class PuppetClassFields private(val puppetClass: Class[_],
                                 val puppetConstructor: Constructor[_],
-                                autoFlush: Boolean) {
+                                val classAnnotation: SharedObject) {
 
-    def isAutoFlush: Boolean = autoFlush
+    def isAutoFlush: Boolean = classAnnotation.autoFlush()
 
     def getSharedField(name: String): Option[Field] = {
-        sharedFields.get(name)
+        prepare(puppetClass.getDeclaredField(name))
     }
 
-    def getSharedMethod(name: String): Option[Method] = sharedMethods.get(name)
+    def getSharedMethod(name: String, args: Seq[Class[_]]): Option[Method] = {
+        prepare(puppetClass.getDeclaredMethod(name, args: _*))
+    }
 
     def foreachSharedFields(action: Field => Unit): Unit = {
-        sharedFields.values.foreach(action)
+        puppetClass.getDeclaredFields
+                .filter(isShared)
+                .tapEach(_.setAccessible(true))
+                .foreach(action)
     }
 
     def foreachSharedMethods(action: Method => Unit): Unit = {
-        sharedMethods.values.foreach(action)
+        puppetClass.getDeclaredMethods
+                .filterNot(member => Modifier.isFinal(member.getModifiers))
+                .filter(isShared)
+                .tapEach(_.setAccessible(true))
+                .foreach(action)
+    }
+
+    private def prepare[M <: AccessibleObject with Member](@Nullable member: M): Option[M] = {
+        val opt = Option(member).filter(isShared)
+        opt.tapEach(_.setAccessible(true))
+        opt
+    }
+
+    private def isShared(member: AccessibleObject): Boolean = {
+        member.isAnnotationPresent(classOf[Shared]) ||
+                (classAnnotation.shareAllMethods() && !member.isAnnotationPresent(classOf[Hidden]))
     }
 
 }
 
 object PuppetClassFields {
 
+    val DefaultAnnotation: SharedObject = new SharedObject {
+        override def autoFlush(): Boolean = true
+
+        override def shareAllMethods(): Boolean = true
+
+        override def annotationType(): Class[_ <: Annotation] = getClass
+    }
+
     def ofRef(anyRef: Serializable): PuppetClassFields = {
         ofClass(anyRef.getClass)
     }
 
     def ofClass[S <: Serializable](clazz: Class[S]): PuppetClassFields = {
-        val sharedFields = clazz.getDeclaredFields
-                .filter(_.isAnnotationPresent(classOf[Shared]))
-                .tapEach(_.setAccessible(true))
-                .map(field => (field.getName, field))
-                .toMap
 
-        val sharedMethods = clazz.getDeclaredMethods
-                .filter(_.isAnnotationPresent(classOf[Shared]))
-                .tapEach(_.setAccessible(true))
-                .map(method => (method.getName, method))
-                .toMap
-
-        val annotation  = clazz
-                .getAnnotation(classOf[SharedObject])
-        val isAutoFlush = if (annotation != null) {
-            annotation.autoFlush()
-        } else {
-            true
-        }
-
+        val annotation = Option(clazz.getAnnotation(classOf[SharedObject])).getOrElse(DefaultAnnotation)
 
         val simpleName        = clazz.getSimpleName
         val puppetConstructor = clazz.getDeclaredConstructors
-                .find(_.getParameterTypes sameElements Array(clazz))
+                .find(_.getParameterTypes sameElements scala.Array(clazz))
                 .getOrElse(throw new InvalidPuppetDefException(
                     s"""For puppet class $clazz
-                       |This puppet must contain an accessible constructor 'x $simpleName($simpleName other)' in order to be extended by a generated class.
+                       |This puppet must contain an accessible constructor '+protected $simpleName($simpleName other)' in order to be extended by a generated class.
                        | If you are not the maintainer of this class, you can simply extend the class, define the appointed constructor and give the implementation
                        | to the puppet generator.
-                       |""".stripMargin))
+                       |""".stripMargin
+                ))
 
-        new PuppetClassFields(sharedFields, sharedMethods, clazz, puppetConstructor, isAutoFlush)
+        new PuppetClassFields(clazz, puppetConstructor, annotation)
     }
 }
