@@ -12,6 +12,8 @@
 
 package fr.linkit.core.local.utils
 
+import java.lang
+
 object NumberSerializer {
 
     def serializeLong(value: Long): Array[Byte] = {
@@ -97,7 +99,7 @@ object NumberSerializer {
     /**
      * @return a pair with the deserialized number at left, and its length in the array at right.
      * */
-    def deserializeFlaggedNumber[@specialized(Int, Short, Byte, Long) T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
+    def deserializeFlaggedNumber[@specialized(Byte, Short, Int, Long) T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
         var result: Int = 0
         //println(s"Number:|:${bytes.slice(start, start + 4).mkString("Array(", ", ", ")")}")
         //println(s"Number:|:${new String(bytes.slice(start, start + 4))}")
@@ -119,7 +121,7 @@ object NumberSerializer {
             //println(s"result = ${result}")
         }
         //println(s"result = ${result}")
-        //println(s"result.getClass = ${result.getClass}")
+        println(s"result.getClass = ${result.getClass}")
 
         (result.asInstanceOf[T], (numberLength + 1).toByte)
     }
@@ -146,6 +148,66 @@ object NumberSerializer {
 
     def convertByteArray(array: Array[Long]): Array[Byte] = {
         array.flatMap(serializeLong)
+    }
+
+    def convertValue[A <: AnyVal](value: Any, converter: PrimitiveWrapper => A): A = {
+        value match {
+            case n: Number       => converter(new NumberWrapper(n))
+            case b: lang.Boolean => converter(new BooleanNumber(b))
+            case c: Character    => converter(new CharacterNumber(c))
+        }
+    }
+
+    sealed trait PrimitiveWrapper extends Number {
+
+        def booleanValue: Boolean
+
+        def charValue: Char
+    }
+
+    class CharacterNumber(c: Character) extends PrimitiveWrapper {
+
+        override def intValue: Int = c.toInt
+
+        override def longValue: Long = c.toLong
+
+        override def floatValue: Float = c.toFloat
+
+        override def doubleValue: Double = c.toDouble
+
+        override def booleanValue: Boolean = intValue == 1
+
+        override def charValue: Char = c
+    }
+
+    class BooleanNumber(b: java.lang.Boolean) extends PrimitiveWrapper {
+
+        override def intValue: Int = if (b) 1 else 0
+
+        override def longValue: Long = intValue
+
+        override def floatValue: Float = intValue
+
+        override def doubleValue: Double = intValue
+
+        override def booleanValue: Boolean = b
+
+        override def charValue: Char = if (b) 'y' else 'n'
+    }
+
+    class NumberWrapper(n: Number) extends PrimitiveWrapper {
+
+        override def booleanValue: Boolean = intValue == 1
+
+        override def charValue: Char = intValue.toChar
+
+        override def intValue: Int = n.intValue
+
+        override def longValue: Long = n.longValue
+
+        override def floatValue: Float = n.floatValue
+
+        override def doubleValue: Double = n.doubleValue
     }
 
 }

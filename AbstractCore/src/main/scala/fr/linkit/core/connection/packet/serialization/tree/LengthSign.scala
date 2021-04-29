@@ -87,7 +87,7 @@ object LengthSign {
         println("-- Reading lengths ")
         for (i <- 0 until signItemCount) {
             println(s"FOR LENGTH ${i}: ")
-            val (length, lengthByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, currentIndex: Int)
+            val (length, lengthByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, currentIndex)
             lengths(i) = length
             println(s"length = ${length}")
             println(s"lengthByteCount = ${lengthByteCount}")

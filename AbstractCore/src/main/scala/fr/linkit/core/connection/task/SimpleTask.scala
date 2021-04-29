@@ -80,7 +80,7 @@ abstract class SimpleTask[T](val targetID: String) extends Task[T] with Fallible
      * @param onFail the action to perform when the task was unsuccessful
      * @param identifier specifies the task identifier used for packet channels.
      * */
-    final override def queue(onSuccess: T => Unit = _ => onSuccess, onFail: String => Unit = onFail, identifier: Int): Unit = {
+    final override def queue(onSuccess: T => Unit = onSuccess, onFail: String => Unit = onFail, identifier: Int): Unit = {
         checkInit()
         this.onSuccess = onSuccess
         this.onFail = onFail

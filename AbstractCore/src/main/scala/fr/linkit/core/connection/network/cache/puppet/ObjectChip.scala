@@ -49,18 +49,18 @@ case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
 
     private[puppet] def handleBundle(packet: Packet, submitter: ResponseSubmitter): Unit = {
         packet match {
-            case ObjectPacket((fieldName: String, value: Any)) =>
-                val field = desc.getSharedField(fieldName).get
-                ScalaUtils.setFieldValue(field, puppet, value)
-
             case ObjectPacket((methodName: String, args: Array[Any])) =>
                 var result: Serializable = null
                 if (canCallMethod(methodName)) {
                     result = callMethod(methodName, args)
                 }
                 submitter
-                        .addPacket(RefPacket(result))
-                        .submit()
+                    .addPacket(RefPacket(result))
+                    .submit()
+
+            case ObjectPacket((fieldName: String, value: Any)) =>
+                val field = desc.getSharedField(fieldName).get
+                ScalaUtils.setFieldValue(field, puppet, value)
         }
     }
 

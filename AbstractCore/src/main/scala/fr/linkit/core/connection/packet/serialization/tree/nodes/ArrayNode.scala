@@ -102,7 +102,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
                 return Array.empty
 
             println(s"Deserializing array into bytes ${toPresentableString(bytes)}")
-            val (signItemCount, sizeByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, 1: Int) //starting from 1 because first byte is the array flag.
+            val (signItemCount, sizeByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, 1) //starting from 1 because first byte is the array flag.
             println(s"signItemCount = ${signItemCount}")
             println(s"sizeByteCount = ${sizeByteCount}")
             val sign                                 = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 1)

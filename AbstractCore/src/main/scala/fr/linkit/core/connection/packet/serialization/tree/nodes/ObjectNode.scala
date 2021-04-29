@@ -117,13 +117,7 @@ object ObjectNode {
 
             import java.lang
 
-            def convertValue[A <: AnyVal](converter: PrimitiveWrapper => A): A = {
-                value match {
-                    case n: Number       => converter(new NumberWrapper(n))
-                    case b: lang.Boolean => converter(new BooleanNumber(b))
-                    case c: Character    => converter(new CharacterNumber(c))
-                }
-            }
+            import NumberSerializer.convertValue
 
             println(s"value.getClass = ${Try(value.getClass).getOrElse(null)}")
             val action: (AnyRef, Long) => Unit = if (field.getType.isPrimitive) {
@@ -138,70 +132,20 @@ object ObjectNode {
                     case c: Character    => TheUnsafe.putChar(_, _, c)
                 }
             } else field.getType match {
-                case c if c eq classOf[Integer]      => TheUnsafe.putObject(_, _, convertValue(_.intValue))
-                case c if c eq classOf[lang.Byte]    => TheUnsafe.putObject(_, _, convertValue(_.byteValue))
-                case c if c eq classOf[lang.Short]   => TheUnsafe.putObject(_, _, convertValue(_.shortValue))
-                case c if c eq classOf[lang.Long]    => TheUnsafe.putObject(_, _, convertValue(_.longValue))
-                case c if c eq classOf[lang.Double]  => TheUnsafe.putObject(_, _, convertValue(_.doubleValue))
-                case c if c eq classOf[lang.Float]   => TheUnsafe.putObject(_, _, convertValue(_.floatValue))
-                case c if c eq classOf[lang.Boolean] => TheUnsafe.putObject(_, _, convertValue(_.booleanValue))
-                case c if c eq classOf[Character]    => TheUnsafe.putObject(_, _, convertValue(_.shortValue))
+                case c if c eq classOf[Integer]      => TheUnsafe.putObject(_, _, convertValue(value, _.intValue))
+                case c if c eq classOf[lang.Byte]    => TheUnsafe.putObject(_, _, convertValue(value, _.byteValue))
+                case c if c eq classOf[lang.Short]   => TheUnsafe.putObject(_, _, convertValue(value, _.shortValue))
+                case c if c eq classOf[lang.Long]    => TheUnsafe.putObject(_, _, convertValue(value, _.longValue))
+                case c if c eq classOf[lang.Double]  => TheUnsafe.putObject(_, _, convertValue(value, _.doubleValue))
+                case c if c eq classOf[lang.Float]   => TheUnsafe.putObject(_, _, convertValue(value, _.floatValue))
+                case c if c eq classOf[lang.Boolean] => TheUnsafe.putObject(_, _, convertValue(value, _.booleanValue))
+                case c if c eq classOf[Character]    => TheUnsafe.putObject(_, _, convertValue(value, _.shortValue))
                 case _                               => TheUnsafe.putObject(_, _, value)
             }
             action(instance, fieldOffset)
         }
     }
 
-    private sealed trait PrimitiveWrapper extends Number {
 
-        def booleanValue: Boolean
-
-        def charValue: Char
-    }
-
-    private class CharacterNumber(c: Character) extends PrimitiveWrapper {
-
-        override def intValue: Int = c.toInt
-
-        override def longValue: Long = c.toLong
-
-        override def floatValue: Float = c.toFloat
-
-        override def doubleValue: Double = c.toDouble
-
-        override def booleanValue: Boolean = intValue == 1
-
-        override def charValue: Char = c
-    }
-
-    private class BooleanNumber(b: java.lang.Boolean) extends PrimitiveWrapper {
-
-        override def intValue: Int = if (b) 1 else 0
-
-        override def longValue: Long = intValue
-
-        override def floatValue: Float = intValue
-
-        override def doubleValue: Double = intValue
-
-        override def booleanValue: Boolean = b
-
-        override def charValue: Char = if (b) 'y' else 'n'
-    }
-
-    private class NumberWrapper(n: Number) extends PrimitiveWrapper {
-
-        override def booleanValue: Boolean = intValue == 1
-
-        override def charValue: Char = intValue.toChar
-
-        override def intValue: Int = n.intValue
-
-        override def longValue: Long = n.longValue
-
-        override def floatValue: Float = n.floatValue
-
-        override def doubleValue: Double = n.doubleValue
-    }
 
 }

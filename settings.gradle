@@ -19,7 +19,4 @@ include 'LinkitPlugins:DebugExtension'
 findProject(':LinkitPlugins:DebugExtension')?.name = 'DebugExtension'
 include 'LinkitPlugins:CLICommands'
 findProject(':LinkitPlugins:CLICommands')?.name = 'CLICommands'
-include 'Traffic-Debugger'
-include 'Traffic-Debugger'
-include 'LinkitAgent'
 

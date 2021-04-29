@@ -14,40 +14,39 @@ package fr.linkit.core.connection.packet.serialization.tree.nodes
 
 import fr.linkit.core.connection.packet.serialization.tree.NodeFinder.MegaByte
 import fr.linkit.core.connection.packet.serialization.tree._
-import fr.linkit.core.local.utils.NumberSerializer
-import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
+import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 
 object PrimitiveNode {
 
-    val ByteFlag     : Byte = 1
-    val ShortFlag    : Byte = 2
-    val IntFlag      : Byte = 4
-    val LongFlag     : Byte = 8
-    val FloatFlag    : Byte = 16
-    val DoubleFlag   : Byte = 32
-    val CharFlag     : Byte = 64
-    val BooleanFlag  : Byte = 127
-    val PrimitiveFlag: Byte = -128
+    val ByteFlag   : Byte = 1
+    val ShortFlag  : Byte = 2
+    val IntFlag    : Byte = 4
+    val LongFlag   : Byte = 8
+    val FloatFlag  : Byte = 16
+    val DoubleFlag : Byte = 32
+    val CharFlag   : Byte = 64
+    val BooleanFlag: Byte = 127
 
-    private val TypeFlags = Array(ByteFlag, ShortFlag, LongFlag, FloatFlag, DoubleFlag, CharFlag, BooleanFlag)
+    private val TypeFlags = Array(ByteFlag, ShortFlag, IntFlag, LongFlag, FloatFlag, DoubleFlag, CharFlag, BooleanFlag)
 
     private val OtherWrapperClasses: Array[Class[_]] = Array(classOf[Character], classOf[java.lang.Boolean])
 
-    def apply[T <: AnyVal]: NodeFactory[T] = new NodeFactory[T] {
+    def apply: NodeFactory[AnyVal] = new NodeFactory[AnyVal] {
         override def canHandle(clazz: Class[_]): Boolean = {
             clazz.isPrimitive || (classOf[Number].isAssignableFrom(clazz) && clazz.getPackageName == "java.lang") || OtherWrapperClasses.contains(clazz)
         }
 
         override def canHandle(info: ByteSeqInfo): Boolean = !info.isClassDefined && info.bytes.nonEmpty && {
-            TypeFlags.exists(flag => (info.bytes(0) & flag) == flag)
+            println(s"info.bytes = ${info.bytes.mkString("Array(", ", ", ")")}")
+            TypeFlags.exists(info.sameFlag)
         }
 
-        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[T] = {
-            new PrimitiveSerialNode[T](parent)
+        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[AnyVal] = {
+            new PrimitiveSerialNode(parent)
         }
 
-        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[T] = {
-            new PrimitiveDeserialNode[T](bytes, parent)
+        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[AnyVal] = {
+            new PrimitiveDeserialNode(bytes, parent)
         }
     }
 
@@ -67,15 +66,28 @@ object PrimitiveNode {
             }
             /*if (!putTypeHint)
                 return bytes //removing first type hint*/
-            (PrimitiveFlag + flag).toByte /\ bytes
+            flag /\ bytes
         }
     }
 
-    class PrimitiveDeserialNode[T <: AnyVal](bytes: Array[Byte], override val parent: DeserialNode[_]) extends DeserialNode[T] {
+    class PrimitiveDeserialNode(bytes: Array[Byte], override val parent: DeserialNode[_]) extends DeserialNode[AnyVal] {
 
-        override def deserialize(): T = {
-            println(s"Deserializing primitive of bytes ${toPresentableString(bytes)}")
-            NumberSerializer.deserializeFlaggedNumber(bytes, 1)._1
+        override def deserialize(): AnyVal = {
+            println(s"Deserializing primitive number from bytes ${ScalaUtils.toPresentableString(bytes)}")
+            println(s"raw bytes = ${bytes.mkString("Array(", ", ", ")")}")
+            import NumberSerializer.{convertValue, deserializeFlaggedNumber}
+            val value = deserializeFlaggedNumber[AnyVal](bytes, 1)._1
+            val result = bytes(0) match {
+                case IntFlag     => convertValue(value, _.intValue)
+                case ByteFlag    => convertValue(value, _.byteValue)
+                case ShortFlag   => convertValue(value, _.shortValue)
+                case FloatFlag   => convertValue(value, _.floatValue)
+                case DoubleFlag  => convertValue(value, _.doubleValue)
+                case CharFlag    => convertValue(value, _.charValue)
+                case BooleanFlag => convertValue(value, _.booleanValue)
+            }
+            println(s"result = ${result}")
+            println(s"result.getClass = ${result.getClass}")
         }
     }
 

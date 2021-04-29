@@ -29,7 +29,10 @@ object PuppetClassGenerator {
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val GeneratedClassesFolder : String = "/generated/"
     val EnqueueingSourcesFolder: String = GeneratedClassesFolder + "/queue/"
-    private val classLoader = new URLClassLoader(Array(Path.of(GeneratedClassesFolder).toRealPath().toUri.toURL))
+    private val path = Path.of(GeneratedClassesFolder)
+    if (Files.notExists(path))
+        Files.createDirectories(path)
+    private val classLoader = new URLClassLoader(Array(path.toUri.toURL))
 
     private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetObject[_]]]()
 
@@ -145,7 +148,7 @@ object PuppetClassGenerator {
                    |""".stripMargin)
         })
         sourceBuilder.append('}') // Closing class
-                .toString()
+            .toString()
     }
 
     private def genMethodBody(method: Method): String = {

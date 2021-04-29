@@ -12,6 +12,8 @@
 
 package fr.linkit.core.local
 
+import java.util.concurrent.locks.LockSupport
+
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.plugin.PluginManager
@@ -148,8 +150,13 @@ object LinkitApplication {
         }
 
         AppLogger.info("Exiting application...")
-        instance.preShutdown()
-        instance.shutdown()
+        val threadExit = Thread.currentThread()
+        instance.runLater {
+            instance.preShutdown()
+            instance.shutdown()
+            LockSupport.unpark(threadExit)
+        }
+        LockSupport.park()
 
         Runtime.getRuntime.halt(code)
         instance = null

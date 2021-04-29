@@ -81,17 +81,17 @@ class SharedObjectsCache(handler: SharedCacheManager,
     override protected def handleBundle(bundle: RequestBundle): Unit = {
         AppLogger.vDebug(s"Processing bundle = ${bundle}")
         val response = bundle.packet
-        val id       = response.getAttribute[Long]("id").get
+        val id       = response.getAttribute[Int]("id").get
         val owner    = bundle.coords.senderID
 
         response.nextPacket[Packet] match {
-            case ObjectPacket((id: Long, puppet: Serializable)) =>
+            case ObjectPacket((id: Int, puppet: Serializable)) =>
                 if (!localChips.contains(id)) {
                     fieldRestorer.restoreFields(puppet)
                     genPuppetObject(id, owner, puppet)
                 }
 
-            case reqPacket => localChips.get(id.toLong).fold() { chip =>
+            case reqPacket => localChips.get(id.toInt).fold() { chip =>
                 chip.handleBundle(reqPacket, bundle.responseSubmitter)
             }
         }

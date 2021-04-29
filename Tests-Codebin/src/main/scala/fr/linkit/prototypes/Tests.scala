@@ -42,7 +42,7 @@ object Tests {
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (l: ${bytes.length})")
         val result = DefaultSerializer.deserializeAll(bytes)
         println(s"result = ${result.mkString("Array(", ", ", ")")}")
-        println(s"result(2).getAttribute(25L) = ${result(2).asInstanceOf[SimplePacketAttributes].getAttribute("25L")}")
+        println(s"result(1).getAttribute(25L) = ${result(1).asInstanceOf[SimplePacketAttributes].getAttribute("25L")}")
     }
 
     private def doMappings(): Unit = {

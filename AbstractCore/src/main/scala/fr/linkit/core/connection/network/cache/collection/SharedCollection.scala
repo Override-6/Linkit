@@ -37,8 +37,8 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
                                                      channel: RequestPacketChannel)
         extends AbstractSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
 
-    private val collectionModifications = ListBuffer.empty[(CollectionModification, Long, Any)]
-    private val networkListeners        = ConsumerContainer[(CollectionModification, Long, A)]()
+    private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
+    private val networkListeners        = ConsumerContainer[(CollectionModification, Int, A)]()
 
     @volatile private  var modCount           = 0
     @volatile override var autoFlush: Boolean = true
@@ -131,12 +131,12 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
      * (_, Int, _) : the index affected (may be -1 for mod kinds that does not specify any index such as CLEAR)
      * (_, _, T) : The object affected (may be null for mod kinds that does not specify any object such as CLEAR, or REMOVE)
      * */
-    def addListener(action: (CollectionModification, Long, A) => Unit): this.type = {
+    def addListener(action: (CollectionModification, Int, A) => Unit): this.type = {
         networkListeners += (tuple3 => action(tuple3._1, tuple3._2, tuple3._3))
         this
     }
 
-    private def addLocalModification(@NotNull kind: CollectionModification, @Nullable index: Int, @Nullable value: Any): Unit = {
+    private def addLocalModification(kind: CollectionModification, index: Int, @Nullable value: Any): Unit = {
         AppLogger.vDebug(s"<$family> Local modification : ${(kind, index, value)}")
         if (autoFlush) {
             flushModification((kind, index, value))
@@ -151,15 +151,15 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         collectionModifications += ((kind, index, value))
     }
 
-    private def flushModification(mod: (CollectionModification, Long, Any)): Unit = {
+    private def flushModification(mod: (CollectionModification, Int, Any)): Unit = {
         sendModification(ObjectPacket(mod))
-        networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Long, A)])
+        networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Int, A)])
         modCount += 1
         AppLogger.vWarn(s"<$family> (${channel.traffic.supportIdentifier}) COLLECTION IS NOW (local): " + this)
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
-        val mod    : (CollectionModification, Long, Any) = packet.casted
+        val mod    : (CollectionModification, Int, Any) = packet.casted
         val modKind: CollectionModification              = mod._1
         val index                                        = mod._2.toInt
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed (could occur to NPE)
@@ -182,7 +182,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         }
         modCount += 1
 
-        networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Long, A)])
+        networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Int, A)])
         AppLogger.vWarn(s"<$family> COLLECTION IS NOW (network) $this")
     }
 

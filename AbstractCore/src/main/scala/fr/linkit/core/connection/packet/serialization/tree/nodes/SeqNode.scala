@@ -59,8 +59,6 @@ object SeqNode {
 
     class MutableSeqSerialNode(override val parent: SerialNode[_], finder: NodeFinder) extends SerialNode[mutable.Seq[_]] {
 
-        Nil: Seq[_]
-
         override def serialize(t: mutable.Seq[_], putTypeHint: Boolean): Array[Byte] = {
             val content      = t.toArray
             val seqTypeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
