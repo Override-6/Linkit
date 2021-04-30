@@ -28,13 +28,12 @@ import scala.collection.mutable
 
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
-    private   val cacheRequestChannel                         = connection.getInjectable(12, ChannelScopes.discardCurrent, RequestPacketChannel)
-    private   val caches                                      = mutable.HashMap.empty[String, NetworkSharedCacheManager]
-    override  val globalCache      : SharedCacheManager       = initCaches()
+    private   val cacheRequestChannel                          = connection.getInjectable(12, ChannelScopes.discardCurrent, RequestPacketChannel)
+    private   val caches                                       = mutable.HashMap.empty[String, NetworkSharedCacheManager]
+    override  val globalCache       : SharedCacheManager       = initCaches()
     protected val sharedIdentifiers : SharedCollection[String] = globalCache.getCache(3, SharedCollection.set[String], CacheOpenBehavior.GET_OR_WAIT)
     protected val entityCommunicator: SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScopes.discardCurrent, SyncAsyncPacketChannel.busy)
     protected val entities: BoundedCollection.Immutable[NetworkEntity]
-    postInit()
 
     override def listEntities: List[NetworkEntity] = {
         //println(s"entities = ${entities}")
@@ -99,6 +98,8 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def initCaches(): SharedCacheManager = {
+        connection.translator.initNetwork(this)
+
         def findCacheToNotify(bundle: Bundle)
                              (notifyAction: NetworkSharedCacheManager => Unit): Unit = {
             val attr = bundle.attributes
@@ -126,10 +127,6 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         })
 
         newCachesManager(s"Global Cache", serverIdentifier)
-    }
-
-    private def postInit(): Unit = {
-        connection.translator
     }
 
 }

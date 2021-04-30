@@ -12,14 +12,14 @@
 
 package fr.linkit.core.connection.network.cache.puppet
 
-import scala.annotation.meta.field
+import scala.annotation.meta.{field, getter, setter}
 
 object AnnotationHelper {
 
     import fr.linkit.core.connection.network.cache.puppet
 
-    type SharedObject = puppet.SharedObject@field
-    type Shared = puppet.Shared@field
-    type Hidden = puppet.Hidden@field
+    type SharedObject = puppet.SharedObject@field@getter@setter
+    type Shared = puppet.Shared@field@getter@setter
+    type Hidden = puppet.Hidden@field@getter@setter
 
 }

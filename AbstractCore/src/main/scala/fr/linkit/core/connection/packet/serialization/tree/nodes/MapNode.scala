@@ -64,7 +64,7 @@ object MapNode {
             profile.applyAllSerialProcedures(t)
             val content      = t.toArray
             val mapTypeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
-            println(s"content = ${content.mkString("Array(", ", ", ")")}")
+            //println(s"content = ${content.mkString("Array(", ", ", ")")}")
             mapTypeBytes ++ finder.getSerialNodeForRef(content).serialize(awfulCast(content), putTypeHint)
         }
     }
@@ -73,12 +73,12 @@ object MapNode {
 
         override def deserialize(): mutable.Map[_, _] = {
             val mapType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
-            println(s"mapType = ${mapType}")
+            //println(s"mapType = ${mapType}")
             val factory = findFactory[mutable.Map](mapType)
-            println(s"factory = ${factory}")
-            println(s"bytes.drop(4) = ${new String(bytes.drop(4))}")
+            //println(s"factory = ${factory}")
+            //println(s"bytes.drop(4) = ${new String(bytes.drop(4))}")
             val content = finder.getDeserialNodeFor[Array[Any]](bytes.drop(4)).deserialize()
-            println(s"content = ${content.mkString("Array(", ", ", ")")}")
+            //println(s"content = ${content.mkString("Array(", ", ", ")")}")
             if (content.isEmpty)
                 return awfulCast(mapType.getConstructor().newInstance())
 

@@ -101,7 +101,7 @@ class SerialContext() extends ContextHolder {
     }
 
     def getClassProfile[T](clazz: Class[_ <: T]): ClassProfile[T] = {
-        println(s"clazz = ${clazz}")
+        //println(s"clazz = ${clazz}")
         profiles.getOrElseUpdate(clazz, new ClassProfile(clazz, this))
                 .asInstanceOf[ClassProfile[T]]
     }
@@ -151,7 +151,7 @@ object SerialContext {
         val desc = new SerializableClassDescription(clazz)
         private val procedures = ListBuffer.empty[Procedure[T]]
 
-        def addProcedure(procedure: Procedure[T]): Unit = procedures -= procedure
+        def addProcedure(procedure: Procedure[T]): Unit = procedures += procedure
 
         def removeProcedure(procedure: Procedure[T]): Unit = procedures -= procedure
 
@@ -163,11 +163,30 @@ object SerialContext {
             applyAllProcedures(t, _.afterDeserial)
         }
 
-        private def applyAllProcedures(t: T, action: Procedure[T] => (T, Network) => Unit): Unit = {
+        private def applyAllProcedures(t: T, action: Procedure[_ >: T] => (T, Network) => Unit): Unit = {
             val network = context.network
             if (t == null || network == null)
                 return
             procedures.foreach(action(_)(t, network))
+            val superClass = clazz.getSuperclass
+            if (superClass == null)
+                return
+            context.getClassProfile(superClass)
+                    .procedures
+                    .foreach(action(_)(t, network))
+
+            applyUpperInterfaceProcedures(clazz)
+
+            def applyUpperInterfaceProcedures(clazz: Class[_ >: T]): Unit = {
+                clazz.getInterfaces
+                        .map(_.asInstanceOf[Class[_ >: T]])
+                        .foreach(interface => {
+                            context.getClassProfile(interface)
+                                    .procedures
+                                    .foreach(action(_)(t, network))
+                            applyUpperInterfaceProcedures(interface)
+                        })
+            }
         }
     }
 

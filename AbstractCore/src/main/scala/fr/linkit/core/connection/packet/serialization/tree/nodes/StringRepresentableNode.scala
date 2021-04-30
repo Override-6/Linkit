@@ -29,11 +29,11 @@ object StringRepresentableNode {
         override def canHandle(clazz: Class[_]): Boolean = this.clazz.isAssignableFrom(clazz)
 
         override def canHandle(bytes: ByteSeq): Boolean = {
-            println(s"bytes = ${ScalaUtils.toPresentableString(bytes.array)}")
-            println(s"raw bytes = ${bytes.array.mkString("Array(", ", ", ")")}")
+            //println(s"bytes = ${ScalaUtils.toPresentableString(bytes.array)}")
+            //println(s"raw bytes = ${bytes.array.mkString("Array(", ", ", ")")}")
             bytes.sameFlag(SRFlag(0)) && bytes.classExists(1, s => {
-                println(s"clazz = ${clazz}")
-                println(s"s = ${s}")
+                //println(s"clazz = ${clazz}")
+                //println(s"s = ${s}")
                 clazz.isAssignableFrom(s)
             })
         }

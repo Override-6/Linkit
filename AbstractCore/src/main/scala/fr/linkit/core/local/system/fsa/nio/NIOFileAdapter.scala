@@ -13,20 +13,24 @@
 package fr.linkit.core.local.system.fsa.nio
 
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
+import fr.linkit.core.connection.network.cache.puppet.AnnotationHelper.Hidden
 
 import java.io.{InputStream, OutputStream}
 import java.net.URI
 import java.nio.file._
 
-case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystemAdapter) extends FileAdapter {
+case class NIOFileAdapter private[nio](@Hidden path: Path, @transient fsa: NIOFileSystemAdapter) extends FileAdapter {
     def this(other: NIOFileAdapter) = {
         this(other.path, other.fsa)
     }
 
+    @Hidden
     override def getPath: String = path.toString
 
+    @Hidden
     override def getFSAdapter: FileSystemAdapter = fsa
 
+    @Hidden
     override def getAbsolutePath: String = path.toAbsolutePath.toString
 
     override def getSize: Long = Files.size(path)
@@ -39,10 +43,13 @@ case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystem
         fsa.getAdapter(parent.toString)
     }
 
+    @Hidden
     override def getName: String = path.getFileName.toString
 
+    @Hidden
     override def getContentString: String = Files.readString(path)
 
+    @Hidden
     override def toUri: URI = path.toUri
 
     override def resolveSibling(path: String): FileAdapter = resolveSiblings(fsa.getAdapter(path))

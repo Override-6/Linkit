@@ -77,7 +77,7 @@ object ScalaUtils {
 
         import NumberSerializer.convertValue
 
-        println(s"value.getClass = ${Try(value.getClass).getOrElse(null)}")
+        //println(s"value.getClass = ${Try(value.getClass).getOrElse(null)}")
         val action: (Any, Long) => Unit = if (field.getType.isPrimitive) {
             value match {
                 case i: Integer      => TheUnsafe.putInt(_, _, i)

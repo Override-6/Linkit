@@ -44,7 +44,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
     class ArraySerialNode(profile: ClassProfile[Array[_]], tree: SerialContext) extends SerialNode[Array[_]] {
 
         override def serialize(array: Array[_], putTypeHint: Boolean): Array[Byte] = {
-            println(s"Serializing array ${array.mkString("Array(", ", ", ")")}")
+            //println(s"Serializing array ${array.mkString("Array(", ", ", ")")}")
             profile.applyAllSerialProcedures(array)
             if (array.isEmpty) {
                 return ArrayFlag /\ EmptyFlag
@@ -72,9 +72,9 @@ object ArrayNode extends NodeFactory[Array[_]] {
                 val typeChange = itemClass != lastClass
                 if (typeChange)
                     lastNode = tree.getSerialNodeForType(itemClass)
-                println(s"Serializing array item $item ($i)")
+                //println(s"Serializing array item $item ($i)")
                 val bytes = lastNode.serialize(cast(item), typeChange) //if type have changed, we need to specify the new type.
-                println(s"array item $item into bytes is now ${bytes.mkString("Array(", ", ", ")")}")
+                //println(s"array item $item into bytes is now ${bytes.mkString("Array(", ", ", ")")}")
 
                 byteArrays(i) = bytes
                 if (i != lengths.length)
@@ -83,13 +83,13 @@ object ArrayNode extends NodeFactory[Array[_]] {
                 lastClass = itemClass
             }
 
-            println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
+            //println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
             val sign = lengths.flatMap(i => NumberSerializer.serializeNumber(i, true))
-            println(s"array sign = ${toPresentableString(sign)}")
+            //println(s"array sign = ${toPresentableString(sign)}")
             val signLength = NumberSerializer.serializeNumber(lengths.length, true)
-            println(s"sign length = ${signLength.mkString("Array(", ", ", ")")}")
+            //println(s"sign length = ${signLength.mkString("Array(", ", ", ")")}")
             val result = ArrayFlag /\ signLength ++ sign ++ byteArrays.flatten
-            println(s"result = ${toPresentableString(result)}")
+            //println(s"result = ${toPresentableString(result)}")
             result
         }
 
@@ -104,20 +104,20 @@ object ArrayNode extends NodeFactory[Array[_]] {
             if (bytes(1) == EmptyFlag)
                 return Array.empty
 
-            println(s"Deserializing array into bytes ${toPresentableString(bytes)}")
+            //println(s"Deserializing array into bytes ${toPresentableString(bytes)}")
             val (signItemCount, sizeByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, 1) //starting from 1 because first byte is the array flag.
-            println(s"signItemCount = ${signItemCount}")
-            println(s"sizeByteCount = ${sizeByteCount}")
+            //println(s"signItemCount = ${signItemCount}")
+            //println(s"sizeByteCount = ${sizeByteCount}")
             val sign   = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 1)
             val result = new Array[Any](sign.childrenBytes.length)
 
             var i = 0
             for (childBytes <- sign.childrenBytes) {
-                println(s"ITEM Deserial $i:")
+                //println(s"ITEM Deserial $i:")
                 val node = context.getDeserialNodeFor(childBytes)
-                println(s"node = ${node}")
+                //println(s"node = ${node}")
                 result(i) = node.deserialize()
-                Try(println(s"array item deserialize result = ${result(i)}"))
+                //Try(//println(s"array item deserialize result = ${result(i)}"))
                 i += 1
             }
 

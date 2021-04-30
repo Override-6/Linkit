@@ -39,11 +39,11 @@ object EnumNode {
 
         override def serialize(t: E, putTypeHint: Boolean): Array[Byte] = {
             profile.applyAllSerialProcedures(t)
-            println(s"Serializing enum ${t}")
+            //println(s"Serializing enum ${t}")
             val name     = t.name()
             val enumType = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
             val result   = enumType ++ name.getBytes
-            println(s"Result = ${toPresentableString(result)} (type: ${toPresentableString(enumType)}, name: $name)")
+            //println(s"Result = ${toPresentableString(result)} (type: ${toPresentableString(enumType)}, name: $name)")
             result
         }
     }
@@ -51,10 +51,10 @@ object EnumNode {
     class EnumDeserialNode[E <: Enum[E]](profile: ClassProfile[E], bytes: ByteSeq) extends DeserialNode[E] {
 
         override def deserialize(): E = {
-            println(s"Deserializing enum ${toPresentableString(bytes)}")
+            //println(s"Deserializing enum ${toPresentableString(bytes)}")
             val enumType = bytes.getHeaderClass
             val name     = new String(bytes.array.drop(4))
-            println(s"Name = $name")
+            //println(s"Name = $name")
             val enum = Enum.valueOf(enumType.asInstanceOf[Class[E]], name)
             profile.applyAllDeserialProcedures(enum)
             enum

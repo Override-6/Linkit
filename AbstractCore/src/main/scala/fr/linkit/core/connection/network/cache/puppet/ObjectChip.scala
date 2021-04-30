@@ -38,20 +38,20 @@ case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
 
     def canCallMethod(methodName: String, parameterTypes: Seq[Class[_]]): Boolean = desc.getSharedMethod(methodName, parameterTypes).isDefined
 
-    def callMethod(methodName: String, params: Seq[Serializable]): Serializable = {
+    def callMethod(methodName: String, params: Seq[Serializable]): Any = {
         val parameterTypes = params.map(_.getClass)
         if (!canCallMethod(methodName, parameterTypes))
             throw new PuppetException(s"Attempted to invoke cached method '$methodName'")
 
         val method = desc.getSharedMethod(methodName, parameterTypes).get
         method.invoke(puppet, params: _*)
-                .asInstanceOf[Serializable]
+                .asInstanceOf[Any]
     }
 
     private[puppet] def handleBundle(packet: Packet, submitter: ResponseSubmitter): Unit = {
         packet match {
             case ObjectPacket((methodName: String, args: Array[Any])) =>
-                var result: Serializable = null
+                var result: Any = null
                 val castedArgs           = ScalaUtils.slowCopy[Serializable](args)
                 if (canCallMethod(methodName, castedArgs.map(_.getClass))) {
                     result = callMethod(methodName, castedArgs)

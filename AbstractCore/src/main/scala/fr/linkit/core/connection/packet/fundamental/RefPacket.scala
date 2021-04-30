@@ -21,7 +21,7 @@ import java.io.Serializable
  * This trait is used to transport a packet for specific ref serializable types
  * such as strings or arrays.
  * */
-sealed trait RefPacket[A <: Serializable] extends Packet {
+sealed trait RefPacket[A] extends Packet {
 
     /**
      * The main value of the packet
@@ -49,7 +49,7 @@ object RefPacket {
     /**
      * Represents a packet that contains a serializable value of a specified type
      * */
-    case class AnyRefPacket[A <: Serializable] private(override val value: A) extends RefPacket[A]
+    case class AnyRefPacket[A] private(override val value: A) extends RefPacket[A]
 
     /**
      * Represents a packet that contains a serializable value
@@ -109,7 +109,7 @@ object RefPacket {
     /**
      * Alias for [[AnyRefPacket.apply()]]
      * */
-    def apply[A <: Serializable](value: A): AnyRefPacket[A] = AnyRefPacket(value)
+    def apply[A](value: A): AnyRefPacket[A] = AnyRefPacket(value)
 
     /**
      * Implicit unboxing of a RefPacket's value.

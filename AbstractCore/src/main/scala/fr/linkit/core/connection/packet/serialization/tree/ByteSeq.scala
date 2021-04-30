@@ -36,11 +36,11 @@ case class ByteSeq(array: Array[Byte]) {
             None
         else {
             val i = NumberSerializer.deserializeInt(array, index)
-            println(s"index = ${index}")
-            println(s"i = ${i}")
-            println(s"classOf[Timestamp].getClass.getName.hashCode = ${classOf[Timestamp].getName.hashCode}")
+            //println(s"index = ${index}")
+            //println(s"i = ${i}")
+            //println(s"classOf[Timestamp].getClass.getName.hashCode = ${classOf[Timestamp].getName.hashCode}")
             val v = ClassMappings.getClassOpt(NumberSerializer.deserializeInt(array, index))
-            println(s"v = ${v}")
+            //println(s"v = ${v}")
             v
         }
     }

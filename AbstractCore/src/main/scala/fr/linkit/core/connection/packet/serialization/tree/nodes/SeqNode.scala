@@ -65,7 +65,7 @@ object SeqNode {
 
             val content      = t.toArray
             val seqTypeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
-            println(s"content = ${content.mkString("Array(", ", ", ")")}")
+            //println(s"content = ${content.mkString("Array(", ", ", ")")}")
             seqTypeBytes ++ finder.getSerialNodeForRef(content).serialize(awfulCast(content), putTypeHint)
         }
     }
@@ -74,12 +74,12 @@ object SeqNode {
 
         override def deserialize(): mutable.Seq[_] = {
             val seqType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
-            println(s"List type = ${seqType}")
+            //println(s"List type = ${seqType}")
             val factory = findFactory(seqType)
-            println(s"factory = ${factory}")
-            println(s"bytes.drop(4) = ${new String(bytes.drop(4))}")
+            //println(s"factory = ${factory}")
+            //println(s"bytes.drop(4) = ${new String(bytes.drop(4))}")
             val content = finder.getDeserialNodeFor[Array[Any]](bytes.drop(4)).deserialize()
-            println(s"SeqNode: content = ${content.mkString("Array(", ", ", ")")}")
+            //println(s"SeqNode: content = ${content.mkString("Array(", ", ", ")")}")
             if (content.isEmpty)
                 return awfulCast(seqType.getConstructor().newInstance())
 
@@ -115,7 +115,7 @@ object SeqNode {
         try {
             val companionClass = Class.forName(seqType.getName + "$")
             val companion      = companionClass.getField("MODULE$").get(null)
-            println(s"companion = ${companion}")
+            //println(s"companion = ${companion}")
             companion match {
                 case e: SeqFactory[CC] => Option(e)
                 case _                 => None

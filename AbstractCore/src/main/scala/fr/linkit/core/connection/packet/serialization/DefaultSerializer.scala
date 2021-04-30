@@ -15,6 +15,7 @@ package fr.linkit.core.connection.packet.serialization
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.serialization.{Serializer, StringRepresentable}
 import fr.linkit.api.local.system.Version
+import fr.linkit.core.connection.network.cache.puppet.PuppetWrapper
 import fr.linkit.core.connection.packet.serialization.procedures.PuppetWrapperProcedure
 import fr.linkit.core.connection.packet.serialization.tree.SerialContext
 import fr.linkit.core.connection.packet.serialization.tree.nodes.StringRepresentableNode
@@ -56,7 +57,7 @@ class DefaultSerializer() extends Serializer {
 
     serialContext.attachFactory(StringRepresentableNode(Version))
     serialContext.attachFactory(StringRepresentableNode(PathRepresentable))
-    serialContext.attachProcedure(PuppetWrapperProcedure)
+    serialContext.attachProcedure[PuppetWrapper[Serializable]](PuppetWrapperProcedure)
 
     private object PathRepresentable extends StringRepresentable[Path] {
 

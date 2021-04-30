@@ -56,7 +56,12 @@ class PuppetClassDesc private(val puppetClass: Class[_],
     //FIXME methods are only taken from the first super class, they must be taken until Object's class.
     def foreachSharedMethods(action: Method => Unit): Unit = {
         puppetClass.getDeclaredMethods
-                .filterNot(member => Modifier.isFinal(member.getModifiers) || Modifier.isStatic(member.getModifiers))
+                .filterNot(member => {
+                    val mods = member.getModifiers
+                    Modifier.isPrivate(mods) ||
+                            Modifier.isFinal(member.getModifiers) ||
+                            Modifier.isStatic(member.getModifiers)
+                })
                 .filter(isShared)
                 .tapEach(_.setAccessible(true))
                 .foreach(action)

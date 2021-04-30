@@ -37,8 +37,8 @@ object DateNode extends NodeFactory[Date] {
         override def serialize(t: Date, putTypeHint: Boolean): Array[Byte] = {
             profile.applyAllSerialProcedures(t)
             val i = t.getTime
-            println(s"long = ${i}")
-            println(s"classType = ${t.getClass.getName}")
+            //println(s"long = ${i}")
+            //println(s"classType = ${t.getClass.getName}")
             NumberSerializer.serializeInt(t.getClass.getName.hashCode) ++ NumberSerializer.serializeLong(i)
         }
     }
@@ -47,7 +47,7 @@ object DateNode extends NodeFactory[Date] {
 
         override def deserialize(): Date = {
             val long = NumberSerializer.deserializeLong(bytes, 4)
-            println(s"long = ${long}")
+            //println(s"long = ${long}")
 
             val clazz = bytes.getHeaderClass
             val date  = clazz.getDeclaredConstructor(classOf[Long])

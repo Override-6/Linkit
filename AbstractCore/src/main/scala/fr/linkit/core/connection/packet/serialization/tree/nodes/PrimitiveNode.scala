@@ -37,7 +37,7 @@ object PrimitiveNode {
         }
 
         override def canHandle(info: ByteSeq): Boolean = !info.isClassDefined && info.array.nonEmpty && {
-            println(s"info.bytes = ${info.array.mkString("Array(", ", ", ")")}")
+            //println(s"info.bytes = ${info.array.mkString("Array(", ", ", ")")}")
             TypeFlags.exists(info.sameFlag)
         }
 
@@ -53,7 +53,7 @@ object PrimitiveNode {
     class PrimitiveSerialNode[T <: AnyVal](profile: ClassProfile[AnyVal]) extends SerialNode[T] {
 
         override def serialize(t: T, putTypeHint: Boolean): Array[Byte] = {
-            println(s"Serializing primitive ${t}")
+            //println(s"Serializing primitive ${t}")
             profile.applyAllSerialProcedures(t)
             val (bytes, flag) = t match {
                 case i: Int     => (NumberSerializer.serializeNumber(i, true), IntFlag)
@@ -74,11 +74,11 @@ object PrimitiveNode {
     class PrimitiveDeserialNode(bytes: Array[Byte], context: SerialContext) extends DeserialNode[AnyVal] {
 
         override def deserialize(): AnyVal = {
-            println(s"Deserializing primitive number from bytes ${ScalaUtils.toPresentableString(bytes)}")
-            println(s"raw bytes = ${bytes.mkString("Array(", ", ", ")")}")
+            //println(s"Deserializing primitive number from bytes ${ScalaUtils.toPresentableString(bytes)}")
+            //println(s"raw bytes = ${bytes.mkString("Array(", ", ", ")")}")
             import NumberSerializer.{convertValue, deserializeFlaggedNumber}
             val value  = deserializeFlaggedNumber[AnyVal](bytes, 1)._1
-            println(s"value = ${value}")
+            //println(s"value = ${value}")
             val result = bytes(0) match {
                 case IntFlag     => convertValue(value, _.intValue)
                 case ByteFlag    => convertValue(value, _.byteValue)
@@ -89,8 +89,8 @@ object PrimitiveNode {
                 case CharFlag    => convertValue(value, _.charValue)
                 case BooleanFlag => convertValue(value, _.booleanValue)
             }
-            println(s"result = ${result}")
-            println(s"result.getClass = ${result.getClass}")
+            //println(s"result = ${result}")
+            //println(s"result.getClass = ${result.getClass}")
             context.getClassProfile[AnyVal](result.getClass.asInstanceOf[Class[_ <: AnyVal]]).applyAllDeserialProcedures(result)
             result
         }
