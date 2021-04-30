@@ -15,7 +15,7 @@ package fr.linkit.core.local.system.fsa.remote
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
-import fr.linkit.core.connection.network.cache.puppet.{Hidden, SharedObject, SharedObjectsCache}
+import fr.linkit.core.connection.network.cache.puppet.{Hidden, SharedObject, CloudObjectRepository}
 import fr.linkit.core.local.system.fsa.AbstractFileSystemAdapter
 import fr.linkit.core.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
 import fr.linkit.core.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
@@ -26,7 +26,7 @@ import java.net.URI
 
 @SharedObject
 class RemoteFileSystemAdapter private(delegateFSA: AbstractFileSystemAdapter,
-                                      sharedAdapters: SharedObjectsCache) extends AbstractFileSystemAdapter {
+                                      sharedAdapters: CloudObjectRepository) extends AbstractFileSystemAdapter {
 
     override def createAdapter(path: String): FileAdapter = {
         val adapter = delegateFSA.createAdapter(path)
@@ -89,7 +89,7 @@ object RemoteFileSystemAdapter {
                 .get
                 .entityCache
 
-        val sharedObjects = cache.getCache(27, SharedObjectsCache)
+        val sharedObjects = cache.getCache(27, CloudObjectRepository)
         //println(s"sharedObjects = ${sharedObjects}")
         val remoteFSA = sharedObjects.findCloudObject[AbstractFileSystemAdapter](delegateFSA.getName.hashCode)
                 .getOrElse(throw new UnsupportedOperationException(s"${delegateFSA.getSimpleName} not found for connection ${connection.boundIdentifier}"))
@@ -102,7 +102,7 @@ object RemoteFileSystemAdapter {
             throw new IllegalArgumentException("Delegate FSA can't be a RemoteFileSystemAdapter.")
 
         val cache         = selfConnection.network.connectionEntity.entityCache
-        val sharedObjects = cache.getCache(27, SharedObjectsCache)
+        val sharedObjects = cache.getCache(27, CloudObjectRepository)
         val puppetFSA     = sharedObjects.postCloudObject(delegateFSA.getClass.getName.hashCode, delegateFSA)
         new RemoteFileSystemAdapter(puppetFSA, sharedObjects)
     }

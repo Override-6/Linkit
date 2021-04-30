@@ -10,9 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.tree
+package fr.linkit.core.connection.packet.serialization
 
-trait SerialNode[T] {
+import fr.linkit.api.connection.network.Network
 
-    def serialize(t: T, putTypeHint: Boolean): Array[Byte]
+trait Procedure[T] {
+
+    def beforeSerial(t: T, network: Network): Unit
+
+    def afterDeserial(t: T, network: Network): Unit
+
 }

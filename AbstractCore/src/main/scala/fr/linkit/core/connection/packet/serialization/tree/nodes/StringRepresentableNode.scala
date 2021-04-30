@@ -13,6 +13,7 @@
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
 import fr.linkit.api.connection.packet.serialization.StringRepresentable
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext.ClassProfile
 import fr.linkit.core.connection.packet.serialization.tree._
 import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 
@@ -27,9 +28,9 @@ object StringRepresentableNode {
 
         override def canHandle(clazz: Class[_]): Boolean = this.clazz.isAssignableFrom(clazz)
 
-        override def canHandle(bytes: ByteSeqInfo): Boolean = {
-            println(s"bytes = ${ScalaUtils.toPresentableString(bytes.bytes)}")
-            println(s"raw bytes = ${bytes.bytes.mkString("Array(", ", ", ")")}")
+        override def canHandle(bytes: ByteSeq): Boolean = {
+            println(s"bytes = ${ScalaUtils.toPresentableString(bytes.array)}")
+            println(s"raw bytes = ${bytes.array.mkString("Array(", ", ", ")")}")
             bytes.sameFlag(SRFlag(0)) && bytes.classExists(1, s => {
                 println(s"clazz = ${clazz}")
                 println(s"s = ${s}")
@@ -37,16 +38,16 @@ object StringRepresentableNode {
             })
         }
 
-        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[T] = {
-            new StringRepresentableSerialNode[T](parent, repr)
+        override def newNode(finder: SerialContext, profile: ClassProfile[T]): SerialNode[T] = {
+            new StringRepresentableSerialNode[T](profile, repr)
         }
 
-        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[T] = {
-            new StringRepresentableDeserialNode[T](parent, bytes, repr)
+        override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[T] = {
+            new StringRepresentableDeserialNode[T](finder.getProfile[T], bytes, repr)
         }
     }
 
-    class StringRepresentableSerialNode[T](override val parent: SerialNode[_], repr: StringRepresentable[T]) extends SerialNode[T] {
+    class StringRepresentableSerialNode[T](profile: ClassProfile[T], repr: StringRepresentable[T]) extends SerialNode[T] {
 
         override def serialize(t: T, putTypeHint: Boolean): Array[Byte] = {
             val typeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
@@ -55,7 +56,7 @@ object StringRepresentableNode {
         }
     }
 
-    class StringRepresentableDeserialNode[T](override val parent: DeserialNode[_], bytes: Array[Byte],
+    class StringRepresentableDeserialNode[T](profile: ClassProfile[T], bytes: Array[Byte],
                                              repr: StringRepresentable[T]) extends DeserialNode[T] {
 
         override def deserialize(): T = {

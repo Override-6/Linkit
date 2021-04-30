@@ -12,7 +12,18 @@
 
 package fr.linkit.core.connection.packet.serialization.tree
 
-trait SerialNode[T] {
+import fr.linkit.core.connection.packet.serialization.Procedure
 
-    def serialize(t: T, putTypeHint: Boolean): Array[Byte]
+import scala.reflect.ClassTag
+
+trait ContextHolder {
+
+    def attachFactory(nodeFactory: NodeFactory[_]): Unit
+
+    def detachFactory(nodeFactory: NodeFactory[_]): Unit
+
+    def attachProcedure[C: ClassTag](procedure: Procedure[C]): Unit
+
+    def detachProcedure[C: ClassTag](procedure: Procedure[C]): Unit
+
 }

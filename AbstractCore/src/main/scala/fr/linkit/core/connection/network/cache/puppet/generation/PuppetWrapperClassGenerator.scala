@@ -14,7 +14,7 @@ package fr.linkit.core.connection.network.cache.puppet.generation
 
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.puppet.AnnotationHelper.Shared
-import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, PuppetWrapper}
+import fr.linkit.core.connection.network.cache.puppet.{PuppetClassDesc, PuppetWrapper, PuppeteerDescription}
 import fr.linkit.core.local.mapping.ClassMappings
 
 import java.io.File
@@ -72,7 +72,7 @@ object PuppetWrapperClassGenerator {
         puppetClass.asInstanceOf[Class[_ <: PuppetWrapper[S]]]
     }
 
-    private def genConstantGettersFields(desc: PuppetClassFields): String = {
+    private def genConstantGettersFields(desc: PuppetClassDesc): String = {
         val fieldBuilder = new StringBuilder()
         desc.foreachSharedMethods(method => {
             val isConstantGetter = getSharedAnnotation(method).constant()
@@ -91,7 +91,7 @@ object PuppetWrapperClassGenerator {
 
     private def genPuppetClassSourceCode[S <: Serializable](clazz: Class[_ <: S]): String = {
         val sourceBuilder = new StringBuilder()
-        val desc          = PuppetClassFields.ofClass(clazz)
+        val desc          = PuppetClassDesc.ofClass(clazz)
 
         val puppetClassSimpleName = s"Puppet${clazz.getSimpleName}"
         val superClassName        = clazz.getCanonicalName
@@ -102,25 +102,43 @@ object PuppetWrapperClassGenerator {
                |package $GeneratedClassesPackage;
                |
                |import fr.linkit.core.connection.network.cache.puppet.Puppeteer;
+               |import fr.linkit.core.connection.network.cache.puppet.PuppeteerDescription;
                |import fr.linkit.core.connection.network.cache.puppet.PuppetWrapper;
                |import fr.linkit.core.connection.network.cache.puppet.generation.PuppetAlreadyInitialisedException;
                |
                |public class $puppetClassSimpleName extends $superClassName implements PuppetWrapper<$superClassName> {
                |
                |private transient $puppeteerType puppeteer;
+               |private PuppeteerDescription puppeteerDescription;
                |$constantGettersFields
                |
                |public $puppetClassSimpleName($puppeteerType puppeteer, $superClassName clone) {
                |    super(clone);
-               |    this.puppeteer = puppeteer;
-               |    this.puppeteer.init(this, clone);
+               |    initPuppeteer(puppeteer, clone);
                |}
                |
-               |//Override
-               |public void initPuppet(Puppeteer<$superClassName> puppeteer) throws PuppetAlreadyInitialisedException {
+               |@Override
+               |public void initPuppeteer(Puppeteer<$superClassName> puppeteer, $superClassName clone) throws PuppetAlreadyInitialisedException {
                |    if (this.puppeteer != null)
                |        throw new PuppetAlreadyInitialisedException("This puppet is already initialized !");
+               |    puppeteer.init(this, clone);
                |    this.puppeteer = puppeteer;
+               |    this.puppeteerDescription = puppeteer.description();
+               |}
+               |
+               |@Override
+               |public boolean isInitialized() {
+               |    return puppeteer != null;
+               |}
+               |
+               |@Override
+               |public $superClassName detachedClone() {
+               |    return new $superClassName(this);
+               |}
+               |
+               |@Override
+               |public PuppeteerDescription getPuppeteerDescription() {
+               |    return puppeteerDescription;
                |}
                |
                |//Overridden methods will be generated here

@@ -12,8 +12,8 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext.ClassProfile
 import fr.linkit.core.connection.packet.serialization.tree._
-import fr.linkit.core.local.mapping.ClassMappings
 import fr.linkit.core.local.utils.NumberSerializer
 
 import java.util.Date
@@ -22,19 +22,20 @@ object DateNode extends NodeFactory[Date] {
 
     override def canHandle(clazz: Class[_]): Boolean = classOf[Date].isAssignableFrom(clazz)
 
-    override def canHandle(info: ByteSeqInfo): Boolean = info.classExists(canHandle)
+    override def canHandle(info: ByteSeq): Boolean = info.classExists(canHandle)
 
-    override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Date] = {
-        new DateSerialNode(parent)
+    override def newNode(finder: SerialContext, profile: ClassProfile[Date]): SerialNode[Date] = {
+        new DateSerialNode(profile)
     }
 
-    override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Date] = {
-        new DateDeserialNode(bytes, parent)
+    override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[Date] = {
+        new DateDeserialNode(bytes, finder.getProfile[Date])
     }
 
-    private class DateSerialNode(override val parent: SerialNode[_]) extends SerialNode[Date] {
+    private class DateSerialNode(profile: ClassProfile[Date]) extends SerialNode[Date] {
 
         override def serialize(t: Date, putTypeHint: Boolean): Array[Byte] = {
+            profile.applyAllSerialProcedures(t)
             val i = t.getTime
             println(s"long = ${i}")
             println(s"classType = ${t.getClass.getName}")
@@ -42,17 +43,18 @@ object DateNode extends NodeFactory[Date] {
         }
     }
 
-    private class DateDeserialNode(bytes: Array[Byte], override val parent: DeserialNode[_]) extends DeserialNode[Date] {
+    private class DateDeserialNode(bytes: ByteSeq, profile: ClassProfile[Date]) extends DeserialNode[Date] {
 
         override def deserialize(): Date = {
-            val classType = NumberSerializer.deserializeInt(bytes, 0)
             val long = NumberSerializer.deserializeLong(bytes, 4)
             println(s"long = ${long}")
-            println(s"classType = ${classType}")
-            val clazz = ClassMappings.getClass(classType)
-            clazz.getDeclaredConstructor(classOf[Long])
+
+            val clazz = bytes.getHeaderClass
+            val date  = clazz.getDeclaredConstructor(classOf[Long])
                     .newInstance(NumberSerializer.deserializeLong(bytes, 4))
                     .asInstanceOf[Date]
+            profile.applyAllSerialProcedures(date)
+            date
         }
     }
 

@@ -12,21 +12,23 @@
 
 package fr.linkit.core.connection.packet.serialization
 
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.serialization.{Serializer, StringRepresentable}
 import fr.linkit.api.local.system.Version
+import fr.linkit.core.connection.packet.serialization.procedures.PuppetWrapperProcedure
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext
 import fr.linkit.core.connection.packet.serialization.tree.nodes.StringRepresentableNode
-import fr.linkit.core.connection.packet.serialization.tree.{NodeFactory, NodeFinder, NodeHolder}
 
 import java.nio.file.Path
 
-object DefaultSerializer extends Serializer with NodeHolder {
+class DefaultSerializer() extends Serializer {
 
-    private val nodeFinder = new NodeFinder
+    private val serialContext = new SerialContext()
 
     override val signature: Array[Byte] = Array(4)
 
     override def serialize(serializable: Serializable, withSignature: Boolean): Array[Byte] = {
-        val node  = nodeFinder.getSerialNodeForRef(serializable)
+        val node  = serialContext.getSerialNodeForRef(serializable)
         val bytes = node.serialize(serializable, true)
 
         if (withSignature) signature ++ bytes else bytes
@@ -35,19 +37,26 @@ object DefaultSerializer extends Serializer with NodeHolder {
     override def isSameSignature(bytes: Array[Byte]): Boolean = bytes.startsWith(signature)
 
     override def deserialize(bytes: Array[Byte]): Any = {
-        val node = nodeFinder.getDeserialNodeFor(bytes.drop(1))
+        val node = serialContext.getDeserialNodeFor(bytes.drop(1))
         node.deserialize()
     }
 
     override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
-        val node = nodeFinder.getDeserialNodeFor[Array[Any]](bytes.drop(1))
+        val node = serialContext.getDeserialNodeFor[Array[Any]](bytes.drop(1))
         node.deserialize()
     }
 
-    override def attachFactory(nodeFactory: NodeFactory[_]): Unit = nodeFinder.attachFactory(nodeFactory)
+    def getContext: SerialContext = serialContext
 
-    nodeFinder.attachFactory(StringRepresentableNode(Version))
-    nodeFinder.attachFactory(StringRepresentableNode(PathRepresentable))
+    def initNetwork(network: Network): Unit = {
+        if (serialContext.getNetwork != null)
+            throw new IllegalStateException("Network already initialized !")
+        serialContext.updateNetwork(network)
+    }
+
+    serialContext.attachFactory(StringRepresentableNode(Version))
+    serialContext.attachFactory(StringRepresentableNode(PathRepresentable))
+    serialContext.attachProcedure(PuppetWrapperProcedure)
 
     private object PathRepresentable extends StringRepresentable[Path] {
 

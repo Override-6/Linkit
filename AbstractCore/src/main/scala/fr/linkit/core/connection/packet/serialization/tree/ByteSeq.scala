@@ -17,31 +17,44 @@ import fr.linkit.core.local.utils.NumberSerializer
 
 import java.sql.Timestamp
 
-case class ByteSeqInfo(bytes: Array[Byte]) {
+case class ByteSeq(array: Array[Byte]) {
 
-    lazy val classType: Option[Class[_]] = findClassAt(0)
+    lazy val headerClass: Option[Class[_]] = findClassAt(0)
 
-    def isClassDefined: Boolean = classType.isDefined
+    def getHeaderClass[T]: Class[T] = headerClass match {
+        case None        => throw new NoSuchElementException("Header class not found into byte array.")
+        case Some(value) => value match {
+            case clazz: Class[T] => clazz
+            case _               => throw new IllegalArgumentException("Header class found into byte array mut mismatches from requested type.")
+        }
+    }
+
+    def isClassDefined: Boolean = headerClass.isDefined
 
     def findClassAt(index: Int): Option[Class[_]] = {
-        if (bytes.length - index < 4)
+        if (array.length - index < 4)
             None
         else {
-            val i = NumberSerializer.deserializeInt(bytes, index)
+            val i = NumberSerializer.deserializeInt(array, index)
             println(s"index = ${index}")
             println(s"i = ${i}")
             println(s"classOf[Timestamp].getClass.getName.hashCode = ${classOf[Timestamp].getName.hashCode}")
-            val v = ClassMappings.getClassOpt(NumberSerializer.deserializeInt(bytes, index))
+            val v = ClassMappings.getClassOpt(NumberSerializer.deserializeInt(array, index))
             println(s"v = ${v}")
             v
         }
     }
 
-    def apply(i: Int): Byte = bytes(i)
+    def apply(i: Int): Byte = array(i)
 
-    def classExists(f: Class[_] => Boolean): Boolean = classType exists f
+    def classExists(f: Class[_] => Boolean): Boolean = headerClass exists f
 
     def classExists(i: Int, f: Class[_] => Boolean): Boolean = findClassAt(i) exists f
 
-    def sameFlag(flag: Byte): Boolean = bytes.nonEmpty && bytes(0) == flag
+    def sameFlag(flag: Byte): Boolean = array.nonEmpty && array(0) == flag
+}
+
+object ByteSeq {
+
+    implicit def unwrap(seq: ByteSeq): Array[Byte] = seq.array
 }

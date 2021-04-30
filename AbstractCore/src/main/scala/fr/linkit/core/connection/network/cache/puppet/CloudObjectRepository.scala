@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.AbstractSharedCache
-import fr.linkit.core.connection.network.cache.puppet.SharedObjectsCache.FieldRestorer
+import fr.linkit.core.connection.network.cache.puppet.CloudObjectRepository.FieldRestorer
 import fr.linkit.core.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.traffic.ChannelScopes
@@ -26,11 +26,11 @@ import fr.linkit.core.local.utils.ScalaUtils
 
 import java.lang.reflect.Field
 import scala.collection.mutable
-import scala.reflect.{ClassTag, classTag}
+import scala.reflect.ClassTag
 
-class SharedObjectsCache(handler: SharedCacheManager,
-                         identifier: Int,
-                         channel: RequestPacketChannel) extends AbstractSharedCache[Serializable](handler, identifier, channel) {
+class CloudObjectRepository(handler: SharedCacheManager,
+                            cacheID: Int,
+                            channel: RequestPacketChannel) extends AbstractSharedCache[Serializable](handler, cacheID, channel) {
 
     private val localChips        = new mutable.HashMap[Int, ObjectChip[_ <: Serializable]]()
     private val puppeteers        = new mutable.HashMap[Int, Puppeteer[_ <: Serializable]]()
@@ -38,11 +38,11 @@ class SharedObjectsCache(handler: SharedCacheManager,
     private val fieldRestorer     = new FieldRestorer
     private val supportIdentifier = channel.traffic.supportIdentifier
 
-    AppLogger.trace(s"Shared Object cache opened (id: $identifier, family: ${handler.family}, owner: ${handler.ownerID})")
+    AppLogger.trace(s"Shared Object cache opened (id: $cacheID, family: ${handler.family}, owner: ${handler.ownerID})")
 
     def postCloudObject[S <: Serializable](id: Int, obj: S): S with PuppetWrapper[S] = {
         chipObject(id, obj)
-        val wrapper = genPuppetObject[S](id, supportIdentifier, obj)
+        val wrapper = genPuppetWrapper[S](id, supportIdentifier, obj)
         flushPuppet(id, obj)
         wrapper
     }
@@ -52,7 +52,7 @@ class SharedObjectsCache(handler: SharedCacheManager,
             case None            => None
             case Some(puppeteer) => puppeteer.getPuppet match {
                 case _: S => Option(puppeteer.getPuppetWrapper.asInstanceOf[S])
-                case _      => None
+                case _    => None
             }
         }
     }
@@ -91,7 +91,7 @@ class SharedObjectsCache(handler: SharedCacheManager,
             case ObjectPacket((id: Int, puppet: Serializable)) =>
                 if (!localChips.contains(id)) {
                     fieldRestorer.restoreFields(puppet)
-                    genPuppetObject(id, owner, puppet)
+                    genPuppetWrapper(id, owner, puppet)
                 }
 
             case reqPacket => localChips.get(id.toInt).fold() { chip =>
@@ -117,14 +117,14 @@ class SharedObjectsCache(handler: SharedCacheManager,
             }
             //it's an object that must be remotely controlled because it is chipped by another objects cache.
             else if (!puppeteers.contains(id)) {
-                genPuppetObject(id, pair._2, pair._1)
+                genPuppetWrapper(id, pair._2, pair._1)
             }
         })
     }
 
     override def currentContent: Array[Any] = {
         puppeteers
-                .map(pair => (pair._1, (pair._2.getPuppet, pair._2.owner)))
+                .map(pair => (pair._1, (pair._2.getPuppet, pair._2.description.owner)))
                 .toArray
     }
 
@@ -145,16 +145,26 @@ class SharedObjectsCache(handler: SharedCacheManager,
         this
     }
 
-    private def genPuppetObject[S <: Serializable](id: Int, owner: String, puppet: S): S with PuppetWrapper[S] = {
-        val fields    = PuppetClassFields.ofRef(puppet)
-        val puppeteer = new Puppeteer[S](channel, this, id, owner, fields)
+    def initPuppetWrapper[S <: Serializable](wrapper: S with PuppetWrapper[S]): Unit = {
+        if (wrapper.isInitialized)
+            return
+        val puppeteerDesc = wrapper.getPuppeteerDescription
+        val puppetDesc          = PuppetClassDesc.ofClass(wrapper.getClass.getSuperclass)
+        val puppeteer     = new Puppeteer[S](channel, this, puppeteerDesc, puppetDesc)
+        wrapper.initPuppeteer(puppeteer, wrapper)
+    }
+
+    private def genPuppetWrapper[S <: Serializable](id: Int, owner: String, puppet: S): S with PuppetWrapper[S] = {
+        val puppetDesc      = PuppetClassDesc.ofRef(puppet)
+        val puppeteerDesc = PuppeteerDescription(family, cacheID, id, owner)
+        val puppeteer = new Puppeteer[S](channel, this, puppeteerDesc, puppetDesc)
         puppeteers.put(id, puppeteer)
 
         val puppetClass = PuppetWrapperClassGenerator.getOrGenerate[S](puppet.getClass)
-        instantiatePuppet[S](puppeteer, puppet, puppetClass)
+        instantiatePuppetWrapper[S](puppeteer, puppet, puppetClass)
     }
 
-    private def instantiatePuppet[S <: Serializable](puppeteer: Puppeteer[S], clone: S, puppetClass: Class[S with PuppetWrapper[S]]): S with PuppetWrapper[S] = {
+    private def instantiatePuppetWrapper[S <: Serializable](puppeteer: Puppeteer[S], clone: S, puppetClass: Class[S with PuppetWrapper[S]]): S with PuppetWrapper[S] = {
         val constructor = puppetClass.getConstructor(puppeteer.getClass, clone.getClass)
         constructor.newInstance(puppeteer, clone)
     }
@@ -172,15 +182,20 @@ class SharedObjectsCache(handler: SharedCacheManager,
                 .submit()
     }
 
+    private def ensureNotWrapped(any: Any): Unit = {
+        if (any.isInstanceOf[PuppetWrapper[_]])
+            throw new IllegalPuppetException("This object is already shared.")
+    }
+
 }
 
-object SharedObjectsCache extends SharedCacheFactory[SharedObjectsCache] {
+object CloudObjectRepository extends SharedCacheFactory[CloudObjectRepository] {
 
     override def createNew(handler: SharedCacheManager,
                            identifier: Int, baseContent: Array[Any],
-                           container: PacketInjectableContainer): SharedObjectsCache = {
+                           container: PacketInjectableContainer): CloudObjectRepository = {
         val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
-        val cache   = new SharedObjectsCache(handler, identifier, channel)
+        val cache   = new CloudObjectRepository(handler, identifier, channel)
         cache.setCurrentContent(ScalaUtils.slowCopy[Serializable](baseContent))
         cache
     }

@@ -12,13 +12,12 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext.ClassProfile
 import fr.linkit.core.connection.packet.serialization.tree._
-import fr.linkit.core.local.mapping.ClassMappings
-import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
+import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 import sun.misc.Unsafe
 
-import java.lang.reflect.Field
 import scala.util.Try
 
 object ObjectNode {
@@ -31,16 +30,16 @@ object ObjectNode {
             !Constraints.exists(_ (clazz))
         }
 
-        override def canHandle(bytes: ByteSeqInfo): Boolean = {
+        override def canHandle(bytes: ByteSeq): Boolean = {
             bytes.sameFlag(NullObjectFlag) || bytes.isClassDefined
         }
 
-        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Any] = {
-            new ObjectSerialNode(parent, desc, finder)
+        override def newNode(finder: SerialContext, profile: ClassProfile[Any]): SerialNode[Any] = {
+            new ObjectSerialNode(profile, finder)
         }
 
-        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Any] = {
-            new ObjectDeserialNode(parent, bytes, finder)
+        override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[Any] = {
+            new ObjectDeserialNode(finder.getClassProfile(bytes.getHeaderClass), bytes, finder)
         }
     }
 
@@ -58,15 +57,20 @@ object ObjectNode {
         throw new IllegalStateException("No instance of Unsafe found")
     }
 
-    class ObjectSerialNode(override val parent: SerialNode[_], desc: SerializableClassDescription, tree: NodeFinder) extends SerialNode[Any] {
+    class ObjectSerialNode(profile: ClassProfile[Any], context: SerialContext) extends SerialNode[Any] {
 
         override def serialize(t: Any, putTypeHint: Boolean): Array[Byte] = {
             println(s"Serializing Object ${t}")
+
+            val desc = profile.desc
             println(s"Object desc = ${desc}")
+            profile.applyAllSerialProcedures(t)
+
             if (t == null)
                 return Array(NullObjectFlag)
+
             println(s"t.getClass = ${t.getClass}")
-            val children = tree.listNodes(desc, t, this)
+            val children = context.listNodes[Any](profile, t)
             println(s"children = ${children}")
 
             val classType = desc.classSignature
@@ -81,16 +85,17 @@ object ObjectNode {
         }
     }
 
-    class ObjectDeserialNode(override val parent: DeserialNode[_], bytes: Array[Byte], tree: NodeFinder) extends DeserialNode[Any] {
+    class ObjectDeserialNode(profile: ClassProfile[Any], bytes: ByteSeq, context: SerialContext) extends DeserialNode[Any] {
 
         override def deserialize(): Any = {
             if (bytes(0) == NullObjectFlag)
                 return null
 
             println(s"Deserializing object from bytes ${toPresentableString(bytes)}")
-            val objectType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
+            val objectType = bytes.getHeaderClass
+
             println(s"objectType = ${objectType}")
-            val desc = tree.getDesc(objectType)
+            val desc = profile.desc
             println(s"Object desc = ${desc}")
 
             val sign     = LengthSign.from(desc.signItemCount, bytes, bytes.length, 4)
@@ -99,7 +104,7 @@ object ObjectNode {
             val fieldValues = for (childBytes <- sign.childrenBytes) yield {
                 println(s"Field bytes = ${toPresentableString(childBytes)}")
                 println(s"childBytes = ${childBytes.mkString("Array(", ", ", ")")}")
-                val node = tree.getDeserialNodeFor(childBytes, this)
+                val node = context.getDeserialNodeFor[Any](childBytes)
                 println(s"node = ${node}")
                 val result = node.deserialize()
                 println(s"result = ${result}")
@@ -114,11 +119,10 @@ object ObjectNode {
 
             println(s"(objectType) = ${objectType}")
             Try(println(s"Instance = $instance"))
+            profile.applyAllDeserialProcedures(instance)
             instance.asInstanceOf[Serializable]
         }
 
     }
-
-
 
 }

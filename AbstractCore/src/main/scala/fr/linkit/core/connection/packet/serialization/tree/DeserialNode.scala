@@ -14,8 +14,6 @@ package fr.linkit.core.connection.packet.serialization.tree
 
 trait DeserialNode[T] {
 
-    val parent: DeserialNode[_]
-
     def deserialize(): T
 
 }

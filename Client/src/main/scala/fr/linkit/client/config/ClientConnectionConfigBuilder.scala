@@ -25,7 +25,7 @@ abstract class ClientConnectionConfigBuilder {
     var configName        : String                      = "simple-config"
     var hasher            : BytesHasher                 = BytesHasher.inactive
     val identifier: String
-    lazy val translator: PacketTranslator = new SimplePacketTranslator(hasher)
+    lazy val translator: PacketTranslator = new SimplePacketTranslator()
     val remoteAddress: InetSocketAddress
 
     /**

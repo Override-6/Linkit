@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
-import fr.linkit.core.connection.packet.serialization.tree.NodeFinder.MegaByte
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext.{ClassProfile, MegaByte}
 import fr.linkit.core.connection.packet.serialization.tree._
 import fr.linkit.core.connection.packet.serialization.tree.nodes.ObjectNode.NullObjectFlag
 import fr.linkit.core.local.utils.NumberSerializer
@@ -29,22 +29,23 @@ object ArrayNode extends NodeFactory[Array[_]] {
         clazz.isArray
     }
 
-    override def canHandle(bytes: ByteSeqInfo): Boolean = {
+    override def canHandle(bytes: ByteSeq): Boolean = {
         bytes.sameFlag(ArrayFlag)
     }
 
-    override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Array[_]] = {
-        new ArraySerialNode(parent, finder)
+    override def newNode(finder: SerialContext, profile: ClassProfile[Array[_]]): SerialNode[Array[_]] = {
+        new ArraySerialNode(profile, finder)
     }
 
-    override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Array[_]] = {
-        new ArrayDeserialNode(parent, bytes, finder)
+    override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[Array[_]] = {
+        new ArrayDeserialNode(finder.getProfile[Array[_]], bytes, finder)
     }
 
-    class ArraySerialNode(val parent: SerialNode[_], tree: NodeFinder) extends SerialNode[Array[_]] {
+    class ArraySerialNode(profile: ClassProfile[Array[_]], tree: SerialContext) extends SerialNode[Array[_]] {
 
         override def serialize(array: Array[_], putTypeHint: Boolean): Array[Byte] = {
             println(s"Serializing array ${array.mkString("Array(", ", ", ")")}")
+            profile.applyAllSerialProcedures(array)
             if (array.isEmpty) {
                 return ArrayFlag /\ EmptyFlag
             }
@@ -97,7 +98,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
         }
     }
 
-    class ArrayDeserialNode(val parent: DeserialNode[_], bytes: Array[Byte], tree: NodeFinder) extends DeserialNode[Array[_]] {
+    class ArrayDeserialNode(profile: ClassProfile[Array[_]], bytes: Array[Byte], context: SerialContext) extends DeserialNode[Array[_]] {
 
         override def deserialize(): Array[_] = {
             if (bytes(1) == EmptyFlag)
@@ -113,13 +114,16 @@ object ArrayNode extends NodeFactory[Array[_]] {
             var i = 0
             for (childBytes <- sign.childrenBytes) {
                 println(s"ITEM Deserial $i:")
-                val node = tree.getDeserialNodeFor(childBytes, this)
+                val node = context.getDeserialNodeFor(childBytes)
                 println(s"node = ${node}")
                 result(i) = node.deserialize()
                 Try(println(s"array item deserialize result = ${result(i)}"))
                 i += 1
             }
+
+            profile.applyAllDeserialProcedures(result)
             result
+
         }
     }
 

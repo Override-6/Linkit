@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.serialization
 
-import fr.linkit.api.connection.network.cache.SharedCacheManager
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 
 trait PacketTranslator {
@@ -27,11 +27,9 @@ trait PacketTranslator {
 
     def translatePacket(packet: Packet, target: String): Array[Byte]
 
-    @deprecated
-    def updateCache(manager: SharedCacheManager): Unit
+    def initNetwork(network: Network): Unit
 
-    @deprecated
-    def findSerializerFor(target: String): Option[Serializer]
+    def getSerializer: Serializer
 
     val signature: Array[Byte]
 

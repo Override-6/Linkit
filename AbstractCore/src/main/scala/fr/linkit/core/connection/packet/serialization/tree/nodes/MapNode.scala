@@ -12,6 +12,7 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext.ClassProfile
 import fr.linkit.core.connection.packet.serialization.tree._
 import fr.linkit.core.local.mapping.ClassMappings
 import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
@@ -26,16 +27,16 @@ object MapNode {
             classOf[mutable.Map[_, _]].isAssignableFrom(clazz)
         }
 
-        override def canHandle(bytes: ByteSeqInfo): Boolean = {
-            bytes.classExists(cl => classOf[mutable.Map[_, _]].isAssignableFrom(cl) && findFactory(cl).isDefined)
+        override def canHandle(bytes: ByteSeq): Boolean = {
+            bytes.classExists(cl => classOf[mutable.Map[_, _]].isAssignableFrom(cl) && findFactory[mutable.Map](cl).isDefined)
         }
 
-        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[mutable.Map[_, _]] = {
-            new MutableMapSerialNode(parent, finder)
+        override def newNode(finder: SerialContext, profile: ClassProfile[mutable.Map[_, _]]): SerialNode[mutable.Map[_, _]] = {
+            new MutableMapSerialNode(profile, finder)
         }
 
-        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[mutable.Map[_, _]] = {
-            new MutableMapDeserialNode(parent, bytes, finder)
+        override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[mutable.Map[_, _]] = {
+            new MutableMapDeserialNode(finder.getClassProfile(bytes.getHeaderClass), bytes, finder)
         }
     }
 
@@ -44,22 +45,23 @@ object MapNode {
             classOf[Map[_, _]].isAssignableFrom(clazz)
         }
 
-        override def canHandle(bytes: ByteSeqInfo): Boolean = {
-            bytes.classExists(cl => classOf[Map[_, _]].isAssignableFrom(cl) && findFactory(cl).isDefined)
+        override def canHandle(bytes: ByteSeq): Boolean = {
+            bytes.classExists(cl => classOf[Map[_, _]].isAssignableFrom(cl) && findFactory[Map](cl).isDefined)
         }
 
-        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Map[_, _]] = {
-            new ImmutableMapSerialNode(parent, finder)
+        override def newNode(finder: SerialContext, profile: ClassProfile[Map[_, _]]): SerialNode[Map[_, _]] = {
+            new ImmutableMapSerialNode(profile, finder)
         }
 
-        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Map[_, _]] = {
-            new ImmutableMapDeserialNode(parent, bytes, finder)
+        override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[Map[_, _]] = {
+            new ImmutableMapDeserialNode(finder.getClassProfile(bytes.getHeaderClass), bytes, finder)
         }
     }
 
-    class MutableMapSerialNode(override val parent: SerialNode[_], finder: NodeFinder) extends SerialNode[mutable.Map[_, _]] {
+    class MutableMapSerialNode(profile: ClassProfile[mutable.Map[_, _]], finder: SerialContext) extends SerialNode[mutable.Map[_, _]] {
 
         override def serialize(t: mutable.Map[_, _], putTypeHint: Boolean): Array[Byte] = {
+            profile.applyAllSerialProcedures(t)
             val content      = t.toArray
             val mapTypeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
             println(s"content = ${content.mkString("Array(", ", ", ")")}")
@@ -67,12 +69,12 @@ object MapNode {
         }
     }
 
-    class MutableMapDeserialNode(override val parent: DeserialNode[_], bytes: Array[Byte], finder: NodeFinder) extends DeserialNode[mutable.Map[_, _]] {
+    class MutableMapDeserialNode(profile: ClassProfile[mutable.Map[_, _]], bytes: Array[Byte], finder: SerialContext) extends DeserialNode[mutable.Map[_, _]] {
 
         override def deserialize(): mutable.Map[_, _] = {
             val mapType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
             println(s"mapType = ${mapType}")
-            val factory = findFactory(mapType)
+            val factory = findFactory[mutable.Map](mapType)
             println(s"factory = ${factory}")
             println(s"bytes.drop(4) = ${new String(bytes.drop(4))}")
             val content = finder.getDeserialNodeFor[Array[Any]](bytes.drop(4)).deserialize()
@@ -80,26 +82,31 @@ object MapNode {
             if (content.isEmpty)
                 return awfulCast(mapType.getConstructor().newInstance())
 
-            awfulCast(factory.get.from(ArrayBuffer.from(ScalaUtils.slowCopy[(_, _)](content))))
+            val result = awfulCast[mutable.Map[_, _]](factory.get.from(ArrayBuffer.from(ScalaUtils.slowCopy[(_, _)](content))))
+            profile.applyAllDeserialProcedures(result)
+            result
         }
     }
 
-    class ImmutableMapSerialNode(override val parent: SerialNode[_], finder: NodeFinder) extends SerialNode[Map[_, _]] {
+    class ImmutableMapSerialNode(profile: ClassProfile[Map[_, _]], finder: SerialContext) extends SerialNode[Map[_, _]] {
 
         override def serialize(t: Map[_, _], putTypeHint: Boolean): Array[Byte] = {
+            profile.applyAllSerialProcedures(t)
             val content      = t.toArray
             val mapTypeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
             mapTypeBytes ++ finder.getSerialNodeForRef(content).serialize(awfulCast(content), putTypeHint)
         }
     }
 
-    class ImmutableMapDeserialNode(override val parent: DeserialNode[_], bytes: Array[Byte], finder: NodeFinder) extends DeserialNode[Map[_, _]] {
+    class ImmutableMapDeserialNode(profile: ClassProfile[Map[_, _]], bytes: Array[Byte], finder: SerialContext) extends DeserialNode[Map[_, _]] {
 
         override def deserialize(): Map[_, _] = {
             val mapType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
-            val factory = findFactory(mapType)
+            val factory = findFactory[Map](mapType)
             val content = finder.getDeserialNodeFor(bytes.drop(4)).deserialize()
-            awfulCast(factory.get.from(content))
+            val result  = awfulCast[Map[_, _]](factory.get.from(content))
+            profile.applyAllDeserialProcedures(result)
+            result
         }
     }
 

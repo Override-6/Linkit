@@ -22,7 +22,7 @@ import java.lang.reflect.Modifier
 
 case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
 
-    private val desc = PuppetClassFields.ofRef(puppet)
+    private val desc = PuppetClassDesc.ofRef(puppet)
 
     def updateField(fieldName: String, value: Any): Unit = {
         desc.getSharedField(fieldName)

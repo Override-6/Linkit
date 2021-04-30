@@ -25,11 +25,11 @@ import scala.collection.mutable.ListBuffer
 
 class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
                                    presence: PacketAttributesPresence,
-                                   id: Int, val owner: String, val desc: PuppetClassFields) {
+                                   val description: PuppeteerDescription, val desc: PuppetClassDesc) {
 
     type SW <: S with PuppetWrapper[S]
 
-    private val ownerScope = prepareScope(ChannelScopes.retains(owner))
+    private val ownerScope = prepareScope(ChannelScopes.retains(description.owner))
     private val bcScope    = prepareScope(ChannelScopes.discardCurrent)
 
     private val puppetModifications = ListBuffer.empty[(String, Any)]
@@ -93,7 +93,7 @@ class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
         val writer = channel.traffic.newWriter(channel.identifier)
         val scope  = factory.apply(writer)
         presence.drainAllDefaultAttributes(scope)
-        scope.addDefaultAttribute("id", id)
+        scope.addDefaultAttribute("id", description.objectID)
     }
 
 }

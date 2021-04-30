@@ -10,10 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.core.connection.packet.serialization.tree
+package fr.linkit.core.connection.network.cache.puppet
 
-trait NodeHolder {
-
-    def attachFactory(nodeFactory: NodeFactory[_]): Unit
+case class PuppeteerDescription(cacheFamily: String, cacheID: Int, objectID: Int, owner: String) {
 
 }

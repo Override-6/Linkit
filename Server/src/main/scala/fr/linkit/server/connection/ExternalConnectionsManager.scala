@@ -117,7 +117,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         candidates.foreach(connection => {
             val translator = connection.translator
             val connectionID = connection.boundIdentifier
-            val serializer = translator.findSerializerFor(connectionID).get
+            val serializer = translator.getSerializer
 
             if (!packetCache.contains(serializer))
                 packetCache.put(serializer, translator.translatePacket(packet, connectionID))

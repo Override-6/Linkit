@@ -78,6 +78,10 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                 })
     }
 
+    override def getCacheManager(family: String): Option[SharedCacheManager] = {
+        caches.get(family)
+    }
+
     override def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager = {
         newCachesManager(family, owner.boundIdentifier)
     }
@@ -125,8 +129,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def postInit(): Unit = {
-        //sharedIdentifiers.addListener((_, _, _) => AppLogger.debug(s"$currentTasksId <> ${connection.supportIdentifier}: SharedIdentifiers Updated : $sharedIdentifiers"))
-        connection.translator.updateCache(globalCache)
+        connection.translator
     }
 
 }

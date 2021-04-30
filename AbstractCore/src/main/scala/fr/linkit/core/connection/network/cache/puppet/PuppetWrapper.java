@@ -14,8 +14,14 @@ package fr.linkit.core.connection.network.cache.puppet;
 
 import java.io.Serializable;
 
-public interface PuppetWrapper<T extends Serializable> extends Serializable  {
+public interface PuppetWrapper<T extends Serializable> extends Serializable {
 
-    void initPuppet(Puppeteer<T> puppeteer);
+    void initPuppeteer(Puppeteer<T> puppeteer, T clone);
+
+    boolean isInitialized();
+
+    T detachedClone();
+
+    PuppeteerDescription getPuppeteerDescription();
 
 }

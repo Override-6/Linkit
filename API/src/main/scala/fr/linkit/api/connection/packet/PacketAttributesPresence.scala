@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet
 
-//TODO -------------------------------------------------- MAINTAINED --------------------------------------------------
+//TODO --------------------------------------------- PARTIALLY MAINTAINED ---------------------------------------------
 
 trait PacketAttributesPresence {
 

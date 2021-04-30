@@ -12,8 +12,8 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
-import fr.linkit.core.connection.packet.serialization.tree._
-import fr.linkit.core.local.mapping.ClassMappings
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext.ClassProfile
+import fr.linkit.core.connection.packet.serialization.tree.{ByteSeq, _}
 import fr.linkit.core.local.utils.NumberSerializer
 import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
 
@@ -22,22 +22,23 @@ object EnumNode {
     def apply[E <: Enum[E]]: NodeFactory[E] = new NodeFactory[E] {
         override def canHandle(clazz: Class[_]): Boolean = clazz.isEnum
 
-        override def canHandle(bytes: ByteSeqInfo): Boolean = {
+        override def canHandle(bytes: ByteSeq): Boolean = {
             bytes.classExists(_.isEnum)
         }
 
-        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[E] = {
-            new EnumSerialNode[E](parent)
+        override def newNode(finder: SerialContext, profile: ClassProfile[E]): SerialNode[E] = {
+            new EnumSerialNode[E](profile)
         }
 
-        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[E] = {
-            new EnumDeserialNode[E](parent, bytes)
+        override def newNode(finder: SerialContext, seq: ByteSeq): DeserialNode[E] = {
+            new EnumDeserialNode[E](finder.getClassProfile(seq.getHeaderClass), seq)
         }
     }
 
-    class EnumSerialNode[E <: Enum[E]](override val parent: SerialNode[_]) extends SerialNode[E] {
+    class EnumSerialNode[E <: Enum[E]](profile: ClassProfile[E]) extends SerialNode[E] {
 
         override def serialize(t: E, putTypeHint: Boolean): Array[Byte] = {
+            profile.applyAllSerialProcedures(t)
             println(s"Serializing enum ${t}")
             val name     = t.name()
             val enumType = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
@@ -47,14 +48,16 @@ object EnumNode {
         }
     }
 
-    class EnumDeserialNode[E <: Enum[E]](override val parent: DeserialNode[_], bytes: Array[Byte]) extends DeserialNode[E] {
+    class EnumDeserialNode[E <: Enum[E]](profile: ClassProfile[E], bytes: ByteSeq) extends DeserialNode[E] {
 
         override def deserialize(): E = {
             println(s"Deserializing enum ${toPresentableString(bytes)}")
-            val enumType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
-            val name     = new String(bytes.drop(4))
+            val enumType = bytes.getHeaderClass
+            val name     = new String(bytes.array.drop(4))
             println(s"Name = $name")
-            Enum.valueOf(enumType.asInstanceOf[Class[E]], name)
+            val enum = Enum.valueOf(enumType.asInstanceOf[Class[E]], name)
+            profile.applyAllDeserialProcedures(enum)
+            enum
         }
     }
 

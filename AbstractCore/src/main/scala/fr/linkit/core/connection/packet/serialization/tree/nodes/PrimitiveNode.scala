@@ -12,7 +12,7 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
-import fr.linkit.core.connection.packet.serialization.tree.NodeFinder.MegaByte
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext.{ClassProfile, MegaByte}
 import fr.linkit.core.connection.packet.serialization.tree._
 import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 
@@ -36,24 +36,25 @@ object PrimitiveNode {
             clazz.isPrimitive || (classOf[Number].isAssignableFrom(clazz) && clazz.getPackageName == "java.lang") || OtherWrapperClasses.contains(clazz)
         }
 
-        override def canHandle(info: ByteSeqInfo): Boolean = !info.isClassDefined && info.bytes.nonEmpty && {
-            println(s"info.bytes = ${info.bytes.mkString("Array(", ", ", ")")}")
+        override def canHandle(info: ByteSeq): Boolean = !info.isClassDefined && info.array.nonEmpty && {
+            println(s"info.bytes = ${info.array.mkString("Array(", ", ", ")")}")
             TypeFlags.exists(info.sameFlag)
         }
 
-        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[AnyVal] = {
-            new PrimitiveSerialNode(parent)
+        override def newNode(context: SerialContext, profile: ClassProfile[AnyVal]): SerialNode[AnyVal] = {
+            new PrimitiveSerialNode(profile)
         }
 
-        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[AnyVal] = {
-            new PrimitiveDeserialNode(bytes, parent)
+        override def newNode(context: SerialContext, bytes: ByteSeq): DeserialNode[AnyVal] = {
+            new PrimitiveDeserialNode(bytes, context)
         }
     }
 
-    class PrimitiveSerialNode[T <: AnyVal](override val parent: SerialNode[_]) extends SerialNode[T] {
+    class PrimitiveSerialNode[T <: AnyVal](profile: ClassProfile[AnyVal]) extends SerialNode[T] {
 
         override def serialize(t: T, putTypeHint: Boolean): Array[Byte] = {
             println(s"Serializing primitive ${t}")
+            profile.applyAllSerialProcedures(t)
             val (bytes, flag) = t match {
                 case i: Int     => (NumberSerializer.serializeNumber(i, true), IntFlag)
                 case b: Byte    => (NumberSerializer.serializeNumber(b, true), ByteFlag)
@@ -70,7 +71,7 @@ object PrimitiveNode {
         }
     }
 
-    class PrimitiveDeserialNode(bytes: Array[Byte], override val parent: DeserialNode[_]) extends DeserialNode[AnyVal] {
+    class PrimitiveDeserialNode(bytes: Array[Byte], context: SerialContext) extends DeserialNode[AnyVal] {
 
         override def deserialize(): AnyVal = {
             println(s"Deserializing primitive number from bytes ${ScalaUtils.toPresentableString(bytes)}")
@@ -90,6 +91,7 @@ object PrimitiveNode {
             }
             println(s"result = ${result}")
             println(s"result.getClass = ${result.getClass}")
+            context.getClassProfile[AnyVal](result.getClass.asInstanceOf[Class[_ <: AnyVal]]).applyAllDeserialProcedures(result)
             result
         }
     }

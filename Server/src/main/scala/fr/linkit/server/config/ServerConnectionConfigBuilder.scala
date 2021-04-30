@@ -24,10 +24,10 @@ abstract class ServerConnectionConfigBuilder {
     var nWorkerThreadFunction: Int => Int  = _ * 2 + 1 //2 threads per external connection allocated + 1 for the server connection
     var configName           : String      = s"config#$count"
     var hasher               : BytesHasher = BytesHasher.inactive
+    lazy val translatorFactory: PacketTranslator = new SimplePacketTranslator
+    var identifierAmbiguityStrategy: AmbiguityStrategy = AmbiguityStrategy.REJECT_NEW
     val identifier: String
     val port      : Int
-    lazy val translator: PacketTranslator = new SimplePacketTranslator(hasher)
-    var identifierAmbiguityStrategy: AmbiguityStrategy = AmbiguityStrategy.REJECT_NEW
 
     def build(): ServerConnectionConfiguration = {
         val builder = this
@@ -39,7 +39,7 @@ abstract class ServerConnectionConfigBuilder {
             override val identifier                 : String            = builder.identifier
             override val port                       : Int               = builder.port
             override val hasher                     : BytesHasher       = builder.hasher
-            override val translator                 : PacketTranslator  = builder.translator
+            override val translator                 : PacketTranslator  = builder.translatorFactory
             override val identifierAmbiguityStrategy: AmbiguityStrategy = builder.identifierAmbiguityStrategy
         }
     }

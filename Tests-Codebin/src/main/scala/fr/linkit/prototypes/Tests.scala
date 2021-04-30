@@ -15,7 +15,7 @@ package fr.linkit.prototypes
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.core.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
-import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, Puppeteer}
+import fr.linkit.core.connection.network.cache.puppet.{PuppetClassDesc, Puppeteer}
 import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.serialization.DefaultSerializer
@@ -48,14 +48,12 @@ object Tests {
         PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
         PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileAdapter])
 
+        val serializer = new DefaultSerializer
         val ref   = Array(coords, attributes, packet)
-        val bytes = DefaultSerializer.serialize(ref, true)
+        val bytes = serializer.serialize(ref, true)
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (l: ${bytes.length})")
-        val result = DefaultSerializer.deserializeAll(bytes)
+        val result = serializer.deserializeAll(bytes)
         println(s"result = ${result.mkString("Array(", ", ", ")")}")
-        println(s"result(1).getAttribute(25L) = ${result(1).asInstanceOf[SimplePacketAttributes].getAttribute("25L")}")
-        println(s"result(2).toLocalDateTime = ${result(2).asInstanceOf[ObjectPacket].casted[Timestamp].toLocalDateTime}")
-        println(s"result(2) = ${result(2).asInstanceOf[ObjectPacket].casted[Timestamp]}")
     }
 
     private def doMappings(): Unit = {
@@ -63,14 +61,14 @@ object Tests {
         ClassMapEngine.mapJDK(fsa)
     }
 
-    private def getTestPuppet: NIOFileSystemAdapter = {
-        val clazz = PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
+    private def getTestPuppet: Unit = {
+        /*val clazz = PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
         clazz.getConstructor(classOf[Puppeteer[_]], classOf[NIOFileSystemAdapter]).newInstance(new Puppeteer[NIOFileSystemAdapter](
             null,
             null,
             -4,
             "stp",
-            PuppetClassFields.ofClass(classOf[NIOFileSystemAdapter]
-            )), LocalFileSystemAdapters.Nio)
+            PuppetClassDesc.ofClass(classOf[NIOFileSystemAdapter]
+            )), LocalFileSystemAdapters.Nio)*/
     }
 }

@@ -12,7 +12,8 @@
 
 package fr.linkit.core.connection.packet.serialization.tree.nodes
 
-import fr.linkit.core.connection.packet.serialization.tree.{ByteSeqInfo, DeserialNode, NodeFactory, NodeFinder, SerialNode, SerializableClassDescription}
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext.ClassProfile
+import fr.linkit.core.connection.packet.serialization.tree._
 
 object StringNode extends NodeFactory[String] {
 
@@ -20,22 +21,31 @@ object StringNode extends NodeFactory[String] {
 
     override def canHandle(clazz: Class[_]): Boolean = clazz == classOf[String]
 
-    override def canHandle(bytes: ByteSeqInfo): Boolean = bytes.sameFlag(StringFlag(0))
+    override def canHandle(bytes: ByteSeq): Boolean = bytes.sameFlag(StringFlag(0))
 
-    override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[String] = new StringSerialNode(parent)
+    override def newNode(finder: SerialContext, profile: ClassProfile[String]): SerialNode[String] = {
+        new StringSerialNode(profile)
+    }
 
-    override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[String] = new StringDeserialNode(parent, bytes)
+    override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[String] = {
+        new StringDeserialNode(finder.getProfile[String], bytes)
+    }
 
-    class StringSerialNode(override val parent: SerialNode[_]) extends SerialNode[String] {
+    class StringSerialNode(profile: ClassProfile[String]) extends SerialNode[String] {
 
         override def serialize(t: String, putTypeHint: Boolean): Array[Byte] = {
+            profile.applyAllSerialProcedures(t)
             StringFlag ++ t.getBytes()
         }
     }
 
-    class StringDeserialNode(override val parent: DeserialNode[_], bytes: Array[Byte]) extends DeserialNode[String] {
+    class StringDeserialNode(profile: ClassProfile[String], bytes: Array[Byte]) extends DeserialNode[String] {
 
-        override def deserialize(): String = new String(bytes.drop(1))
+        override def deserialize(): String = {
+            val result = new String(bytes.drop(1))
+            profile.applyAllDeserialProcedures(result)
+            result
+        }
     }
 
 }

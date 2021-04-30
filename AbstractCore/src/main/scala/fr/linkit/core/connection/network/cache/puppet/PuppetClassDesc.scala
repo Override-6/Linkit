@@ -18,9 +18,9 @@ import org.jetbrains.annotations.Nullable
 import java.lang.annotation.Annotation
 import java.lang.reflect._
 
-class PuppetClassFields private(val puppetClass: Class[_],
-                                val puppetConstructor: Constructor[_],
-                                val classAnnotation: SharedObject) {
+class PuppetClassDesc private(val puppetClass: Class[_],
+                              val puppetConstructor: Constructor[_],
+                              val classAnnotation: SharedObject) {
 
     def isAutoFlush: Boolean = classAnnotation.autoFlush()
 
@@ -28,21 +28,21 @@ class PuppetClassFields private(val puppetClass: Class[_],
         prepare(puppetClass.getDeclaredField(name))
     }
 
-    def getSharedMethod(name: String, args: Seq[Class[_]]): Method = {
+    def getSharedMethod(name: String, args: Seq[Class[_]]): Option[Method] = {
         try {
-            puppetClass.getDeclaredMethod(name, args: _*)
+            Option(puppetClass.getDeclaredMethod(name, args: _*))
         } catch {
             case _: NoSuchMethodException =>
-                for ((arg1, i) <- args) {
-                    var superClass = arg1.getSuperclass
-                    while (superClass != null) {
-                        for (arg2 <- args) {
-                            if (arg2 != arg1) {
-
-                            }
-                        }
-                    }
-                }
+                puppetClass.getDeclaredMethods
+                        .filter(_.getName == name)
+                        .find(method => {
+                            method.getParameterCount == args.size && isShared(method) &&
+                                    method.getParameterTypes
+                                            .zip(args)
+                                            .forall {
+                                                case (parameterType, argType) => parameterType.isAssignableFrom(argType)
+                                            }
+                        })
         }
     }
 
@@ -75,7 +75,7 @@ class PuppetClassFields private(val puppetClass: Class[_],
 
 }
 
-object PuppetClassFields {
+object PuppetClassDesc {
 
     val DefaultAnnotation: SharedObject = new SharedObject {
         override def autoFlush(): Boolean = true
@@ -85,11 +85,11 @@ object PuppetClassFields {
         override def annotationType(): Class[_ <: Annotation] = getClass
     }
 
-    def ofRef(anyRef: Serializable): PuppetClassFields = {
+    def ofRef(anyRef: Serializable): PuppetClassDesc = {
         ofClass(anyRef.getClass)
     }
 
-    def ofClass[S <: Serializable](clazz: Class[S]): PuppetClassFields = {
+    def ofClass(clazz: Class[_]): PuppetClassDesc = {
 
         val annotation = Option(clazz.getAnnotation(classOf[SharedObject])).getOrElse(DefaultAnnotation)
 
@@ -104,6 +104,6 @@ object PuppetClassFields {
                        |""".stripMargin
                 ))
 
-        new PuppetClassFields(clazz, puppetConstructor, annotation)
+        new PuppetClassDesc(clazz, puppetConstructor, annotation)
     }
 }

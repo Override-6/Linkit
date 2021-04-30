@@ -12,37 +12,38 @@
 
 package fr.linkit.core.connection.packet.serialization
 
-import fr.linkit.api.connection.network.cache.SharedCacheManager
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.serialization._
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
-import fr.linkit.api.local.system.security.BytesHasher
 
-class SimplePacketTranslator(hasher: BytesHasher) extends PacketTranslator {
+class SimplePacketTranslator extends PacketTranslator {
+
+    private val serializer = new DefaultSerializer()
 
     override def translate(packetInfo: TransferInfo): PacketSerializationResult = {
-        new LazyPacketSerializationResult(packetInfo, () => DefaultSerializer)
+        new LazyPacketSerializationResult(packetInfo, () => serializer)
     }
 
     //TODO Create trait named "PacketDeserializationResult" even if it is empty.
     override def translate(bytes: Array[Byte]): PacketTransferResult = {
-        new LazyPacketDeserializationResult(bytes, () => DefaultSerializer)
+        new LazyPacketDeserializationResult(bytes, () => serializer)
     }
 
     override def translateCoords(coords: PacketCoordinates, target: String): Array[Byte] = {
-        DefaultSerializer.serialize(coords, false)
+        serializer.serialize(coords, false)
     }
 
     override def translateAttributes(attribute: PacketAttributes, target: String): Array[Byte] = {
-        DefaultSerializer.serialize(attribute, false)
+        serializer.serialize(attribute, false)
     }
 
     override def translatePacket(packet: Packet, target: String): Array[Byte] = {
-        DefaultSerializer.serialize(packet, false)
+        serializer.serialize(packet, false)
     }
 
-    override def updateCache(manager: SharedCacheManager): Unit = ()
+    override def getSerializer: Serializer = serializer
 
-    override def findSerializerFor(target: String): Option[Serializer] = Some(DefaultSerializer)
+    override def initNetwork(network: Network): Unit = serializer.initNetwork(network)
 
-    override val signature: Array[Byte] = DefaultSerializer.signature
+    override val signature: Array[Byte] = serializer.signature
 }

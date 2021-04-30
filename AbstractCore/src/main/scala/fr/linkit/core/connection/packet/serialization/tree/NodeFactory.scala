@@ -12,14 +12,16 @@
 
 package fr.linkit.core.connection.packet.serialization.tree
 
+import fr.linkit.core.connection.packet.serialization.tree.SerialContext.ClassProfile
+
 trait NodeFactory[T] {
 
     def canHandle(clazz: Class[_]): Boolean
 
-    def canHandle(info: ByteSeqInfo): Boolean
+    def canHandle(info: ByteSeq): Boolean
 
-    def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[T]
+    def newNode(finder: SerialContext, profile: ClassProfile[T]): SerialNode[T]
 
-    def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[T]
+    def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[T]
 
 }

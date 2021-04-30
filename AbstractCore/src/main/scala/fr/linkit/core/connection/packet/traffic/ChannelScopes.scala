@@ -53,7 +53,7 @@ object ChannelScopes {
 
     }
 
-    final case class RetainScope private(override val writer: PacketWriter, authorisedIds: String*)
+    final case class RetainerScope private(override val writer: PacketWriter, authorisedIds: String*)
             extends AbstractAttributesPresence with ChannelScope {
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
@@ -85,8 +85,8 @@ object ChannelScopes {
 
         override def equals(obj: Any): Boolean = {
             obj match {
-                case s: RetainScope => s.authorisedIds == this.authorisedIds
-                case _              => false
+                case s: RetainerScope => s.authorisedIds == this.authorisedIds
+                case _                => false
             }
         }
 
@@ -100,6 +100,6 @@ object ChannelScopes {
 
     def discards(discarded: String*): ScopeFactory[BroadcastScope] = BroadcastScope(_, discarded: _*)
 
-    def retains(authorised: String*): ScopeFactory[RetainScope] = RetainScope(_, authorised: _*)
+    def retains(authorised: String*): ScopeFactory[RetainerScope] = RetainerScope(_, authorised: _*)
 
 }
