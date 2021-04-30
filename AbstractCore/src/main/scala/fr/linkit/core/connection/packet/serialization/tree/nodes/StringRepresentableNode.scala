@@ -38,32 +38,28 @@ object StringRepresentableNode {
         }
 
         override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[T] = {
-            new StringRepresentableSerialNode[T](parent, finder, repr)
+            new StringRepresentableSerialNode[T](parent, repr)
         }
 
         override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[T] = {
-            new StringRepresentableDeserialNode[T](parent, finder, bytes, repr)
+            new StringRepresentableDeserialNode[T](parent, bytes, repr)
         }
     }
 
-    class StringRepresentableSerialNode[T](override val parent: SerialNode[_], finder: NodeFinder, repr: StringRepresentable[T]) extends SerialNode[T] {
+    class StringRepresentableSerialNode[T](override val parent: SerialNode[_], repr: StringRepresentable[T]) extends SerialNode[T] {
 
         override def serialize(t: T, putTypeHint: Boolean): Array[Byte] = {
-            val node = finder.getSerialNodeForType[String](classOf[String], parent)
             val typeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
-            println(s"node = ${node}")
             //Thread.dumpStack()
-            SRFlag ++ typeBytes ++ node.serialize(repr.getRepresentation(t), putTypeHint)
+            SRFlag ++ typeBytes ++ repr.getRepresentation(t).getBytes
         }
     }
 
-    class StringRepresentableDeserialNode[T](override val parent: DeserialNode[_],
-                                             finder: NodeFinder, bytes: Array[Byte],
+    class StringRepresentableDeserialNode[T](override val parent: DeserialNode[_], bytes: Array[Byte],
                                              repr: StringRepresentable[T]) extends DeserialNode[T] {
 
         override def deserialize(): T = {
-            val str = finder.getDeserialNodeFor[String](bytes.drop(1)).deserialize()
-            repr.fromRepresentation(str)
+            repr.fromRepresentation(new String(bytes.drop(5)))
         }
     }
 

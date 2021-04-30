@@ -19,7 +19,6 @@ import java.net.URI
 import java.nio.file._
 
 case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystemAdapter) extends FileAdapter {
-
     def this(other: NIOFileAdapter) = {
         this(other.path, other.fsa)
     }
@@ -65,20 +64,18 @@ case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystem
 
     override def notExists: Boolean = Files.notExists(path)
 
-    override def createAsFile(): this.type = {
+    override def createAsFile(): Unit = {
         if (notExists) {
             if (Files.notExists(path.getParent))
                 Files.createDirectories(path.getParent)
             Files.createFile(path)
         }
-        this
     }
 
-    override def createAsFolder(): this.type = {
+    override def createAsFolder(): Unit = {
         if (notExists) {
             Files.createDirectories(path)
         }
-        this
     }
 
     override def isPresentOnDisk: Boolean = exists

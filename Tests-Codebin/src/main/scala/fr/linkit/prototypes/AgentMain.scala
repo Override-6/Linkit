@@ -17,11 +17,11 @@ object AgentMain {
     import java.lang.instrument.Instrumentation
 
     def premain(agentArgs: String, inst: Instrumentation): Unit = {
-        println("[Agent] In premain method")
+        //println("[Agent] In premain method")
     }
 
     def agentmain(agentArgs: String, inst: Instrumentation): Unit = {
-        println("[Agent] In agentmain method")
+        //println("[Agent] In agentmain method")
     }
 
 }

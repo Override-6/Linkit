@@ -38,6 +38,8 @@ object PuppetWrapperClassGenerator {
     private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetWrapper[_]]]()
 
     def getOrGenerate[S <: Serializable](clazz: Class[_ <: S]): Class[S with PuppetWrapper[S]] = {
+        if (clazz.isInterface)
+            throw new InvalidPuppetDefException("Provided class is an interface.")
         generatedClasses.getOrElseUpdate(clazz, genPuppetClass(clazz)).asInstanceOf[Class[S with PuppetWrapper[S]]]
     }
 
@@ -54,7 +56,7 @@ object PuppetWrapperClassGenerator {
         }
         Files.write(path, sourceCode.getBytes)
 
-        val javacProcess = new ProcessBuilder("javac", "-d", GeneratedClassesFolder, s"-cp", classPaths, path.toString)
+        val javacProcess = new ProcessBuilder("javac", "-d", GeneratedClassesFolder, "-Xlint:unchecked", s"-cp", classPaths, path.toString)
         javacProcess.redirectOutput(ProcessBuilder.Redirect.INHERIT)
         javacProcess.redirectError(ProcessBuilder.Redirect.INHERIT)
         javacProcess.directory(new File(GeneratedClassesFolder))
@@ -83,13 +85,16 @@ object PuppetWrapperClassGenerator {
         fieldBuilder.toString()
     }
 
+    private def genMethodReturnType(method: Method): String = {
+        method.getGenericReturnType.getTypeName
+    }
+
     private def genPuppetClassSourceCode[S <: Serializable](clazz: Class[_ <: S]): String = {
         val sourceBuilder = new StringBuilder()
         val desc          = PuppetClassFields.ofClass(clazz)
 
         val puppetClassSimpleName = s"Puppet${clazz.getSimpleName}"
         val superClassName        = clazz.getCanonicalName
-        val puppetClassName       = GeneratedClassesPackage + '.' + puppetClassSimpleName
         val constantGettersFields = genConstantGettersFields(desc)
         val puppeteerType         = s"Puppeteer<$superClassName>"
         sourceBuilder.append(
@@ -111,25 +116,14 @@ object PuppetWrapperClassGenerator {
                |    this.puppeteer.init(this, clone);
                |}
                |
+               |//Override
                |public void initPuppet(Puppeteer<$superClassName> puppeteer) throws PuppetAlreadyInitialisedException {
                |    if (this.puppeteer != null)
                |        throw new PuppetAlreadyInitialisedException("This puppet is already initialized !");
                |    this.puppeteer = puppeteer;
                |}
                |
-               |public boolean canEqual(Object that) {
-               |     return that instanceof $puppetClassName;
-               |}
-               |
-               |public int productArity() {
-               |     return 0;
-               |}
-               |
-               |public Object productElement(int n) {
-               |     return null;
-               |}
-               |
-               |//Overrode methods will be generated here
+               |//Overridden methods will be generated here
                |""".stripMargin)
 
         desc.foreachSharedMethods(method => {
@@ -140,7 +134,7 @@ object PuppetWrapperClassGenerator {
                 parameterType.getTypeName + s" $$$i"
             }).mkString(",")
             val body       = genMethodBody(method)
-            val returnType = method.getReturnType.getTypeName
+            val returnType = genMethodReturnType(method)
             sourceBuilder.append(
                 s"""
                    |public $returnType $name($parameters) {

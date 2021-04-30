@@ -65,18 +65,16 @@ case class IOFileAdapter private[io](file: File, @transient fsa: IOFileSystemAda
 
     override def notExists: Boolean = !exists
 
-    override def createAsFile(): this.type = {
+    override def createAsFile(): Unit = {
         if (notExists) {
             file.createNewFile()
         }
-        this
     }
 
-    override def createAsFolder(): this.type = {
+    override def createAsFolder(): Unit = {
         if (notExists) {
             file.mkdirs()
         }
-        this
     }
 
     override def newInputStream(append: Boolean = false): InputStream = new FileInputStream(file)

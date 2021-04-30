@@ -90,7 +90,7 @@ object RemoteFileSystemAdapter {
                 .entityCache
 
         val sharedObjects = cache.getCache(27, SharedObjectsCache)
-        println(s"sharedObjects = ${sharedObjects}")
+        //println(s"sharedObjects = ${sharedObjects}")
         val remoteFSA = sharedObjects.findCloudObject[AbstractFileSystemAdapter](delegateFSA.getName.hashCode)
                 .getOrElse(throw new UnsupportedOperationException(s"${delegateFSA.getSimpleName} not found for connection ${connection.boundIdentifier}"))
         new RemoteFileSystemAdapter(remoteFSA, sharedObjects)

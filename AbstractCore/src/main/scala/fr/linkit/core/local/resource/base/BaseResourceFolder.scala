@@ -55,7 +55,7 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
     @throws[IllegalResourceException]("If the provided name contains invalid character")
     override def openResource[R <: ExternalResource : ClassTag](name: String, factory: ExternalResourceFactory[R]): R = {
         ensureResourceOpenable(name)
-        println(s"Opening resource $name, ${classTag[R].runtimeClass}")
+        //println(s"Opening resource $name, ${classTag[R].runtimeClass}")
 
         register(name, factory)
     }

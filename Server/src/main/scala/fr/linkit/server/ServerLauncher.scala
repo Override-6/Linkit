@@ -72,20 +72,20 @@ object ServerLauncher {//
             return homePath
 
         val scanner = new Scanner(System.in)
-        println(s"Environment variable '$HomeProperty' is not set !")
-        println(s"Would you like to set your own path for the Linkit Framework home ?")
-        println(s"Say 'y' to set your custom path, or something else to use default path '$DefaultHomePath'")
+        //println(s"Environment variable '$HomeProperty' is not set !")
+        //println(s"Would you like to set your own path for the Linkit Framework home ?")
+        //println(s"Say 'y' to set your custom path, or something else to use default path '$DefaultHomePath'")
         print("> ")
         val response       = scanner.nextLine()
         val linkitHomePath = if (response.startsWith("y")) {
-            println("Enter your custom path (the folder will be created if it does not exists)")
+            //println("Enter your custom path (the folder will be created if it does not exists)")
             print("> ")
             scanner.nextLine()
         } else DefaultHomePath
         setEnvHome(linkitHomePath)
-        println(s"Linkit home path has been set to $linkitHomePath.")
-        println("(If this java process is a child from another process, such as an IDE")
-        println("You may restart the mother process in order to complete the environment variable update)")
+        //println(s"Linkit home path has been set to $linkitHomePath.")
+        //println("(If this java process is a child from another process, such as an IDE")
+        //println("You may restart the mother process in order to complete the environment variable update)")
 
         linkitHomePath
     }

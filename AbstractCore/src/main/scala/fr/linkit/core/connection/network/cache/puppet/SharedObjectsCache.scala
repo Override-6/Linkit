@@ -198,7 +198,7 @@ object SharedObjectsCache extends SharedCacheFactory[SharedObjectsCache] {
             val clazz = any.getClass
 
             listRestorableFields(clazz).foreach(field => {
-                ScalaUtils.setFieldValue(field, any, values(field))
+                ScalaUtils.setValue(any, field, values(field))
             })
         }
 

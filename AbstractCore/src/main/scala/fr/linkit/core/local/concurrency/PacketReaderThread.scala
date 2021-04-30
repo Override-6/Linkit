@@ -40,7 +40,7 @@ class PacketReaderThread(reader: PacketReader,
     override def run(): Unit = {
         try {
             while (open) {
-                println("Waiting for next packet...")
+                //println("Waiting for next packet...")
                 refresh()
             }
         } catch {
@@ -48,7 +48,7 @@ class PacketReaderThread(reader: PacketReader,
                 AppLogger.error("Packet reading threw an error", e)
                 open = false
         } finally {
-            println("STOPPED PACKET WORKER")
+            //println("STOPPED PACKET WORKER")
         }
     }
 

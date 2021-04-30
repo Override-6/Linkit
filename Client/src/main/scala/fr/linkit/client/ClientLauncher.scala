@@ -37,17 +37,17 @@ object ClientLauncher {
         AppLogger.info(s"Running client with arguments '${args.mkString(" ")}'")
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
 
-        println("Say 'y' to connect to localhost")
+        //println("Say 'y' to connect to localhost")
         print("> ")
         val scanner     = new Scanner(System.in)
         val isLocalhost = scanner.nextLine().startsWith("y")
         val address     = if (isLocalhost) Localhost else ServerAddress
 
-        println("Choose an identifier")
+        //println("Choose an identifier")
         print("> ")
         val identifier = scanner.nextLine()
 
-        println(s"Choose how much client will connect to $address")
+        //println(s"Choose how much client will connect to $address")
         print("Nothing = 1 > ")
         val numberEntry = scanner.nextLine()
         val raidCount   = if (numberEntry.isEmpty) 1 else numberEntry.toInt
@@ -63,20 +63,20 @@ object ClientLauncher {
             return homePath
 
         val scanner = new Scanner(System.in)
-        println(s"Environment variable '$HomeProperty' is not set !")
-        println(s"Would you like to set your own path for the Linkit Framework home ?")
-        println(s"Say 'y' to set your custom path, or something else to use default path '$DefaultHomePath'")
+        //println(s"Environment variable '$HomeProperty' is not set !")
+        //println(s"Would you like to set your own path for the Linkit Framework home ?")
+        //println(s"Say 'y' to set your custom path, or something else to use default path '$DefaultHomePath'")
         print("> ")
         val response       = scanner.nextLine()
         val linkitHomePath = if (response.startsWith("y")) {
-            println("Enter your custom path (the folder will be created if it does not exists)")
+            //println("Enter your custom path (the folder will be created if it does not exists)")
             print("> ")
             scanner.nextLine()
         } else DefaultHomePath
         setEnvHome(linkitHomePath)
-        println(s"Linkit home path has been set to $linkitHomePath.")
-        println("(If this java process is a child from another process, such as an IDE")
-        println("You may restart the mother process in order to complete the environment variable update)")
+        //println(s"Linkit home path has been set to $linkitHomePath.")
+        //println("(If this java process is a child from another process, such as an IDE")
+        //println("You may restart the mother process in order to complete the environment variable update)")
 
         linkitHomePath
     }

@@ -18,6 +18,8 @@ import fr.linkit.core.connection.packet.serialization.tree.nodes.ObjectNode.Null
 import fr.linkit.core.local.utils.NumberSerializer
 import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
 
+import scala.util.Try
+
 object ArrayNode extends NodeFactory[Array[_]] {
 
     val ArrayFlag: Byte = -54
@@ -71,7 +73,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
                     lastNode = tree.getSerialNodeForType(itemClass)
                 println(s"Serializing array item $item ($i)")
                 val bytes = lastNode.serialize(cast(item), typeChange) //if type have changed, we need to specify the new type.
-                println(s"array item $item into bytes is now ${toPresentableString(bytes)}")
+                println(s"array item $item into bytes is now ${bytes.mkString("Array(", ", ", ")")}")
 
                 byteArrays(i) = bytes
                 if (i != lengths.length)
@@ -81,11 +83,11 @@ object ArrayNode extends NodeFactory[Array[_]] {
             }
 
             println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
-            val sign       = lengths.flatMap(i => NumberSerializer.serializeNumber(i, true))
+            val sign = lengths.flatMap(i => NumberSerializer.serializeNumber(i, true))
             println(s"array sign = ${toPresentableString(sign)}")
             val signLength = NumberSerializer.serializeNumber(lengths.length, true)
-            println(s"sign length = ${toPresentableString(signLength)}")
-            val result     = ArrayFlag /\ signLength ++ sign ++ byteArrays.flatten
+            println(s"sign length = ${signLength.mkString("Array(", ", ", ")")}")
+            val result = ArrayFlag /\ signLength ++ sign ++ byteArrays.flatten
             println(s"result = ${toPresentableString(result)}")
             result
         }
@@ -105,8 +107,8 @@ object ArrayNode extends NodeFactory[Array[_]] {
             val (signItemCount, sizeByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, 1) //starting from 1 because first byte is the array flag.
             println(s"signItemCount = ${signItemCount}")
             println(s"sizeByteCount = ${sizeByteCount}")
-            val sign                                 = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 1)
-            val result                               = new Array[Any](sign.childrenBytes.length)
+            val sign   = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 1)
+            val result = new Array[Any](sign.childrenBytes.length)
 
             var i = 0
             for (childBytes <- sign.childrenBytes) {
@@ -114,7 +116,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
                 val node = tree.getDeserialNodeFor(childBytes, this)
                 println(s"node = ${node}")
                 result(i) = node.deserialize()
-                println(s"array item deserialize result = ${result(i)}")
+                Try(println(s"array item deserialize result = ${result(i)}"))
                 i += 1
             }
             result

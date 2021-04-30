@@ -26,13 +26,13 @@ case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
 
     def updateField(fieldName: String, value: Any): Unit = {
         desc.getSharedField(fieldName)
-                .fold()(ScalaUtils.setFieldValue(_, puppet, value))
+                .fold()(ScalaUtils.setValue(puppet, _, value))
     }
 
     def updateAllFields(obj: Serializable): Unit = {
         desc.foreachSharedFields(field => {
             val value = field.get(obj)
-            ScalaUtils.setFieldValue(field, puppet, value)
+            ScalaUtils.setValue(puppet, field, value)
         })
     }
 
@@ -62,7 +62,7 @@ case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
 
             case ObjectPacket((fieldName: String, value: Any)) =>
                 val field = desc.getSharedField(fieldName).get
-                ScalaUtils.setFieldValue(field, puppet, value)
+                ScalaUtils.setValue(puppet, field, value)
         }
     }
 

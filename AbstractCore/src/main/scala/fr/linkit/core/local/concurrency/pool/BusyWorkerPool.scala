@@ -44,7 +44,7 @@ import scala.collection.mutable.ListBuffer
  * {{{
  *      val channel = relay.getInjectable(x, ChannelScope.y, SyncPacketChannel)
  *      val nextPacket = channel.nextPacket()
- *      println("A new packet has been received !")
+ *      //println("A new packet has been received !")
  *      // Process nextPacket....
  * }}}
  *
@@ -53,7 +53,7 @@ import scala.collection.mutable.ListBuffer
  *      val injectable = //Retrieves the needed injectable, stored with 'x' identifier
  *      val packetInjection = //Get the concerned injection object
  *      injectable.injectPacket(packetInjection) //The injection will notify the first thread.
- *      println("Another packet injection has been performed !")
+ *      //println("Another packet injection has been performed !")
  * }}}
  *
  * <h2> Solution </h2>

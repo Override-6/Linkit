@@ -47,15 +47,15 @@ class SimpleResourceListener(resourcePath: String) extends ResourceListener with
     private def listen(): Unit = {
         val key    = watcher.take()
         val events = key.pollEvents().asInstanceOf[util.List[WatchEvent[Path]]]
-        println(s"events = ${events.stream().map(_.kind().name()).toArray.mkString("Array(", ", ", ")")}")
+        //println(s"events = ${events.stream().map(_.kind().name()).toArray.mkString("Array(", ", ", ")")}")
         events.forEach(event => {
 
             val folder = key.watchable().asInstanceOf[Path]
             val path   = folder.resolve(event.context())
 
             if (path.getFileName.toString != ResourceFolderMaintainer.MaintainerFileName) {
-                println(s"file updated ${path}")
-                println(s"in folder $folder")
+                //println(s"file updated ${path}")
+                //println(s"in folder $folder")
                 import StandardWatchEventKinds._
                 keys.get(folder.toString).fold() { pair =>
                     val key                    = pair._1

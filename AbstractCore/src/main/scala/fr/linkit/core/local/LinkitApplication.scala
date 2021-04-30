@@ -140,7 +140,9 @@ object LinkitApplication {
         LocalFileSystemAdapters.Io.clearAdapters()
 
         PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
+        PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileAdapter])
         PuppetWrapperClassGenerator.getOrGenerate(classOf[IOFileSystemAdapter])
+        PuppetWrapperClassGenerator.getOrGenerate(classOf[IOFileAdapter])
     }
 
     @workerExecution

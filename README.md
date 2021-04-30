@@ -146,7 +146,7 @@ val relayPoint: RelayPoint = new RelayPointBuilder {
 
 relayPoint.runLater {
     relayPoint.start()
-    println("Client started !") 
+    //println("Client started !") 
 }
 ```
 

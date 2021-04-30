@@ -37,8 +37,8 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     postInit()
 
     override def listEntities: List[NetworkEntity] = {
-        println(s"entities = ${entities}")
-        println(s"sharedIdentifiers = ${sharedIdentifiers}")
+        //println(s"entities = ${entities}")
+        //println(s"sharedIdentifiers = ${sharedIdentifiers}")
         entities.toList
     }
 

@@ -14,7 +14,7 @@ package fr.linkit.core.connection.packet.serialization.tree.nodes
 
 import fr.linkit.core.connection.packet.serialization.tree._
 import fr.linkit.core.local.mapping.ClassMappings
-import fr.linkit.core.local.utils.NumberSerializer
+import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
 import fr.linkit.core.local.utils.ScalaUtils.toPresentableString
 import sun.misc.Unsafe
 
@@ -26,7 +26,7 @@ object ObjectNode {
     val Constraints   : Array[Class[_] => Boolean] = Array(_.isPrimitive, _.isArray, _.isEnum, _ == classOf[String])
     val NullObjectFlag: Byte                       = -76
 
-    def apply: NodeFactory[Serializable] = new NodeFactory[Serializable] {
+    def apply: NodeFactory[Any] = new NodeFactory[Any] {
         override def canHandle(clazz: Class[_]): Boolean = {
             !Constraints.exists(_ (clazz))
         }
@@ -35,11 +35,11 @@ object ObjectNode {
             bytes.sameFlag(NullObjectFlag) || bytes.isClassDefined
         }
 
-        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Serializable] = {
+        override def newNode(finder: NodeFinder, desc: SerializableClassDescription, parent: SerialNode[_]): SerialNode[Any] = {
             new ObjectSerialNode(parent, desc, finder)
         }
 
-        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Serializable] = {
+        override def newNode(finder: NodeFinder, bytes: Array[Byte], parent: DeserialNode[_]): DeserialNode[Any] = {
             new ObjectDeserialNode(parent, bytes, finder)
         }
     }
@@ -58,9 +58,9 @@ object ObjectNode {
         throw new IllegalStateException("No instance of Unsafe found")
     }
 
-    class ObjectSerialNode(override val parent: SerialNode[_], desc: SerializableClassDescription, tree: NodeFinder) extends SerialNode[Serializable] {
+    class ObjectSerialNode(override val parent: SerialNode[_], desc: SerializableClassDescription, tree: NodeFinder) extends SerialNode[Any] {
 
-        override def serialize(t: Serializable, putTypeHint: Boolean): Array[Byte] = {
+        override def serialize(t: Any, putTypeHint: Boolean): Array[Byte] = {
             println(s"Serializing Object ${t}")
             println(s"Object desc = ${desc}")
             if (t == null)
@@ -81,9 +81,9 @@ object ObjectNode {
         }
     }
 
-    class ObjectDeserialNode(override val parent: DeserialNode[_], bytes: Array[Byte], tree: NodeFinder) extends DeserialNode[Serializable] {
+    class ObjectDeserialNode(override val parent: DeserialNode[_], bytes: Array[Byte], tree: NodeFinder) extends DeserialNode[Any] {
 
-        override def deserialize(): Serializable = {
+        override def deserialize(): Any = {
             if (bytes(0) == NullObjectFlag)
                 return null
 
@@ -109,46 +109,14 @@ object ObjectNode {
             desc.foreachDeserializableFields { (i, field) =>
                 println(s"For object field number (of object $objectType) $i: ")
                 println(s"Deserialized value : ${fieldValues(i)}")
-                setValue(instance, field, fieldValues(i))
+                ScalaUtils.setValue(instance, field, fieldValues(i))
             }
 
             println(s"(objectType) = ${objectType}")
-            println(s"Instance = $instance")
+            Try(println(s"Instance = $instance"))
             instance.asInstanceOf[Serializable]
         }
 
-        private def setValue(instance: AnyRef, field: Field, value: Any): Unit = {
-            val fieldOffset = TheUnsafe.objectFieldOffset(field)
-
-            import java.lang
-
-            import NumberSerializer.convertValue
-
-            println(s"value.getClass = ${Try(value.getClass).getOrElse(null)}")
-            val action: (AnyRef, Long) => Unit = if (field.getType.isPrimitive) {
-                value match {
-                    case i: Integer      => TheUnsafe.putInt(_, _, i)
-                    case b: lang.Byte    => TheUnsafe.putByte(_, _, b)
-                    case s: lang.Short   => TheUnsafe.putShort(_, _, s)
-                    case l: lang.Long    => TheUnsafe.putLong(_, _, l)
-                    case d: lang.Double  => TheUnsafe.putDouble(_, _, d)
-                    case f: lang.Float   => TheUnsafe.putFloat(_, _, f)
-                    case b: lang.Boolean => TheUnsafe.putBoolean(_, _, b)
-                    case c: Character    => TheUnsafe.putChar(_, _, c)
-                }
-            } else field.getType match {
-                case c if c eq classOf[Integer]      => TheUnsafe.putObject(_, _, convertValue(value, _.intValue))
-                case c if c eq classOf[lang.Byte]    => TheUnsafe.putObject(_, _, convertValue(value, _.byteValue))
-                case c if c eq classOf[lang.Short]   => TheUnsafe.putObject(_, _, convertValue(value, _.shortValue))
-                case c if c eq classOf[lang.Long]    => TheUnsafe.putObject(_, _, convertValue(value, _.longValue))
-                case c if c eq classOf[lang.Double]  => TheUnsafe.putObject(_, _, convertValue(value, _.doubleValue))
-                case c if c eq classOf[lang.Float]   => TheUnsafe.putObject(_, _, convertValue(value, _.floatValue))
-                case c if c eq classOf[lang.Boolean] => TheUnsafe.putObject(_, _, convertValue(value, _.booleanValue))
-                case c if c eq classOf[Character]    => TheUnsafe.putObject(_, _, convertValue(value, _.shortValue))
-                case _                               => TheUnsafe.putObject(_, _, value)
-            }
-            action(instance, fieldOffset)
-        }
     }
 
 

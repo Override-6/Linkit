@@ -19,11 +19,13 @@ import fr.linkit.core.connection.network.cache.puppet.{PuppetClassFields, Puppet
 import fr.linkit.core.connection.packet.SimplePacketAttributes
 import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.core.connection.packet.serialization.DefaultSerializer
+import fr.linkit.core.connection.packet.traffic.channel.request.RequestPacket
 import fr.linkit.core.local.mapping.{ClassMapEngine, ClassMappings}
 import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.core.local.system.fsa.nio.NIOFileSystemAdapter
+import fr.linkit.core.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
 import fr.linkit.core.local.utils.ScalaUtils
 
+import java.nio.file.Path
 import java.sql.Timestamp
 import java.time.Instant
 
@@ -36,12 +38,15 @@ object Tests {
     //private val generatedPuppet = getTestPuppet
 
     private val coords     = DedicatedPacketCoordinates(12, "TestServer1", "s1")
-    private val attributes = SimplePacketAttributes.from("25L" -> 25L)
-    private val packet     = ObjectPacket(Timestamp.from(Instant.now()))
+    private val attributes = SimplePacketAttributes.from("cache" -> 27, "id" -> -192009448, "family" -> "s1")
+    private val packet     = RequestPacket(9, Array(ObjectPacket(Array(Path.of("C:\\Users\\maxim\\Desktop\\fruits")))))
 
     def main(args: Array[String]): Unit = {
 
         ClassMappings.getClassOpt(classOf[Timestamp].getName.hashCode()).get
+
+        PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
+        PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileAdapter])
 
         val ref   = Array(coords, attributes, packet)
         val bytes = DefaultSerializer.serialize(ref, true)

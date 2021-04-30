@@ -103,7 +103,7 @@ object AppLogger {
 
         debug(s"RETRIEVING ${to - from} STACK LINES FOR THREAD ${currentThread.getName} :")
         for (i <- (from + 2) to to.min(stackTrace.length - 2) + 1) {
-            println("\t" + stackTrace(i))
+            //println("\t" + stackTrace(i))
         }*/
     }
 

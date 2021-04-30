@@ -37,7 +37,7 @@ object LengthSign {
     def of(root: Any, desc: SerializableClassDescription, children: Iterable[SerialNode[_]]): LengthSign = {
         println()
         println(s"--- Creating sign for object $root")
-        if (children.isEmpty)
+        if (children.isEmpty && desc.signItemCount == -1)
             return LengthSign(Array(), Array())
 
         val lengths    = new Array[Int](children.size - 1) //Discard the last field, we already know its length by deducting it from previous lengths
@@ -104,6 +104,8 @@ object LengthSign {
             println(s"childrenSize = ${childrenSize}")
             println(s"currentIndex = ${currentIndex}")
             val childrenBytes = bytes.slice(currentIndex, currentIndex + childrenSize)
+            println(s"childrenBytes = ${childrenBytes.mkString("Array(", ", ", ")")}")
+            println(s"bytes = ${bytes.mkString("Array(", ", ", ")")}")
             println(s"childrenBytes = ${ScalaUtils.toPresentableString(childrenBytes)}")
             childrenByteArrays(i) = childrenBytes
             currentIndex += childrenSize

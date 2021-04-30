@@ -72,7 +72,7 @@ object ClassMapEngine {
     private def mapDirectory(fsa: FileSystemAdapter, root: String,
                              directory: FileAdapter, classLoader: ClassLoader,
                              filters: MapEngineFilters): Unit = {
-        println(s"directory = ${directory}")
+        //println(s"directory = ${directory}")
         if (isZipFile(directory)) {
             val dirPath  = directory.getAbsolutePath
             val isInJMod = dirPath.endsWith(".jmod")
@@ -125,7 +125,7 @@ object ClassMapEngine {
         def canMap(className: String): Boolean = {
             if (in == null)
                 return true
-            println(s"filters = ${filters.mkString("Array(", ", ", ")")}")
+            //println(s"filters = ${filters.mkString("Array(", ", ", ")")}")
             filters.exists(_.isAuthorised(className))
         }
 
@@ -137,13 +137,13 @@ object ClassMapEngine {
         private val packageName   = if (isGeneralized) line.dropRight(2) else line
 
         def isAuthorised(className: String): Boolean = {
-            println(s"className = ${className}")
-            println(s"packageName = ${packageName}")
+            //println(s"className = ${className}")
+            //println(s"packageName = ${packageName}")
             if (isGeneralized)
                 className.startsWith(packageName)
             else {
                 val folder = className.take(className.lastIndexOf("."))
-                println(s"folder = ${folder}")
+                //println(s"folder = ${folder}")
                 packageName == folder
             }
         }

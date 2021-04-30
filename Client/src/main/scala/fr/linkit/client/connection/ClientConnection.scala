@@ -157,9 +157,9 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             //FIXME case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
             case system: SystemPacket => handleSystemPacket(system, coordinates)
             case _: Packet            =>
-                println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
+                //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
                 traffic.processInjection(packet, attributes, coordinates)
-            println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
+            //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }
 

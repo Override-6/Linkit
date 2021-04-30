@@ -161,8 +161,8 @@ object ParallelInjection {
                 val indexPacketNumber = indexPacket.number
                 if (packetNumber < indexPacketNumber) {
                     var nextIndex = index + 1
-                    println(s"nextIndex = ${nextIndex}")
-                    println(s"buff = ${buff.mkString("Array(", ", ", ")")}")
+                    //println(s"nextIndex = ${nextIndex}")
+                    //println(s"buff = ${buff.mkString("Array(", ", ", ")")}")
                     while (nextIndex < buff.length) {
                         val pair = buff(nextIndex)
                         buff(index) = (packet, attributes)

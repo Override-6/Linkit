@@ -28,8 +28,22 @@ class PuppetClassFields private(val puppetClass: Class[_],
         prepare(puppetClass.getDeclaredField(name))
     }
 
-    def getSharedMethod(name: String, args: Seq[Class[_]]): Option[Method] = {
-        prepare(puppetClass.getDeclaredMethod(name, args: _*))
+    def getSharedMethod(name: String, args: Seq[Class[_]]): Method = {
+        try {
+            puppetClass.getDeclaredMethod(name, args: _*)
+        } catch {
+            case _: NoSuchMethodException =>
+                for ((arg1, i) <- args) {
+                    var superClass = arg1.getSuperclass
+                    while (superClass != null) {
+                        for (arg2 <- args) {
+                            if (arg2 != arg1) {
+
+                            }
+                        }
+                    }
+                }
+        }
     }
 
     def foreachSharedFields(action: Field => Unit): Unit = {
@@ -39,9 +53,10 @@ class PuppetClassFields private(val puppetClass: Class[_],
                 .foreach(action)
     }
 
+    //FIXME methods are only taken from the first super class, they must be taken until Object's class.
     def foreachSharedMethods(action: Method => Unit): Unit = {
         puppetClass.getDeclaredMethods
-                .filterNot(member => Modifier.isFinal(member.getModifiers))
+                .filterNot(member => Modifier.isFinal(member.getModifiers) || Modifier.isStatic(member.getModifiers))
                 .filter(isShared)
                 .tapEach(_.setAccessible(true))
                 .foreach(action)

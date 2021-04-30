@@ -70,9 +70,9 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
 
     private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
         /*lazy val entity = entityOpt.orNull //get
-        println(s"mod = ${mod}")
-        println(s"index = ${index}")
-        println(s"entity = ${entity}")
+        //println(s"mod = ${mod}")
+        //println(s"index = ${index}")
+        //println(s"entity = ${entity}")
 
         import CollectionModification._
         val event = mod match {
