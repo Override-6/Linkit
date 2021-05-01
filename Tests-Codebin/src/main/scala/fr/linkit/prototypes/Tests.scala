@@ -14,16 +14,16 @@ package fr.linkit.prototypes
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.core.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
-import fr.linkit.core.connection.network.cache.puppet.{PuppetClassDesc, Puppeteer}
-import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.core.connection.packet.serialization.DefaultSerializer
-import fr.linkit.core.connection.packet.traffic.channel.request.RequestPacket
-import fr.linkit.core.local.mapping.{ClassMapEngine, ClassMappings}
-import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.core.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
-import fr.linkit.core.local.utils.ScalaUtils
+import fr.linkit.engine.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
+import fr.linkit.engine.connection.network.cache.puppet.{PuppetClassDesc, Puppeteer}
+import fr.linkit.engine.connection.packet.SimplePacketAttributes
+import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.engine.connection.packet.serialization.DefaultSerializer
+import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
+import fr.linkit.engine.local.mapping.{ClassMapEngine, ClassMappings}
+import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.engine.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
+import fr.linkit.engine.local.utils.ScalaUtils
 
 import java.nio.file.Path
 import java.sql.Timestamp

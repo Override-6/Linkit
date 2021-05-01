@@ -18,9 +18,9 @@ import fr.linkit.api.local.system
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.security.ConnectionSecurityException
-import fr.linkit.core.local.LinkitApplication
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
+import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.local.system.{EngineConstants, Rules, StaticVersions}
 import fr.linkit.server.ServerApplication.Version
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
@@ -35,7 +35,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
     private val serverCache     = mutable.HashMap.empty[Any, ServerConnection]
     private val securityManager = configuration.securityManager
 
-    override val versions: Versions = StaticVersions(ApiConstants.Version, AbstractCoreConstants.Version, Version)
+    override val versions: Versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, Version)
 
     override def countConnections: Int = {
         /*

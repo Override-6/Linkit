@@ -16,8 +16,8 @@ import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.connection.task.{TaskException, TaskExecutor, TasksHandler}
 import fr.linkit.api.local.system.{AppLogger, Reason}
-import fr.linkit.core.connection.task.{SimpleCompleterHandler, TaskTicket}
-import fr.linkit.core.local.system.{SystemOrder, SystemPacketChannel}
+import fr.linkit.engine.connection.task.{SimpleCompleterHandler, TaskTicket}
+import fr.linkit.engine.local.system.{SystemOrder, SystemPacketChannel}
 
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 import scala.util.control.NonFatal

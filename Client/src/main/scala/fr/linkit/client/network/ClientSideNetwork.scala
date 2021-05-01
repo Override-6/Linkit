@@ -16,10 +16,10 @@ import fr.linkit.api.connection.network.cache.CacheOpenBehavior
 import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.client.connection.ClientConnection
-import fr.linkit.core.connection.network.cache.SharedInstance
-import fr.linkit.core.connection.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.linkit.core.connection.network.{AbstractNetwork, SelfNetworkEntity}
-import fr.linkit.core.connection.packet.traffic.channel.SyncAsyncPacketChannel
+import fr.linkit.engine.connection.network.cache.SharedInstance
+import fr.linkit.engine.connection.network.cache.collection.{BoundedCollection, CollectionModification}
+import fr.linkit.engine.connection.network.{AbstractNetwork, SelfNetworkEntity}
+import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
 
 import java.sql.Timestamp
 

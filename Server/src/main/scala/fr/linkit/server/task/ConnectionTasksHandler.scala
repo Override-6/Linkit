@@ -15,8 +15,8 @@ package fr.linkit.server.task
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.connection.task.{TaskCompleterHandler, TaskException, TaskExecutor, TasksHandler}
 import fr.linkit.api.local.system.Reason
-import fr.linkit.core.connection.task.TaskTicket
-import fr.linkit.core.local.system.SystemOrder
+import fr.linkit.engine.connection.task.TaskTicket
+import fr.linkit.engine.local.system.SystemOrder
 import fr.linkit.server.connection.ExternalConnectionSession
 
 class ConnectionTasksHandler(session: ExternalConnectionSession) extends TasksHandler {

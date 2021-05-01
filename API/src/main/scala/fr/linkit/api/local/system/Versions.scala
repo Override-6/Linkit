@@ -25,7 +25,7 @@ trait Versions {
     /**
      * The version of the Linkit Framework Abstract Core
      * */
-    def abstractCoreVersion: Version
+    def EngineVersion: Version
 
     /**
      * The version of the Linkit Framework Implementation.
@@ -34,7 +34,7 @@ trait Versions {
 
     def sameVersions(other: Versions): Boolean = {
         other.apiVersion == apiVersion &&
-                other.abstractCoreVersion == abstractCoreVersion &&
+                other.EngineVersion == EngineVersion &&
                 other.implementationVersion == implementationVersion
     }
 
@@ -49,7 +49,7 @@ object Versions {
 
         override def apiVersion: Version = Version.Unknown
 
-        override def abstractCoreVersion: Version = Version.Unknown
+        override def EngineVersion: Version = Version.Unknown
 
         override def implementationVersion: Version = Version.Unknown
     }

@@ -22,13 +22,13 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, Pack
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.core.connection.packet.traffic.DynamicSocket
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.system.Rules
-import fr.linkit.core.local.system.event.DefaultEventNotifier
-import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.core.local.system.fsa.remote.RemoteFileSystemAdapter
-import fr.linkit.core.local.utils.NumberSerializer.serializeInt
+import fr.linkit.engine.connection.packet.traffic.DynamicSocket
+import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.local.system.Rules
+import fr.linkit.engine.local.system.event.DefaultEventNotifier
+import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.engine.local.system.fsa.remote.RemoteFileSystemAdapter
+import fr.linkit.engine.local.utils.NumberSerializer.serializeInt
 import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.network.ServerSideNetwork
 import fr.linkit.server.{ServerApplication, ServerException, ServerPacketTraffic}

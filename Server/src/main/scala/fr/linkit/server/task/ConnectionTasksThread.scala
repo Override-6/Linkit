@@ -14,7 +14,7 @@ package fr.linkit.server.task
 
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
-import fr.linkit.core.connection.task.TaskTicket
+import fr.linkit.engine.connection.task.TaskTicket
 
 import java.util.concurrent.{ArrayBlockingQueue, BlockingQueue}
 import scala.collection.mutable

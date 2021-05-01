@@ -15,8 +15,8 @@ package fr.linkit.server
 import fr.linkit.api.connection.NoSuchConnectionException
 import fr.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.core.connection.packet.SimplePacketAttributes
-import fr.linkit.core.connection.packet.traffic.WriterInfo
+import fr.linkit.engine.connection.packet.SimplePacketAttributes
+import fr.linkit.engine.connection.packet.traffic.WriterInfo
 import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {

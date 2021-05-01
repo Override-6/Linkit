@@ -16,8 +16,8 @@ import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, Seri
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
-import fr.linkit.core.connection.packet.serialization.SimpleTransferInfo
-import fr.linkit.core.local.concurrency.PacketReaderThread
+import fr.linkit.engine.connection.packet.serialization.SimpleTransferInfo
+import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
 import org.jetbrains.annotations.Nullable
 

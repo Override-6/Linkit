@@ -22,10 +22,10 @@ import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.core.connection.packet.fundamental.TaskInitPacket
-import fr.linkit.core.connection.packet.serialization.SimpleTransferInfo
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.system.SystemPacket
+import fr.linkit.engine.connection.packet.fundamental.TaskInitPacket
+import fr.linkit.engine.connection.packet.serialization.SimpleTransferInfo
+import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
@@ -136,7 +136,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     private def handleSystemOrder(packet: SystemPacket): Unit = {
         val orderType = packet.order
         val reason    = packet.reason.reversedPOV()
-        import fr.linkit.core.local.system.SystemOrder._
+        import fr.linkit.engine.local.system.SystemOrder._
         orderType match {
             case CLIENT_CLOSE => runLater(shutdown())
             case SERVER_CLOSE => server.shutdown()

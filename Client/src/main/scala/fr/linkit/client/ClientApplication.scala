@@ -20,9 +20,9 @@ import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.client.ClientApplication.Version
 import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
-import fr.linkit.core.local.LinkitApplication
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.system.{AbstractCoreConstants, Rules, StaticVersions}
+import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.local.system.{EngineConstants, Rules, StaticVersions}
 
 import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
@@ -36,7 +36,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     override def countConnections: Int = connectionCount
 
-    override val versions: Versions = StaticVersions(ApiConstants.Version, AbstractCoreConstants.Version, Version)
+    override val versions: Versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, Version)
 
     @workerExecution
     override def shutdown(): Unit = {

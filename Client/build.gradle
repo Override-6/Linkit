@@ -53,7 +53,7 @@ dependencies {
     implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
 
     implementation project(':API')
-    implementation project(':AbstractCore')
+    implementation project(':Engine')
 
 
     implementation project(':LinkitPlugins:DebugExtension')

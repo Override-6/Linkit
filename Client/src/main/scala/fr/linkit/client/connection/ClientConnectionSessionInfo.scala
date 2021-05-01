@@ -14,7 +14,7 @@ package fr.linkit.client.connection
 
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
-import fr.linkit.core.local.concurrency.PacketReaderThread
+import fr.linkit.engine.local.concurrency.PacketReaderThread
 
 case class ClientConnectionSessionInfo(appContext: ClientApplication,
                                        configuration: ClientConnectionConfiguration,

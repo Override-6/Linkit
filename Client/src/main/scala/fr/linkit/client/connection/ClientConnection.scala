@@ -26,14 +26,14 @@ import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.client.network.ClientSideNetwork
-import fr.linkit.core.connection.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.core.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
-import fr.linkit.core.local.concurrency.PacketReaderThread
-import fr.linkit.core.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.core.local.system.fsa.remote.RemoteFileSystemAdapter
-import fr.linkit.core.local.system.{Rules, SystemPacket}
-import fr.linkit.core.local.utils.{NumberSerializer, ScalaUtils}
+import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
+import fr.linkit.engine.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
+import fr.linkit.engine.local.concurrency.PacketReaderThread
+import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.engine.local.system.fsa.remote.RemoteFileSystemAdapter
+import fr.linkit.engine.local.system.{Rules, SystemPacket}
+import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
@@ -137,7 +137,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         val reason = system.reason.reversedPOV()
         val sender = coords.senderID
 
-        import fr.linkit.core.local.system.SystemOrder._
+        import fr.linkit.engine.local.system.SystemOrder._
         order match {
             case CLIENT_CLOSE => shutdown()
             //FIXME case ABORT_TASK => tasksHandler.skipCurrent(reason)

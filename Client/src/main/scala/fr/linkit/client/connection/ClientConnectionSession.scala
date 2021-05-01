@@ -18,10 +18,10 @@ import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
-import fr.linkit.core.connection.packet.traffic.{ChannelScopes, DynamicSocket, SocketPacketTraffic}
-import fr.linkit.core.local.concurrency.PacketReaderThread
-import fr.linkit.core.local.system.SystemPacketChannel
-import fr.linkit.core.local.system.event.DefaultEventNotifier
+import fr.linkit.engine.connection.packet.traffic.{ChannelScopes, DynamicSocket, SocketPacketTraffic}
+import fr.linkit.engine.local.concurrency.PacketReaderThread
+import fr.linkit.engine.local.system.SystemPacketChannel
+import fr.linkit.engine.local.system.event.DefaultEventNotifier
 
 case class ClientConnectionSession(socket: DynamicSocket,
                                    info: ClientConnectionSessionInfo,

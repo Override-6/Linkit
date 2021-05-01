@@ -14,8 +14,8 @@ package fr.linkit.server.network
 
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, SharedCacheManager}
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
-import fr.linkit.core.connection.network.AbstractRemoteEntity
-import fr.linkit.core.connection.network.cache.SharedInstance
+import fr.linkit.engine.connection.network.AbstractRemoteEntity
+import fr.linkit.engine.connection.network.cache.SharedInstance
 import fr.linkit.server.connection.ServerConnection
 
 class ExternalConnectionNetworkEntity private[network](serverConnection: ServerConnection,

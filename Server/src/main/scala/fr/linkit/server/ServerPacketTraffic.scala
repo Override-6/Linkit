@@ -13,7 +13,7 @@
 package fr.linkit.server
 
 import fr.linkit.api.connection.packet.traffic.PacketWriter
-import fr.linkit.core.connection.packet.traffic.{AbstractPacketTraffic, WriterInfo}
+import fr.linkit.engine.connection.packet.traffic.{AbstractPacketTraffic, WriterInfo}
 import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketTraffic(serverConnection: ServerConnection) extends AbstractPacketTraffic(serverConnection.supportIdentifier, serverConnection) {

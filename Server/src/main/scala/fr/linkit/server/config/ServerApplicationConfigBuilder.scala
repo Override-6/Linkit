@@ -16,7 +16,7 @@ import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.api.local.system.config.schematic.{AppSchematic, EmptySchematic}
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
-import fr.linkit.core.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.server.ServerApplication
 import org.jetbrains.annotations.{NotNull, Nullable}
 
