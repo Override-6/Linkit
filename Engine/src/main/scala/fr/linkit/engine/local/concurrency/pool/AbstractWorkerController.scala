@@ -24,25 +24,25 @@ abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerControl
     private val entertainedThreads = new mutable.HashMap[Int, ControlTicket[W]]()
 
     @workerExecution
-    override def waitTask(): Unit = {
+    override def pauseTask(): Unit = {
         //unlock condition as false means that we can be unlocked at any time.
         createControlTicket(false)
     }
 
     @workerExecution
-    override def waitTaskWhile(condition: => Boolean): Unit = {
+    override def pauseTaskWhile(condition: => Boolean): Unit = {
         if (!condition)
             return
         createControlTicket(condition)
     }
 
     @workerExecution
-    override def waitTaskForAtLeast(millis: Long): Unit = {
+    override def pauseTaskForAtLeast(millis: Long): Unit = {
         val worker      = currentWorker
         val currentTask = worker.currentTaskID
         val lockDate    = System.currentTimeMillis()
         entertainedThreads.put(currentTask, new ControlTicket[W](worker, System.currentTimeMillis() - lockDate <= millis))
-        waitCurrentTask(millis)
+        pauseCurrentTask(millis)
     }
 
     override def notifyNThreads(n: Int): Unit = {
@@ -94,15 +94,15 @@ abstract class AbstractWorkerController[W <: WorkerThread] extends WorkerControl
 
     def notifyWorker(worker: W, taskID: Int): Unit
 
-    def waitCurrentTask(): Unit
+    def pauseCurrentTask(): Unit
 
-    def waitCurrentTask(millis: Long): Unit
+    def pauseCurrentTask(millis: Long): Unit
 
-    private def createControlTicket(waitCondition: => Boolean): Unit = {
+    private def createControlTicket(pauseCondition: => Boolean): Unit = {
         val worker      = currentWorker
         val currentTask = worker.currentTaskID
-        entertainedThreads.put(currentTask, new ControlTicket[W](worker, waitCondition))
-        waitCurrentTask()
+        entertainedThreads.put(currentTask, new ControlTicket[W](worker, pauseCondition))
+        pauseCurrentTask()
     }
 
 }

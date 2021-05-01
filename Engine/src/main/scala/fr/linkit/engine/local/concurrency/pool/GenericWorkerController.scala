@@ -18,11 +18,11 @@ class GenericWorkerController extends AbstractWorkerController[BusyWorkerThread]
 
     override def notifyWorker(worker: BusyWorkerThread, taskID: Int): Unit = BusyWorkerPool.unpauseTask(worker, taskID)
 
-    override def waitCurrentTask(): Unit = {
+    override def pauseCurrentTask(): Unit = {
         currentWorker.pool.pauseCurrentTask()
     }
 
-    override def waitCurrentTask(millis: Long): Unit = {
+    override def pauseCurrentTask(millis: Long): Unit = {
         currentWorker.pool.pauseCurrentTaskForAtLeast(millis)
     }
 }

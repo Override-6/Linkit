@@ -17,7 +17,7 @@ trait WorkerThread extends Thread {
 
     def taskRecursionDepth: Int
 
-    def isWaitingForRecursiveTask: Boolean
+    def isParkingForRecursiveTask: Boolean
 
     def currentTaskID: Int
 }

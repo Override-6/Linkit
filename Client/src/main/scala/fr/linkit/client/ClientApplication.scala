@@ -13,7 +13,7 @@
 package fr.linkit.client
 
 import fr.linkit.api.connection.{ConnectionContext, ConnectionException, ConnectionInitialisationException, ExternalConnection}
-import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
+import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
@@ -24,14 +24,14 @@ import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.system.{EngineConstants, Rules, StaticVersions}
 
-import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
-class ClientApplication private(override val configuration: ClientApplicationConfiguration) extends LinkitApplication(configuration) with Procrastinator {
+class ClientApplication private(override val configuration: ClientApplicationConfiguration) extends LinkitApplication(configuration) {
 
-    private val workerPool                     = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
-    private val connectionCache                = mutable.HashMap.empty[Any, ExternalConnection]
+    override protected val appPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
+    private            val connectionCache     = mutable.HashMap.empty[Any, ExternalConnection]
     @volatile private var connectionCount: Int = 0
 
     override def countConnections: Int = connectionCount
@@ -40,7 +40,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     @workerExecution
     override def shutdown(): Unit = {
-        workerPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
+        appPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
         AppLogger.info("Client application is shutting down...")
 
@@ -57,19 +57,9 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     override def listConnections: Iterable[ConnectionContext] = connectionCache.values.toSet
 
-    override def runLater(@workerExecution task: => Unit): Unit = workerPool.runLater(task)
-
-    override def ensureCurrentThreadOwned(msg: String): Unit = workerPool.ensureCurrentThreadOwned(msg)
-
-    override def ensureCurrentThreadOwned(): Unit = workerPool.ensureCurrentThreadOwned()
-
-    override def isCurrentThreadOwned: Boolean = workerPool.isCurrentThreadOwned
-
-
-
     @workerExecution
     private def start(): Unit = {
-        workerPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
+        appPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
         if (alive) {
             throw new AppException("Client is already started")
         }
@@ -98,14 +88,14 @@ class ClientApplication private(override val configuration: ClientApplicationCon
     @throws[ConnectionInitialisationException]("If something went wrong during the connection's opening")
     @workerExecution
     def openConnection(config: ClientConnectionConfiguration): ExternalConnection = {
-        workerPool.ensureCurrentThreadOwned("Connection creation must be executed by the client application's thread pool")
+        appPool.ensureCurrentThreadOwned("Connection creation must be executed by the client application's thread pool")
 
         val identifier = config.identifier
         if (!Rules.IdentifierPattern.matcher(identifier).matches())
             throw new ConnectionInitialisationException("Provided identifier does not matches Client's rules.")
 
         connectionCount += 1
-        workerPool.setThreadCount(configuration.nWorkerThreadFunction(connectionCount)) //expand the pool for the new connection that will be opened
+        appPool.setThreadCount(configuration.nWorkerThreadFunction(connectionCount)) //expand the pool for the new connection that will be opened
 
         AppLogger.info(s"Creating connection with address '${config.remoteAddress}'")
         val address       = config.remoteAddress
@@ -117,14 +107,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         val connection = try {
             ClientConnection.open(dynamicSocket, this, config)
         } catch {
-            case e: ConnectionException =>
-                connectionCount -= 1
-                throw e
             case NonFatal(e)            =>
-                runLater {
-                    AppLogger.fatal("EXITING...")
-                    System.exit(1)
-                }
                 connectionCount -= 1
                 throw new ConnectionInitialisationException(s"Could not open connection with server $address : ${e.getMessage}", e)
         }
@@ -145,7 +128,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         connectionCache.remove(supportIdentifier)
         connectionCount -= 1
         val newThreadCount = configuration.nWorkerThreadFunction(connectionCount)
-        workerPool.setThreadCount(newThreadCount)
+        appPool.setThreadCount(newThreadCount)
 
         AppLogger.info(s"Connection '$supportIdentifier' bound to $boundIdentifier was detached from application.")
     }
@@ -172,27 +155,19 @@ object ClientApplication {
                 throw new ApplicationInstantiationException("Could not instantiate Client Application.", e)
         }
 
-        val loaderThread                   = Thread.currentThread()
-        @volatile var exception: Throwable = null
-        clientApp.runLater {
-            try {
-                AppLogger.info("Starting Client Application...")
-                clientApp.start()
-                val loadSchematic = config.loadSchematic
-                AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
-                loadSchematic.setup(clientApp)
-                AppLogger.trace("Schematic applied successfully.")
-            } catch {
-                case NonFatal(e) =>
-                    exception = e
-            }
-            LockSupport.unpark(loaderThread)
+        clientApp.runLaterControl {
+            AppLogger.info("Starting Client Application...")
+            clientApp.start()
+            val loadSchematic = config.loadSchematic
+            AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
+            loadSchematic.setup(clientApp)
+            AppLogger.trace("Schematic applied successfully.")
+        }.join() match {
+            case Failure(e) =>
+                throw new ApplicationInstantiationException("Could not instantiate Client Application.", e)
+            case Success(_) =>
+                initialized = true
+                clientApp
         }
-        LockSupport.park()
-        if (exception != null)
-            throw new ApplicationInstantiationException("Could not instantiate Client Application.", exception)
-
-        initialized = true
-        clientApp
     }
 }

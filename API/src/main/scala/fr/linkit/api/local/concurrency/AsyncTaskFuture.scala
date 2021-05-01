@@ -12,26 +12,21 @@
 
 package fr.linkit.api.local.concurrency
 
-trait WorkerController[W <: WorkerThread] {
+import scala.concurrent.Future
+import scala.util.Try
+
+trait AsyncTaskFuture[A] extends Future[A] {
+
+    val taskID: Int
+
+    def join(): Try[A]
+
+    def join(millis: Long): Option[Try[A]]
 
     @workerExecution
-    def pauseTask(): Unit
+    def joinTask(): Try[A]
 
     @workerExecution
-    def pauseTaskWhile(notifyCondition: => Boolean): Unit
+    def joinTaskForAtLeast(millis: Long): Option[Try[A]]
 
-    @workerExecution
-    def pauseTaskForAtLeast(millis: Long): Unit
-
-    @workerExecution
-    def notifyNThreads(n: Int): Unit
-
-    @workerExecution
-    def notifyAnyThread(): Unit
-
-    @workerExecution
-    def notifyThreadsTasks(taskIds: Int*): Unit
-
-    @workerExecution
-    def notifyWorkerTask(thread: W, taskID: Int): Unit
 }

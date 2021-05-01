@@ -14,17 +14,12 @@ package fr.linkit.api.local.concurrency
 
 trait Procrastinator {
 
+    def runLaterControl[A](@workerExecution task: => A): AsyncTaskFuture[A]
+
     def runLater(@workerExecution task: => Unit): Unit
-
-    def ensureCurrentThreadOwned(msg: String): Unit
-
-    def ensureCurrentThreadOwned(): Unit
-
-    def isCurrentThreadOwned: Boolean
-
-
 }
 
 object Procrastinator {
+
     val workerThreadGroup: ThreadGroup = new ThreadGroup("Entertained Workers")
 }

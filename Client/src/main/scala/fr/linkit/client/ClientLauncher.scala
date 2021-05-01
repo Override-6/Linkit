@@ -23,7 +23,6 @@ import org.jetbrains.annotations.NotNull
 import java.io.File
 import java.net.InetSocketAddress
 import java.util.Scanner
-import java.util.concurrent.locks.LockSupport
 
 object ClientLauncher {
 
@@ -117,8 +116,6 @@ object ClientLauncher {
             throw new NullPointerException("Resources folder is null !")
         }
 
-        val launcherThread = Thread.currentThread()
-
         val config = new ClientApplicationConfigBuilder {
             override val resourcesFolder: String = resourcesFolder0
             nWorkerThreadFunction = _ + 1
@@ -134,15 +131,12 @@ object ClientLauncher {
         }
         val client = ClientApplication.launch(config, getClass)
         AppLogger.trace(s"Build completed: $client")
-        client.runLater {
+        client.runLaterControl {
             val pluginManager = client.pluginManager
             pluginManager.loadAllClass(Array(
                 classOf[ControllerExtension]: Class[_ <: Plugin],
                 classOf[DebugExtension]: Class[_ <: Plugin],
             ))
-            LockSupport.unpark(launcherThread)
-        }
-        LockSupport.park()
-        AppLogger.info("Client Application launched.")
+        }.join()
     }
 }

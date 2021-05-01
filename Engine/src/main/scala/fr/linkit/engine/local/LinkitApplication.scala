@@ -12,9 +12,8 @@
 
 package fr.linkit.engine.local
 
-import java.util.concurrent.locks.LockSupport
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.concurrency.{AsyncTaskFuture, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
@@ -22,6 +21,7 @@ import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppLogger, Version}
 import fr.linkit.engine.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
 import fr.linkit.engine.local.LinkitApplication.setInstance
+import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.mapping.ClassMapEngine
 import fr.linkit.engine.local.plugin.LinkitPluginManager
 import fr.linkit.engine.local.resource.SimpleResourceListener
@@ -31,8 +31,8 @@ import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
 import fr.linkit.engine.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
 
-import java.io.File
-import java.nio.file.Path
+import java.util.concurrent.locks.LockSupport
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 abstract class LinkitApplication(configuration: ApplicationConfiguration) extends ApplicationContext {
@@ -41,6 +41,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration) extend
     protected val resources      : ResourceFolder = prepareAppResources()
     override  val pluginManager  : PluginManager  = new LinkitPluginManager(this, configuration.fsAdapter)
     @volatile protected var alive: Boolean        = false
+    protected val appPool: BusyWorkerPool
 
     setInstance(this)
 
@@ -50,6 +51,10 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration) extend
         if (!alive)
             throw new IllegalStateException("Server Application is shutdown.")
     }
+
+    override def runLaterControl[A](task: => A): AsyncTaskFuture[A] = appPool.runLaterControl(task)
+
+    override def runLater(task: => Unit): Unit = appPool.runLater(task)
 
     override def isAlive: Boolean = alive
 
@@ -153,13 +158,13 @@ object LinkitApplication {
         }
 
         AppLogger.info("Exiting application...")
-        val threadExit = Thread.currentThread()
-        instance.runLater {
+        instance.runLaterControl {
             instance.preShutdown()
             instance.shutdown()
-            LockSupport.unpark(threadExit)
+        }.join() match {
+            case Failure(e) => e.printStackTrace()
+            case Success(_)     =>
         }
-        LockSupport.park()
 
         Runtime.getRuntime.halt(code)
         instance = null

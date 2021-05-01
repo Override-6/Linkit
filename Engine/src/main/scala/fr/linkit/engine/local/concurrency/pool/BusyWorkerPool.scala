@@ -12,14 +12,18 @@
 
 package fr.linkit.engine.local.concurrency.pool
 
-import fr.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, workerExecution}
+import fr.linkit.api.local.concurrency.{AsyncTaskFuture, IllegalThreadException, WorkerPool, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool._
-import fr.linkit.engine.local.concurrency.{currentThread, now, timedPark}
+import fr.linkit.engine.local.concurrency.{SimpleAsyncTaskFuture, currentThread, now, timedPark}
 
 import java.util.concurrent.locks.LockSupport
 import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.global
+import scala.util.Try
+import scala.util.control.NonFatal
 
 /**
  * This class handles a FixedThreadPool from Java executors, excepted that the used threads can be busy about
@@ -78,7 +82,7 @@ import scala.collection.mutable.ListBuffer
  * @see [[BusyBlockingQueue]] for busy waitings example.
  * @param initialThreadCount The number of threads the pool will contain (can ba changed with [[setThreadCount]].
  * */
-class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoCloseable with Procrastinator {
+class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPool with AutoCloseable {
 
     if (initialThreadCount <= 0)
         throw new IllegalArgumentException(s"Worker pool '$name' must contain at least 1 thread, provided: '$initialThreadCount'")
@@ -108,32 +112,24 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
      * @throws IllegalStateException if the pool is closed
      * @param task the task to execute in the thread pool
      * */
-    override def runLater(@workerExecution task: => Unit): Unit = {
+    override def runLaterControl[A](@workerExecution task: => A): AsyncTaskFuture[A] = {
         if (closed)
             throw new IllegalStateException("Attempted to submit a task in a closed thread pool !")
 
         var runnable: Runnable = null
         taskCount += 1
         val submittedTaskID = taskCount
+        val future          = SimpleAsyncTaskFuture[A](submittedTaskID, Try(task))
         runnable = () => {
             val rootExecution = currentTaskExecutionDepth == 0
             if (rootExecution)
                 activeThreads += 1
-            try {
-                AppLogger.vWarn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID TAKEN FROM POOL $name")
-                currentWorker.pushTaskID(submittedTaskID)
-                task
-                currentWorker.removeTaskID(submittedTaskID)
-            } catch {
-                case e                  =>
-                    AppLogger.fatal(s"${currentTasksId} <> Caught fatal exception in thread pool '$name'. The JVM Will exit.")
-                    AppLogger.printStackTrace(e)
-                    System.exit(1)
-                case e if rootExecution =>
-                    AppLogger.fatal(s"${currentTasksId} <> Caught fatal exception in thread pool '$name'. The JVM Will exit.")
-                    AppLogger.printStackTrace(e)
-                    System.exit(1)
-            }
+
+            AppLogger.vWarn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID TAKEN FROM POOL $name")
+            currentWorker.pushTaskID(submittedTaskID)
+            future.runTask()
+            currentWorker.removeTaskID(submittedTaskID)
+
             if (rootExecution)
                 activeThreads -= 1
             workTaskIds.synchronized {
@@ -154,6 +150,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
         //If there is one busy thread that is waiting for a new task to be performed,
         //It would instantly execute the current task.
         unparkBusyThread()
+        future
     }
 
     override def ensureCurrentThreadOwned(): Unit = {
@@ -168,6 +165,16 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     override def isCurrentThreadOwned: Boolean = {
         currentPool.exists(_ eq this)
     }
+
+    override def execute(runnable: Runnable): Unit = {
+        if (isCurrentThreadOwned) {
+            runnable.run()
+            return
+        }
+        runLaterControl(runnable.run())
+    }
+
+    override def reportFailure(cause: Throwable): Unit = ()
 
     def taskParkingThreads: Iterable[BusyWorkerThread] = {
         workers.filter(_.isParkingForWorkflow)
@@ -273,7 +280,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
     }
 
     private def unparkBusyThread(): Unit = workers.synchronized {
-        workers.find(_.isWaitingForRecursiveTask) match {
+        workers.find(_.isParkingForRecursiveTask) match {
             case Some(thread) =>
                 AppLogger.vError(s"${thread.getName} <- This thread will be unparked because a new task is ready to be executed.")
                 LockSupport.unpark(thread)
@@ -310,6 +317,14 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends AutoClos
             }
         }
         AppLogger.vError("Exit executeRemainingTasks...")
+    }
+
+    override def runLater(task: => Unit): Unit = runLaterControl {
+        try {
+            task
+        } catch {
+            case NonFatal(e) => e.printStackTrace()
+        }
     }
 }
 
@@ -403,10 +418,17 @@ object BusyWorkerPool {
     /**
      * @return Some if the current thread is a member of a [[BusyWorkerPool]], None instead
      * */
-    def currentPool: Option[BusyWorkerPool] = {
+    implicit def currentPool: Option[BusyWorkerPool] = {
         currentThread match {
             case worker: BusyWorkerThread => Some(worker.pool)
             case _                        => None
+        }
+    }
+
+    implicit def currentExecutionContext: ExecutionContext = {
+        currentPool match {
+            case Some(pool) => pool
+            case None       => global
         }
     }
 

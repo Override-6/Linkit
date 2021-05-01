@@ -139,7 +139,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
             return apply(k)
         }
         println(s"Waiting key ${k} to be put... (${Thread.currentThread()}")
-        controller.waitTaskWhile(!contains(k))
+        controller.pauseTaskWhile(!contains(k))
         println("Done !")
         apply(k)
     }

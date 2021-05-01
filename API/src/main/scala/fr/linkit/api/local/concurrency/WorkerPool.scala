@@ -12,26 +12,12 @@
 
 package fr.linkit.api.local.concurrency
 
-trait WorkerController[W <: WorkerThread] {
+import scala.concurrent.ExecutionContext
 
-    @workerExecution
-    def pauseTask(): Unit
+trait WorkerPool extends Procrastinator with ExecutionContext {
+    def ensureCurrentThreadOwned(msg: String): Unit
 
-    @workerExecution
-    def pauseTaskWhile(notifyCondition: => Boolean): Unit
+    def ensureCurrentThreadOwned(): Unit
 
-    @workerExecution
-    def pauseTaskForAtLeast(millis: Long): Unit
-
-    @workerExecution
-    def notifyNThreads(n: Int): Unit
-
-    @workerExecution
-    def notifyAnyThread(): Unit
-
-    @workerExecution
-    def notifyThreadsTasks(taskIds: Int*): Unit
-
-    @workerExecution
-    def notifyWorkerTask(thread: W, taskID: Int): Unit
+    def isCurrentThreadOwned: Boolean
 }

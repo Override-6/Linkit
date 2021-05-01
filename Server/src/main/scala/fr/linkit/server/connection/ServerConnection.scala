@@ -12,14 +12,14 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.{CentralConnection, ConnectionContext}
+import fr.linkit.api.connection.CentralConnection
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.concurrency.{AsyncTaskFuture, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.engine.connection.packet.traffic.DynamicSocket
@@ -98,17 +98,13 @@ class ServerConnection(applicationContext: ServerApplication,
         traffic.getInjectable(injectableID, scopeFactory, factory)
     }
 
-    override def runLater(@workerExecution task: => Unit): Unit = workerPool.runLater(task)
-
-    override def ensureCurrentThreadOwned(msg: String): Unit = workerPool.ensureCurrentThreadOwned(msg)
-
-    override def ensureCurrentThreadOwned(): Unit = workerPool.ensureCurrentThreadOwned()
-
-    override def isCurrentThreadOwned: Boolean = workerPool.isCurrentThreadOwned
-
     override def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
 
     override def countConnections: Int = connectionsManager.countConnections
+
+    override def runLaterControl[A](task: => A): AsyncTaskFuture[A] = workerPool.runLaterControl(task)
+
+    override def runLater(task: => Unit): Unit = workerPool.runLater(task)
 
     def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, injectableID: Int, discarded: String*): Unit = {
         if (connectionsManager.countConnections - discarded.length < 0) {
@@ -133,24 +129,14 @@ class ServerConnection(applicationContext: ServerApplication,
 
     private def listenSocketConnection(): Unit = {
         val socketContainer = new SocketContainer(true)
+        val port = configuration.port
+        AppLogger.debug(s"Ready to accept next connection on port $port")
+
         try {
-            val port = configuration.port
-            AppLogger.debug(s"Ready to accept next connection on port $port")
-            val clientSocket = serverSocket.accept()
+            val socket = serverSocket.accept()
             if (!alive)
                 return
-
-            socketContainer.set(clientSocket)
-            AppLogger.debug(s"Socket accepted ($clientSocket)")
-            runLater {
-                AppLogger.trace(s"Handling client socket $clientSocket...")
-                val count = connectionsManager.countConnections
-                handleSocket(socketContainer)
-                val newCount = connectionsManager.countConnections
-                if (count != newCount) {
-                    workerPool.setThreadCount(configuration.nWorkerThreadFunction(newCount))
-                }
-            }
+            socketContainer.set(socket)
         } catch {
             case e: SocketException =>
                 val msg = e.getMessage.toLowerCase
@@ -160,14 +146,23 @@ class ServerConnection(applicationContext: ServerApplication,
                 onException(e)
             case NonFatal(e)        =>
                 AppLogger.printStackTrace(e)
-                runLater {
-                    onException(e)
-                }
+                onException(e)
         }
 
-        def onException(e: Throwable): Unit = {
+        AppLogger.debug(s"Socket accepted (${socketContainer.getCurrent})")
+        runLater {
+            AppLogger.trace(s"Handling client socket ${socketContainer.getCurrent}...")
+            val count = connectionsManager.countConnections
+            handleSocket(socketContainer)
+            val newCount = connectionsManager.countConnections
+            if (count != newCount) {
+                workerPool.setThreadCount(configuration.nWorkerThreadFunction(newCount))
+            }
+        }
+
+        def onException(e: Throwable): Unit = runLater {
             sendRefusedConnection(socketContainer, s"An exception occurred in server during client connection initialisation ($e)") //sends a negative response for the fr.linkit.client initialisation handling
-            shutdown()
+            //shutdown()
         }
     }
 
@@ -253,7 +248,7 @@ class ServerConnection(applicationContext: ServerApplication,
                                             socket: SocketContainer): Unit = {
         val identifier = conflicted.boundIdentifier
         if (!conflicted.isConnected) {
-            conflicted.updateSocket(socket.get)
+            conflicted.updateSocket(socket.getCurrent)
             sendAuthorisedConnection(socket)
             AppLogger.info(s"The connection of ${conflicted.boundIdentifier} has been resumed.")
             return

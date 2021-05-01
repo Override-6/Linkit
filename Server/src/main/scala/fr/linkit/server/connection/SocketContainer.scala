@@ -34,7 +34,7 @@ class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnec
         markAsConnected()
     }
 
-    def get: Socket = currentSocket
+    def getCurrent: Socket = currentSocket
 
     override protected def handleReconnection(): Unit = {
         this.synchronized {

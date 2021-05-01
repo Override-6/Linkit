@@ -98,7 +98,7 @@ class NetworkSharedCacheManager(override val family: String,
                 AppLogger.fatal(s"Was executing request (${request.id}) for cache ID '$cacheID'.")
                 AppLogger.printStackTrace(e)
                 System.exit(1)
-                throw new Error
+                throw null
         }
     }
 

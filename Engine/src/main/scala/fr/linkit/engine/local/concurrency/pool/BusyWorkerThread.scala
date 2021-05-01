@@ -122,7 +122,7 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
 
     def tasksId: String = tasksIdStr
 
-    override def isWaitingForRecursiveTask: Boolean = isParkingForWorkflow
+    override def isParkingForRecursiveTask: Boolean = isParkingForWorkflow
 
     override def taskRecursionDepth: Int = taskRecursionDepthCount
 

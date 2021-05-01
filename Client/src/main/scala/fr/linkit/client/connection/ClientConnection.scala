@@ -19,7 +19,7 @@ import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, Pack
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketException}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
-import fr.linkit.api.local.concurrency.{packetWorkerExecution, workerExecution}
+import fr.linkit.api.local.concurrency.{AsyncTaskFuture, packetWorkerExecution, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.api.local.system.security.BytesHasher
@@ -70,6 +70,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     }
 
     override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
+
+    override def runLaterControl[A](task: => A): AsyncTaskFuture[A] = appContext.runLaterControl(task)
 
     override def getState: ExternalConnectionState = socket.getState
 

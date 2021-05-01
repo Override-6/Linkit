@@ -165,7 +165,12 @@ class CloudObjectRepository(handler: SharedCacheManager,
     }
 
     private def instantiatePuppetWrapper[S <: Serializable](puppeteer: Puppeteer[S], clone: S, puppetClass: Class[S with PuppetWrapper[S]]): S with PuppetWrapper[S] = {
-        val constructor = puppetClass.getConstructor(puppeteer.getClass, clone.getClass)
+        println(s"puppeteer = ${puppeteer}")
+        println(s"puppetClass = ${puppetClass}")
+        puppetClass.getDeclaredConstructors.foreach(println)
+        puppetClass.getDeclaredMethods.foreach(println)
+        puppetClass.getDeclaredFields.foreach(println)
+        val constructor = puppetClass.getDeclaredConstructor(puppeteer.getClass, clone.getClass)
         constructor.newInstance(puppeteer, clone)
     }
 

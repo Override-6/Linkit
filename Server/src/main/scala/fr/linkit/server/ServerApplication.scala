@@ -12,7 +12,7 @@
 
 package fr.linkit.server
 
-import fr.linkit.api.connection.NoSuchConnectionException
+import fr.linkit.api.connection.{ConnectionInitialisationException, NoSuchConnectionException}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system
 import fr.linkit.api.local.system._
@@ -27,13 +27,14 @@ import fr.linkit.server.connection.ServerConnection
 
 import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
+import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
 
 class ServerApplication private(override val configuration: ServerApplicationConfiguration) extends LinkitApplication(configuration) {
 
-    private val mainWorkerPool  = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
-    private val serverCache     = mutable.HashMap.empty[Any, ServerConnection]
-    private val securityManager = configuration.securityManager
+    protected override val appPool         = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
+    private            val serverCache     = mutable.HashMap.empty[Any, ServerConnection]
+    private            val securityManager = configuration.securityManager
 
     override val versions: Versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, Version)
 
@@ -52,7 +53,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         * in order to ensure that multiple shutdown aren't executed
         * on the same application, wich could occur to some problems.
         * */
-        mainWorkerPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
+        appPool.ensureCurrentThreadOwned("Shutdown must be performed into Application's pool")
         ensureAlive()
         AppLogger.info("Server application is shutting down...")
 
@@ -69,7 +70,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             if (downCount == totalConnectionCount)
                 BusyWorkerPool.unpauseTask(shutdownThread, shutdownTask)
         })
-        mainWorkerPool.pauseCurrentTask()
+        appPool.pauseCurrentTask()
 
         alive = false
         AppLogger.info("Server application successfully shutdown.")
@@ -77,7 +78,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
 
     @workerExecution
     private def start(): Unit = {
-        mainWorkerPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
+        appPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
         if (alive) {
             throw new AppException("Server is already started")
         }
@@ -100,17 +101,9 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         serverCache.values.toSet
     }
 
-    override def runLater(@workerExecution task: => Unit): Unit = mainWorkerPool.runLater(task)
-
-    override def ensureCurrentThreadOwned(msg: String): Unit = mainWorkerPool.ensureCurrentThreadOwned(msg)
-
-    override def ensureCurrentThreadOwned(): Unit = mainWorkerPool.ensureCurrentThreadOwned()
-
-    override def isCurrentThreadOwned: Boolean = mainWorkerPool.isCurrentThreadOwned
-
     @workerExecution
     def openServerConnection(configuration: ServerConnectionConfiguration): ServerConnection = /*this.synchronized*/ {
-        mainWorkerPool.ensureCurrentThreadOwned("Open server connection must be performed into Application's pool.")
+        appPool.ensureCurrentThreadOwned("Open server connection must be performed into Application's pool.")
 
         ensureAlive()
         if (configuration.identifier.length > Rules.MaxConnectionIDLength)
@@ -119,22 +112,21 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         securityManager.checkConnectionConfig(configuration)
         AppLogger.debug("Instantiating server connection...")
         val serverConnection = new ServerConnection(this, configuration)
-        val openerThread     = BusyWorkerPool.currentWorker
-        val openerTask       = openerThread.currentTaskID
 
-        serverConnection.runLater {
+        serverConnection.runLaterControl {
             AppLogger.debug("Starting server...")
             serverConnection.start()
             AppLogger.debug("Server started !")
-            BusyWorkerPool.unpauseTask(openerThread, openerTask)
+        }.joinTask() match {
+            case Failure(e) => throw new ConnectionInitialisationException(s"Failed to create server connection ${configuration.identifier} on port ${configuration.port}", e)
+            case Success(_)     =>
         }
-        mainWorkerPool.pauseCurrentTask()
 
         try {
             securityManager.checkConnection(serverConnection)
         } catch {
             case e: ConnectionSecurityException =>
-                runLater {
+                serverConnection.runLater {
                     serverConnection.shutdown()
                 }
                 throw e
@@ -192,29 +184,19 @@ object ServerApplication {
                 throw new ApplicationInstantiationException("Could not instantiate Server Application.", e)
         }
 
-        val loaderThread                   = Thread.currentThread()
-        @volatile var exception: Throwable = null
-        serverAppContext.runLater {
-            try {
+        serverAppContext.runLaterControl {
                 AppLogger.info("Starting Server Application...")
                 serverAppContext.start()
                 val loadSchematic = config.loadSchematic
                 AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
                 loadSchematic.setup(serverAppContext)
                 AppLogger.trace("Schematic applied successfully.")
-            } catch {
-                case NonFatal(e) =>
-                    exception = e
-            }
-            LockSupport.unpark(loaderThread)
+        }.join() match {
+            case Failure(exception) => throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
+            case Success(_)     =>
+                initialized = true
+                serverAppContext
         }
-        LockSupport.park()
-
-        if (exception != null)
-            throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
-
-        initialized = true
-        serverAppContext
     }
 
     def launch(builder: ServerApplicationConfigBuilder, caller: Class[_]): ServerApplication = {
