@@ -54,7 +54,13 @@ case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
                 var result: Any = null
                 val castedArgs           = ScalaUtils.slowCopy[Serializable](args)
                 if (canCallMethod(methodName, castedArgs.map(_.getClass))) {
-                    result = callMethod(methodName, castedArgs)
+                    try {
+                        result = callMethod(methodName, castedArgs)
+                    } catch {
+                        case e: Throwable =>
+                            throw e
+                            // result = ThrowableWrapper(e)
+                    }
                 }
                 submitter
                         .addPacket(RefPacket(result))

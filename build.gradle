@@ -34,10 +34,10 @@ subprojects {
         archives sourcesJar
         archives javadocJar
     }
-}
 
-dependencies {
-    testCompile group: 'junit', name: 'junit', version: '4.12'
+    test {
+        useJUnitPlatform()
+    }
 }
 
 wrapper {

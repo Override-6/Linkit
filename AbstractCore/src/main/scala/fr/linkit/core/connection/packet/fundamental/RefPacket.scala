@@ -33,7 +33,7 @@ sealed trait RefPacket[A] extends Packet {
     override def toString: String = {
         val valueString = value match {
             case array: Array[Any] => array.mkString("Array(", ", ", ")")
-            case obj => obj.toString
+            case obj => String.valueOf(obj)
         }
         getClass.getSimpleName + s"($valueString)"
     }

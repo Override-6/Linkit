@@ -16,12 +16,13 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.core.connection.network.cache.puppet.AnnotationHelper.Shared
 import fr.linkit.core.connection.network.cache.puppet.{PuppetClassDesc, PuppetWrapper, PuppeteerDescription}
 import fr.linkit.core.local.mapping.ClassMappings
-
 import java.io.File
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
 import java.net.URLClassLoader
 import java.nio.file.{Files, Path}
+import java.sql.Timestamp
+
 import scala.collection.mutable
 
 //FIXME potential Collision if two classes of the same name, but not the same package are generated.
@@ -56,7 +57,7 @@ object PuppetWrapperClassGenerator {
         }
         Files.write(path, sourceCode.getBytes)
 
-        val javacProcess = new ProcessBuilder("javac", "-d", GeneratedClassesFolder, "-Xlint:unchecked", s"-cp", classPaths, path.toString)
+        val javacProcess = new ProcessBuilder("javac", "-d", GeneratedClassesFolder, "-Xlint:all", s"-cp", classPaths, path.toString)
         javacProcess.redirectOutput(ProcessBuilder.Redirect.INHERIT)
         javacProcess.redirectError(ProcessBuilder.Redirect.INHERIT)
         javacProcess.directory(new File(GeneratedClassesFolder))
@@ -108,6 +109,7 @@ object PuppetWrapperClassGenerator {
                |
                |public class $puppetClassSimpleName extends $superClassName implements PuppetWrapper<$superClassName> {
                |
+               |public static final long serialVersionUID = ${System.currentTimeMillis()}L;
                |private transient $puppeteerType puppeteer;
                |private PuppeteerDescription puppeteerDescription;
                |$constantGettersFields

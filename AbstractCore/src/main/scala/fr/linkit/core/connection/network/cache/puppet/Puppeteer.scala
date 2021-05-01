@@ -42,17 +42,24 @@ class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
     def getPuppetWrapper: SW = puppetWrapper
 
     def sendInvokeAndReturn[R](methodName: String, args: Array[Any]): R = {
-        channel.makeRequest(ownerScope)
-                .addPacket(ObjectPacket((methodName, Array(args: _*))))
-                .submit()
-                .nextResponse
-                .nextPacket[RefPacket[R]].value
+        AppLogger.debug(s"Remotely invoking method $methodName(${args.mkString(",")})")
+        val result = channel.makeRequest(ownerScope)
+            .addPacket(ObjectPacket((methodName, Array(args: _*))))
+            .submit()
+            .nextResponse
+            .nextPacket[RefPacket[R]].value
+        result match {
+                //FIXME ambiguity with broadcast method invocation.
+            case ThrowableWrapper(e) => throw new RemoteInvocationFailedException(s"Invocation of method $methodName with arguments '${args.mkString(", ")}' failed.", e)
+            case result              => result
+        }
     }
 
     def sendInvoke(methodName: String, args: Array[Any]): Unit = {
+        AppLogger.debug(s"Remotely invoking method $methodName(${args.mkString(",")})")
         channel.makeRequest(ownerScope)
-                .addPacket(ObjectPacket((methodName, Array(args: _*))))
-                .submit()
+            .addPacket(ObjectPacket((methodName, Array(args: _*))))
+            .submit()
     }
 
     def addFieldUpdate(fieldName: String, newValue: Any): Unit = {
@@ -82,9 +89,9 @@ class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
 
     private def flushModification(mod: (String, Any)): Unit = {
         channel.makeRequest(bcScope)
-                .addPacket(ObjectPacket(mod))
-                .submit()
-                .detach()
+            .addPacket(ObjectPacket(mod))
+            .submit()
+            .detach()
     }
 
     private def prepareScope(factory: ScopeFactory[_ <: ChannelScope]): ChannelScope = {
