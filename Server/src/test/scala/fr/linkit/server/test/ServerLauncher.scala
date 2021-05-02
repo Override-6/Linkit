@@ -1,17 +1,16 @@
-import fr.linkit.api.local.plugin.Plugin
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugExtension
-import fr.linkit.server.ServerApplication
-import fr.linkit.server.config.schematic.ScalaServerAppSchematic
-import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
-import org.junit.jupiter.api.Assertions.fail
-import org.junit.jupiter.api.TestInstance.Lifecycle
-import org.junit.jupiter.api.function.{Executable, ThrowingSupplier}
-import org.junit.jupiter.api.{Assertions, Test, TestInstance}
+/*
+ *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ *  This code is free software; you can only use it for personal uses, studies or documentation.
+ *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  questions.
+ */
 
-import java.io.File
-import java.util.Scanner
+package fr.linkit.server.test
 
 /*
  *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
@@ -25,8 +24,24 @@ import java.util.Scanner
  *  questions.
  */
 
-import java.util.concurrent.locks.LockSupport
+import fr.linkit.api.local.plugin.Plugin
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.test.EngineTests
+import fr.linkit.plugin.controller.ControllerExtension
+import fr.linkit.plugin.debug.DebugExtension
+import fr.linkit.server.ServerApplication
+import fr.linkit.server.config.schematic.ScalaServerAppSchematic
+import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
+import org.junit.jupiter.api.Assertions.fail
+import org.junit.jupiter.api.TestInstance.Lifecycle
+import org.junit.jupiter.api.function.{Executable, ThrowingSupplier}
+import org.junit.jupiter.api.{Assertions, Test, TestInstance}
+import org.junit.platform.suite.api.SelectClasses
 
+import java.io.File
+import java.util.Scanner
+
+@SelectClasses(Array(StartupTests.getClass, classOf[EngineTests]))
 @TestInstance(Lifecycle.PER_CLASS)
 class ServerLauncher {
 
@@ -65,7 +80,6 @@ class ServerLauncher {
         Assertions.assertAll("App launch conclusion",
             Assertions.assertNotNull(application),
         )
-
 
     }
 

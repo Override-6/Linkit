@@ -1,17 +1,6 @@
-/*
- *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- *  This code is free software; you can only use it for personal uses, studies or documentation.
- *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
- *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
- *  questions.
- */
-
 plugins {
-    id 'java'
+    id 'java-library'
+    id 'java-test-fixtures'
     id 'scala'
 }
 
@@ -52,13 +41,15 @@ test {
 dependencies {
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0-M1'
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.8.0-M1'
+    testImplementation group: 'org.junit.platform', name: 'junit-platform-suite-api', version: '1.8.0-M1'
+    testImplementation project(':Engine').sourceSets.test.output
 
     implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.5'
     implementation group: 'log4j', name: 'log4j', version: '1.2.17'
     implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
 
-    implementation project(':API')
-    implementation project(':Engine')
+    api project(':API')
+    api project(':Engine')
     implementation project(':LinkitPlugins:DebugExtension')
     implementation project(':LinkitPlugins:CLICommands')
 }

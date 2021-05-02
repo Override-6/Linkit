@@ -57,26 +57,6 @@ class ClientApplication private(override val configuration: ClientApplicationCon
 
     override def listConnections: Iterable[ConnectionContext] = connectionCache.values.toSet
 
-    @workerExecution
-    private def start(): Unit = {
-        appPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
-        if (alive) {
-            throw new AppException("Client is already started")
-        }
-        alive = true
-        val pluginFolder = configuration.pluginFolder match {
-            case Some(path) =>
-                val adapter = configuration.fsAdapter.getAdapter(path)
-                adapter.getAbsolutePath //converting to absolute path.
-            case None       => null
-        }
-        if (pluginFolder != null) {
-            val pluginCount = pluginManager.loadAll(pluginFolder).length
-            configuration.fsAdapter.getAdapter(pluginFolder)
-            AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
-        }
-    }
-
     override def getConnection(identifier: String): Option[ExternalConnection] = {
         connectionCache.get(identifier).orElse(connectionCache.find(_._2.boundIdentifier == identifier).map(_._2))
     }

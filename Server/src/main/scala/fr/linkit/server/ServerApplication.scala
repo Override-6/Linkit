@@ -25,10 +25,9 @@ import fr.linkit.server.ServerApplication.Version
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
 
-import java.util.concurrent.locks.LockSupport
 import scala.collection.mutable
-import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
 class ServerApplication private(override val configuration: ServerApplicationConfiguration) extends LinkitApplication(configuration) {
 
@@ -76,27 +75,6 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         AppLogger.info("Server application successfully shutdown.")
     }
 
-    @workerExecution
-    private def start(): Unit = {
-        appPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
-        if (alive) {
-            throw new AppException("Server is already started")
-        }
-        alive = true
-        val pluginFolder = configuration.pluginFolder match {
-            case Some(path) =>
-                val adapter = configuration.fsAdapter.getAdapter(path)
-                adapter.getAbsolutePath //converting to absolute path.
-            case None       => null
-        }
-        if (pluginFolder != null) {
-            val pluginCount = pluginManager.loadAll(pluginFolder).length
-            configuration.fsAdapter.getAdapter(pluginFolder)
-
-            AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
-        }
-    }
-
     override def listConnections: Iterable[ServerConnection] = {
         serverCache.values.toSet
     }
@@ -119,7 +97,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             AppLogger.debug("Server started !")
         }.joinTask() match {
             case Failure(e) => throw new ConnectionInitialisationException(s"Failed to create server connection ${configuration.identifier} on port ${configuration.port}", e)
-            case Success(_)     =>
+            case Success(_) =>
         }
 
         try {
@@ -185,15 +163,15 @@ object ServerApplication {
         }
 
         serverAppContext.runLaterControl {
-                AppLogger.info("Starting Server Application...")
-                serverAppContext.start()
-                val loadSchematic = config.loadSchematic
-                AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
-                loadSchematic.setup(serverAppContext)
-                AppLogger.trace("Schematic applied successfully.")
+            AppLogger.info("Starting Server Application...")
+            serverAppContext.start()
+            val loadSchematic = config.loadSchematic
+            AppLogger.trace(s"Applying schematic '${loadSchematic.name}'...")
+            loadSchematic.setup(serverAppContext)
+            AppLogger.trace("Schematic applied successfully.")
         }.join() match {
             case Failure(exception) => throw new ApplicationInstantiationException("Could not instantiate Server Application.", exception)
-            case Success(_)     =>
+            case Success(_)         =>
                 initialized = true
                 serverAppContext
         }

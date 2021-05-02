@@ -14,15 +14,14 @@ package fr.linkit.engine.connection.network.cache.puppet.generation
 
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.network.cache.puppet.AnnotationHelper.Shared
-import fr.linkit.engine.connection.network.cache.puppet.{PuppetClassDesc, PuppetWrapper, PuppeteerDescription}
+import fr.linkit.engine.connection.network.cache.puppet.{PuppetClassDesc, PuppetWrapper, Puppeteer, PuppeteerDescription}
 import fr.linkit.engine.local.mapping.ClassMappings
+
 import java.io.File
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
 import java.net.URLClassLoader
 import java.nio.file.{Files, Path}
-import java.sql.Timestamp
-
 import scala.collection.mutable
 
 //FIXME potential Collision if two classes of the same name, but not the same package are generated.
@@ -102,10 +101,11 @@ object PuppetWrapperClassGenerator {
             s"""
                |package $GeneratedClassesPackage;
                |
-               |import fr.linkit.core.connection.network.cache.puppet.Puppeteer;
-               |import fr.linkit.core.connection.network.cache.puppet.PuppeteerDescription;
-               |import fr.linkit.core.connection.network.cache.puppet.PuppetWrapper;
-               |import fr.linkit.core.connection.network.cache.puppet.generation.PuppetAlreadyInitialisedException;
+               |//import fr.linkit.core.connection.network.cache.puppet.Puppeteer;
+               |import ${classOf[Puppeteer[_]].getName};
+               |import ${classOf[PuppeteerDescription].getName};
+               |import ${classOf[PuppetWrapper[_]].getName};
+               |import ${classOf[PuppetAlreadyInitialisedException].getName};
                |
                |public class $puppetClassSimpleName extends $superClassName implements PuppetWrapper<$superClassName> {
                |
@@ -120,7 +120,7 @@ object PuppetWrapperClassGenerator {
                |}
                |
                |@Override
-               |public void initPuppeteer(Puppeteer<$superClassName> puppeteer, $superClassName clone) throws PuppetAlreadyInitialisedException {
+               |public void initPuppeteer($puppeteerType puppeteer, $superClassName clone) throws PuppetAlreadyInitialisedException {
                |    if (this.puppeteer != null)
                |        throw new PuppetAlreadyInitialisedException("This puppet is already initialized !");
                |    puppeteer.init(this, clone);

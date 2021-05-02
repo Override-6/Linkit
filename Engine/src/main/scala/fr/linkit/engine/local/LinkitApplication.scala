@@ -18,7 +18,7 @@ import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
-import fr.linkit.api.local.system.{ApiConstants, AppLogger, Version}
+import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
 import fr.linkit.engine.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
 import fr.linkit.engine.local.LinkitApplication.setInstance
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
@@ -80,6 +80,26 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration) extend
                 Console.err.println(s"This exception has been thrown while closing $closedEntity")
                 Console.err.println("-----------------------------------------------------------")
                 e.printStackTrace()
+        }
+    }
+
+    @workerExecution
+    protected def start(): Unit = {
+        appPool.ensureCurrentThreadOwned("Start must be performed into Application's pool")
+        if (alive) {
+            throw new AppException("Client is already started")
+        }
+        alive = true
+        val pluginFolder = configuration.pluginFolder match {
+            case Some(path) =>
+                val adapter = configuration.fsAdapter.getAdapter(path)
+                adapter.getAbsolutePath //converting to absolute path.
+            case None       => null
+        }
+        if (pluginFolder != null) {
+            val pluginCount = pluginManager.loadAll(pluginFolder).length
+            configuration.fsAdapter.getAdapter(pluginFolder)
+            AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
         }
     }
 

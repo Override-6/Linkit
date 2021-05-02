@@ -41,6 +41,7 @@ class CloudObjectRepository(handler: SharedCacheManager,
     AppLogger.trace(s"Shared Object cache opened (id: $cacheID, family: ${handler.family}, owner: ${handler.ownerID})")
 
     def postCloudObject[S <: Serializable](id: Int, obj: S): S with PuppetWrapper[S] = {
+        ensureNotWrapped(obj)
         chipObject(id, obj)
         val wrapper = genPuppetWrapper[S](id, supportIdentifier, obj)
         flushPuppet(id, obj)
@@ -155,6 +156,7 @@ class CloudObjectRepository(handler: SharedCacheManager,
     }
 
     private def genPuppetWrapper[S <: Serializable](id: Int, owner: String, puppet: S): S with PuppetWrapper[S] = {
+        ensureNotWrapped(puppet)
         val puppetDesc      = PuppetClassDesc.ofRef(puppet)
         val puppeteerDesc = PuppeteerDescription(family, cacheID, id, owner)
         val puppeteer = new Puppeteer[S](channel, this, puppeteerDesc, puppetDesc)
