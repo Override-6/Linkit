@@ -12,16 +12,41 @@
 
 package fr.linkit.api.local.concurrency
 
+import org.jetbrains.annotations.Nullable
+
 import scala.concurrent.Future
 import scala.util.Try
 
-trait AsyncTaskFuture[A] extends Future[A] {
+/**
+ * This class acts as a Future, and contains some utility method for
+ * flow control or information about the task that is being executed.
+ * */
+trait AsyncTask[A] extends Future[A] {
 
+    /**
+     * The taskID this class
+     * */
     val taskID: Int
+
+    def getWorkerThread: WorkerThread
+
+    def isExecuting: Boolean
+
+    def isPaused: Boolean
+
+    def isWaitingToContinue: Boolean
+
+    @Nullable val parent: AsyncTask[_]
+
+    def wakeup(): Unit
 
     def join(): Try[A]
 
     def join(millis: Long): Option[Try[A]]
+
+    def awaitNextThrowable(): Unit
+
+    def addOnNextThrow(@workerExecution callback: Option[Throwable] => Unit): Unit
 
     @workerExecution
     def joinTask(): Try[A]

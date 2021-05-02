@@ -44,7 +44,7 @@ class StreamChannel(parent: PacketChannel, scope: ChannelScope) extends Abstract
         }
 
         def startConstantTransfer(): Unit = {
-            BusyWorkerPool.checkCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
+            BusyWorkerPool.ensureCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
             transferConstantly = true
             while (transferConstantly) {
                 transferAll()

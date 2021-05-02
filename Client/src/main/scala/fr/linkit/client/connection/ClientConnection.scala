@@ -19,7 +19,7 @@ import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, Pack
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketException}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
-import fr.linkit.api.local.concurrency.{AsyncTaskFuture, packetWorkerExecution, workerExecution}
+import fr.linkit.api.local.concurrency.{AsyncTask, packetWorkerExecution, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.api.local.system.security.BytesHasher
@@ -71,7 +71,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
 
-    override def runLaterControl[A](task: => A): AsyncTaskFuture[A] = appContext.runLaterControl(task)
+    override def runLaterControl[A](task: => A): AsyncTask[A] = appContext.runLaterControl(task)
 
     override def getState: ExternalConnectionState = socket.getState
 
@@ -164,12 +164,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }
-
-    override def ensureCurrentThreadOwned(msg: String): Unit = appContext.ensureCurrentThreadOwned(msg)
-
-    override def ensureCurrentThreadOwned(): Unit = appContext.ensureCurrentThreadOwned()
-
-    override def isCurrentThreadOwned: Boolean = appContext.isCurrentThreadOwned
 }
 
 object ClientConnection {

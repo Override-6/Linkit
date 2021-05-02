@@ -13,7 +13,7 @@
 package fr.linkit.engine.local
 
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.concurrency.{AsyncTaskFuture, workerExecution}
+import fr.linkit.api.local.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
@@ -52,7 +52,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration) extend
             throw new IllegalStateException("Server Application is shutdown.")
     }
 
-    override def runLaterControl[A](task: => A): AsyncTaskFuture[A] = appPool.runLaterControl(task)
+    override def runLaterControl[A](task: => A): AsyncTask[A] = appPool.runLaterControl(task)
 
     override def runLater(task: => Unit): Unit = appPool.runLater(task)
 

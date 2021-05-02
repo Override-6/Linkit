@@ -59,7 +59,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
         val totalConnectionCount = countConnections
         var downCount            = 0
         val shutdownThread       = BusyWorkerPool.currentWorker
-        val shutdownTask         = shutdownThread.currentTaskID
+        val shutdownTask         = shutdownThread.currentTask
 
         listConnections.foreach((serverConnection: ServerConnection) => serverConnection.runLater {
             wrapCloseAction(s"Server connection ${serverConnection.supportIdentifier}") {

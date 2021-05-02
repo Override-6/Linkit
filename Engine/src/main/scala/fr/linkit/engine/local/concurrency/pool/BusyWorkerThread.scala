@@ -12,12 +12,10 @@
 
 package fr.linkit.engine.local.concurrency.pool
 
-import fr.linkit.api.local.concurrency.WorkerThread
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.local.concurrency.{AsyncTask, IllegalThreadException, WorkerThread, WorkerThreadController}
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.workerThreadGroup
 
-import java.util.concurrent.locks.LockSupport
-import scala.collection.mutable
+import java.util.concurrent.LinkedBlockingDeque
 
 /**
  * The representation of a java thread, extending from [[Thread]].
@@ -25,87 +23,76 @@ import scala.collection.mutable
  * */
 private[concurrency] final class BusyWorkerThread private[concurrency](target: Runnable,
                                                                        override val pool: BusyWorkerPool,
-                                                                       id: Int)
-        extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$id") with WorkerThread {
+                                                                       tid: Int)
+        extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$tid") with WorkerThread with WorkerThreadController {
 
-    private[concurrency] var isParkingForWorkflow   : Boolean                   = false
-    private[concurrency] var taskRecursionDepthCount: Int                       = 0
-    private              var currentTaskId          : Int                       = -1
-    private val workflowContinueLevels              : mutable.Map[Int, Boolean] = mutable.LinkedHashMap()
+    private[concurrency] var isParkingForWorkflow   : Boolean    = false
+    private[concurrency] var taskRecursionDepthCount: Int        = 0
+    private              var currentTask            : ThreadTask = _
+    private val workingTasks                                     = new LinkedBlockingDeque[ThreadTask]()
 
-    override def currentTaskID: Int = currentTaskId
+    override def getCurrentTask: Option[ThreadTask] = Option(currentTask)
 
-    def isExecutingTask(taskID: Int): Boolean = workflowContinueLevels.contains(taskID)
+    def isExecutingTask(taskID: Int): Boolean = {
+        workingTasks
+                .stream()
+                .anyMatch(_.taskID == taskID)
+    }
 
-    def currentTaskIsWaiting(): Boolean = workflowContinueLevels.getOrElse(currentTaskID, false)
+    override def execWhileCurrentTaskPaused[T](parkAction: => T)(workflow: T => Unit): Unit = {
+        checkCurrentThreadEqualsCurrentObject()
 
-    private[concurrency] def workflowLoop[T](parkAction: => T)(workflow: T => Unit): Unit = {
-        AppLogger.vError(s"$tasksId <> Entering Workflow Loop... ")
-        while (workflowContinueLevels(currentTaskID)) {
-            AppLogger.vError(s"$tasksId <> Workflow Loop continuing... ")
+        while (!currentTask.isWaitingToContinue) {
             isParkingForWorkflow = true
-            AppLogger.vError(s"$tasksId <> Parking... ")
             val t = parkAction
-            AppLogger.vError(s"$tasksId <> This thread has been unparked. ")
             isParkingForWorkflow = false
-
-            if (!workflowContinueLevels(currentTaskID)) {
-                AppLogger.vError(s"Workflow returned... ")
-                workflowContinueLevels(currentTaskID) = true
+            if (currentTask.isWaitingToContinue) {
                 return
             }
 
-            AppLogger.vError(s"$tasksId <> Continue workflow... ")
             workflow(t)
-            AppLogger.vError(s"$tasksId <> Workflow have ended ! ")
         }
-        this.workflowContinueLevels(currentTaskID) = true //set it to true in case if stopWorkflowLoop has been called.
-        AppLogger.vError(s"$tasksId <> Exit Worker Loop ")
+        //this.workflowContinueLevels(getCurrentTaskID) = true //set it to true in case if stopWorkflowLoop has been called.
     }
 
-    private[concurrency] def stopWorkflowLoop(taskID: Int): Unit = {
-        val continueWorkflow = workflowContinueLevels.get(taskID)
-        AppLogger.vError(s"stopWorkflowLoop($taskID) called for thread $getName.")
-        if (continueWorkflow.isEmpty)
-            return
-        if (continueWorkflow.get)
-            this.workflowContinueLevels(taskID) = false
+    override def runTask(task: ThreadTask): Unit = {
+        if (Thread.currentThread() != this)
+            throw IllegalThreadException("")
 
-        AppLogger.vError(s"$getName <-- This thread will be unparked for task $taskID because stopWorkflowLoop has been invoked.")
-        AppLogger.vError(s"workflowContinueLevels = $workflowContinueLevels")
-        if (currentTaskID == taskID)
-            LockSupport.unpark(this)
+        pushTask(task)
+        task.runTask()
+        removeTask(task)
     }
 
+    override def runSubTask(task: Runnable): Unit = {
+        taskRecursionDepthCount += 1
+        task.run()
+        taskRecursionDepthCount -= 1
+    }
 
-    private[concurrency] def pushTaskID(id: Int): Unit = {
-        workflowContinueLevels.put(id, true)
-        currentTaskId = id
+    private def pushTask(task: ThreadTask): Unit = {
+        workingTasks.addLast(task)
+        currentTask = task
         tasksIdStr = getUpdatedTasksID
     }
 
-    private[concurrency] def removeTaskID(id: Int): Unit = {
-        workflowContinueLevels.remove(id)
-        currentTaskId = workflowContinueLevels
-                .keys
-                .lastOption
-                .getOrElse(-1)
+    private def removeTask(task: AsyncTask[_]): Unit = {
+        val id = task.taskID
+        currentTask = workingTasks.pollLast()
         tasksIdStr = getUpdatedTasksID
     }
-
-
 
     //debug only
     private var tasksIdStr: String = _
 
     private def getUpdatedTasksID: String = {
-        if (workflowContinueLevels.isEmpty)
+        if (workingTasks.isEmpty)
             return s"[]"
 
-        val current = currentTaskId
-        val sb      = new StringBuilder(s"[")
-        workflowContinueLevels.keys.foreach(taskID => {
-            if (taskID == current) {
+        val sb = new StringBuilder(s"[")
+        workingTasks.forEach(task => {
+            val taskID = task.taskID
+            if (taskID == getCurrentTaskID) {
                 sb.append(taskID)
             } else {
                 sb.append(taskID)
@@ -114,16 +101,22 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
         })
         tasksIdStr = sb.dropRight(1) // remove last ',' char
                 .append("](")
-                .append(currentTaskID)
+                .append(currentTask)
                 .append(")")
                 .toString()
         tasksIdStr
     }
 
-    def tasksId: String = tasksIdStr
+    override def prettyPrintPrefix: String = tasksIdStr
 
     override def isParkingForRecursiveTask: Boolean = isParkingForWorkflow
 
     override def taskRecursionDepth: Int = taskRecursionDepthCount
 
+    override def getController: WorkerThreadController = this
+
+    private def checkCurrentThreadEqualsCurrentObject(): Unit = {
+        if (Thread.currentThread() != this)
+            throw IllegalThreadException("This Thread must run methods of it's own object representation.")
+    }
 }

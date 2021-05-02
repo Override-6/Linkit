@@ -12,14 +12,15 @@
 
 package fr.linkit.api.local.concurrency
 
-trait Procrastinator {
+trait WorkerThreadController {
 
-    def runLaterControl[A](@workerExecution task: => A): AsyncTask[A]
+    protected type ThreadTask = AsyncTaskController with AsyncTask[_]
 
-    def runLater(@workerExecution task: => Unit): Unit
-}
+    def execWhileCurrentTaskPaused[T](parkAction: => T)(workflow: T => Unit): Unit
 
-object Procrastinator {
-    //TODO use it.
-    val workerThreadGroup: ThreadGroup = new ThreadGroup("Application Workers")
+    def getCurrentTask: Option[ThreadTask]
+
+    def runTask(task: ThreadTask): Unit
+
+    def runSubTask(task: Runnable): Unit
 }

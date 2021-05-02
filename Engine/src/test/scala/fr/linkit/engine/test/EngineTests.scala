@@ -12,15 +12,15 @@
 
 package fr.linkit.engine.test
 
-import org.junit.jupiter.api.TestInstance.Lifecycle
-import org.junit.jupiter.api.{Test, TestInstance}
+import fr.linkit.api.local.ApplicationContext
 
-@TestInstance(Lifecycle.PER_CLASS)
-class EngineTests {
+/*@RunWith(classOf[JUnitPlatform])*/
+//@TestInstance(Lifecycle.PER_CLASS)
+abstract class EngineTests {
 
-    @Test
-    def test(): Unit = {
-        println("Passed !")
-    }
+}
+
+object EngineTests {
+    var application: ApplicationContext = _
 
 }

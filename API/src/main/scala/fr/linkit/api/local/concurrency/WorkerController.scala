@@ -12,26 +12,26 @@
 
 package fr.linkit.api.local.concurrency
 
-trait WorkerController[W <: WorkerThread] {
+trait WorkerController {
 
     @workerExecution
     def pauseTask(): Unit
 
     @workerExecution
-    def pauseTaskWhile(notifyCondition: => Boolean): Unit
+    def pauseTaskWhile(wakeupCondition: => Boolean): Unit
 
     @workerExecution
     def pauseTaskForAtLeast(millis: Long): Unit
 
     @workerExecution
-    def notifyNThreads(n: Int): Unit
+    def wakeupNTask(n: Int): Unit
 
     @workerExecution
-    def notifyAnyThread(): Unit
+    def wakeupAnyTask(): Unit
 
     @workerExecution
-    def notifyThreadsTasks(taskIds: Int*): Unit
+    def wakeupAllTasks(taskIds: Int*): Unit
 
     @workerExecution
-    def notifyWorkerTask(thread: W, taskID: Int): Unit
+    def wakeupWorkerTask(task: AsyncTask[_]): Unit
 }

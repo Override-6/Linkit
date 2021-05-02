@@ -19,7 +19,7 @@ import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult,
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
-import fr.linkit.api.local.concurrency.{AsyncTaskFuture, workerExecution}
+import fr.linkit.api.local.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.engine.connection.packet.fundamental.TaskInitPacket
@@ -67,7 +67,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     override def getState: ExternalConnectionState = session.getSocketState
 
-    override def runLaterControl[A](@workerExecution task: => A): AsyncTaskFuture[A] = {
+    override def runLaterControl[A](@workerExecution task: => A): AsyncTask[A] = {
         server.runLaterControl(task)
     }
 

@@ -11,7 +11,7 @@
  */
 
 plugins {
-    id 'java'
+    id 'java-library'
     id 'scala'
 }
 
@@ -23,9 +23,15 @@ repositories {
 
 dependencies {
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0-M1'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.0-M1'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.8.0-M1'
+    testImplementation group: 'org.junit.platform', name: 'junit-platform-suite-api', version: '1.8.0-M1'
+    testImplementation group: 'org.junit.platform', name: 'junit-platform-runner', version: '1.8.0-M1'
+    testImplementation project(':API').sourceSets.test.output
+
     implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.5'
     implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.6'
 
-    implementation project(':API')
+    api project(':API')
 }

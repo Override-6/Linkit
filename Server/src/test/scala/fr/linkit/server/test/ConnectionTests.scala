@@ -12,12 +12,12 @@
 
 package fr.linkit.server.test
 
-import org.junit.jupiter.api.Test
+class ConnectionTests {
 
-object StartupTests {
+    private val application = ServerLauncher.application
 
-    @Test
-    def test(): Unit = {
-        println("Hello !")
-    }
+    /*def openServerConnection(): Unit = {
+        application.getConnection()
+    }*/
+
 }

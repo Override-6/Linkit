@@ -30,14 +30,14 @@ import scala.collection.mutable.ListBuffer
  * */
 class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
     private val content     = new util.LinkedList[A]()
-    private val controller = new DedicatedWorkerController(pool)
+    private val controller = new SimpleWorkerController()
 
     override def add(e: A): Boolean = {
         content.synchronized {
             content.add(e)
             AppLogger.vError(s"Added ${e} in content $this (${System.identityHashCode(this)})")
         }
-        controller.notifyAnyThread()
+        controller.wakeupAnyTask()
         true
     }
 

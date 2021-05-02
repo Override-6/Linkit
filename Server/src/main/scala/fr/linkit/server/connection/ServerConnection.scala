@@ -19,7 +19,7 @@ import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.local.concurrency.{AsyncTaskFuture, workerExecution}
+import fr.linkit.api.local.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.engine.connection.packet.traffic.DynamicSocket
@@ -102,7 +102,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def countConnections: Int = connectionsManager.countConnections
 
-    override def runLaterControl[A](task: => A): AsyncTaskFuture[A] = workerPool.runLaterControl(task)
+    override def runLaterControl[A](task: => A): AsyncTask[A] = workerPool.runLaterControl(task)
 
     override def runLater(task: => Unit): Unit = workerPool.runLater(task)
 

@@ -22,7 +22,7 @@ import fr.linkit.engine.connection.network.cache.map.MapModification._
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
-import fr.linkit.engine.local.concurrency.pool.GenericWorkerController
+import fr.linkit.engine.local.concurrency.pool.SimpleWorkerController
 import fr.linkit.engine.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
 
@@ -35,7 +35,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
 
     private val networkListeners        = ConsumerContainer[(MapModification, K, V)]()
     private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]
-    private val controller              = new GenericWorkerController()
+    private val controller              = new SimpleWorkerController()
 
     @volatile private var modCount: Int = 0
 
@@ -164,7 +164,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
         println(s"Received modification: $mod, $this, $hashCode, ${LocalMap.hashCode()}")
 
         modCount += 1
-        controller.notifyAnyThread()
+        controller.wakeupAnyTask()
         networkListeners.applyAll(mod)
     }
 

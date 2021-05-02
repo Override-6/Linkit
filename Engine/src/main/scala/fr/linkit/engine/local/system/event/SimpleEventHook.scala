@@ -16,7 +16,6 @@ import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.event.{Event, EventHook, EventListener}
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.utils.ConsumerContainer
-import org.jetbrains.annotations.NotNull
 
 class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L, E) => Unit)*) extends EventHook[L, E] {
 
@@ -25,10 +24,9 @@ class SimpleEventHook[L <: EventListener, E <: Event[_, L]](listenerMethods: ((L
     @workerExecution
     override def await(): Unit = {
         val pool = BusyWorkerPool.ensureCurrentIsWorker()
-        val worker = BusyWorkerPool.currentWorker
-        val taskID = worker.currentTaskID
+        val task = BusyWorkerPool.currentTask
         addOnce {
-            BusyWorkerPool.unpauseTask(worker, taskID)
+            task.wakeup()
         }
         pool.pauseCurrentTask()
     }
