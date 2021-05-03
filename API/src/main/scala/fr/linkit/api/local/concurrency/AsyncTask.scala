@@ -44,14 +44,14 @@ trait AsyncTask[A] extends Future[A] {
 
     def join(millis: Long): Option[Try[A]]
 
-    def awaitNextThrowable(): Unit
+    def throwNextThrowable(): Unit
 
     def addOnNextThrow(@workerExecution callback: Option[Throwable] => Unit): Unit
 
     @workerExecution
-    def joinTask(): Try[A]
+    def derivate(): Try[A]
 
     @workerExecution
-    def joinTaskForAtLeast(millis: Long): Option[Try[A]]
+    def derivateForAtLeast(millis: Long): Option[Try[A]]
 
 }

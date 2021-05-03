@@ -16,14 +16,14 @@ import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.connection.packet.traffic.{PacketInjectableFactory, PacketSender, PacketSyncReceiver}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
-import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.local.system.Reason
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.utils.ScalaUtils.ensurePacketType
 import org.jetbrains.annotations.Nullable
-
 import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
+
 import scala.reflect.ClassTag
 
 //TODO doc
@@ -38,7 +38,7 @@ class SyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Channe
         if (!providable)
             new LinkedBlockingQueue[Packet]()
         else {
-            BusyWorkerPool
+            WorkerPools
                     .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }

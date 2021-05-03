@@ -12,16 +12,14 @@
 
 package fr.linkit.engine.local.concurrency.pool
 
-import fr.linkit.api.local.concurrency._
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool._
-import fr.linkit.engine.local.concurrency.{SimpleAsyncTask, currentThread, now, timedPark}
-
 import java.util.concurrent.locks.LockSupport
 import java.util.concurrent.{BlockingQueue, Executors, ThreadFactory, ThreadPoolExecutor}
+
+import fr.linkit.api.local.concurrency._
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.local.concurrency.{SimpleAsyncTask, now, timedPark}
+
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.global
 import scala.util.Try
 import scala.util.control.NonFatal
 
@@ -84,6 +82,8 @@ import scala.util.control.NonFatal
  * */
 class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPool with AutoCloseable {
 
+    import fr.linkit.api.local.concurrency.WorkerPools._
+
     if (initialThreadCount <= 0)
         throw new IllegalArgumentException(s"Worker pool '$name' must contain at least 1 thread, provided: '$initialThreadCount'")
 
@@ -92,7 +92,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
 
     //The extracted workQueue of the executor which contains all the tasks to execute
     private val workQueue = executor.getQueue
-    private val workers   = ListBuffer.empty[BusyWorkerThread]
+    private val workers   = ListBuffer.empty[WorkerThread]
     private var closed    = false
 
     //additional values for debugging
@@ -119,28 +119,24 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
         var runnable: Runnable = null
         taskCount += 1
         val submittedTaskID = taskCount
-        val currentTask     = currentTask0.orNull
-        val childTask       = SimpleAsyncTask[A](submittedTaskID, currentTask, Try(task))
+        val currentTask     = currentTaskWithController.orNull
+        val childTask       = SimpleAsyncTask[A](submittedTaskID, currentTask)(Try(task))
         runnable = () => {
             val rootExecution = currentTaskExecutionDepth == 0
             if (rootExecution)
                 activeThreads += 1
 
-            AppLogger.vWarn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID TAKEN FROM POOL $name")
-            currentWorker.getController.runTask(childTask)
+            currentWorker
+                .getController
+                .runTask(childTask)
 
             if (rootExecution)
                 activeThreads -= 1
             workTaskIds.synchronized {
                 workTaskIds -= submittedTaskID
-                val tasks = workTaskIds.toString()
-                AppLogger.vWarn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK ACCOMPLISHED ($submittedTaskID) ($tasks).")
             }
         }
-        AppLogger.vWarn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) Task $submittedTaskID will be submitted...")
-
         val tasks = workTaskIds.synchronized {
-            AppLogger.discoverLines(0, 6)
             workTaskIds += submittedTaskID
             workTaskIds.toString()
         }
@@ -173,10 +169,18 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
         runLaterControl(runnable.run())
     }
 
-    override def reportFailure(cause: Throwable): Unit = ()
+    override def reportFailure(cause: Throwable): Unit = {
+        if (!isCurrentThreadWorker)
+            return
+        currentWorker
+            .getController
+            .getCurrentTask
+            .get
+            .notifyNestThrow(cause)
+    }
 
-    def taskParkingThreads: Iterable[BusyWorkerThread] = {
-        workers.filter(_.isParkingForWorkflow)
+    def sleepingThreads: Iterable[WorkerThread] = {
+        workers.filter(_.isSleeping)
     }
 
     def countRemainingTasks: Int = workQueue.size()
@@ -200,11 +204,9 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
      * as long as it is not stopped by an auxiliary thread.
      * However, if the thread can't process other tasks, and still not stopped, it will wait until a task get submitted.
      *
-     * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
+     * @throws IllegalThreadException if the current thread is not a [[WorkerThread]]
      * */
-    def pauseCurrentTask(): Unit = {
-        AppLogger.vError(s"${currentTasksId} <> This Thread will execute remaining tasks or wait.")
-        AppLogger.discoverLines(0, 7)
+    override def pauseCurrentTask(): Unit = {
         executeRemainingTasks()
 
         val worker      = currentWorker.getController
@@ -214,7 +216,6 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
             executeRemainingTasks()
         }
         currentTask.setContinue()
-        AppLogger.vError(s"${currentTasksId} <> pauseCurrentTask just ended.")
     }
 
     /**
@@ -222,9 +223,9 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
      * x milliseconds.
      *
      * @param timeoutMillis the number of milliseconds the thread must be busy.
-     * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
+     * @throws IllegalThreadException if the current thread is not a [[WorkerThread]]
      * */
-    def pauseCurrentTaskForAtLeast(timeoutMillis: Long): Unit = {
+    override def pauseCurrentTaskForAtLeast(timeoutMillis: Long): Unit = {
         ensureCurrentThreadOwned()
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
@@ -275,7 +276,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
      * @tparam A the type of element the queue will contains
      * @return a [[BusyBlockingQueue]]
      */
-    def newBusyQueue[A]: BlockingQueue[A] = {
+    override def newBusyQueue[A]: BlockingQueue[A] = {
         new BusyBlockingQueue[A](this)
     }
 
@@ -284,7 +285,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
      * a thread is consequently executing.
      *
      * @return the task execution depth of the current thread
-     * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
+     * @throws IllegalThreadException if the current thread is not a [[WorkerThread]]
      * */
     @workerExecution
     def currentTaskExecutionDepth: Int = {
@@ -293,10 +294,8 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
     }
 
     private def unparkBusyThread(): Unit = workers.synchronized {
-        workers.find(_.isParkingForRecursiveTask) match {
-            case Some(thread) =>
-                AppLogger.vError(s"${thread.getName} <- This thread will be unparked because a new task is ready to be executed.")
-                LockSupport.unpark(thread)
+        workers.find(_.isSleeping) match {
+            case Some(thread) => thread.getController.wakeup()
             case None         => //no-op
         }
     }
@@ -315,7 +314,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
      * Executes all tasks contained in the workQueue
      * until the queue is empty.
      *
-     * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
+     * @throws IllegalThreadException if the current thread is not a [[WorkerThread]]
      * */
     private def executeRemainingTasks(): Unit = {
         ensureCurrentThreadOwned()
@@ -340,134 +339,3 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
     }
 }
 
-object BusyWorkerPool {
-
-    val workerThreadGroup: ThreadGroup = new ThreadGroup("Relay Worker")
-
-    /**
-     * This method may execute the given action into the current thread pool.
-     * If the current execution thread is not a relay worker thread, this would mean that
-     * we are not running into a thread that is owned by the Relay concurrency system. Therefore, the action
-     * may be performed in the current thread
-     *
-     * @param action the action to perform
-     * */
-    def runLaterOrHere(action: => Unit): Unit = {
-        currentPool.fold(action)(_.runLater(action))
-    }
-
-    @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
-    def runLaterInCurrentPool(@workerExecution action: => Unit): Unit = {
-        val pool = ensureCurrentIsWorker("Could not run request action because current thread does not belong to any worker pool")
-        pool.runLater(action)
-    }
-
-    /**
-     * @throws IllegalThreadException if the current thread is a [[BusyWorkerThread]]
-     * */
-    @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
-    def ensureCurrentIsWorker(): BusyWorkerPool = {
-        if (!isCurrentThreadWorker)
-            throw IllegalThreadException("This action must be performed by a Worker thread !")
-        currentPool.get
-    }
-
-    /**
-     * @throws IllegalThreadException if the current thread is a [[BusyWorkerThread]]
-     * @param msg the message to complain with the exception
-     * */
-    @throws[IllegalThreadException]("If the current thread that executes this method is not an instance of WorkerThread.")
-    def ensureCurrentIsWorker(msg: String): BusyWorkerPool = {
-        if (!isCurrentThreadWorker)
-            throw IllegalThreadException(s"This action must be performed by a Worker thread ! ($msg)")
-        currentPool.get
-    }
-
-    /**
-     * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
-     * */
-    @throws[IllegalThreadException]("If the current thread that executes this method is an instance of WorkerThread.")
-    def ensureCurrentIsNotWorker(): Unit = {
-        if (isCurrentThreadWorker)
-            throw IllegalThreadException("This action must not be performed by a Worker thread !")
-    }
-
-    /**
-     * @throws IllegalThreadException if the current thread is not a [[BusyWorkerThread]]
-     * @param msg the message to complain with the exception
-     * */
-    @throws[IllegalThreadException]("If the current thread that executes this method is an instance of WorkerThread.")
-    def ensureCurrentIsNotWorker(msg: String): Unit = {
-        if (isCurrentThreadWorker)
-            throw IllegalThreadException(s"This action must not be performed by a Worker thread ! ($msg)")
-    }
-
-    /**
-     * @return {{{true}}} if and only if the current thread is an instance of [[BusyWorkerThread]]
-     * */
-    def isCurrentThreadWorker: Boolean = {
-        currentThread.isInstanceOf[BusyWorkerThread]
-    }
-
-    /**
-     * Toggles between two actions if the current thread is an instance of [[BusyWorkerThread]]
-     *
-     * @param ifCurrent The action to process if the current thread is a relay worker thread.
-     *                  The given entry is the current thread pool
-     * @param orElse    the action to process if the current thread is not a relay worker thread.
-     *
-     * */
-    def ifCurrentWorkerOrElse[A](ifCurrent: BusyWorkerPool => A, orElse: => A): A = {
-        val pool = currentPool
-
-        if (pool.isDefined) {
-            ifCurrent(pool.get)
-        } else {
-            orElse
-        }
-    }
-
-    /**
-     * @return Some if the current thread is a member of a [[BusyWorkerPool]], None instead
-     * */
-    implicit def currentPool: Option[BusyWorkerPool] = {
-        currentThread match {
-            case worker: BusyWorkerThread => Some(worker.pool)
-            case _                        => None
-        }
-    }
-
-    implicit def currentExecutionContext: ExecutionContext = {
-        currentPool match {
-            case Some(pool) => pool
-            case None       => global
-        }
-    }
-
-    @workerExecution
-    def currentWorker: WorkerThread = {
-        currentThread match {
-            case worker: WorkerThread => worker
-            case _                    => throw IllegalThreadException("Current thread is not a BusyWorkerThread.")
-        }
-    }
-
-    @workerExecution
-    def currentTask: AsyncTask[_] = {
-        currentWorker.getCurrentTask.get
-    }
-
-    @workerExecution
-    private def currentTask0: Option[AsyncTask[_] with AsyncTaskController] = {
-        if (!isCurrentThreadWorker)
-            return None
-        currentWorker.getController.getCurrentTask
-    }
-
-    def currentTasksId: String = {
-        if (isCurrentThreadWorker)
-            currentWorker.prettyPrintPrefix
-        else "?"
-    }
-
-}

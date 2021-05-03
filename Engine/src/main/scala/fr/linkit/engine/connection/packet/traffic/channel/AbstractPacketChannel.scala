@@ -20,7 +20,7 @@ import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{AppLogger, ForbiddenIdentifierException, Reason}
 import fr.linkit.engine.connection.packet.AbstractAttributesPresence
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable

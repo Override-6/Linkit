@@ -13,15 +13,15 @@
 package fr.linkit.engine.local.plugin
 
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.local.plugin.{Plugin, PluginLoader, PluginManager}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.mapping.ClassMapEngine
 import fr.linkit.engine.local.plugin.fragment.SimpleFragmentManager
-
 import java.nio.file.{NoSuchFileException, NotDirectoryException}
+
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
 
@@ -34,7 +34,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
 
     @workerExecution
     override def load(file: String): Plugin = {
-        BusyWorkerPool.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
+        WorkerPools.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         AppLogger.debug(s"Plugin $file is preparing to be loaded.")
 
         val adapter = fsa.getAdapter(file)
@@ -49,7 +49,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
 
     @workerExecution
     override def loadAll(folder: String): Array[Plugin] = {
-        BusyWorkerPool.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
+        WorkerPools.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         AppLogger.debug(s"Plugins into folder '$folder' are preparing to be loaded.")
 
         val adapter = fsa.getAdapter(folder)
@@ -74,7 +74,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
             return Array()
 
         ClassMapEngine.mapAllSourcesOfClasses(fsa, classes)
-        BusyWorkerPool.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
+        WorkerPools.ensureCurrentIsWorker("Plugin loading must be performed in a worker pool")
         val pluginLoader = new DirectPluginLoader(context, classes)
         enablePlugins(pluginLoader)
     }

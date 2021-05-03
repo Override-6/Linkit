@@ -13,9 +13,9 @@
 package fr.linkit.engine.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.{AsyncTask, IllegalThreadException, WorkerThread, WorkerThreadController}
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.workerThreadGroup
-
+import fr.linkit.api.local.concurrency.WorkerPools.workerThreadGroup
 import java.util.concurrent.LinkedBlockingDeque
+import java.util.concurrent.locks.LockSupport
 
 /**
  * The representation of a java thread, extending from [[Thread]].
@@ -24,19 +24,19 @@ import java.util.concurrent.LinkedBlockingDeque
 private[concurrency] final class BusyWorkerThread private[concurrency](target: Runnable,
                                                                        override val pool: BusyWorkerPool,
                                                                        tid: Int)
-        extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$tid") with WorkerThread with WorkerThreadController {
+    extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$tid") with WorkerThread with WorkerThreadController {
 
-    private[concurrency] var isParkingForWorkflow   : Boolean    = false
-    private[concurrency] var taskRecursionDepthCount: Int        = 0
-    private              var currentTask            : ThreadTask = _
-    private val workingTasks                                     = new LinkedBlockingDeque[ThreadTask]()
+    private var isParkingForWorkflow   : Boolean    = false
+    private var taskRecursionDepthCount: Int        = 0
+    private var currentTask            : ThreadTask = _
+    private val workingTasks                        = new LinkedBlockingDeque[ThreadTask]()
 
     override def getCurrentTask: Option[ThreadTask] = Option(currentTask)
 
     def isExecutingTask(taskID: Int): Boolean = {
         workingTasks
-                .stream()
-                .anyMatch(_.taskID == taskID)
+            .stream()
+            .anyMatch(_.taskID == taskID)
     }
 
     override def execWhileCurrentTaskPaused[T](parkAction: => T)(workflow: T => Unit): Unit = {
@@ -70,6 +70,8 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
         taskRecursionDepthCount -= 1
     }
 
+    override def wakeup(): Unit = if (isParkingForWorkflow) LockSupport.unpark(this)
+
     private def pushTask(task: ThreadTask): Unit = {
         workingTasks.addLast(task)
         currentTask = task
@@ -100,20 +102,20 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
             sb.append(',')
         })
         tasksIdStr = sb.dropRight(1) // remove last ',' char
-                .append("](")
-                .append(currentTask)
-                .append(")")
-                .toString()
+            .append("](")
+            .append(currentTask)
+            .append(")")
+            .toString()
         tasksIdStr
     }
 
     override def prettyPrintPrefix: String = tasksIdStr
 
-    override def isParkingForRecursiveTask: Boolean = isParkingForWorkflow
-
     override def taskRecursionDepth: Int = taskRecursionDepthCount
 
     override def getController: WorkerThreadController = this
+
+    override def isSleeping: Boolean = isParkingForWorkflow
 
     private def checkCurrentThreadEqualsCurrentObject(): Unit = {
         if (Thread.currentThread() != this)

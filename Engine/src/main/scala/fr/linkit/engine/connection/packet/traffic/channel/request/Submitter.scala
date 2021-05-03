@@ -14,10 +14,11 @@ package fr.linkit.engine.connection.packet.traffic.channel.request
 
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.local.concurrency.WorkerPool
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
 import scala.collection.mutable.ListBuffer
 
@@ -66,7 +67,7 @@ class ResponseSubmitter(id: Int, scope: ChannelScope) extends Submitter[Unit](id
     }
 }
 
-class RequestSubmitter(id: Int, scope: ChannelScope, pool: BusyWorkerPool, handler: RequestPacketChannel) extends Submitter[RequestHolder](id, scope) {
+class RequestSubmitter(id: Int, scope: ChannelScope, pool: WorkerPool, handler: RequestPacketChannel) extends Submitter[RequestHolder](id, scope) {
 
     override protected def makeSubmit(): RequestHolder = {
         val holder  = RequestHolder(id, pool.newBusyQueue, handler)

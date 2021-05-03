@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.local.utils
 
-import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal
@@ -70,7 +70,7 @@ class ConsumerContainer[A]() {
 
     @workerExecution
     def applyAllLater(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
-        val pool = BusyWorkerPool.ensureCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
+        val pool = WorkerPools.ensureCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
         pool.runLater {
             applyAll(t, onException)
         }

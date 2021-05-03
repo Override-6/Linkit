@@ -59,7 +59,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     @workerExecution
     override def shutdown(): Unit = {
-        BusyWorkerPool.ensureCurrentIsWorker("Must shutdown server connection in a worker thread.")
+        WorkerPools.ensureCurrentIsWorker("Must shutdown server connection in a worker thread.")
         if (!alive)
             return
         alive = false
@@ -75,7 +75,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     @workerExecution
     def start(): Unit = {
-        BusyWorkerPool.ensureCurrentIsWorker("Must start server connection in a worker thread.")
+        WorkerPools.ensureCurrentIsWorker("Must start server connection in a worker thread.")
         if (alive)
             throw new ServerException(this, "Server is already started.")
         AppLogger.info(s"Server '$supportIdentifier' starts on port ${configuration.port}")

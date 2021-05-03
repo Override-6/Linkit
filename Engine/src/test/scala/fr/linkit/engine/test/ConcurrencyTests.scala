@@ -39,7 +39,7 @@ class ConcurrencyTests {
 
     @Test
     def join1s(): Unit = runLater {
-        Assertions.assertTimeout(Duration.ofSeconds(1), {
+        Assertions.assertTimeout(Duration.ofMillis(1100), {
             pool.runLaterControl {
                 AppLogger.debug("Waiting 1s...")
                 Thread.sleep(2000L)
@@ -71,13 +71,13 @@ class ConcurrencyTests {
     }
 
     @Test
-    def jointTask(): Unit = runLater {
+    def joinTask(): Unit = runLater {
         Assertions.assertTimeout(Duration.ofSeconds(1), {
             pool.runLaterControl {
-                AppLogger.debug("Waiting 1s...")
+                AppLogger.debug("Waiting 2s...")
                 Thread.sleep(2000L)
                 AppLogger.debug("Freedom")
-            }.joinTask()
+            }.derivate()
         }: Executable)
     }
 
@@ -88,13 +88,15 @@ class ConcurrencyTests {
                 AppLogger.debug("Waiting 1s...")
                 Thread.sleep(2000L)
                 AppLogger.debug("Freedom")
-            }.joinTaskForAtLeast(1000L)
+            }.derivateForAtLeast(1000L)
         }: Executable)
     }
 
     @AfterAll
     def closePool(): Unit = pool.close()
 
-    private def runLater(f: => Unit): Unit = pool.runLater(f)
+    private def runLater(f: => Unit): Unit = pool
+        .runLaterControl(f)
+        .throwNextThrowable()
 
 }

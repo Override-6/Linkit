@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine
 import fr.linkit.engine.connection.packet.{PacketBundle, SimplePacketAttributes}
@@ -34,7 +34,7 @@ class AsyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Chann
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
-        val pool = BusyWorkerPool.currentPool.get
+        val pool = WorkerPools.currentPool.get
         pool.runLater {
             injection.attachPin((packet, attr) => {
                 try {

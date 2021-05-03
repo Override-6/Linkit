@@ -12,6 +12,8 @@
 
 package fr.linkit.api.local.concurrency
 
+import java.util.concurrent.{BlockingDeque, BlockingQueue}
+
 import scala.concurrent.ExecutionContext
 
 trait WorkerPool extends Procrastinator with ExecutionContext {
@@ -20,4 +22,10 @@ trait WorkerPool extends Procrastinator with ExecutionContext {
     def ensureCurrentThreadOwned(): Unit
 
     def isCurrentThreadOwned: Boolean
+
+    def pauseCurrentTask(): Unit
+
+    def pauseCurrentTaskForAtLeast(millis: Long): Unit
+
+    def newBusyQueue[A]: BlockingQueue[A]
 }

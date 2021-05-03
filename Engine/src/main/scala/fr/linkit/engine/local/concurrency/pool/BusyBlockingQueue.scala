@@ -14,7 +14,7 @@ package fr.linkit.engine.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 import java.util

@@ -18,8 +18,9 @@ import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import org.jetbrains.annotations.Nullable
-
 import java.io.{DataInputStream, DataOutputStream}
+
+import fr.linkit.api.local.concurrency.WorkerPools
 
 class StreamChannel(parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) {
 
@@ -44,7 +45,7 @@ class StreamChannel(parent: PacketChannel, scope: ChannelScope) extends Abstract
         }
 
         def startConstantTransfer(): Unit = {
-            BusyWorkerPool.ensureCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
+            WorkerPools.ensureCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
             transferConstantly = true
             while (transferConstantly) {
                 transferAll()

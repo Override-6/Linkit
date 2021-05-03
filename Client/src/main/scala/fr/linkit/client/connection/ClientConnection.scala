@@ -81,7 +81,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     @workerExecution
     override def shutdown(): Unit = {
-        BusyWorkerPool.ensureCurrentIsWorker("Shutdown must be performed in a contextual thread pool.")
+        WorkerPools.ensureCurrentIsWorker("Shutdown must be performed in a contextual thread pool.")
         if (!alive)
             return //already shutdown
 
@@ -101,7 +101,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     @workerExecution
     private def initPacketReader(): Unit = {
-        BusyWorkerPool.ensureCurrentIsWorker("Can't start in a non worker pool !")
+        WorkerPools.ensureCurrentIsWorker("Can't start in a non worker pool !")
         if (alive)
             throw new IllegalStateException(s"Connection already started ! ($supportIdentifier)")
         alive = true

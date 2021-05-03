@@ -21,11 +21,13 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.AbstractPacketChannel
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.engine.local.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
-
 import java.util.NoSuchElementException
+
+import fr.linkit.api.local.concurrency.WorkerPools
+
 import scala.collection.mutable
 
 class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) {
@@ -75,7 +77,7 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
     }
 
     def makeRequest(scope: ChannelScope): RequestSubmitter = {
-        val pool = BusyWorkerPool.ensureCurrentIsWorker()
+        val pool = WorkerPools.ensureCurrentIsWorker()
 
         val requestID = nextRequestID
         new RequestSubmitter(requestID, scope, pool, this)

@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.traffic.InjectionContainer
 import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
 import scala.collection.mutable
 

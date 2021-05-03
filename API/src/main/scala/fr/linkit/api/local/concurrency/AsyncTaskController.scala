@@ -14,8 +14,6 @@ package fr.linkit.api.local.concurrency
 
 trait AsyncTaskController {
 
-    protected type ControlledWorkerThread = WorkerThread with WorkerThreadController
-
     def notifyNestThrow(threw: Throwable): Unit
 
     def runTask(): Unit

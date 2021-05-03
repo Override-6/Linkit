@@ -18,7 +18,7 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, Pack
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjection.{PacketBuffer, PacketInjectionNode}
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
 import java.nio.BufferOverflowException
 import scala.collection.mutable.ArrayBuffer
@@ -118,7 +118,7 @@ object ParallelInjection {
         def foreachUnmarked(f: (Packet, PacketAttributes) => Unit, buff: Array[(Packet, PacketAttributes)]): Unit = breakable {
             buff.foreach(tuple => {
                 if (tuple == null)
-                    break //we have reached the end of the tuple.
+                    break() //we have reached the end of the tuple.
                 if (!marks.contains(tuple._1.number))
                     f(tuple._1, tuple._2)
             })

@@ -58,8 +58,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
 
         val totalConnectionCount = countConnections
         var downCount            = 0
-        val shutdownThread       = BusyWorkerPool.currentWorker
-        val shutdownTask         = shutdownThread.currentTask
+        val shutdownTask         = WorkerPools.currentTask
 
         listConnections.foreach((serverConnection: ServerConnection) => serverConnection.runLater {
             wrapCloseAction(s"Server connection ${serverConnection.supportIdentifier}") {
@@ -67,7 +66,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             }
             downCount += 1
             if (downCount == totalConnectionCount)
-                BusyWorkerPool.unpauseTask(shutdownThread, shutdownTask)
+                shutdownTask.wakeup()
         })
         appPool.pauseCurrentTask()
 
@@ -95,7 +94,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             AppLogger.debug("Starting server...")
             serverConnection.start()
             AppLogger.debug("Server started !")
-        }.joinTask() match {
+        }.derivate() match {
             case Failure(e) => throw new ConnectionInitialisationException(s"Failed to create server connection ${configuration.identifier} on port ${configuration.port}", e)
             case Success(_) =>
         }

@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.packet.traffic.channel.request
 
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.engine.local.utils.ConsumerContainer
 
 import java.util.concurrent.BlockingQueue

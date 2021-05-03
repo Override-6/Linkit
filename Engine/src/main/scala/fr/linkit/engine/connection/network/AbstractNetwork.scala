@@ -22,7 +22,7 @@ import fr.linkit.engine.connection.network.cache.collection.{BoundedCollection, 
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
 import scala.collection.mutable
 

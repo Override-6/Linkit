@@ -134,7 +134,7 @@ Here is an exaustive list of options contained in the default RelayPointConfigur
 You can find the list of [RelayPoint](https://github.com/Override-6/Linkit/finder.master/RelayPoint) and [RelayServer](https://github.com/Override-6/Linkit/finder.master/RelayServer) configuration options in their respective readme.  
 
 ## Setup
-The setup is very simple; you just have to download / compile the source code of RelayPoint or RelayServer, then create a RelayPoint/Server instance with a RelayPoint/ServerBuilder. In order to start your relay, you'll must call the Relay#start method in the [BusyWorkerPool](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/concurrency/BusyWorkerPool.scala) of the relay. In order to retrieve the thread pool execution, simply use Relay#runLater.
+The setup is very simple; you just have to download / compile the source code of RelayPoint or RelayServer, then create a RelayPoint/Server instance with a RelayPoint/ServerBuilder. In order to start your relay, you'll must call the Relay#start method in the [BusyWorkerPool](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/concurrency/WorkerPools.scala) of the relay. In order to retrieve the thread pool execution, simply use Relay#runLater.
 
 Here is an example for setting up the fr.override.linkit.client : 
 ```scala

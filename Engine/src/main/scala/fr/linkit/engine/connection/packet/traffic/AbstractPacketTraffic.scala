@@ -21,7 +21,7 @@ import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.api.local.system.{AppLogger, ClosedException, JustifiedCloseable, Reason}
 import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjectionContainer
 import fr.linkit.engine.local.concurrency.PacketReaderThread
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

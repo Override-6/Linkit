@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.local.concurrency
 
-import fr.linkit.api.local.concurrency.{AsyncTask, AsyncTaskController, WorkerThread, workerExecution}
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTask
+import java.util.concurrent.locks.LockSupport
+
+import fr.linkit.api.local.concurrency.WorkerPools.{currentTask, currentWorker}
+import fr.linkit.api.local.concurrency._
 import fr.linkit.engine.local.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
 
-import java.util.concurrent.locks.LockSupport
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{CanAwait, ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -26,11 +26,11 @@ import scala.util.{Failure, Success, Try}
 
 class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent: AsyncTask[_] with AsyncTaskController, task: () => Try[A]) extends AsyncTask[A] with AsyncTaskController {
 
-    @volatile private var attempt: Try[A]                 = _
-    @volatile private var paused                          = true
-    private val onCompleteConsumers                       = new ConsumerContainer[Try[A]]
-    private val onThrowConsumers                          = new ConsumerContainer[Option[Throwable]]
-    private           var worker : ControlledWorkerThread = _
+    @volatile private var attempt: Try[A]       = _
+    @volatile private var paused                = true
+    private val onCompleteConsumers             = new ConsumerContainer[Try[A]]
+    private val onThrowConsumers                = new ConsumerContainer[Option[Throwable]]
+    private           var worker : WorkerThread = _
 
     override def getWorkerThread: WorkerThread = worker
 
@@ -49,30 +49,36 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     }
 
     @workerExecution
-    override def joinTask(): Try[A] = {
-        val pool = BusyWorkerPool.ensureCurrentIsWorker()
-
-        val task = currentTask
-        awaitComplete(pool.pauseCurrentTask(), _ => task.wakeup()).get
+    override def derivate(): Try[A] = {
+        val pool           = WorkerPools.ensureCurrentIsWorker()
+        val pausedTask           = currentTask
+        awaitComplete(pool.pauseCurrentTask(), _ => {
+            pausedTask.wakeup()
+        }).get
     }
 
     @workerExecution
-    override def joinTaskForAtLeast(millis: Long): Option[Try[A]] = {
-        val pool = BusyWorkerPool.ensureCurrentIsWorker()
+    override def derivateForAtLeast(millis: Long): Option[Try[A]] = {
+        val pool = WorkerPools.ensureCurrentIsWorker()
         val task = currentTask
         awaitComplete(pool.pauseCurrentTaskForAtLeast(millis), _ => task.wakeup())
     }
 
     @workerExecution
     def runTask(): Unit = {
-        BusyWorkerPool.ensureCurrentIsWorker()
+        WorkerPools.ensureCurrentIsWorker()
 
         paused = false
+        worker = currentWorker
         this.attempt = task.apply()
 
-        onCompleteConsumers.applyAll(attempt)
+        onCompleteConsumers.synchronized {
+            onCompleteConsumers.applyAll(attempt)
+        }
         val opt: Option[Throwable] = attempt match {
-            case Failure(exception) => Option(exception)
+            case Failure(exception) =>
+                notifyNestThrow(exception)
+                Option(exception)
             case Success(_)         => None
         }
         onThrowConsumers.applyAll(opt)
@@ -100,7 +106,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     override def value: Option[Try[A]] = if (!isCompleted) None else Some(attempt)
 
     override def transform[S](f: Try[A] => Try[S])(implicit executor: ExecutionContext): Future[S] = {
-        val future = SimpleAsyncTask[S](taskID, this, Try(f(attempt)).flatten)
+        val future = SimpleAsyncTask[S](taskID, this)(Try(f(attempt)).flatten)
         onComplete(_ => future.runTask())
         future
     }
@@ -128,7 +134,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     private def performOnComplete[U](f: Try[A] => U): Unit = {
         if (isCompleted)
             f(attempt)
-        else onCompleteConsumers += (t => f(t))
+        else onCompleteConsumers.synchronized(onCompleteConsumers += (t => f(t)))
     }
 
     private def awaitComplete(wait: => Unit, wakeup: Thread => Unit): Option[Try[A]] = {
@@ -136,18 +142,22 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
             return Option(attempt)
 
         val parkedThread = currentThread
-        onCompleteConsumers += (e => wakeup(parkedThread))
+        onCompleteConsumers.synchronized {
+            onCompleteConsumers += (e => wakeup(parkedThread))
+        }
         wait
         Option(attempt)
     }
 
-    override def awaitNextThrowable(): Unit = {
+    override def throwNextThrowable(): Unit = {
         if (isCompleted)
             return
-        val (waitAction, wakeupAction) = if (BusyWorkerPool.isCurrentThreadWorker) {
-            val pool = BusyWorkerPool.currentPool.get
+        val (waitAction, wakeupAction) = if (WorkerPools.isCurrentThreadWorker) {
+            val pool = WorkerPools.currentPool.get
             val task = currentTask
-            (() => pool.pauseCurrentTask(), () => task.wakeup())
+            (() => pool.pauseCurrentTask(), () => {
+                task.wakeup()
+            })
         } else {
             val thread = currentThread
             (() => LockSupport.park(), () => LockSupport.unpark(thread))
@@ -171,6 +181,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
 
     override def wakeup(): Unit = {
         setContinue()
+        worker.getController.wakeup()
     }
 
     override def setPaused(): Unit = paused = true
@@ -182,6 +193,6 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
 
 object SimpleAsyncTask {
 
-    def apply[A](taskID: Int, parent: AsyncTask[_] with AsyncTaskController, task: => Try[A]): SimpleAsyncTask[A] = new SimpleAsyncTask(taskID, parent, () => task)
+    def apply[A](taskID: Int, parent: AsyncTask[_] with AsyncTaskController)(task: => Try[A]): SimpleAsyncTask[A] = new SimpleAsyncTask(taskID, parent, () => task)
 
 }

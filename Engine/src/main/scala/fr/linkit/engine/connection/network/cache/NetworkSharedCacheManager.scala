@@ -13,20 +13,17 @@
 package fr.linkit.engine.connection.network.cache
 
 import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
-import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.network.cache.NetworkSharedCacheManager.MockCache
 import fr.linkit.engine.connection.network.cache.map.SharedMap
-import fr.linkit.engine.connection.packet.PacketBundle
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ArrayObjectPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool.currentTasksId
 
-import java.util.NoSuchElementException
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 

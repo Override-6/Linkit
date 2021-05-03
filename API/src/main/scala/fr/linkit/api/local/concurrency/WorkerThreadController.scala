@@ -23,4 +23,6 @@ trait WorkerThreadController {
     def runTask(task: ThreadTask): Unit
 
     def runSubTask(task: Runnable): Unit
+
+    def wakeup(): Unit
 }

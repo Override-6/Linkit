@@ -14,11 +14,11 @@ package fr.linkit.api.local.concurrency
 
 trait WorkerThread extends Thread {
 
-    val pool: Procrastinator
+    val pool: WorkerPool
 
     def taskRecursionDepth: Int
 
-    def isParkingForRecursiveTask: Boolean
+    def isSleeping: Boolean
 
     def getCurrentTask: Option[AsyncTask[_]]
 
