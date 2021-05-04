@@ -110,7 +110,7 @@ object WorkerPools {
     def currentWorker: WorkerThread = {
         currentThread match {
             case worker: WorkerThread => worker
-            case _                    => throw IllegalThreadException("Current thread is not a WorkerThread.")
+            case other                    => throw IllegalThreadException(s"Current thread is not a WorkerThread. ($other)")
         }
     }
 

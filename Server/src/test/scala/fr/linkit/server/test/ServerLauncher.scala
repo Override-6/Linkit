@@ -34,9 +34,8 @@ import fr.linkit.plugin.debug.DebugExtension
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
-import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.TestInstance.Lifecycle
-import org.junit.jupiter.api.{AfterAll, Assertions, Test, TestInstance, TestMethodOrder}
+import org.junit.jupiter.api._
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(classOf[HierarchyRaiserOrderer])
@@ -83,8 +82,7 @@ object ServerLauncher extends EngineTests {
 
     @Test
     def plugins(): Unit = {
-        if (application == null)
-            fail()
+        Assertions.assertNotNull(application)
 
         application.runLaterControl {
             val pluginManager = application.pluginManager
@@ -99,6 +97,7 @@ object ServerLauncher extends EngineTests {
 
     @AfterAll
     def sleep(): Unit = {
+        Thread.currentThread().setDaemon(true)
         AppLogger.debug("Sleeping...")
         Thread.sleep(9999999999999L)
     }

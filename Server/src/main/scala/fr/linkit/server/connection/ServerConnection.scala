@@ -19,7 +19,7 @@ import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.local.concurrency.{AsyncTask, workerExecution}
+import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.engine.connection.packet.traffic.DynamicSocket

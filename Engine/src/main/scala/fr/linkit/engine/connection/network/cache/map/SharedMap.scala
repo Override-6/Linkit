@@ -63,7 +63,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
 
     //FIXME remove would not work as we are creating a wrapper for this lambda att add and remove.
     def removeListener(action: (MapModification, K, V) => Unit): this.type = {
-        networkListeners -= (triple => action(triple._1, triple._2, triple._3))
+        //networkListeners -= (triple => action(triple._1, triple._2, triple._3))
         this
     }
 

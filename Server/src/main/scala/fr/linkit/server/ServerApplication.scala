@@ -13,7 +13,7 @@
 package fr.linkit.server
 
 import fr.linkit.api.connection.{ConnectionInitialisationException, NoSuchConnectionException}
-import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.local.system
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException

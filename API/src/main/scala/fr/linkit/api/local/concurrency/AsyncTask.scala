@@ -22,7 +22,6 @@ import scala.util.Try
  * flow control or information about the task that is being executed.
  * */
 trait AsyncTask[A] extends Future[A] {
-
     /**
      * The taskID this class
      * */
@@ -33,8 +32,6 @@ trait AsyncTask[A] extends Future[A] {
     def isExecuting: Boolean
 
     def isPaused: Boolean
-
-    def isWaitingToContinue: Boolean
 
     @Nullable val parent: AsyncTask[_]
 

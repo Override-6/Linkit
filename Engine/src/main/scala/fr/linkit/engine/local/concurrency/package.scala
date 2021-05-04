@@ -41,9 +41,9 @@ package object concurrency {
      * @param timeout the maximum amount of time to wait
      * @return the time the thread waited on the object.
      * */
-    def timedPark(timeout: Long): Long = {
+    def timedPark(ref: AnyRef = null, timeout: Long): Long = {
         val t0 = now()
-        LockSupport.parkNanos(timeout * 1000000)
+        LockSupport.parkNanos(ref, timeout * 1000000)
         val t1 = now()
         t1 - t0
     }

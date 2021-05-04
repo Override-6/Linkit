@@ -22,6 +22,7 @@ import scala.util.control.NonFatal
 
 class ConsumerContainer[A]() {
 
+
     private val consumers = ListBuffer.empty[ConsumerExecutor]
 
     def add(consumer: A => Unit): this.type = {
@@ -39,10 +40,7 @@ class ConsumerContainer[A]() {
         this
     }
 
-    def remove(consumer: A => Unit): this.type = {
-        consumers.filterInPlace(_.isSameConsumer(consumer))
-        this
-    }
+    def isEmpty: Boolean = consumers.isEmpty
 
     def clear(): this.type = {
         consumers.clear()
@@ -63,11 +61,6 @@ class ConsumerContainer[A]() {
      * */
     def +:+=(consumer: A => Unit): this.type = addOnce(consumer)
 
-    /**
-     * alias for [[ConsumerContainer#remove()]]
-     * */
-    def -=(consumer: A => Unit): this.type = remove(consumer)
-
     @workerExecution
     def applyAllLater(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
         val pool = WorkerPools.ensureCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
@@ -80,9 +73,9 @@ class ConsumerContainer[A]() {
     def applyAll(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
         Array.from(consumers).foreach(consumer => {
             try {
-                AppLogger.vTrace(s"EXECUTING $consumer")
+                //AppLogger.vTrace(s"EXECUTING $consumer")
                 consumer.execute(t)
-                AppLogger.vTrace(s"Consumer $consumer executed !")
+                //AppLogger.vTrace(s"Consumer $consumer executed !")
             } catch {
                 case NonFatal(e) =>
                     onException(e)
@@ -102,13 +95,12 @@ class ConsumerContainer[A]() {
                 //synchronise in order to be sure that another thread would not start to execute the
                 //consumer again when the first thread is removing it from the queue.
                 consumer(t)
-                remove(consumer)
+                consumers -= this
                 return
             }
             consumer(t)
         }
 
-        def isSameConsumer(consumer: A => Unit): Boolean = this.consumer == consumer
     }
 
 }

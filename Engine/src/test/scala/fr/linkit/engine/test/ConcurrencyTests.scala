@@ -12,14 +12,16 @@
 
 package fr.linkit.engine.test
 
+import fr.linkit.api.local.concurrency.WorkerPools
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.test.TestUtils._
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import org.junit.jupiter.api.TestInstance.Lifecycle
+import org.junit.jupiter.api._
 import org.junit.jupiter.api.function.Executable
-import org.junit.jupiter.api.{AfterAll, Assertions, Test, TestInstance}
 
-import java.time.Duration
+import java.util.concurrent.locks.LockSupport
 
 @TestInstance(Lifecycle.PER_CLASS)
 class ConcurrencyTests {
@@ -27,76 +29,101 @@ class ConcurrencyTests {
     private val pool = new BusyWorkerPool(2, "TestPool")
 
     @Test
+    @RepeatedTest(5)
     def join(): Unit = runLater {
-        Assertions.assertTimeout(Duration.ofSeconds(2), {
+        assertBetween(2000, 2100, {
             pool.runLaterControl {
-                AppLogger.debug("Waiting 1s...")
+                AppLogger.debug(s"${currentTasksId} Waiting 1s...")
                 Thread.sleep(2000L)
-                AppLogger.debug("Freedom")
+                AppLogger.debug(s"${currentTasksId} Freedom")
             }.join()
+            AppLogger.debug("Hello")
         }: Executable)
     }
 
-    @Test
+    @RepeatedTest(5)
     def join1s(): Unit = runLater {
-        Assertions.assertTimeout(Duration.ofMillis(1100), {
-            pool.runLaterControl {
-                AppLogger.debug("Waiting 1s...")
+        assertBetween(1000, 1200, {
+            val task = pool.runLaterControl {
+                AppLogger.debug("Waiting 2s...")
                 Thread.sleep(2000L)
                 AppLogger.debug("Freedom")
-            }.join(1000)
+            }
+            AppLogger.debug(s"current task ${WorkerPools.currentTask.taskID} is about to join task ${task.taskID} for 1 second...")
+            task.join(1000)
+            AppLogger.debug("join ended.")
         }: Executable)
     }
 
-    @Test
-    def awaitFirstThrowable(): Unit = {
-        println("dqsdqzd")
+    @RepeatedTest(5)
+    def throwNextThrowable(): Unit = {
         runLater {
-            println(s"Thread.currentThread() = ${Thread.currentThread()}")
-            Assertions.assertThrows(classOf[ArithmeticException], {
+            AppLogger.debug("setting AssertThrows...")
+            Assertions.assertThrows(classOf[ArithmeticException], try {
                 pool.runLaterControl {
-                    println(s"Thread.currentThread() = ${Thread.currentThread()}")
                     pool.runLaterControl {
-                        println(s"Thread.currentThread() = ${Thread.currentThread()}")
                         pool.runLaterControl {
-                            println(s"Thread.currentThread() = ${Thread.currentThread()}")
-                            throw new ArithmeticException()
+                            AppLogger.debug("throwing...")
+                            throw new ArithmeticException(s"${System.nanoTime()}")
                         }
                         pool.pauseCurrentTaskForAtLeast(1000)
                     }
                     pool.pauseCurrentTaskForAtLeast(1000)
-                }//.awaitNextThrowable()
-            }: Executable)
+                }.throwNextThrowable()
+            }: Executable catch {
+                case e: Throwable =>
+                    e.printStackTrace()
+                    throw e
+            })
+            AppLogger.debug("AssertThrows set !")
         }
     }
 
-    @Test
-    def joinTask(): Unit = runLater {
-        Assertions.assertTimeout(Duration.ofSeconds(1), {
+    @RepeatedTest(5)
+    def derivate(): Unit = runLater {
+        assertBetween(2000, 2200, {
             pool.runLaterControl {
                 AppLogger.debug("Waiting 2s...")
                 Thread.sleep(2000L)
                 AppLogger.debug("Freedom")
             }.derivate()
+            AppLogger.debug("Hello")
         }: Executable)
     }
 
-    @Test
-    def joinTaskForAtLeast1s(): Unit = runLater {
-        Assertions.assertTimeout(Duration.ofSeconds(1), {
+    @RepeatedTest(5)
+    def derivateForAtLeast1s(): Unit = runLater {
+        assertBetween(1000, 1200000, {
             pool.runLaterControl {
-                AppLogger.debug("Waiting 1s...")
-                Thread.sleep(2000L)
-                AppLogger.debug("Freedom")
+                pool.runLaterControl {
+                    AppLogger.debug("Waiting 1s...")
+                    Thread.sleep(2000L)
+                    AppLogger.debug("Freedom")
+                }.derivate()
+                AppLogger.debug("Hello")
             }.derivateForAtLeast(1000L)
+            AppLogger.debug("Hello")
         }: Executable)
     }
 
     @AfterAll
     def closePool(): Unit = pool.close()
 
-    private def runLater(f: => Unit): Unit = pool
-        .runLaterControl(f)
-        .throwNextThrowable()
+    private def runLater(f: => Unit): Unit = {
+        pool
+                .runLaterControl(f)
+                .throwNextThrowable()
+    }
+
+    private def assertBetween(min: Int, max: Int, action: => Unit): Unit = {
+        val t0 = System.currentTimeMillis()
+        AppLogger.trace(s"AssertBetween $min ms and $max ms...")
+        action
+        val t1       = System.currentTimeMillis()
+        val execTime = t1 - t0
+        AppLogger.trace(s"Action performed in $execTime ms")
+        if (execTime < min || execTime > max)
+            throw new AssertionError(s"execution did not took between $min ms and $max ms to execute. ($execTime ms)")
+    }
 
 }

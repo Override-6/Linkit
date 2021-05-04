@@ -16,7 +16,7 @@ trait WorkerThreadController {
 
     protected type ThreadTask = AsyncTaskController with AsyncTask[_]
 
-    def execWhileCurrentTaskPaused[T](parkAction: => T)(workflow: T => Unit): Unit
+    def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit
 
     def getCurrentTask: Option[ThreadTask]
 
@@ -24,5 +24,5 @@ trait WorkerThreadController {
 
     def runSubTask(task: Runnable): Unit
 
-    def wakeup(): Unit
+    def wakeup(task: ThreadTask): Unit
 }

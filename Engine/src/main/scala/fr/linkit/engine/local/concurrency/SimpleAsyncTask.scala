@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.local.concurrency
 
-import java.util.concurrent.locks.LockSupport
-
 import fr.linkit.api.local.concurrency.WorkerPools.{currentTask, currentWorker}
 import fr.linkit.api.local.concurrency._
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.local.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
 
+import java.util.concurrent.locks.LockSupport
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{CanAwait, ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -37,21 +37,23 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     override def isExecuting: Boolean = worker != null
 
     override def join(): Try[A] = {
-        awaitComplete(LockSupport.park(), LockSupport.unpark).get
+        awaitComplete(LockSupport.park(this), LockSupport.unpark).get
     }
 
     override def join(millis: Long): Option[Try[A]] = {
         if (millis <= 0) {
-            join()
-            return Option(attempt)
+            return Option(join())
         }
-        awaitComplete(LockSupport.parkNanos(millis * 1000000), LockSupport.unpark)
+        awaitComplete(LockSupport.parkNanos(this, millis * 1000000), t => {
+            if (LockSupport.getBlocker(t) eq this)
+                LockSupport.unpark(t)
+        })
     }
 
     @workerExecution
     override def derivate(): Try[A] = {
-        val pool           = WorkerPools.ensureCurrentIsWorker()
-        val pausedTask           = currentTask
+        val pool       = WorkerPools.ensureCurrentIsWorker()
+        val pausedTask = currentTask
         awaitComplete(pool.pauseCurrentTask(), _ => {
             pausedTask.wakeup()
         }).get
@@ -71,6 +73,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
         paused = false
         worker = currentWorker
         this.attempt = task.apply()
+        //AppLogger.info(s"$this -> Task attempt: $attempt")
 
         onCompleteConsumers.synchronized {
             onCompleteConsumers.applyAll(attempt)
@@ -86,8 +89,13 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     }
 
     override def notifyNestThrow(threw: Throwable): Unit = {
+        //AppLogger.debug(s"NotifyNestThrow : $threw")
+        //AppLogger.debug(s"onThrowConsumers: $onThrowConsumers")
+        //AppLogger.debug(s"this            : $this")
+
+        val consumersEmpty = onThrowConsumers.isEmpty
         onThrowConsumers.applyAll(Option(threw))
-        if (parent != null)
+        if (parent != null && consumersEmpty)
             parent.notifyNestThrow(threw)
     }
 
@@ -134,24 +142,36 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     private def performOnComplete[U](f: Try[A] => U): Unit = {
         if (isCompleted)
             f(attempt)
-        else onCompleteConsumers.synchronized(onCompleteConsumers += (t => f(t)))
+        else onCompleteConsumers.synchronized(onCompleteConsumers +:+= (t => f(t)))
     }
 
     private def awaitComplete(wait: => Unit, wakeup: Thread => Unit): Option[Try[A]] = {
+        //AppLogger.debug("awaitComplete...")
+        //AppLogger.debug(s"isCompleted = ${isCompleted}")
         if (isCompleted)
             return Option(attempt)
 
+        //val pausedTaskID = currentTask.taskID
+
         val parkedThread = currentThread
         onCompleteConsumers.synchronized {
-            onCompleteConsumers += (e => wakeup(parkedThread))
+            onCompleteConsumers +:+= (_ => {
+                ////AppLogger.debug(s"waking up task $pausedTaskID that was waiting for task $taskID $parkedThread.")
+                wakeup(parkedThread)
+            })
         }
+        ////AppLogger.debug(s"${currentTasksId} waiting task $taskID to be complete.")
         wait
+        ////AppLogger.debug(s"${currentTasksId} task $taskID has been completed.")
+        setContinue()
         Option(attempt)
     }
 
     override def throwNextThrowable(): Unit = {
-        if (isCompleted)
+        if (isCompleted) {
+            //AppLogger.debug("throwNextThrowable isCompleted = true !")
             return
+        }
         val (waitAction, wakeupAction) = if (WorkerPools.isCurrentThreadWorker) {
             val pool = WorkerPools.currentPool.get
             val task = currentTask
@@ -160,35 +180,50 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
             })
         } else {
             val thread = currentThread
-            (() => LockSupport.park(), () => LockSupport.unpark(thread))
+            (() => LockSupport.park(this), () => LockSupport.unpark(thread))
         }
 
-        var exception: Throwable = null
+        @volatile var exception: Option[Throwable] = None
+        val reference                              = new Object
         addOnNextThrow(t => {
-            exception = t.orNull
+            exception = t
+            //AppLogger.debug(s"setting exception to ${t} ($reference)")
             wakeupAction.apply()
         })
+        //AppLogger.debug(s"$this -> throwNextThrowable preparing to perform wait action... ($reference)")
         waitAction.apply()
-        if (exception != null)
-            throw exception
+        setContinue()
+        //AppLogger.debug(s"$this -> exception: $exception")
+        if (exception.isDefined) {
+            //AppLogger.debug(s"Throw ${exception.get}")
+            throw exception.get
+        }
     }
 
     override def addOnNextThrow(callback: Option[Throwable] => Unit): Unit = {
-        onThrowConsumers += callback
+        onThrowConsumers +:+= callback
     }
 
     override def isPaused: Boolean = paused
 
     override def wakeup(): Unit = {
         setContinue()
-        worker.getController.wakeup()
+        if (worker != null)
+            worker.getController.wakeup(this)
     }
 
-    override def setPaused(): Unit = paused = true
+    override def setPaused(): Unit = {
+        AppLogger.info(s"TASK $this MARKED AS PAUSED")
+        paused = true
+    }
 
-    override def setContinue(): Unit = paused = false
+    override def setContinue(): Unit = {
+        AppLogger.info(s"TASK $this MARKED AS CONTINUE")
+        paused = false
+    }
 
-    override def isWaitingToContinue: Boolean = !paused && isExecuting
+    override def toString: String = s"SimpleAsyncTask($taskID, $parent)"
+
 }
 
 object SimpleAsyncTask {

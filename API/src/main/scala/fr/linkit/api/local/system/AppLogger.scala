@@ -22,7 +22,7 @@ object AppLogger {
 
     var networkPreviewLength: Int = 1000
 
-    var useVerbose         : Boolean = false
+    var useVerbose         : Boolean = true
     var printVerbosesOnKill: Boolean = false
 
     val logger: Logger = Logger.getLogger(classOf[ApplicationContext])
@@ -97,14 +97,13 @@ object AppLogger {
         e.printStackTrace()
     }
 
-    def discoverLines(from: Int, to: Int): Unit = /*verbose*/ {
-        /*val currentThread = Thread.currentThread()
+    def discoverLines(from: Int, to: Int): Unit = verbose {
+        val currentThread = Thread.currentThread()
         val stackTrace    = currentThread.getStackTrace
 
-        debug(s"RETRIEVING ${to - from} STACK LINES FOR THREAD ${currentThread.getName} :")
         for (i <- (from + 2) to to.min(stackTrace.length - 2) + 1) {
-            //println("\t" + stackTrace(i))
-        }*/
+            println("\t at: " + stackTrace(i))
+        }
     }
 
     private var totalVerbPrints = 0

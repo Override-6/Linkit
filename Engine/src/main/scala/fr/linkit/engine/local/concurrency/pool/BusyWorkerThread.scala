@@ -12,10 +12,13 @@
 
 package fr.linkit.engine.local.concurrency.pool
 
-import fr.linkit.api.local.concurrency.{AsyncTask, IllegalThreadException, WorkerThread, WorkerThreadController}
 import fr.linkit.api.local.concurrency.WorkerPools.workerThreadGroup
-import java.util.concurrent.LinkedBlockingDeque
+import fr.linkit.api.local.concurrency._
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.local.concurrency.pool.BusyWorkerThread.TaskProfile
+
 import java.util.concurrent.locks.LockSupport
+import scala.collection.mutable
 
 /**
  * The representation of a java thread, extending from [[Thread]].
@@ -24,35 +27,36 @@ import java.util.concurrent.locks.LockSupport
 private[concurrency] final class BusyWorkerThread private[concurrency](target: Runnable,
                                                                        override val pool: BusyWorkerPool,
                                                                        tid: Int)
-    extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$tid") with WorkerThread with WorkerThreadController {
+        extends Thread(workerThreadGroup, target, s"${pool.name}'s Thread#$tid") with WorkerThread with WorkerThreadController {
 
     private var isParkingForWorkflow   : Boolean    = false
     private var taskRecursionDepthCount: Int        = 0
     private var currentTask            : ThreadTask = _
-    private val workingTasks                        = new LinkedBlockingDeque[ThreadTask]()
+    private val workingTasks                        = new mutable.LinkedHashMap[Int, TaskProfile]
 
     override def getCurrentTask: Option[ThreadTask] = Option(currentTask)
 
     def isExecutingTask(taskID: Int): Boolean = {
-        workingTasks
-            .stream()
-            .anyMatch(_.taskID == taskID)
+        workingTasks.contains(taskID)
     }
 
-    override def execWhileCurrentTaskPaused[T](parkAction: => T)(workflow: T => Unit): Unit = {
-        checkCurrentThreadEqualsCurrentObject()
+    override def execWhileCurrentTaskPaused[T](parkAction: => T, loopCondition: => Boolean)(workflow: T => Unit): Unit = {
+        ensureCurrentThreadEqualsThisObject()
+        AppLogger.vError("Entering workflow loop...")
 
-        while (!currentTask.isWaitingToContinue) {
+        while (loopCondition) {
+            AppLogger.vError("This thread is about to park.")
             isParkingForWorkflow = true
             val t = parkAction
             isParkingForWorkflow = false
-            if (currentTask.isWaitingToContinue) {
+            AppLogger.vError("This thread has been unparked.")
+            if (!loopCondition) {
                 return
             }
-
+            AppLogger.vError("Continuing workflow...")
             workflow(t)
         }
-        //this.workflowContinueLevels(getCurrentTaskID) = true //set it to true in case if stopWorkflowLoop has been called.
+        AppLogger.vError("Exiting workflow loop...")
     }
 
     override def runTask(task: ThreadTask): Unit = {
@@ -70,18 +74,37 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
         taskRecursionDepthCount -= 1
     }
 
-    override def wakeup(): Unit = if (isParkingForWorkflow) LockSupport.unpark(this)
+    override def wakeup(task: ThreadTask): Unit = {
+        AppLogger.debug(s"Waking up thread $this for task ${task.taskID}")
+        val blocker = LockSupport.getBlocker(this)
+        AppLogger.debug(s"Thread $this is parking on blocker $blocker")
+        if (blocker == task) {
+            AppLogger.vError(s"$this <- This thread will be unparked.")
+            LockSupport.unpark(this)
+            task.setContinue()
+        }
+    }
 
     private def pushTask(task: ThreadTask): Unit = {
-        workingTasks.addLast(task)
+        if (currentTask != null && task.taskID < currentTask.taskID)
+            throw new IllegalArgumentException("Cannot push task which is inferior than current task.")
+        workingTasks.put(task.taskID, TaskProfile(task))
         currentTask = task
         tasksIdStr = getUpdatedTasksID
+        AppLogger.vInfo(s"$tasksIdStr push Task '${task.taskID}'")
     }
 
     private def removeTask(task: AsyncTask[_]): Unit = {
+        if (currentTask != null && task.taskID > currentTask.taskID)
+            throw new IllegalArgumentException("Cannot remove task which is superior than current task.")
         val id = task.taskID
-        currentTask = workingTasks.pollLast()
+        workingTasks.remove(id)
+        currentTask = workingTasks
+                .lastOption
+                .map(_._2.task)
+                .orNull
         tasksIdStr = getUpdatedTasksID
+        AppLogger.vInfo(s"$tasksIdStr remove Task '$id'")
     }
 
     //debug only
@@ -92,8 +115,8 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
             return s"[]"
 
         val sb = new StringBuilder(s"[")
-        workingTasks.forEach(task => {
-            val taskID = task.taskID
+        workingTasks.values.foreach(taskProfile => {
+            val taskID = taskProfile.taskID
             if (taskID == getCurrentTaskID) {
                 sb.append(taskID)
             } else {
@@ -102,10 +125,10 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
             sb.append(',')
         })
         tasksIdStr = sb.dropRight(1) // remove last ',' char
-            .append("](")
-            .append(currentTask)
-            .append(")")
-            .toString()
+                .append("](")
+                .append(currentTask.taskID)
+                .append(")")
+                .toString()
         tasksIdStr
     }
 
@@ -117,8 +140,21 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
 
     override def isSleeping: Boolean = isParkingForWorkflow
 
-    private def checkCurrentThreadEqualsCurrentObject(): Unit = {
+    private def ensureCurrentThreadEqualsThisObject(): Unit = {
         if (Thread.currentThread() != this)
             throw IllegalThreadException("This Thread must run methods of it's own object representation.")
     }
+
+}
+
+object BusyWorkerThread {
+
+    case class TaskProfile(task: AsyncTask[_] with AsyncTaskController) {
+
+        val taskID: Int = task.taskID
+
+        var mustWakeup: Boolean = true
+
+    }
+
 }
