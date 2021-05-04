@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.server.test
+package fr.linkit.api.connection.network.cache.repo
 
-class ConnectionTests {
+import fr.linkit.api.local.system.AppException
 
-    private val application = ServerTests.application
-
-    /*def openServerConnection(): Unit = {
-        application.getConnection()
-    }*/
+class PuppetException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

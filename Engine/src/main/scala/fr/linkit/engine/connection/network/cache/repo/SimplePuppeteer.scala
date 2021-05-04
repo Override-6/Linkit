@@ -10,8 +10,9 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet
+package fr.linkit.engine.connection.network.cache.repo
 
+import fr.linkit.api.connection.network.cache.repo.{PuppetWrapper, Puppeteer, PuppeteerDescription, RemoteInvocationFailedException}
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
@@ -23,11 +24,10 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketC
 
 import scala.collection.mutable.ListBuffer
 
-class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
-                                   presence: PacketAttributesPresence,
-                                   val description: PuppeteerDescription, val desc: PuppetClassDesc) {
+class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
+                                         presence: PacketAttributesPresence,
+                                         val description: PuppeteerDescription, val desc: PuppetClassDesc) extends Puppeteer[S]{
 
-    type SW <: S with PuppetWrapper[S]
 
     private val ownerScope = prepareScope(ChannelScopes.retains(description.owner))
     private val bcScope    = prepareScope(ChannelScopes.discardCurrent)
@@ -35,51 +35,51 @@ class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
     private val puppetModifications = ListBuffer.empty[(String, Any)]
 
     private var puppet       : S  = _
-    private var puppetWrapper: SW = _
+    private var puppetWrapper: S with PuppetWrapper[S] = _
 
-    def getPuppet: S = puppet
+    override def getPuppet: S = puppet
 
-    def getPuppetWrapper: SW = puppetWrapper
+    override def getPuppetWrapper: S with PuppetWrapper[S] = puppetWrapper
 
-    def sendInvokeAndReturn[R](methodName: String, args: Array[Any]): R = {
+    override def sendInvokeAndReturn[R](methodName: String, args: Array[Any]): R = {
         AppLogger.debug(s"Remotely invoking method $methodName(${args.mkString(",")})")
         val result = channel.makeRequest(ownerScope)
-            .addPacket(ObjectPacket((methodName, Array(args: _*))))
-            .submit()
-            .nextResponse
-            .nextPacket[RefPacket[R]].value
+                .addPacket(ObjectPacket((methodName, Array(args: _*))))
+                .submit()
+                .nextResponse
+                .nextPacket[RefPacket[R]].value
         result match {
-                //FIXME ambiguity with broadcast method invocation.
+            //FIXME ambiguity with broadcast method invocation.
             case ThrowableWrapper(e) => throw new RemoteInvocationFailedException(s"Invocation of method $methodName with arguments '${args.mkString(", ")}' failed.", e)
             case result              => result
         }
     }
 
-    def sendInvoke(methodName: String, args: Array[Any]): Unit = {
+    override def sendInvoke(methodName: String, args: Array[Any]): Unit = {
         AppLogger.debug(s"Remotely invoking method $methodName(${args.mkString(",")})")
         channel.makeRequest(ownerScope)
-            .addPacket(ObjectPacket((methodName, Array(args: _*))))
-            .submit()
+                .addPacket(ObjectPacket((methodName, Array(args: _*))))
+                .submit()
     }
 
-    def addFieldUpdate(fieldName: String, newValue: Any): Unit = {
+    override def addFieldUpdate(fieldName: String, newValue: Any): Unit = {
         AppLogger.vDebug(s"Field '$fieldName' took value $newValue")
         if (desc.isAutoFlush)
             flushModification((fieldName, newValue))
         else puppetModifications += ((fieldName, newValue))
     }
 
-    def sendUpdatePuppet(newVersion: Serializable): Unit = {
+    override def sendPuppetUpdate(newVersion: S): Unit = {
         desc.foreachSharedFields(field => addFieldUpdate(field.getName, field.get(newVersion)))
     }
 
-    def flush(): this.type = {
+    override def flush(): this.type = {
         puppetModifications.foreach(flushModification)
         puppetModifications.clear()
         this
     }
 
-    def init(wrapper: SW, puppet: S): Unit = {
+    override def init(wrapper: S with PuppetWrapper[S], puppet: S): Unit = {
         if (this.puppet != null || this.puppetWrapper != null) {
             throw new IllegalStateException("This Puppeteer already controls a puppet instance !")
         }
@@ -89,9 +89,9 @@ class Puppeteer[S <: Serializable](channel: RequestPacketChannel,
 
     private def flushModification(mod: (String, Any)): Unit = {
         channel.makeRequest(bcScope)
-            .addPacket(ObjectPacket(mod))
-            .submit()
-            .detach()
+                .addPacket(ObjectPacket(mod))
+                .submit()
+                .detach()
     }
 
     private def prepareScope(factory: ScopeFactory[_ <: ChannelScope]): ChannelScope = {

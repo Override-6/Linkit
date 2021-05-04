@@ -10,8 +10,9 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet
+package fr.linkit.engine.connection.network.cache.repo
 
+import fr.linkit.api.connection.network.cache.repo.{IllegalPuppetException, PuppetException}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
@@ -48,7 +49,7 @@ case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
                 .asInstanceOf[Any]
     }
 
-    private[puppet] def handleBundle(packet: Packet, submitter: ResponseSubmitter): Unit = {
+    private[repo] def handleBundle(packet: Packet, submitter: ResponseSubmitter): Unit = {
         packet match {
             case ObjectPacket((methodName: String, args: Array[Any])) =>
                 var result: Any = null

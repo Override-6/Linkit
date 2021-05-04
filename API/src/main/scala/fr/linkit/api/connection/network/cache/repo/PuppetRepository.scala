@@ -10,16 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet
+package fr.linkit.api.connection.network.cache.repo
 
-import scala.annotation.meta.{field, getter, setter}
+trait PuppetRepository[A <: Serializable] {
 
-object AnnotationHelper {
+    def postObject(identifier: Int, obj: A): A with PuppetWrapper[A]
 
-    import fr.linkit.engine.connection.network.cache.puppet
+    def findObject(identifier: Int): Option[A with PuppetWrapper[A]]
 
-    type SharedObject = puppet.SharedObject@field@getter@setter
-    type Shared = puppet.Shared@field@getter@setter
-    type Hidden = puppet.Hidden@field@getter@setter
+    def isRegistered(identifier: Int): Boolean
 
+    def initPuppetWrapper(wrapper: A with PuppetWrapper[A]): Unit
+
+    def getOrElse[U >: A](id: Int, orElse: => U): U = findObject(id).getOrElse(orElse)
 }

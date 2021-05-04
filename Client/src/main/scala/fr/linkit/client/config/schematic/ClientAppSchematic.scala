@@ -26,10 +26,10 @@ abstract class ClientAppSchematic extends AppSchematic[ClientApplication] {
         ListBuffer.empty[ClientConnectionConfiguration]
 
     @throws[ApplicationInstantiationException]
-    override def setup(a: ClientApplication): Unit = {
-        for (configuration <- serverConfigs) a.runLater {
+    override def setup(app: ClientApplication): Unit = {
+        for (configuration <- serverConfigs) app.runLater {
             try {
-                a.openConnection(configuration)
+                app.openConnection(configuration)
             } catch {
                 case NonFatal(e) =>
                     val name: String = configuration.configName

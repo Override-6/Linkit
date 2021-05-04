@@ -12,28 +12,19 @@
 
 package fr.linkit.engine.connection.network.cache
 
-import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheManager}
+import fr.linkit.api.connection.network.cache.{CacheContent, CacheOpenBehavior, InternalSharedCache, SharedCacheManager}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketAttributesPresence}
-import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
-import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
+import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel, RequestSubmitter}
-import fr.linkit.engine.local.utils.{ConsumerContainer, ScalaUtils}
+import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 import org.jetbrains.annotations.Nullable
 
-import scala.reflect.ClassTag
-
-abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handler: SharedCacheManager,
-                                                                 identifier: Int,
-                                                                 channel: RequestPacketChannel) extends AbstractAttributesPresence with InternalSharedCache with JustifiedCloseable {
-
-    /**
-     * Consumers of this container are called when a new item get inserted into the cache.
-     * Or for all items already present.
-     * */
-    protected val links: ConsumerContainer[A] = ConsumerContainer[A]()
+abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
+                                   identifier: Int,
+                                   channel: RequestPacketChannel) extends AbstractAttributesPresence with InternalSharedCache with JustifiedCloseable {
 
     override val family: String = if (handler == null) "" else handler.family
 
@@ -48,12 +39,13 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         //println(s"<$family> UPDATING CACHE $identifier")
         val content = handler.retrieveCacheContent(identifier, CacheOpenBehavior.GET_OR_CRASH)
         //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
-
-        setCurrentContent(ScalaUtils.slowCopy(content))
+        if (content.isDefined) {
+            setContent(content.get)
+        }
         this
     }
 
-    def link(action: A => Unit): this.type
+    //def link(action: A => Unit): this.type
 
     protected def handleBundle(bundle: RequestBundle): Unit
 
@@ -70,8 +62,6 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         request
     }
 
-    protected def setCurrentContent(content: Array[A]): Unit
-
     addDefaultAttribute("family", family)
     addDefaultAttribute("cache", identifier)
 
@@ -83,6 +73,5 @@ abstract class AbstractSharedCache[A <: Serializable : ClassTag](@Nullable handl
         if (isPresent("cache", identifier) && isPresent("family", family))
             handleBundle(bundle)
     })
-
 
 }

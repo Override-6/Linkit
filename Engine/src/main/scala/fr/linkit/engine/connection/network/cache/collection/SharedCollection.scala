@@ -12,20 +12,19 @@
 
 package fr.linkit.engine.connection.network.cache.collection
 
-import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
-import fr.linkit.api.connection.packet.{Bundle, Packet}
-import fr.linkit.api.connection.packet.traffic.{PacketInjectableContainer, PacketSender, PacketSyncReceiver}
+import fr.linkit.api.connection.network.cache.{CacheContent, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.concurrency.WorkerPools
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.network.cache.AbstractSharedCache
 import fr.linkit.engine.connection.network.cache.collection.CollectionModification._
 import fr.linkit.engine.connection.network.cache.collection.SharedCollection.CollectionAdapter
+import fr.linkit.engine.connection.network.cache.{AbstractSharedCache, CacheArrayContent}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.utils.ConsumerContainer
-import org.jetbrains.annotations.{NotNull, Nullable}
+import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -36,7 +35,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
                                                      identifier: Int,
                                                      adapter: CollectionAdapter[A],
                                                      channel: RequestPacketChannel)
-        extends AbstractSharedCache[A](handler, identifier, channel) with mutable.Iterable[A] {
+        extends AbstractSharedCache(handler, identifier, channel) with mutable.Iterable[A] {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
     private val networkListeners        = ConsumerContainer[(CollectionModification, Int, A)]()
@@ -54,7 +53,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
 
     override def toString: String = getClass.getSimpleName + s"(family: $family, id: $identifier, content: ${adapter.toString})"
 
-    override def currentContent: Array[Any] = adapter.get().toArray
+    override def snapshotContent: CacheContent = CacheArrayContent[A](toArray)
 
     override def iterator: Iterator[A] = adapter.iterator
 
@@ -66,12 +65,11 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
         }
     }
 
-    override protected def setCurrentContent(content: Array[A]): Unit = set(content)
-
-    override def link(action: A => Unit): this.type = {
-        links += action
-        foreach(action)
-        this
+    override def setContent(content: CacheContent): Unit = {
+        content match {
+            case content: CacheArrayContent[A] => set(content.array)
+            case _                             => throw new IllegalArgumentException(s"Received unexpected content '$content'")
+        }
     }
 
     def contains(a: Any): Boolean = adapter.contains(a)
@@ -161,8 +159,8 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
         val mod    : (CollectionModification, Int, Any) = packet.casted
-        val modKind: CollectionModification              = mod._1
-        val index                                        = mod._2.toInt
+        val modKind: CollectionModification             = mod._1
+        val index                                       = mod._2.toInt
         lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed (could occur to NPE)
 
         AppLogger.vTrace(s"<$family> Received mod request : $mod")
@@ -210,9 +208,9 @@ object SharedCollection {
      * The insertFilter must be true in order to authorise the insertion
      * */
     def ofInsertFilter[A <: Serializable : ClassTag](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
-        (handler: SharedCacheManager, identifier: Int, baseContent: Array[Any], container: PacketInjectableContainer) => {
+        (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
             var adapter: CollectionAdapter[A] = null
-            adapter = new CollectionAdapter[A](baseContent.asInstanceOf[Array[A]], insertFilter(adapter, _))
+            adapter = new CollectionAdapter[A](insertFilter(adapter, _))
             val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
 
             new SharedCollection[A](handler, identifier, adapter, channel)
@@ -222,11 +220,11 @@ object SharedCollection {
     /**
      * The insertFilter must be true in order to authorise the insertion
      * */
-    class CollectionAdapter[A](baseContent: Array[A], insertFilter: A => Boolean) extends mutable.Iterable[A] {
+    class CollectionAdapter[A](insertFilter: A => Boolean) extends mutable.Iterable[A] {
 
         type X
-        private val mainCollection                                          = ListBuffer.from(baseContent)
-        private val boundedCollections: ListBuffer[BoundedCollection[A, X]] = ListBuffer.empty
+        private val mainCollection     = ListBuffer.empty[A]
+        private val boundedCollections = ListBuffer.empty[BoundedCollection[A, X]]
 
         override def toString: String = mainCollection.toString()
 

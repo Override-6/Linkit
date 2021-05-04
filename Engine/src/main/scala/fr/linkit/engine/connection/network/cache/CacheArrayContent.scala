@@ -10,17 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet;
+package fr.linkit.engine.connection.network.cache
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import fr.linkit.api.connection.network.cache.CacheContent
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
-public @interface Shared {
+case class CacheArrayContent[A <: Any](array: Array[A]) extends CacheContent {
 
-    boolean constant() default false;
-
+    override def toArray: Array[A] = array
 }

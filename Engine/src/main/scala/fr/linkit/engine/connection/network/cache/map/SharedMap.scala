@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.connection.network.cache.map
 
-import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.network.cache.{CacheContent, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.network.cache.AbstractSharedCache
 import fr.linkit.engine.connection.network.cache.map.MapModification._
+import fr.linkit.engine.connection.network.cache.{AbstractSharedCache, CacheArrayContent}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
@@ -29,9 +29,8 @@ import org.jetbrains.annotations.{NotNull, Nullable}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
-                      baseContent: Array[(K, V)], channel: RequestPacketChannel)
-        extends AbstractSharedCache[(K, V)](handler, identifier, channel) {
+class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: RequestPacketChannel)
+        extends AbstractSharedCache(handler, identifier, channel) {
 
     private val networkListeners        = ConsumerContainer[(MapModification, K, V)]()
     private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]
@@ -67,12 +66,6 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
         this
     }
 
-    override def link(action: ((K, V)) => Unit): this.type = {
-        links += action
-        foreach((k, v) => action(k, v))
-        this
-    }
-
     def get(k: K): Option[V] = LocalMap.get(k)
 
     def getOrWait(k: K): V = awaitPut(k)
@@ -90,7 +83,6 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
 
     def put(k: K, v: V): Unit = {
         LocalMap.put(k, v)
-        links.applyAllLater((k, v))
         addLocalModification(PUT, k, v)
     }
 
@@ -193,24 +185,28 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
         AppLogger.vTrace(s"<$family, $identifier> $msg")
     }
 
-    override def currentContent: Array[Any] = LocalMap.toArray
+    override def snapshotContent: CacheContent = {
+        CacheArrayContent(LocalMap.toArray)
+    }
 
-    override protected def setCurrentContent(content: Array[(K, V)]): Unit = LocalMap.set(content)
+    override def setContent(content: CacheContent): Unit = {
+        if (content.toArray.isEmpty)
+            return
+        LocalMap.set(content match {
+            case content: CacheArrayContent[(K, V)] => ScalaUtils.slowCopy(content.array)
+            case _                                  => throw new IllegalArgumentException(s"Received unexpected content $content")
+        })
+    }
 
     private object LocalMap {
 
-        type nK
-        type nV
+        private val mainMap = mutable.Map.empty[K, V]
 
-        private val mainMap = {
-            mutable.Map.from[K, V](baseContent)
-        }
-
-        private val boundedCollections = ListBuffer.empty[BoundedMap[K, V, nK, nV]]
+        private val boundedCollections = ListBuffer.empty[BoundedMap[K, V, _, _]]
 
         def createBoundedMap[nK, nV](map: (K, V) => (nK, nV)): BoundedMap.Immutable[nK, nV] = {
             val boundedMap = new BoundedMap[K, V, nK, nV](map)
-            boundedCollections += boundedMap.asInstanceOf[BoundedMap[K, V, this.nK, this.nV]]
+            boundedCollections += boundedMap.asInstanceOf[BoundedMap[K, V, _, _]]
             boundedMap.set(mainMap.toArray)
             boundedMap
         }
@@ -273,9 +269,9 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int,
 object SharedMap {
 
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        (handler: SharedCacheManager, identifier: Int, baseContent: Array[Any], container: PacketInjectableContainer) => {
+        (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
             val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
-            new SharedMap[K, V](handler, identifier, ScalaUtils.slowCopy(baseContent), channel)
+            new SharedMap[K, V](handler, identifier, channel)
         }
     }
 

@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet;
+package fr.linkit.engine.connection.network.cache.repo.generation
 
-public enum ObjectModification {
+import fr.linkit.api.local.system.AppException
 
-
+class InvalidPuppetDefException(msg: String) extends AppException(msg) {
 
 }

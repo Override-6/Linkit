@@ -12,14 +12,14 @@
 
 package fr.linkit.engine.connection.network.cache
 
-import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.network.cache._
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.network.cache.NetworkSharedCacheManager.MockCache
 import fr.linkit.engine.connection.network.cache.map.SharedMap
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.ArrayObjectPacket
+import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
@@ -27,13 +27,12 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-
 class NetworkSharedCacheManager(override val family: String,
                                 override val ownerID: String,
                                 container: PacketInjectableContainer,
                                 requestChannel: RequestPacketChannel) extends SharedCacheManager {
 
-    private      val ownerScope                                       = prepareOwnerScope()
+    private      val ownerScope                                      = prepareOwnerScope()
     private lazy val sharedObjects: map.SharedMap[Int, Serializable] = init()
 
     override def postInstance[A <: Serializable](key: Int, value: A): A = {
@@ -50,25 +49,30 @@ class NetworkSharedCacheManager(override val family: String,
 
     override def apply[A <: Serializable](key: Int): A = sharedObjects(key).asInstanceOf[A]
 
-    override def getCache[A <: InternalSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior): A = {
+    override def getCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheOpenBehavior): A = {
         LocalCacheHandler
                 .findCache[A](cacheID)
                 .getOrElse {
                     println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
                     val baseContent = retrieveCacheContent(cacheID, behavior)
-                    println(s"CONTENT RECEIVED (${baseContent.mkString("Array(", ", ", ")")}) FOR CACHE $cacheID")
-                    val sharedCache = factory.createNew(this, cacheID, baseContent, container)
+                    println(s"CONTENT RECEIVED (${baseContent}) FOR CACHE $cacheID")
+                    val sharedCache = factory.createNew(this, cacheID, container)
+
+                    if (baseContent.isDefined) {
+                        sharedCache.setContent(baseContent.get)
+                    }
+
                     LocalCacheHandler.register(cacheID, sharedCache)
                     requestChannel.injectStoredBundles()
                     sharedCache
                 }
     }
 
-    override def getUpdated[A <: InternalSharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheOpenBehavior): A = {
+    override def getUpdated[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheOpenBehavior): A = {
         getCache(cacheID, factory, behavior).update()
     }
 
-    override def retrieveCacheContent(cacheID: Int, behavior: CacheOpenBehavior): Array[Any] = {
+    override def retrieveCacheContent(cacheID: Int, behavior: CacheOpenBehavior): Option[CacheContent] = {
         println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
         val request = requestChannel
                 .makeRequest(ownerScope)
@@ -85,10 +89,10 @@ class NetworkSharedCacheManager(override val family: String,
                 throw new CacheOpenException(errorMsg)
             }
 
-            val content = response.nextPacket[ArrayObjectPacket].value
+            val content = response.nextPacket[RefPacket[Option[CacheContent]]].value
             request.detach()
 
-            println(s"Content '$cacheID' received ! (${content.mkString("Array(", ", ", ")")})")
+            println(s"Content '$cacheID' received ! ($content)")
             content
         } catch {
             case e: Throwable =>
@@ -125,7 +129,7 @@ class NetworkSharedCacheManager(override val family: String,
         val contentOpt = LocalCacheHandler.getContent(cacheID)
 
         if (contentOpt.isDefined) {
-            response.addPacket(ArrayObjectPacket(contentOpt.get))
+            response.addPacket(RefPacket[Option[CacheContent]](contentOpt))
         } else {
             import CacheOpenBehavior._
 
@@ -141,9 +145,9 @@ class NetworkSharedCacheManager(override val family: String,
                         return
                     }
                     //The sender is the owner : this class must create the cache content.
-                    response.addPacket(ArrayObjectPacket())
+                    response.addPacket(RefPacket[Option[CacheContent]](None))
                 case GET_OR_EMPTY =>
-                    response.addPacket(ArrayObjectPacket())
+                    response.addPacket(RefPacket[Option[CacheContent]](None))
             }
         }
         println(s"Content Response for cache $cacheID = $response.")
@@ -161,9 +165,12 @@ class NetworkSharedCacheManager(override val family: String,
         * For simple, if you remove this line, a deadlock will occur.
         * */
         LocalCacheHandler
-        val content = retrieveCacheContent(1, CacheOpenBehavior.GET_OR_WAIT)
+        val content       = retrieveCacheContent(1, CacheOpenBehavior.GET_OR_WAIT)
+        val sharedObjects = SharedMap[Int, Serializable].createNew(this, 1, container)
+        if (content.isDefined) {
+            sharedObjects.setContent(content.get)
+        }
 
-        val sharedObjects = SharedMap[Int, Serializable].createNew(this, 1, content, container)
         LocalCacheHandler.register(1, sharedObjects)
         sharedObjects.foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
         println("Shared objects : " + sharedObjects)
@@ -172,8 +179,8 @@ class NetworkSharedCacheManager(override val family: String,
 
     private def prepareOwnerScope(): ChannelScope = {
         val traffic = requestChannel.traffic
-        val writer = traffic.newWriter(requestChannel.identifier)
-        val scope  = ChannelScopes.retains(ownerID).apply(writer)
+        val writer  = traffic.newWriter(requestChannel.identifier)
+        val scope   = ChannelScopes.retains(ownerID).apply(writer)
         scope.addDefaultAttribute("family", family)
         scope
     }
@@ -205,8 +212,8 @@ class NetworkSharedCacheManager(override val family: String,
             localRegisteredCaches.put(identifier, MockCache)
         }
 
-        def getContent(cacheID: Int): Option[Array[Any]] = {
-            localRegisteredCaches.get(cacheID).map(_.currentContent)
+        def getContent(cacheID: Int): Option[CacheContent] = {
+            localRegisteredCaches.get(cacheID).map(_.snapshotContent)
         }
 
         def isRegistered(cacheID: Int): Boolean = {
@@ -232,7 +239,7 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     private def println(msg: String): Unit = {
-        AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
+        AppLogger.vTrace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
 }
@@ -245,7 +252,9 @@ object NetworkSharedCacheManager {
 
         override var autoFlush: Boolean = false
 
-        override def currentContent: Array[Any] = Array()
+        override def snapshotContent: CacheContent = CacheArrayContent(Array())
+
+        override def setContent(cacheContent: CacheContent): Unit = ()
 
         override def flush(): this.type = this
 

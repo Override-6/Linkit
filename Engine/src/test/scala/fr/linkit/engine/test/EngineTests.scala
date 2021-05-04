@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.test
 
+import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.local.ApplicationContext
 
 /*@RunWith(classOf[JUnitPlatform])*/
@@ -21,6 +22,8 @@ abstract class EngineTests {
 }
 
 object EngineTests {
-    var application: ApplicationContext = _
+
+    var application   : ApplicationContext = _
+    var testConnection: ConnectionContext  = _
 
 }

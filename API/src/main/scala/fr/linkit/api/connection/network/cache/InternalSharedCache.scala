@@ -14,6 +14,6 @@ package fr.linkit.api.connection.network.cache
 
 trait InternalSharedCache extends SharedCache {
 
-    def currentContent: Array[Any]
+    def setContent(cacheContent: CacheContent): Unit
 
 }

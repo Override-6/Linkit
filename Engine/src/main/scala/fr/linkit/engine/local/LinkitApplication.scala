@@ -19,7 +19,7 @@ import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolde
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
-import fr.linkit.engine.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
+import fr.linkit.engine.connection.network.cache.repo.generation.PuppetWrapperClassGenerator
 import fr.linkit.engine.local.LinkitApplication.setInstance
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.mapping.ClassMapEngine
@@ -152,7 +152,7 @@ object LinkitApplication {
 
         AppLogger.info("-------------------------- Linkit Framework --------------------------")
         AppLogger.info(s"\tApi Version            | ${ApiConstants.Version}")
-        AppLogger.info(s"\tEngine Version   | ${EngineConstants.Version}")
+        AppLogger.info(s"\tEngine Version         | ${EngineConstants.Version}")
         AppLogger.info(s"\tImplementation Version | ${implVersion}")
         AppLogger.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
 

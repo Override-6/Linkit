@@ -10,8 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet.generation
+package fr.linkit.api.connection.network.cache.repo
 
-class PuppetAlreadyInitialisedException(msg: String) extends RuntimeException(msg) {
+class ObjectAlreadyPostException(msg: String) extends PuppetException(msg) {
 
 }

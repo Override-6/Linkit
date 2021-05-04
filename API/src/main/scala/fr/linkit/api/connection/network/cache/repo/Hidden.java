@@ -10,8 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet
+package fr.linkit.api.connection.network.cache.repo;
 
-class IllegalPuppetException(msg: String) extends PuppetException(msg) {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
+public @interface Hidden {
 }

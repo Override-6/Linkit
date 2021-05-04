@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.local.system.fsa.nio
 
+import fr.linkit.api.connection.network.cache.repo.Hidden
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
-import fr.linkit.engine.connection.network.cache.puppet.AnnotationHelper.Hidden
 
 import java.io.{InputStream, OutputStream}
 import java.net.URI

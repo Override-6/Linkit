@@ -10,19 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet;
+package fr.linkit.api.connection.network.cache.repo
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import fr.linkit.api.connection.network.cache.repo
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface SharedObject {
+import scala.annotation.meta.{field, getter, setter}
 
-    boolean autoFlush() default true;
+object AnnotationHelper {
 
-    boolean shareAllMethods() default true;
+    type SharedObject = repo.SharedObject@field @getter @setter
+    type Shared = repo.Shared@field @getter @setter
+    type Hidden = repo.Hidden@field @getter @setter
 
 }

@@ -213,12 +213,12 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     }
 
     override def setPaused(): Unit = {
-        AppLogger.info(s"TASK $this MARKED AS PAUSED")
+        AppLogger.vInfo(s"TASK $this MARKED AS PAUSED")
         paused = true
     }
 
     override def setContinue(): Unit = {
-        AppLogger.info(s"TASK $this MARKED AS CONTINUE")
+        AppLogger.vInfo(s"TASK $this MARKED AS CONTINUE")
         paused = false
     }
 

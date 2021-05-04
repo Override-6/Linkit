@@ -75,9 +75,9 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     }
 
     override def wakeup(task: ThreadTask): Unit = {
-        AppLogger.debug(s"Waking up thread $this for task ${task.taskID}")
+        AppLogger.vDebug(s"Waking up thread $this for task ${task.taskID}")
         val blocker = LockSupport.getBlocker(this)
-        AppLogger.debug(s"Thread $this is parking on blocker $blocker")
+        AppLogger.vDebug(s"Thread $this is parking on blocker $blocker")
         if (blocker == task) {
             AppLogger.vError(s"$this <- This thread will be unparked.")
             LockSupport.unpark(this)
@@ -86,8 +86,6 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     }
 
     private def pushTask(task: ThreadTask): Unit = {
-        if (currentTask != null && task.taskID < currentTask.taskID)
-            throw new IllegalArgumentException("Cannot push task which is inferior than current task.")
         workingTasks.put(task.taskID, TaskProfile(task))
         currentTask = task
         tasksIdStr = getUpdatedTasksID
@@ -95,8 +93,6 @@ private[concurrency] final class BusyWorkerThread private[concurrency](target: R
     }
 
     private def removeTask(task: AsyncTask[_]): Unit = {
-        if (currentTask != null && task.taskID > currentTask.taskID)
-            throw new IllegalArgumentException("Cannot remove task which is superior than current task.")
         val id = task.taskID
         workingTasks.remove(id)
         currentTask = workingTasks

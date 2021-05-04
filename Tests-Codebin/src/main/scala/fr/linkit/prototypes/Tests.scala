@@ -14,8 +14,8 @@ package fr.linkit.prototypes
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.engine.connection.network.cache.puppet.generation.PuppetWrapperClassGenerator
-import fr.linkit.engine.connection.network.cache.puppet.{PuppetClassDesc, Puppeteer}
+import fr.linkit.engine.connection.network.cache.repo.generation.PuppetWrapperClassGenerator
+import fr.linkit.engine.connection.network.cache.repo.{PuppetClassDesc, SimplePuppeteer}
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.serialization.DefaultSerializer

@@ -10,14 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet
+package fr.linkit.engine.connection.network.cache.repo
 
-import fr.linkit.engine.connection.network.cache.puppet.generation.InvalidPuppetDefException
+import fr.linkit.api.connection.network.cache.repo.{Hidden, Shared, SharedObject}
+import fr.linkit.engine.connection.network.cache.repo.generation.InvalidPuppetDefException
 import org.jetbrains.annotations.Nullable
+
 import java.lang.annotation.Annotation
 import java.lang.reflect._
-
-import fr.linkit.engine.connection.network.cache.puppet.PuppetClassDesc.{DefaultHiddenMethods, ForgotClasses}
+import fr.linkit.engine.connection.network.cache.repo.PuppetClassDesc.{DefaultHiddenMethods, ForgotClasses}
 
 import scala.annotation.tailrec
 
@@ -118,7 +119,7 @@ object PuppetClassDesc {
     private val ForgotClasses = Seq(classOf[Object], classOf[Product])
     private val DefaultHiddenMethods = ForgotClasses.flatMap(_.getDeclaredMethods)
 
-    def ofRef(anyRef: Serializable): PuppetClassDesc = {
+    def ofRef(anyRef: Any): PuppetClassDesc = {
         ofClass(anyRef.getClass)
     }
 

@@ -10,14 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.server.test
+package fr.linkit.api.connection.network.cache.repo;
 
-class ConnectionTests {
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    private val application = ServerTests.application
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.METHOD})
+public @interface Shared {
 
-    /*def openServerConnection(): Unit = {
-        application.getConnection()
-    }*/
+    boolean constant() default false;
 
 }

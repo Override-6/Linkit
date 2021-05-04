@@ -77,7 +77,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         connectionCount += 1
         appPool.setThreadCount(configuration.nWorkerThreadFunction(connectionCount)) //expand the pool for the new connection that will be opened
 
-        AppLogger.info(s"Creating connection with address '${config.remoteAddress}'")
+        AppLogger.info(s"Creating connection to address '${config.remoteAddress}'...")
         val address       = config.remoteAddress
         val dynamicSocket = new ClientDynamicSocket(address, config.socketFactory)
         dynamicSocket.reconnectionPeriod = config.reconnectionMillis

@@ -13,9 +13,9 @@
 package fr.linkit.engine.connection.packet.serialization
 
 import fr.linkit.api.connection.network.Network
+import fr.linkit.api.connection.network.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.packet.serialization.{Serializer, StringRepresentable}
 import fr.linkit.api.local.system.Version
-import fr.linkit.engine.connection.network.cache.puppet.PuppetWrapper
 import fr.linkit.engine.connection.packet.serialization.procedures.PuppetWrapperProcedure
 import fr.linkit.engine.connection.packet.serialization.tree.SerialContext
 import fr.linkit.engine.connection.packet.serialization.tree.nodes.StringRepresentableNode

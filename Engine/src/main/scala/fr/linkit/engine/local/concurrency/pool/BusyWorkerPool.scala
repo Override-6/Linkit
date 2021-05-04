@@ -217,7 +217,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
     override def pauseCurrentTask(): Unit = {
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
-        AppLogger.error(s"$currentTasksId current task is about to pause indefinitely...")
+        AppLogger.vError(s"$currentTasksId current task is about to pause indefinitely...")
         currentTask.setPaused()
         executeRemainingTasks()
 
@@ -225,7 +225,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
             executeRemainingTasks()
         }
         currentTask.setContinue()
-        AppLogger.error(s"${currentTask.taskID} task is continuing")
+        AppLogger.vError(s"$currentTasksId task '${currentTask.taskID}' is continuing")
     }
 
     /**
@@ -239,7 +239,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
         ensureCurrentThreadOwned()
         val worker      = currentWorker.getController
         val currentTask = worker.getCurrentTask.get
-        AppLogger.error(s"$currentTasksId current task is about to pause for at least $timeoutMillis ms...")
+        AppLogger.vError(s"$currentTasksId current task is about to pause for at least $timeoutMillis ms...")
 
         if (timeoutMillis == 0) {
             pauseCurrentTask()
@@ -255,7 +255,6 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
                 workQueue.take().run()
                 val t1 = now()
                 busiedMillis += (t1 - t0)
-                AppLogger.debug(s"busiedMillis = ${busiedMillis}")
             }
             busiedMillis
         }
@@ -271,7 +270,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
         }
 
         currentTask.setContinue()
-        AppLogger.error(s"${currentTask.taskID} is continuing...")
+        AppLogger.vError(s"${currentTask.taskID} is continuing...")
     }
 
     def ensureCurrentThreadNotOwned(): Unit = {
@@ -310,7 +309,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
 
     private def unparkBusyThread(): Unit = workers.synchronized {
         val sleepingWorker = workers.find(_.isSleeping)
-        AppLogger.debug(s"unparking busy thread ${sleepingWorker.orNull} (if null, no thread is sleeping)")
+        AppLogger.vDebug(s"unparking busy thread ${sleepingWorker.orNull} (if null, no thread is sleeping)")
         sleepingWorker match {
             case Some(worker) => LockSupport.unpark(worker)
             case None         => //no-op

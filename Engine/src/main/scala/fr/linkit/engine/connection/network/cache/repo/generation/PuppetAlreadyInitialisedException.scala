@@ -10,14 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.server.test
+package fr.linkit.engine.connection.network.cache.repo.generation
 
-class ConnectionTests {
-
-    private val application = ServerTests.application
-
-    /*def openServerConnection(): Unit = {
-        application.getConnection()
-    }*/
+class PuppetAlreadyInitialisedException(msg: String) extends RuntimeException(msg) {
 
 }

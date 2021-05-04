@@ -12,10 +12,11 @@
 
 package fr.linkit.engine.connection.network.cache
 
-import fr.linkit.api.connection.network.cache.{SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.network.cache.{CacheContent, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.connection.network.cache.SharedInstance.CacheInstanceContent
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
@@ -27,28 +28,20 @@ import scala.reflect.ClassTag
 class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheManager,
                                                            identifier: Int,
                                                            channel: RequestPacketChannel)
-        extends AbstractSharedCache[A](handler, identifier, channel) {
+        extends AbstractSharedCache(handler, identifier, channel) {
 
     override var autoFlush: Boolean = true
 
-    private val listeners = new ConsumerContainer[A]
+    private val listeners = new ConsumerContainer[Option[A]]
 
     @volatile private var modCount            = 0
     @volatile private var instance: Option[A] = None
 
-    def this(handler: SharedCacheManager,
-             identifier: Int,
-             channel: RequestPacketChannel,
-             value: A = null) = {
-        this(handler, identifier, channel)
-        instance = Option(value)
-    }
-
     override def handleBundle(bundle: RequestBundle): Unit = {
         AppLogger.vTrace(s"<$family> Handling packet $bundle")
         bundle.packet.nextPacket[Packet] match {
-            case ObjectPacket(remoteInstance: A) =>
-                this.instance = Option(remoteInstance)
+            case ObjectPacket(remoteInstance: Option[A]) =>
+                this.instance = remoteInstance
                 modCount += 1
                 listeners.applyAll(remoteInstance)
                 AppLogger.vTrace(s"<$family> INSTANCE IS NOW (network): $instance")
@@ -59,23 +52,15 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 
     override def modificationCount(): Int = modCount
 
-    override def currentContent: Array[Any] = Array(instance.orNull)
+    override def snapshotContent: CacheContent = CacheInstanceContent(instance)
 
     override def toString: String = s"SharedInstance(${instance.orNull})"
 
-    override def link(action: A => Unit): this.type = {
-        links += action
-        action(instance.getOrElse(null.asInstanceOf[A]))
-        this
-    }
-
-    override protected def setCurrentContent(content: Array[A]): Unit = {
-        content.ensuring(_.length <= 1)
-        if (content.isEmpty) {
-            instance = None
-            return
+    override def setContent(content: CacheContent): Unit = {
+        content match {
+            case CacheInstanceContent(obj: A) => instance = Option(obj)
+            case _                            => throw new IllegalArgumentException(s"Received unexpected cache content '$content'")
         }
-        instance = Option(content(0))
     }
 
     def get: Option[A] = instance
@@ -83,7 +68,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
     def set(t: A): this.type = {
         instance = Option(t)
         modCount += 1
-        listeners.applyAll(t)
+        listeners.applyAll(instance)
         AppLogger.vTrace(s"INSTANCE IS NOW (local) : $instance $autoFlush")
         if (autoFlush)
             flush()
@@ -95,7 +80,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
         this
     }
 
-    def addListener(callback: A => Unit): this.type = {
+    def addListener(callback: Option[A] => Unit): this.type = {
         listeners += callback
         this
     }
@@ -104,12 +89,15 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 object SharedInstance {
 
     def apply[A <: Serializable : ClassTag]: SharedCacheFactory[SharedInstance[A]] = {
-        (handler: SharedCacheManager, identifier: Int, baseContent: Array[Any], container: PacketInjectableContainer) => {
+        (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
             val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
-            if (baseContent.isEmpty)
-                new SharedInstance[A](handler, identifier, channel)
-            else new SharedInstance[A](handler, identifier, channel, baseContent(0).asInstanceOf[A])
+            new SharedInstance[A](handler, identifier, channel)
         }
+    }
+
+    case class CacheInstanceContent[A](instance: Option[A]) extends CacheContent {
+
+        override def toArray: Array[_] = Array(instance)
     }
 
 }

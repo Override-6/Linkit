@@ -10,14 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.server.test
+package fr.linkit.api.connection.network.cache.repo
 
-class ConnectionTests {
-
-    private val application = ServerTests.application
-
-    /*def openServerConnection(): Unit = {
-        application.getConnection()
-    }*/
+class IllegalPuppetException(msg: String) extends PuppetException(msg) {
 
 }

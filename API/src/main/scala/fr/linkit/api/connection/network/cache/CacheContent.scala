@@ -10,8 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet
+package fr.linkit.api.connection.network.cache
 
-case class PuppeteerDescription(cacheFamily: String, cacheID: Int, objectID: Int, owner: String) {
+trait CacheContent {
+
+    def toArray: Array[_ <: Any]
+
+    override def toString: String = {
+        toArray.mkString("Array(", ", ", ")")
+    }
 
 }

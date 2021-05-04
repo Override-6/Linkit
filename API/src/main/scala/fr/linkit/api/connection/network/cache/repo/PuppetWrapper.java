@@ -10,10 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet.generation
+package fr.linkit.api.connection.network.cache.repo;
 
-import fr.linkit.api.local.system.AppException
+import java.io.Serializable;
 
-class InvalidPuppetDefException(msg: String) extends AppException(msg) {
+public interface PuppetWrapper<T extends Serializable> extends Serializable {
+
+    void initPuppeteer(Puppeteer<T> puppeteer, T clone);
+
+    boolean isInitialized();
+
+    T detachedClone();
+
+    PuppeteerDescription getPuppeteerDescription();
 
 }

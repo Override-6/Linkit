@@ -22,7 +22,7 @@ object AppLogger {
 
     var networkPreviewLength: Int = 1000
 
-    var useVerbose         : Boolean = true
+    var useVerbose         : Boolean = false
     var printVerbosesOnKill: Boolean = false
 
     val logger: Logger = Logger.getLogger(classOf[ApplicationContext])

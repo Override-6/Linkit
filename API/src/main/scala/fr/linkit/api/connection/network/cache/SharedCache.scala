@@ -24,4 +24,6 @@ trait SharedCache extends Updatable {
 
     def modificationCount(): Int
 
+    def snapshotContent: CacheContent
+
 }

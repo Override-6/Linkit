@@ -10,10 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet
+package fr.linkit.api.connection.network.cache.repo
 
-import fr.linkit.api.local.system.AppException
-
-class PuppetException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+class RemoteInvocationFailedException(msg: String, cause: Throwable) extends PuppetException(msg, cause) {
 
 }

@@ -10,18 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet;
+package fr.linkit.api.connection.network.cache.repo;
 
-import java.io.Serializable;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface PuppetWrapper<T extends Serializable> extends Serializable {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface SharedObject {
 
-    void initPuppeteer(Puppeteer<T> puppeteer, T clone);
+    boolean autoFlush() default true;
 
-    boolean isInitialized();
-
-    T detachedClone();
-
-    PuppeteerDescription getPuppeteerDescription();
+    boolean shareAllMethods() default true;
 
 }

@@ -19,7 +19,7 @@ import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, Pack
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketException}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
-import fr.linkit.api.local.concurrency.{AsyncTask, packetWorkerExecution, workerExecution}
+import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.api.local.system.security.BytesHasher

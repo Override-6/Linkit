@@ -65,5 +65,5 @@ class ClientDynamicSocket(boundAddress: InetSocketAddress,
 
 object ClientDynamicSocket {
 
-    private val UnsetIdentifier = "$Unset£"
+    private val UnsetIdentifier = "$Unset$"
 }

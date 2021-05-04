@@ -12,30 +12,30 @@
 
 package fr.linkit.engine.local.system.fsa.remote
 
+import fr.linkit.api.connection.network.cache.repo.{Hidden, SharedObject}
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
-import fr.linkit.engine.connection.network.cache.puppet.{Hidden, SharedObject, CloudObjectRepository}
+import fr.linkit.engine.connection.network.cache.repo.CloudPuppetRepository
 import fr.linkit.engine.local.system.fsa.AbstractFileSystemAdapter
 import fr.linkit.engine.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
 import fr.linkit.engine.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
-import sun.misc.Unsafe
 
 import java.io.{InputStream, OutputStream}
 import java.net.URI
 
 @SharedObject
 class RemoteFileSystemAdapter private(delegateFSA: AbstractFileSystemAdapter,
-                                      sharedAdapters: CloudObjectRepository) extends AbstractFileSystemAdapter {
+                                      sharedAdapters: CloudPuppetRepository[FileAdapter]) extends AbstractFileSystemAdapter {
 
     override def createAdapter(path: String): FileAdapter = {
         val adapter = delegateFSA.createAdapter(path)
-        sharedAdapters.postCloudObject(adapter.hashCode(), adapter)
+        sharedAdapters.postObject(adapter.hashCode(), adapter)
     }
 
     override def createAdapter(uri: URI): FileAdapter = {
         val adapter = delegateFSA.createAdapter(uri)
-        sharedAdapters.postCloudObject(adapter.hashCode(), adapter)
+        sharedAdapters.postObject(adapter.hashCode(), adapter)
     }
 
     override def createDirectories(fa: FileAdapter): Unit = delegateFSA.createDirectories(fa)
@@ -63,11 +63,11 @@ class RemoteFileSystemAdapter private(delegateFSA: AbstractFileSystemAdapter,
     delegateFSA match {
         case adapter: IOFileSystemAdapter =>
             val field = classOf[IOFileAdapter].getDeclaredField("fsa")
-            sharedAdapters.mapField(field, adapter)
+            sharedAdapters.addFieldReplacement(field, adapter)
 
         case adapter: NIOFileSystemAdapter =>
             val field = classOf[NIOFileAdapter].getDeclaredField("fsa")
-            sharedAdapters.mapField(field, adapter)
+            sharedAdapters.addFieldReplacement(field, adapter)
 
         case _ => throw new IllegalArgumentException(s"RemoteFileSystemAdapter is only compatible with IO and NIO FSAdapters. Provided ${delegateFSA.getClass}")
     }
@@ -89,11 +89,12 @@ object RemoteFileSystemAdapter {
                 .get
                 .entityCache
 
-        val sharedObjects = cache.getCache(27, CloudObjectRepository)
-        //println(s"sharedObjects = ${sharedObjects}")
-        val remoteFSA = sharedObjects.findCloudObject[AbstractFileSystemAdapter](delegateFSA.getName.hashCode)
+        val sharedAdapters = cache.getCache(27, CloudPuppetRepository[FileAdapter])
+        val sharedSystems  = cache.getCache(28, CloudPuppetRepository[AbstractFileSystemAdapter])
+        //println(s"sharedAdapters = ${sharedAdapters}")
+        val remoteFSA      = sharedSystems.findObject(delegateFSA.getName.hashCode)
                 .getOrElse(throw new UnsupportedOperationException(s"${delegateFSA.getSimpleName} not found for connection ${connection.boundIdentifier}"))
-        new RemoteFileSystemAdapter(remoteFSA, sharedObjects)
+        new RemoteFileSystemAdapter(remoteFSA, sharedAdapters)
     }
 
     @workerExecution
@@ -101,9 +102,15 @@ object RemoteFileSystemAdapter {
         if (delegateFSA.isInstanceOf[RemoteFileSystemAdapter])
             throw new IllegalArgumentException("Delegate FSA can't be a RemoteFileSystemAdapter.")
 
-        val cache         = selfConnection.network.connectionEntity.entityCache
-        val sharedObjects = cache.getCache(27, CloudObjectRepository)
-        val puppetFSA     = sharedObjects.postCloudObject(delegateFSA.getClass.getName.hashCode, delegateFSA)
-        new RemoteFileSystemAdapter(puppetFSA, sharedObjects)
+        val cache = selfConnection
+                .network
+                .connectionEntity
+                .entityCache
+
+        val sharedAdapters = cache.getCache(27, CloudPuppetRepository[FileAdapter])
+        val sharedSystems = cache.getCache(28, CloudPuppetRepository[AbstractFileSystemAdapter])
+
+        val puppetFSA = sharedSystems.postObject(delegateFSA.getClass.getName.hashCode, delegateFSA)
+        new RemoteFileSystemAdapter(puppetFSA, sharedAdapters)
     }
 }

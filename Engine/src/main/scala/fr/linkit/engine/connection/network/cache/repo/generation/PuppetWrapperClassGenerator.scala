@@ -10,11 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.network.cache.puppet.generation
+package fr.linkit.engine.connection.network.cache.repo.generation
 
+import fr.linkit.api.connection.network.cache.repo.{PuppetWrapper, Puppeteer, PuppeteerDescription, Shared}
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.network.cache.puppet.AnnotationHelper.Shared
-import fr.linkit.engine.connection.network.cache.puppet.{PuppetClassDesc, PuppetWrapper, Puppeteer, PuppeteerDescription}
+import fr.linkit.engine.connection.network.cache.repo.{PuppetClassDesc, SimplePuppeteer}
 import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.io.File
