@@ -1,6 +1,10 @@
 ![Cover](RCover.png)
  A personal project to easily synchronise and link programs.  
 
+# THIS README IS OUTDATED
+Please, consider that everything in this readme does not reflect what the framework currently is.
+The readme must be reedited since the project got completely redesigned.
+
 This project is designed to help the user to quickly write the network side of an application (for games, apps...). 
 But it is also designed to be used for simple domotic, such as linking your phones with all of your computers, in order to take control or retrieve some files quickly from them...
 (An application for phones would be developped in order to define behaviour between your electronic stuff)
