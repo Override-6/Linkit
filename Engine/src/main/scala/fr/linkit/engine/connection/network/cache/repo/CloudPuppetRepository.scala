@@ -24,8 +24,10 @@ import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
 import fr.linkit.engine.local.utils.ScalaUtils
-
 import java.lang.reflect.Field
+
+import fr.linkit.api.connection.network.cache.repo.generation.PuppeteerDescription
+
 import scala.collection.mutable
 import scala.reflect.ClassTag
 

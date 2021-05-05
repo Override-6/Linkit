@@ -12,12 +12,11 @@
 
 package fr.linkit.api.connection.network.cache.repo
 
-import fr.linkit.api.connection.network.cache.repo.PuppetDescription.MethodDescription
-import fr.linkit.api.connection.network.cache.repo.annotations.{Hidden, InvokeOnly, LocalOnly}
-import org.jetbrains.annotations.Contract
-
 import java.lang.reflect.Method
 import java.util
+
+import fr.linkit.api.connection.network.cache.repo.PuppetDescription.MethodDescription
+import fr.linkit.api.connection.network.cache.repo.annotations.{Control, InvokeOnly}
 
 class PuppetDescription[T <: Serializable] private(clazz: Class[T]) {
 
@@ -39,30 +38,28 @@ class PuppetDescription[T <: Serializable] private(clazz: Class[T]) {
         }
 
         getMethodsOfClass(clazz)
-                .map(desc => (desc.hashCode(), desc))
-                .toMap
+            .map(desc => (desc.hashCode(), desc))
+            .toMap
     }
 
     private def genDescription(method: Method): MethodDescription = {
-        val contract                         = Option(method.getAnnotation(classOf[Contract]))
-        val synchronizedParamNumbers         = contract
-                .map(_.mutates()
-                        .split(",")
-                        .filterNot(_ == "this")
-                        .map(_.trim
-                                .last
-                                .toInt)
-                        .distinct)
+        val control                          = Option(method.getAnnotation(classOf[Control]))
+        val synchronizedParamNumbers         = control
+            .map(_.mutates()
+                .split(",")
+                .filterNot(_ == "this")
+                .map(_.trim
+                    .last
+                    .toInt)
+                .distinct)
         val synchronizedParams: Seq[Boolean] = for (n <- 1 to method.getParameterCount) yield {
             synchronizedParamNumbers.exists(_.contains(n))
         }
-        val isLocalOnly                      = if (method.isAnnotationPresent(classOf[Contract])) {
-            method.getAnnotation(classOf[Contract]).pure()
-        } else method.isAnnotationPresent(classOf[LocalOnly])
-        val isHidden                         = method.isAnnotationPresent(classOf[Hidden])
+        val isLocalOnly                      = control.exists(c => c.pure() || c.mutates().nonEmpty)
+        val isHidden                         = control.exists(_.hide())
+        val syncReturnValue                  = control.exists(_.synchronizeReturnValue())
         val invokeOnly                       = method.getAnnotation(classOf[InvokeOnly])
-
-        MethodDescription(method, synchronizedParams, )
+        MethodDescription(method, invokeOnly, synchronizedParams, syncReturnValue, isLocalOnly, isHidden)
     }
 
 }
@@ -70,11 +67,11 @@ class PuppetDescription[T <: Serializable] private(clazz: Class[T]) {
 object PuppetDescription {
 
     case class MethodDescription(method: Method,
+                                 invokeOnly: InvokeOnly,
                                  synchronizedParams: Seq[Boolean],
-                                 var syncReturnType: Boolean,
+                                 var syncReturnValue: Boolean,
                                  var isLocalOnly: Boolean,
-                                 var isHidden: Boolean,
-                                 var invokeOnly: InvokeOnly) {
+                                 var isHidden: Boolean) {
 
         def getReplacedReturnValue: Option[String] = Option(invokeOnly).map(_.value())
 

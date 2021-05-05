@@ -16,9 +16,9 @@ import $WrappedClassPackage$.$WrappedClassSimpleName$;
 import fr.linkit.api.connection.network.cache.repo.PuppetDescription;
 import fr.linkit.api.connection.network.cache.repo.PuppetWrapper;
 import fr.linkit.api.connection.network.cache.repo.Puppeteer;
-import fr.linkit.api.connection.network.cache.repo.PuppeteerDescription;
+import fr.linkit.api.connection.network.cache.repo.generation.PuppeteerDescription;
 import fr.linkit.api.connection.network.cache.repo.generation.WrapperBundle;
-import fr.linkit.engine.connection.network.cache.repo.generation.PuppetAlreadyInitialisedException;
+import fr.linkit.engine.connection.network.cache.repo.PuppetAlreadyInitialisedException;
 
 public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ implements PuppetWrapper<$WrappedClassSimpleName$> {
 

@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.connection.network.cache.repo
 
-import fr.linkit.api.connection.network.cache.repo.{PuppetWrapper, Puppeteer, PuppeteerDescription, RemoteInvocationFailedException}
+import fr.linkit.api.connection.network.cache.repo.generation.PuppeteerDescription
+import fr.linkit.api.connection.network.cache.repo.{PuppetWrapper, Puppeteer, RemoteInvocationFailedException}
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory

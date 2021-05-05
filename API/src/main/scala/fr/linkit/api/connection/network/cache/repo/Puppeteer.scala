@@ -12,6 +12,8 @@
 
 package fr.linkit.api.connection.network.cache.repo
 
+import fr.linkit.api.connection.network.cache.repo.generation.PuppeteerDescription
+
 trait Puppeteer[S <: Serializable] {
 
     val description: PuppeteerDescription

@@ -10,8 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.network.cache.repo
+package fr.linkit.engine.local.generation.jcbp
 
-case class PuppeteerDescription(cacheFamily: String, cacheID: Int, objectID: Int, owner: String) {
+import fr.linkit.api.local.generation.ValueProvider
 
+class SimpleJavaClassBlueprint(blueprint: String, rootProvider: ValueProvider) extends {
+    private val rootScope = new ValueScope("Root", blueprint, null)
 }

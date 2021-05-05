@@ -12,6 +12,10 @@
 
 package fr.linkit.engine.connection.network.cache.repo.generation
 
+import java.io.File
+import java.net.URLClassLoader
+import java.nio.file.{Files, Path, StandardOpenOption}
+
 import fr.linkit.api.connection.network.cache.repo.PuppetWrapper
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.FolderRepresentation
@@ -19,9 +23,6 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.network.cache.repo.generation.WrapperClassResource.{ClassesFolder, SourcesFolder}
 import fr.linkit.engine.local.mapping.ClassMappings
 
-import java.io.File
-import java.net.URLClassLoader
-import java.nio.file.{Files, Path, StandardOpenOption}
 import scala.collection.mutable
 
 class WrapperClassResource(override val folder: ResourceFolder) extends FolderRepresentation {

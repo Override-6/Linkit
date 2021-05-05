@@ -12,13 +12,12 @@
 
 package fr.linkit.engine.connection.network.cache.repo.generation
 
-import fr.linkit.api.connection.network.cache.repo.generation.PuppetWrapperGenerator
-import fr.linkit.api.connection.network.cache.repo.{PuppetWrapper, Puppeteer, PuppeteerDescription}
-import fr.linkit.engine.connection.network.cache.repo.PuppetClassDesc
-import fr.linkit.engine.local.mapping.ClassMappings
-
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
+
+import fr.linkit.api.connection.network.cache.repo.generation.{PuppetWrapperGenerator, PuppeteerDescription}
+import fr.linkit.api.connection.network.cache.repo.{PuppetWrapper, Puppeteer}
+import fr.linkit.engine.connection.network.cache.repo.PuppetAlreadyInitialisedException
 
 class WrapperClassGenerator(resources: WrapperClassResource) extends PuppetWrapperGenerator {
 

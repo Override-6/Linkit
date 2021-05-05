@@ -54,4 +54,6 @@ public @interface Control {
      * as well.
      * */
     boolean synchronizeReturnValue() default false;
+
+    boolean hide();
 }

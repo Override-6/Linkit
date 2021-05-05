@@ -12,6 +12,8 @@
 
 package fr.linkit.api.connection.network.cache.repo;
 
+import fr.linkit.api.connection.network.cache.repo.generation.PuppeteerDescription;
+
 import java.io.Serializable;
 
 public interface PuppetWrapper<T extends Serializable> extends Serializable {
