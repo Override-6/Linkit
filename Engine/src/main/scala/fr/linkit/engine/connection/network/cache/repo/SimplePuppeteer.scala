@@ -22,19 +22,14 @@ import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
 
-import scala.collection.mutable.ListBuffer
-
 class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
                                          presence: PacketAttributesPresence,
-                                         val description: PuppeteerDescription, val desc: PuppetClassDesc) extends Puppeteer[S]{
-
+                                         val description: PuppeteerDescription, val desc: PuppetClassDesc) extends Puppeteer[S] {
 
     private val ownerScope = prepareScope(ChannelScopes.retains(description.owner))
     private val bcScope    = prepareScope(ChannelScopes.discardCurrent)
 
-    private val puppetModifications = ListBuffer.empty[(String, Any)]
-
-    private var puppet       : S  = _
+    private var puppet       : S                       = _
     private var puppetWrapper: S with PuppetWrapper[S] = _
 
     override def getPuppet: S = puppet
@@ -64,19 +59,11 @@ class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
 
     override def addFieldUpdate(fieldName: String, newValue: Any): Unit = {
         AppLogger.vDebug(s"Field '$fieldName' took value $newValue")
-        if (desc.isAutoFlush)
-            flushModification((fieldName, newValue))
-        else puppetModifications += ((fieldName, newValue))
+        flushModification((fieldName, newValue))
     }
 
     override def sendPuppetUpdate(newVersion: S): Unit = {
         desc.foreachSharedFields(field => addFieldUpdate(field.getName, field.get(newVersion)))
-    }
-
-    override def flush(): this.type = {
-        puppetModifications.foreach(flushModification)
-        puppetModifications.clear()
-        this
     }
 
     override def init(wrapper: S with PuppetWrapper[S], puppet: S): Unit = {

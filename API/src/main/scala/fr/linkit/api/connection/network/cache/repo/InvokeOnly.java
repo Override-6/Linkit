@@ -17,12 +17,15 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.TYPE)
-public @interface SharedObject {
-
-    boolean autoFlush() default true;
-
-    boolean shareAllMethods() default true;
-
+public @interface InvokeOnly {
+    /**
+     * value represents the value to return in a generated method annotated with @InvokeOnly.
+     * The value can be something else, such as 'this' in case of method chaining.
+     *
+     * Note that this value is compiled by javac, and its scope is like an extending class of the annotated method's declaring class.
+     * the trailing ';' character is not necessarily required.
+     * */
+    String value() default "null;";
 }

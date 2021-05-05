@@ -26,9 +26,6 @@ class PuppetClassDesc private(val puppetClass: Class[_],
                               val puppetConstructor: Constructor[_],
                               val classAnnotation: SharedObject) {
 
-
-    def isAutoFlush: Boolean = classAnnotation.autoFlush()
-
     def getSharedField(name: String): Option[Field] = {
         prepare(puppetClass.getDeclaredField(name))
     }

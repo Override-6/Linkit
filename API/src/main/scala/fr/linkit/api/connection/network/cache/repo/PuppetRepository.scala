@@ -14,6 +14,8 @@ package fr.linkit.api.connection.network.cache.repo
 
 trait PuppetRepository[A <: Serializable] {
 
+    def setPuppetBlueprint(blueprint: PuppetBlueprint[A]): Unit
+
     def postObject(identifier: Int, obj: A): A with PuppetWrapper[A]
 
     def findObject(identifier: Int): Option[A with PuppetWrapper[A]]

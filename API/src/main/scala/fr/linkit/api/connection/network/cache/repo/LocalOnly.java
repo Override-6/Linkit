@@ -16,11 +16,18 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-
+/**
+ * If a method is annotated with {@link LocalOnly},
+ * this mean that the underlying generated method should not call the distant
+ * method and call the upper method instead.
+ * You may want to define a method as a LocalOnly invocation for pure methods, such as getters.
+ *
+ * Note that methods annotated with @Contract(pure = true) takes the same effect.
+ * */
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.METHOD})
-public @interface Shared {
+public @interface LocalOnly {
 
-    boolean constant() default false;
+
 
 }

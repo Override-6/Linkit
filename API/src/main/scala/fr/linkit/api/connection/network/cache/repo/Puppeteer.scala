@@ -28,7 +28,5 @@ trait Puppeteer[S <: Serializable] {
 
     def sendPuppetUpdate(newVersion: S): Unit
 
-    def flush(): this.type
-
     def init(wrapper: S with PuppetWrapper[S], puppet: S): Unit
 }
