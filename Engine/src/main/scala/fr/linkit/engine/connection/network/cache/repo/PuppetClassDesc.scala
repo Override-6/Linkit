@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.connection.network.cache.repo
 
-import fr.linkit.api.connection.network.cache.repo.{Hidden, Shared, SharedObject}
+import fr.linkit.api.connection.network.cache.repo.annotations.Hidden
+import fr.linkit.api.connection.network.cache.repo.{Shared, SharedObject}
 import fr.linkit.engine.connection.network.cache.repo.generation.InvalidPuppetDefException
 import org.jetbrains.annotations.Nullable
 

@@ -36,7 +36,7 @@ class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
 
     override def getPuppetWrapper: S with PuppetWrapper[S] = puppetWrapper
 
-    override def sendInvokeAndReturn[R](methodName: String, args: Array[Any]): R = {
+    override def sendInvokeAndWaitResult[R](methodName: String, args: Array[Any]): R = {
         AppLogger.debug(s"Remotely invoking method $methodName(${args.mkString(",")})")
         val result = channel.makeRequest(ownerScope)
                 .addPacket(ObjectPacket((methodName, Array(args: _*))))

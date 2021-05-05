@@ -20,7 +20,7 @@ trait Puppeteer[S <: Serializable] {
 
     def getPuppetWrapper: S with PuppetWrapper[S]
 
-    def sendInvokeAndReturn[R](methodName: String, args: Array[Any]): R
+    def sendInvokeAndWaitResult[R](methodName: String, args: Array[Any]): R
 
     def sendInvoke(methodName: String, args: Array[Any]): Unit
 

@@ -36,7 +36,7 @@ class SerializableClassDescription(val clazz: Class[_]) {
                 .tapEach(_.setAccessible(true))
                 .toList
 
-        initial ++ listSerializableFields(cl.getSuperclass, initial) ++ cl.getInterfaces.flatMap(listSerializableFields(_, initial))
+        initial ++ listSerializableFields(cl.getSuperclass, initial) //++ cl.getInterfaces.flatMap(listSerializableFields(_, initial))
     }
 
     def foreachDeserializableFields(action: (Int, Field) => Unit): Unit = {

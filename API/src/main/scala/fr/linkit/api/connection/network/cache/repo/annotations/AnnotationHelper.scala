@@ -10,16 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.network.cache.repo
+package fr.linkit.api.connection.network.cache.repo.annotations
 
-import fr.linkit.api.connection.network.cache.repo
+import fr.linkit.api.connection.network.cache.repo.annotations
 
 import scala.annotation.meta.{field, getter, setter}
 
 object AnnotationHelper {
 
-    type SharedObject = repo.SharedObject@field @getter @setter
-    type Shared = repo.Shared@field @getter @setter
-    type Hidden = repo.Hidden@field @getter @setter
+    type Control = annotations.Control@field @getter @setter
 
 }

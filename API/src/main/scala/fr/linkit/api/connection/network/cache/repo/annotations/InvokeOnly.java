@@ -10,22 +10,21 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.network.cache.repo;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-@Target(ElementType.METHOD)
-@Retention(RetentionPolicy.RUNTIME)
+package fr.linkit.api.connection.network.cache.repo.annotations;
+/**
+ * Specifies that a remote invocation should not await result or exception from the distant method.
+ * if true, the underlying class will only send the invocation request to the distant object's owner and
+ * return what's specified by {@link InvokeOnly#value()}. arguments declared as mutable with {@link Control}
+ * will thus not be modified.
+ * */
 public @interface InvokeOnly {
     /**
      * value represents the value to return in a generated method annotated with @InvokeOnly.
      * The value can be something else, such as 'this' in case of method chaining.
      *
-     * Note that this value is compiled by javac, and its scope is like an extending class of the annotated method's declaring class.
+     * Note that this value is compiled by javac, and the scope of the compiled string is the underlying method.
      * the trailing ';' character is not necessarily required.
      * */
     String value() default "null;";
+
 }

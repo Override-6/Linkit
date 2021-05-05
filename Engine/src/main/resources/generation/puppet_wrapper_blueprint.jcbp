@@ -1,0 +1,77 @@
+/*
+ *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ *  This code is free software; you can only use it for personal uses, studies or documentation.
+ *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  questions.
+ */
+
+package gen.$WrappedClassPackage$;
+
+import $WrappedClassPackage$.$WrappedClassSimpleName$;
+import fr.linkit.api.connection.network.cache.repo.PuppetDescription;
+import fr.linkit.api.connection.network.cache.repo.PuppetWrapper;
+import fr.linkit.api.connection.network.cache.repo.Puppeteer;
+import fr.linkit.api.connection.network.cache.repo.PuppeteerDescription;
+import fr.linkit.api.connection.network.cache.repo.generation.WrapperBundle;
+import fr.linkit.engine.connection.network.cache.repo.generation.PuppetAlreadyInitialisedException;
+
+public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ implements PuppetWrapper<$WrappedClassSimpleName$> {
+
+    public static final long serialVersionUID = $CompileTime$L;
+    private transient Puppeteer<$WrappedClassSimpleName$> puppeteer;
+    private transient PuppetDescription<$WrappedClassSimpleName$> description;
+    private PuppeteerDescription puppeteerDescription;
+
+    public $WrappedClassSimpleName$(WrapperBundle<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) {
+        super(clone);
+        initPuppeteer(bundle, clone);
+    }
+
+    //Fun fact: Override annotations are only conventional.
+    //They are only informal and
+    //does not affect abstraction or classes behaviors.
+    //Override annotations are removed at compilation.
+
+    @Override
+    public void initPuppeteer(WrapperBundle<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) throws PuppetAlreadyInitialisedException {
+        if (this.puppeteer != null)
+            throw new PuppetAlreadyInitialisedException("This puppet is already initialized !");
+        this.puppeteer = bundle.puppeteer();
+        this.puppeteerDescription = puppeteer.description();
+        puppeteer.init(this, clone);
+    }
+
+    @Override
+    public boolean isInitialized() {
+        return puppeteer != null;
+    }
+
+    @Override
+    public $WrappedClassSimpleName$ detachedClone() {
+        return new $WrappedClassSimpleName$(this);
+    }
+
+    @Override
+    public PuppeteerDescription getPuppeteerDescription() {
+        return puppeteerDescription;
+    }
+
+    $$FOR: INHERITED_METHOD$$ {
+        @Override
+        public $ReturnType$ $MethodName$($ParamsOut$) {
+            if (!description.isRMIEnabled($MethodID$)) {
+                return super.$MethodName$($ParamsIn$);
+            }
+            if (description.isInvokeOnly($MethodID$)) {
+                puppeteer.sendInvoke($MethodName$, $ParamsIn$);
+                return $InvokeOnlyResult$;
+            }
+            return puppeteer.sendInvokeAndWaitResult($MethodName$, $ParamsIn$);
+        }
+    }
+}

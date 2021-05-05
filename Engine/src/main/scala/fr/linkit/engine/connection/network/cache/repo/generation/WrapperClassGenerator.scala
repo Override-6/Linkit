@@ -12,64 +12,28 @@
 
 package fr.linkit.engine.connection.network.cache.repo.generation
 
-import fr.linkit.api.connection.network.cache.repo.{PuppetWrapper, Puppeteer, PuppeteerDescription, Shared}
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.network.cache.repo.{PuppetClassDesc, SimplePuppeteer}
+import fr.linkit.api.connection.network.cache.repo.generation.PuppetWrapperGenerator
+import fr.linkit.api.connection.network.cache.repo.{PuppetWrapper, Puppeteer, PuppeteerDescription}
+import fr.linkit.engine.connection.network.cache.repo.PuppetClassDesc
 import fr.linkit.engine.local.mapping.ClassMappings
 
-import java.io.File
 import java.lang.annotation.Annotation
 import java.lang.reflect.Method
-import java.net.URLClassLoader
-import java.nio.file.{Files, Path}
-import scala.collection.mutable
 
-//FIXME potential Collision if two classes of the same name, but not the same package are generated.
-object PuppetWrapperClassGenerator {
+class WrapperClassGenerator(resources: WrapperClassResource) extends PuppetWrapperGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
-    val GeneratedClassesFolder : String = "/generated/"
-    val EnqueueingSourcesFolder: String = GeneratedClassesFolder + "/queue/"
-    private val path = Path.of(GeneratedClassesFolder)
-    if (Files.notExists(path))
-        Files.createDirectories(path)
-    private val classLoader = new URLClassLoader(Array(path.toUri.toURL))
-
-    private val generatedClasses = new mutable.HashMap[Class[_], Class[_ <: PuppetWrapper[_]]]()
 
     def getOrGenerate[S <: Serializable](clazz: Class[_ <: S]): Class[S with PuppetWrapper[S]] = {
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is an interface.")
-        generatedClasses.getOrElseUpdate(clazz, genPuppetClass(clazz)).asInstanceOf[Class[S with PuppetWrapper[S]]]
-    }
-
-    private def genPuppetClass[S <: Serializable](clazz: Class[_ <: S]): Class[_ <: PuppetWrapper[_]] = {
-        val s          = '\"'
-        val classPaths = ClassMappings.getSources.map(source => s"$s${source.getLocation.getPath.drop(1)}$s").mkString(";")
-        val sourceCode = genPuppetClassSourceCode[S](clazz)
-
-        val puppetClassName = "Puppet" + clazz.getSimpleName
-        val path            = Path.of(EnqueueingSourcesFolder + puppetClassName + ".java").toAbsolutePath
-        if (Files.notExists(path)) {
-            Files.createDirectories(path.getParent)
-            Files.createFile(path)
-        }
-        Files.write(path, sourceCode.getBytes)
-
-        val javacProcess = new ProcessBuilder("javac", "-d", GeneratedClassesFolder, "-Xlint:all", s"-cp", classPaths, path.toString)
-        javacProcess.redirectOutput(ProcessBuilder.Redirect.INHERIT)
-        javacProcess.redirectError(ProcessBuilder.Redirect.INHERIT)
-        javacProcess.directory(new File(GeneratedClassesFolder))
-
-        AppLogger.debug(s"Compiling Puppet class for ${clazz.getSimpleName}...")
-        val exitValue = javacProcess.start().waitFor()
-        if (exitValue != 0)
-            throw new InvalidPuppetDefException(s"Javac rejected compilation of class $puppetClassName, check above error prints for further details.")
-
-        AppLogger.debug(s"Compilation done.")
-        val puppetClass = classLoader.loadClass(GeneratedClassesPackage + "." + puppetClassName)
-        ClassMappings.putClass(puppetClass)
-        puppetClass.asInstanceOf[Class[_ <: PuppetWrapper[S]]]
+        val className = clazz.getName
+        resources.getWrapperClass[S](className)
+                .getOrElse({
+                    resources.addToQueue(className, genPuppetClassSourceCode(clazz))
+                    resources.compileQueueAndClear()
+                    resources.getWrapperClass[S](className)
+                })
     }
 
     private def genConstantGettersFields(desc: PuppetClassDesc): String = {
@@ -101,7 +65,6 @@ object PuppetWrapperClassGenerator {
             s"""
                |package $GeneratedClassesPackage;
                |
-               |//import fr.linkit.core.connection.network.cache.puppet.Puppeteer;
                |import ${classOf[Puppeteer[_]].getName};
                |import ${classOf[PuppeteerDescription].getName};
                |import ${classOf[PuppetWrapper[_]].getName};

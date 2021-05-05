@@ -10,14 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.network.cache.repo;
+package fr.linkit.api.connection.network.cache.repo.generation
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import fr.linkit.api.connection.network.cache.repo.{PuppetDescription, Puppeteer}
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target({ElementType.FIELD, ElementType.METHOD, ElementType.PARAMETER})
-public @interface Hidden {
-}
+case class WrapperBundle[S <: Serializable](puppeteer: Puppeteer[S], description: PuppetDescription[S])

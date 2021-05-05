@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.system.fsa.nio
 
-import fr.linkit.api.connection.network.cache.repo.Hidden
+import fr.linkit.api.connection.network.cache.repo.annotations.Hidden
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 
 import java.io.{InputStream, OutputStream}

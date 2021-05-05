@@ -16,7 +16,7 @@ import fr.linkit.api.local.resource.external.ExternalResource
 
 trait ResourceRepresentation extends AutoCloseable {
 
-    def getResource: ExternalResource
+    def folder: ExternalResource
 
     override def close(): Unit = ()
 

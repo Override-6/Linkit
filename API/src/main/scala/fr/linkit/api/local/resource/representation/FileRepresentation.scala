@@ -16,6 +16,6 @@ import fr.linkit.api.local.resource.external.ResourceFile
 
 trait FileRepresentation extends ResourceRepresentation {
 
-    override def getResource: ResourceFile
+    override def folder: ResourceFile
 
 }

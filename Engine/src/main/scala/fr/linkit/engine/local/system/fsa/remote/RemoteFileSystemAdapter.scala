@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.local.system.fsa.remote
 
-import fr.linkit.api.connection.network.cache.repo.{Hidden, SharedObject}
+import fr.linkit.api.connection.network.cache.repo.SharedObject
+import fr.linkit.api.connection.network.cache.repo.annotations.Hidden
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}

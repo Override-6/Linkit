@@ -74,6 +74,7 @@ class DefaultResourceEntry[E <: ExternalResource](val resource: E) extends Resou
 
     override def close(): Unit = {
         ensureAlive()
+        representations.values.foreach(_.close())
         representations.clear()
         closed = true
     }
