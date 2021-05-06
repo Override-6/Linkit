@@ -39,9 +39,13 @@ object PuppetWrapperProcedure extends Procedure[PuppetWrapper[Serializable]] {
                 AppLogger.warn(s"     In order to retrieve this object.")
             }
             failCount += 1
-        } { cache =>
-            val repo = cache.getCache(cacheID, CloudPuppetRepository[Serializable], CacheOpenBehavior.GET_OR_CRASH)
+        } { cache => {
+            val connection   = network.connection
+            val appResources = connection.getContext.getAppResources
+
+            val repo      = cache.getCache(cacheID, CloudPuppetRepository[Serializable], CacheOpenBehavior.GET_OR_CRASH)
             repo.initPuppetWrapper(wrapper)
+        }
         }
     }
 }

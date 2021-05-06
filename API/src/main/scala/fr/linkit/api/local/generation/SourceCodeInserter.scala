@@ -10,19 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.network.cache.repo
+package fr.linkit.api.local.generation
 
-trait PuppetRepository[A <: Serializable] {
+trait SourceCodeInserter {
 
-    val puppetDescription: PuppetDescription[A]
+    def insert(inserter: BlueprintInserter, value: BlueprintValue[_]): Unit
 
-    def postObject(identifier: Int, obj: A): A with PuppetWrapper[A]
-
-    def findObject(identifier: Int): Option[A with PuppetWrapper[A]]
-
-    def isRegistered(identifier: Int): Boolean
-
-    def initPuppetWrapper(wrapper: A with PuppetWrapper[A]): Unit
-
-    def getOrElse[U >: A](id: Int, orElse: => U): U = findObject(id).getOrElse(orElse)
 }

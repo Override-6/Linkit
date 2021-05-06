@@ -12,24 +12,23 @@
 
 package fr.linkit.engine.connection.network.cache.repo.generation
 
+import fr.linkit.api.connection.network.cache.repo.PuppetWrapper
+import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
+import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.connection.network.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder}
+import fr.linkit.engine.local.mapping.ClassMappings
+
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.{Files, Path, StandardOpenOption}
-
-import fr.linkit.api.connection.network.cache.repo.PuppetWrapper
-import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.resource.representation.FolderRepresentation
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.network.cache.repo.generation.WrapperClassResource.{ClassesFolder, SourcesFolder}
-import fr.linkit.engine.local.mapping.ClassMappings
-
 import scala.collection.mutable
 
-class WrapperClassResource(override val folder: ResourceFolder) extends FolderRepresentation {
+class WrappersClassResource(override val resource: ResourceFolder) extends FolderRepresentation {
 
-    private val folderPath           = Path.of(folder.getAdapter.getAbsolutePath)
-    private val queuePath            = folderPath.resolve(SourcesFolder)
-    private val generatedClassesPath = folderPath.resolve(ClassesFolder)
+    private val folderPath           = Path.of(resource.getAdapter.getAbsolutePath)
+    private val queuePath            = Path.of(folderPath + SourcesFolder)
+    private val generatedClassesPath = Path.of(folderPath + ClassesFolder)
     private val classLoader          = new URLClassLoader(Array(generatedClassesPath.toUri.toURL))
     private val generatedClasses     = mutable.Map.empty[String, Class[_ <: PuppetWrapper[Serializable]]]
 
@@ -52,7 +51,7 @@ class WrapperClassResource(override val folder: ResourceFolder) extends FolderRe
         }
     }
 
-    def compileQueueAndClear(): Unit = {
+    def compileQueue(): Unit = {
         val classPaths   = ClassMappings.getSources.map(source => '\"' + source.getLocation.getPath.drop(1) + '\"').toString()
         val javacProcess = new ProcessBuilder("javac", "-d", queuePath.toString, "-Xlint:all", s"-cp", classPaths, generatedClassesPath.toString)
         javacProcess.redirectOutput(ProcessBuilder.Redirect.INHERIT)
@@ -72,8 +71,11 @@ class WrapperClassResource(override val folder: ResourceFolder) extends FolderRe
         Files.deleteIfExists(path)
     }
 
-    def initialize(): Unit = {
+    initialize()
+
+    override def initialize(): Unit = {
         Files.createDirectories(queuePath)
+        Files.createDirectories(generatedClassesPath)
         clearQueue()
     }
 
@@ -88,8 +90,10 @@ class WrapperClassResource(override val folder: ResourceFolder) extends FolderRe
 
 }
 
-object WrapperClassResource {
+object WrappersClassResource extends ResourceRepresentationFactory[WrappersClassResource, ResourceFolder] {
 
-    val SourcesFolder: String = "/sources/"
-    val ClassesFolder: String = "/classes/"
+    val SourcesFolder: String = "/Sources/"
+    val ClassesFolder: String = "/Classes/"
+
+    override def apply(resource: ResourceFolder): WrappersClassResource = new WrappersClassResource(resource)
 }

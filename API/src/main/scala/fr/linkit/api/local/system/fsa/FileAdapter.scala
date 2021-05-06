@@ -60,9 +60,9 @@ trait FileAdapter extends Serializable {
 
     def notExists: Boolean
 
-    def createAsFile(): Unit
+    def createAsFile(): this.type
 
-    def createAsFolder(): Unit
+    def createAsFolder(): this.type
 
     def newInputStream(append: Boolean = false): InputStream
 

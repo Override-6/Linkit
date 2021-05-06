@@ -16,13 +16,13 @@ import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, SharedCacheMan
 import fr.linkit.api.connection.network.{Network, NetworkEntity}
 import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.network.cache.NetworkSharedCacheManager
 import fr.linkit.engine.connection.network.cache.collection.{BoundedCollection, SharedCollection}
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
-import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
 import scala.collection.mutable
 
@@ -60,7 +60,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         caches.get(family)
                 .fold {
                     AppLogger.vDebug(s"$currentTasksId <> ${connection.supportIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
-                    val cache = new NetworkSharedCacheManager(family, owner, connection, cacheRequestChannel)
+                    val cache = new NetworkSharedCacheManager(family, owner, this, connection, cacheRequestChannel)
 
                     //Will inject all packet that the new cache have possibly missed.
                     caches.synchronized {

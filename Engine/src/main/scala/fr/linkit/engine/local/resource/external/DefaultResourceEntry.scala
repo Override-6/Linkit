@@ -10,11 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.resource.local
+package fr.linkit.engine.local.resource.external
 
 import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException, NoSuchRepresentationException}
 import fr.linkit.api.local.resource.external.{ExternalResource, ResourceEntry, ResourceFile, ResourceFolder}
-import fr.linkit.api.local.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
+import fr.linkit.api.local.resource.representation.{FileRepresentation, FolderRepresentation, ResourceRepresentation, ResourceRepresentationFactory}
 import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
@@ -40,10 +40,10 @@ class DefaultResourceEntry[E <: ExternalResource](val resource: E) extends Resou
         val rClass = classTag[R].runtimeClass
         resource match {
             case _: ResourceFile   =>
-                if (!classOf[ResourceFile].isAssignableFrom(rClass))
+                if (!classOf[FileRepresentation].isAssignableFrom(rClass))
                     abort("folder", "file")
             case _: ResourceFolder =>
-                if (!classOf[ResourceFolder].isAssignableFrom(rClass))
+                if (!classOf[FolderRepresentation].isAssignableFrom(rClass))
                     abort("file", "folder")
         }
 

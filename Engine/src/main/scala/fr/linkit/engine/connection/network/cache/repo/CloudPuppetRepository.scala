@@ -13,27 +13,28 @@
 package fr.linkit.engine.connection.network.cache.repo
 
 import fr.linkit.api.connection.network.cache.repo._
+import fr.linkit.api.connection.network.cache.repo.generation.{PuppetWrapperGenerator, PuppeteerDescription}
 import fr.linkit.api.connection.network.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.network.cache.repo.CloudPuppetRepository.{CacheRepoContent, FieldRestorer, PuppetProfile}
-import fr.linkit.engine.connection.network.cache.repo.generation.PuppetWrapperClassGenerator
+import fr.linkit.engine.connection.network.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.connection.network.cache.{AbstractSharedCache, CacheArrayContent}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
 import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.local.resource.external.LocalResourceFolder._
+
 import java.lang.reflect.Field
-
-import fr.linkit.api.connection.network.cache.repo.generation.PuppeteerDescription
-
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
 class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
                                                cacheID: Int,
-                                               channel: RequestPacketChannel)(implicit aCt: ClassTag[A])
+                                               channel: RequestPacketChannel,
+                                               generator: PuppetWrapperGenerator)(implicit aCt: ClassTag[A])
         extends AbstractSharedCache(handler, cacheID, channel) with PuppetRepository[A] {
 
     private val localChips        = new mutable.HashMap[Int, ObjectChip[A]]()
@@ -41,6 +42,10 @@ class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
     private val unFlushedPuppets  = new mutable.HashSet[PuppetProfile[A]]
     private val fieldRestorer     = new FieldRestorer
     private val supportIdentifier = channel.traffic.supportIdentifier
+
+    override val puppetDescription: PuppetDescription[A] = {
+        new PuppetDescription[A](aCt.runtimeClass.asInstanceOf[Class[A]])
+    }
 
     AppLogger.vTrace(s"Shared Object cache opened (id: $cacheID, family: ${handler.family}, owner: ${handler.ownerID})")
 
@@ -145,7 +150,7 @@ class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
     override def snapshotContent: CacheContent = {
         def toProfile(pair: (Int, SimplePuppeteer[A])): PuppetProfile[A] = {
             val (id, puppeteer) = pair
-            PuppetProfile[A](id, puppeteer.getPuppet, puppeteer.description.owner)
+            PuppetProfile[A](id, puppeteer.getPuppet, puppeteer.puppeteerDescription.owner)
         }
 
         val array = puppeteers.map(toProfile).toArray
@@ -166,34 +171,27 @@ class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
         if (wrapper.isInitialized)
             return
         val puppeteerDesc = wrapper.getPuppeteerDescription
-        val puppetDesc    = PuppetClassDesc.ofClass(wrapper.getClass.getSuperclass)
-        val puppeteer     = new SimplePuppeteer[A](channel, this, puppeteerDesc, puppetDesc)
+        val puppeteer     = new SimplePuppeteer[A](channel, this, puppeteerDesc, puppetDescription)
         wrapper.initPuppeteer(puppeteer, wrapper)
     }
 
     private def genPuppetWrapper(id: Int, owner: String, puppet: A): A with PuppetWrapper[A] = {
         ensureNotWrapped(puppet)
-        val puppetDesc    = PuppetClassDesc.ofRef(puppet)
         val puppeteerDesc = PuppeteerDescription(family, cacheID, id, owner)
-        val puppeteer     = new SimplePuppeteer[A](channel, this, puppeteerDesc, puppetDesc)
+        val puppeteer     = new SimplePuppeteer[A](channel, this, puppeteerDesc, puppetDescription)
         puppeteers.put(id, puppeteer)
 
-        val puppetClass = PuppetWrapperClassGenerator.getOrGenerate[A](puppet.getClass)
+        val puppetClass = generator.getClass[A](puppet.getClass.asInstanceOf[Class[A]])
         instantiatePuppetWrapper(puppeteer, puppet, puppetClass)
     }
 
     private def instantiatePuppetWrapper(puppeteer: SimplePuppeteer[A], clone: A, puppetClass: Class[A with PuppetWrapper[A]]): A with PuppetWrapper[A] = {
-        /*println(s"puppeteer = ${puppeteer}")
-        println(s"puppetClass = ${puppetClass}")
-        puppetClass.getDeclaredConstructors.foreach(println)
-        puppetClass.getDeclaredMethods.foreach(println)
-        puppetClass.getDeclaredFields.foreach(println)*/
         val constructor = puppetClass.getDeclaredConstructor(classOf[Puppeteer[_]], clone.getClass)
         constructor.newInstance(puppeteer, clone)
     }
 
     private def chipObject(id: Int, puppet: A): Unit = {
-        val chip = ObjectChip[A](supportIdentifier, puppet)
+        val chip = ObjectChip[A](supportIdentifier, puppetDescription, puppet)
         localChips.put(id, chip)
     }
 
@@ -214,11 +212,17 @@ class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
 
 object CloudPuppetRepository {
 
-    def apply[A <: Serializable : ClassTag]: SharedCacheFactory[CloudPuppetRepository[A] with InternalSharedCache] = (handler: SharedCacheManager,
-                                                                                                                      identifier: Int,
-                                                                                                                      container: PacketInjectableContainer) => {
-        val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
-        new CloudPuppetRepository[A](handler, identifier, channel)
+    private val ClassesResourceDirectory = "/GeneratedClasses/"
+
+    def apply[A <: Serializable : ClassTag]: SharedCacheFactory[CloudPuppetRepository[A] with InternalSharedCache] = {
+        (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
+            val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
+            val application = handler.network.connection.getContext
+            val resources = application.getAppResources.getOrOpenShort[WrappersClassResource](ClassesResourceDirectory)
+            val generator = new PuppetWrapperClassGenerator(resources)
+
+            new CloudPuppetRepository[A](handler, identifier, channel, generator)
+        }
     }
 
     class FieldRestorer {

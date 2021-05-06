@@ -15,8 +15,9 @@ package fr.linkit.api.local.resource.external
 import fr.linkit.api.local.resource.ResourceListener
 import fr.linkit.api.local.system.fsa.FileAdapter
 
-trait ExternalResourceFactory[+R <: ExternalResource] {
+trait ExternalResourceFactory[E <: ExternalResource] {
 
-    def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): R
+    implicit final val self: this.type = this
 
+    def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): E
 }

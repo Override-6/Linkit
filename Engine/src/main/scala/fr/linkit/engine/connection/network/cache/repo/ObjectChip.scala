@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.network.cache.repo
 
-import fr.linkit.api.connection.network.cache.repo.{IllegalPuppetException, PuppetException}
+import fr.linkit.api.connection.network.cache.repo.{IllegalPuppetException, PuppetDescription, PuppetException}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
@@ -20,55 +20,64 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmit
 import fr.linkit.engine.local.utils.ScalaUtils
 
 import java.lang.reflect.Modifier
+import scala.util.control.NonFatal
 
-case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
+case class ObjectChip[S <: Serializable] private(owner: String, description: PuppetDescription[S], puppet: S) {
 
-    private val desc = PuppetClassDesc.ofRef(puppet)
-
-    def updateField(fieldName: String, value: Any): Unit = {
-        desc.getSharedField(fieldName)
-                .fold()(ScalaUtils.setValue(puppet, _, value))
+    def updateField(fieldID: Int, value: Any): Unit = {
+        description.getFieldDesc(fieldID)
+                .filterNot(_.isHidden)
+                .foreach(desc => ScalaUtils.setValue(puppet, desc.field, value))
     }
 
     def updateAllFields(obj: Serializable): Unit = {
-        desc.foreachSharedFields(field => {
+        description.foreachFields(desc => if (!desc.isHidden) {
+            val field = desc.field
             val value = field.get(obj)
             ScalaUtils.setValue(puppet, field, value)
         })
     }
 
-    def canCallMethod(methodName: String, parameterTypes: Seq[Class[_]]): Boolean = desc.getSharedMethod(methodName, parameterTypes).isDefined
-
-    def callMethod(methodName: String, params: Seq[Serializable]): Any = {
-        val parameterTypes = params.map(_.getClass)
-        if (!canCallMethod(methodName, parameterTypes))
-            throw new PuppetException(s"Attempted to invoke cached method '$methodName'")
-
-        val method = desc.getSharedMethod(methodName, parameterTypes).get
-        method.invoke(puppet, params: _*)
+    def callMethod(methodID: Int, params: Seq[Serializable]): Any = {
+        val methodDesc = description.getMethodDesc(methodID)
+        if (methodDesc.exists(!_.isHidden)) {
+            throw new PuppetException(s"Attempted to invoke hidden method '${
+                methodDesc.map(_.method.getName).getOrElse(s"(unknown method id '$methodID')")
+            }' with arguments '${params.mkString(", ")}'")
+        }
+        methodDesc.get
+                .method
+                .invoke(puppet, params: _*)
                 .asInstanceOf[Any]
     }
 
     private[repo] def handleBundle(packet: Packet, submitter: ResponseSubmitter): Unit = {
         packet match {
-            case ObjectPacket((methodName: String, args: Array[Any])) =>
+            case ObjectPacket((methodId: Int, args: Array[Any])) =>
                 var result: Any = null
-                val castedArgs           = ScalaUtils.slowCopy[Serializable](args)
-                if (canCallMethod(methodName, castedArgs.map(_.getClass))) {
-                    try {
-                        result = callMethod(methodName, castedArgs)
-                    } catch {
-                        case e: Throwable =>
-                            throw e
-                            // result = ThrowableWrapper(e)
-                    }
+                val castedArgs  = ScalaUtils.slowCopy[Serializable](args)
+                try {
+                    result = callMethod(methodId, castedArgs)
+                } catch {
+                    case NonFatal(e) =>
+                        //FIXME instance loop for serializers.
+                        throw e
+                    //result = ThrowableWrapper(e)
                 }
                 submitter
                         .addPacket(RefPacket(result))
                         .submit()
 
-            case ObjectPacket((fieldName: String, value: Any)) =>
-                val field = desc.getSharedField(fieldName).get
+            case ObjectPacket((fieldId: Int, value: Any)) =>
+                val fieldDesc = description.getFieldDesc(fieldId)
+                fieldDesc
+                        .filterNot(_.isHidden)
+                        .getOrElse(
+                            throw new PuppetException(s"Attempted to set hidden field '${
+                                fieldDesc.getOrElse(s"(unknown field id '$fieldId')")
+                            }' to value '$value'")
+                        )
+                val field = fieldDesc.get.field
                 ScalaUtils.setValue(puppet, field, value)
         }
     }
@@ -77,7 +86,7 @@ case class ObjectChip[S <: Serializable] private(owner: String, puppet: S) {
 
 object ObjectChip {
 
-    def apply[S <: Serializable](owner: String, puppet: S): ObjectChip[S] = {
+    def apply[S <: Serializable](owner: String, description: PuppetDescription[S], puppet: S): ObjectChip[S] = {
         if (puppet == null)
             throw new NullPointerException("puppet is null !")
         val clazz = puppet.getClass
@@ -85,7 +94,7 @@ object ObjectChip {
         if (Modifier.isFinal(clazz.getModifiers))
             throw new IllegalPuppetException("Puppet can't be final.")
 
-        new ObjectChip[S](owner, puppet)
+        new ObjectChip[S](owner, description, puppet)
     }
 
 }

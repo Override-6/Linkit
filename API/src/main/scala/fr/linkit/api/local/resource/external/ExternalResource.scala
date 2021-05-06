@@ -25,6 +25,8 @@ trait ExternalResource extends AutoCloseable {
 
     val name: String
 
+    def getEntry: ResourceEntry[ExternalResource]
+
     def getLocation: String
 
     /**

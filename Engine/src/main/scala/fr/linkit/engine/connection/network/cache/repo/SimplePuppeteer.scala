@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.network.cache.repo
 
 import fr.linkit.api.connection.network.cache.repo.generation.PuppeteerDescription
-import fr.linkit.api.connection.network.cache.repo.{PuppetWrapper, Puppeteer, RemoteInvocationFailedException}
+import fr.linkit.api.connection.network.cache.repo.{PuppetDescription, PuppetWrapper, Puppeteer, RemoteInvocationFailedException}
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
@@ -25,9 +25,10 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketC
 
 class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
                                          presence: PacketAttributesPresence,
-                                         val description: PuppeteerDescription, val desc: PuppetClassDesc) extends Puppeteer[S] {
+                                         override val puppeteerDescription: PuppeteerDescription,
+                                         val puppetDescription: PuppetDescription[S]) extends Puppeteer[S] {
 
-    private val ownerScope = prepareScope(ChannelScopes.retains(description.owner))
+    private val ownerScope = prepareScope(ChannelScopes.retains(puppeteerDescription.owner))
     private val bcScope    = prepareScope(ChannelScopes.discardCurrent)
 
     private var puppet       : S                       = _
@@ -51,20 +52,32 @@ class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
         }
     }
 
-    override def sendInvoke(methodName: String, args: Array[Any]): Unit = {
-        AppLogger.debug(s"Remotely invoking method $methodName(${args.mkString(",")})")
-        channel.makeRequest(ownerScope)
-                .addPacket(ObjectPacket((methodName, Array(args: _*))))
-                .submit()
+    override def sendInvoke(methodId: Int, args: Array[Any]): Unit = {
+        val desc = puppetDescription.getMethodDesc(methodId).get
+        AppLogger.debug(s"Remotely invoking method ${desc.method.getName}(${args.mkString(",")})")
+
+        if (desc.isHidden)
+            channel.makeRequest(ownerScope)
+                    .addPacket(ObjectPacket((methodId, Array(args: _*))))
+                    .submit()
+                    .detach()
     }
 
-    override def addFieldUpdate(fieldName: String, newValue: Any): Unit = {
-        AppLogger.vDebug(s"Field '$fieldName' took value $newValue")
-        flushModification((fieldName, newValue))
+    override def sendFieldUpdate(fieldId: Int, newValue: Any): Unit = {
+        AppLogger.vDebug(s"Remotely associating field '${
+            puppetDescription.getFieldDesc(fieldId).get.field.getName
+        }' to value $newValue.")
+        channel.makeRequest(bcScope)
+                .addPacket(ObjectPacket((fieldId, newValue)))
+                .submit()
+                .detach()
     }
 
     override def sendPuppetUpdate(newVersion: S): Unit = {
-        desc.foreachSharedFields(field => addFieldUpdate(field.getName, field.get(newVersion)))
+        //TODO optimize, directly send the newVersion object to copy paste instead of all its fields.
+        puppetDescription.foreachFields(fieldDesc => if (!fieldDesc.isHidden) {
+            sendFieldUpdate(fieldDesc.fieldID, fieldDesc.field.get(newVersion))
+        })
     }
 
     override def init(wrapper: S with PuppetWrapper[S], puppet: S): Unit = {
@@ -75,20 +88,13 @@ class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
         this.puppet = puppet
     }
 
-    private def flushModification(mod: (String, Any)): Unit = {
-        channel.makeRequest(bcScope)
-                .addPacket(ObjectPacket(mod))
-                .submit()
-                .detach()
-    }
-
     private def prepareScope(factory: ScopeFactory[_ <: ChannelScope]): ChannelScope = {
         if (channel == null)
             return null
         val writer = channel.traffic.newWriter(channel.identifier)
         val scope  = factory.apply(writer)
         presence.drainAllDefaultAttributes(scope)
-        scope.addDefaultAttribute("id", description.objectID)
+        scope.addDefaultAttribute("id", puppeteerDescription.objectID)
     }
 
 }

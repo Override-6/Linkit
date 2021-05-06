@@ -14,7 +14,10 @@ package fr.linkit.api.local.resource.representation
 
 import fr.linkit.api.local.resource.external.ExternalResource
 
-trait ResourceRepresentationFactory[R <: ResourceRepresentation, E <: ExternalResource] {
+trait ResourceRepresentationFactory[R <: ResourceRepresentation, -E <: ExternalResource] {
+
+    final implicit val self: ResourceRepresentationFactory[R, E] = this
+
 
     def apply(resource: E): R
 

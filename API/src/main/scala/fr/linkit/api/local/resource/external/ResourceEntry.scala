@@ -24,7 +24,7 @@ import scala.reflect.ClassTag
  * any resource representation.
  * Default representations of type [[ExternalResource]] may be automatically attached.
  * */
-trait ResourceEntry[E <: ExternalResource] extends Closeable {
+trait ResourceEntry[+E <: ExternalResource] extends Closeable {
 
     /**
      * This resource name

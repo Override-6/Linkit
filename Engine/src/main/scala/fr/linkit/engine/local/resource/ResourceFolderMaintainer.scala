@@ -16,7 +16,7 @@ import fr.linkit.api.local.resource._
 import fr.linkit.api.local.resource.exception.NoSuchResourceException
 import fr.linkit.api.local.resource.external.{ExternalResource, ResourceFolder}
 import fr.linkit.engine.local.resource.ResourceFolderMaintainer.{MaintainerFileName, Resources}
-import fr.linkit.engine.local.resource.local.LocalResourceFactories
+import fr.linkit.engine.local.resource.external.LocalResourceFactories
 import fr.linkit.engine.local.system.EngineConstants.{UserGson => Gson}
 import fr.linkit.engine.local.system.{DynamicVersions, StaticVersions}
 

@@ -12,25 +12,24 @@
 
 package fr.linkit.engine.local.system.fsa.nio
 
-import fr.linkit.api.connection.network.cache.repo.annotations.Hidden
+import fr.linkit.api.connection.network.cache.repo.annotations.{InvokeOnly, MethodControl}
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 
 import java.io.{InputStream, OutputStream}
 import java.net.URI
 import java.nio.file._
 
-case class NIOFileAdapter private[nio](@Hidden path: Path, @transient fsa: NIOFileSystemAdapter) extends FileAdapter {
+case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystemAdapter) extends FileAdapter {
     def this(other: NIOFileAdapter) = {
         this(other.path, other.fsa)
     }
 
-    @Hidden
+    @MethodControl(localOnly = true)
     override def getPath: String = path.toString
 
-    @Hidden
     override def getFSAdapter: FileSystemAdapter = fsa
 
-    @Hidden
+    @MethodControl(localOnly = true)
     override def getAbsolutePath: String = path.toAbsolutePath.toString
 
     override def getSize: Long = Files.size(path)
@@ -43,17 +42,19 @@ case class NIOFileAdapter private[nio](@Hidden path: Path, @transient fsa: NIOFi
         fsa.getAdapter(parent.toString)
     }
 
-    @Hidden
+    @MethodControl(localOnly = true)
     override def getName: String = path.getFileName.toString
 
-    @Hidden
+    @MethodControl(localOnly = true)
     override def getContentString: String = Files.readString(path)
 
-    @Hidden
+    @MethodControl(localOnly = true)
     override def toUri: URI = path.toUri
 
+    @MethodControl(localOnly = true)
     override def resolveSibling(path: String): FileAdapter = resolveSiblings(fsa.getAdapter(path))
 
+    @MethodControl(localOnly = true)
     override def resolveSiblings(fa: FileAdapter): FileAdapter = {
         val resolved = path.resolveSibling(path.getParent)
         fsa.getAdapter(resolved.toString)
@@ -71,18 +72,22 @@ case class NIOFileAdapter private[nio](@Hidden path: Path, @transient fsa: NIOFi
 
     override def notExists: Boolean = Files.notExists(path)
 
-    override def createAsFile(): Unit = {
+    @InvokeOnly("this")
+    override def createAsFile(): this.type = {
         if (notExists) {
             if (Files.notExists(path.getParent))
                 Files.createDirectories(path.getParent)
             Files.createFile(path)
         }
+        this
     }
 
-    override def createAsFolder(): Unit = {
+    @InvokeOnly("this")
+    override def createAsFolder(): this.type = {
         if (notExists) {
             Files.createDirectories(path)
         }
+        this
     }
 
     override def isPresentOnDisk: Boolean = exists

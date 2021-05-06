@@ -10,19 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.network.cache.repo
+package fr.linkit.api.local.resource
 
-trait PuppetRepository[A <: Serializable] {
+import fr.linkit.api.local.resource.external.ResourceFolder
 
-    val puppetDescription: PuppetDescription[A]
+/**
+ * These traits are to be passed implicitly, and their implementations
+ * are meant to be used in order to shorten code to write.
+ * */
+trait OpenActionShortener[R] {
 
-    def postObject(identifier: Int, obj: A): A with PuppetWrapper[A]
+    def performOpen(i: ResourceFolder): R
 
-    def findObject(identifier: Int): Option[A with PuppetWrapper[A]]
-
-    def isRegistered(identifier: Int): Boolean
-
-    def initPuppetWrapper(wrapper: A with PuppetWrapper[A]): Unit
-
-    def getOrElse[U >: A](id: Int, orElse: => U): U = findObject(id).getOrElse(orElse)
 }

@@ -42,7 +42,7 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
         if (this.puppeteer != null)
             throw new PuppetAlreadyInitialisedException("This puppet is already initialized !");
         this.puppeteer = bundle.puppeteer();
-        this.puppeteerDescription = puppeteer.description();
+        this.puppeteerDescription = puppeteer.puppeteerDescription();
         puppeteer.init(this, clone);
     }
 
@@ -61,17 +61,17 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
         return puppeteerDescription;
     }
 
-    $$FOR: INHERITED_METHOD$$ {
+    $$INHERITED_METHODS$$ {
         @Override
-        public $ReturnType$ $MethodName$($ParamsOut$) {
-            if (!description.isRMIEnabled($MethodID$)) {
-                return super.$MethodName$($ParamsIn$);
-            }
-            if (description.isInvokeOnly($MethodID$)) {
-                puppeteer.sendInvoke($MethodName$, $ParamsIn$);
-                return $InvokeOnlyResult$;
-            }
-            return puppeteer.sendInvokeAndWaitResult($MethodName$, $ParamsIn$);
+        public $ReturnType$ $MethodName$ ($ParamsIn$) {
+        if (!description.isRMIEnabled($MethodID$)) {
+            return super.$MethodName$($ParamsOut$);
+        }
+        if (description.isInvokeOnly($MethodID$)) {
+            puppeteer.sendInvoke($MethodID$, new Object[]{$ParamsOut$});
+            return $InvokeOnlyResult$;
+        }
+        return puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
         }
     }
 }

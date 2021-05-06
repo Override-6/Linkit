@@ -18,6 +18,7 @@ import scala.annotation.meta.{field, getter, setter}
 
 object AnnotationHelper {
 
-    type Control = annotations.Control@field @getter @setter
+    type MethodControl = annotations.MethodControl@field @getter @setter
+    type FieldControl = annotations.MethodControl@field @getter @setter
 
 }

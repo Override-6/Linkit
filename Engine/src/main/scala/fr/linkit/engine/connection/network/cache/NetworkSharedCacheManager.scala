@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.network.cache
 
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.network.cache._
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
@@ -29,6 +30,7 @@ import scala.reflect.{ClassTag, classTag}
 
 class NetworkSharedCacheManager(override val family: String,
                                 override val ownerID: String,
+                                override val network: Network,
                                 container: PacketInjectableContainer,
                                 requestChannel: RequestPacketChannel) extends SharedCacheManager {
 

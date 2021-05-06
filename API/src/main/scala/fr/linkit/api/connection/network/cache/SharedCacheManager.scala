@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.network.cache
 
-import fr.linkit.api.connection.network.Updatable
+import fr.linkit.api.connection.network.{Network, Updatable}
 
 import scala.reflect.ClassTag
 
@@ -20,6 +20,7 @@ trait SharedCacheManager extends Updatable {
 
     val family : String
     val ownerID: String
+    val network: Network
 
     def postInstance[A <: Serializable](key: Int, value: A): A
 

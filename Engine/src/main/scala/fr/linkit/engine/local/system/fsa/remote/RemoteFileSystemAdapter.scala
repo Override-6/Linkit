@@ -12,8 +12,7 @@
 
 package fr.linkit.engine.local.system.fsa.remote
 
-import fr.linkit.api.connection.network.cache.repo.SharedObject
-import fr.linkit.api.connection.network.cache.repo.annotations.Hidden
+import fr.linkit.api.connection.network.cache.repo.annotations.MethodControl
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
@@ -25,7 +24,6 @@ import fr.linkit.engine.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapt
 import java.io.{InputStream, OutputStream}
 import java.net.URI
 
-@SharedObject
 class RemoteFileSystemAdapter private(delegateFSA: AbstractFileSystemAdapter,
                                       sharedAdapters: CloudPuppetRepository[FileAdapter]) extends AbstractFileSystemAdapter {
 
@@ -46,13 +44,13 @@ class RemoteFileSystemAdapter private(delegateFSA: AbstractFileSystemAdapter,
     override def list(fa: FileAdapter): Array[FileAdapter] = delegateFSA.list(fa)
 
     //FIXME Make returned object synchronised.
-    @Hidden
+    @MethodControl(hide = true)
     override def newInputStream(fa: FileAdapter): InputStream = {
         throw new UnsupportedOperationException("Use readNBytes instead")
     }
 
     //FIXME Make returned object synchronised.
-    @Hidden
+    @MethodControl(hide = true)
     override def newOutputStream(fa: FileAdapter): OutputStream = {
         throw new UnsupportedOperationException("Use readNBytes instead")
     }

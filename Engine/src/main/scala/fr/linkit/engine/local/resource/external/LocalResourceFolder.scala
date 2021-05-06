@@ -10,12 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.resource.local
+package fr.linkit.engine.local.resource.external
 
-import fr.linkit.api.local.resource.ResourceListener
+import fr.linkit.api.local.resource.{OpenActionShortener, ResourceListener}
 import fr.linkit.api.local.resource.external._
+import fr.linkit.api.local.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
 import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.engine.local.resource.base.BaseResourceFolder
+
+import scala.reflect.ClassTag
 
 class LocalResourceFolder protected(adapter: FileAdapter,
                                     listener: ResourceListener,
@@ -41,6 +44,21 @@ object LocalResourceFolder extends ExternalResourceFactory[LocalResourceFolder] 
                        listener: ResourceListener,
                        parent: ResourceFolder): LocalResourceFolder = {
         new LocalResourceFolder(adapter, listener, parent)
+    }
+
+    implicit def shortenRepresentation[E <: ExternalResource : ClassTag, R <: ResourceRepresentation : ClassTag](name: String)
+                                                                                                                (implicit resourceFactory: ExternalResourceFactory[E],
+                                                                                                                 representationFactory: ResourceRepresentationFactory[R, E]): OpenActionShortener[R] = {
+        { folder =>
+            val resource = folder.getOrOpen[E](name)
+            val entry    = resource.getEntry.asInstanceOf[ResourceEntry[E]]
+            entry
+                    .findRepresentation[R]
+                    .getOrElse {
+                        entry.attachRepresentation[R](representationFactory)
+                        entry.getRepresentation[R]
+                    }
+        }
     }
 
     val ForbiddenChars: Array[Char] = Array('\\', '/', ':', '?', '"', '<', '>', '|')

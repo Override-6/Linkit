@@ -10,10 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation.jcbp
+package fr.linkit.api.local.generation
 
-import fr.linkit.api.local.generation.ValueProvider
+trait JavaClassBlueprint[V] {
 
-class SimpleJavaClassBlueprint(blueprint: String, rootProvider: ValueProvider) extends {
-    private val rootScope = new ValueScope("Root", blueprint, null)
+    def getBlueprintString: String
+
+    def toClassSource(v: V): String
+
 }

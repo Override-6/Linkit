@@ -14,7 +14,7 @@ package fr.linkit.api.connection.network.cache.repo.annotations;
 /**
  * Specifies that a remote invocation should not await result or exception from the distant method.
  * if true, the underlying class will only send the invocation request to the distant object's owner and
- * return what's specified by {@link InvokeOnly#value()}. arguments declared as mutable with {@link Control}
+ * return what's specified by {@link InvokeOnly#value()}. arguments declared as mutable with {@link MethodControl}
  * will thus not be modified.
  * */
 public @interface InvokeOnly {

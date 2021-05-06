@@ -12,8 +12,9 @@
 
 package fr.linkit.api.local.resource.external
 
-import fr.linkit.api.local.resource.ResourcesMaintainer
 import fr.linkit.api.local.resource.exception._
+import fr.linkit.api.local.resource.representation.{ResourceRepresentation, ResourceRepresentationFactory}
+import fr.linkit.api.local.resource.{OpenActionShortener, ResourcesMaintainer}
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
@@ -40,8 +41,6 @@ trait ResourceFolder extends ExternalResource {
      * @return the location from the root [[ResourceFolder]]
      * */
     def getLocation: String
-
-    def getEntry: ResourceEntry[ResourceFolder]
 
     /**
      * @return the parent folder of this folder or null if this resource is the root folder.
@@ -94,6 +93,21 @@ trait ResourceFolder extends ExternalResource {
     @throws[IncompatibleResourceTypeException]("If a resource was found but with another type than R.")
     @NotNull
     def get[R <: ExternalResource : ClassTag](name: String): R
+
+    /**
+     * Retrieves or creates an [[ExternalResource]] of the name and it's representation type [[R]].
+     *
+     * @param name the name associated with the requested resource.
+     * @tparam R the type of resource expected.
+     * @return the expected resource representation.
+     * */
+    @NotNull
+    def getOrOpen[R <: ExternalResource : ClassTag](name: String)(implicit factory: ExternalResourceFactory[R]): R
+
+    @NotNull
+    def getOrOpenShort[R <: ResourceRepresentation : ClassTag](actionShortener: OpenActionShortener[R]): R = {
+        actionShortener.performOpen(this)
+    }
 
     /**
      * Tries to retrieve an [[ExternalResource]] with the same name and kind than the ones provided.

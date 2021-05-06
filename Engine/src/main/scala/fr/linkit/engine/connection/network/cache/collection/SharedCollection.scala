@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.network.cache.collection
 
-import fr.linkit.api.connection.network.cache.{CacheContent, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.network.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.concurrency.WorkerPools
@@ -35,7 +35,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
                                                      identifier: Int,
                                                      adapter: CollectionAdapter[A],
                                                      channel: RequestPacketChannel)
-        extends AbstractSharedCache(handler, identifier, channel) with mutable.Iterable[A] {
+        extends AbstractSharedCache(handler, identifier, channel) with mutable.Iterable[A] with InternalSharedCache {
 
     private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
     private val networkListeners        = ConsumerContainer[(CollectionModification, Int, A)]()

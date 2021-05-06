@@ -17,8 +17,8 @@ import fr.linkit.api.local.resource.external.{ExternalResource, ExternalResource
 import fr.linkit.api.local.resource.{ResourceListener, ResourcesMaintainer}
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 import fr.linkit.engine.local.resource.ResourceFolderMaintainer
-import fr.linkit.engine.local.resource.local.DefaultResourceEntry
-import fr.linkit.engine.local.resource.local.LocalResourceFolder.ForbiddenChars
+import fr.linkit.engine.local.resource.external.DefaultResourceEntry
+import fr.linkit.engine.local.resource.external.LocalResourceFolder.ForbiddenChars
 import org.jetbrains.annotations.NotNull
 
 import java.io.File
@@ -55,7 +55,6 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
     @throws[IllegalResourceException]("If the provided name contains invalid character")
     override def openResource[R <: ExternalResource : ClassTag](name: String, factory: ExternalResourceFactory[R]): R = {
         ensureResourceOpenable(name)
-        //println(s"Opening resource $name, ${classTag[R].runtimeClass}")
 
         register(name, factory)
     }
@@ -72,6 +71,10 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
                     case resource: R => resource
                     case other       => throw IncompatibleResourceTypeException(s"Requested resource of type '${classTag[R].runtimeClass.getSimpleName}' but found resource '${other.getClass.getSimpleName}'")
                 }
+    }
+
+    override def getOrOpen[R <: ExternalResource : ClassTag](name: String)(implicit factory: ExternalResourceFactory[R]): R = {
+        find[R](name).getOrElse(openResource[R](name, factory))
     }
 
     override def find[R <: ExternalResource : ClassTag](name: String): Option[R] = {

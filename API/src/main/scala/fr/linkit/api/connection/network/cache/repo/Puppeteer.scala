@@ -16,7 +16,7 @@ import fr.linkit.api.connection.network.cache.repo.generation.PuppeteerDescripti
 
 trait Puppeteer[S <: Serializable] {
 
-    val description: PuppeteerDescription
+    val puppeteerDescription: PuppeteerDescription
 
     def getPuppet: S
 
@@ -24,11 +24,11 @@ trait Puppeteer[S <: Serializable] {
 
     def sendInvokeAndWaitResult[R](methodName: String, args: Array[Any]): R
 
-    def sendInvoke(methodName: String, args: Array[Any]): Unit
-
-    def addFieldUpdate(fieldName: String, newValue: Any): Unit
-
     def sendPuppetUpdate(newVersion: S): Unit
 
     def init(wrapper: S with PuppetWrapper[S], puppet: S): Unit
+
+    def sendInvoke(methodId: Int, args: Array[Any]): Unit
+
+    def sendFieldUpdate(fieldId: Int, newValue: Any): Unit
 }

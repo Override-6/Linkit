@@ -25,10 +25,10 @@ import java.lang.annotation.Target;
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Control {
+public @interface MethodControl {
     /**
      * Specifies that the annotated method has no visible side effects.
-     * A pure method is a method that does not mutate the receiver object and/or does not mutates his arguments.
+     * A pure method is a method that does not mutate the receiver object and/or does not mutates its arguments.
      * If a method is declared as pure, but declares mutable arguments too, the returned boolean of this method should
      * be ignored, and used as false.
      *
@@ -40,20 +40,31 @@ public @interface Control {
     /**
      * Informs what arguments of the annotated method have a chance to be mutated.
      * <p>
-     *   The following values are possible:
-     *   <table>
-     *     <tr><td>"this"</td><td>Method mutates the receiver object, and doesn't mutates any objects passed as arguments (cannot be applied for static method or constructor)</td></tr>
-     *     <tr><td>"arg1", "arg2", ...</td><td>Method mutates the N-th argument</td></tr>
-     *     <tr><td>"this,arg1"</td><td>Method mutates the receiver and first argument and doesn't mutate any other arguments</td></tr>
-     *   </table>
+     * e following values are possible:
+     * <table>
+     *   <tr><td>"this"</td><td>Method mutates the receiver object, and doesn't mutates any objects passed as arguments (cannot be applied for static method or constructor)</td></tr>
+     *   <tr><td>"arg1", "arg2", ...</td><td>Method mutates the N-th argument</td></tr>
+     *   <tr><td>"this,arg1"</td><td>Method mutates the receiver and first argument and doesn't mutate any other arguments</td></tr>
+     * </table>
      */
     String mutates() default "";
 
     /**
      * If true, the returned value, if possible, will be synchronized with the caller as well.
      * as well.
-     * */
+     */
     boolean synchronizeReturnValue() default false;
 
-    boolean hide();
+    /**
+     * If a method is hidden, this mean that it can't be called remotely.
+     * If a distant object reference call the annotated method with this param on,
+     * It will receive a {@link fr.linkit.api.connection.network.cache.repo.RemoteInvocationFailedException}
+     */
+    boolean hide() default false;
+
+    /**
+     * Specifies that the annotated method must be invoked instead of
+     * invoking the distant method.
+     * */
+    boolean localOnly() default false;
 }

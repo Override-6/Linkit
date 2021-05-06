@@ -17,35 +17,31 @@ import fr.linkit.api.local.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
-import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
-import fr.linkit.engine.connection.network.cache.repo.generation.PuppetWrapperClassGenerator
+import fr.linkit.engine.connection.network.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication.setInstance
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.mapping.ClassMapEngine
 import fr.linkit.engine.local.plugin.LinkitPluginManager
 import fr.linkit.engine.local.resource.SimpleResourceListener
-import fr.linkit.engine.local.resource.local.{LocalResourceFactories, LocalResourceFolder}
+import fr.linkit.engine.local.resource.external.{LocalResourceFactories, LocalResourceFolder}
 import fr.linkit.engine.local.system.EngineConstants
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
 import fr.linkit.engine.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
 
-import java.util.concurrent.locks.LockSupport
-import scala.util.{Failure, Success}
 import scala.util.control.NonFatal
+import scala.util.{Failure, Success}
 
-abstract class LinkitApplication(configuration: ApplicationConfiguration) extends ApplicationContext {
+abstract class LinkitApplication(configuration: ApplicationConfiguration, appResources: ResourceFolder) extends ApplicationContext {
 
-    protected val resourceListener                = new SimpleResourceListener(configuration.resourceFolder)
-    protected val resources      : ResourceFolder = prepareAppResources()
-    override  val pluginManager  : PluginManager  = new LinkitPluginManager(this, configuration.fsAdapter)
-    @volatile protected var alive: Boolean        = false
+    override val pluginManager   : PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
+    @volatile protected var alive: Boolean       = false
     protected val appPool: BusyWorkerPool
 
     setInstance(this)
 
-    override def getAppResources: ResourceFolder = resources
+    override def getAppResources: ResourceFolder = appResources
 
     protected def ensureAlive(): Unit = {
         if (!alive)
@@ -63,10 +59,11 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration) extend
             pluginManager.close()
         }
         wrapCloseAction("Resource listener") {
-            resourceListener.close()
+            AppLogger.error("REMEMBER TO CLOSE RESOURCE LISTENER IN A FUTURE UPDATE WIH A DEDICATED CLASS FOR APP RESOURCES ROOT")
+            //resourceListener.close()
         }
         wrapCloseAction("Resource management") {
-            resources.close()
+            appResources.close()
         }
     }
 
@@ -103,8 +100,54 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration) extend
         }
     }
 
-    private def prepareAppResources(): ResourceFolder = {
+}
+
+object LinkitApplication {
+
+    @volatile private var instance  : LinkitApplication = _
+    @volatile private var isPrepared: Boolean           = false
+
+    private def setInstance(instance: LinkitApplication): Unit = this.synchronized {
+        if (this.instance != null)
+            throw new IllegalAccessError("Only one LinkitApplication per Java process is permitted.")
+        if (!isPrepared)
+            throw new IllegalStateException("Application must be prepared before any launch. Please use LinkitApplication.prepareApplication.")
+        this.instance = instance
+    }
+
+    def prepareApplication(implVersion: Version, configuration: ApplicationConfiguration, otherSources: Seq[Class[_]]): ResourceFolder = this.synchronized {
+        isPrepared = true
+
+        System.setProperty(EngineConstants.ImplVersionProperty, implVersion.toString)
+
+        AppLogger.info("-------------------------- Linkit Framework --------------------------")
+        AppLogger.info(s"\tApi Version            | ${ApiConstants.Version}")
+        AppLogger.info(s"\tEngine Version         | ${EngineConstants.Version}")
+        AppLogger.info(s"\tImplementation Version | ${implVersion}")
+        AppLogger.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
+
+        AppLogger.info("Mapping classes, this task may take a time.")
+
+        val fsa = configuration.fsAdapter
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources)
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
+        ClassMapEngine.mapJDK(fsa)
+        LocalFileSystemAdapters.Nio.clearAdapters()
+        LocalFileSystemAdapters.Io.clearAdapters()
+
+        import LocalResourceFolder._
+
+        val appResources = prepareAppResources(configuration)
+        val resource     = appResources.getOrOpenShort[WrappersClassResource]("/PuppetGeneration/")
+        val generator    = new PuppetWrapperClassGenerator(resource)
+
+        generator.preGenerateClasses(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter])
+        appResources
+    }
+
+    def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {
         AppLogger.trace("Loading app resources...")
+        val resourceListener = new SimpleResourceListener(configuration.resourceFolder)
         resourceListener.startWatchService()
         val fsa         = configuration.fsAdapter
         val rootAdapter = fsa.getAdapter(configuration.resourceFolder)
@@ -130,46 +173,6 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration) extend
         root
     }
 
-}
-
-object LinkitApplication {
-
-    @volatile private var instance  : LinkitApplication = _
-    @volatile private var isPrepared: Boolean           = false
-
-    private def setInstance(instance: LinkitApplication): Unit = this.synchronized {
-        if (this.instance != null)
-            throw new IllegalAccessError("Only one LinkitApplication per Java process is permitted.")
-        if (!isPrepared)
-            throw new IllegalStateException("Application must be prepared before any launch. Please use LinkitApplication.prepareApplication.")
-        this.instance = instance
-    }
-
-    def prepareApplication(implVersion: Version, fsa: FileSystemAdapter, otherSources: Seq[Class[_]]): Unit = this.synchronized {
-        isPrepared = true
-
-        System.setProperty(EngineConstants.ImplVersionProperty, implVersion.toString)
-
-        AppLogger.info("-------------------------- Linkit Framework --------------------------")
-        AppLogger.info(s"\tApi Version            | ${ApiConstants.Version}")
-        AppLogger.info(s"\tEngine Version         | ${EngineConstants.Version}")
-        AppLogger.info(s"\tImplementation Version | ${implVersion}")
-        AppLogger.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
-
-        AppLogger.info("Mapping classes, this task may take a time.")
-
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources)
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
-        ClassMapEngine.mapJDK(fsa)
-        LocalFileSystemAdapters.Nio.clearAdapters()
-        LocalFileSystemAdapters.Io.clearAdapters()
-
-        PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
-        PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileAdapter])
-        PuppetWrapperClassGenerator.getOrGenerate(classOf[IOFileSystemAdapter])
-        PuppetWrapperClassGenerator.getOrGenerate(classOf[IOFileAdapter])
-    }
-
     @workerExecution
     def exitApplication(code: Int): Unit = this.synchronized {
         if (instance == null) {
@@ -183,7 +186,7 @@ object LinkitApplication {
             instance.shutdown()
         }.join() match {
             case Failure(e) => e.printStackTrace()
-            case Success(_)     =>
+            case Success(_) =>
         }
 
         Runtime.getRuntime.halt(code)
