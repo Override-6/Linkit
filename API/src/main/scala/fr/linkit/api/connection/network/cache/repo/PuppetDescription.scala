@@ -19,9 +19,9 @@ import java.lang.reflect.{Field, Method}
 
 class PuppetDescription[T <: Serializable](val clazz: Class[_ <: T]) {
 
-    private val methods      = genMethodsMap()
+    private val methods    = genMethodsMap()
     private val methodsMap = methods.map(desc => (desc.methodId, desc)).toMap
-    private val fields       = genMethodsField()
+    private val fields     = genMethodsField()
 
     private var currentMethodIndex = -1
 
@@ -42,7 +42,7 @@ class PuppetDescription[T <: Serializable](val clazz: Class[_ <: T]) {
         methods(currentMethodIndex)
     }
 
-    def resetMethodIteration: Unit = currentMethodIndex = 0
+    def resetMethodIteration(): Unit = currentMethodIndex = 0
 
     def isRMIEnabled(methodId: Int): Boolean = {
         methodsMap.get(methodId).forall(!_.isLocalOnly)
@@ -66,20 +66,20 @@ class PuppetDescription[T <: Serializable](val clazz: Class[_ <: T]) {
         }
 
         getFieldsOfClass(clazz)
-                .map(desc => (desc.fieldID, desc))
-                .toMap
+            .map(desc => (desc.fieldID, desc))
+            .toMap
     }
 
     private def genMethodDescription(method: Method): MethodDescription = {
         val control                          = Option(method.getAnnotation(classOf[MethodControl]))
         val synchronizedParamNumbers         = control
-                .map(_.mutates()
-                        .split(",")
-                        .filterNot(s => s == "this" || s.isBlank)
-                        .map(s => s.trim
-                                .dropRight(s.lastIndexWhere(!_.isDigit))
-                                .toInt)
-                        .distinct)
+            .map(_.mutates()
+                .split(",")
+                .filterNot(s => s == "this" || s.isBlank)
+                .map(s => s.trim
+                    .dropRight(s.lastIndexWhere(!_.isDigit))
+                    .toInt)
+                .distinct)
         val synchronizedParams: Seq[Boolean] = for (n <- 1 to method.getParameterCount) yield {
             synchronizedParamNumbers.exists(_.contains(n))
         }

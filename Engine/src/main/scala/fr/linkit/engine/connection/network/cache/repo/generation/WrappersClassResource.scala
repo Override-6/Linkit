@@ -12,16 +12,17 @@
 
 package fr.linkit.engine.connection.network.cache.repo.generation
 
-import fr.linkit.api.connection.network.cache.repo.PuppetWrapper
-import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.network.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder}
-import fr.linkit.engine.local.mapping.ClassMappings
-
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.{Files, Path, StandardOpenOption}
+import java.util
+
+import fr.linkit.api.connection.network.cache.repo.PuppetWrapper
+import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
+import fr.linkit.engine.connection.network.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder}
+import javax.tools.{DiagnosticCollector, JavaFileObject, StandardLocation, ToolProvider}
+
 import scala.collection.mutable
 
 class WrappersClassResource(override val resource: ResourceFolder) extends FolderRepresentation {
@@ -52,17 +53,30 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
     }
 
     def compileQueue(): Unit = {
-        val classPaths   = ClassMappings.getSources.map(source => '\"' + source.getLocation.getPath.drop(1) + '\"').toString()
-        val javacProcess = new ProcessBuilder("javac", "-d", queuePath.toString, "-Xlint:all", s"-cp", classPaths, generatedClassesPath.toString)
-        javacProcess.redirectOutput(ProcessBuilder.Redirect.INHERIT)
-        javacProcess.redirectError(ProcessBuilder.Redirect.INHERIT)
+        val javac      = ToolProvider.getSystemJavaCompiler
+        val diagnostic = new DiagnosticCollector[JavaFileObject]
+        val sfm        = javac.getStandardFileManager(diagnostic, null, null)
+        val files      = sfm.getJavaFileObjects(Files
+            .list(queuePath)
+            .filter(_.toString.endsWith(".java"))
 
-        val classes = Files.list(queuePath).map(_.getFileName).toArray()
-        AppLogger.debug(s"Compiling Puppet classes '${classes.mkString(", ")}'")
-        val exitValue = javacProcess.start().waitFor()
-        if (exitValue != 0)
-            throw new InvalidPuppetDefException(s"Javac rejected compilation. Check above error prints for further details.")
-        AppLogger.debug(s"Compilation done.")
+            .toArray(new Array[Path](_)): _*)
+        sfm.setLocation(StandardLocation.CLASS_OUTPUT, util.Arrays.asList(generatedClassesPath.toFile))
+        val task = javac.getTask(null, sfm, diagnostic, null, null, files)
+        println(s"files = ${files}")
+        println(s"generatedClassesPath.toFile = ${util.Arrays.asList(generatedClassesPath.toFile)}")
+
+        javac.run()
+
+        task.call()
+        sfm.close()
+
+        diagnostic.getDiagnostics.forEach(diagnostic => {
+            System.err.format("Line: %d, %s in %s",
+                diagnostic.getLineNumber, diagnostic.getMessage(null),
+                diagnostic.getSource.getName)
+        })
+
         clearQueue()
     }
 
@@ -85,7 +99,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
 
     private def clearQueue(): Unit = {
         Files.list(queuePath)
-                .forEach(element => Files.deleteIfExists(element))
+            .forEach(element => Files.deleteIfExists(element))
     }
 
 }

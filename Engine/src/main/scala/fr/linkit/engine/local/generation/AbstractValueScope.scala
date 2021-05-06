@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.generation
 
-import fr.linkit.api.local.generation.{BlueprintInserter, BlueprintValue, LexerUtils, ValueScope}
+import fr.linkit.api.local.generation.{BlueprintInserter, BlueprintValue, LexerUtils, ValueIterator, ValueScope}
 import fr.linkit.engine.local.generation.AbstractValueScope.{ScopeBlock, SubScopeCategory}
 
 import scala.collection.mutable
@@ -23,8 +23,8 @@ class AbstractValueScope[A](override val name: String,
 
     private val subBlocks = {
         LexerUtils
-                .positionsBetween("\\$\\$", upperBlueprint)
-                .map(getScopeBlock)
+            .positionsBetween("\\$\\$", upperBlueprint)
+            .map(getScopeBlock)
     }
     private val values    = mutable.Map.empty[String, BlueprintValue[A]]
     private val subScopes = mutable.Map.empty[String, SubScopeCategory[A, _]]
@@ -45,13 +45,13 @@ class AbstractValueScope[A](override val name: String,
         values.put(pair._1, BlueprintValueSupplier[A](pair)(upperBlueprint))
     }
 
-    protected def bindSubScope[B](scopeFactory: (String, Int) => ValueScope[B], transform: A => B): Unit = {
+    protected def bindSubScope[B](scopeFactory: (String, Int) => ValueScope[B], valueIterator: ValueIterator[A, B]): Unit = {
         val scopes = subBlocks.map(block => (scopeFactory(block.blockBlueprint, block.startPos), block))
         if (scopes.isEmpty) {
             throw new NoSuchElementException("Sub scope not present.")
         }
         val name = scopes.head._2.name
-        subScopes.put(name, new SubScopeCategory[A, B](scopes, transform))
+        subScopes.put(name, new SubScopeCategory[A, B](scopes, valueIterator))
     }
 
     implicit protected class Helper(private val self: String) {
@@ -71,7 +71,7 @@ class AbstractValueScope[A](override val name: String,
 
 object AbstractValueScope {
 
-    class SubScopeCategory[A, B](scopes: Seq[(ValueScope[B], ScopeBlock)], transform: A => B) {
+    class SubScopeCategory[A, B](scopes: Seq[(ValueScope[B], ScopeBlock)], iterator: ValueIterator[A, B]) {
 
         def insertResult(inserter: BlueprintInserter, value: A): Unit = {
 
@@ -79,14 +79,12 @@ object AbstractValueScope {
                 val scope = pair._1
                 val block = pair._2
                 inserter.deleteBlock(block.startPos, block.blockBlueprint.length)
-                var subValue = transform(value)
-                while (subValue != null) {
+                iterator.foreach(value, { subValue =>
                     val sourceCode = scope.getSourceCode(subValue)
                     val start      = sourceCode.indexOf('{', scope.name.length + 4) + 1 // +4 to remove '$$' quotes + 1 to remove first '{'
                     val end        = sourceCode.lastIndexOf('}') //Removing last '}'
                     inserter.insertBlock(sourceCode.slice(start, end), scope.position) // Removing last '}' char
-                    subValue = transform(value)
-                }
+                })
             })
         }
     }

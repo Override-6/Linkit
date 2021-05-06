@@ -12,6 +12,9 @@
 
 package fr.linkit.engine.test
 
+import java.io.{File, StringWriter}
+import java.util
+
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.Version
 import fr.linkit.api.local.system.config.ApplicationConfiguration
@@ -22,6 +25,7 @@ import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.system.fsa.nio.NIOFileAdapter
+import javax.tools.{DiagnosticCollector, JavaFileObject, ToolProvider}
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
@@ -32,17 +36,13 @@ class ResourcesAndClassGenerationTests {
 
     private var resources: ResourceFolder = _
 
-    @Test
-    def sbTests(): Unit = {
-
-    }
 
     @Test
     @Order(1)
     def loadResources(): Unit = {
         val config = new ApplicationConfiguration {
             override val pluginFolder   : Option[String]             = None
-            override val resourceFolder : String                     = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            override val resourceFolder : String                     = "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\Linkit\\Home"
             override val fsAdapter      : FileSystemAdapter          = LocalFileSystemAdapters.Nio
             override val securityManager: ApplicationSecurityManager = null
         }

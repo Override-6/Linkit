@@ -15,6 +15,7 @@ package fr.linkit.engine.connection.network.cache.repo.generation
 import fr.linkit.api.connection.network.cache.repo.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.network.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.network.cache.repo.{PuppetDescription, PuppetWrapper}
+import fr.linkit.api.local.generation.ValueIterator
 import fr.linkit.engine.connection.network.cache.repo.generation.PuppetWrapperClassGenerator.{BPPath, ClassValueScope}
 import fr.linkit.engine.local.generation.{AbstractValueScope, SimpleJavaClassBlueprint}
 
@@ -28,11 +29,11 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
             throw new InvalidPuppetDefException("Provided class is an interface.")
         val className = clazz.getName
         resources.getWrapperClass[S](className)
-                .getOrElse({
-                    resources.addToQueue(className, genPuppetClassSourceCode(new PuppetDescription(clazz)))
-                    resources.compileQueue()
-                    resources.getWrapperClass[S](className).get
-                })
+            .getOrElse({
+                resources.addToQueue(className, genPuppetClassSourceCode(new PuppetDescription(clazz)))
+                resources.compileQueue()
+                resources.getWrapperClass[S](className).get
+            })
     }
 
     override def preGenerateClasses[S <: Serializable](classes: Class[_ <: S]*): Unit = {
@@ -61,17 +62,17 @@ object PuppetWrapperClassGenerator {
     val BPPath: String = "/generation/puppet_wrapper_blueprint.jcbp"
 
     class ClassValueScope(blueprint: String)
-            extends AbstractValueScope[PuppetDescription[_]]("CLASS", 0, blueprint) {
+        extends AbstractValueScope[PuppetDescription[_]]("CLASS", 0, blueprint) {
 
         registerValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
         registerValue("CompileTime" ~~> System.currentTimeMillis())
         registerValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
 
-        bindSubScope(MethodValueScope, _.nextMethod)
+        bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => desc.foreachMethods(action))
     }
 
     case class MethodValueScope(blueprint: String, pos: Int)
-            extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
+        extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
         registerValue("ReturnType" ~> (_.method.getReturnType.getName))
         registerValue("MethodName" ~> (_.method.getName))
@@ -84,19 +85,25 @@ object PuppetWrapperClassGenerator {
             var count = 0
             val sb    = new StringBuilder
             methodDesc.method.getParameterTypes.foreach(clazz => {
-                val typeName = clazz.getName
+                val typeName = clazz.getTypeName
                 count += 1
                 sb.append(typeName)
-                        .append(' ')
-                        .append("arg")
-                        .append(count)
-                        .append(", ")
+                    .append(' ')
+                    .append("arg")
+                    .append(count)
+                    .append(", ")
             })
             sb.toString().dropRight(2) //Remove last ", " string.
         }
 
         private def getParametersOut(methodDesc: MethodDescription): String = {
-            methodDesc.method.getParameterTypes.mkString(", ")
+            val sb = new StringBuilder
+            for (i <- 1 to methodDesc.method.getParameterCount) {
+                sb.append("arg")
+                    .append(i)
+                    .append(", ")
+            }
+            sb.dropRight(2).toString()
         }
     }
 
