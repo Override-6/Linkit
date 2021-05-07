@@ -15,13 +15,12 @@ package fr.linkit.engine.connection.network.cache.repo.generation
 import java.io.File
 import java.net.URLClassLoader
 import java.nio.file.{Files, Path, StandardOpenOption}
-import java.util
 
 import fr.linkit.api.connection.network.cache.repo.PuppetWrapper
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
 import fr.linkit.engine.connection.network.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder}
-import javax.tools.{DiagnosticCollector, JavaFileObject, StandardLocation, ToolProvider}
+import javax.tools.ToolProvider
 
 import scala.collection.mutable
 
@@ -53,29 +52,12 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
     }
 
     def compileQueue(): Unit = {
-        val javac      = ToolProvider.getSystemJavaCompiler
-        val diagnostic = new DiagnosticCollector[JavaFileObject]
-        val sfm        = javac.getStandardFileManager(diagnostic, null, null)
-        val files      = sfm.getJavaFileObjects(Files
-            .list(queuePath)
-            .filter(_.toString.endsWith(".java"))
+        val javac = ToolProvider.getSystemJavaCompiler
 
-            .toArray(new Array[Path](_)): _*)
-        sfm.setLocation(StandardLocation.CLASS_OUTPUT, util.Arrays.asList(generatedClassesPath.toFile))
-        val task = javac.getTask(null, sfm, diagnostic, null, null, files)
-        println(s"files = ${files}")
-        println(s"generatedClassesPath.toFile = ${util.Arrays.asList(generatedClassesPath.toFile)}")
-
-        javac.run()
-
-        task.call()
-        sfm.close()
-
-        diagnostic.getDiagnostics.forEach(diagnostic => {
-            System.err.format("Line: %d, %s in %s",
-                diagnostic.getLineNumber, diagnostic.getMessage(null),
-                diagnostic.getSource.getName)
-        })
+        javac.run(null, null, null, "--help")
+        val code = javac.run(null, null, null, "javac", "-d", "\"" + generatedClassesPath.toString + "\\\"", "-Xlint:all", queuePath.toString)
+        if (code != 0)
+            throw new InvalidPuppetDefException(s"Javac rejected class queue compilation. See above messages for further details. (error code: $code)")
 
         clearQueue()
     }
