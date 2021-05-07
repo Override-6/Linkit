@@ -14,9 +14,17 @@ package fr.linkit.api.local.generation
 
 import scala.collection.mutable
 
-class BlueprintInserter(builder: StringBuilder) {
+class BlueprintInserter(val posInScopeBp: Int, val blueprint: String) {
 
-    private val insertionHistory = mutable.ListBuffer.empty[(Int, Int)] //(Index, Shift)
+    val builder: StringBuilder = new StringBuilder(blueprint)
+    private val insertionHistory       = mutable.ListBuffer.empty[(Int, Int)] //(Index, Shift)
+
+    def recenterPosFromScopeBp(pos: Int): Int = {
+        val recenter = (pos - posInScopeBp)
+        if (recenter > blueprint.length || recenter < 0)
+            -1
+        else recenter
+    }
 
     def insertValue(value: String, valueName: String, pos: Int): Unit = {
         val valueClauseLength = valueName.length + 2
@@ -25,10 +33,10 @@ class BlueprintInserter(builder: StringBuilder) {
         archiveShift(pos, value.length - valueClauseLength)
     }
 
-    def insertBlock(block: String, pos: Int): Unit = {
+    def insertBlock(block: String, pos: Int, blockLength: Int): Unit = {
         val shift = getShift(pos)
         builder.insert(pos + shift, block)
-        archiveShift(pos, block.length)
+        archiveShift(pos, shift)
     }
 
     def deleteBlock(pos: Int, len: Int): Unit = {

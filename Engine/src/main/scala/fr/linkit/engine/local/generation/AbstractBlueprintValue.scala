@@ -16,13 +16,18 @@ import fr.linkit.api.local.generation.{BlueprintInserter, BlueprintValue, LexerU
 
 abstract class AbstractBlueprintValue[A](override val name: String, blueprint: String) extends BlueprintValue[A] {
 
+    if (name.count(_.isWhitespace) > 0)
+        throw new IllegalArgumentException("BlueprintValue can't contain spaces.")
+
     private val positions = LexerUtils.positions('$' + name + '$', blueprint)
 
     override def replaceValues(inserter: BlueprintInserter, value: A): Unit = {
-        val str = toClauseString(value)
-        positions.foreach(inserter.insertValue(str, name, _))
+        val str = getValue(value)
+        positions.foreach { pos =>
+            val centeredPos = inserter.recenterPosFromScopeBp(pos)
+            if (centeredPos != -1)
+                inserter.insertValue(str, name, centeredPos)
+        }
     }
-
-    def toClauseString(a: A): String
 
 }

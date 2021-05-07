@@ -42,7 +42,7 @@ class ResourcesAndClassGenerationTests {
     def loadResources(): Unit = {
         val config = new ApplicationConfiguration {
             override val pluginFolder   : Option[String]             = None
-            override val resourceFolder : String                     = "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\Linkit\\Home"
+            override val resourceFolder : String                     = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
             override val fsAdapter      : FileSystemAdapter          = LocalFileSystemAdapters.Nio
             override val securityManager: ApplicationSecurityManager = null
         }

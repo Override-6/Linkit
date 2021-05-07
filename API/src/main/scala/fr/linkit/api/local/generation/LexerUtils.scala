@@ -27,19 +27,20 @@ object LexerUtils {
         locations.toSeq
     }
 
-    def positionsBetween(quotesRegex: String, blueprint: String): Seq[(String, Int)] = {
-        val matcher      = Pattern.compile(s"$quotesRegex(.*)$quotesRegex").matcher(blueprint)
+    def expressionsBetween(regexA: String, regexB: String, blueprint: String): Seq[(String, Int)] = {
+        val matcher      = Pattern.compile(s"$regexA(.*)$regexB").matcher(blueprint)
         val buffer = ListBuffer.empty[(String, Int)]
         while (matcher.find()) {
-            buffer += ((matcher.group(1), matcher.start()))
+            buffer += ((matcher.group(1).trim, matcher.start()))
         }
         buffer.toSeq
     }
 
     def nextBlock(blueprint: String, pos: Int): String = {
         var blockDepth     = 0
-        val semiBlock      = blueprint.drop(pos + 1) //remove the first '{'
-        var lastChar: Char = blueprint(pos)
+        val start = blueprint.indexOf('{', pos)
+        val semiBlock      = blueprint.drop(start + 1) //remove the first '{'
+        var lastChar: Char = blueprint(start)
         var isInString     = false
         for (i <- semiBlock.indices) {
             semiBlock(i) match {

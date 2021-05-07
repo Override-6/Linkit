@@ -25,6 +25,6 @@ public @interface InvokeOnly {
      * Note that this value is compiled by javac, and the scope of the compiled string is the underlying method.
      * the trailing ';' character is not necessarily required.
      * */
-    String value() default "null;";
+    String value();
 
 }

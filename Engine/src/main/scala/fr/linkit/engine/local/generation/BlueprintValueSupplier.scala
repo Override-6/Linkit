@@ -14,7 +14,7 @@ package fr.linkit.engine.local.generation
 
 class BlueprintValueSupplier[A](name: String, bp: String, supplier: A => String) extends AbstractBlueprintValue[A](name, bp) {
 
-    override def toClauseString(a: A): String = supplier(a)
+    override def getValue(a: A): String = supplier(a)
 
 }
 

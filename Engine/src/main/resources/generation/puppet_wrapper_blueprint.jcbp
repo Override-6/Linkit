@@ -17,7 +17,6 @@ import fr.linkit.api.connection.network.cache.repo.PuppetDescription;
 import fr.linkit.api.connection.network.cache.repo.PuppetWrapper;
 import fr.linkit.api.connection.network.cache.repo.Puppeteer;
 import fr.linkit.api.connection.network.cache.repo.generation.PuppeteerDescription;
-import fr.linkit.api.connection.network.cache.repo.generation.WrapperBundle;
 import fr.linkit.engine.connection.network.cache.repo.PuppetAlreadyInitialisedException;
 
 public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ implements PuppetWrapper<$WrappedClassSimpleName$> {
@@ -27,7 +26,7 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
     private transient PuppetDescription<$WrappedClassSimpleName$> description;
     private PuppeteerDescription puppeteerDescription;
 
-    public $WrappedClassSimpleName$(WrapperBundle<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) {
+    public Puppet$WrappedClassSimpleName$(Puppeteer<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) {
         super(clone);
         initPuppeteer(bundle, clone);
     }
@@ -38,12 +37,13 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
     //Override annotations are removed at compilation.
 
     @Override
-    public void initPuppeteer(WrapperBundle<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) throws PuppetAlreadyInitialisedException {
+    public void initPuppeteer(Puppeteer<$WrappedClassSimpleName$> puppeteer, $WrappedClassSimpleName$ clone) throws PuppetAlreadyInitialisedException {
         if (this.puppeteer != null)
             throw new PuppetAlreadyInitialisedException("This puppet is already initialized !");
-        this.puppeteer = bundle.puppeteer();
-        this.puppeteerDescription = puppeteer.puppeteerDescription();
-        puppeteer.init(this, clone);
+        this.puppeteer = puppeteer;
+        this.puppeteerDescription = this.puppeteer.puppeteerDescription();
+        this.description = puppeteer.puppetDescription();
+        this.puppeteer.init(this, clone);
     }
 
     @Override
@@ -61,17 +61,22 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
         return puppeteerDescription;
     }
 
-    $$INHERITED_METHODS$$ {
-        @Override
-        public $ReturnType$ $MethodName$ ($ParamsIn$) {
+$$INHERITED_METHODS$$ {
+    Override
+    public $ReturnType$ $MethodName$($ParamsIn$) {
         if (!description.isRMIEnabled($MethodID$)) {
-            return super.$MethodName$($ParamsOut$);
+            $|If ReturnType == "void"|$ {
+                super.$MethodName$($ParamsOut$);
+                return
+            } $|Else|$ {
+                return super.$MethodName$($ParamsOut$);
+            }
         }
         if (description.isInvokeOnly($MethodID$)) {
             puppeteer.sendInvoke($MethodID$, new Object[]{$ParamsOut$});
             return $InvokeOnlyResult$;
         }
-        return puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
-        }
+    return puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
     }
+}
 }

@@ -38,16 +38,16 @@ class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
 
     override def getPuppetWrapper: S with PuppetWrapper[S] = puppetWrapper
 
-    override def sendInvokeAndWaitResult[R](methodName: String, args: Array[Any]): R = {
-        AppLogger.debug(s"Remotely invoking method $methodName(${args.mkString(",")})")
+    override def sendInvokeAndWaitResult[R](methodId: Int, args: Array[Any]): R = {
+        AppLogger.debug(s"Remotely invoking method $methodId(${args.mkString(",")})")
         val result = channel.makeRequest(ownerScope)
-                .addPacket(ObjectPacket((methodName, Array(args: _*))))
+                .addPacket(ObjectPacket((methodId, Array(args: _*))))
                 .submit()
                 .nextResponse
                 .nextPacket[RefPacket[R]].value
         result match {
             //FIXME ambiguity with broadcast method invocation.
-            case ThrowableWrapper(e) => throw new RemoteInvocationFailedException(s"Invocation of method $methodName with arguments '${args.mkString(", ")}' failed.", e)
+            case ThrowableWrapper(e) => throw new RemoteInvocationFailedException(s"Invocation of method $methodId with arguments '${args.mkString(", ")}' failed.", e)
             case result              => result
         }
     }
@@ -75,7 +75,8 @@ class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
 
     override def sendPuppetUpdate(newVersion: S): Unit = {
         //TODO optimize, directly send the newVersion object to copy paste instead of all its fields.
-        puppetDescription.foreachFields(fieldDesc => if (!fieldDesc.isHidden) {
+        puppetDescription.listFields()
+                .foreach(fieldDesc => if (!fieldDesc.isHidden) {
             sendFieldUpdate(fieldDesc.fieldID, fieldDesc.field.get(newVersion))
         })
     }

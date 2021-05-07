@@ -15,9 +15,10 @@ package fr.linkit.engine.connection.network.cache.repo.generation
 import fr.linkit.api.connection.network.cache.repo.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.network.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.network.cache.repo.{PuppetDescription, PuppetWrapper}
-import fr.linkit.api.local.generation.ValueIterator
 import fr.linkit.engine.connection.network.cache.repo.generation.PuppetWrapperClassGenerator.{BPPath, ClassValueScope}
 import fr.linkit.engine.local.generation.{AbstractValueScope, SimpleJavaClassBlueprint}
+
+import java.lang.reflect.Modifier
 
 class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends PuppetWrapperGenerator {
 
@@ -29,11 +30,11 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
             throw new InvalidPuppetDefException("Provided class is an interface.")
         val className = clazz.getName
         resources.getWrapperClass[S](className)
-            .getOrElse({
-                resources.addToQueue(className, genPuppetClassSourceCode(new PuppetDescription(clazz)))
-                resources.compileQueue()
-                resources.getWrapperClass[S](className).get
-            })
+                .getOrElse({
+                    resources.addToQueue(className, genPuppetClassSourceCode(new PuppetDescription(clazz)))
+                    resources.compileQueue()
+                    resources.getWrapperClass[S](className).get
+                })
     }
 
     override def preGenerateClasses[S <: Serializable](classes: Class[_ <: S]*): Unit = {
@@ -62,36 +63,44 @@ object PuppetWrapperClassGenerator {
     val BPPath: String = "/generation/puppet_wrapper_blueprint.jcbp"
 
     class ClassValueScope(blueprint: String)
-        extends AbstractValueScope[PuppetDescription[_]]("CLASS", 0, blueprint) {
+            extends AbstractValueScope[PuppetDescription[_]]("CLASS", 0, blueprint) {
 
         registerValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
         registerValue("CompileTime" ~~> System.currentTimeMillis())
         registerValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
 
-        bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => desc.foreachMethods(action))
+        bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
+            desc.listMethods()
+                    .distinctBy(_.methodId)
+                    .filterNot(desc => {
+                        val mods = desc.method.getModifiers
+                        Modifier.isPrivate(mods) || Modifier.isStatic(mods) || Modifier.isFinal(mods)
+                    })
+                    .foreach(action)
+        })
     }
 
     case class MethodValueScope(blueprint: String, pos: Int)
-        extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
+            extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
-        registerValue("ReturnType" ~> (_.method.getReturnType.getName))
+        registerValue("ReturnType" ~> (_.method.getGenericReturnType.getTypeName))
         registerValue("MethodName" ~> (_.method.getName))
         registerValue("MethodID" ~> (_.methodId.toString))
-        registerValue("InvokeOnlyResult" ~> (_.getReplacedReturnValue.getOrElse("null")))
+        registerValue("InvokeOnlyResult" ~> (_.getReplacedReturnValue))
         registerValue("ParamsIn" ~> getParametersIn)
         registerValue("ParamsOut" ~> getParametersOut)
 
         private def getParametersIn(methodDesc: MethodDescription): String = {
             var count = 0
             val sb    = new StringBuilder
-            methodDesc.method.getParameterTypes.foreach(clazz => {
+            methodDesc.method.getGenericParameterTypes.foreach(clazz => {
                 val typeName = clazz.getTypeName
                 count += 1
                 sb.append(typeName)
-                    .append(' ')
-                    .append("arg")
-                    .append(count)
-                    .append(", ")
+                        .append(' ')
+                        .append("arg")
+                        .append(count)
+                        .append(", ")
             })
             sb.toString().dropRight(2) //Remove last ", " string.
         }
@@ -100,8 +109,8 @@ object PuppetWrapperClassGenerator {
             val sb = new StringBuilder
             for (i <- 1 to methodDesc.method.getParameterCount) {
                 sb.append("arg")
-                    .append(i)
-                    .append(", ")
+                        .append(i)
+                        .append(", ")
             }
             sb.dropRight(2).toString()
         }

@@ -12,8 +12,18 @@
 
 package fr.linkit.api.local.generation
 
-trait SourceCodeInserter {
+import org.jetbrains.annotations.Nullable
 
-    def insert(inserter: BlueprintInserter, value: BlueprintValue[_]): Unit
+trait BlueprintFlowController {
+
+    @Nullable val before: BlueprintFlowController
+
+    val blockPosition: Int
+
+    val expressionPosition: Int
+
+    val layerBlueprint: String
+
+    def getBlueprint(context: GenerationContext): (String, Int) //(BlockBlueprint, BlockStartPos)
 
 }

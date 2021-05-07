@@ -31,7 +31,8 @@ case class ObjectChip[S <: Serializable] private(owner: String, description: Pup
     }
 
     def updateAllFields(obj: Serializable): Unit = {
-        description.foreachFields(desc => if (!desc.isHidden) {
+        description.listFields()
+                .foreach(desc => if (!desc.isHidden) {
             val field = desc.field
             val value = field.get(obj)
             ScalaUtils.setValue(puppet, field, value)

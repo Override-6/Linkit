@@ -18,11 +18,13 @@ trait Puppeteer[S <: Serializable] {
 
     val puppeteerDescription: PuppeteerDescription
 
+    val puppetDescription: PuppetDescription[S]
+
     def getPuppet: S
 
     def getPuppetWrapper: S with PuppetWrapper[S]
 
-    def sendInvokeAndWaitResult[R](methodName: String, args: Array[Any]): R
+    def sendInvokeAndWaitResult[R](methodId: Int, args: Array[Any]): R
 
     def sendPuppetUpdate(newVersion: S): Unit
 

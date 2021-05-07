@@ -19,67 +19,74 @@ import java.lang.reflect.{Field, Method}
 
 class PuppetDescription[T <: Serializable](val clazz: Class[_ <: T]) {
 
-    private val methods    = genMethodsMap()
+    /**
+     * Methods and fields that comes from those classes will not be available for RMI Invocations.
+     * */
+    private val blacklistedSuperClasses = Array[Class[_]](classOf[Object], classOf[Product])
+
+    private val methods    = collectMethods()
     private val methodsMap = methods.map(desc => (desc.methodId, desc)).toMap
     private val fields     = genMethodsField()
 
-    private var currentMethodIndex = -1
-
-    def foreachMethods(action: MethodDescription => Unit): Unit = {
-        methods.foreach(action)
+    def listMethods(): Seq[MethodDescription] = {
+        methods.toSeq
     }
 
-    def getMethodDesc(methodID: Int): Option[MethodDescription] = methodsMap.get(methodID)
-
-    def foreachFields(action: FieldDescription => Unit): Unit = {
-        fields.values.foreach(action)
+    def getMethodDesc(methodID: Int): Option[MethodDescription] = {
+        methodsMap.get(methodID)
     }
 
-    def getFieldDesc(fieldID: Int): Option[FieldDescription] = fields.get(fieldID)
-
-    def nextMethod: MethodDescription = {
-        currentMethodIndex += 1
-        methods(currentMethodIndex)
+    def listFields(): Seq[FieldDescription] = {
+        fields.values.toSeq
     }
 
-    def resetMethodIteration(): Unit = currentMethodIndex = 0
+    def getFieldDesc(fieldID: Int): Option[FieldDescription] = {
+        fields
+                .get(fieldID)
+    }
 
     def isRMIEnabled(methodId: Int): Boolean = {
-        methodsMap.get(methodId).forall(!_.isLocalOnly)
+        getMethodDesc(methodId).forall(!_.isLocalOnly)
     }
 
-    private def genMethodsMap(): Array[MethodDescription] = {
-        def getMethodsOfClass[S >: T](clazz: Class[_ <: S]): Array[MethodDescription] = {
+    def isInvokeOnly(methodId: Int): Boolean = {
+        getMethodDesc(methodId).forall(_.invokeOnly.isDefined)
+    }
+
+    private def collectMethods(): Array[MethodDescription] = {
+        def collectMethods[S >: T](clazz: Class[_ <: S]): Array[MethodDescription] = {
             if (clazz == null)
                 return Array()
-            clazz.getDeclaredMethods.map(genMethodDescription) ++ getMethodsOfClass(clazz.getSuperclass)
+            if (blacklistedSuperClasses.contains(clazz))
+                return collectMethods(clazz.getSuperclass)
+            clazz.getDeclaredMethods.map(genMethodDescription) ++ collectMethods(clazz.getSuperclass)
         }
 
-        getMethodsOfClass(clazz)
+        collectMethods(clazz)
     }
 
     private def genMethodsField(): Map[Int, FieldDescription] = {
         def getFieldsOfClass[S >: T](clazz: Class[_ <: S]): Array[FieldDescription] = {
-            if (clazz == null)
+            if (clazz == null || blacklistedSuperClasses.contains(clazz))
                 return Array()
             clazz.getDeclaredFields.map(genFieldDescription) ++ getFieldsOfClass(clazz.getSuperclass)
         }
 
         getFieldsOfClass(clazz)
-            .map(desc => (desc.fieldID, desc))
-            .toMap
+                .map(desc => (desc.fieldID, desc))
+                .toMap
     }
 
     private def genMethodDescription(method: Method): MethodDescription = {
         val control                          = Option(method.getAnnotation(classOf[MethodControl]))
         val synchronizedParamNumbers         = control
-            .map(_.mutates()
-                .split(",")
-                .filterNot(s => s == "this" || s.isBlank)
-                .map(s => s.trim
-                    .dropRight(s.lastIndexWhere(!_.isDigit))
-                    .toInt)
-                .distinct)
+                .map(_.mutates()
+                        .split(",")
+                        .filterNot(s => s == "this" || s.isBlank)
+                        .map(s => s.trim
+                                .dropRight(s.lastIndexWhere(!_.isDigit))
+                                .toInt)
+                        .distinct)
         val synchronizedParams: Seq[Boolean] = for (n <- 1 to method.getParameterCount) yield {
             synchronizedParamNumbers.exists(_.contains(n))
         }
@@ -110,11 +117,24 @@ object PuppetDescription {
                                  var isPure: Boolean,
                                  var isHidden: Boolean) {
 
-        def getReplacedReturnValue: Option[String] = invokeOnly.map(_.value())
+        def getReplacedReturnValue: String = {
+            import java.lang
+            invokeOnly.map(_.value())
+                    .getOrElse {
+                        val returnType = method.getReturnType
+                        returnType match {
+                            case lang.Boolean.TYPE                                                     => "false"
+                            case lang.Float.TYPE | lang.Double.TYPE                                    => "-1.0"
+                            case lang.Integer.TYPE | lang.Byte.TYPE | lang.Long.TYPE | lang.Short.TYPE => "-1"
+                            case lang.Character.TYPE                                                   => "'\\u0000'"
+                            case _ => "null"
+                        }
+                    }
+        }
 
         val methodId: Int = {
-            val any: Array[Class[_]] = method.getParameterTypes
-            method.hashCode() + hashCode(any)
+            val parameters: Array[Class[_]] = method.getParameterTypes
+            method.getName.hashCode + hashCode(parameters)
         }
 
         private def hashCode(a: Array[Class[_]]): Int = {

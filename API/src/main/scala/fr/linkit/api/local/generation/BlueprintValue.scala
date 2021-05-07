@@ -5,4 +5,6 @@ trait BlueprintValue[A] {
     val name: String
 
     def replaceValues(inserter: BlueprintInserter, value: A): Unit
+
+    def getValue(a: A): String
 }

@@ -12,16 +12,15 @@
 
 package fr.linkit.engine.connection.network.cache.repo.generation
 
-import java.io.File
-import java.net.URLClassLoader
-import java.nio.file.{Files, Path, StandardOpenOption}
-
 import fr.linkit.api.connection.network.cache.repo.PuppetWrapper
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
 import fr.linkit.engine.connection.network.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder}
-import javax.tools.ToolProvider
 
+import java.io.File
+import java.net.URLClassLoader
+import java.nio.file.{Files, Path, StandardOpenOption}
+import javax.tools.ToolProvider
 import scala.collection.mutable
 
 class WrappersClassResource(override val resource: ResourceFolder) extends FolderRepresentation {
@@ -32,8 +31,12 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
     private val classLoader          = new URLClassLoader(Array(generatedClassesPath.toUri.toURL))
     private val generatedClasses     = mutable.Map.empty[String, Class[_ <: PuppetWrapper[Serializable]]]
 
-    def addToQueue(className: String, classSource: String): Unit = {
-        val path = queuePath.resolve(className + ".java")
+    private[generation] def addToQueue(className: String, classSource: String): Unit = {
+        val classSimpleName = className.drop(className.lastIndexOf('.') + 1)
+        val classFolder     = Path.of(className.dropRight(classSimpleName.length).replace('.', File.separatorChar))
+        val path            = queuePath.resolve(classFolder + "\\Puppet" + classSimpleName + ".java")
+        if (Files.notExists(path))
+            Files.createDirectories(path.getParent)
         Files.writeString(path, classSource, StandardOpenOption.CREATE)
     }
 
@@ -52,14 +55,26 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
     }
 
     def compileQueue(): Unit = {
-        val javac = ToolProvider.getSystemJavaCompiler
-
-        javac.run(null, null, null, "--help")
-        val code = javac.run(null, null, null, "javac", "-d", "\"" + generatedClassesPath.toString + "\\\"", "-Xlint:all", queuePath.toString)
+        val javac                  = ToolProvider.getSystemJavaCompiler
+        val options                = Array[String]("-d", generatedClassesPath.toString, "-Xlint:all") ++ listSources()
+        val code                   = javac.run(null, null, null, options: _*)
         if (code != 0)
             throw new InvalidPuppetDefException(s"Javac rejected class queue compilation. See above messages for further details. (error code: $code)")
 
         clearQueue()
+    }
+    private def listSources(): Array[String] = {
+        def listSources(path: Path): Array[String] = {
+            Files.list(path)
+                    .toArray(new Array[Path](_))
+                    .flatMap(subPath => {
+                        if (Files.isDirectory(subPath))
+                        listSources(subPath)
+                        else Array(subPath.toString)
+                    })
+                    .filter(_.endsWith(".java"))
+        }
+        listSources(queuePath)
     }
 
     def removeFromQueue(className: String): Unit = {
@@ -80,8 +95,16 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
     }
 
     private def clearQueue(): Unit = {
-        Files.list(queuePath)
-            .forEach(element => Files.deleteIfExists(element))
+        def deleteFolder(path: Path): Unit = {
+            Files.list(path)
+                    .forEach(subPath => {
+                        if (Files.isDirectory(subPath))
+                            deleteFolder(subPath)
+                        else Files.delete(subPath)
+                    })
+        }
+
+        deleteFolder(queuePath)
     }
 
 }
