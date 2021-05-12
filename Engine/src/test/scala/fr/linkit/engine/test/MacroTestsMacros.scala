@@ -15,6 +15,7 @@ package fr.linkit.engine.test
 import scala.reflect.macros.whitebox
 
 object MacroTestsMacros {
+
     def macroCompute(c: whitebox.Context)(clazz: c.Expr[Class[_]]): c.Tree = {
         println("What")
         import c.universe._

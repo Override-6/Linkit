@@ -15,7 +15,7 @@ package fr.linkit.api.local.system
 /**
  * A Data class description that stores information about all the Framework's layers versions.
  * */
-trait Versions {
+trait Versions extends Serializable {
 
     /**
      * The version of the Linkit Framework API
@@ -25,7 +25,7 @@ trait Versions {
     /**
      * The version of the Linkit Framework Abstract Core
      * */
-    def EngineVersion: Version
+    def engineVersion: Version
 
     /**
      * The version of the Linkit Framework Implementation.
@@ -34,7 +34,7 @@ trait Versions {
 
     def sameVersions(other: Versions): Boolean = {
         other.apiVersion == apiVersion &&
-                other.EngineVersion == EngineVersion &&
+                other.engineVersion == engineVersion &&
                 other.implementationVersion == implementationVersion
     }
 
@@ -49,7 +49,7 @@ object Versions {
 
         override def apiVersion: Version = Version.Unknown
 
-        override def EngineVersion: Version = Version.Unknown
+        override def engineVersion: Version = Version.Unknown
 
         override def implementationVersion: Version = Version.Unknown
     }

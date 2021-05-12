@@ -33,7 +33,7 @@ trait ExternalResource extends AutoCloseable {
      * Each times a resource is modified from a LinkitApplication,
      * its ResourceVersion must be updated by the modifier application.
      * This can be useful to determine if a resource is obsolete depending on his
-     * utilisation (example: a file used by the core which have not the same [[Versions.EngineVersion]] could be out of date)
+     * utilisation (example: a file used by the core which have not the same [[Versions.engineVersion]] could be out of date)
      * */
     def getLastModified: Versions
 

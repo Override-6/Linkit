@@ -77,7 +77,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
 
         val item = ResourceItem(resource.name)
         item.lastChecksum = resource.getChecksum
-        item.lastModified = DynamicVersions.from(StaticVersions.currentVersion)
+        item.lastModified = DynamicVersions.from(StaticVersions.currentVersions)
         //println(s"Registered item $item")
 
         if (resources.get(item.name).exists(_.lastChecksum == item.lastChecksum)) {
@@ -101,8 +101,8 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
     object MaintainerKey extends ResourceKey {
 
         override def onModify(name: String): Unit = runIfKnown(name) { (resource, item) =>
-            if (!item.lastModified.sameVersions(StaticVersions.currentVersion)) {
-                item.lastModified.setAll(StaticVersions.currentVersion)
+            if (!item.lastModified.sameVersions(StaticVersions.currentVersions)) {
+                item.lastModified.setAll(StaticVersions.currentVersions)
             }
 
             def itemChecksum: Long = item.lastChecksum

@@ -12,28 +12,28 @@
 
 package fr.linkit.engine.local.system.event.network
 
-import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
+import fr.linkit.api.connection.network.{ExternalConnectionState, Engine}
 
 object NetworkEvents {
 
-    case class EntityAddedEvent(override val entity: NetworkEntity) extends NetworkEvent {
+    case class EntityAddedEvent(override val entity: Engine) extends NetworkEvent {
 
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityAdded))
     }
 
-    case class EntityRemovedEvent(override val entity: NetworkEntity) extends NetworkEvent {
+    case class EntityRemovedEvent(override val entity: Engine) extends NetworkEvent {
 
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityRemoved))
     }
 
-    case class EntityStateChangeEvent(override val entity: NetworkEntity,
+    case class EntityStateChangeEvent(override val entity: Engine,
                                       newState: ExternalConnectionState,
                                       oldState: ExternalConnectionState) extends NetworkEvent {
 
         override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook] = !!(Array(category.entityStateChange))
     }
 
-    case class RemotePropertyChangeEvent(override val entity: NetworkEntity,
+    case class RemotePropertyChangeEvent(override val entity: Engine,
                                          name: String,
                                          newProperty: Serializable,
                                          oldProperty: Any,
@@ -47,7 +47,7 @@ object NetworkEvents {
         }
     }
 
-    case class RemotePrintEvent(override val entity: NetworkEntity,
+    case class RemotePrintEvent(override val entity: Engine,
                                 print: String,
                                 private val received: Boolean) extends NetworkEvent {
 
@@ -59,34 +59,34 @@ object NetworkEvents {
         }
     }
 
-    def entityAdded(entity: NetworkEntity): EntityAddedEvent = EntityAddedEvent(entity)
+    def entityAdded(entity: Engine): EntityAddedEvent = EntityAddedEvent(entity)
 
-    def entityRemoved(entity: NetworkEntity): EntityRemovedEvent = EntityRemovedEvent(entity)
+    def entityRemoved(entity: Engine): EntityRemovedEvent = EntityRemovedEvent(entity)
 
-    def entityStateChange(entity: NetworkEntity,
+    def entityStateChange(entity: Engine,
                           newState: ExternalConnectionState, oldState: ExternalConnectionState): EntityStateChangeEvent = {
         EntityStateChangeEvent(entity, newState, oldState)
     }
 
-    def remotelyCurrentPropertyChange(entity: NetworkEntity,
+    def remotelyCurrentPropertyChange(entity: Engine,
                                       name: String,
                                       newProperty: Serializable,
                                       oldProperty: Any): RemotePropertyChangeEvent = {
         RemotePropertyChangeEvent(entity, name, newProperty, oldProperty, true)
     }
 
-    def remotePropertyChange(entity: NetworkEntity,
+    def remotePropertyChange(entity: Engine,
                              name: String,
                              newProperty: Serializable,
                              oldProperty: Serializable): RemotePropertyChangeEvent = {
         RemotePropertyChangeEvent(entity, name, newProperty, oldProperty, false)
     }
 
-    def remotePrintSentEvent(entity: NetworkEntity, print: String): RemotePrintEvent = {
+    def remotePrintSentEvent(entity: Engine, print: String): RemotePrintEvent = {
         RemotePrintEvent(entity, print, false)
     }
 
-    def remotePrintReceivedEvent(entity: NetworkEntity, print: String): RemotePrintEvent = {
+    def remotePrintReceivedEvent(entity: Engine, print: String): RemotePrintEvent = {
         RemotePrintEvent(entity, print, true)
     }
 

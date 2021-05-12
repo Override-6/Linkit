@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.local.system.event.network
 
-import fr.linkit.api.connection.network.NetworkEntity
+import fr.linkit.api.connection.network.Engine
 import fr.linkit.api.local.system.event.{Event, EventHook}
 
 trait NetworkEvent extends Event[NetworkEventHooks, NetworkEventListener] {
 
     protected type NetworkEventHook <: EventHook[_ <: NetworkEventListener, _ <: Event[_ <: NetworkEventHooks, _ <: NetworkEventListener]]
-    val entity: NetworkEntity
+    val entity: Engine
 
     override def getHooks(category: NetworkEventHooks): Array[NetworkEventHook]
 

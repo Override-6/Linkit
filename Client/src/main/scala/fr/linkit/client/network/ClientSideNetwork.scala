@@ -12,22 +12,22 @@
 
 package fr.linkit.client.network
 
-import fr.linkit.api.connection.network.cache.CacheOpenBehavior
-import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
+import fr.linkit.api.connection.cache.CacheOpenBehavior
+import fr.linkit.api.connection.network.{ExternalConnectionState, Engine}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.client.connection.ClientConnection
-import fr.linkit.engine.connection.network.cache.SharedInstance
-import fr.linkit.engine.connection.network.cache.collection.{BoundedCollection, CollectionModification}
-import fr.linkit.engine.connection.network.{AbstractNetwork, SelfNetworkEntity}
+import fr.linkit.engine.connection.cache.SharedInstance
+import fr.linkit.engine.connection.cache.collection.{BoundedCollection, CollectionModification}
+import fr.linkit.engine.connection.network.{AbstractNetwork, SelfEngine}
 import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
 
 import java.sql.Timestamp
 
 class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
 
-    override val connectionEntity: SelfNetworkEntity = initSelfEntity
+    override val connectionEngine: SelfEngine = initSelfEntity
 
-    override protected val entities: BoundedCollection.Immutable[NetworkEntity] = {
+    override protected val entities: BoundedCollection.Immutable[Engine] = {
         sharedIdentifiers
                 .addListener((_, _, _) => if (entities != null) AppLogger.vDebug("entities are now : " + entities)) //debug purposes
                 .mapped(createEntity)
@@ -36,27 +36,27 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
 
     override def serverIdentifier: String = connection.boundIdentifier
 
-    override def serverEntity: NetworkEntity = getEntity(serverIdentifier).get
+    override def serverEngine: Engine = getEngine(serverIdentifier).get
 
-    override def startUpDate: Timestamp = globalCache(2)
+    override def startUpDate: Timestamp = cache(2)
 
-    override def createEntity0(identifier: String, communicator: SyncAsyncPacketChannel): NetworkEntity = {
+    override def createEngine(identifier: String, communicator: SyncAsyncPacketChannel): Engine = {
         val entityCache = newCachesManager(identifier, identifier)
-        new ConnectionNetworkEntity(connection, identifier, entityCache)
+        new ConnectionEngine(connection, identifier, entityCache)
     }
 
     def update(): Unit = {
-        globalCache.update()
-        connectionEntity.update()
+        cache.update()
+        connectionEngine.update()
     }
 
-    def initSelfEntity: SelfNetworkEntity = {
+    def initSelfEntity: SelfEngine = {
         val identifier   = connection.supportIdentifier
         val sharedCaches = newCachesManager(identifier, identifier)
         sharedCaches
                 .getCache(3, SharedInstance[ExternalConnectionState], CacheOpenBehavior.GET_OR_WAIT)
                 .set(ExternalConnectionState.CONNECTED) //technically always connected to himself
-        new SelfNetworkEntity(connection, connection.getState, sharedCaches)
+        new SelfEngine(connection, connection.getState, sharedCaches)
     }
 
     private[client] def handshake(): Unit = {
@@ -67,7 +67,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
         //AppLogger.debug("HANDSHAKE MADE !")
     }
 
-    private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[NetworkEntity]): Unit = {
+    private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[Engine]): Unit = {
         //lazy val entity = entityOpt.get
         /*val event = mod match {
             case ADD => NetworkEvents.entityAdded(entity)

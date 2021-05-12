@@ -30,8 +30,6 @@ import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 import fr.linkit.engine.local.concurrency.PacketReaderThread
-import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.system.fsa.remote.RemoteFileSystemAdapter
 import fr.linkit.engine.local.system.{Rules, SystemPacket}
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
@@ -54,8 +52,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(this)
     override val network          : Network           = sideNetwork
     @volatile private var alive                       = true
-
-    postInit()
 
     /*
     * This will have for consequence to add the current connection's presence to the whole network.
@@ -92,11 +88,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         socket.close()
 
         alive = false
-    }
-
-    @workerExecution
-    private def postInit(): Unit = {
-        RemoteFileSystemAdapter.open(LocalFileSystemAdapters.Nio, this)
     }
 
     @workerExecution

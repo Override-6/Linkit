@@ -19,7 +19,6 @@ import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.AppLogger
@@ -29,7 +28,6 @@ import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.system.Rules
 import fr.linkit.engine.local.system.event.DefaultEventNotifier
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.system.fsa.remote.RemoteFileSystemAdapter
 import fr.linkit.engine.local.utils.NumberSerializer.serializeInt
 import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.network.ServerSideNetwork
@@ -86,8 +84,6 @@ class ServerConnection(applicationContext: ServerApplication,
             throw new ServerException(this, "Server is already started.")
         AppLogger.info(s"Server '$supportIdentifier' starts on port ${configuration.port}")
         AppLogger.trace(s"Identifier Ambiguity Strategy : ${configuration.identifierAmbiguityStrategy}")
-
-        RemoteFileSystemAdapter.open(LocalFileSystemAdapters.Nio, this)
 
         try {
             loadSocketListener()

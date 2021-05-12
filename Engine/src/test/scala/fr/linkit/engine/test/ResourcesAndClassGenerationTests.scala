@@ -12,20 +12,15 @@
 
 package fr.linkit.engine.test
 
-import java.io.{File, StringWriter}
-import java.util
-
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.Version
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
-import fr.linkit.engine.connection.network.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
-import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.system.fsa.nio.NIOFileAdapter
-import javax.tools.{DiagnosticCollector, JavaFileObject, ToolProvider}
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._

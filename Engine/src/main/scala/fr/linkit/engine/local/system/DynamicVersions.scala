@@ -40,13 +40,13 @@ class DynamicVersions() extends Versions {
             throw new NullPointerException
 
         api = other.apiVersion
-        Engine = other.EngineVersion
+        Engine = other.engineVersion
         implementation = other.implementationVersion
     }
 
     override def apiVersion: Version = api
 
-    override def EngineVersion: Version = Engine
+    override def engineVersion: Version = Engine
 
     override def implementationVersion: Version = implementation
 

@@ -12,14 +12,14 @@
 
 package fr.linkit.engine.connection.network
 
-import fr.linkit.api.connection.network.cache.{CacheOpenBehavior, SharedCacheManager}
-import fr.linkit.api.connection.network.{Network, NetworkEntity}
+import fr.linkit.api.connection.cache.{CacheOpenBehavior, SharedCacheManager}
+import fr.linkit.api.connection.network.{Network, Engine}
 import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.network.cache.NetworkSharedCacheManager
-import fr.linkit.engine.connection.network.cache.collection.{BoundedCollection, SharedCollection}
+import fr.linkit.engine.connection.cache.NetworkSharedCacheManager
+import fr.linkit.engine.connection.cache.collection.{BoundedCollection, SharedCollection}
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
@@ -30,20 +30,18 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
     private   val cacheRequestChannel                          = connection.getInjectable(12, ChannelScopes.discardCurrent, RequestPacketChannel)
     private   val caches                                       = mutable.HashMap.empty[String, NetworkSharedCacheManager]
-    override  val globalCache       : SharedCacheManager       = initCaches()
-    protected val sharedIdentifiers : SharedCollection[String] = globalCache.getCache(3, SharedCollection.set[String], CacheOpenBehavior.GET_OR_WAIT)
+    override  val cache             : SharedCacheManager       = initCaches()
+    protected val sharedIdentifiers : SharedCollection[String] = cache.getCache(3, SharedCollection.set[String], CacheOpenBehavior.GET_OR_WAIT)
     protected val entityCommunicator: SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScopes.discardCurrent, SyncAsyncPacketChannel.busy)
-    protected val entities: BoundedCollection.Immutable[NetworkEntity]
+    protected val entities: BoundedCollection.Immutable[Engine]
 
-    override def listEntities: List[NetworkEntity] = {
-        //println(s"entities = ${entities}")
-        //println(s"sharedIdentifiers = ${sharedIdentifiers}")
+    override def listEngines: List[Engine] = {
         entities.toList
     }
 
-    override def isConnected(identifier: String): Boolean = getEntity(identifier).isDefined
+    override def isConnected(identifier: String): Boolean = getEngine(identifier).isDefined
 
-    override def getEntity(identifier: String): Option[NetworkEntity] = {
+    override def getEngine(identifier: String): Option[Engine] = {
         if (entities != null)
             entities.find(_.identifier == identifier)
         else None
@@ -85,15 +83,15 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         newCachesManager(family, owner.boundIdentifier)
     }
 
-    protected def createEntity0(identifier: String, communicationChannel: SyncAsyncPacketChannel): NetworkEntity
+    protected def createEngine(identifier: String, communicationChannel: SyncAsyncPacketChannel): Engine
 
-    protected def createEntity(identifier: String): NetworkEntity = {
+    protected def createEntity(identifier: String): Engine = {
         if (identifier == connection.supportIdentifier) {
-            return connectionEntity
+            return connectionEngine
         }
 
         val channel = entityCommunicator.subInjectable(Array(identifier), SyncAsyncPacketChannel.busy, transparent = true)
-        val ent     = createEntity0(identifier, channel)
+        val ent     = createEngine(identifier, channel)
         ent
     }
 

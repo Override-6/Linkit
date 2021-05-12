@@ -13,10 +13,10 @@
 package fr.linkit.engine.connection.packet.serialization.procedures
 
 import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.network.cache.CacheOpenBehavior
-import fr.linkit.api.connection.network.cache.repo.PuppetWrapper
+import fr.linkit.api.connection.cache.CacheOpenBehavior
+import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.network.cache.repo.CloudPuppetRepository
+import fr.linkit.engine.connection.cache.repo.CloudPuppetRepository
 import fr.linkit.engine.connection.packet.serialization.Procedure
 
 object PuppetWrapperProcedure extends Procedure[PuppetWrapper[Serializable]] {

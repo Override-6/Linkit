@@ -12,26 +12,26 @@
 
 package fr.linkit.api.connection.network
 
-import fr.linkit.api.connection.network.cache.SharedCacheManager
+import fr.linkit.api.connection.cache.SharedCacheManager
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 
 import java.sql.Timestamp
 
 trait Network {
 
-    val connectionEntity: NetworkEntity
+    val connectionEngine: Engine
 
-    val globalCache: SharedCacheManager
+    val cache: SharedCacheManager
 
     val connection: ConnectionContext
 
     def serverIdentifier: String
 
-    def listEntities: List[NetworkEntity]
+    def serverEngine: Engine
 
-    def getEntity(identifier: String): Option[NetworkEntity]
+    def listEngines: List[Engine]
 
-    def serverEntity: NetworkEntity
+    def getEngine(identifier: String): Option[Engine]
 
     def isConnected(identifier: String): Boolean
 

@@ -15,25 +15,25 @@ package fr.linkit.engine.local.system
 import fr.linkit.api.local.system.{ApiConstants, Version, Versions}
 
 case class StaticVersions(override val apiVersion: Version,
-                          override val EngineVersion: Version,
+                          override val engineVersion: Version,
                           override val implementationVersion: Version) extends Versions {
 }
 
 object StaticVersions {
 
-    private var currentVersions: StaticVersions = _
+    private var versions: StaticVersions = _
 
-    def currentVersion: Versions = {
+    def currentVersions: Versions = {
 
-        if (currentVersions != null)
-            return currentVersions
+        if (versions != null)
+            return versions
 
         val implVersionString = System.getProperty(EngineConstants.ImplVersionProperty)
         if (implVersionString == null)
             throw new IllegalStateException(s"System property ${EngineConstants.ImplVersionProperty} was not found !")
 
         val implVersion = Version(implVersionString)
-        currentVersions = StaticVersions(ApiConstants.Version, EngineConstants.Version, implVersion)
-        currentVersions
+        versions = StaticVersions(ApiConstants.Version, EngineConstants.Version, implVersion)
+        versions
     }
 }

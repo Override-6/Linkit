@@ -51,7 +51,7 @@ abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileA
 
     override def markAsModifiedByCurrentApp(): Unit = {
         lastModified match {
-            case dynamic: DynamicVersions => dynamic.setAll(StaticVersions.currentVersion)
+            case dynamic: DynamicVersions => dynamic.setAll(StaticVersions.currentVersions)
             case _                        =>
             //If the Versions implementation isn't dynamic, this means that we may not
             //Update the versions.

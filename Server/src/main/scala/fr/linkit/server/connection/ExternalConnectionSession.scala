@@ -12,7 +12,7 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.network.{ExternalConnectionState, NetworkEntity}
+import fr.linkit.api.connection.network.{ExternalConnectionState, Engine}
 import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
@@ -61,7 +61,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
 
     def updateSocket(socket: Socket): Unit = this.socket.set(socket)
 
-    def getEntity: NetworkEntity = network.getEntity(boundIdentifier).get
+    def getEntity: Engine = network.getEngine(boundIdentifier).get
 
     override def isClosed: Boolean = socket.isClosed //refers to an used closeable element
 }

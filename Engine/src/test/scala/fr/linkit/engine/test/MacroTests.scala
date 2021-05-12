@@ -15,14 +15,13 @@ package fr.linkit.engine.test
 import org.junit.jupiter.api.Test
 
 import scala.language.experimental.macros
-import scala.reflect.io.Path
 
 class MacroTests {
 
     @Test
     def testStaticAccessor(): Unit = {
         val accessor = new StaticAccessor
-        accessor.compute(classOf[Path])
+        //accessor.compute(classOf[Path])
     }
 }
 

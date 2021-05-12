@@ -18,7 +18,7 @@ import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
-import fr.linkit.engine.connection.network.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication.setInstance
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.mapping.ClassMapEngine
