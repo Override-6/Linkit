@@ -12,17 +12,19 @@
 
 package fr.linkit.api.connection.network.cache.repo
 
+import scala.reflect.ClassTag
+
 trait PuppetRepository[A <: Serializable] {
 
-    val puppetDescription: PuppetDescription[A]
+    def getPuppetDescription[B <: A : ClassTag]: PuppetDescription[B]
 
-    def postObject(identifier: Int, obj: A): A with PuppetWrapper[A]
+    def postObject[B <: A : ClassTag](id: Int, obj: B): B with PuppetWrapper[B]
 
-    def findObject(identifier: Int): Option[A with PuppetWrapper[A]]
+    def findObject[B <: A](id: Int): Option[B with PuppetWrapper[B]]
 
     def isRegistered(identifier: Int): Boolean
 
-    def initPuppetWrapper(wrapper: A with PuppetWrapper[A]): Unit
+    def initPuppetWrapper[B <: A : ClassTag](wrapper: B with PuppetWrapper[B]): Unit
 
     def getOrElse[U >: A](id: Int, orElse: => U): U = findObject(id).getOrElse(orElse)
 }

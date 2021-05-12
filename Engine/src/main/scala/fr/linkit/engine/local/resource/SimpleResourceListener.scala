@@ -20,9 +20,8 @@ import java.nio.file._
 import java.util
 import scala.collection.mutable
 
-class SimpleResourceListener(resourcePath: String) extends ResourceListener with Closeable {
+class SimpleResourceListener extends ResourceListener with Closeable {
 
-    private val rootPath              = Path.of(resourcePath)
     private val watcher: WatchService = FileSystems.getDefault.newWatchService()
     private val keys                  = new mutable.HashMap[String, (ResourceKey, WatchKey)]()
 
@@ -76,7 +75,8 @@ class SimpleResourceListener(resourcePath: String) extends ResourceListener with
         watcher.close()
     }
 
-    override def putMaintainer(maintainer: ResourcesMaintainer, resourceKey: ResourceKey): Unit = {
+    override def putMaintainer(maintainer: ResourcesMaintainer,
+                               resourceKey: ResourceKey): Unit = {
 
         val location = maintainer.getResources.getAdapter.getAbsolutePath
 
@@ -86,7 +86,7 @@ class SimpleResourceListener(resourcePath: String) extends ResourceListener with
 
         val path = Path.of(location)
         import StandardWatchEventKinds._
-        val watchKey = path.register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
+        val watchKey = path.register(watcher, ENTRY_DELETE, ENTRY_MODIFY)
         keys.put(location, (resourceKey, watchKey))
     }
 

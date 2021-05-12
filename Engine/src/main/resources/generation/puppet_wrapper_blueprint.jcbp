@@ -62,21 +62,29 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
     }
 
 $$INHERITED_METHODS$$ {
-    Override
-    public $ReturnType$ $MethodName$($ParamsIn$) {
+    @Override
+    public $ReturnType$ $MethodName$($ParamsIn$) $MethodExceptions$ {
         if (!description.isRMIEnabled($MethodID$)) {
             $|If ReturnType == "void"|$ {
                 super.$MethodName$($ParamsOut$);
-                return
+                return;
             } $|Else|$ {
                 return super.$MethodName$($ParamsOut$);
             }
         }
         if (description.isInvokeOnly($MethodID$)) {
             puppeteer.sendInvoke($MethodID$, new Object[]{$ParamsOut$});
-            return $InvokeOnlyResult$;
+            $|If ReturnType != "void"|$ {
+                return $InvokeOnlyResult$;
+            } $|Else|$ {
+                return;
+            }
         }
-    return puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+        $|If ReturnType != "void"|$ {
+            return puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+        } $|Else|$ {
+            return;
+        }
     }
 }
 }

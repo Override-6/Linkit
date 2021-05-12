@@ -14,6 +14,7 @@ package fr.linkit.server
 
 import fr.linkit.api.connection.{ConnectionInitialisationException, NoSuchConnectionException}
 import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
+import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
@@ -29,7 +30,7 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class ServerApplication private(override val configuration: ServerApplicationConfiguration) extends LinkitApplication(configuration) {
+class ServerApplication private(override val configuration: ServerApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) {
 
     protected override val appPool         = new BusyWorkerPool(configuration.mainPoolThreadCount, "Application")
     private            val serverCache     = mutable.HashMap.empty[Any, ServerConnection]
@@ -151,11 +152,11 @@ object ServerApplication {
         if (initialized)
             throw new IllegalStateException("ServerApplication was already launched !")
 
-        LinkitApplication.prepareApplication(Version, config.fsAdapter, otherSources)
+        val appResources = LinkitApplication.prepareApplication(Version, config, otherSources)
 
         val serverAppContext = try {
             AppLogger.info("Instantiating Server application...")
-            new ServerApplication(config)
+            new ServerApplication(config, appResources)
         } catch {
             case NonFatal(e) =>
                 throw new ApplicationInstantiationException("Could not instantiate Server Application.", e)

@@ -10,20 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation
+package fr.linkit.engine.test
 
-import org.jetbrains.annotations.Nullable
+class StaticAccessor {
 
-trait BlueprintFlowController {
-
-    @Nullable val before: BlueprintFlowController
-
-    val blockPosition: Int
-
-    val expressionPosition: Int
-
-    val layerBlueprint: String
-
-    def getBlueprint(context: GenerationContext): Option[(String, Int)] //(BlockBlueprint, BlockStartPos)
+    def compute(clazz: Class[_]): Any = macro MacroTestsMacros.macroCompute
 
 }

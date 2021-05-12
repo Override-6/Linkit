@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
+import java.lang.reflect.{Array => RArray}
 import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.{ClassProfile, MegaByte}
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.connection.packet.serialization.tree.nodes.ObjectNode.NullObjectFlag
+import fr.linkit.engine.local.mapping.ClassMappings
 import fr.linkit.engine.local.utils.NumberSerializer
-import fr.linkit.engine.local.utils.ScalaUtils.toPresentableString
-
-import scala.util.Try
+import fr.linkit.engine.local.utils.NumberSerializer.{deserializeFlaggedNumber, deserializeInt, serializeNumber}
 
 object ArrayNode extends NodeFactory[Array[_]] {
 
@@ -84,11 +84,12 @@ object ArrayNode extends NodeFactory[Array[_]] {
             }
 
             //println(s"lengths = ${lengths.mkString("Array(", ", ", ")")}")
-            val sign = lengths.flatMap(i => NumberSerializer.serializeNumber(i, true))
+            val sign = lengths.flatMap(i => serializeNumber(i, true))
             //println(s"array sign = ${toPresentableString(sign)}")
-            val signLength = NumberSerializer.serializeNumber(lengths.length, true)
+            val signLength = serializeNumber(lengths.length, true)
             //println(s"sign length = ${signLength.mkString("Array(", ", ", ")")}")
-            val result = ArrayFlag /\ signLength ++ sign ++ byteArrays.flatten
+            val arrayType = NumberSerializer.serializeInt(array.getClass.componentType().getName.hashCode)
+            val result = ArrayFlag /\ arrayType ++ signLength ++ sign ++ byteArrays.flatten
             //println(s"result = ${toPresentableString(result)}")
             result
         }
@@ -104,12 +105,14 @@ object ArrayNode extends NodeFactory[Array[_]] {
             if (bytes(1) == EmptyFlag)
                 return Array.empty
 
+            val arrayType = ClassMappings.getClass(deserializeInt(bytes, 1))
             //println(s"Deserializing array into bytes ${toPresentableString(bytes)}")
-            val (signItemCount, sizeByteCount: Byte) = NumberSerializer.deserializeFlaggedNumber[Int](bytes, 1) //starting from 1 because first byte is the array flag.
+            val (signItemCount, sizeByteCount: Byte) = deserializeFlaggedNumber[Int](bytes, 5) //starting from 1 because first byte is the array flag.
             //println(s"signItemCount = ${signItemCount}")
             //println(s"sizeByteCount = ${sizeByteCount}")
-            val sign   = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 1)
-            val result = new Array[Any](sign.childrenBytes.length)
+            val sign   = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 5)
+
+            val result = RArray.newInstance(arrayType, sign.childrenBytes.length).asInstanceOf[Array[_]]
 
             var i = 0
             for (childBytes <- sign.childrenBytes) {

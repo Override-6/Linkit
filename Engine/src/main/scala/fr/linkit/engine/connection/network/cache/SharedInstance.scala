@@ -40,10 +40,10 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
     override def handleBundle(bundle: RequestBundle): Unit = {
         AppLogger.vTrace(s"<$family> Handling packet $bundle")
         bundle.packet.nextPacket[Packet] match {
-            case ObjectPacket(remoteInstance: Option[A]) =>
-                this.instance = remoteInstance
+            case ObjectPacket(remoteInstance: A) =>
+                this.instance = Option(remoteInstance)
                 modCount += 1
-                listeners.applyAll(remoteInstance)
+                listeners.applyAll(instance)
                 AppLogger.vTrace(s"<$family> INSTANCE IS NOW (network): $instance")
 
             case _ => throw UnexpectedPacketException("Unable to handle a non ObjectPacket into SharedInstance")
@@ -52,7 +52,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
 
     override def modificationCount(): Int = modCount
 
-    override def snapshotContent: CacheContent = CacheInstanceContent(instance)
+    override def snapshotContent: CacheContent = CacheInstanceContent(if (instance.isDefined) instance.get else null)
 
     override def toString: String = s"SharedInstance(${instance.orNull})"
 
@@ -95,9 +95,9 @@ object SharedInstance {
         }
     }
 
-    case class CacheInstanceContent[A](instance: Option[A]) extends CacheContent {
+    case class CacheInstanceContent[A](a: A) extends CacheContent {
 
-        override def toArray: Array[_] = Array(instance)
+        override def toArray: Array[_] = Array[Any](a)
     }
 
 }

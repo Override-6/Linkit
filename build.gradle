@@ -38,6 +38,18 @@ subprojects {
     test {
         useJUnitPlatform()
     }
+
+    tasks.withType(ScalaCompile) {
+        scalaCompileOptions.additionalParameters = [
+                "-feature",
+                "-Ymacro-debug-verbose",
+                "-Ycache-macro-class-loader:always",
+                "-language:implicitConversions",
+                "-language:experimental.macros"
+        ]
+    }
+
+    configurations.scalaCompiler.transitive = false
 }
 
 wrapper {

@@ -29,8 +29,17 @@ class LocalResourceFolder protected(adapter: FileAdapter,
 
     override def createOnDisk(): Unit = getAdapter.createAsFolder()
 
-    override def scan(scanAction: String => Unit): Unit = {
+    override def scanFolders(scanAction: String => Unit): Unit = {
+        scan(scanAction, true)
+    }
+
+    override def scanFiles(scanAction: String => Unit): Unit = {
+        scan(scanAction, false)
+    }
+
+    private def scan(scanAction: String => Unit, filterDirs: Boolean): Unit = {
         fsa.list(getAdapter)
+                .filter(_.isDirectory == filterDirs)
                 .map(_.getName)
                 .filterNot(maintainer.isKnown)
                 .foreach(scanAction)

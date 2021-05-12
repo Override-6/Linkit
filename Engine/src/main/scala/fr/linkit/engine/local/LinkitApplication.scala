@@ -23,8 +23,8 @@ import fr.linkit.engine.local.LinkitApplication.setInstance
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.mapping.ClassMapEngine
 import fr.linkit.engine.local.plugin.LinkitPluginManager
-import fr.linkit.engine.local.resource.SimpleResourceListener
 import fr.linkit.engine.local.resource.external.{LocalResourceFactories, LocalResourceFolder}
+import fr.linkit.engine.local.resource.{ResourceFolderMaintainer, SimpleResourceListener}
 import fr.linkit.engine.local.system.EngineConstants
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
@@ -145,9 +145,9 @@ object LinkitApplication {
         appResources
     }
 
-    def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {
+    private def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {
         AppLogger.trace("Loading app resources...")
-        val resourceListener = new SimpleResourceListener(configuration.resourceFolder)
+        val resourceListener = new SimpleResourceListener()
         resourceListener.startWatchService()
         val fsa         = configuration.fsAdapter
         val rootAdapter = fsa.getAdapter(configuration.resourceFolder)
@@ -160,11 +160,14 @@ object LinkitApplication {
         recursiveScan(root)
 
         def recursiveScan(folder: LocalExternalFolder): Unit = {
-            folder.scan(folder.register(_, LocalResourceFactories.adaptive))
+            folder.scanFiles(folder.register(_, LocalResourceFactories.file))
 
-            fsa.list(folder.getAdapter).foreach { sub =>
-                if (sub.isDirectory) {
-                    recursiveScan(folder.get[LocalExternalFolder](sub.getName))
+            val subPaths = fsa.list(folder.getAdapter)
+            subPaths.foreach { sub =>
+                val subName = sub.getName
+                if (sub.isDirectory && subPaths.exists(_.getName == ResourceFolderMaintainer.MaintainerFileName)) {
+                    if (folder.isKnown(subName))
+                        recursiveScan(folder.get[LocalExternalFolder](subName))
                 }
             }
         }

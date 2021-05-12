@@ -11,12 +11,20 @@
  */
 
 package fr.linkit.api.connection.network.cache.repo.annotations;
+
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
 /**
  * Specifies that a remote invocation should not await result or exception from the distant method.
  * if true, the underlying class will only send the invocation request to the distant object's owner and
  * return what's specified by {@link InvokeOnly#value()}. arguments declared as mutable with {@link MethodControl}
  * will thus not be modified.
  * */
+@Target(ElementType.METHOD)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface InvokeOnly {
     /**
      * value represents the value to return in a generated method annotated with @InvokeOnly.

@@ -16,6 +16,7 @@ import fr.linkit.api.connection.network.cache.repo.PuppetDescription.{FieldDescr
 import fr.linkit.api.connection.network.cache.repo.annotations.{FieldControl, InvokeOnly, MethodControl}
 
 import java.lang.reflect.{Field, Method}
+import scala.collection.mutable.ListBuffer
 
 class PuppetDescription[T <: Serializable](val clazz: Class[_ <: T]) {
 
@@ -26,10 +27,10 @@ class PuppetDescription[T <: Serializable](val clazz: Class[_ <: T]) {
 
     private val methods    = collectMethods()
     private val methodsMap = methods.map(desc => (desc.methodId, desc)).toMap
-    private val fields     = genMethodsField()
+    private val fields     = collectFields()
 
     def listMethods(): Seq[MethodDescription] = {
-        methods.toSeq
+        methods
     }
 
     def getMethodDesc(methodID: Int): Option[MethodDescription] = {
@@ -53,23 +54,52 @@ class PuppetDescription[T <: Serializable](val clazz: Class[_ <: T]) {
         getMethodDesc(methodId).forall(_.invokeOnly.isDefined)
     }
 
-    private def collectMethods(): Array[MethodDescription] = {
+    private def collectMethods(): Seq[MethodDescription] = {
         def collectMethods[S >: T](clazz: Class[_ <: S]): Array[MethodDescription] = {
             if (clazz == null)
                 return Array()
             if (blacklistedSuperClasses.contains(clazz))
                 return collectMethods(clazz.getSuperclass)
-            clazz.getDeclaredMethods.map(genMethodDescription) ++ collectMethods(clazz.getSuperclass)
+            val declaredMethods = clazz.getDeclaredMethods.map(genMethodDescription)
+            val superMethods    = collectMethods(clazz.getSuperclass)
+            superMethods ++ declaredMethods
         }
 
-        collectMethods(clazz)
+        val methods         = collectMethods(clazz)
+        val filteredMethods = ListBuffer.empty[MethodDescription]
+        methods.foreach(desc => {
+            filteredMethods.find(_.methodId == desc.methodId)
+                    .fold[Unit](filteredMethods += desc) { otherDesc =>
+                        if (hierarchyLevel(desc.method.getReturnType) > hierarchyLevel(otherDesc.method.getReturnType)) {
+                            filteredMethods -= otherDesc
+                            filteredMethods += desc
+                        }
+                    }
+        })
+        filteredMethods.toSeq
     }
 
-    private def genMethodsField(): Map[Int, FieldDescription] = {
+    private def hierarchyLevel(clazz: Class[_]): Int = {
+        var superClass = clazz.getSuperclass
+        var level      = 0
+        while (superClass != null) {
+            superClass = superClass.getSuperclass
+            level += 1
+        }
+
+        def hierarchyInterfaceLevel(clazz: Class[_]): Int = {
+            val interfaces = clazz.getInterfaces
+            interfaces.length + interfaces.map(hierarchyLevel).sum
+        }
+
+        level + hierarchyInterfaceLevel(clazz)
+    }
+
+    private def collectFields(): Map[Int, FieldDescription] = {
         def getFieldsOfClass[S >: T](clazz: Class[_ <: S]): Array[FieldDescription] = {
             if (clazz == null || blacklistedSuperClasses.contains(clazz))
                 return Array()
-            clazz.getDeclaredFields.map(genFieldDescription) ++ getFieldsOfClass(clazz.getSuperclass)
+            getFieldsOfClass(clazz.getSuperclass) ++ clazz.getDeclaredFields.map(genFieldDescription)
         }
 
         getFieldsOfClass(clazz)
@@ -117,17 +147,19 @@ object PuppetDescription {
                                  var isPure: Boolean,
                                  var isHidden: Boolean) {
 
+        val clazz: Class[_] = method.getDeclaringClass
+
         def getReplacedReturnValue: String = {
-            import java.lang
             invokeOnly.map(_.value())
                     .getOrElse {
+                        import java.lang
                         val returnType = method.getReturnType
                         returnType match {
                             case lang.Boolean.TYPE                                                     => "false"
                             case lang.Float.TYPE | lang.Double.TYPE                                    => "-1.0"
                             case lang.Integer.TYPE | lang.Byte.TYPE | lang.Long.TYPE | lang.Short.TYPE => "-1"
                             case lang.Character.TYPE                                                   => "'\\u0000'"
-                            case _ => "null"
+                            case _                                                                     => "null"
                         }
                     }
         }

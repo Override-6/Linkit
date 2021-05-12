@@ -15,7 +15,7 @@ package fr.linkit.api.local.resource.external
 trait LocalExternalFolder extends LocalExternalResource with ResourceFolder {
 
     /**
-     * Performs a non-recursive scan of all the content of this folder.
+     * Performs a non-recursive scan of all the content of this folder, excluding folders.
      * Each times the scan hits a resource that is not yet registered, the scanAction gets called.
      * scanAction may determine whether the hit resource must be registered or not, attached by
      * any representation kind, or destroyed...
@@ -24,6 +24,19 @@ trait LocalExternalFolder extends LocalExternalResource with ResourceFolder {
      *
      * @param scanAction the action to perform on each new resource.
      * */
-    def scan(scanAction: String => Unit): Unit
+    def scanFiles(scanAction: String => Unit): Unit
+
+
+    /**
+     * Performs a non-recursive scan of all the content of this folder, excluding files.
+     * Each times the scan hits a resource that is not yet registered, the scanAction gets called.
+     * scanAction may determine whether the hit resource must be registered or not, attached by
+     * any representation kind, or destroyed...
+     *
+     * The implementation can perform default operations before or after invoking the scanAction.
+     *
+     * @param scanAction the action to perform on each new resource.
+     * */
+    def scanFolders(scanAction: String => Unit): Unit
 
 }

@@ -29,7 +29,8 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is an interface.")
         val className = clazz.getName
-        resources.getWrapperClass[S](className)
+        resources
+                .getWrapperClass[S](className)
                 .getOrElse({
                     resources.addToQueue(className, genPuppetClassSourceCode(new PuppetDescription(clazz)))
                     resources.compileQueue()
@@ -42,10 +43,11 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
     }
 
     override def preGenerateDescs[S <: Serializable](descriptions: Seq[PuppetDescription[S]]): Unit = {
-        descriptions.foreach(desc => {
-            val source = genPuppetClassSourceCode(desc)
-            resources.addToQueue(desc.clazz.getName, source)
-        })
+        descriptions.filter(desc => resources.getWrapperClass(desc.clazz.getName).isEmpty)
+                .foreach(desc => {
+                    val source = genPuppetClassSourceCode(desc)
+                    resources.addToQueue(desc.clazz.getName, source)
+                })
         resources.compileQueue()
     }
 
@@ -71,7 +73,7 @@ object PuppetWrapperClassGenerator {
 
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
-                    .distinctBy(_.methodId)
+                    .distinctBy(p => p.methodId)
                     .filterNot(desc => {
                         val mods = desc.method.getModifiers
                         Modifier.isPrivate(mods) || Modifier.isStatic(mods) || Modifier.isFinal(mods)
@@ -85,10 +87,18 @@ object PuppetWrapperClassGenerator {
 
         registerValue("ReturnType" ~> (_.method.getGenericReturnType.getTypeName))
         registerValue("MethodName" ~> (_.method.getName))
+        registerValue("MethodExceptions" ~> getMethodThrows)
         registerValue("MethodID" ~> (_.methodId.toString))
         registerValue("InvokeOnlyResult" ~> (_.getReplacedReturnValue))
         registerValue("ParamsIn" ~> getParametersIn)
         registerValue("ParamsOut" ~> getParametersOut)
+
+        private def getMethodThrows(methodDesc: MethodDescription): String = {
+            val exceptions = methodDesc.method.getGenericExceptionTypes
+            if (exceptions.isEmpty)
+                return ""
+            exceptions.map(_.getTypeName).mkString("throws ", ", ", "")
+        }
 
         private def getParametersIn(methodDesc: MethodDescription): String = {
             var count = 0

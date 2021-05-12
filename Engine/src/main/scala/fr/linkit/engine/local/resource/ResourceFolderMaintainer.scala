@@ -142,6 +142,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
                 } else {
                     maintained.unregister(name)
                 }
+                return
             }
             if (item.isDefined && resource.isEmpty) {
                 if (maintained.isPresentOnDrive(name)) {
@@ -149,6 +150,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
                 } else {
                     unregisterResource(name)
                 }
+                return
             }
 
             callback(resource.get, item.get)

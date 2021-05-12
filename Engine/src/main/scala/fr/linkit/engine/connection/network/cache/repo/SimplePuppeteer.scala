@@ -53,7 +53,9 @@ class SimplePuppeteer[S <: Serializable](channel: RequestPacketChannel,
     }
 
     override def sendInvoke(methodId: Int, args: Array[Any]): Unit = {
-        val desc = puppetDescription.getMethodDesc(methodId).get
+        val desc = puppetDescription.getMethodDesc(methodId).getOrElse {
+            throw new NoSuchMethodException(s"Remote method not found for id '$methodId'")
+        }
         AppLogger.debug(s"Remotely invoking method ${desc.method.getName}(${args.mkString(",")})")
 
         if (desc.isHidden)

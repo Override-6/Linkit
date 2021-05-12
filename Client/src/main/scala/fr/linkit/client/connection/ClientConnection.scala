@@ -20,6 +20,7 @@ import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketException}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
+import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.api.local.system.security.BytesHasher
@@ -29,7 +30,6 @@ import fr.linkit.client.network.ClientSideNetwork
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 import fr.linkit.engine.local.concurrency.PacketReaderThread
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.system.fsa.remote.RemoteFileSystemAdapter
 import fr.linkit.engine.local.system.{Rules, SystemPacket}
@@ -164,6 +164,10 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
         }
     }
+
+    override def getAppResources: ResourceFolder = session.appContext.getAppResources
+
+    override def getContext: this.type = this
 }
 
 object ClientConnection {

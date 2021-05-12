@@ -47,7 +47,7 @@ class ResourcesAndClassGenerationTests {
             override val securityManager: ApplicationSecurityManager = null
         }
         System.setProperty("LinkitImplementationVersion", Version("Tests", "0.0.0", false).toString)
-        resources = LinkitApplication.prepareAppResources(config)
+        //resources = LinkitApplication.prepareAppResources(config)
     }
 
     @Test

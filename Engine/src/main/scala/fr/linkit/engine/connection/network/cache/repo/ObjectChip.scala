@@ -41,10 +41,10 @@ case class ObjectChip[S <: Serializable] private(owner: String, description: Pup
 
     def callMethod(methodID: Int, params: Seq[Serializable]): Any = {
         val methodDesc = description.getMethodDesc(methodID)
-        if (methodDesc.exists(!_.isHidden)) {
-            throw new PuppetException(s"Attempted to invoke hidden method '${
+        if (methodDesc.exists(_.isHidden)) {
+            throw new PuppetException(s"Attempted to invoke ${methodDesc.fold("unknown")(_ => "hidden")} method '${
                 methodDesc.map(_.method.getName).getOrElse(s"(unknown method id '$methodID')")
-            }' with arguments '${params.mkString(", ")}'")
+            }(${params.mkString(", ")}) in class ${methodDesc.get.clazz}'")
         }
         methodDesc.get
                 .method

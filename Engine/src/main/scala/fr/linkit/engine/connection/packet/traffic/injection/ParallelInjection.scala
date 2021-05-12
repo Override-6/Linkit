@@ -15,10 +15,10 @@ package fr.linkit.engine.connection.packet.traffic.injection
 import fr.linkit.api.connection.packet.traffic.PacketInjectable
 import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjection.{PacketBuffer, PacketInjectionNode}
-import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
 import java.nio.BufferOverflowException
 import scala.collection.mutable.ArrayBuffer
@@ -195,8 +195,13 @@ object ParallelInjection {
 
             def rectifyConcurrentInsertion(): Unit = {
                 AppLogger.vDebug(s"BUFFER HAS BEEN MODIFIED ${buff.mkString("Array(", ", ", ")")}")
-                val packetNumber     = buff(i)._1.number
-                val nextPacketNumber = buff(i + 1)._1.number
+                if (i == buff.length - 1)
+                    return
+                val packetNumber = buff(i)._1.number
+                val next         = buff(i + 1)
+                if (next == null)
+                    return
+                val nextPacketNumber = next._1.number
 
                 if (packetNumber < nextPacketNumber) {
                     //Synchronize buffer in order to prone any insertion during this operation.

@@ -74,7 +74,11 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
     }
 
     override def getOrOpen[R <: ExternalResource : ClassTag](name: String)(implicit factory: ExternalResourceFactory[R]): R = {
-        find[R](name).getOrElse(openResource[R](name, factory))
+        find[R](name).getOrElse {
+            if (isPresentOnDrive(name))
+                register[R](name, factory)
+            else openResource[R](name, factory)
+        }
     }
 
     override def find[R <: ExternalResource : ClassTag](name: String): Option[R] = {

@@ -10,10 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.system.fsa.remote
+package fr.linkit.engine.test
 
-import fr.linkit.api.local.system.fsa.FileAdapter
+import scala.reflect.macros.whitebox
 
-trait RemoteFileAdapter extends FileAdapter {
-
+object MacroTestsMacros {
+    def macroCompute(c: whitebox.Context)(clazz: c.Expr[Class[_]]): c.Tree = {
+        println("What")
+        import c.universe._
+        q"""
+            object test {
+                def say(): Unit = println("I Say Something !")
+            }
+            test
+          """
+    }
 }

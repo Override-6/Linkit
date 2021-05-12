@@ -10,20 +10,22 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation
+package fr.linkit.engine.test
 
-import org.jetbrains.annotations.Nullable
+import org.junit.jupiter.api.Test
 
-trait BlueprintFlowController {
+import scala.language.experimental.macros
+import scala.reflect.io.Path
 
-    @Nullable val before: BlueprintFlowController
+class MacroTests {
 
-    val blockPosition: Int
-
-    val expressionPosition: Int
-
-    val layerBlueprint: String
-
-    def getBlueprint(context: GenerationContext): Option[(String, Int)] //(BlockBlueprint, BlockStartPos)
-
+    @Test
+    def testStaticAccessor(): Unit = {
+        val accessor = new StaticAccessor
+        accessor.compute(classOf[Path])
+    }
 }
+
+
+
+

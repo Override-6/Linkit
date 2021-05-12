@@ -24,47 +24,50 @@ import fr.linkit.engine.connection.network.cache.{AbstractSharedCache, CacheArra
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
-import fr.linkit.engine.local.utils.ScalaUtils
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
+import fr.linkit.engine.local.utils.ScalaUtils
 
 import java.lang.reflect.Field
 import scala.collection.mutable
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
 class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
                                                cacheID: Int,
                                                channel: RequestPacketChannel,
-                                               generator: PuppetWrapperGenerator)(implicit aCt: ClassTag[A])
+                                               generator: PuppetWrapperGenerator)
         extends AbstractSharedCache(handler, cacheID, channel) with PuppetRepository[A] {
 
-    private val localChips        = new mutable.HashMap[Int, ObjectChip[A]]()
-    private val puppeteers        = new mutable.HashMap[Int, SimplePuppeteer[A]]()
-    private val unFlushedPuppets  = new mutable.HashSet[PuppetProfile[A]]
+    private val localChips        = new mutable.HashMap[Int, ObjectChip[_ <: A]]()
+    private val puppeteers        = new mutable.HashMap[Int, Puppeteer[_ <: A]]()
+    private val unFlushedPuppets  = new mutable.HashSet[PuppetProfile[_ <: A]]
+    private val descriptions      = new mutable.HashMap[Class[_ <: A], PuppetDescription[_ <: A]]
     private val fieldRestorer     = new FieldRestorer
     private val supportIdentifier = channel.traffic.supportIdentifier
 
-    override val puppetDescription: PuppetDescription[A] = {
-        new PuppetDescription[A](aCt.runtimeClass.asInstanceOf[Class[A]])
-    }
-
     AppLogger.vTrace(s"Shared Object cache opened (id: $cacheID, family: ${handler.family}, owner: ${handler.ownerID})")
 
-    override def postObject(id: Int, obj: A): A with PuppetWrapper[A] = {
+    override def getPuppetDescription[B <: A : ClassTag]: PuppetDescription[B] = {
+        val rClass = classTag[B].runtimeClass.asInstanceOf[Class[B]]
+        descriptions.getOrElseUpdate(rClass, new PuppetDescription[B](rClass))
+                .asInstanceOf[PuppetDescription[B]]
+    }
+
+    override def postObject[B <: A : ClassTag](id: Int, obj: B): B with PuppetWrapper[B] = {
         ensureNotWrapped(obj)
         if (isRegistered(id))
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
 
-        chipObject(id, obj)
+        chipObject[B](id, obj)
         flushPuppet(PuppetProfile(id, obj, supportIdentifier))
-        genPuppetWrapper(id, supportIdentifier, obj)
+        genPuppetWrapper[B](id, supportIdentifier, obj)
     }
 
-    override def findObject(id: Int): Option[A with PuppetWrapper[A]] = {
+    override def findObject[B <: A](id: Int): Option[B with PuppetWrapper[B]] = {
         puppeteers.get(id) match {
             case None            => None
             case Some(puppeteer) => puppeteer.getPuppet match {
-                case _: A => Option(puppeteer.getPuppetWrapper)
-                case _    => None
+                case null    => None
+                case _: B => Option(puppeteer.getPuppetWrapper.asInstanceOf[B with PuppetWrapper[B]])
             }
         }
     }
@@ -108,34 +111,35 @@ class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
                 if (!localChips.contains(id)) {
                     val puppet = profile.puppet
                     fieldRestorer.restoreFields(puppet)
-                    genPuppetWrapper(id, owner, puppet)
+                    genPuppetWrapper[A](id, owner, puppet)(ClassTag(puppet.getClass))
                 }
 
-            case reqPacket => localChips.get(id.toInt).fold() { chip =>
+            case reqPacket => localChips.get(id).fold() { chip =>
                 chip.handleBundle(reqPacket, bundle.responseSubmitter)
             }
         }
     }
 
     private def setRepoContent(content: CacheRepoContent[A]): Unit = {
-        val array = content.array
-        if (array.isEmpty)
+        if (content.array.isEmpty)
             return
+        val array = content.array
 
         array.foreach(profile => {
             val puppet = profile.puppet
             val owner  = profile.owner
             val id     = profile.id
+            val puppetClassTag = ClassTag[A](puppet.getClass)
             //it's an object that must be chipped by the current objects cache (owner is the same as current identifier)
             if (owner == supportIdentifier) {
                 localChips.get(id) match {
-                    case None       => chipObject(id, puppet)
+                    case None       => chipObject(id, puppet)(puppetClassTag)
                     case Some(chip) => chip.updateAllFields(puppet)
                 }
             }
             //it's an object that must be remotely controlled because it is chipped by another objects cache.
             else if (!puppeteers.contains(id)) {
-                genPuppetWrapper(id, owner, puppet)
+                genPuppetWrapper(id, owner, puppet)(puppetClassTag)
             }
         })
     }
@@ -148,7 +152,7 @@ class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
     }
 
     override def snapshotContent: CacheContent = {
-        def toProfile(pair: (Int, SimplePuppeteer[A])): PuppetProfile[A] = {
+        def toProfile(pair: (Int, Puppeteer[_ <: A])): PuppetProfile[A] = {
             val (id, puppeteer) = pair
             PuppetProfile[A](id, puppeteer.getPuppet, puppeteer.puppeteerDescription.owner)
         }
@@ -167,35 +171,35 @@ class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
 
     override def modificationCount(): Int = -1
 
-    override def initPuppetWrapper(wrapper: A with PuppetWrapper[A]): Unit = {
+    override def initPuppetWrapper[B <: A : ClassTag](wrapper: B with PuppetWrapper[B]): Unit = {
         if (wrapper.isInitialized)
             return
         val puppeteerDesc = wrapper.getPuppeteerDescription
-        val puppeteer     = new SimplePuppeteer[A](channel, this, puppeteerDesc, puppetDescription)
+        val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, getPuppetDescription[B])
         wrapper.initPuppeteer(puppeteer, wrapper)
     }
 
-    private def genPuppetWrapper(id: Int, owner: String, puppet: A): A with PuppetWrapper[A] = {
+    private def genPuppetWrapper[B <: A : ClassTag](id: Int, owner: String, puppet: B): B with PuppetWrapper[B] = {
         ensureNotWrapped(puppet)
         val puppeteerDesc = PuppeteerDescription(family, cacheID, id, owner)
-        val puppeteer     = new SimplePuppeteer[A](channel, this, puppeteerDesc, puppetDescription)
+        val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, getPuppetDescription[B])
         puppeteers.put(id, puppeteer)
 
-        val puppetClass = generator.getClass[A](puppet.getClass.asInstanceOf[Class[A]])
+        val puppetClass = generator.getClass[B](puppet.getClass.asInstanceOf[Class[B]])
         instantiatePuppetWrapper(puppeteer, puppet, puppetClass)
     }
 
-    private def instantiatePuppetWrapper(puppeteer: SimplePuppeteer[A], clone: A, puppetClass: Class[A with PuppetWrapper[A]]): A with PuppetWrapper[A] = {
+    private def instantiatePuppetWrapper[B <: A](puppeteer: SimplePuppeteer[B], clone: B, puppetClass: Class[B with PuppetWrapper[B]]): B with PuppetWrapper[B] = {
         val constructor = puppetClass.getDeclaredConstructor(classOf[Puppeteer[_]], clone.getClass)
         constructor.newInstance(puppeteer, clone)
     }
 
-    private def chipObject(id: Int, puppet: A): Unit = {
-        val chip = ObjectChip[A](supportIdentifier, puppetDescription, puppet)
+    private def chipObject[B <: A : ClassTag](id: Int, puppet: B): Unit = {
+        val chip = ObjectChip[B](supportIdentifier, getPuppetDescription[B], puppet)
         localChips.put(id, chip)
     }
 
-    private def flushPuppet(profile: PuppetProfile[A]): Unit = {
+    private def flushPuppet(profile: PuppetProfile[_ <: A]): Unit = {
         AppLogger.vTrace(s"Flushing puppet $profile...")
         makeRequest(ChannelScopes.discardCurrent)
                 .addPacket(ObjectPacket(profile))
@@ -212,14 +216,14 @@ class CloudPuppetRepository[A <: Serializable](handler: SharedCacheManager,
 
 object CloudPuppetRepository {
 
-    private val ClassesResourceDirectory = "/GeneratedClasses/"
+    private val ClassesResourceDirectory = "/PuppetGeneration/"
 
     def apply[A <: Serializable : ClassTag]: SharedCacheFactory[CloudPuppetRepository[A] with InternalSharedCache] = {
         (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
-            val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
+            val channel     = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             val application = handler.network.connection.getContext
-            val resources = application.getAppResources.getOrOpenShort[WrappersClassResource](ClassesResourceDirectory)
-            val generator = new PuppetWrapperClassGenerator(resources)
+            val resources   = application.getAppResources.getOrOpenShort[WrappersClassResource](ClassesResourceDirectory)
+            val generator   = new PuppetWrapperClassGenerator(resources)
 
             new CloudPuppetRepository[A](handler, identifier, channel, generator)
         }

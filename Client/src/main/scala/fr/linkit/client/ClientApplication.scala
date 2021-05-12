@@ -12,8 +12,9 @@
 
 package fr.linkit.client
 
-import fr.linkit.api.connection.{ConnectionContext, ConnectionException, ConnectionInitialisationException, ExternalConnection}
+import fr.linkit.api.connection.{ConnectionContext, ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.concurrency.workerExecution
+import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
@@ -28,7 +29,7 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
-class ClientApplication private(override val configuration: ClientApplicationConfiguration) extends LinkitApplication(configuration) {
+class ClientApplication private(override val configuration: ClientApplicationConfiguration, resources: ResourceFolder) extends LinkitApplication(configuration, resources) {
 
     override protected val appPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), "Application")
     private            val connectionCache     = mutable.HashMap.empty[Any, ExternalConnection]
@@ -87,7 +88,7 @@ class ClientApplication private(override val configuration: ClientApplicationCon
         val connection = try {
             ClientConnection.open(dynamicSocket, this, config)
         } catch {
-            case NonFatal(e)            =>
+            case NonFatal(e) =>
                 connectionCount -= 1
                 throw new ConnectionInitialisationException(s"Could not open connection with server $address : ${e.getMessage}", e)
         }
@@ -125,11 +126,11 @@ object ClientApplication {
         if (initialized)
             throw new IllegalStateException("Client Application is already launched.")
 
-        LinkitApplication.prepareApplication(Version, config.fsAdapter, otherSources)
+        val resources = LinkitApplication.prepareApplication(Version, config, otherSources)
 
         val clientApp = try {
             AppLogger.info("Instantiating Client application...")
-            new ClientApplication(config)
+            new ClientApplication(config, resources)
         } catch {
             case NonFatal(e) =>
                 throw new ApplicationInstantiationException("Could not instantiate Client Application.", e)

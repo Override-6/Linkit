@@ -13,7 +13,7 @@
 package fr.linkit.engine.local.generation
 
 import fr.linkit.api.local.generation._
-import fr.linkit.engine.local.generation.AbstractValueScope.FlowControllerBlock
+import fr.linkit.engine.local.generation.AbstractValueScope.FlowControllerChain
 import fr.linkit.engine.local.generation.controllers.BPController
 import fr.linkit.engine.local.generation.controllers.BPController.Else
 
@@ -71,9 +71,9 @@ abstract class AbstractValueScope[A](override val name: String,
         })
     }
 
-    private def findFlowControllers(): Array[FlowControllerBlock[A]] = {
+    private def findFlowControllers(): Array[FlowControllerChain[A]] = {
         val expressions                     = LexerUtils.expressionsBetween("\\$\\|", "\\|\\$", upperBlueprint)
-        val controllers                     = ListBuffer.empty[FlowControllerBlock[A]]
+        val controllers                     = ListBuffer.empty[FlowControllerChain[A]]
         var before: BlueprintFlowController = null //iteration over controller is reversed
         var index                           = 0
         for ((expression, position) <- expressions) {
@@ -89,20 +89,19 @@ abstract class AbstractValueScope[A](override val name: String,
             if (isPositionOwnedBySubScope(exprPos))
                 return
 
-            val arguments = expression.split("\\s")
-            val kind      = arguments(0).toLowerCase
+            val kind      = expression.takeWhile(!_.isWhitespace).toLowerCase
             kind match {
                 case "if"   =>
-                    before = BPController.IfElif(blockStartPos, exprPos, blockBlueprint, arguments.drop(1), null)
+                    before = BPController.IfElif(blockStartPos, exprPos, blockBlueprint, expression.drop(kind.length), null)
                 case "elif" =>
                     if (before == null)
                         throw new IllegalArgumentException("Illegal head elif expression.")
-                    before = BPController.IfElif(blockStartPos, exprPos, blockBlueprint, arguments.drop(1), before)
+                    before = BPController.IfElif(blockStartPos, exprPos, blockBlueprint, expression.drop(kind.length), before)
                 case "else" =>
                     if (before == null)
                         throw new IllegalArgumentException("Illegal head else expression.")
                     before = BPController.Else(blockStartPos, exprPos, blockBlueprint, before)
-                case _      => throw new IllegalArgumentException(s"Unknown expression '$expression' for flow controllers.")
+                case _      => throw new IllegalArgumentException(s"Unknown flow controller expression '$expression'.")
             }
             conclude(blockStartPos, blockBlueprint)
         }
@@ -114,12 +113,12 @@ abstract class AbstractValueScope[A](override val name: String,
                 if (upperBlueprint.indexWhere(!_.isWhitespace, blockStartPos + blockBlueprint.length) != nextPosition
                         || (before != null && before.isInstanceOf[Else])) {
                     if (before != null)
-                        controllers += FlowControllerBlock(before, this)
+                        controllers += FlowControllerChain(before, this)
                     before = null //start a new condition chain expression.
                 }
                 index += 1
             } else {
-                controllers += FlowControllerBlock(before, this)
+                controllers += FlowControllerChain(before, this)
             }
         }
 
@@ -140,6 +139,7 @@ abstract class AbstractValueScope[A](override val name: String,
     }
 
     case class ScopeBlock(name: String, startPos: Int, blockBlueprint: String) {
+
         val blockLength: Int = {
             upperBlueprint.indexOf('{', startPos) - startPos + blockBlueprint.length + 2
         }
@@ -155,10 +155,7 @@ abstract class AbstractValueScope[A](override val name: String,
                 inserter.deleteBlock(block.startPos, block.blockLength)
                 iterator.foreach(value, { subValue =>
                     val sourceCode = scope.getSourceCode(subValue)
-                    val start      = sourceCode.indexOf('{', scope.name.length + 4) + 1 // +4 to remove '$$' quotes + 1 to remove first '{'
-                    val end        = sourceCode.lastIndexOf('}') //Removing last '}'
-                    val blueprint = sourceCode.slice(start, end)
-                    inserter.insertBlock(blueprint, scope.position, blueprint.length) // Removing last '}' char
+                    inserter.insertBlock(sourceCode, scope.position) // Removing last '}' char
                 })
             })
         }
@@ -167,23 +164,26 @@ abstract class AbstractValueScope[A](override val name: String,
 
 object AbstractValueScope {
 
-    case class FlowControllerBlock[A](control: BlueprintFlowController, scope: AbstractValueScope[A]) {
+    case class FlowControllerChain[A](control: BlueprintFlowController, scope: AbstractValueScope[A]) {
 
         private val (startPos, totalLength) = getDimensions
 
         def insertResult(upperInserter: BlueprintInserter, value: A): Unit = {
-            val (blueprint, pos) = control.getBlueprint(name => {
+            val result = control.getBlueprint(name => {
                 scope.values
                         .get(name)
                         .map(_.getValue(value))
                         .getOrElse(throw new NoSuchElementException(s"Unknown value '$name'"))
             })
+            if (result.isEmpty)
+                return
+
+            val (blueprint, pos) = result.get
             val inserter         = new BlueprintInserter(pos - 1, blueprint)
             upperInserter.deleteBlock(startPos, totalLength)
             scope.insertValues(inserter, value)
-            upperInserter.insertBlock(inserter.getResult, startPos, totalLength)
+            upperInserter.insertOther(inserter, startPos)
         }
-
 
         private def getDimensions: (Int, Int) = {
             var startPos    = 0
