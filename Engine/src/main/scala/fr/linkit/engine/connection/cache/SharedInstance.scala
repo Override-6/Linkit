@@ -30,8 +30,6 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
                                                            channel: RequestPacketChannel)
         extends AbstractSharedCache(handler, identifier, channel) {
 
-    override var autoFlush: Boolean = true
-
     private val listeners = new ConsumerContainer[Option[A]]
 
     @volatile private var modCount            = 0
@@ -50,8 +48,6 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
         }
     }
 
-    override def modificationCount(): Int = modCount
-
     override def snapshotContent: CacheContent = CacheInstanceContent(if (instance.isDefined) instance.get else null)
 
     override def toString: String = s"SharedInstance(${instance.orNull})"
@@ -69,13 +65,11 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
         instance = Option(t)
         modCount += 1
         listeners.applyAll(instance)
-        AppLogger.vTrace(s"INSTANCE IS NOW (local) : $instance $autoFlush")
-        if (autoFlush)
-            flush()
-        this
+        AppLogger.vTrace(s"INSTANCE IS NOW (local) : $instance")
+        flush()
     }
 
-    override def flush(): this.type = {
+    private def flush(): this.type = {
         sendModification(ObjectPacket(instance.orNull))
         this
     }

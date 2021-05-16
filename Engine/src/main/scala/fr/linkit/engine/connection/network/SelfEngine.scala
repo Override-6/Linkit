@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.network
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.cache.SharedCacheManager
-import fr.linkit.api.connection.network.{Engine, ExternalConnectionState, Network}
+import fr.linkit.api.connection.network.{Engine, ExternalConnectionState, Network, StaticAccessor}
 import fr.linkit.api.local.system.{AppLogger, Versions}
 import fr.linkit.engine.local.system.StaticVersions
 
@@ -45,4 +45,5 @@ class SelfEngine(connection: ConnectionContext,
 
     override def toString: String = s"SelfNetworkEngine(identifier: ${identifier})"
 
+    override val staticAccessor: StaticAccessor = null
 }

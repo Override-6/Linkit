@@ -10,12 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.repo.tree
+package fr.linkit.api.connection.cache.repo
 
-trait SyncNode {
+import scala.reflect.ClassTag
 
-    def getChildren: Seq[SyncNode]
+trait ObjectSynchronizer {
 
-    def handleBundle(bundle: TreeRequestBundle): Unit
-
+    def genSynchronizedObject[B: ClassTag](treeViewPath: Array[Int],
+                                           obj: B,
+                                           owner: String,
+                                           descriptions: PuppetDescriptions)(foreachSubObjects: (PuppetWrapper[_], Array[Int]) => Unit): B with PuppetWrapper[B]
 }

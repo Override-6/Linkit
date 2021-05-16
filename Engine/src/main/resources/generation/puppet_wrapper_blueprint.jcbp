@@ -12,7 +12,7 @@
 
 package gen.$WrappedClassPackage$;
 
-import $WrappedClassPackage$.$WrappedClassSimpleName$;
+import $WrappedClassName$;
 import fr.linkit.api.connection.cache.repo.PuppetDescription;
 import fr.linkit.api.connection.cache.repo.PuppetWrapper;
 import fr.linkit.api.connection.cache.repo.Puppeteer;
@@ -54,6 +54,11 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
     @Override
     public $WrappedClassSimpleName$ detachedClone() {
         return new $WrappedClassSimpleName$(this);
+    }
+
+    @Override
+    public Puppeteer<$WrappedClassSimpleName$> getPuppeteer() {
+        return puppeteer;
     }
 
     @Override

@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.network
 
 import fr.linkit.api.connection.cache.SharedCacheManager
-import fr.linkit.api.connection.network.{Engine, ExternalConnectionState}
+import fr.linkit.api.connection.network.{Engine, ExternalConnectionState, StaticAccessor}
 import fr.linkit.api.local.system.Versions
 
 import java.sql.Timestamp
@@ -33,4 +33,6 @@ abstract class AbstractRemoteEngine(override val identifier: String,
     override def getConnectionState: ExternalConnectionState
 
     override def toString: String = s"${getClass.getSimpleName}(identifier: $identifier, state: $getConnectionState)"
+
+    override val staticAccessor: StaticAccessor = null
 }

@@ -10,19 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.repo.tree
+package fr.linkit.api.connection.cache.repo.tree
 
-import fr.linkit.engine.connection.packet.traffic.channel.request.RequestBundle
+import fr.linkit.api.connection.cache.CacheContent
 
-import scala.collection.mutable.ListBuffer
+trait PuppetCenter[A] {
 
-class ObjectOwner extends SyncNode {
+    def getPuppet[B <: A](path: Array[Int]): Option[SyncNode[B]]
 
-    private val children: ListBuffer[SyncNode] = ListBuffer.empty
+    def addPuppet[B <: A](path: Array[Int], obj: SyncNode[_] => SyncNode[B]): Unit
 
-    override def getChildren: Seq[SyncNode] = children.toSeq
-
-    override def handleBundle(bundle: RequestBundle): Unit = {
-
-    }
+    def snapshotContent: CacheContent
 }

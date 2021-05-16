@@ -14,7 +14,11 @@ package fr.linkit.api.connection.cache.repo
 
 import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
 
-trait Puppeteer[S <: Serializable] {
+trait Puppeteer[S] {
+    
+    val ownerID: String
+
+    val repo: ObjectSynchronizer
 
     val puppeteerDescription: PuppeteerDescription
 

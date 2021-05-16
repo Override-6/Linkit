@@ -10,14 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache
+package fr.linkit.engine.connection.cache.repo
 
-import fr.linkit.api.connection.network.Updatable
+import fr.linkit.api.connection.cache.repo.PuppetException
 
-trait SharedCache extends Updatable {
+class NoSuchPuppetException(msg: String) extends PuppetException(msg) {
 
-    val family: String
+}
 
-    def snapshotContent: CacheContent
+object NoSuchPuppetException {
 
+    def apply(msg: String): NoSuchPuppetException = new NoSuchPuppetException(msg)
 }

@@ -37,19 +37,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
                                                      channel: RequestPacketChannel)
         extends AbstractSharedCache(handler, identifier, channel) with mutable.Iterable[A] with InternalSharedCache {
 
-    private val collectionModifications = ListBuffer.empty[(CollectionModification, Int, Any)]
     private val networkListeners        = ConsumerContainer[(CollectionModification, Int, A)]()
-
-    @volatile private  var modCount           = 0
-    @volatile override var autoFlush: Boolean = true
-
-    override def modificationCount(): Int = modCount
-
-    override def flush(): this.type = this.synchronized {
-        collectionModifications.foreach(flushModification)
-        collectionModifications.clear()
-        this
-    }
 
     override def toString: String = getClass.getSimpleName + s"(family: $family, id: $identifier, content: ${adapter.toString})"
 
@@ -137,24 +125,15 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
 
     private def addLocalModification(kind: CollectionModification, index: Int, @Nullable value: Any): Unit = {
         AppLogger.vDebug(s"<$family> Local modification : ${(kind, index, value)}")
-        if (autoFlush) {
-            flushModification((kind, index, value))
-            return
-        }
-
-        kind match {
-            case CLEAR        => collectionModifications.clear()
-            case SET | REMOVE => collectionModifications.filterInPlace(m => !((m._1 == SET || m._1 == REMOVE) && m._2 == index))
-            case ADD          => //Do not optimise : the addition result may be different according to the order
-        }
-        collectionModifications += ((kind, index, value))
+        flushModification((kind, index, value))
     }
 
     private def flushModification(mod: (CollectionModification, Int, Any)): Unit = {
         sendModification(ObjectPacket(mod))
         networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Int, A)])
-        modCount += 1
-        AppLogger.vTrace(s"<$family> (${channel.traffic.supportIdentifier}) COLLECTION IS NOW (local): " + this)
+        AppLogger.vTrace(s"<$family> (${
+            channel.traffic.supportIdentifier
+        }) COLLECTION IS NOW (local): " + this)
     }
 
     private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
@@ -179,7 +158,6 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
                 AppLogger.printStackTrace(e)
                 System.exit(1)
         }
-        modCount += 1
 
         networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Int, A)])
         AppLogger.vTrace(s"<$family> COLLECTION IS NOW (network) $this")

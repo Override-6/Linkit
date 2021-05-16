@@ -17,7 +17,7 @@ trait CacheContent {
     def toArray: Array[_ <: Any]
 
     override def toString: String = {
-        toArray.mkString("Array(", ", ", ")")
+        java.util.Arrays.deepToString(toArray.asInstanceOf[Array[AnyRef]])
     }
 
 }

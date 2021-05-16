@@ -31,7 +31,6 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
         sharedIdentifiers
                 .addListener((_, _: Int, _) => if (entities != null) println("entities are now : " + entities)) //debug purposes
                 .add(serverIdentifier)
-                .flush()
                 .mapped(createEntity)
                 .addListener(handleTraffic)
     }

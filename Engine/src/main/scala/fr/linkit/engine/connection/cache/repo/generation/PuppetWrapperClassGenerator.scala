@@ -25,10 +25,10 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     private val jcbp = new SimpleJavaClassBlueprint(classOf[PuppetWrapperClassGenerator].getResourceAsStream(BPPath), new ClassValueScope(_))
 
-    override def getClass[S <: Serializable](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
+    override def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is an interface.")
-        val className = clazz.getName
+        val className = clazz.getTypeName
         resources
                 .getWrapperClass[S](className)
                 .getOrElse({
@@ -38,11 +38,11 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
                 })
     }
 
-    override def preGenerateClasses[S <: Serializable](classes: Class[_ <: S]*): Unit = {
+    override def preGenerateClasses[S](classes: Class[_ <: S]*): Unit = {
         preGenerateDescs(classes.map(new PuppetDescription[S](_)))
     }
 
-    override def preGenerateDescs[S <: Serializable](descriptions: Seq[PuppetDescription[S]]): Unit = {
+    override def preGenerateDescs[S](descriptions: Seq[PuppetDescription[S]]): Unit = {
         descriptions.filter(desc => resources.getWrapperClass(desc.clazz.getName).isEmpty)
                 .foreach(desc => {
                     val source = genPuppetClassSourceCode(desc)
@@ -52,10 +52,10 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
     }
 
     override def isClassGenerated[S](clazz: Class[S]): Boolean = {
-        resources.getWrapperClass[S with Serializable](clazz.getName).isDefined
+        resources.getWrapperClass[S](clazz.getName).isDefined
     }
 
-    private def genPuppetClassSourceCode[S <: Serializable](description: PuppetDescription[S]): String = {
+    private def genPuppetClassSourceCode[S](description: PuppetDescription[S]): String = {
         jcbp.toClassSource(description)
     }
 }
@@ -70,10 +70,11 @@ object PuppetWrapperClassGenerator {
         registerValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
         registerValue("CompileTime" ~~> System.currentTimeMillis())
         registerValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
+        registerValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
 
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
-                    .distinctBy(p => p.methodId)
+                    .distinctBy(_.methodId)
                     .filterNot(desc => {
                         val mods = desc.method.getModifiers
                         Modifier.isPrivate(mods) || Modifier.isStatic(mods) || Modifier.isFinal(mods)
@@ -85,7 +86,7 @@ object PuppetWrapperClassGenerator {
     case class MethodValueScope(blueprint: String, pos: Int)
             extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
-        registerValue("ReturnType" ~> (_.method.getGenericReturnType.getTypeName))
+        registerValue("ReturnType" ~> (_.method.getGenericReturnType.getTypeName.replaceAll("\\$", ".")))
         registerValue("MethodName" ~> (_.method.getName))
         registerValue("MethodExceptions" ~> getMethodThrows)
         registerValue("MethodID" ~> (_.methodId.toString))
@@ -97,14 +98,14 @@ object PuppetWrapperClassGenerator {
             val exceptions = methodDesc.method.getGenericExceptionTypes
             if (exceptions.isEmpty)
                 return ""
-            exceptions.map(_.getTypeName).mkString("throws ", ", ", "")
+            exceptions.map(_.getTypeName.replaceAll("\\$", ".")).mkString("throws ", ", ", "")
         }
 
         private def getParametersIn(methodDesc: MethodDescription): String = {
             var count = 0
             val sb    = new StringBuilder
             methodDesc.method.getGenericParameterTypes.foreach(clazz => {
-                val typeName = clazz.getTypeName
+                val typeName = clazz.getTypeName.replaceAll("\\$", ".")
                 count += 1
                 sb.append(typeName)
                         .append(' ')

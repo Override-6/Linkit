@@ -24,13 +24,14 @@ import java.nio.file.{Files, Path, StandardOpenOption}
 import javax.tools.ToolProvider
 import scala.collection.mutable
 
+//FIXME Critical bug ! This naming system currently can't handle nested / anonymous classes !
 class WrappersClassResource(override val resource: ResourceFolder) extends FolderRepresentation {
 
     private val folderPath           = Path.of(resource.getAdapter.getAbsolutePath)
     private val queuePath            = Path.of(folderPath + SourcesFolder)
     private val generatedClassesPath = Path.of(folderPath + ClassesFolder)
     private val classLoader          = preInit()
-    private val generatedClasses     = mutable.Map.empty[String, Class[_ <: PuppetWrapper[Serializable]]]
+    private val generatedClasses     = mutable.Map.empty[String, Class[_ <: PuppetWrapper[AnyRef]]]
     initialize()
 
     private[generation] def addToQueue(className: String, classSource: String): Unit = {
@@ -42,13 +43,13 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
         Files.writeString(path, classSource, StandardOpenOption.CREATE)
     }
 
-    def getWrapperClass[S <: Serializable](puppetClassName: String): Option[Class[S with PuppetWrapper[S]]] = {
+    def getWrapperClass[S](puppetClassName: String): Option[Class[S with PuppetWrapper[S]]] = {
         generatedClasses.getOrElseUpdate(toWrappedClassName(puppetClassName), {
             val wrapperClassPath = generatedClassesPath.resolve(puppetClassName.replace('.', File.separatorChar))
             if (Files.notExists(wrapperClassPath))
                 null
             else {
-                Class.forName(puppetClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[Serializable]]]
+                Class.forName(puppetClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]]
             }
         }) match {
             case clazz: Class[S with PuppetWrapper[S]] => Some(clazz)
@@ -82,7 +83,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
 
     private def loadWrapperClass(name: String): Unit = {
         val clazz = classLoader.loadClass(name)
-        generatedClasses.put(toWrappedClassName(name), clazz.asInstanceOf[Class[_ <: PuppetWrapper[Serializable]]])
+        generatedClasses.put(toWrappedClassName(name), clazz.asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]])
     }
 
     private def toWrappedClassName(puppetWrapperName: String): String = {

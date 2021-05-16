@@ -10,14 +10,9 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache
+package fr.linkit.engine.connection.cache.repo
 
-import fr.linkit.api.connection.network.Updatable
+import fr.linkit.engine.connection.cache.CacheArrayContent
+import fr.linkit.engine.connection.cache.repo.CloudObjectRepository.PuppetProfile
 
-trait SharedCache extends Updatable {
-
-    val family: String
-
-    def snapshotContent: CacheContent
-
-}
+class CacheRepoContent[A <: Serializable](content: Array[PuppetProfile[A]]) extends CacheArrayContent[PuppetProfile[A]](content)

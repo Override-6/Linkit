@@ -252,15 +252,9 @@ object NetworkSharedCacheManager {
 
         override val family: String = ""
 
-        override var autoFlush: Boolean = false
-
         override def snapshotContent: CacheContent = CacheArrayContent(Array())
 
         override def setContent(cacheContent: CacheContent): Unit = ()
-
-        override def flush(): this.type = this
-
-        override def modificationCount(): Int = -1
 
         override def update(): this.type = this
     }

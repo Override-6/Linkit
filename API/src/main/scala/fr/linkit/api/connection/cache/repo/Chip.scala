@@ -12,11 +12,11 @@
 
 package fr.linkit.api.connection.cache.repo
 
-trait Chip[S <: Serializable] {
+trait Chip[S] {
 
     def updateField(fieldID: Int, value: Any): Unit
 
-    def updateAllFields(obj: Serializable): Unit
+    def updateAllFields(obj: S): Unit
 
-    def callMethod(methodID: Int, params: Seq[Serializable]): Any
+    def callMethod(methodID: Int, params: Seq[Any]): Any
 }

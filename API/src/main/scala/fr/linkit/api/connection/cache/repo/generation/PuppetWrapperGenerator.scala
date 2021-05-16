@@ -9,11 +9,13 @@ import scala.reflect.{ClassTag, classTag}
  * */
 trait PuppetWrapperGenerator {
 
-    def getClass[S <: Serializable](clazz: Class[S]): Class[S with PuppetWrapper[S]]
+    def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]]
 
-    def preGenerateClasses[S <: Serializable](classes: Class[_ <: S]*): Unit
+    def getClass[S : ClassTag]: Class[S with PuppetWrapper[S]] = getClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
-    def preGenerateDescs[S <: Serializable](descriptions: Seq[PuppetDescription[S]]): Unit
+    def preGenerateClasses[S](classes: Class[_ <: S]*): Unit
+
+    def preGenerateDescs[S](descriptions: Seq[PuppetDescription[S]]): Unit
 
     def isClassGenerated[T : ClassTag]: Boolean = isClassGenerated(classTag[T].runtimeClass)
 

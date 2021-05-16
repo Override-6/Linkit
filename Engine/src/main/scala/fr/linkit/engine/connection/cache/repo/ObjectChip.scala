@@ -22,7 +22,9 @@ import fr.linkit.engine.local.utils.ScalaUtils
 import java.lang.reflect.Modifier
 import scala.util.control.NonFatal
 
-case class ObjectChip[S <: Serializable] private(owner: String, description: PuppetDescription[S], puppet: S) extends Chip[S] {
+case class ObjectChip[S] private(owner: String,
+                                 description: PuppetDescription[S],
+                                 puppet: S) extends Chip[S] {
 
     override def updateField(fieldID: Int, value: Any): Unit = {
         description.getFieldDesc(fieldID)
@@ -30,7 +32,7 @@ case class ObjectChip[S <: Serializable] private(owner: String, description: Pup
                 .foreach(desc => ScalaUtils.setValue(puppet, desc.field, value))
     }
 
-    override def updateAllFields(obj: Serializable): Unit = {
+    override def updateAllFields(obj: S): Unit = {
         description.listFields()
                 .foreach(desc => if (!desc.isHidden) {
                     val field = desc.field
@@ -39,7 +41,7 @@ case class ObjectChip[S <: Serializable] private(owner: String, description: Pup
                 })
     }
 
-    override def callMethod(methodID: Int, params: Seq[Serializable]): Any = {
+    override def callMethod(methodID: Int, params: Seq[Any]): Any = {
         val methodDesc = description.getMethodDesc(methodID)
         if (methodDesc.exists(_.isHidden)) {
             throw new PuppetException(s"Attempted to invoke ${methodDesc.fold("unknown")(_ => "hidden")} method '${
@@ -49,7 +51,6 @@ case class ObjectChip[S <: Serializable] private(owner: String, description: Pup
         methodDesc.get
                 .method
                 .invoke(puppet, params: _*)
-                .asInstanceOf[Any]
     }
 
     private[repo] def handleBundle(packet: Packet, submitter: ResponseSubmitter): Unit = {
@@ -87,7 +88,7 @@ case class ObjectChip[S <: Serializable] private(owner: String, description: Pup
 
 object ObjectChip {
 
-    def apply[S <: Serializable](owner: String, description: PuppetDescription[S], puppet: S): ObjectChip[S] = {
+    def apply[S](owner: String, description: PuppetDescription[S], puppet: S): ObjectChip[S] = {
         if (puppet == null)
             throw new NullPointerException("puppet is null !")
         val clazz = puppet.getClass

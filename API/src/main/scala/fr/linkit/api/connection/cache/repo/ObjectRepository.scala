@@ -12,9 +12,16 @@
 
 package fr.linkit.api.connection.cache.repo
 
+import fr.linkit.api.connection.cache.repo.tree.PuppetCenter
+import fr.linkit.api.connection.packet.PacketAttributesPresence
+
 import scala.reflect.ClassTag
 
-trait PuppetRepository[A <: Serializable] {
+trait ObjectRepository[A <: Serializable] extends ObjectSynchronizer with PacketAttributesPresence {
+
+    val center: PuppetCenter[A]
+
+    val descriptions: PuppetDescriptions
 
     def getPuppetDescription[B <: A : ClassTag]: PuppetDescription[B]
 
@@ -22,9 +29,9 @@ trait PuppetRepository[A <: Serializable] {
 
     def findObject[B <: A](id: Int): Option[B with PuppetWrapper[B]]
 
-    def isRegistered(identifier: Int): Boolean
-
     def initPuppetWrapper[B <: A : ClassTag](wrapper: B with PuppetWrapper[B]): Unit
 
     def getOrElse[U >: A](id: Int, orElse: => U): U = findObject(id).getOrElse(orElse)
+
+    def isRegistered(id: Int): Boolean
 }

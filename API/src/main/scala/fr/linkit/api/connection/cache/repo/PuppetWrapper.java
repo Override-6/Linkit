@@ -16,9 +16,11 @@ import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription;
 
 import java.io.Serializable;
 
-public interface PuppetWrapper<T extends Serializable> extends Serializable {
+public interface PuppetWrapper<T> extends Serializable {
 
     void initPuppeteer(Puppeteer<T> puppeteer, T clone);
+
+    Puppeteer<T> getPuppeteer();
 
     boolean isInitialized();
 

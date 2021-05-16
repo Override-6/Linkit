@@ -33,22 +33,10 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
         extends AbstractSharedCache(handler, identifier, channel) {
 
     private val networkListeners        = ConsumerContainer[(MapModification, K, V)]()
-    private val collectionModifications = ListBuffer.empty[(MapModification, Any, Any)]
     private val controller              = new SimpleWorkerController()
-
-    @volatile private var modCount: Int = 0
-
-    override var autoFlush: Boolean = true
 
     override def toString: String = LocalMap.toString
 
-    override def flush(): SharedMap.this.type = {
-        collectionModifications.foreach(flushModification)
-        collectionModifications.clear()
-        this
-    }
-
-    override def modificationCount(): Int = modCount
 
     /**
      * (MapModification, _, _) : the kind of modification that were done<p>
@@ -155,22 +143,12 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
         action(LocalMap)
         println(s"Received modification: $mod, $this, $hashCode, ${LocalMap.hashCode()}")
 
-        modCount += 1
         controller.wakeupAnyTask()
         networkListeners.applyAll(mod)
     }
 
     private def addLocalModification(@NotNull kind: MapModification, @Nullable key: Any, @Nullable value: Any): Unit = {
-        if (autoFlush) {
-            flushModification((kind, key, value))
-            return
-        }
-
-        kind match {
-            case CLEAR        => collectionModifications.clear()
-            case PUT | REMOVE => collectionModifications.filterInPlace(m => !((m._1 == PUT || m._1 == REMOVE) && m._2 == key))
-        }
-        collectionModifications += ((kind, key, value))
+        flushModification((kind, key, value))
     }
 
     private def flushModification(mod: (MapModification, Any, Any)): Unit = {
@@ -178,7 +156,6 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
         println(s"Flushed $mod, $this, $hashCode, ${LocalMap.hashCode()}")
         sendModification(ObjectPacket(mod))
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
-        modCount += 1
     }
 
     private def println(msg: String): Unit = {

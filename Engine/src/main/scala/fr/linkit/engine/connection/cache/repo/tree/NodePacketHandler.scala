@@ -12,15 +12,11 @@
 
 package fr.linkit.engine.connection.cache.repo.tree
 
-import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.api.connection.packet.channel.PacketChannel
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacket, ResponseSubmitter}
+import fr.linkit.engine.connection.cache.repo.InvocationPacket
+import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 
-class TreeRequestBundle(channel: PacketChannel,
-                        override val packet: RequestPacket,
-                        override val coords: DedicatedPacketCoordinates,
-                        submitter: ResponseSubmitter) extends RequestBundle(channel, packet, coords, submitter) {
+trait NodePacketHandler {
 
-
+    def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit
 
 }

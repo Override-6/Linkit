@@ -18,7 +18,7 @@ import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvokeOnly
 import java.lang.reflect.{Field, Method}
 import scala.collection.mutable.ListBuffer
 
-class PuppetDescription[T <: Serializable](val clazz: Class[_ <: T]) {
+class PuppetDescription[+T](val clazz: Class[_ <: T]) {
 
     /**
      * Methods and fields that comes from those classes will not be available for RMI Invocations.
@@ -47,11 +47,15 @@ class PuppetDescription[T <: Serializable](val clazz: Class[_ <: T]) {
     }
 
     def isRMIEnabled(methodId: Int): Boolean = {
-        getMethodDesc(methodId).forall(!_.isLocalOnly)
+        getMethodDesc(methodId).exists(!_.isLocalOnly)
     }
 
     def isInvokeOnly(methodId: Int): Boolean = {
-        getMethodDesc(methodId).forall(_.invokeOnly.isDefined)
+        getMethodDesc(methodId).exists(_.invokeOnly.isDefined)
+    }
+
+    def isReturnValueSynchronized(methodID: Int): Boolean = {
+        getMethodDesc(methodID).exists(_.syncReturnValue)
     }
 
     private def collectMethods(): Seq[MethodDescription] = {
