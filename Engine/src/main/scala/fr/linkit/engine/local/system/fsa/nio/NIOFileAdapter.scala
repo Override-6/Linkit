@@ -24,12 +24,12 @@ case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystem
         this(other.path, other.fsa)
     }
 
-    @MethodControl(localOnly = true)
+    @MethodControl()
     override def getPath: String = path.toString
 
     override def getFSAdapter: FileSystemAdapter = fsa
 
-    @MethodControl(localOnly = true)
+    @MethodControl()
     override def getAbsolutePath: String = path.toAbsolutePath.toString
 
     override def getSize: Long = Files.size(path)
@@ -42,19 +42,19 @@ case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystem
         fsa.getAdapter(parent.toString)
     }
 
-    @MethodControl(localOnly = true)
+    @MethodControl()
     override def getName: String = path.getFileName.toString
 
-    @MethodControl(localOnly = true)
+    @MethodControl()
     override def getContentString: String = Files.readString(path)
 
-    @MethodControl(localOnly = true)
+    @MethodControl()
     override def toUri: URI = path.toUri
 
-    @MethodControl(localOnly = true)
+    @MethodControl()
     override def resolveSibling(path: String): FileAdapter = resolveSiblings(fsa.getAdapter(path))
 
-    @MethodControl(localOnly = true)
+    @MethodControl()
     override def resolveSiblings(fa: FileAdapter): FileAdapter = {
         val resolved = path.resolveSibling(path.getParent)
         fsa.getAdapter(resolved.toString)

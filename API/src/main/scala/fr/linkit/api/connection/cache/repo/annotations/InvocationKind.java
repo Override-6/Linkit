@@ -22,21 +22,23 @@ public enum InvocationKind {
     /**
      * Invocation will only be invoked on the intended machine (usually the original object's owner)
      */
-    ONLY_INTENDED,
+    ONLY_OWNER,
     /**
      * The invocation will only be performed on every remote machines.
-     * The return value of the invocation will come from the intended machine (usually the original object's owner).
+     * The return value of the invocation will come from the machine that owns the original object.
      */
     ONLY_REMOTES,
     /**
      * The invocation will be performed on the current machine <b>and</b> on every remote machines.
-     * The return value of the invocation will come from the local machine.
+     * The return value of the invocation will come from the current machine.
+     * <br>
+     * <u>This is the normal behavior.</u>
      */
     LOCAL_AND_REMOTES,
     /**
-     * The invocation will be performed on the current machine <b>and</b> on the intended machine (usually the original object's owner).
+     * The invocation will be performed on the current machine <b>and</b> on the machine that owns the original object.
      * The return value of the invocation will come from the local machine.
      */
-    LOCAL_AND_INTENDED
+    LOCAL_AND_OWNER
 
 }

@@ -12,9 +12,10 @@
 
 package fr.linkit.api.connection.cache.repo
 
-import fr.linkit.api.connection.cache.repo.PuppetDescription.{FieldDescription, MethodDescription}
-import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvokeOnly, MethodControl}
+import fr.linkit.api.connection.cache.repo.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription}
+import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvocationKind, InvokeOnly, MethodControl}
 
+import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method}
 import scala.collection.mutable.ListBuffer
 
@@ -47,7 +48,7 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
     }
 
     def isRMIEnabled(methodId: Int): Boolean = {
-        getMethodDesc(methodId).exists(!_.isLocalOnly)
+        getMethodDesc(methodId).exists(_.invocationKind != InvocationKind.ONLY_LOCAL)
     }
 
     def isInvokeOnly(methodId: Int): Boolean = {
@@ -99,24 +100,24 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
     }
 
     private def genMethodDescription(method: Method): MethodDescription = {
-        val control                          = Option(method.getDeclaredAnnotation(classOf[MethodControl]))
+        val control                          = Option(method.getDeclaredAnnotation(classOf[MethodControl])).getOrElse(DefaultMethodControl)
         val synchronizedParamNumbers         = control
-                .map(_.mutates()
-                        .split(",")
-                        .filterNot(s => s == "this" || s.isBlank)
-                        .map(s => s.trim
-                                .dropRight(s.lastIndexWhere(!_.isDigit))
-                                .toInt)
-                        .distinct)
+                .mutates()
+                .split(",")
+                .filterNot(s => s == "this" || s.isBlank)
+                .map(s => s.trim
+                        .dropRight(s.lastIndexWhere(!_.isDigit))
+                        .toInt)
+                .distinct
         val synchronizedParams: Seq[Boolean] = for (n <- 1 to method.getParameterCount) yield {
-            synchronizedParamNumbers.exists(_.contains(n))
+            synchronizedParamNumbers.contains(n)
         }
+        val invocationKind                   = control.value()
         val invokeOnly                       = method.getAnnotation(classOf[InvokeOnly])
-        val isPure                           = control.exists(c => c.pure() && c.mutates().nonEmpty)
-        val isHidden                         = control.exists(_.hide())
-        val syncReturnValue                  = control.exists(_.synchronizeReturnValue())
-        val isLocalOnly                      = control.exists(_.localOnly())
-        val desc                             = MethodDescription(method, Option(invokeOnly), synchronizedParams, syncReturnValue, isLocalOnly, isPure, isHidden)
+        val isPure                           = control.pure() && control.mutates().nonEmpty
+        val isHidden                         = control.hide()
+        val syncReturnValue                  = control.synchronizeReturnValue()
+        val desc                             = MethodDescription(method, Option(invokeOnly), synchronizedParams, invocationKind, syncReturnValue, isPure, isHidden)
         desc
     }
 
@@ -156,17 +157,17 @@ object PuppetDescription {
     case class MethodDescription(method: Method,
                                  invokeOnly: Option[InvokeOnly],
                                  synchronizedParams: Seq[Boolean],
+                                 var invocationKind: InvocationKind,
                                  var syncReturnValue: Boolean,
-                                 var isLocalOnly: Boolean,
                                  var isPure: Boolean,
                                  var isHidden: Boolean) {
 
         val clazz: Class[_] = method.getDeclaringClass
 
         def getReplacedReturnValue: String = {
+            import java.lang
             invokeOnly.map(_.value())
                     .getOrElse {
-                        import java.lang
                         val returnType = method.getReturnType
                         returnType match {
                             case lang.Boolean.TYPE                                                     => "false"
@@ -203,4 +204,19 @@ object PuppetDescription {
         }
     }
 
+    private val DefaultMethodControl: MethodControl = {
+        new MethodControl {
+            override def value(): InvocationKind = InvocationKind.LOCAL_AND_REMOTES
+
+            override def pure(): Boolean = false
+
+            override def mutates(): String = ""
+
+            override def synchronizeReturnValue(): Boolean = false
+
+            override def hide(): Boolean = false
+
+            override def annotationType(): Class[_ <: Annotation] = getClass
+        }
+    }
 }

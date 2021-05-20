@@ -29,9 +29,9 @@ public @interface MethodControl {
 
     /**
      * Specifies what kind of invocation the implementation of the annotated method must do.
-     * @see InvocationKind for more details
+     * @see [[fr.linkit.api.connection.cache.repo.annotations.InvocationKind]]
      * */
-    InvocationKind value();
+    InvocationKind value() default InvocationKind.LOCAL_AND_REMOTES;
 
     /**
      * Specifies that the annotated method has no visible side effects.
