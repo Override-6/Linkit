@@ -88,7 +88,7 @@ class NetworkSharedCacheManager(override val family: String,
 
             if (possibleErrorMsg.isDefined) {
                 val errorMsg = possibleErrorMsg.get
-                throw new CacheOpenException(errorMsg)
+                throw new CacheOpenException(errorMsg + s"(this = $ownerID)")
             }
 
             val content = response.nextPacket[RefPacket[Option[CacheContent]]].value

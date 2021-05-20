@@ -21,7 +21,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.repo.CloudObjectRepository.{FieldRestorer, PuppetProfile}
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
-import fr.linkit.engine.connection.cache.repo.tree.{DefaultPuppetCenter, PuppetNode}
+import fr.linkit.engine.connection.cache.repo.tree.{DefaultPuppetCenter, MemberSyncNode, PuppetNode}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
@@ -51,11 +51,18 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         if (isRegistered(id))
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
 
-        registerRemotePuppet[B](Array(id), supportIdentifier, puppet)
+        val path    = Array(id)
+        val wrapper = localRegisterRemotePuppet[B](Array(id), supportIdentifier, puppet)
+        channel.makeRequest(ChannelScopes.discardCurrent)
+                .addPacket(ObjectPacket(PuppetProfile(path, puppet, supportIdentifier)))
+                .putAllAttributes(this)
+                .submit()
+
+        wrapper
     }
 
     override def findObject[B <: A](id: Int): Option[B with PuppetWrapper[B]] = {
-        center.getPuppet[B](Array(id)).map(_.puppeteer.getPuppetWrapper)
+        center.getNode[B](Array(id)).map(_.puppeteer.getPuppetWrapper)
     }
 
     override def isRegistered(id: Int): Boolean = {
@@ -71,7 +78,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
     }
 
     private def isRegistered(path: Array[Int]): Boolean = {
-        center.getPuppet(path).isDefined
+        center.getNode(path).isDefined
     }
 
     private def ensureNotWrapped(any: Any): Unit = {
@@ -98,9 +105,16 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
                 if (!isRegistered(profile.treeViewPath)) {
                     val puppet = profile.puppet
                     fieldRestorer.restoreFields(puppet)
-                    registerRemotePuppet(profile.treeViewPath, owner, puppet)(ClassTag(puppet.getClass))
+                    localRegisterRemotePuppet(profile.treeViewPath, owner, puppet)(ClassTag(puppet.getClass))
                 }
-            case _ =>
+            case ip: InvocationPacket                    =>
+                val path = ip.path
+                val node = center.getNode(path)
+                node.fold(AppLogger.error(s"Could not find puppet node at path ${path.mkString("$", " -> ", "")}")) {
+                    case node: MemberSyncNode[_] => node.handlePacket(ip, bundle.responseSubmitter)
+                    case _                       =>
+                        throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[MemberSyncNode[_]].getSimpleName} in order to handle a member rmi request.")
+                }
         }
     }
 
@@ -111,7 +125,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         }
     }
 
-    override def snapshotContent: CacheContent = center.snapshotContent
+    override def snapshotContent: CacheRepoContent[A] = center.snapshotContent
 
     override def genSynchronizedObject[B: ClassTag](treeViewPath: Array[Int],
                                                     obj: B,
@@ -152,40 +166,42 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
             val path   = profile.treeViewPath
             //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
             if (owner == supportIdentifier) {
-                center.getPuppet[A](path).fold {
+                center.getNode[A](path).fold {
                     throw new IllegalArgumentException(s"Unknown local object of path '${path.mkString("$", " -> ", "")}'")
                 }(_.chip.updateAllFields(puppet))
             }
             //it's an object that must be remotely controlled because it is chipped by another objects cache.
             else if (!isRegistered(path)) {
-                registerRemotePuppet(path, owner, puppet)(ClassTag(puppet.getClass))
+                localRegisterRemotePuppet(path, owner, puppet)(ClassTag(puppet.getClass))
             }
         })
     }
 
-    private def registerRemotePuppet[B <: A : ClassTag](path: Array[Int], owner: String, puppet: B): B with PuppetWrapper[B] = {
-        val puppeteerDesc = PuppeteerDescription(family, cacheID, owner, path)
-        val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, getPuppetDescription[B])
-        val chip          = ObjectChip[B](owner, getPuppetDescription[B], puppet)
-        val intended      = owner == supportIdentifier
+    private def localRegisterRemotePuppet[B <: A : ClassTag](path: Array[Int], owner: String, puppet: B): B with PuppetWrapper[B] = {
+        val isIntended = owner == supportIdentifier
 
-        center.addPuppet(path, new PuppetNode[B](puppeteer, chip, descriptions, intended, path.last, _))
-        val node = center.getPuppet(path).get
+        var parent        = center.getNode[B](path)
         val wrappedPuppet = genSynchronizedObject(path, puppet, owner, descriptions) {
             (wrapper, childPath) =>
                 val id          = childPath.last
-                val description = descriptions.getDescription[Any](ClassTag(wrapper.getClass))
-                node.getGrandChild(childPath.drop(path.length).dropRight(1))
-                        .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${childPath.mkString("$", " -> ", "")}")) {
-                            parent =>
-                                val chip = ObjectChip[Any](owner, description, wrapper)
-                                val puppeteer = wrapper.getPuppeteer.asInstanceOf[Puppeteer[Any]]
-                                parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, intended, id, _))
-                        }
+                val description = descriptions.getDescription[B](ClassTag(wrapper.getClass.getSuperclass))
+                parent.fold {
+                    val rootWrapper = wrapper.asInstanceOf[B with PuppetWrapper[B]]
+                    val chip        = ObjectChip[B](owner, description, rootWrapper)
+                    val parentNode  = new PuppetNode[B](rootWrapper.getPuppeteer, chip, descriptions, isIntended, id, null)
+                    center.addPuppet(path, _ => parentNode)
+                    parent = Some(parentNode)
+                } { parentNode =>
+                    parentNode.getGrandChild(childPath.drop(path.length).dropRight(1))
+                            .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${childPath.mkString("$", " -> ", "")}")) {
+                                parent =>
+                                    val chip      = ObjectChip[Any](owner, description, wrapper.asInstanceOf[Any with PuppetWrapper[Any]])
+                                    val puppeteer = wrapper.getPuppeteer.asInstanceOf[Puppeteer[Any]]
+                                    parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, isIntended, id, _))
+                            }
+                }
         }
-        channel.makeRequest(ChannelScopes.broadcast)
-                .addPacket(ObjectPacket(PuppetProfile(path, puppet, owner)))
-                .submit()
+
         wrappedPuppet
     }
 }

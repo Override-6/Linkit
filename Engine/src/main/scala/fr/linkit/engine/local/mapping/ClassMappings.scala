@@ -12,17 +12,14 @@
 
 package fr.linkit.engine.local.mapping
 
-import fr.linkit.api.connection.packet.serialization.Serializer
-
-import java.io.OutputStream
 import java.security.CodeSource
-import java.sql.Timestamp
 import scala.collection.mutable
 
 object ClassMappings {
 
-    private val classes = new mutable.HashMap[Int, (String, ClassLoader)]()
-    private val sources = mutable.HashSet.empty[CodeSource]
+    private val primitives = mapPrimitives()
+    private val classes    = new mutable.HashMap[Int, (String, ClassLoader)]()
+    private val sources    = mutable.HashSet.empty[CodeSource]
 
     def putClass(className: String, loader: ClassLoader): Unit = {
         /*if (classes.contains(className.hashCode)) {
@@ -31,20 +28,16 @@ object ClassMappings {
         classes.put(className.hashCode, (className, loader))
     }
 
-    def putSourceCode(source: CodeSource): Unit = {
-        sources += source
-    }
+    def addClassPath(source: CodeSource): Unit = sources += source
 
-    def getSources: List[CodeSource] = sources.toList
+    def getClassPaths: List[CodeSource] = sources.toList
 
     def putClass(clazz: Class[_]): Unit = putClass(clazz.getName, clazz.getClassLoader)
 
     def getClassName(hashCode: Int): String = classes(hashCode)._1
 
     def getClassOpt(hashCode: Int): Option[Class[_]] = {
-        classes.get(hashCode).map(pair => {
-            Class.forName(pair._1, false, pair._2)
-        })
+        classes.get(hashCode).map(extractClass).orElse(primitives.get(hashCode))
     }
 
     def getClass(hashCode: Int): Class[_] = {
@@ -59,9 +52,25 @@ object ClassMappings {
 
     def isRegistered(className: String): Boolean = classes.contains(className.hashCode)
 
-    def serialize(serializer: Serializer, out: OutputStream): Unit = {
-        val bytes = serializer.serialize(classes, true)
-        out.write(bytes)
+    private def mapPrimitives(): Map[Int, Class[_]] = {
+        import java.{lang => l}
+        Array(
+            Integer.TYPE,
+            l.Byte.TYPE,
+            l.Short.TYPE,
+            l.Long.TYPE,
+            l.Double.TYPE,
+            l.Float.TYPE,
+            l.Boolean.TYPE,
+            Character.TYPE
+        ).map(cl => (cl.getName.hashCode, cl))
+                .toMap
+    }
+
+    private def extractClass(pair: (String, ClassLoader)): Class[_] = {
+        val className = pair._1
+        primitives.getOrElse(className.hashCode,
+            Class.forName(className, false, pair._2))
     }
 
 }

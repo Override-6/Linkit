@@ -30,9 +30,9 @@ trait SyncNode[A] {
 
     def addChild(id: Int, factory: this.type => SyncNode[_]): Unit
 
-    def getGrandChild(path: Array[Int]): Option[SyncNode[_]] = {
+    def getGrandChild(relativePath: Array[Int]): Option[SyncNode[_]] = {
         var child: SyncNode[_] = this
-        for (childID <- path) {
+        for (childID <- relativePath) {
             val opt = child.getChild(childID)
             if (opt.isEmpty)
                 return None

@@ -12,7 +12,6 @@
 
 package fr.linkit.engine.connection.cache.repo.tree
 
-import fr.linkit.api.connection.cache.CacheContent
 import fr.linkit.api.connection.cache.repo.tree.{PuppetCenter, SyncNode}
 import fr.linkit.engine.connection.cache.repo.CloudObjectRepository.PuppetProfile
 import fr.linkit.engine.connection.cache.repo.{CacheRepoContent, NoSuchPuppetException}
@@ -23,7 +22,7 @@ class DefaultPuppetCenter[A <: Serializable] extends PuppetCenter[A] {
 
     private val puppets = new mutable.HashMap[Int, SyncNode[_ <: A]]
 
-    override def getPuppet[B <: A](path: Array[Int]): Option[SyncNode[B]] = puppets.get(path(0)) match {
+    override def getNode[B <: A](path: Array[Int]): Option[SyncNode[B]] = puppets.get(path(0)) match {
         case None        => None
         case Some(value) => value
                 .getGrandChild(path.drop(1))
@@ -35,12 +34,12 @@ class DefaultPuppetCenter[A <: Serializable] extends PuppetCenter[A] {
             puppets.put(path.head, provider(null))
             return
         }
-        getPuppet[B](path).fold(throw new NoSuchPuppetException("Attempted to attach a puppet node to a parent that does not exists !")) {
+        getNode[B](path).fold(throw new NoSuchPuppetException("Attempted to attach a puppet node to a parent that does not exists !")) {
             parent => parent.addChild(path.last, provider)
         }
     }
 
-    override def snapshotContent: CacheContent = {
+    override def snapshotContent: CacheRepoContent[A] = {
         def toProfile(node: SyncNode[_ <: A]): PuppetProfile[A] = {
             val puppeteer = node.puppeteer
             PuppetProfile[A](node.treeViewPath, puppeteer.getPuppet, puppeteer.puppeteerDescription.owner)

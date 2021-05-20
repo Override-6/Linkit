@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.repo
 
-import fr.linkit.api.connection.cache.repo.{Chip, IllegalPuppetException, PuppetDescription, PuppetException}
+import fr.linkit.api.connection.cache.repo._
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
@@ -24,12 +24,12 @@ import scala.util.control.NonFatal
 
 case class ObjectChip[S] private(owner: String,
                                  description: PuppetDescription[S],
-                                 puppet: S) extends Chip[S] {
+                                 wrapper: S with PuppetWrapper[S]) extends Chip[S] {
 
     override def updateField(fieldID: Int, value: Any): Unit = {
         description.getFieldDesc(fieldID)
                 .filterNot(_.isHidden)
-                .foreach(desc => ScalaUtils.setValue(puppet, desc.field, value))
+                .foreach(desc => ScalaUtils.setValue(wrapper, desc.field, value))
     }
 
     override def updateAllFields(obj: S): Unit = {
@@ -37,7 +37,7 @@ case class ObjectChip[S] private(owner: String,
                 .foreach(desc => if (!desc.isHidden) {
                     val field = desc.field
                     val value = field.get(obj)
-                    ScalaUtils.setValue(puppet, field, value)
+                    ScalaUtils.setValue(wrapper, field, value)
                 })
     }
 
@@ -48,9 +48,11 @@ case class ObjectChip[S] private(owner: String,
                 methodDesc.map(_.method.getName).getOrElse(s"(unknown method id '$methodID')")
             }(${params.mkString(", ")}) in class ${methodDesc.get.clazz}'")
         }
-        methodDesc.get
-                .method
-                .invoke(puppet, params: _*)
+        wrapper.getChoreographer.forceLocalInvocation {
+            methodDesc.get
+                    .method
+                    .invoke(wrapper, params: _*)
+        }
     }
 
     private[repo] def handleBundle(packet: Packet, submitter: ResponseSubmitter): Unit = {
@@ -80,7 +82,7 @@ case class ObjectChip[S] private(owner: String,
                             }' to value '$value'")
                         )
                 val field = fieldDesc.get.field
-                ScalaUtils.setValue(puppet, field, value)
+                ScalaUtils.setValue(wrapper, field, value)
         }
     }
 
@@ -88,7 +90,7 @@ case class ObjectChip[S] private(owner: String,
 
 object ObjectChip {
 
-    def apply[S](owner: String, description: PuppetDescription[S], puppet: S): ObjectChip[S] = {
+    def apply[S](owner: String, description: PuppetDescription[S], puppet: S with PuppetWrapper[S]): ObjectChip[S] = {
         if (puppet == null)
             throw new NullPointerException("puppet is null !")
         val clazz = puppet.getClass

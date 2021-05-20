@@ -13,13 +13,14 @@
 package fr.linkit.engine.connection.cache.repo.generation
 
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
+import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder, WrapperPackageName, WrapperPrefixName}
+import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder, WrapperPackage, WrapperPackageName, WrapperPrefixName}
+import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.io.File
-import java.net.URLClassLoader
 import java.nio.file.{Files, Path, StandardOpenOption}
 import javax.tools.ToolProvider
 import scala.collection.mutable
@@ -28,28 +29,36 @@ import scala.collection.mutable
 class WrappersClassResource(override val resource: ResourceFolder) extends FolderRepresentation {
 
     private val folderPath           = Path.of(resource.getAdapter.getAbsolutePath)
-    private val queuePath            = Path.of(folderPath + SourcesFolder)
+    private val queuePath            = Path.of(s"$folderPath/$SourcesFolder/${WrapperPackageName}")
     private val generatedClassesPath = Path.of(folderPath + ClassesFolder)
-    private val classLoader          = preInit()
     private val generatedClasses     = mutable.Map.empty[String, Class[_ <: PuppetWrapper[AnyRef]]]
     initialize()
 
-    private[generation] def addToQueue(className: String, classSource: String): Unit = {
-        val classSimpleName = className.drop(className.lastIndexOf('.') + 1)
-        val classFolder     = Path.of(className.dropRight(classSimpleName.length).replace('.', File.separatorChar))
-        val path            = queuePath.resolve(classFolder + s"\\$WrapperPrefixName" + classSimpleName + ".java")
+    private[generation] def addToQueue(wrappedClass: Class[_], classSource: String): Unit = {
+        val wrapperClassName = toWrapperClassName(wrappedClass)
+        val classSimpleName  = wrapperClassName.drop(wrapperClassName.lastIndexOf('.') + 1)
+        val classFolderPath = wrapperClassName.drop(WrapperPackageName.length).dropRight(classSimpleName.length)
+        val classFolder      = classFolderPath.replace('.', File.separatorChar)
+        val path             = Path.of(s"$queuePath/$classFolder/$classSimpleName.java")
         if (Files.notExists(path))
             Files.createDirectories(path.getParent)
         Files.writeString(path, classSource, StandardOpenOption.CREATE)
     }
 
-    def getWrapperClass[S](puppetClassName: String): Option[Class[S with PuppetWrapper[S]]] = {
-        generatedClasses.getOrElseUpdate(toWrappedClassName(puppetClassName), {
-            val wrapperClassPath = generatedClassesPath.resolve(puppetClassName.replace('.', File.separatorChar))
+    private def toWrapperClassName(wrappedClass: Class[_]): String = {
+        WrapperPackage + wrappedClass.getPackageName + '.' + WrapperPrefixName + wrappedClass.getSimpleName
+    }
+
+    def getWrapperClass[S](puppetClass: Class[_], parent: ClassLoader): Option[Class[S with PuppetWrapper[S]]] = {
+        val puppetClassName = puppetClass.getName
+        val wrapperClassName = toWrapperClassName(puppetClassName)
+        generatedClasses.getOrElseUpdate(wrapperClassName, {
+            val wrapperClassPath = generatedClassesPath.resolve(wrapperClassName.replace('.', File.separatorChar) + ".class")
             if (Files.notExists(wrapperClassPath))
                 null
             else {
-                Class.forName(puppetClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]]
+                val classLoader = new GeneratedClassClassLoader(generatedClassesPath, parent)
+                Class.forName(wrapperClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]]
             }
         }) match {
             case clazz: Class[S with PuppetWrapper[S]] => Some(clazz)
@@ -57,49 +66,75 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
         }
     }
 
-    def compileQueue(): Unit = {
+    def compileQueue(parent: ClassLoader): Unit = {
         val sources = listSources()
         if (sources.isEmpty)
             return
 
-        AppLogger.trace(s"Compiling dynamic wrapper classes ${
+        AppLogger.debug(s"Compiling dynamic wrapper classes ${
             sources
-                    .map(pathToClassName(_, 5))
+                    .map(pathToGeneratedClassName(_, 5))
                     .mkString(", ")
         }...")
 
-        val javac   = ToolProvider.getSystemJavaCompiler
-        val options = Array[String]("-d", generatedClassesPath.toString, "-Xlint:all") ++ sources
-        val code    = javac.run(null, null, null, options: _*)
+        val t0         = System.currentTimeMillis()
+        val javac      = ToolProvider.getSystemJavaCompiler
+        val classPaths = ClassMappings.getClassPaths
+                .map(source => Path.of(source.getLocation.toURI).toString)
+                .mkString(";")
+        val options    = Array[String]("-d", generatedClassesPath.toString, "-Xlint:all", "-classpath", classPaths) ++ sources
+        val code       = javac.run(null, null, null, options: _*)
+        val t1         = System.currentTimeMillis()
+        AppLogger.debug(s"Compilation took ${t1 - t0}ms.")
+
         if (code != 0)
             throw new InvalidPuppetDefException(s"Javac rejected class queue compilation. See above messages for further details. (error code: $code)")
 
-        listSources()
-                .map(WrapperPackageName + pathToClassName(_, 5))
-                .foreach(loadWrapperClass)
+        sources
+                .map(pathToGeneratedClassName(_, 5))
+                .foreach(loadWrapperClass(_, parent))
 
-        //clearQueue()
+        clearQueue()
     }
 
-    private def loadWrapperClass(name: String): Unit = {
-        val clazz = classLoader.loadClass(name)
-        generatedClasses.put(toWrappedClassName(name), clazz.asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]])
+    private def loadWrapperClass(name: String, parent: ClassLoader): Unit = {
+        val className = toWrapperClassName(name)
+        val clazz = new GeneratedClassClassLoader(generatedClassesPath, parent).loadClass(className)
+        generatedClasses.put(className, clazz.asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]])
     }
 
     private def toWrappedClassName(puppetWrapperName: String): String = {
-        val pivotIndex = puppetWrapperName.lastIndexOf('.')
+        val className  = puppetWrapperName.replace(File.separator, ".")
+        val pivotIndex = className.lastIndexOf('.')
 
-        var simpleName = puppetWrapperName.drop(pivotIndex + 1)
+        var simpleName = className.drop(pivotIndex + 1)
         if (!simpleName.startsWith(WrapperPrefixName))
-            return puppetWrapperName
+            return className
         simpleName = simpleName.drop(WrapperPrefixName.length)
 
-        var packageName = puppetWrapperName.take(pivotIndex)
-        if (!packageName.startsWith(WrapperPackageName))
+        var packageName = className.take(pivotIndex)
+        if (!packageName.startsWith(WrapperPackage))
             return packageName + simpleName
-        packageName = packageName.drop(WrapperPackageName.length)
+        packageName = packageName.drop(WrapperPackage.length)
 
         packageName + '.' + simpleName
+    }
+
+    private def toWrapperClassName(puppetWrapperName: String): String = {
+        val className  = puppetWrapperName.replace(File.separator, ".")
+        val pivotIndex = className.lastIndexOf('.')
+
+        var simpleName = className.drop(pivotIndex + 1)
+        if (simpleName.startsWith(WrapperPrefixName))
+            return className
+        simpleName = WrapperPrefixName + simpleName
+
+        var packageName = className.take(pivotIndex)
+        if (packageName.startsWith(WrapperPackage))
+            return packageName + "." + simpleName
+        packageName = WrapperPackage + packageName
+
+        packageName + "." + simpleName
     }
 
     private def listSources(): Array[String] = {
@@ -123,42 +158,25 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
     }
 
     override def initialize(): Unit = {
-
-        def loadFolder(folder: Path): Unit = {
-            Files.list(folder)
-                    .forEach { sub =>
-                        if (Files.isDirectory(sub))
-                            loadFolder(sub)
-                        else if (sub.toString.endsWith(".class")) {
-                            loadWrapperClass(pathToClassName(sub.toString, 6))
-                        }
-                    }
-        }
-
-        loadFolder(generatedClassesPath)
-        //clearQueue()
-    }
-
-    private def preInit(): URLClassLoader = {
-        if (classLoader != null)
-            throw new IllegalStateException("Resource already initialized !")
-
         Files.createDirectories(queuePath)
         Files.createDirectories(generatedClassesPath)
-        new URLClassLoader(Array(generatedClassesPath.toUri.toURL))
+
+        clearQueue()
     }
 
-    private def pathToClassName(generatedClassPath: String, suffixLength: Int): String = {
+    private def pathToGeneratedClassName(generatedClassPath: String, suffixLength: Int): String = {
         val parent = if (generatedClassPath.startsWith(generatedClassesPath.toString)) generatedClassesPath else queuePath
         val name   = generatedClassPath.drop(parent.toString.length + 1)
-        name.replace(File.separator, ".").dropRight(suffixLength)
+        WrapperPackage + name.replace(File.separator, ".").dropRight(suffixLength)
     }
 
     override def close(): Unit = {
-        //clearQueue()
+        clearQueue()
     }
 
     private def clearQueue(): Unit = {
+        //return
+
         def deleteFolder(path: Path): Unit = {
             Files.list(path)
                     .forEach(subPath => {
@@ -178,7 +196,8 @@ object WrappersClassResource extends ResourceRepresentationFactory[WrappersClass
     val SourcesFolder     : String = "/Sources/"
     val ClassesFolder     : String = "/Classes/"
     val WrapperPrefixName : String = "Puppet"
-    val WrapperPackageName: String = "gen."
+    val WrapperPackageName: String = "gen"
+    val WrapperPackage: String = WrapperPackageName + "."
 
     override def apply(resource: ResourceFolder): WrappersClassResource = new WrappersClassResource(resource)
 }

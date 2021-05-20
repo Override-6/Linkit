@@ -26,7 +26,8 @@ object ClassMapEngine {
 
     val JModRelativeClassesDirectory = "classes/"
 
-    val EmptyFilter   = new MapEngineFilters(null)
+    val EmptyFilter = new MapEngineFilters(null)
+
     val DefaultFilter = new MapEngineFilters(getClass.getResourceAsStream("/mapEngineFilter.txt"))
 
     def mapAllSources(fsa: FileSystemAdapter, sources: (CodeSource, ClassLoader)*): Unit = {
@@ -37,7 +38,7 @@ object ClassMapEngine {
             val root        = fsa.getAdapter(url.toURI)
             val rootPath    = root.getAbsolutePath
             AppLogger.debug(s"Mapping source $rootPath...")
-            ClassMappings.putSourceCode(source)
+            ClassMappings.addClassPath(source)
 
             mapDirectory(fsa, rootPath, root, classLoader, EmptyFilter)
         })
@@ -62,6 +63,20 @@ object ClassMapEngine {
     def mapDir(fsa: FileSystemAdapter, directory: FileAdapter,
                classLoader: ClassLoader, filters: MapEngineFilters = DefaultFilter): Unit = {
         mapDirectory(fsa, directory.getAbsolutePath, directory, classLoader, filters)
+    }
+
+    def mapPrimitives(): Unit = {
+        import java.lang
+        Array(
+            Integer.TYPE,
+            lang.Byte.TYPE,
+            lang.Short.TYPE,
+            lang.Long.TYPE,
+            lang.Double.TYPE,
+            lang.Float.TYPE,
+            lang.Boolean.TYPE,
+            Character.TYPE
+        ).foreach(ClassMappings.putClass)
     }
 
     private def isZipFile(directory: FileAdapter): Boolean = {

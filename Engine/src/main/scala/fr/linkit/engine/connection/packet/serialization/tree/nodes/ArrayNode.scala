@@ -16,9 +16,10 @@ import java.lang.reflect.{Array => RArray}
 import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.{ClassProfile, MegaByte}
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.connection.packet.serialization.tree.nodes.ObjectNode.NullObjectFlag
-import fr.linkit.engine.local.mapping.ClassMappings
+import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
 import fr.linkit.engine.local.utils.NumberSerializer
 import fr.linkit.engine.local.utils.NumberSerializer.{deserializeFlaggedNumber, deserializeInt, serializeNumber}
+import fr.linkit.engine.local.utils.ScalaUtils.toPresentableString
 
 object ArrayNode extends NodeFactory[Array[_]] {
 
@@ -105,7 +106,11 @@ object ArrayNode extends NodeFactory[Array[_]] {
             if (bytes(1) == EmptyFlag)
                 return Array.empty
 
-            val arrayType = ClassMappings.getClass(deserializeInt(bytes, 1))
+            val classIdentifier = deserializeInt(bytes, 1)
+            val arrayType = ClassMappings.getClass(classIdentifier)
+            if (arrayType == null)
+                throw new ClassNotMappedException(s"Unknown class identifier '$classIdentifier'")
+
             //println(s"Deserializing array into bytes ${toPresentableString(bytes)}")
             val (signItemCount, sizeByteCount: Byte) = deserializeFlaggedNumber[Int](bytes, 5) //starting from 1 because first byte is the array flag.
             //println(s"signItemCount = ${signItemCount}")
@@ -113,7 +118,6 @@ object ArrayNode extends NodeFactory[Array[_]] {
             val sign   = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 5)
 
             val result = RArray.newInstance(arrayType, sign.childrenBytes.length).asInstanceOf[Array[_]]
-
             var i = 0
             for (childBytes <- sign.childrenBytes) {
                 //println(s"ITEM Deserial $i:")

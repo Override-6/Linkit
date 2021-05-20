@@ -12,7 +12,7 @@
 
 package gen.$WrappedClassPackage$;
 
-import $WrappedClassName$;
+import fr.linkit.api.connection.cache.repo.InvocationChoreographer;
 import fr.linkit.api.connection.cache.repo.PuppetDescription;
 import fr.linkit.api.connection.cache.repo.PuppetWrapper;
 import fr.linkit.api.connection.cache.repo.Puppeteer;
@@ -24,6 +24,7 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
     public static final long serialVersionUID = $CompileTime$L;
     private transient Puppeteer<$WrappedClassSimpleName$> puppeteer;
     private transient PuppetDescription<$WrappedClassSimpleName$> description;
+    private transient InvocationChoreographer choreographer
     private PuppeteerDescription puppeteerDescription;
 
     public Puppet$WrappedClassSimpleName$(Puppeteer<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) {
@@ -44,6 +45,7 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
         this.puppeteerDescription = this.puppeteer.puppeteerDescription();
         this.description = puppeteer.puppetDescription();
         this.puppeteer.init(this, clone);
+        this.choreographer = new InvocationChoreographer();
     }
 
     @Override
@@ -57,6 +59,14 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
     }
 
     @Override
+    public $WrappedClassSimpleName$ getValue() {
+        return this;
+    }
+
+    @Override
+    public
+
+    @Override
     public Puppeteer<$WrappedClassSimpleName$> getPuppeteer() {
         return puppeteer;
     }
@@ -66,30 +76,33 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
         return puppeteerDescription;
     }
 
-$$INHERITED_METHODS$$ {
-    @Override
-    public $ReturnType$ $MethodName$($ParamsIn$) $MethodExceptions$ {
-        if (!description.isRMIEnabled($MethodID$)) {
-            $|If ReturnType == "void"|$ {
-                super.$MethodName$($ParamsOut$);
-                return;
-            } $|Else|$ {
-                return super.$MethodName$($ParamsOut$);
+    $$INHERITED_METHODS$$ {
+        @Override
+        public $ReturnType$ $MethodName$ ($ParamsIn$) $MethodExceptions$ {
+            if (choreographer.isMethodExecutionForcedToLocal() || !description.isRMIEnabled($MethodID$)) {
+                $|If ReturnType == "void"|$ {
+                    super.$MethodName$($ParamsOut$);
+                    return;
+                }
+                $|Else|$ {
+                    return super.$MethodName$($ParamsOut$);
+                }
             }
-        }
-        if (description.isInvokeOnly($MethodID$)) {
-            puppeteer.sendInvoke($MethodID$, new Object[]{$ParamsOut$});
+            if (description.isInvokeOnly($MethodID$)) {
+                puppeteer.sendInvoke($MethodID$, new Object[]{$ParamsOut$});
+                $|If ReturnType != "void"|$ {
+                    return $InvokeOnlyResult$;
+                }
+                $|Else|$
+                    return;
+                }
+            }
             $|If ReturnType != "void"|$ {
-                return $InvokeOnlyResult$;
-            } $|Else|$ {
+                return puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+            }
+            $|Else|$ {
                 return;
             }
-        }
-        $|If ReturnType != "void"|$ {
-            return puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
-        } $|Else|$ {
-            return;
         }
     }
-}
 }

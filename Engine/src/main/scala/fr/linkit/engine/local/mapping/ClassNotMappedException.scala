@@ -10,13 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.repo.tree
+package fr.linkit.engine.local.mapping
 
-import fr.linkit.engine.connection.cache.repo.InvocationPacket
-import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
+import fr.linkit.api.local.system.AppException
 
-trait NodePacketHandler {
-
-    def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit
+class ClassNotMappedException(msg: String = null, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

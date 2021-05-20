@@ -21,7 +21,7 @@ class PuppetDescriptions {
 
     def getDescription[B: ClassTag]: PuppetDescription[B] = {
         val rClass = classTag[B].runtimeClass.asInstanceOf[Class[B]]
-        descriptions.getOrElseUpdate(rClass, new PuppetDescription[B](rClass))
+        descriptions.getOrElseUpdate(rClass, PuppetDescription[B](rClass))
                 .asInstanceOf[PuppetDescription[B]]
     }
 }

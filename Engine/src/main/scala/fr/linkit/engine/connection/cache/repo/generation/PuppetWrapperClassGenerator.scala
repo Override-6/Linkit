@@ -16,6 +16,7 @@ import fr.linkit.api.connection.cache.repo.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.repo.{PuppetDescription, PuppetWrapper}
 import fr.linkit.engine.connection.cache.repo.generation.PuppetWrapperClassGenerator.{BPPath, ClassValueScope}
+import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{WrapperPackageName, WrapperPrefixName}
 import fr.linkit.engine.local.generation.{AbstractValueScope, SimpleJavaClassBlueprint}
 
 import java.lang.reflect.Modifier
@@ -26,33 +27,43 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
     private val jcbp = new SimpleJavaClassBlueprint(classOf[PuppetWrapperClassGenerator].getResourceAsStream(BPPath), new ClassValueScope(_))
 
     override def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
+        getClass[S](PuppetDescription(clazz))
+    }
+
+    override def getClass[S](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]] = {
+        val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is an interface.")
-        val className = clazz.getTypeName
+        val loader           = clazz.getClassLoader
         resources
-                .getWrapperClass[S](className)
-                .getOrElse({
-                    resources.addToQueue(className, genPuppetClassSourceCode(new PuppetDescription(clazz)))
-                    resources.compileQueue()
-                    resources.getWrapperClass[S](className).get
-                })
+                .getWrapperClass[S](clazz, loader)
+                .getOrElse {
+                    resources.addToQueue(clazz, genPuppetClassSourceCode(desc))
+                    resources.compileQueue(loader)
+                    resources.getWrapperClass[S](clazz, loader).get
+                }
     }
 
-    override def preGenerateClasses[S](classes: Class[_ <: S]*): Unit = {
-        preGenerateDescs(classes.map(new PuppetDescription[S](_)))
+    override def preGenerateClasses[S](defaultLoader: ClassLoader, classes: Seq[Class[_ <: S]]): Unit = {
+        preGenerateDescs(defaultLoader, classes.map(PuppetDescription[S]))
     }
 
-    override def preGenerateDescs[S](descriptions: Seq[PuppetDescription[S]]): Unit = {
-        descriptions.filter(desc => resources.getWrapperClass(desc.clazz.getName).isEmpty)
+    override def preGenerateDescs[S](defaultLoader: ClassLoader, descriptions: Seq[PuppetDescription[S]]): Unit = {
+        descriptions
+                .filter(desc => resources.getWrapperClass(desc.clazz, desc.clazz.getClassLoader).isEmpty)
                 .foreach(desc => {
                     val source = genPuppetClassSourceCode(desc)
-                    resources.addToQueue(desc.clazz.getName, source)
+                    resources.addToQueue(desc.clazz, source)
                 })
-        resources.compileQueue()
+        resources.compileQueue(defaultLoader)
     }
 
-    override def isClassGenerated[S](clazz: Class[S]): Boolean = {
-        resources.getWrapperClass[S](clazz.getName).isDefined
+    override def isWrapperClassGenerated[S](clazz: Class[S]): Boolean = {
+        resources.getWrapperClass[S](clazz, clazz.getClassLoader).isDefined
+    }
+
+    override def isClassGenerated[S <: PuppetWrapper[S]](clazz: Class[S]): Boolean = {
+        resources.getWrapperClass[S](clazz, clazz.getClassLoader).isDefined
     }
 
     private def genPuppetClassSourceCode[S](description: PuppetDescription[S]): String = {

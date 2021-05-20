@@ -17,6 +17,7 @@ import fr.linkit.api.local.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
+import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication.setInstance
@@ -128,12 +129,7 @@ object LinkitApplication {
 
         AppLogger.info("Mapping classes, this task may take a time.")
 
-        val fsa = configuration.fsAdapter
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources)
-        ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
-        ClassMapEngine.mapJDK(fsa)
-        LocalFileSystemAdapters.Nio.clearAdapters()
-        LocalFileSystemAdapters.Io.clearAdapters()
+        mapEnvironment(configuration.fsAdapter, otherSources)
 
         import LocalResourceFolder._
 
@@ -141,11 +137,19 @@ object LinkitApplication {
         val resource     = appResources.getOrOpenShort[WrappersClassResource]("/PuppetGeneration/")
         val generator    = new PuppetWrapperClassGenerator(resource)
 
-        generator.preGenerateClasses(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter])
+        generator.preGenerateClasses(classOf[LinkitApplication].getClassLoader, Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter]))
         appResources
     }
 
-    private def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {
+    def mapEnvironment(fsa: FileSystemAdapter, otherSources: Seq[Class[_]]): Unit = {
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
+        ClassMapEngine.mapJDK(fsa)
+        ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources)
+        LocalFileSystemAdapters.Nio.clearAdapters()
+        LocalFileSystemAdapters.Io.clearAdapters()
+    }
+
+    def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {
         AppLogger.trace("Loading app resources...")
         val resourceListener = new SimpleResourceListener()
         resourceListener.startWatchService()

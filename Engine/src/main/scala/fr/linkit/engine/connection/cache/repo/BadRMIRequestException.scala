@@ -10,15 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo.tree
+package fr.linkit.engine.connection.cache.repo
 
-import fr.linkit.api.connection.cache.CacheContent
+import fr.linkit.api.connection.cache.repo.PuppetException
 
-trait PuppetCenter[A] {
+class BadRMIRequestException(msg: String, cause: Throwable = null) extends PuppetException(msg, cause) {
 
-    def getNode[B <: A](path: Array[Int]): Option[SyncNode[B]]
-
-    def addPuppet[B <: A](path: Array[Int], obj: SyncNode[_] => SyncNode[B]): Unit
-
-    def snapshotContent: CacheContent
 }

@@ -13,8 +13,9 @@
 package fr.linkit.engine.connection.cache.repo.tree
 
 import fr.linkit.api.connection.cache.repo.tree.SyncNode
-import fr.linkit.api.connection.cache.repo.{Chip, PuppetDescriptions, Puppeteer}
+import fr.linkit.api.connection.cache.repo.{Chip, PuppetDescriptions, PuppetWrapper, Puppeteer}
 import fr.linkit.engine.connection.cache.repo.{InvocationPacket, NoSuchPuppetException, ObjectChip}
+import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 import org.jetbrains.annotations.Nullable
@@ -26,9 +27,9 @@ import scala.reflect.ClassTag
 class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                     override val chip: Chip[A], //Reflective invocation
                     val descriptions: PuppetDescriptions,
-                    val intended: Boolean,
+                    val isIntended: Boolean,
                     id: Int,
-                    @Nullable override val parent: SyncNode[_]) extends SyncNode[A] with NodePacketHandler {
+                    @Nullable override val parent: SyncNode[_]) extends MemberSyncNode[A] {
 
     private   val ownerID: String = puppeteer.ownerID
     /**
@@ -51,17 +52,24 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
     override def getID: Int = id
 
     override def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit = {
-        if (packet.haveMoreStep) {
-            val id = packet.nextStep
-            members.get(id).fold(throw NoSuchPuppetException(s"Unknown puppet id $id (${treeViewPath.mkString("$", " -> ", "")})")) {
-                case handler: NodePacketHandler => handler.handlePacket(packet, response)
-                case _                          =>
-            }
-            return
+        if (!(packet.path sameElements treeViewPath)) {
+            val packetPath = packet.path
+            if (!packetPath.startsWith(treeViewPath))
+                throw UnexpectedPacketException("Received invocation packet that does not target this node or this node's children.")
+
+            getGrandChild(packetPath.drop(treeViewPath.length))
+                    .fold(throw new NoSuchPuppetException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("$", " -> ", "")}")) {
+                        case node: MemberSyncNode[_] => node.handlePacket(packet, response)
+                        case _                       =>
+                    }
         }
+        makeMemberInvocation(packet, response)
+    }
+
+    private def makeMemberInvocation(packet: InvocationPacket, response: ResponseSubmitter): Unit = {
         val methodID = packet.methodID
         var result   = chip.callMethod(methodID, packet.params)
-        if (intended) {
+        if (isIntended) {
             val canSyncReturnType = puppeteer.puppetDescription.isReturnValueSynchronized(methodID)
             if (result != null && canSyncReturnType) {
                 implicit val resultCT: ClassTag[_] = ClassTag(result.getClass)
@@ -76,9 +84,9 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                         getGrandChild(path.drop(treeViewPath.length).dropRight(1))
                                 .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${path.mkString("$", " -> ", "")}")) {
                                     parent =>
-                                        val chip      = ObjectChip[Any](ownerID, description, wrapper)
+                                        val chip      = ObjectChip[Any](ownerID, description, wrapper.asInstanceOf[PuppetWrapper[Any]])
                                         val puppeteer = wrapper.getPuppeteer.asInstanceOf[Puppeteer[Any]]
-                                        parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, intended, id, _))
+                                        parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, isIntended, id, _))
                                 }
 
                 }
@@ -88,5 +96,4 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                     .submit()
         }
     }
-
 }

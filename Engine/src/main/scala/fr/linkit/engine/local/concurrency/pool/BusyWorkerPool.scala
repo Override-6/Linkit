@@ -350,7 +350,11 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
         try {
             task
         } catch {
-            case NonFatal(e) => e.printStackTrace()
+            case NonFatal(e) =>
+                e.printStackTrace()
+            case e: Throwable =>
+                e.printStackTrace()
+                throw e
         }
     }
 }

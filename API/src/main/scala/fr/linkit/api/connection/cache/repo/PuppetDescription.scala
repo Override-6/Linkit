@@ -18,12 +18,12 @@ import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvokeOnly
 import java.lang.reflect.{Field, Method}
 import scala.collection.mutable.ListBuffer
 
-class PuppetDescription[+T](val clazz: Class[_ <: T]) {
+class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
 
     /**
      * Methods and fields that comes from those classes will not be available for RMI Invocations.
      * */
-    private val blacklistedSuperClasses = Array[Class[_]](classOf[Object], classOf[Product])
+    private val BlacklistedSuperClasses = Array[Class[_]](classOf[Object], classOf[Product])
 
     private val methods    = collectMethods()
     private val methodsMap = methods.map(desc => (desc.methodId, desc)).toMap
@@ -62,9 +62,12 @@ class PuppetDescription[+T](val clazz: Class[_ <: T]) {
         def collectMethods[S >: T](clazz: Class[_ <: S]): Array[MethodDescription] = {
             if (clazz == null)
                 return Array()
-            if (blacklistedSuperClasses.contains(clazz))
+            if (BlacklistedSuperClasses.contains(clazz))
                 return collectMethods(clazz.getSuperclass)
-            val declaredMethods = clazz.getDeclaredMethods.map(genMethodDescription)
+            val declaredMethods = clazz
+                    .getDeclaredMethods
+                    .filterNot(m => BlacklistedSuperClasses.contains(m.getDeclaringClass))
+                    .map(genMethodDescription)
             val superMethods    = collectMethods(clazz.getSuperclass)
             superMethods ++ declaredMethods
         }
@@ -83,25 +86,9 @@ class PuppetDescription[+T](val clazz: Class[_ <: T]) {
         filteredMethods.toSeq
     }
 
-    private def hierarchyLevel(clazz: Class[_]): Int = {
-        var superClass = clazz.getSuperclass
-        var level      = 0
-        while (superClass != null) {
-            superClass = superClass.getSuperclass
-            level += 1
-        }
-
-        def hierarchyInterfaceLevel(clazz: Class[_]): Int = {
-            val interfaces = clazz.getInterfaces
-            interfaces.length + interfaces.map(hierarchyLevel).sum
-        }
-
-        level + hierarchyInterfaceLevel(clazz)
-    }
-
     private def collectFields(): Map[Int, FieldDescription] = {
         def getFieldsOfClass[S >: T](clazz: Class[_ <: S]): Array[FieldDescription] = {
-            if (clazz == null || blacklistedSuperClasses.contains(clazz))
+            if (clazz == null || BlacklistedSuperClasses.contains(clazz))
                 return Array()
             getFieldsOfClass(clazz.getSuperclass) ++ clazz.getDeclaredFields.map(genFieldDescription)
         }
@@ -112,7 +99,7 @@ class PuppetDescription[+T](val clazz: Class[_ <: T]) {
     }
 
     private def genMethodDescription(method: Method): MethodDescription = {
-        val control                          = Option(method.getAnnotation(classOf[MethodControl]))
+        val control                          = Option(method.getDeclaredAnnotation(classOf[MethodControl]))
         val synchronizedParamNumbers         = control
                 .map(_.mutates()
                         .split(",")
@@ -129,7 +116,8 @@ class PuppetDescription[+T](val clazz: Class[_ <: T]) {
         val isHidden                         = control.exists(_.hide())
         val syncReturnValue                  = control.exists(_.synchronizeReturnValue())
         val isLocalOnly                      = control.exists(_.localOnly())
-        MethodDescription(method, Option(invokeOnly), synchronizedParams, syncReturnValue, isLocalOnly, isPure, isHidden)
+        val desc                             = MethodDescription(method, Option(invokeOnly), synchronizedParams, syncReturnValue, isLocalOnly, isPure, isHidden)
+        desc
     }
 
     private def genFieldDescription(field: Field): FieldDescription = {
@@ -139,9 +127,31 @@ class PuppetDescription[+T](val clazz: Class[_ <: T]) {
         FieldDescription(field, isSynchronized, isHidden)
     }
 
+    private def hierarchyLevel(clazz: Class[_]): Int = {
+        var superClass = clazz.getSuperclass
+        var level      = 0
+        while (superClass != null) {
+            superClass = superClass.getSuperclass
+            level += 1
+        }
+
+        def hierarchyInterfaceLevel(clazz: Class[_]): Int = {
+            val interfaces = clazz.getInterfaces
+            interfaces.length + interfaces.map(hierarchyLevel).sum
+        }
+
+        level + hierarchyInterfaceLevel(clazz)
+    }
+
 }
 
 object PuppetDescription {
+
+    def apply[T](clazz: Class[_ <: T]): PuppetDescription[T] = {
+        if (classOf[PuppetWrapper[T]].isAssignableFrom(clazz))
+            throw new IllegalArgumentException("Provided class can't extend PuppetWrapper")
+        new PuppetDescription(clazz)
+    }
 
     case class MethodDescription(method: Method,
                                  invokeOnly: Option[InvokeOnly],

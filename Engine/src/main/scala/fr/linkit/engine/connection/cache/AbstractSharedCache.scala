@@ -65,10 +65,11 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
     addDefaultAttribute("family", family)
     addDefaultAttribute("cache", identifier)
 
+    //FIXME optimise (find another way to find the right cache that can accept the bundle)
     channel.addRequestListener(bundle => {
         val attr = bundle.attributes
 
-        def isPresent(name: String, value: Any): Boolean = attr.getAttribute(name).contains(value)
+        def isPresent(name: String, expected: Any): Boolean = attr.getAttribute(name).contains(expected)
 
         if (isPresent("cache", identifier) && isPresent("family", family))
             handleBundle(bundle)

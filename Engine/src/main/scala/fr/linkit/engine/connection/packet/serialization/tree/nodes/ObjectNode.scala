@@ -14,11 +14,10 @@ package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
 import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree._
+import fr.linkit.engine.local.mapping.ClassNotMappedException
 import fr.linkit.engine.local.utils.ScalaUtils.toPresentableString
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 import sun.misc.Unsafe
-
-import scala.util.Try
 
 object ObjectNode {
 

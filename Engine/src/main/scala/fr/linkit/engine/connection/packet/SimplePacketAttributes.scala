@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet
 
-import fr.linkit.api.connection.packet.PacketAttributes
+import fr.linkit.api.connection.packet.{PacketAttributes, PacketAttributesPresence}
 import fr.linkit.api.local.system.AppLogger
 
 import scala.collection.mutable
@@ -56,6 +56,7 @@ class SimplePacketAttributes extends PacketAttributes {
     }
 
     override def isEmpty: Boolean = attributes.isEmpty
+
 }
 
 object SimplePacketAttributes {

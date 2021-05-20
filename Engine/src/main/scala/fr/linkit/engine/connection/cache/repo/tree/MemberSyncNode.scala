@@ -10,15 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo.tree
+package fr.linkit.engine.connection.cache.repo.tree
 
-import fr.linkit.api.connection.cache.CacheContent
+import fr.linkit.api.connection.cache.repo.tree.SyncNode
+import fr.linkit.engine.connection.cache.repo.InvocationPacket
+import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 
-trait PuppetCenter[A] {
+trait MemberSyncNode[A] extends SyncNode[A]{
 
-    def getNode[B <: A](path: Array[Int]): Option[SyncNode[B]]
+    def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit
 
-    def addPuppet[B <: A](path: Array[Int], obj: SyncNode[_] => SyncNode[B]): Unit
-
-    def snapshotContent: CacheContent
 }

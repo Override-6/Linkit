@@ -10,15 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo.tree
+package fr.linkit.api.connection.cache.repo.generation
 
-import fr.linkit.api.connection.cache.CacheContent
+import java.net.URLClassLoader
+import java.nio.file.Path
 
-trait PuppetCenter[A] {
+class GeneratedClassClassLoader(classRootFolder: Path, parent: ClassLoader) extends URLClassLoader(Array(classRootFolder.toUri.toURL), parent) {
 
-    def getNode[B <: A](path: Array[Int]): Option[SyncNode[B]]
-
-    def addPuppet[B <: A](path: Array[Int], obj: SyncNode[_] => SyncNode[B]): Unit
-
-    def snapshotContent: CacheContent
 }

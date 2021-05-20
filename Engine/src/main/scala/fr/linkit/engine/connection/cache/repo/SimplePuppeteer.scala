@@ -48,8 +48,9 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         }
 
         AppLogger.debug(s"Remotely invoking method $methodId(${args.mkString(",")})")
+        val treeViewPath = puppeteerDescription.treeViewPath
         val result = channel.makeRequest(bcScope)
-                .addPacket(ObjectPacket((methodId, synchronizedArgs(desc, args))))
+                .addPacket(InvocationPacket(treeViewPath, methodId, synchronizedArgs(desc, args)))
                 .submit()
                 .nextResponse
                 .nextPacket[RefPacket[R]].value
@@ -82,7 +83,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         }
         val value = if (desc.isSynchronized) synchronizedObj(newValue) else newValue
         channel.makeRequest(bcScope)
-                .addPacket(InvocationPacket(puppeteerDescription.treeViewPath, fieldId, Array(newValue)))
+                .addPacket(InvocationPacket(puppeteerDescription.treeViewPath, fieldId, Array(value)))
                 .submit()
                 .detach()
     }
@@ -120,10 +121,10 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
             (wrapper, childPath) =>
                 val id          = childPath.last
                 val description = repo.getPuppetDescription(ClassTag(wrapper.getClass))
-                repo.center.getPuppet(currentPath).get.getGrandChild(childPath.drop(currentPath.length).dropRight(1))
+                repo.center.getNode(currentPath).get.getGrandChild(childPath.drop(currentPath.length).dropRight(1))
                         .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${childPath.mkString("$", " -> ", "")}")) {
                             parent =>
-                                val chip      = ObjectChip[Any](ownerID, description, wrapper)
+                                val chip      = ObjectChip[Any](ownerID, description, wrapper.asInstanceOf[PuppetWrapper[Any]])
                                 val puppeteer = wrapper.getPuppeteer.asInstanceOf[Puppeteer[Any]]
                                 parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, isIntended, id, _))
                         }

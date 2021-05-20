@@ -20,12 +20,16 @@ public interface PuppetWrapper<T> extends Serializable {
 
     void initPuppeteer(Puppeteer<T> puppeteer, T clone);
 
+    PuppeteerDescription getPuppeteerDescription();
+
+    InvocationChoreographer getChoreographer();
+
     Puppeteer<T> getPuppeteer();
 
     boolean isInitialized();
 
-    T detachedClone();
+    T getValue();
 
-    PuppeteerDescription getPuppeteerDescription();
+    T detachedClone();
 
 }
