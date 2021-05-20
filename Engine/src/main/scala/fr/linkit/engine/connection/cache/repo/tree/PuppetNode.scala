@@ -68,7 +68,11 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
 
     private def makeMemberInvocation(packet: InvocationPacket, response: ResponseSubmitter): Unit = {
         val methodID = packet.methodID
-        var result   = chip.callMethod(methodID, packet.params)
+        var result   = puppeteer.getPuppetWrapper
+                .getChoreographer
+                .forceLocalInvocation {
+                    chip.callMethod(methodID, packet.params)
+                }
         if (isIntended) {
             val canSyncReturnType = puppeteer.puppetDescription.isReturnValueSynchronized(methodID)
             if (result != null && canSyncReturnType) {

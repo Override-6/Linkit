@@ -33,7 +33,7 @@ class InvocationChoreographer {
      * @param action the action to perform
      * @see [[fr.linkit.api.connection.cache.repo.PuppetWrapper]] for more information about those 'generated methods'.
      * */
-    def forceLocalInvocation(action: => Unit): Unit = {
+    def forceLocalInvocation[A](action: => A): A = {
         markedThreads += Thread.currentThread()
         try {
             action

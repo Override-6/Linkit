@@ -67,11 +67,12 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         }
         AppLogger.debug(s"Remotely invoking method ${desc.method.getName}(${args.mkString(",")})")
 
-        if (desc.isHidden)
+        if (!desc.isHidden) {
             channel.makeRequest(bcScope)
                     .addPacket(InvocationPacket(puppeteerDescription.treeViewPath, methodId, args))
                     .submit()
                     .detach()
+        }
     }
 
     override def sendFieldUpdate(fieldId: Int, newValue: Any): Unit = {

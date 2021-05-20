@@ -26,6 +26,13 @@ import java.lang.annotation.Target;
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MethodControl {
+
+    /**
+     * Specifies what kind of invocation the implementation of the annotated method must do.
+     * @see InvocationKind for more details
+     * */
+    InvocationKind value();
+
     /**
      * Specifies that the annotated method has no visible side effects.
      * A pure method is a method that does not mutate the receiver object and/or does not mutates its arguments.
@@ -61,10 +68,4 @@ public @interface MethodControl {
      * It will receive a {@link fr.linkit.api.connection.cache.repo.RemoteInvocationFailedException}
      */
     boolean hide() default false;
-
-    /**
-     * Specifies that the annotated method must be invoked instead of
-     * invoking the distant method.
-     * */
-    boolean localOnly() default false;
 }

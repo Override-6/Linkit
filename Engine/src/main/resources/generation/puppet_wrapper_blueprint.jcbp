@@ -12,6 +12,7 @@
 
 package gen.$WrappedClassPackage$;
 
+import $WrappedClassName$;
 import fr.linkit.api.connection.cache.repo.InvocationChoreographer;
 import fr.linkit.api.connection.cache.repo.PuppetDescription;
 import fr.linkit.api.connection.cache.repo.PuppetWrapper;
@@ -24,7 +25,7 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
     public static final long serialVersionUID = $CompileTime$L;
     private transient Puppeteer<$WrappedClassSimpleName$> puppeteer;
     private transient PuppetDescription<$WrappedClassSimpleName$> description;
-    private transient InvocationChoreographer choreographer
+    private transient InvocationChoreographer choreographer;
     private PuppeteerDescription puppeteerDescription;
 
     public Puppet$WrappedClassSimpleName$(Puppeteer<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) {
@@ -64,7 +65,9 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
     }
 
     @Override
-    public
+    public InvocationChoreographer getChoreographer() {
+        return choreographer;
+    }
 
     @Override
     public Puppeteer<$WrappedClassSimpleName$> getPuppeteer() {
@@ -78,13 +81,12 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
 
     $$INHERITED_METHODS$$ {
         @Override
-        public $ReturnType$ $MethodName$ ($ParamsIn$) $MethodExceptions$ {
+        public $ReturnType$ $MethodName$($ParamsIn$) $MethodExceptions$ {
             if (choreographer.isMethodExecutionForcedToLocal() || !description.isRMIEnabled($MethodID$)) {
                 $|If ReturnType == "void"|$ {
                     super.$MethodName$($ParamsOut$);
                     return;
-                }
-                $|Else|$ {
+                } $|Else|$ {
                     return super.$MethodName$($ParamsOut$);
                 }
             }
@@ -92,15 +94,14 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
                 puppeteer.sendInvoke($MethodID$, new Object[]{$ParamsOut$});
                 $|If ReturnType != "void"|$ {
                     return $InvokeOnlyResult$;
-                }
-                $|Else|$
+                } $|Else|$ {
                     return;
                 }
             }
             $|If ReturnType != "void"|$ {
                 return puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
-            }
-            $|Else|$ {
+            } $|Else|$ {
+                puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
                 return;
             }
         }
