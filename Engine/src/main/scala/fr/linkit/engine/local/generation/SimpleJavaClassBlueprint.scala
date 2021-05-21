@@ -13,13 +13,14 @@
 package fr.linkit.engine.local.generation
 
 import fr.linkit.api.local.generation.{JavaClassBlueprint, ValueScope}
+import fr.linkit.engine.local.generation.SimpleJavaClassBlueprint.removeBPComments
 
 import java.io.InputStream
 
 class SimpleJavaClassBlueprint[V] private(blueprint: String, rootScope: ValueScope[V]) extends JavaClassBlueprint[V] {
 
     def this(blueprint: String, rootProvider: String => ValueScope[V]) = {
-        this(blueprint, rootProvider(blueprint))
+        this(blueprint, rootProvider(removeBPComments(blueprint)))
     }
 
     def this(stream: InputStream, rootProvider: String => ValueScope[V]) = {
@@ -29,4 +30,34 @@ class SimpleJavaClassBlueprint[V] private(blueprint: String, rootScope: ValueSco
     override def getBlueprintString: String = blueprint
 
     override def toClassSource(v: V): String = rootScope.getSourceCode(v)
+
+}
+
+object SimpleJavaClassBlueprint {
+
+    val BlueprintCommentPrefix: String = "//#"
+
+    def removeBPComments(blueprint: String): String = {
+        var nextCommentPos = blueprint.indexOf(BlueprintCommentPrefix)
+        val result         = new StringBuilder(blueprint)
+
+        def shouldDeleteWholeLine(from: Int): Boolean = {
+            for (i <- from to nextCommentPos) {
+                if (!result(i).isWhitespace)
+                    return false
+            }
+            true
+        }
+
+        while (nextCommentPos != -1) {
+            val commentEndPos = result.indexOf('\n', nextCommentPos)
+            val lineStartPos = result.lastIndexOf('\n', nextCommentPos)
+            result.delete(nextCommentPos, commentEndPos)
+            if (shouldDeleteWholeLine(lineStartPos)) {
+                result.delete(lineStartPos, nextCommentPos)
+            }
+            nextCommentPos = result.indexOf(BlueprintCommentPrefix, nextCommentPos)
+        }
+        result.toString()
+    }
 }

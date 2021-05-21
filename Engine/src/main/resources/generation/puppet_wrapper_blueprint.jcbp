@@ -33,9 +33,8 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
         initPuppeteer(bundle, clone);
     }
 
-    //Fun fact: Override annotations are only conventional.
-    //They are only informal and
-    //does not affect abstraction or classes behaviors.
+    //Fun fact: Override annotations are conventional.
+    //They does not affect abstraction or classes behaviors.
     //Override annotations are removed at compilation.
 
     @Override
@@ -79,31 +78,53 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
         return puppeteerDescription;
     }
 
-    $$INHERITED_METHODS$$ {
-        @Override
-        public $ReturnType$ $MethodName$($ParamsIn$) $MethodExceptions$ {
-            if (choreographer.isMethodExecutionForcedToLocal() || !description.isRMIEnabled($MethodID$)) {
-                $|If ReturnType == "void"|$ {
-                    super.$MethodName$($ParamsOut$);
-                    return;
-                } $|Else|$ {
-                    return super.$MethodName$($ParamsOut$);
-                }
-            }
-            if (description.isInvokeOnly($MethodID$)) {
-                puppeteer.sendInvoke($MethodID$, new Object[]{$ParamsOut$});
-                $|If ReturnType != "void"|$ {
-                    return $InvokeOnlyResult$;
-                } $|Else|$ {
-                    return;
-                }
-            }
-            $|If ReturnType != "void"|$ {
-                return puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+$$INHERITED_METHODS$$ {
+    @Override
+    public $ReturnType$ $MethodName$($ParamsIn$) $MethodExceptions$ {
+        if (choreographer.isMethodExecutionForcedToLocal() || !description.isRMIEnabled($MethodID$)) {
+            $|If ReturnType == "void"|$ {
+                super.$MethodName$($ParamsOut$);
+                return;
             } $|Else|$ {
-                puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+                return super.$MethodName$($ParamsOut$);
+            }
+        }
+        //# From here we are sure that we want to perform a remote
+        //# method invocation. (A Local invocation (super.xxx()) can be added).
+        if (description.isInvokeOnly($MethodID$)) {
+            puppeteer.sendInvoke($MethodID$, new Object[]{$ParamsOut$});
+            $|If ReturnType != "void"|$ {
+                $ReturnType$ localResult;
+                if (description.isLocalInvocationForced($MethodID$)) {
+                    localResult = super.$MethodName$($ParamsOut$);
+                }
+                //# Note1: value of 'InvokeOnlyResult' can be "localResult".
+                //# Note2: Be aware that you can get a null value returned
+                //#        if the 'InvokeOnlyResult' value of the annotated
+                //#        method is set to "localResult" and the invocation
+                //#        kind does not force local invocation.
+                return $InvokeOnlyResult$;
+            } $|Else|$ {
+                if (description.isLocalInvocationForced($MethodID$)) {
+                    super.$MethodName$($ParamsOut$);
+                }
                 return;
             }
         }
+        $|If ReturnType != "void"|$ {
+            $ReturnType$ result;
+            if (description.isLocalInvocationForced($MethodID$)) {
+                result = super.$MethodName$($ParamsOut$);
+                puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+            } else {
+                result = puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+            }
+            return result;
+        } $|Else|$ {
+            super.$MethodName$($ParamsOut$);
+            puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+            return;
+        }
     }
+}
 }

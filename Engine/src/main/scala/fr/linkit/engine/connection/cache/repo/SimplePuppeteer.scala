@@ -14,13 +14,13 @@ package fr.linkit.engine.connection.cache.repo
 
 import fr.linkit.api.connection.cache.repo.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.cache.repo._
+import fr.linkit.api.connection.cache.repo.annotations.InvocationKind
 import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.tree.PuppetNode
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
 
@@ -32,11 +32,12 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
                          override val puppeteerDescription: PuppeteerDescription,
                          val puppetDescription: PuppetDescription[S]) extends Puppeteer[S] {
 
-    private val bcScope                                = prepareScope(ChannelScopes.discardCurrent)
-    private var puppet       : S                       = _
-    private var puppetWrapper: S with PuppetWrapper[S] = _
-
     override val ownerID: String = puppeteerDescription.owner
+    private  val bcScope         = prepareScope(ChannelScopes.discardCurrent)
+    private  val ownerScope      = prepareScope(ChannelScopes.retains(ownerID))
+    private var puppet  : S      = _
+
+    private var puppetWrapper: S with PuppetWrapper[S] = _
 
     override def getPuppet: S = puppet
 
@@ -49,7 +50,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
 
         AppLogger.debug(s"Remotely invoking method $methodId(${args.mkString(",")})")
         val treeViewPath = puppeteerDescription.treeViewPath
-        val result = channel.makeRequest(bcScope)
+        val result       = channel.makeRequest(chooseScope(desc.invocationKind))
                 .addPacket(InvocationPacket(treeViewPath, methodId, synchronizedArgs(desc, args)))
                 .submit()
                 .nextResponse
@@ -68,7 +69,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         AppLogger.debug(s"Remotely invoking method ${desc.method.getName}(${args.mkString(",")})")
 
         if (!desc.isHidden) {
-            channel.makeRequest(bcScope)
+            channel.makeRequest(chooseScope(desc.invocationKind))
                     .addPacket(InvocationPacket(puppeteerDescription.treeViewPath, methodId, args))
                     .submit()
                     .detach()
@@ -103,6 +104,16 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         }
         this.puppetWrapper = wrapper
         this.puppet = puppet
+    }
+
+    private def chooseScope(kind: InvocationKind): ChannelScope = {
+        import InvocationKind._
+        kind match {
+            case ONLY_OWNER | LOCAL_AND_OWNER     => ownerScope
+            case ONLY_REMOTES | LOCAL_AND_REMOTES => bcScope
+            case ONLY_LOCAL                       =>
+                throw new UnsupportedOperationException(s"Unable to perform a remote invocation with Invocation kind of type $ONLY_LOCAL")
+        }
     }
 
     private def synchronizedArgs(desc: MethodDescription, args: Array[Any]): Array[Any] = {

@@ -51,6 +51,10 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
         getMethodDesc(methodId).exists(_.invocationKind != InvocationKind.ONLY_LOCAL)
     }
 
+    def isLocalInvocationForced(methodId: Int): Boolean = {
+        getMethodDesc(methodId).exists(_.invocationKind.isLocalInvocationForced)
+    }
+
     def isInvokeOnly(methodId: Int): Boolean = {
         getMethodDesc(methodId).exists(_.invokeOnly.isDefined)
     }
@@ -165,10 +169,10 @@ object PuppetDescription {
         val clazz: Class[_] = method.getDeclaringClass
 
         def getReplacedReturnValue: String = {
-            import java.lang
             invokeOnly.map(_.value())
                     .getOrElse {
                         val returnType = method.getReturnType
+                        import java.lang
                         returnType match {
                             case lang.Boolean.TYPE                                                     => "false"
                             case lang.Float.TYPE | lang.Double.TYPE                                    => "-1.0"

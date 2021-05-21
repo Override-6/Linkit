@@ -18,27 +18,36 @@ public enum InvocationKind {
      * The invocation will only be performed on the current object.
      * This behavior is the same as calling any normal java method.
      */
-    ONLY_LOCAL,
+    ONLY_LOCAL(true),
     /**
-     * Invocation will only be invoked on the intended machine (usually the original object's owner)
+     * Invocation will only be invoked on the machine that owns the original object.
      */
-    ONLY_OWNER,
+    ONLY_OWNER(false),
     /**
      * The invocation will only be performed on every remote machines.
      * The return value of the invocation will come from the machine that owns the original object.
      */
-    ONLY_REMOTES,
+    ONLY_REMOTES(false),
     /**
      * The invocation will be performed on the current machine <b>and</b> on every remote machines.
      * The return value of the invocation will come from the current machine.
      * <br>
      * <u>This is the normal behavior.</u>
      */
-    LOCAL_AND_REMOTES,
+    LOCAL_AND_REMOTES(true),
     /**
      * The invocation will be performed on the current machine <b>and</b> on the machine that owns the original object.
      * The return value of the invocation will come from the local machine.
      */
-    LOCAL_AND_OWNER
+    LOCAL_AND_OWNER(true);
 
+    private final boolean forceLocalInvocation;
+
+    InvocationKind(boolean forceLocalInvocation) {
+        this.forceLocalInvocation = forceLocalInvocation;
+    }
+
+    public boolean isLocalInvocationForced() {
+        return forceLocalInvocation;
+    }
 }

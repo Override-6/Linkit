@@ -20,8 +20,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Contains all the information of a method declared by a class that would be extended at runtime for an object synchronization.
- * This method contains info about the purity, remote access and local behaviours for the generated class.
+ * Contains all the information of a method declared by a class
+ * that would be extended at runtime for an object synchronization.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
@@ -47,7 +47,7 @@ public @interface MethodControl {
     /**
      * Informs what arguments of the annotated method have a chance to be mutated.
      * <p>
-     * e following values are possible:
+     * the following values are possible:
      * <table>
      *   <tr><td>"this"</td><td>Method mutates the receiver object, and doesn't mutates any objects passed as arguments (cannot be applied for static method or constructor)</td></tr>
      *   <tr><td>"arg1", "arg2", ...</td><td>Method mutates the N-th argument</td></tr>

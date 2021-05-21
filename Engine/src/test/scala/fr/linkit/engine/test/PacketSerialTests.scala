@@ -20,13 +20,14 @@ import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.mapping.ClassMapEngine
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Assertions, BeforeAll, Test, TestInstance}
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketSerialTests {
 
-    private val testedPacket                 = RequestPacket(7, Array(ObjectPacket(PuppetProfile(Array(8, 5, 3, 4), PlayerTest(5, "TestServer1", "jimmy", 89, 12), "TestServer1"))))
+    private val testedPacket                 = RequestPacket(7, Array(ObjectPacket(PuppetProfile(Array(8, 5, 3, 4), PlayerObject(5, "TestServer1", "jimmy", 89, 12), "TestServer1"))))
     private var testPacketBytes: Array[Byte] = _
 
     @BeforeAll
