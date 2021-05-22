@@ -81,17 +81,6 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
         return puppeteerDescription;
     }
 
-    private <T> T sendInvokeAndGetResult(int methodID, Object[] args, Supplier<T> localInvocation) {
-        T result;
-        if (puppeteer.isCurrentEngineOwner()) {
-            result = localInvocation.get();
-            puppeteer.sendInvoke(methodID, args);
-        } else {
-            result = puppeteer.<T>sendInvokeAndWaitResult(methodID, args);
-        }
-        return result;
-    }
-
 $$INHERITED_METHODS$$ {
     @Override
     public $ReturnType$ $MethodName$($ParamsIn$) $MethodExceptions$ {
@@ -109,7 +98,10 @@ $$INHERITED_METHODS$$ {
         if (description.isInvokeOnly($MethodID$)) {
             puppeteer.sendInvoke($MethodID$, args);
             $|If ReturnType != "void"|$ {
-                $ReturnType$ localResult = sendInvokeAndGetResult($MethodID$, $ParamsOut$, () -> super.$MethodName$($ParamsOut$));
+                $ReturnType$ localResult;
+                if (description.isLocalInvocationForced($MethodID$)) {
+                    localResult = super.$MethodName$($ParamsOut$);
+                }
                 //# Note1: value of 'InvokeOnlyResult' can be "localResult".
                 //# Note2: Be aware that you can get a null value returned
                 //#        if the 'InvokeOnlyResult' value of the annotated
@@ -129,7 +121,7 @@ $$INHERITED_METHODS$$ {
                 result = super.$MethodName$($ParamsOut$);
                 puppeteer.sendInvoke($MethodID$, args);
             } else {
-                result = sendInvokeAndGetResult($MethodID$, args, () -> super.$MethodName$($ParamsOut$))
+                result = puppeteer.sendInvokeAndWaitResult($MethodID$, args);
             }
             return result;
         } $|Else|$ {
