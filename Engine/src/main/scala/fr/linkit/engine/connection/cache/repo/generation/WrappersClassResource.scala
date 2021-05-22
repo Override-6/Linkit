@@ -175,7 +175,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
     }
 
     private def clearQueue(): Unit = {
-        return
+        //return
 
         def deleteFolder(path: Path): Unit = {
             Files.list(path)
