@@ -20,6 +20,9 @@ import fr.linkit.api.connection.cache.repo.Puppeteer;
 import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription;
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException;
 
+import java.util.function.Function;
+import java.util.function.Supplier;
+
 public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ implements PuppetWrapper<$WrappedClassSimpleName$> {
 
     public static final long serialVersionUID = $CompileTime$L;
@@ -78,6 +81,17 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
         return puppeteerDescription;
     }
 
+    private <T> T sendInvokeAndGetResult(int methodID, Object[] args, Supplier<T> localInvocation) {
+        T result;
+        if (puppeteer.isCurrentEngineOwner()) {
+            result = localInvocation.get();
+            puppeteer.sendInvoke(methodID, args);
+        } else {
+            result = puppeteer.<T>sendInvokeAndWaitResult(methodID, args);
+        }
+        return result;
+    }
+
 $$INHERITED_METHODS$$ {
     @Override
     public $ReturnType$ $MethodName$($ParamsIn$) $MethodExceptions$ {
@@ -89,15 +103,13 @@ $$INHERITED_METHODS$$ {
                 return super.$MethodName$($ParamsOut$);
             }
         }
+        final Object[] args = new Object[]{$ParamsOut$};
         //# From here we are sure that we want to perform a remote
         //# method invocation. (A Local invocation (super.xxx()) can be added).
         if (description.isInvokeOnly($MethodID$)) {
-            puppeteer.sendInvoke($MethodID$, new Object[]{$ParamsOut$});
+            puppeteer.sendInvoke($MethodID$, args);
             $|If ReturnType != "void"|$ {
-                $ReturnType$ localResult;
-                if (description.isLocalInvocationForced($MethodID$)) {
-                    localResult = super.$MethodName$($ParamsOut$);
-                }
+                $ReturnType$ localResult = sendInvokeAndGetResult($MethodID$, $ParamsOut$, () -> super.$MethodName$($ParamsOut$));
                 //# Note1: value of 'InvokeOnlyResult' can be "localResult".
                 //# Note2: Be aware that you can get a null value returned
                 //#        if the 'InvokeOnlyResult' value of the annotated
@@ -115,16 +127,17 @@ $$INHERITED_METHODS$$ {
             $ReturnType$ result;
             if (description.isLocalInvocationForced($MethodID$)) {
                 result = super.$MethodName$($ParamsOut$);
-                puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+                puppeteer.sendInvoke($MethodID$, args);
             } else {
-                result = puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+                result = sendInvokeAndGetResult($MethodID$, args, () -> super.$MethodName$($ParamsOut$))
             }
             return result;
         } $|Else|$ {
             super.$MethodName$($ParamsOut$);
-            puppeteer.sendInvokeAndWaitResult($MethodID$, new Object[]{$ParamsOut$});
+            puppeteer.sendInvoke($MethodID$, args);
             return;
         }
     }
+
 }
 }

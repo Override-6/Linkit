@@ -39,6 +39,8 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
 
     private var puppetWrapper: S with PuppetWrapper[S] = _
 
+    override def isCurrentEngineOwner: Boolean = ownerID == channel.traffic.supportIdentifier
+
     override def getPuppet: S = puppet
 
     override def getPuppetWrapper: S with PuppetWrapper[S] = puppetWrapper
@@ -48,7 +50,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
             throw new NoSuchMethodException(s"Remote method not found for id '$methodId'")
         }
 
-        AppLogger.debug(s"Remotely invoking method $methodId(${args.mkString(",")})")
+        AppLogger.debug(s"Remotely invoking method ${desc.method.getName}(${args.mkString(",")})")
         val treeViewPath = puppeteerDescription.treeViewPath
         val result       = channel.makeRequest(chooseScope(desc.invocationKind))
                 .addPacket(InvocationPacket(treeViewPath, methodId, synchronizedArgs(desc, args)))

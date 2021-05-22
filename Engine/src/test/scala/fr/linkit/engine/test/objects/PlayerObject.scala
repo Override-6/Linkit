@@ -17,16 +17,16 @@ import fr.linkit.api.connection.cache.repo.annotations.MethodControl
 
 import scala.annotation.meta._
 
-case class PlayerObject(@MethodControl(ONLY_LOCAL) @getter id: Int,
-                        @MethodControl(ONLY_LOCAL) @getter owner: String,
-                        @MethodControl(ONLY_LOCAL) @getter var name: String,
-                        @MethodControl(ONLY_LOCAL) @getter var x: Long,
-                        @MethodControl(ONLY_LOCAL) @getter var y: Long) extends Serializable {
+case class PlayerObject(@(MethodControl @getter)(ONLY_LOCAL) id: Int,
+                        @(MethodControl @getter)(ONLY_LOCAL) owner: String,
+                        @(MethodControl @getter)(ONLY_LOCAL) var name: String,
+                        @(MethodControl @getter)(ONLY_LOCAL) var x: Long,
+                        @(MethodControl @getter)(ONLY_LOCAL) var y: Long) extends Serializable {
 
     def this(other: PlayerObject) = {
         this(other.id, other.owner, other.name, other.x, other.y)
     }
 
-    @MethodControl()
+    @MethodControl(ONLY_LOCAL)
     override def toString: String = s"PlayerObject($id, $owner, $name, $x, $y)"
 }

@@ -21,7 +21,7 @@ import scala.collection.mutable.ArrayBuffer
 
 object EngineConstants {
 
-    val Version: Version    = system.Version(name = "AC", code = "1.0.0", stable = false)
+    val Version: Version    = system.Version(name = "Engine", code = "1.0.0", stable = false)
     val ImplVersionProperty = "LinkitImplementationVersion"
 
     val Gson: Gson = new GsonBuilder()

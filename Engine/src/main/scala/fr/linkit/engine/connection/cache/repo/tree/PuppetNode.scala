@@ -27,7 +27,7 @@ import scala.reflect.ClassTag
 class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                     override val chip: Chip[A], //Reflective invocation
                     val descriptions: PuppetDescriptions,
-                    val isIntended: Boolean,
+                    val isOwner: Boolean,
                     id: Int,
                     @Nullable override val parent: SyncNode[_]) extends MemberSyncNode[A] {
 
@@ -73,7 +73,7 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                 .forceLocalInvocation {
                     chip.callMethod(methodID, packet.params)
                 }
-        if (isIntended) {
+        if (isOwner) {
             val canSyncReturnType = puppeteer.puppetDescription.isReturnValueSynchronized(methodID)
             if (result != null && canSyncReturnType) {
                 implicit val resultCT: ClassTag[_] = ClassTag(result.getClass)
@@ -90,7 +90,7 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                                     parent =>
                                         val chip      = ObjectChip[Any](ownerID, description, wrapper.asInstanceOf[PuppetWrapper[Any]])
                                         val puppeteer = wrapper.getPuppeteer.asInstanceOf[Puppeteer[Any]]
-                                        parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, isIntended, id, _))
+                                        parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, isOwner, id, _))
                                 }
 
                 }

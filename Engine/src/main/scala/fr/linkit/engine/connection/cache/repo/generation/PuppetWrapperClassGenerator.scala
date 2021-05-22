@@ -36,11 +36,11 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
             throw new InvalidPuppetDefException("Provided class is an interface.")
         val loader           = clazz.getClassLoader
         resources
-                .getWrapperClass[S](clazz, loader)
+                .findWrapperClass[S](clazz, loader)
                 .getOrElse {
                     resources.addToQueue(clazz, genPuppetClassSourceCode(desc))
                     resources.compileQueue(loader)
-                    resources.getWrapperClass[S](clazz, loader).get
+                    resources.findWrapperClass[S](clazz, loader).get
                 }
     }
 
@@ -50,7 +50,7 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
 
     override def preGenerateDescs[S](defaultLoader: ClassLoader, descriptions: Seq[PuppetDescription[S]]): Unit = {
         descriptions
-                .filter(desc => resources.getWrapperClass(desc.clazz, desc.clazz.getClassLoader).isEmpty)
+                .filter(desc => resources.findWrapperClass(desc.clazz, desc.clazz.getClassLoader).isEmpty)
                 .foreach(desc => {
                     val source = genPuppetClassSourceCode(desc)
                     resources.addToQueue(desc.clazz, source)
@@ -59,11 +59,11 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
     }
 
     override def isWrapperClassGenerated[S](clazz: Class[S]): Boolean = {
-        resources.getWrapperClass[S](clazz, clazz.getClassLoader).isDefined
+        resources.findWrapperClass[S](clazz, clazz.getClassLoader).isDefined
     }
 
     override def isClassGenerated[S <: PuppetWrapper[S]](clazz: Class[S]): Boolean = {
-        resources.getWrapperClass[S](clazz, clazz.getClassLoader).isDefined
+        resources.findWrapperClass[S](clazz, clazz.getClassLoader).isDefined
     }
 
     private def genPuppetClassSourceCode[S](description: PuppetDescription[S]): String = {

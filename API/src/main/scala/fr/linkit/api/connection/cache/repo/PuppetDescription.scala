@@ -168,6 +168,11 @@ object PuppetDescription {
 
         val clazz: Class[_] = method.getDeclaringClass
 
+        val methodId: Int = {
+            val parameters: Array[Class[_]] = method.getParameterTypes
+            method.getName.hashCode + hashCode(parameters)
+        }
+
         def getReplacedReturnValue: String = {
             invokeOnly.map(_.value())
                     .getOrElse {
@@ -183,17 +188,12 @@ object PuppetDescription {
                     }
         }
 
-        val methodId: Int = {
-            val parameters: Array[Class[_]] = method.getParameterTypes
-            method.getName.hashCode + hashCode(parameters)
-        }
-
         private def hashCode(a: Array[Class[_]]): Int = {
             if (a == null) return 0
             var result = 1
-            for (element <- a) {
-                result = 31 * result + (if (element == null) 0
-                else element.hashCode)
+            for (clazz <- a) {
+                result = 31 * result + (if (clazz == null) 0
+                else clazz.getName.hashCode)
             }
             result
         }

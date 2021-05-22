@@ -16,7 +16,7 @@ import fr.linkit.server.config.ServerConnectionConfiguration
 
 class JavaServerAppSchematic extends ServerAppSchematic {
 
-    override val name: String = "raw-schematic"
+    override val name: String = "default-schematic"
 
     def addConfig(serverConfig: ServerConnectionConfiguration): this.type = {
         serverConfigs += serverConfig

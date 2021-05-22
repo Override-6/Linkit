@@ -12,7 +12,6 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.repo.annotations.{InvokeOnly, MethodControl}
 import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
 import fr.linkit.api.connection.cache.repo.{PuppetDescription, Puppeteer}
 import fr.linkit.api.local.resource.external.ResourceFolder
@@ -25,12 +24,10 @@ import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGene
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.test.objects.{PlayerObject, TestAnnotation}
+import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
-
-import scala.annotation.meta.getter
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(classOf[OrderAnnotation])
@@ -41,16 +38,6 @@ class ResourcesAndClassGenerationTests {
     @BeforeAll
     def init(): Unit = {
         LinkitApplication.mapEnvironment(LocalFileSystemAdapters.Nio, Seq(getClass))
-    }
-
-    @Test
-    @Order(0)
-    def annotationTests(): Unit = {
-        class MyTestClass(@TestAnnotation()@getter val a: Int, @TestAnnotation()@getter val b: Int)
-        val methods = classOf[MyTestClass].getDeclaredMethods
-        println(s"methods = ${methods}")
-        val what = classOf[MyTestClass].getDeclaredMethod("a").getDeclaredAnnotations
-        println(s"classOf[MyTestClass].getDeclaredMethod(a).getDeclaredAnnotations = ${what}")
     }
 
     @Test
@@ -74,7 +61,7 @@ class ResourcesAndClassGenerationTests {
         val generator   = new PuppetWrapperClassGenerator(resource)
         val puppetClass = generator.getClass(classOf[PlayerObject])
         println(s"puppetClass = ${puppetClass}")
-        val player = PlayerObject(7, "", "slt", 1, 5)
+        val player = PlayerObject(7, "sheeeesh", "slt", 1, 5)
         val pup    = new SimplePuppeteer[PlayerObject](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription(classOf[PlayerObject]))
         val puppet = puppetClass.getDeclaredConstructor(classOf[Puppeteer[_]], classOf[PlayerObject]).newInstance(pup, player)
         println(s"puppet = ${puppet}")

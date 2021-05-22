@@ -16,7 +16,7 @@ import fr.linkit.server.config.ServerConnectionConfiguration
 
 abstract class ScalaServerAppSchematic extends ServerAppSchematic {
 
-    override val name: String = "raw-schematic"
+    override val name: String = "default-schematic"
 
     protected object servers {
 

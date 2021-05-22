@@ -43,7 +43,7 @@ case class ObjectChip[S] private(owner: String,
 
     override def callMethod(methodID: Int, params: Seq[Any]): Any = {
         val methodDesc = description.getMethodDesc(methodID)
-        if (methodDesc.exists(_.isHidden)) {
+        if (methodDesc.forall(_.isHidden)) {
             throw new PuppetException(s"Attempted to invoke ${methodDesc.fold("unknown")(_ => "hidden")} method '${
                 methodDesc.map(_.method.getName).getOrElse(s"(unknown method id '$methodID')")
             }(${params.mkString(", ")}) in class ${methodDesc.get.clazz}'")

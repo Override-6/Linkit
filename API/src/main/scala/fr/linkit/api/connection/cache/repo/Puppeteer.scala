@@ -24,6 +24,8 @@ trait Puppeteer[S] {
 
     val puppetDescription: PuppetDescription[S]
 
+    def isCurrentEngineOwner: Boolean
+
     def getPuppet: S
 
     def getPuppetWrapper: S with PuppetWrapper[S]

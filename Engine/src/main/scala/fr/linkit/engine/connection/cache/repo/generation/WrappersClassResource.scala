@@ -49,7 +49,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
         WrapperPackage + wrappedClass.getPackageName + '.' + WrapperPrefixName + wrappedClass.getSimpleName
     }
 
-    def getWrapperClass[S](puppetClass: Class[_], parent: ClassLoader): Option[Class[S with PuppetWrapper[S]]] = {
+    def findWrapperClass[S](puppetClass: Class[_], parent: ClassLoader): Option[Class[S with PuppetWrapper[S]]] = {
         val puppetClassName = puppetClass.getName
         val wrapperClassName = toWrapperClassName(puppetClassName)
         generatedClasses.getOrElseUpdate(wrapperClassName, {

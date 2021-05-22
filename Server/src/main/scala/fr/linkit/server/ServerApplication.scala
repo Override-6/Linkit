@@ -155,7 +155,6 @@ object ServerApplication {
         val appResources = LinkitApplication.prepareApplication(Version, config, otherSources)
 
         val serverAppContext = try {
-            AppLogger.info("Instantiating Server application...")
             new ServerApplication(config, appResources)
         } catch {
             case NonFatal(e) =>
