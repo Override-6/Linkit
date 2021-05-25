@@ -32,16 +32,12 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
                          override val puppeteerDescription: PuppeteerDescription,
                          val puppetDescription: PuppetDescription[S]) extends Puppeteer[S] {
 
-    override val ownerID: String = puppeteerDescription.owner
-    private  val bcScope         = prepareScope(ChannelScopes.discardCurrent)
-    private  val ownerScope      = prepareScope(ChannelScopes.retains(ownerID))
-    private var puppet  : S      = _
-
+    override val ownerID     : String                  = puppeteerDescription.owner
+    private  val bcScope                               = prepareScope(ChannelScopes.discardCurrent)
+    private  val ownerScope                            = prepareScope(ChannelScopes.retains(ownerID))
     private var puppetWrapper: S with PuppetWrapper[S] = _
 
     override def isCurrentEngineOwner: Boolean = ownerID == channel.traffic.supportIdentifier
-
-    override def getPuppet: S = puppet
 
     override def getPuppetWrapper: S with PuppetWrapper[S] = puppetWrapper
 
@@ -100,12 +96,11 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
                 })
     }
 
-    override def init(wrapper: S with PuppetWrapper[S], puppet: S): Unit = {
-        if (this.puppet != null || this.puppetWrapper != null) {
+    override def init(wrapper: S with PuppetWrapper[S]): Unit = {
+        if (this.puppetWrapper != null) {
             throw new IllegalStateException("This Puppeteer already controls a puppet instance !")
         }
         this.puppetWrapper = wrapper
-        this.puppet = puppet
     }
 
     private def chooseScope(kind: InvocationKind): ChannelScope = {

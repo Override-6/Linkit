@@ -18,7 +18,7 @@ import java.io.Serializable;
 
 public interface PuppetWrapper<T> extends Serializable {
 
-    void initPuppeteer(Puppeteer<T> puppeteer, T clone);
+    void initPuppeteer(Puppeteer<T> puppeteer);
 
     PuppeteerDescription getPuppeteerDescription();
 
@@ -30,6 +30,6 @@ public interface PuppetWrapper<T> extends Serializable {
 
     T getValue();
 
-    T detachedClone();
+    T detachedSnapshot();
 
 }

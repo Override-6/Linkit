@@ -33,7 +33,7 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
 
     public Puppet$WrappedClassSimpleName$(Puppeteer<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) {
         super(clone);
-        initPuppeteer(bundle, clone);
+        initPuppeteer(bundle);
     }
 
     //Fun fact: Override annotations are conventional.
@@ -41,13 +41,13 @@ public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ imp
     //Override annotations are removed at compilation.
 
     @Override
-    public void initPuppeteer(Puppeteer<$WrappedClassSimpleName$> puppeteer, $WrappedClassSimpleName$ clone) throws PuppetAlreadyInitialisedException {
+    public void initPuppeteer(Puppeteer<$WrappedClassSimpleName$> puppeteer) throws PuppetAlreadyInitialisedException {
         if (this.puppeteer != null)
             throw new PuppetAlreadyInitialisedException("This puppet is already initialized !");
         this.puppeteer = puppeteer;
         this.puppeteerDescription = this.puppeteer.puppeteerDescription();
         this.description = puppeteer.puppetDescription();
-        this.puppeteer.init(this, clone);
+        this.puppeteer.init(this);
         this.choreographer = new InvocationChoreographer();
     }
 

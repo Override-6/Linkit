@@ -46,15 +46,15 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
 
     override def getPuppetDescription[B <: A : ClassTag]: PuppetDescription[B] = descriptions.getDescription[B]
 
-    override def postObject[B <: A : ClassTag](id: Int, puppet: B): B with PuppetWrapper[B] = {
-        ensureNotWrapped(puppet)
+    override def postObject[B <: A : ClassTag](id: Int, snapshot: B): B with PuppetWrapper[B] = {
+        ensureNotWrapped(snapshot)
         if (isRegistered(id))
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
 
         val path    = Array(id)
-        val wrapper = localRegisterRemotePuppet[B](Array(id), supportIdentifier, puppet)
+        val wrapper = localRegisterRemotePuppet[B](Array(id), supportIdentifier, snapshot)
         channel.makeRequest(ChannelScopes.discardCurrent)
-                .addPacket(ObjectPacket(PuppetProfile(path, puppet, supportIdentifier)))
+                .addPacket(ObjectPacket(PuppetProfile(path, snapshot, supportIdentifier)))
                 .putAllAttributes(this)
                 .submit()
 
@@ -74,7 +74,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
             return
         val puppeteerDesc = wrapper.getPuppeteerDescription
         val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, getPuppetDescription[B])
-        wrapper.initPuppeteer(puppeteer, wrapper)
+        wrapper.initPuppeteer(puppeteer)
     }
 
     private def isRegistered(path: Array[Int]): Boolean = {

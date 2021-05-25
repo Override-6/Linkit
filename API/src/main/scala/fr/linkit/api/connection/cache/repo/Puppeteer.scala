@@ -26,15 +26,13 @@ trait Puppeteer[S] {
 
     def isCurrentEngineOwner: Boolean
 
-    def getPuppet: S
-
     def getPuppetWrapper: S with PuppetWrapper[S]
 
     def sendInvokeAndWaitResult[R](methodId: Int, args: Array[Any]): R
 
     def sendPuppetUpdate(newVersion: S): Unit
 
-    def init(wrapper: S with PuppetWrapper[S], puppet: S): Unit
+    def init(wrapper: S with PuppetWrapper[S]): Unit
 
     def sendInvoke(methodId: Int, args: Array[Any]): Unit
 
