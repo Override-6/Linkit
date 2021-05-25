@@ -1,3 +1,8 @@
+import java.sql.Timestamp
+import java.text.DateFormat
+import java.time.Instant
+import java.time.format.DateTimeFormatter
+
 /*
  *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
@@ -18,7 +23,7 @@ plugins {
 apply plugin: 'scala'
 
 group 'fr.linkit'
-version '1.0-SNAPSHOT'
+version '1.0Alpha ' + nowFormat()
 
 repositories {
     mavenCentral()
@@ -36,4 +41,8 @@ dependencies {
 
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = ["-feature", "-language:implicitConversions", "-language:postfixOps", "-language:existentials"]
+}
+
+static String nowFormat() {
+    new Date().format("yyyyMMdd HH-mm-ss")
 }

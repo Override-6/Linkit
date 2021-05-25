@@ -29,7 +29,7 @@ public @interface MethodControl {
 
     /**
      * Specifies what kind of invocation the implementation of the annotated method must do.
-     * @see [[fr.linkit.api.connection.cache.repo.annotations.InvocationKind]]
+     * @see fr.linkit.api.connection.cache.repo.annotations.InvocationKind
      * */
     InvocationKind value() default InvocationKind.LOCAL_AND_REMOTES;
 
@@ -48,7 +48,7 @@ public @interface MethodControl {
      * Informs what arguments of the annotated method have a chance to be mutated.
      * <p>
      * the following values are possible:
-     * <table>
+     * <table summary="">
      *   <tr><td>"this"</td><td>Method mutates the receiver object, and doesn't mutates any objects passed as arguments (cannot be applied for static method or constructor)</td></tr>
      *   <tr><td>"arg1", "arg2", ...</td><td>Method mutates the N-th argument</td></tr>
      *   <tr><td>"this,arg1"</td><td>Method mutates the receiver and first argument and doesn't mutate any other arguments</td></tr>

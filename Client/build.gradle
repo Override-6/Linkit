@@ -16,7 +16,7 @@ plugins {
 }
 
 group 'fr.linkit'
-version ''
+version '1.0Alpha ' + new Date().format("yyyyMMdd HH-mm-ss")
 
 repositories {
     mavenCentral()

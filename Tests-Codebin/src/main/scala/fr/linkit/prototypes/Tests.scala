@@ -43,9 +43,6 @@ object Tests {
 
         ClassMappings.getClassOpt(classOf[Timestamp].getName.hashCode()).get
 
-        PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileSystemAdapter])
-        PuppetWrapperClassGenerator.getOrGenerate(classOf[NIOFileAdapter])
-
         val serializer = new DefaultSerializer
         val ref   = Array(coords, attributes, packet)
         val bytes = serializer.serialize(ref, true)
