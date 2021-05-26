@@ -12,9 +12,10 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
 import fr.linkit.api.connection.cache.repo.Puppeteer
-import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription
+import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
+import fr.linkit.api.local.resource.external.{ResourceFile, ResourceFolder}
 import fr.linkit.api.local.system.Version
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
@@ -38,6 +39,25 @@ class ResourcesAndClassGenerationTests {
     @BeforeAll
     def init(): Unit = {
         LinkitApplication.mapEnvironment(LocalFileSystemAdapters.Nio, Seq(getClass))
+    }
+
+    @Test
+    @Order(0)
+    def genericParameterTests(): Unit = {
+        class TestClass {
+
+            def genericMethod[EFFE <: ResourceFolder with ResourceFile ](t: EFFE): EFFE = t
+
+            def genericMethod2[EFFE <: ResourceFolder with ResourceFile, T <: EFFE, U, V[T]](t: EFFE): EFFE = t
+        }
+        val clazz = classOf[TestClass]
+        println(s"clazz = ${clazz}")
+        val methods = clazz.getDeclaredMethods
+        methods.foreach { method =>
+            val args = method.getGenericParameterTypes
+            println(s"args = ${args.mkString("Array(", ", ", ")")}")
+        }
+        println("qsd")
     }
 
     @Test

@@ -24,23 +24,22 @@ class PuppetDescriptionBuilder[T](desc: PuppetDescription[T]) {
         this(PuppetDescription(clazz))
     }
 
-    @inline final def annotate0(name: String, params: Class[_]*): MethodModification = {
+    final def annotate(name: String, params: Class[_]*): MethodModification = {
         val methodID = name.hashCode + util.Arrays.hashCode(params.toArray[AnyRef])
         val method   = desc.getMethodDesc(methodID).getOrElse(throw new NoSuchElementException(s"Method description '$name' not found."))
         new MethodModification(method)
     }
 
-    @inline final def annotate(name: String): MethodModification = {
-        annotate0(name)
+    @inline final def annotateAll(name: String): MethodModification = {
+        new MethodModification(
+            desc.listMethods()
+                    .filter(_.method.getName == name): _*
+        )
     }
 
-    new PuppetDescriptionBuilder(classOf[MethodModification]) {
-        annotate("test") by MethodControl(InvocationKind.ONLY_LOCAL)
-    }
+    class MethodModification private[PuppetDescriptionBuilder](descs: MethodDescription*) {
 
-    class MethodModification private[PuppetDescriptionBuilder](desc: MethodDescription) {
-
-        def by(control: MethodControl): Unit = {
+        def by(control: MethodControl): Unit = descs.foreach { desc =>
             desc.invocationKind = control.value
             desc.synchronizedParams = PuppetDescription.toSyncParamsIndexes(control.mutates, desc.method)
             desc.isPure = control.pure

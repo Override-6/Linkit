@@ -38,7 +38,7 @@ object ServerLauncher {
 
         val config           = new ServerApplicationConfigBuilder {
             override val resourceFolder: String = resourcesFolder
-            pluginsFolder = None //userDefinedPluginFolder
+            pluginFolder = None //userDefinedPluginFolder
             mainPoolThreadCount = 2
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {

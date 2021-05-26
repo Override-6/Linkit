@@ -19,7 +19,7 @@ import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWra
 import fr.linkit.engine.connection.cache.repo.generation.PuppetWrapperClassGenerator.{BPPath, ClassValueScope}
 import fr.linkit.engine.local.generation.{AbstractValueScope, SimpleJavaClassBlueprint}
 
-import java.lang.reflect.Modifier
+import java.lang.reflect.{Method, Modifier}
 
 class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends PuppetWrapperGenerator {
 
@@ -34,7 +34,7 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is an interface.")
-        val loader           = clazz.getClassLoader
+        val loader = clazz.getClassLoader
         resources
                 .findWrapperClass[S](clazz, loader)
                 .getOrElse {
@@ -98,12 +98,23 @@ object PuppetWrapperClassGenerator {
             extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
         registerValue("ReturnType" ~> (_.method.getGenericReturnType.getTypeName.replaceAll("\\$", ".")))
+
+        registerValue("GenericTypes" ~> getGenParams)
         registerValue("MethodName" ~> (_.method.getName))
         registerValue("MethodExceptions" ~> getMethodThrows)
         registerValue("MethodID" ~> (_.methodId.toString))
         registerValue("InvokeOnlyResult" ~> (_.getReplacedReturnValue))
         registerValue("ParamsIn" ~> getParametersIn)
         registerValue("ParamsOut" ~> getParametersOut)
+
+        private def getGenParams(desc: MethodDescription): String = {
+            val signatureField = classOf[Method].getField("signature")
+            signatureField.setAccessible(true)
+            val signature = signatureField.get(desc.method)
+            if (signature == null)
+                return ""
+            ""
+        }
 
         private def getMethodThrows(methodDesc: MethodDescription): String = {
             val exceptions = methodDesc.method.getGenericExceptionTypes

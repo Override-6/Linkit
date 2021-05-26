@@ -12,9 +12,9 @@
 
 package fr.linkit.api.connection.cache.repo.description
 
+import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvocationKind, InvokeOnly, MethodControl}
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription, toSyncParamsIndexes}
-import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method}
@@ -187,7 +187,6 @@ object PuppetDescription {
                             case lang.Float.TYPE | lang.Double.TYPE                                    => "-1.0"
                             case lang.Integer.TYPE | lang.Byte.TYPE | lang.Long.TYPE | lang.Short.TYPE => "-1"
                             case lang.Character.TYPE                                                   => "'\\u0000'"
-                            case lang.Void.TYPE                                                        => throw new InvalidPuppetDefException("Illegal return value specification for void method")
                             case _                                                                     => "null"
                         }
                     }
