@@ -21,21 +21,20 @@ import fr.linkit.server.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
 import java.io.File
+import java.nio.file.{Files, Path}
 import java.util.Scanner
-import java.util.concurrent.locks.LockSupport
 
 object ServerLauncher {
 
-
     private val DefaultServerID = "TestServer1"
-    val HomeProperty   : String            = "LinkitHome"
-    val DefaultHomePath: String            = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
+    val HomeProperty   : String = "LinkitHome"
+    val DefaultHomePath: String = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
 
     def main(args: Array[String]): Unit = {
         AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
 
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
-        val resourcesFolder = getOrElse(args, "--home-path", getDefaultLinkitHome)
+        val resourcesFolder         = getOrElse(args, "--home-path", getDefaultLinkitHome)
 
         val config           = new ServerApplicationConfigBuilder {
             override val resourceFolder: String = resourcesFolder
@@ -90,7 +89,7 @@ object ServerLauncher {
     }
 
     private def setEnvHome(linkitHomePath: String): Unit = {
-        new File(linkitHomePath).createNewFile() //ensure that the folder exists.
+        Files.createDirectories(Path.of(linkitHomePath)) //ensure that the folder exists.
 
         val osName     = System.getProperty("os.name").takeWhile(_ != ' ').trim.toLowerCase
         val setCommand = osName match {

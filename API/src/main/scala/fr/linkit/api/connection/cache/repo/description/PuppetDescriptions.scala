@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo
+package fr.linkit.api.connection.cache.repo.description
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}

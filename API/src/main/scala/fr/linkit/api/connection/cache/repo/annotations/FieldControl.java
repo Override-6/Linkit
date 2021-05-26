@@ -12,6 +12,7 @@
 
 package fr.linkit.api.connection.cache.repo.annotations;
 
+@Deprecated
 public @interface FieldControl {
 
     boolean hide() default false;

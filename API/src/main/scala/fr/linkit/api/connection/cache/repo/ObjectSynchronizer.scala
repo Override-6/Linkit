@@ -12,6 +12,8 @@
 
 package fr.linkit.api.connection.cache.repo
 
+import fr.linkit.api.connection.cache.repo.description.PuppetDescriptions
+
 import scala.reflect.ClassTag
 
 trait ObjectSynchronizer {

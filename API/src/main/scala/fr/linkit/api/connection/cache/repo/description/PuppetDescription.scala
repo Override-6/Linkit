@@ -10,10 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo
+package fr.linkit.api.connection.cache.repo.description
 
-import fr.linkit.api.connection.cache.repo.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription}
 import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvocationKind, InvokeOnly, MethodControl}
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription, toSyncParamsIndexes}
+import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
 
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method}
@@ -104,24 +105,14 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
     }
 
     private def genMethodDescription(method: Method): MethodDescription = {
-        val control                          = Option(method.getDeclaredAnnotation(classOf[MethodControl])).getOrElse(DefaultMethodControl)
-        val synchronizedParamNumbers         = control
-                .mutates()
-                .split(",")
-                .filterNot(s => s == "this" || s.isBlank)
-                .map(s => s.trim
-                        .dropRight(s.lastIndexWhere(!_.isDigit))
-                        .toInt)
-                .distinct
-        val synchronizedParams: Seq[Boolean] = for (n <- 1 to method.getParameterCount) yield {
-            synchronizedParamNumbers.contains(n)
-        }
-        val invocationKind                   = control.value()
-        val invokeOnly                       = method.getAnnotation(classOf[InvokeOnly])
-        val isPure                           = control.pure() && control.mutates().nonEmpty
-        val isHidden                         = control.hide()
-        val syncReturnValue                  = control.synchronizeReturnValue()
-        val desc                             = MethodDescription(method, Option(invokeOnly), synchronizedParams, invocationKind, syncReturnValue, isPure, isHidden)
+        val control            = Option(method.getDeclaredAnnotation(classOf[MethodControl])).getOrElse(DefaultMethodControl)
+        val synchronizedParams = toSyncParamsIndexes(control.mutates(), method)
+        val invocationKind     = control.value()
+        val invokeOnly         = method.getAnnotation(classOf[InvokeOnly])
+        val isPure             = control.pure() && control.mutates().nonEmpty
+        val isHidden           = control.hide()
+        val syncReturnValue    = control.synchronizeReturnValue()
+        val desc               = MethodDescription(method, Option(invokeOnly), synchronizedParams, invocationKind, syncReturnValue, isPure, isHidden)
         desc
     }
 
@@ -152,6 +143,19 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
 
 object PuppetDescription {
 
+    def toSyncParamsIndexes(literal: String, method: Method): Seq[Boolean] = {
+        val synchronizedParamNumbers = literal
+                .split(",")
+                .filterNot(s => s == "this" || s.isBlank)
+                .map(s => s.trim
+                        .dropRight(s.lastIndexWhere(!_.isDigit))
+                        .toInt)
+                .distinct
+        for (n <- 1 to method.getParameterCount) yield {
+            synchronizedParamNumbers.contains(n)
+        }
+    }
+
     def apply[T](clazz: Class[_ <: T]): PuppetDescription[T] = {
         if (classOf[PuppetWrapper[T]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class can't extend PuppetWrapper")
@@ -160,7 +164,7 @@ object PuppetDescription {
 
     case class MethodDescription(method: Method,
                                  invokeOnly: Option[InvokeOnly],
-                                 synchronizedParams: Seq[Boolean],
+                                 var synchronizedParams: Seq[Boolean], //TODO make synchronization
                                  var invocationKind: InvocationKind,
                                  var syncReturnValue: Boolean,
                                  var isPure: Boolean,
@@ -183,6 +187,7 @@ object PuppetDescription {
                             case lang.Float.TYPE | lang.Double.TYPE                                    => "-1.0"
                             case lang.Integer.TYPE | lang.Byte.TYPE | lang.Long.TYPE | lang.Short.TYPE => "-1"
                             case lang.Character.TYPE                                                   => "'\\u0000'"
+                            case lang.Void.TYPE                                                        => throw new InvalidPuppetDefException("Illegal return value specification for void method")
                             case _                                                                     => "null"
                         }
                     }
@@ -199,6 +204,7 @@ object PuppetDescription {
         }
     }
 
+    //TODO make synchronization
     case class FieldDescription(field: Field,
                                 isSynchronized: Boolean,
                                 isHidden: Boolean) {

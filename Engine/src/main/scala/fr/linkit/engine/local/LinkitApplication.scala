@@ -31,6 +31,7 @@ import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
 import fr.linkit.engine.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
 
+import java.util.Objects
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
@@ -154,7 +155,7 @@ object LinkitApplication {
         val resourceListener = new SimpleResourceListener()
         resourceListener.startWatchService()
         val fsa         = configuration.fsAdapter
-        val rootAdapter = fsa.getAdapter(configuration.resourceFolder)
+        val rootAdapter = fsa.getAdapter(Objects.requireNonNull(configuration.resourceFolder, "provided null resource folder"))
 
         val root = LocalResourceFolder(
             adapter = rootAdapter,

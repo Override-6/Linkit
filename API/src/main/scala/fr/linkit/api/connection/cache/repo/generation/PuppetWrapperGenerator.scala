@@ -1,6 +1,7 @@
 package fr.linkit.api.connection.cache.repo.generation
 
-import fr.linkit.api.connection.cache.repo.{PuppetDescription, PuppetWrapper}
+import fr.linkit.api.connection.cache.repo.PuppetWrapper
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 
 import scala.reflect.{ClassTag, classTag}
 

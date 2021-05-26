@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.repo.generation
 
-import fr.linkit.api.connection.cache.repo.PuppetWrapper
+import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}

@@ -13,6 +13,7 @@
 package fr.linkit.engine.connection.cache.repo
 
 import fr.linkit.api.connection.cache.repo._
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket

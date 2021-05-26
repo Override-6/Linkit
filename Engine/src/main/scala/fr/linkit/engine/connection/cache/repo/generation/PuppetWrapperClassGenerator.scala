@@ -12,11 +12,11 @@
 
 package fr.linkit.engine.connection.cache.repo.generation
 
-import fr.linkit.api.connection.cache.repo.PuppetDescription.MethodDescription
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
-import fr.linkit.api.connection.cache.repo.{PuppetDescription, PuppetWrapper}
+import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
 import fr.linkit.engine.connection.cache.repo.generation.PuppetWrapperClassGenerator.{BPPath, ClassValueScope}
-import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{WrapperPackageName, WrapperPrefixName}
 import fr.linkit.engine.local.generation.{AbstractValueScope, SimpleJavaClassBlueprint}
 
 import java.lang.reflect.Modifier

@@ -12,6 +12,7 @@
 
 package fr.linkit.api.connection.cache.repo
 
+import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppetDescriptions}
 import fr.linkit.api.connection.cache.repo.tree.PuppetCenter
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 

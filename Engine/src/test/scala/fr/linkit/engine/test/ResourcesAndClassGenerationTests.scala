@@ -13,7 +13,7 @@
 package fr.linkit.engine.test
 
 import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
-import fr.linkit.api.connection.cache.repo.{PuppetDescription, Puppeteer}
+import fr.linkit.api.connection.cache.repo.Puppeteer
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.Version
 import fr.linkit.api.local.system.config.ApplicationConfiguration

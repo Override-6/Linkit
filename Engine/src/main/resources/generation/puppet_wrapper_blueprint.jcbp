@@ -14,14 +14,11 @@ package gen.$WrappedClassPackage$;
 
 import $WrappedClassName$;
 import fr.linkit.api.connection.cache.repo.InvocationChoreographer;
-import fr.linkit.api.connection.cache.repo.PuppetDescription;
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription;
 import fr.linkit.api.connection.cache.repo.PuppetWrapper;
 import fr.linkit.api.connection.cache.repo.Puppeteer;
 import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription;
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException;
-
-import java.util.function.Function;
-import java.util.function.Supplier;
 
 public class Puppet$WrappedClassSimpleName$ extends $WrappedClassSimpleName$ implements PuppetWrapper<$WrappedClassSimpleName$> {
 

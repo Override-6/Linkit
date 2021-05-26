@@ -12,8 +12,9 @@
 
 package fr.linkit.engine.connection.cache.repo.tree
 
+import fr.linkit.api.connection.cache.repo.description.PuppetDescriptions
 import fr.linkit.api.connection.cache.repo.tree.SyncNode
-import fr.linkit.api.connection.cache.repo.{Chip, PuppetDescriptions, PuppetWrapper, Puppeteer}
+import fr.linkit.api.connection.cache.repo.{Chip, PuppetWrapper, Puppeteer}
 import fr.linkit.engine.connection.cache.repo.{InvocationPacket, NoSuchPuppetException, ObjectChip}
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket

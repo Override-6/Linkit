@@ -13,6 +13,7 @@
 package fr.linkit.engine.connection.cache.repo
 
 import fr.linkit.api.connection.cache.repo._
+import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppetDescriptions}
 import fr.linkit.api.connection.cache.repo.generation.{PuppetWrapperGenerator, PuppeteerDescription}
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet

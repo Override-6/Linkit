@@ -24,7 +24,7 @@ abstract class ServerApplicationConfigBuilder {
 
     @NotNull val resourceFolder: String
               var mainPoolThreadCount: Int                             = 2
-    @Nullable var pluginsFolder      : Option[String]                  = Some("/Plugins")
+    @Nullable var pluginFolder      : Option[String]                  = Some("/Plugins")
     @NotNull  var fsAdapter          : FileSystemAdapter               = LocalFileSystemAdapters.Nio
     @NotNull  var securityManager    : ApplicationSecurityManager      = ApplicationSecurityManager.none
     @NotNull  var loadSchematic      : AppSchematic[ServerApplication] = EmptySchematic[ServerApplication]
@@ -33,7 +33,7 @@ abstract class ServerApplicationConfigBuilder {
     def buildConfig(): ServerApplicationConfiguration = {
         val builder = this
         new ServerApplicationConfiguration {
-            override val pluginFolder       : Option[String]                  = builder.pluginsFolder
+            override val pluginFolder       : Option[String]                  = builder.pluginFolder
             override val resourceFolder     : String                          = builder.resourceFolder
             override val fsAdapter          : FileSystemAdapter               = builder.fsAdapter
             override val securityManager    : ApplicationSecurityManager      = builder.securityManager
