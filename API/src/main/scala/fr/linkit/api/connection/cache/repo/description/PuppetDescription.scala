@@ -17,7 +17,7 @@ import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, Invocation
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription, toSyncParamsIndexes}
 
 import java.lang.annotation.Annotation
-import java.lang.reflect.{Field, Method}
+import java.lang.reflect.{Field, Method, Modifier}
 import scala.collection.mutable.ListBuffer
 
 class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
@@ -65,20 +65,10 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
     }
 
     private def collectMethods(): Seq[MethodDescription] = {
-        def collectMethods[S >: T](clazz: Class[_ <: S]): Array[MethodDescription] = {
-            if (clazz == null)
-                return Array()
-            if (BlacklistedSuperClasses.contains(clazz))
-                return collectMethods(clazz.getSuperclass)
-            val declaredMethods = clazz
-                    .getDeclaredMethods
-                    .filterNot(m => BlacklistedSuperClasses.contains(m.getDeclaringClass))
-                    .map(genMethodDescription)
-            val superMethods    = collectMethods(clazz.getSuperclass)
-            superMethods ++ declaredMethods
-        }
+        val methods = clazz.getMethods
+                .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
+                .map(genMethodDescription)
 
-        val methods         = collectMethods(clazz)
         val filteredMethods = ListBuffer.empty[MethodDescription]
         methods.foreach(desc => {
             filteredMethods.find(_.methodId == desc.methodId)
@@ -93,13 +83,9 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
     }
 
     private def collectFields(): Map[Int, FieldDescription] = {
-        def getFieldsOfClass[S >: T](clazz: Class[_ <: S]): Array[FieldDescription] = {
-            if (clazz == null || BlacklistedSuperClasses.contains(clazz))
-                return Array()
-            getFieldsOfClass(clazz.getSuperclass) ++ clazz.getDeclaredFields.map(genFieldDescription)
-        }
-
-        getFieldsOfClass(clazz)
+        clazz.getFields
+                .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
+                .map(genFieldDescription)
                 .map(desc => (desc.fieldID, desc))
                 .toMap
     }

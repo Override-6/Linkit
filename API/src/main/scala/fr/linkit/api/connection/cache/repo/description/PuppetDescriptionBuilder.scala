@@ -17,6 +17,7 @@ import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodD
 import fr.linkit.api.connection.cache.repo.description.PuppetDescriptionBuilder.MethodControl
 
 import java.util
+import scala.collection.mutable.ListBuffer
 
 class PuppetDescriptionBuilder[T](desc: PuppetDescription[T]) {
 

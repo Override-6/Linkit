@@ -21,10 +21,11 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
-import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.repo.generation.{ByteCodeGenericParameterTranslator, PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.engine.test.ResourcesAndClassGenerationTests.TestClass
 import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
@@ -42,14 +43,16 @@ class ResourcesAndClassGenerationTests {
     }
 
     @Test
-    @Order(0)
+    @Order(-1)
     def genericParameterTests(): Unit = {
-        class TestClass {
+        val expression = "<EFFE:Ljava/lang/Object;GUU:TEFFE;S:TGUU;U:Lscala/collection/immutable/List<TEFFE;>;V:Ljava/lang/Object;>"
+        val result = ByteCodeGenericParameterTranslator.toJavaDeclaration(expression)
+        println(s"result = ${result}")
+    }
 
-            def genericMethod[EFFE <: ResourceFolder with ResourceFile ](t: EFFE): EFFE = t
-
-            def genericMethod2[EFFE <: ResourceFolder with ResourceFile, T <: EFFE, U, V[T]](t: EFFE): EFFE = t
-        }
+    @Test
+    @Order(0)
+    def methodsSignatureTests(): Unit = {
         val clazz = classOf[TestClass]
         println(s"clazz = ${clazz}")
         val methods = clazz.getDeclaredMethods
@@ -87,4 +90,13 @@ class ResourcesAndClassGenerationTests {
         println(s"puppet = ${puppet}")
     }
 
+}
+
+object ResourcesAndClassGenerationTests {
+    class TestClass {
+
+        def genericMethod2[EFFE <: ResourceFolder, S <: ResourceFile](t: EFFE): EFFE = t
+
+        def genericMethod[EFFE >: ResourceFolder, I >: ResourceFolder](t: EFFE): EFFE = t
+    }
 }
