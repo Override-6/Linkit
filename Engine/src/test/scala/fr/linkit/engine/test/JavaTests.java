@@ -12,19 +12,6 @@
 
 package fr.linkit.engine.test;
 
-import fr.linkit.api.local.resource.external.ResourceFile;
-import fr.linkit.api.local.resource.external.ResourceFolder;
-
 public class JavaTests extends ResourcesAndClassGenerationTests.TestClass {
 
-    @Override
-    public <EFFE extends ResourceFolder, S extends ResourceFile> EFFE genericMethod2(EFFE t) {
-        return super.genericMethod2(t);
-    }
-
-
-    @Override
-    public <EFFE, I> EFFE genericMethod(EFFE t) {
-        return super.genericMethod(t);
-    }
 }

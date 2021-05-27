@@ -20,7 +20,7 @@ import fr.linkit.api.connection.cache.repo.Puppeteer;
 import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription;
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException;
 
-public class Puppet$WrappedClassSimpleName$ $TParamsIn$ extends $WrappedClassSimpleName$ $TParamsOut$ implements PuppetWrapper<$WrappedClassSimpleName$> {
+class Puppet$WrappedClassSimpleName$ $TParamsIn$ extends $WrappedClassSimpleName$ $TParamsOut$ implements PuppetWrapper<$WrappedClassSimpleName$> {
 
     public static final long serialVersionUID = $CompileTime$L;
     private transient Puppeteer<$WrappedClassSimpleName$> puppeteer;

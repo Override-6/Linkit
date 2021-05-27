@@ -17,4 +17,8 @@ import java.nio.file.Path
 
 class GeneratedClassClassLoader(classRootFolder: Path, parent: ClassLoader) extends URLClassLoader(Array(classRootFolder.toUri.toURL), parent) {
 
+    override def loadClass(name: String, resolve: Boolean): Class[_] = {
+        super.loadClass(name, resolve)
+    }
+
 }

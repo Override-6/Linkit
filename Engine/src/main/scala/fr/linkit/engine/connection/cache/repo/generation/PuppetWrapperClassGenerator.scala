@@ -19,8 +19,7 @@ import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWra
 import fr.linkit.engine.connection.cache.repo.generation.PuppetWrapperClassGenerator.{BPPath, ClassValueScope}
 import fr.linkit.engine.local.generation.{AbstractValueScope, SimpleJavaClassBlueprint}
 
-import java.lang.reflect.{Method, Modifier, Type}
-import scala.collection.mutable.ListBuffer
+import java.lang.reflect.{Modifier, Type}
 
 class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends PuppetWrapperGenerator {
 
@@ -35,7 +34,9 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is an interface.")
-        val loader = clazz.getClassLoader
+        var loader = clazz.getClassLoader
+        if (loader == null)
+            loader = classOf[PuppetWrapperClassGenerator].getClassLoader //Use the Application classloader
         resources
                 .findWrapperClass[S](clazz, loader)
                 .getOrElse {
@@ -83,24 +84,47 @@ object PuppetWrapperClassGenerator {
         registerValue("CompileTime" ~~> System.currentTimeMillis())
         registerValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
         registerValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
+        registerValue("TParamsIn" ~> getGenericParamsIn)
+        registerValue("TParamsOut" ~> getGenericParamsOut)
 
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
+
                     .distinctBy(_.methodId)
+
                     .filterNot(desc => {
+
                         val mods = desc.method.getModifiers
                         Modifier.isPrivate(mods) || Modifier.isStatic(mods) || Modifier.isFinal(mods)
                     })
                     .foreach(action)
         })
+
+        private def getGenericParamsIn(desc: PuppetDescription[_]): String = {
+            val result = TypeVariableTranslator.toJavaDeclaration(desc.clazz.getTypeParameters)
+            if (result.isEmpty)
+                ""
+            else s"<$result>"
+        }
+
+        private def getGenericParamsOut(desc: PuppetDescription[_]): String = {
+            val result = desc
+                    .clazz
+                    .getTypeParameters
+                    .map(_.getName)
+                    .mkString(", ")
+            if (result.isEmpty)
+                ""
+            else s"<$result>"
+        }
+
     }
 
     case class MethodValueScope(blueprint: String, pos: Int)
             extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
         registerValue("ReturnType" ~> getReturnType)
-
-        registerValue("GenericTypes" ~> getGenParams)
+        registerValue("GenericTypes" ~> getGenericParams)
         registerValue("MethodName" ~> (_.method.getName))
         registerValue("MethodExceptions" ~> getMethodThrows)
         registerValue("MethodID" ~> (_.methodId.toString))
@@ -109,21 +133,22 @@ object PuppetWrapperClassGenerator {
         registerValue("ParamsOut" ~> getParametersOut)
 
         private def getReturnType(desc: MethodDescription): String = {
-            toGenericTypeName(desc.method.getGenericReturnType)
+            desc
+                    .method
+                    .getGenericReturnType
+                    .getTypeName
+                    .replace("$", ".")
+                    .replace(". ", "$ ")
+                    .replace(".>", "$>")
+                    .replace(".,", "$,")
         }
 
-        private def getGenParams(desc: MethodDescription): String = {
-            val signatureField = classOf[Method].getDeclaredMethod("getGenericSignature")
-            signatureField.setAccessible(true)
-            val signature = signatureField.invoke(desc.method).asInstanceOf[String]
-            if (signature == null)
-                return ""
-            val genericTypeBegin = signature.indexOf('<')
-            val methodInputBegin = signature.indexOf('(')
-            if (genericTypeBegin >= 0 && genericTypeBegin < methodInputBegin) {
-                val expression = signature.slice(genericTypeBegin, signature.lastIndexOf('>', methodInputBegin) + 1)
-                ByteCodeGenericParameterTranslator.toJavaDeclaration(expression)
-            } else ""
+        private def getGenericParams(desc: MethodDescription): String = {
+            val tParams = desc.method.getTypeParameters
+            if (tParams.isEmpty)
+                ""
+            else
+                s"<${TypeVariableTranslator.toJavaDeclaration(tParams)}>"
         }
 
         private def getMethodThrows(methodDesc: MethodDescription): String = {
@@ -139,7 +164,7 @@ object PuppetWrapperClassGenerator {
             var count = 0
             val sb    = new StringBuilder
             methodDesc.method.getGenericParameterTypes.foreach(clazz => {
-                val typeName = toGenericTypeName(clazz)
+                val typeName = clazz.getTypeName.replaceAll("\\.,", "$")
                 count += 1
                 sb.append(typeName)
                         .append(' ')
@@ -162,7 +187,7 @@ object PuppetWrapperClassGenerator {
 
         private def toGenericTypeName(typ: Type): String = {
             //The successor name can be the Package for a top level class or a Class File name for an inner class.
-            val name = typ.getTypeName
+            val name             = typ.getTypeName
             val genericTypeBegin = name.indexOf('<')
             if (genericTypeBegin >= 0) {
                 val typeOnly = name.take(genericTypeBegin)

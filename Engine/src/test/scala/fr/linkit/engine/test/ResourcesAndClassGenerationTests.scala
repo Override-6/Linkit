@@ -21,7 +21,7 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
-import fr.linkit.engine.connection.cache.repo.generation.{ByteCodeGenericParameterTranslator, PuppetWrapperClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, TypeVariableTranslator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
@@ -30,6 +30,10 @@ import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
+import org.mockito.Mockito
+
+import java.util
+import scala.collection.mutable.ListBuffer
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(classOf[OrderAnnotation])
@@ -39,15 +43,27 @@ class ResourcesAndClassGenerationTests {
 
     @BeforeAll
     def init(): Unit = {
+        val config = new ApplicationConfiguration {
+            override val pluginFolder   : Option[String]             = None
+            override val resourceFolder : String                     = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            override val fsAdapter      : FileSystemAdapter          = LocalFileSystemAdapters.Nio
+            override val securityManager: ApplicationSecurityManager = null
+        }
+        System.setProperty("LinkitImplementationVersion", Version("Tests", "0.0.0", false).toString)
+
         LinkitApplication.mapEnvironment(LocalFileSystemAdapters.Nio, Seq(getClass))
+        resources = LinkitApplication.prepareAppResources(config)
     }
+
 
     @Test
     @Order(-1)
     def genericParameterTests(): Unit = {
-        val expression = "<EFFE:Ljava/lang/Object;GUU:TEFFE;S:TGUU;U:Lscala/collection/immutable/List<TEFFE;>;V:Ljava/lang/Object;>"
-        val result = ByteCodeGenericParameterTranslator.toJavaDeclaration(expression)
-        println(s"result = ${result}")
+        val testMethod = classOf[TestClass].getMethod("genericMethod2")
+        val javaResult = TypeVariableTranslator.toJavaDeclaration(testMethod.getTypeParameters)
+        val scalaResult = TypeVariableTranslator.toScalaDeclaration(testMethod.getTypeParameters)
+         println(s"Java result = ${javaResult}")
+        println(s"Scala result = ${scalaResult}")
     }
 
     @Test
@@ -64,30 +80,34 @@ class ResourcesAndClassGenerationTests {
     }
 
     @Test
-    @Order(1)
-    def loadResources(): Unit = {
-        val config = new ApplicationConfiguration {
-            override val pluginFolder   : Option[String]             = None
-            override val resourceFolder : String                     = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
-            override val fsAdapter      : FileSystemAdapter          = LocalFileSystemAdapters.Nio
-            override val securityManager: ApplicationSecurityManager = null
-        }
-        System.setProperty("LinkitImplementationVersion", Version("Tests", "0.0.0", false).toString)
-        resources = LinkitApplication.prepareAppResources(config)
+    @Order(2)
+    def generateSimpleClass(): Unit = {
+        forObject(PlayerObject(7, "sheeeesh", "slt", 1, 5))
     }
 
     @Test
-    @Order(2)
-    def generateClass(): Unit = {
+    @Order(3)
+    def generateComplexScalaClass(): Unit = {
+       forObject(ListBuffer.empty[String])
+    }
+
+    @Test
+    @Order(3)
+    def generateComplexJavaClass(): Unit = {
+        forObject(new util.ArrayList[String]())
+    }
+
+    private def forObject(obj: Any): Unit = {
         Assertions.assertNotNull(resources)
+        val cl = obj.getClass.asInstanceOf[Class[obj.type]]
+
         val resource    = resources.getOrOpenShort[WrappersClassResource]("PuppetGeneration")
         val generator   = new PuppetWrapperClassGenerator(resource)
-        val puppetClass = generator.getClass(classOf[PlayerObject])
+        val puppetClass = generator.getClass(cl)
         println(s"puppetClass = ${puppetClass}")
-        val player = PlayerObject(7, "sheeeesh", "slt", 1, 5)
-        val pup    = new SimplePuppeteer[PlayerObject](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription(classOf[PlayerObject]))
-        val puppet = puppetClass.getDeclaredConstructor(classOf[Puppeteer[_]], classOf[PlayerObject]).newInstance(pup, player)
-        println(s"puppet = ${puppet}")
+        val pup    = new SimplePuppeteer[obj.type](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))
+        val puppet = puppetClass.getDeclaredConstructor(classOf[Puppeteer[_]], cl).newInstance(pup, obj)
+        println(s"puppet = ${puppet.detachedSnapshot()}")
     }
 
 }
@@ -95,8 +115,8 @@ class ResourcesAndClassGenerationTests {
 object ResourcesAndClassGenerationTests {
     class TestClass {
 
-        def genericMethod2[EFFE <: ResourceFolder, S <: ResourceFile](t: EFFE): EFFE = t
+        def genericMethod2[EFFE <: ResourceFolder, S <: ResourceFile, V, G, TS >: V, F <: List[(EFFE, S)]]: EFFE = ???
 
-        def genericMethod[EFFE >: ResourceFolder, I >: ResourceFolder](t: EFFE): EFFE = t
+        def genericMethod[EFFE >: ResourceFolder, I >: ResourceFolder]: EFFE = null
     }
 }
