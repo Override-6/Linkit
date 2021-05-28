@@ -10,7 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.repo.generation
+package fr.linkit.engine.local.generation.access.common
+
+import fr.linkit.api.local.generation.CompilerType
+import fr.linkit.engine.local.generation.access.{AbstractCompilerAccess, CommonCompilerTypes}
 
 import java.nio.file.Path
 import javax.tools.ToolProvider
@@ -19,13 +22,15 @@ object JavacCompilerAccess extends AbstractCompilerAccess {
 
     val JavaFileExtension = ".java"
 
-    override def filePredicate(filePath: Path): Boolean = filePath.toString.endsWith(JavaFileExtension)
+    override def getType: CompilerType = CommonCompilerTypes.Javac
+
+    override def canCompileFile(filePath: Path): Boolean = filePath.toString.endsWith(JavaFileExtension)
 
     override def compile(sourceFiles: Array[Path], destination: Path, classPaths: Seq[Path]): Int = {
         val javac                = ToolProvider.getSystemJavaCompiler
         val cpStrings            = classPaths.mkString(";")
         val options: Seq[String] = Seq[String]("-d", destination.toString, "-Xlint:none", "-classpath", cpStrings) ++ sourceFiles.map(_.toString)
-        val code = javac.run(null, null, null, options: _*)
+        val code                 = javac.run(null, null, null, options: _*)
         code
     }
 }

@@ -12,19 +12,19 @@
 
 package fr.linkit.engine.connection.cache.repo.generation
 
-import fr.linkit.api.connection.cache.repo.generation.{CompilerAccess, GeneratedClassClassLoader}
+import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
+import fr.linkit.api.local.generation.{CompilerAccess, CompilerAccessException, CompilerType}
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder, WrapperPackage, WrapperPackageName, WrapperPrefixName}
+import fr.linkit.engine.local.generation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.io.File
 import java.nio.file.{Files, Path, StandardOpenOption}
-import javax.tools.ToolProvider
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 
 //FIXME Critical bug ! This naming system currently can't handle nested / anonymous classes !
 class WrappersClassResource(override val resource: ResourceFolder) extends FolderRepresentation {
@@ -33,17 +33,17 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
     private val queuePath            = Path.of(s"$folderPath/$SourcesFolder/${WrapperPackageName}")
     private val generatedClassesPath = Path.of(folderPath + ClassesFolder)
     private val generatedClasses     = mutable.Map.empty[String, Class[_ <: PuppetWrapper[AnyRef]]]
-    private val compilersAccess      = ListBuffer.from[CompilerAccess](Array(JavacCompilerAccess))
+    private val compilers            = new DefaultCompilerCenter
     initialize()
 
-    def addCompilerAccess(access: CompilerAccess): Unit = compilersAccess += access
+    def addCompilerAccess(access: CompilerAccess): Unit = compilers += access
 
-    private[generation] def addToQueue(wrappedClass: Class[_], classSource: String): Unit = {
+    private[generation] def addToQueue(wrappedClass: Class[_], classSource: String, compilerType: CompilerType): Unit = {
         val wrapperClassName = toWrapperClassName(wrappedClass)
         val classSimpleName  = wrapperClassName.drop(wrapperClassName.lastIndexOf('.') + 1)
         val classFolderPath  = wrapperClassName.drop(WrapperPackageName.length).dropRight(classSimpleName.length)
         val classFolder      = classFolderPath.replace('.', File.separatorChar)
-        val path             = Path.of(s"$queuePath/$classFolder/$classSimpleName.java")
+        val path             = Path.of(s"$queuePath/$classFolder/$classSimpleName.${compilerType.sourceFileExtension}")
         if (Files.notExists(path))
             Files.createDirectories(path.getParent)
         Files.writeString(path, classSource, StandardOpenOption.CREATE)
@@ -80,13 +80,13 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
 
         val t0         = System.currentTimeMillis()
         val classPaths = ClassMappings.getClassPaths.map(source => Path.of(source.getLocation.toURI))
-        compilersAccess
-                .map(_.compileAll(queuePath, generatedClassesPath, classPaths))
-                .find(_ != 0)
-                .fold() {
-                    throw new InvalidPuppetDefException("Some Compilers could not compile given source files. See above errors for more details.")
-                }
-        val t1         = System.currentTimeMillis()
+        try {
+            compilers.compileAll(queuePath, generatedClassesPath, classPaths)
+        } catch {
+            case e: CompilerAccessException =>
+                throw new InvalidPuppetDefException("Some Compilers could not compile given source files. See above errors for more details.", e)
+        }
+        val t1 = System.currentTimeMillis()
         AppLogger.debug(s"Compilation took ${t1 - t0}ms.")
 
         sources.foreach(loadWrapperClass(_, parent))

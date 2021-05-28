@@ -10,10 +10,20 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo
+package fr.linkit.api.local.generation.cbp
 
-import fr.linkit.api.local.system.AppException
+import org.jetbrains.annotations.Nullable
 
-class InvalidPuppetDefException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+trait BlueprintFlowController {
+
+    @Nullable val before: BlueprintFlowController
+
+    val blockPosition: Int
+
+    val expressionPosition: Int
+
+    val layerBlueprint: String
+
+    def getBlueprint(context: GenerationContext): Option[(String, Int)] //(BlockBlueprint, BlockStartPos)
 
 }

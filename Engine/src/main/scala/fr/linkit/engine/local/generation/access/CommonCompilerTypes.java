@@ -10,12 +10,24 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation
+package fr.linkit.engine.local.generation.access;
 
-trait JavaClassBlueprint[V] {
+import fr.linkit.api.local.generation.CompilerType;
 
-    def getBlueprintString: String
+public enum CommonCompilerTypes implements CompilerType {
 
-    def toClassSource(v: V): String
+    //TODO add Kotlin compiler support.
+    Javac("Java"), Scalac("Scala");
+
+    private final String langName;
+
+    CommonCompilerTypes(String langName) {
+        this.langName = langName;
+    }
+
+    @Override
+    public String languageName() {
+        return langName;
+    }
 
 }

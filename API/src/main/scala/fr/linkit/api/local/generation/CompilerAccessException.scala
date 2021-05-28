@@ -10,12 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.repo.generation;
+package fr.linkit.api.local.generation
 
-import java.io.Serializable;
-import java.util.List;
+import fr.linkit.api.local.system.AppException
 
-public interface Test {
-
+class CompilerAccessException(msg: String, errorCode: Int, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

@@ -16,15 +16,16 @@ import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
+import fr.linkit.api.local.generation.CompilerType
 import fr.linkit.engine.connection.cache.repo.generation.PuppetWrapperClassGenerator.{BPPath, ClassValueScope}
-import fr.linkit.engine.local.generation.{AbstractValueScope, SimpleJavaClassBlueprint}
+import fr.linkit.engine.local.generation.cbp.{AbstractValueScope, SimpleClassBlueprint}
 
 import java.lang.reflect.{Modifier, Type}
 
 class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends PuppetWrapperGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
-    private val jcbp = new SimpleJavaClassBlueprint(classOf[PuppetWrapperClassGenerator].getResourceAsStream(BPPath), new ClassValueScope(_))
+    private val jcbp = new SimpleClassBlueprint(classOf[PuppetWrapperClassGenerator].getResourceAsStream(BPPath), new ClassValueScope(_))
 
     override def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
         getClass[S](PuppetDescription(clazz))
@@ -54,8 +55,8 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
         descriptions
                 .filter(desc => resources.findWrapperClass(desc.clazz, desc.clazz.getClassLoader).isEmpty)
                 .foreach(desc => {
-                    val source = genPuppetClassSourceCode(desc)
-                    resources.addToQueue(desc.clazz, source)
+                    val (source, compileType) = genPuppetClassSourceCode(desc)
+                    resources.addToQueue(desc.clazz, source, compileType )
                 })
         resources.compileQueue(defaultLoader)
     }
@@ -68,14 +69,12 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
         resources.findWrapperClass[S](clazz, clazz.getClassLoader).isDefined
     }
 
-    private def genPuppetClassSourceCode[S](description: PuppetDescription[S]): String = {
+    private def genPuppetClassSourceCode[S](description: PuppetDescription[S]): (String, CompilerType) = {
         jcbp.toClassSource(description)
     }
 }
 
 object PuppetWrapperClassGenerator {
-
-    val BPPath: String = "/generation/puppet_wrapper_blueprint.jcbp"
 
     class ClassValueScope(blueprint: String)
             extends AbstractValueScope[PuppetDescription[_]]("CLASS", 0, blueprint) {

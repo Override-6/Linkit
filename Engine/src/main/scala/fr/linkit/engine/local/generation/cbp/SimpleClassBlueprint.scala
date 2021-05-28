@@ -10,14 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation
+package fr.linkit.engine.local.generation.cbp
 
-import fr.linkit.api.local.generation.{JavaClassBlueprint, ValueScope}
-import fr.linkit.engine.local.generation.SimpleJavaClassBlueprint.removeBPComments
+import fr.linkit.api.local.generation.cbp.{ClassBlueprint, ValueScope}
+import fr.linkit.engine.local.generation.cbp.SimpleClassBlueprint.removeBPComments
 
 import java.io.InputStream
 
-class SimpleJavaClassBlueprint[V] private(blueprint: String, rootScope: ValueScope[V]) extends JavaClassBlueprint[V] {
+class SimpleClassBlueprint[V] private(blueprint: String, rootScope: ValueScope[V]) extends ClassBlueprint[V] {
 
     def this(blueprint: String, rootProvider: String => ValueScope[V]) = {
         this(blueprint, rootProvider(removeBPComments(blueprint)))
@@ -33,7 +33,7 @@ class SimpleJavaClassBlueprint[V] private(blueprint: String, rootScope: ValueSco
 
 }
 
-object SimpleJavaClassBlueprint {
+object SimpleClassBlueprint {
 
     val BlueprintCommentPrefix: String = "//#"
 

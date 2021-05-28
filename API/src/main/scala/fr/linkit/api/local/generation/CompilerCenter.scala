@@ -10,10 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo
+package fr.linkit.api.local.generation
 
-import fr.linkit.api.local.system.AppException
+import java.nio.file.Path
 
-class InvalidPuppetDefException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+trait CompilerCenter {
 
+    def +=(access: CompilerAccess): Unit = addAccess(access)
+
+    def addAccess(access: CompilerAccess): Unit
+
+    def getAccessForFile(path: Path): Option[CompilerAccess]
+
+    def compileAll(files: Array[Path], destination: Path, classPaths: Seq[Path]): Unit
+
+    def compileAll(folder: Path, destination: Path, classPaths: Seq[Path]): Unit
 }

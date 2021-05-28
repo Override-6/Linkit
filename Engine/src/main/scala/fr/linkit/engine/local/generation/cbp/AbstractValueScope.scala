@@ -10,12 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation
+package fr.linkit.engine.local.generation.cbp
 
-import fr.linkit.api.local.generation._
-import fr.linkit.engine.local.generation.AbstractValueScope.FlowControllerChain
-import fr.linkit.engine.local.generation.controllers.BPController
-import fr.linkit.engine.local.generation.controllers.BPController.Else
+import fr.linkit.api.local.generation.cbp._
+import fr.linkit.engine.local.generation.cbp.controllers.BPController
+import fr.linkit.engine.local.generation.cbp.controllers.BPController.Else
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer

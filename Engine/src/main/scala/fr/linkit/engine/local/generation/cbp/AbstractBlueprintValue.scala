@@ -10,9 +10,9 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation
+package fr.linkit.engine.local.generation.cbp
 
-import fr.linkit.api.local.generation.{BlueprintInserter, BlueprintValue, LexerUtils}
+import fr.linkit.api.local.generation.cbp.{BlueprintInserter, BlueprintValue, LexerUtils}
 
 abstract class AbstractBlueprintValue[A](override val name: String, blueprint: String) extends BlueprintValue[A] {
 

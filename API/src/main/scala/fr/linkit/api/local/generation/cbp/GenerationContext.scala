@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo
+package fr.linkit.api.local.generation.cbp
 
-import fr.linkit.api.local.system.AppException
+trait GenerationContext {
 
-class InvalidPuppetDefException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+    def getValue(string: String): String
 
 }

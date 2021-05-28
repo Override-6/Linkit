@@ -10,11 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo.generation
+package fr.linkit.api.local.generation
 
 import java.nio.file.Path
 
 trait CompilerAccess {
+
+    def getType: CompilerType
+
+    def canCompileFile(file: Path): Boolean
 
     /**
      * This methods will compile all classes that can be compiled with the
@@ -23,8 +27,7 @@ trait CompilerAccess {
      *
      * @param sourceFolder absolute path to the folder in which sources are put.
      * @param destination absolute path to the folder in which the compiler will put the generated classes.
-     * @return the compiler's exit code.
-     * @throws InvalidPuppetDefException if the compilation did not completed successfully
+     * @throws CompilerAccessException if the compilation did not completed successfully
      * */
     def compileAll(sourceFolder: Path, destination: Path, classPaths: Seq[Path]): Int
 
@@ -35,8 +38,7 @@ trait CompilerAccess {
      *
      * @param sourceFiles absolute path to each file the implemented compiler must compute.
      * @param destination absolute path to the folder in which the compiler will put the generated classes.
-     * @return the compiler's exit code.
-     * @throws InvalidPuppetDefException if the compilation did not completed successfully
+     * @throws CompilerAccessException if the compilation did not completed successfully
      * */
     def compileAll(sourceFiles: Array[Path], destination: Path, classPaths: Seq[Path]): Int
 

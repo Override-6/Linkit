@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation
+package fr.linkit.api.local.generation.cbp
 
 import java.util.regex.Pattern
 import scala.collection.mutable.ListBuffer
@@ -28,8 +28,8 @@ object LexerUtils {
     }
 
     def expressionsBetween(regexA: String, regexB: String, blueprint: String): Seq[(String, Int)] = {
-        val matcher      = Pattern.compile(s"$regexA(.*)$regexB").matcher(blueprint)
-        val buffer = ListBuffer.empty[(String, Int)]
+        val matcher = Pattern.compile(s"$regexA(.*)$regexB").matcher(blueprint)
+        val buffer  = ListBuffer.empty[(String, Int)]
         while (matcher.find()) {
             buffer += ((matcher.group(1).trim, matcher.start()))
         }
@@ -38,7 +38,7 @@ object LexerUtils {
 
     def nextBlock(blueprint: String, pos: Int): String = {
         var blockDepth     = 0
-        val start = blueprint.indexOf('{', pos)
+        val start          = blueprint.indexOf('{', pos)
         val semiBlock      = blueprint.drop(start + 1) //remove the first '{'
         var lastChar: Char = blueprint(start)
         var isInString     = false

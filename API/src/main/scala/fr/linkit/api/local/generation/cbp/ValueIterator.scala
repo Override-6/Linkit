@@ -10,20 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation
+package fr.linkit.api.local.generation.cbp
 
-import org.jetbrains.annotations.Nullable
+trait ValueIterator[A, B] {
 
-trait BlueprintFlowController {
-
-    @Nullable val before: BlueprintFlowController
-
-    val blockPosition: Int
-
-    val expressionPosition: Int
-
-    val layerBlueprint: String
-
-    def getBlueprint(context: GenerationContext): Option[(String, Int)] //(BlockBlueprint, BlockStartPos)
+    def foreach(a: A, action: B => Unit): Unit
 
 }

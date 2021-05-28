@@ -117,14 +117,14 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     def handleRequest(requestBundle: RequestBundle): Unit = {
-        val packet   = requestBundle.packet
-        val coords   = requestBundle.coords
+        val request   = requestBundle.packet
         val response = requestBundle.responseSubmitter
-        println(s"HANDLING REQUEST $packet, $coords")
+        val coords   = requestBundle.coords
+        println(s"HANDLING REQUEST $request, $coords")
 
         val senderID: String = coords.senderID
-        val behavior         = packet.getAttribute[CacheOpenBehavior]("behavior").get
-        val cacheID          = packet.nextPacket[IntPacket].value
+        val behavior         = request.getAttribute[CacheOpenBehavior]("behavior").get
+        val cacheID          = request.nextPacket[IntPacket].value
 
         println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
         println(s"Behavior = $behavior")

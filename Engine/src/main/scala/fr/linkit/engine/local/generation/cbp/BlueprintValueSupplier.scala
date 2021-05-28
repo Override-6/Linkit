@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation
+package fr.linkit.engine.local.generation.cbp
 
 class BlueprintValueSupplier[A](name: String, bp: String, supplier: A => String) extends AbstractBlueprintValue[A](name, bp) {
 

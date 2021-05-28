@@ -10,10 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo
+package fr.linkit.api.local.generation.cbp
 
-import fr.linkit.api.local.system.AppException
+trait BlueprintValue[A] {
 
-class InvalidPuppetDefException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+    val name: String
 
+    def replaceValues(inserter: BlueprintInserter, value: A): Unit
+
+    def getValue(a: A): String
 }

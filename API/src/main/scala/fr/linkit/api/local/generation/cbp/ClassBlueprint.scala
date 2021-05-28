@@ -10,10 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo
+package fr.linkit.api.local.generation.cbp
 
-import fr.linkit.api.local.system.AppException
+trait ClassBlueprint[V] {
 
-class InvalidPuppetDefException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+    def getBlueprintString: String
+
+    def toClassSource(v: V): String
 
 }

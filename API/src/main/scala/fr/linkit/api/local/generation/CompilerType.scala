@@ -10,10 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo
+package fr.linkit.api.local.generation
 
-import fr.linkit.api.local.system.AppException
+trait CompilerType {
 
-class InvalidPuppetDefException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+    val name: String
+
+    val languageName: String
+
+    val sourceFileExtension: String
 
 }

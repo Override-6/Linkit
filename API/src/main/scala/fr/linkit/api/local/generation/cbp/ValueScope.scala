@@ -10,10 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation
+package fr.linkit.api.local.generation.cbp
 
-trait GenerationContext {
+trait ValueScope[A] {
 
-    def getValue(string: String): String
+    val position: Int
+
+    val name: String
+
+    def getSourceCode(value: A): String
 
 }

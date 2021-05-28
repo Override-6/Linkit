@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation
+package fr.linkit.api.local.generation.cbp
 
 import org.jetbrains.annotations.NotNull
 
