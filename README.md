@@ -1,21 +1,20 @@
 ![Cover](RCover.png)
- A personal project to easily synchronise and link programs.  
+ A personal project to easily synchronise and link programs between them.  
 
 # THIS README IS OUTDATED
 **Please, consider that everything in this readme does not reflect what the framework currently is.
 The readme must be reedited since the project got completely redesigned.**
 
-This project is designed to help the user to quickly write the network side of an application (for games, apps...). 
-But it is also designed to be used for simple domotic, such as linking your phones with all of your computers, in order to take control or retrieve some files quickly from them...
-(An application for phones would be developped in order to define behaviour between your electronic stuff)
-Linkit offers an entire networking library, that can be extended and controlled from a 'Relay'  
-The project is mainly write in scala, and some classes in Java.  
+This project is a Scala Framework, Designed in order to make network system developpement intuitive and easy to write.  
+The Linkit Framework offers you an entire environnement, where objects, executions, events and resources are synchronisable.
+
 
 ## Table of contents
-* [Notes and General information](https://github.com/Override-6/Linkit/#notes-and-general-information)
-* [The API](https://github.com/Override-6/Linkit/#the-api)
-* [The Client](https://github.com/Override-6/Linkit/#the-fr.override.linkit.client)
-* [The Server](https://github.com/Override-6/Linkit/#the-server)
+* [Notes and General information](#notes-and-general-information)
+* [The API](#the-api)
+* [The Engine](#the-engine)
+* [The Client](#the-client)
+* [The Server](#the-server)
 * [Features](https://github.com/Override-6/Linkit/#features)
 * [How to extend](https://github.com/Override-6/Linkit/#how-to-extend)
 * [How to configure](https://github.com/Override-6/Linkit/#how-to-configure)
