@@ -12,7 +12,7 @@ The Linkit Framework offers you an entire environnement, where objects, executio
 ## Table of contents
 * [Notes and General information](#notes-and-general-information)
 * [Features](#features)
-* [The API](#the-api)
+* [The Application](#the-appplication)
 * [The Engine](#the-engine)
 * [The Client](#the-client)
 * [The Server](#the-server)
@@ -27,7 +27,17 @@ The Linkit Project quickly progresses, and, as long as the project stands in alp
 Such as refactorings, class/package movement or deletion of different classes, packages, folders or methods, Illogical feature operations, bugs or even redesigning some aspect.  
 Some Scala practices would be a real nightmare to use in Java, such as Builders, so they have a Java version in order to be more user-friendly with java developers.
 
-## The Client  
+## Features
+* Multiple connection handling
+* Local resource handling (soon ready to be used over the network)
+* Other connections' Engine accesses that are bound to a network. 
+* Extendable Packet Channels
+* Compact Packet Serialization
+* Synchronized Cache: List, maps, instances and Objects (will soon be only object synchronization, because map, instances and lists have no interests when you can synchronize everything you want (so you can use List and Map implementations)
+* Optimised / *Smart* Multithreading, Each thread handles a list of tasks, that can be paused and unpaused. While a task is paused, the thread will poll other tasks from its WorkerPool.
+* Very Simple plugin management, which can be start and stopped, with the possibility to register "Plugin Fragments".
+
+## The Application  
 The Client, or RelayPoint, is one implementation of the Relay interface, which can connect to any server implementation, as long as they comply with the same mutual initialisation rules.  
 In order to instantiate a RelayPoint, you need a RelayPointConfiguration.  
 The different option explications of a RelayPointConfiguration can be find in the [RelayPoint README](https://github.com/Override-6/Linkit/finder.master/RelayPoint), but here, we will focus on how to create a default RelayPoint by using its builder :  
