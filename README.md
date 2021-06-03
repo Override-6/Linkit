@@ -11,46 +11,21 @@ The Linkit Framework offers you an entire environnement, where objects, executio
 
 ## Table of contents
 * [Notes and General information](#notes-and-general-information)
+* [Features](#features)
 * [The API](#the-api)
 * [The Engine](#the-engine)
 * [The Client](#the-client)
 * [The Server](#the-server)
-* [Features](https://github.com/Override-6/Linkit/#features)
-* [How to extend](https://github.com/Override-6/Linkit/#how-to-extend)
-* [How to configure](https://github.com/Override-6/Linkit/#how-to-configure)
-* [Setup](https://github.com/Override-6/Linkit/#setup)
-* [Acknowledgements](https://github.com/Override-6/Linkit/#acknowledgements)
+* [The Plugin System](#the-plugin-system)
+* [Setup](#setup)
+* [Acknowledgements](#acknowledgements)
 
 ## Notes and General information
-This Readme contains the general information to create your own project with this program  
-If you want further details about the [API](https://github.com/Override-6/Linkit/blob/master/API), the [RelayServer](https://github.com/Override-6/Linkit/blob/master/RelayServer) or the [RelayPoint](https://github.com/Override-6/Linkit/blob/master/RelayPoint), you can open theirs respective folders.  
-This project quickly progresses, and, as long as the project stands in beta, irreversible changes would often be made.  
-Such as refactoring, movement or deletion of different classes, packages, folders or methods, Illogical feature operations, bugs or even redesigning some aspect.  
+This Readme contains general information about how to integrate this network into your project.  
+If you want further details about the [API](/API), the [Engine](/Engine) or the [Server](/Server), Or the [Client](/Client), you can open theirs respective folders.  
+The Linkit Project quickly progresses, and, as long as the project stands in alpha/beta, irreversible changes may often be made.  
+Such as refactorings, class/package movement or deletion of different classes, packages, folders or methods, Illogical feature operations, bugs or even redesigning some aspect.  
 Some Scala practices would be a real nightmare to use in Java, such as Builders, so they have a Java version in order to be more user-friendly with java developers.
-
-### Versioning
-The current versioning system is the [SemVer](https://semver.org/), but, during the beta phase of this project, it will not being respected.  
-This way, the first number is always 0, any feature or irreversible change would increment the middle number, and small reversible patches increments the last number.  
-
-#### During beta phase : 
-0.x.y
-* x feature, irreversible internal changes or remote changes such as packet protocol or communication 
-* y patches, internal bugfixes, that are fully reversible  
-
-No objectives are scheduled in order to exit the beta phase.
-
-## The API
-The API is a bag of features and definitions of behavior that a Relay implementation must support.  
-Some features are pre-implemented and handled by the api, such as the [extension](TODO), the [event handling system](TODO) or the [Packet handling](TODO) and [Task scheduling](TODO) which are partially implemented.  
-All of those features are accessible from the Relay interface.  
-
-(see [API README](https://github.com/Override-6/Linkit/finder.master/API) to get further details)  
-
-### Packet handling
-
-Protocol Used : TCP
-
-[Packet](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/packet/Packet.scala) implementations are simply serialised / deserialised using custom serialisation protocol. Any packet is serialised/deserialised with the [PacketTranslator](https://github.com/Override-6/Linkit/blob/master/API/src/fr/override/linkit/api/packet/serialization/PacketTranslator.scala), that handles the byte sequence of packet content __and__ their coordinates.
 
 ## The Client  
 The Client, or RelayPoint, is one implementation of the Relay interface, which can connect to any server implementation, as long as they comply with the same mutual initialisation rules.  
