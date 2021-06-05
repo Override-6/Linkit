@@ -20,20 +20,22 @@ import scala.tools.nsc.{Global, Settings}
 
 object ScalacCompilerAccess extends AbstractCompilerAccess {
 
-    val ScalacArguments: List[String] = List("-usejavacp", "-Xplugin:$classes", "-Xplugin-require:sculpt")
+    val ScalacArguments: List[String] = List("-usejavacp", "-Xplugin:$classes")
     val ScalaFileExtension            = ".scala"
 
     override def compile(sourceFiles: Array[Path], destination: Path, classPaths: Seq[Path]): Int = {
         val settings = new Settings()
-        settings.processArguments(ScalacArguments, true)
-        settings.outputDirs.setSingleOutput(destination.toString)
+        settings.processArguments(ScalacArguments ++ List("-d", destination.toString), true)
         val global = new Global(settings)
-        val run    = new global.Run
+        val run = new global.Run
         run.compile(sourceFiles.map(_.toString).toList)
         0 //OK code
     }
 
     override def getType: CompilerType = CommonCompilerTypes.Scalac
 
-    override def canCompileFile(file: Path): Boolean = file.toString.endsWith(ScalaFileExtension)
+    override def canCompileFile(file: Path): Boolean = {
+        val v = file.toString.endsWith(ScalaFileExtension)
+        v
+    }
 }

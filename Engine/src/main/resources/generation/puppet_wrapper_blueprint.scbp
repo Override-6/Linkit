@@ -2,7 +2,7 @@
  *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
  *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
- *  This code is free software; you can only use it for personal uses, studies or documentation.
+ *  This code is free software you can only use it for personal uses, studies or documentation.
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
@@ -10,122 +10,83 @@
  *  questions.
  */
 
-package gen.$WrappedClassPackage$;
+package gen.$WrappedClassPackage$
 
-import $WrappedClassName$;
-import fr.linkit.api.connection.cache.repo.InvocationChoreographer;
-import fr.linkit.api.connection.cache.repo.description.PuppetDescription;
-import fr.linkit.api.connection.cache.repo.PuppetWrapper;
-import fr.linkit.api.connection.cache.repo.Puppeteer;
-import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription;
-import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException;
+import $WrappedClassName$
+import fr.linkit.api.connection.cache.repo.InvocationChoreographer
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription
+import fr.linkit.api.connection.cache.repo.PuppetWrapper
+import fr.linkit.api.connection.cache.repo.Puppeteer
+import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
+import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException
 
-class Puppet$WrappedClassSimpleName$ $TParamsIn$ extends $WrappedClassSimpleName$ $TParamsOut$ implements PuppetWrapper<$WrappedClassSimpleName$> {
+@SerialVersionUID($CompileTime$L)
+class Puppet$WrappedClassSimpleName$ $TParamsIn$(private var puppeteer: Puppeteer[$WrappedClassSimpleName$ $TParamsOut$],
+                                                 private val clone: $WrappedClassSimpleName$ $TParamsOut$)
+    extends $WrappedClassSimpleName$ $TParamsOut$(clone) with PuppetWrapper[$WrappedClassSimpleName$ $TParamsOut$] {
 
-    public static final long serialVersionUID = $CompileTime$L;
-    private transient Puppeteer<$WrappedClassSimpleName$> puppeteer;
-    private transient PuppetDescription<$WrappedClassSimpleName$> description;
-    private transient InvocationChoreographer choreographer;
-    private PuppeteerDescription puppeteerDescription;
-
-    public Puppet$WrappedClassSimpleName$(Puppeteer<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) {
-        super(clone);
-        initPuppeteer(bundle);
-    }
+    @transient private var description: PuppetDescription[$WrappedClassSimpleName$ $TParamsOut$] = _
+    @transient private var choreographer: InvocationChoreographer = _
+    @transient private var puppeteerDescription: PuppeteerDescription = _
+    initPuppeteer(puppeteer)
 
     //Fun fact: Override annotations are conventional.
     //They does not affect abstraction or classes behaviors.
     //Override annotations are removed at compilation.
 
-    @Override
-    public void initPuppeteer(Puppeteer<$WrappedClassSimpleName$> puppeteer) throws PuppetAlreadyInitialisedException {
+    override def initPuppeteer(puppeteer: Puppeteer[$WrappedClassSimpleName$ $TParamsIn$]): Unit = {
         if (this.puppeteer != null)
-            throw new PuppetAlreadyInitialisedException("This puppet is already initialized !");
-        this.puppeteer = puppeteer;
-        this.puppeteerDescription = this.puppeteer.puppeteerDescription();
-        this.description = puppeteer.puppetDescription();
-        this.puppeteer.init(this);
-        this.choreographer = new InvocationChoreographer();
+            throw new PuppetAlreadyInitialisedException("This puppet is already initialized !")
+        this.puppeteer = puppeteer
+        this.puppeteerDescription = this.puppeteer.puppeteerDescription
+        this.description = puppeteer.puppetDescription
+        this.puppeteer.init(this)
+        this.choreographer = new InvocationChoreographer()
     }
 
-    @Override
-    public boolean isInitialized() {
-        return puppeteer != null;
+    override def isInitialized: Boolean = puppeteer != null
+
+    override def detachedSnapshot: $WrappedClassSimpleName$ $TParamsIn$ = {
+        new $WrappedClassSimpleName$(this)
     }
 
-    @Override
-    public $WrappedClassSimpleName$ detachedSnapshot() {
-        return new $WrappedClassSimpleName$(this);
-    }
+    override def getValue: $WrappedClassSimpleName$ $TParamsIn$ = this
 
-    @Override
-    public $WrappedClassSimpleName$ getValue() {
-        return this;
-    }
+    override def getChoreographer: InvocationChoreographer = choreographer
 
-    @Override
-    public InvocationChoreographer getChoreographer() {
-        return choreographer;
-    }
+    override def getPuppeteer: Puppeteer[$WrappedClassSimpleName$ $TParamsIn$] = puppeteer
 
-    @Override
-    public Puppeteer<$WrappedClassSimpleName$> getPuppeteer() {
-        return puppeteer;
-    }
-
-    @Override
-    public PuppeteerDescription getPuppeteerDescription() {
-        return puppeteerDescription;
-    }
+    override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
 
 $$INHERITED_METHODS$$ {
-    @Override
-    public $GenericTypes$ $ReturnType$ $MethodName$($ParamsIn$) $MethodExceptions$ {
-        if (choreographer.isMethodExecutionForcedToLocal() || !description.isRMIEnabled($MethodID$)) {
-        $|If ReturnType == "void"|$ {
-            super.$MethodName$($ParamsOut$);
-            return;
-        } $|Else|$ {
-            return super.$MethodName$($ParamsOut$);
+    override def $MethodName$ $GenericTypes$($ParamsIn$): $ReturnType$ = {
+        if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled($MethodID$)) {
+            return super.$MethodName$($ParamsOut$)
         }
-        }
-        final Object[] args = new Object[]{$ParamsOut$};
+        val args = Array[Any]($ParamsOut$)
         //# From here we are sure that we want to perform a remote
         //# method invocation. (A Local invocation (super.xxx()) can be added).
         if (description.isInvokeOnly($MethodID$)) {
-            puppeteer.sendInvoke($MethodID$, args);
-        $|If ReturnType != "void"|$ {
-            $ReturnType$ localResult;
+            puppeteer.sendInvoke($MethodID$, args)
+            var localResult: $ReturnType$ = $DefaultReturnType$
             if (description.isLocalInvocationForced($MethodID$)) {
-                localResult = super.$MethodName$($ParamsOut$);
+                localResult = super.$MethodName$($ParamsIn$)
             }
             //# Note1: value of 'InvokeOnlyResult' can be "localResult".
             //# Note2: Be aware that you can get a null value returned
             //#        if the 'InvokeOnlyResult' value of the annotated
             //#        method is set to "localResult" and the invocation
             //#        kind does not force local invocation.
-            return $InvokeOnlyResult$;
-        } $|Else|$ {
-            if (description.isLocalInvocationForced($MethodID$)) {
-                super.$MethodName$($ParamsOut$);
-            }
-            return;
+            return $InvokeOnlyResult$
         }
-        }
-    $|If ReturnType != "void"|$ {
-        $ReturnType$ result;
+        var result: $ReturnType$ = $DefaultReturnType$
         if (description.isLocalInvocationForced($MethodID$)) {
-            result = super.$MethodName$($ParamsOut$);
-            puppeteer.sendInvoke($MethodID$, args);
+            result = super.$MethodName$($ParamsIn$)
+            puppeteer.sendInvoke($MethodID$, args)
         } else {
-            result = puppeteer.sendInvokeAndWaitResult($MethodID$, args);
+            result = puppeteer.sendInvokeAndWaitResult($MethodID$, args)
         }
-        return result;
-    } $|Else|$ {
-        super.$MethodName$($ParamsOut$);
-        puppeteer.sendInvoke($MethodID$, args);
-        return;
-    }
+        result
     }
 
 }

@@ -12,11 +12,10 @@
 
 package fr.linkit.engine.local.generation.cbp.controllers
 
-import fr.linkit.api.local.generation.GenerationContext
+import java.util.regex.{MatchResult, Pattern}
+
 import fr.linkit.api.local.generation.cbp.{BlueprintFlowController, GenerationContext}
 import org.jetbrains.annotations.{NotNull, Nullable}
-
-import java.util.regex.{MatchResult, Pattern}
 
 object BPController {
 

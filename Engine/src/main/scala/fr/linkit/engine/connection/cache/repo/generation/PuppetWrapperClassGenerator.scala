@@ -12,20 +12,21 @@
 
 package fr.linkit.engine.connection.cache.repo.generation
 
+import java.lang.reflect.{Modifier, Type}
+
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
-import fr.linkit.api.local.generation.CompilerType
-import fr.linkit.engine.connection.cache.repo.generation.PuppetWrapperClassGenerator.{BPPath, ClassValueScope}
+import fr.linkit.api.local.generation.{CompilerType, TypeVariableTranslator}
+import fr.linkit.engine.connection.cache.repo.generation.PuppetWrapperClassGenerator.ClassValueScope
+import fr.linkit.engine.local.generation.access.CommonCompilerTypes
 import fr.linkit.engine.local.generation.cbp.{AbstractValueScope, SimpleClassBlueprint}
-
-import java.lang.reflect.{Modifier, Type}
 
 class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends PuppetWrapperGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
-    private val jcbp = new SimpleClassBlueprint(classOf[PuppetWrapperClassGenerator].getResourceAsStream(BPPath), new ClassValueScope(_))
+    private val scbp = new SimpleClassBlueprint(classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp"), new ClassValueScope(_))
 
     override def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
         getClass[S](PuppetDescription(clazz))
@@ -39,12 +40,13 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
         if (loader == null)
             loader = classOf[PuppetWrapperClassGenerator].getClassLoader //Use the Application classloader
         resources
-                .findWrapperClass[S](clazz, loader)
-                .getOrElse {
-                    resources.addToQueue(clazz, genPuppetClassSourceCode(desc))
-                    resources.compileQueue(loader)
-                    resources.findWrapperClass[S](clazz, loader).get
-                }
+            .findWrapperClass[S](clazz, loader)
+            .getOrElse {
+                val (sourceCode, compilerType) = genPuppetClassSourceCode(desc)
+                resources.addToQueue(clazz, sourceCode, compilerType)
+                resources.compileQueue(loader)
+                resources.findWrapperClass[S](clazz, loader).get
+            }
     }
 
     override def preGenerateClasses[S](defaultLoader: ClassLoader, classes: Seq[Class[_ <: S]]): Unit = {
@@ -53,11 +55,11 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
 
     override def preGenerateDescs[S](defaultLoader: ClassLoader, descriptions: Seq[PuppetDescription[S]]): Unit = {
         descriptions
-                .filter(desc => resources.findWrapperClass(desc.clazz, desc.clazz.getClassLoader).isEmpty)
-                .foreach(desc => {
-                    val (source, compileType) = genPuppetClassSourceCode(desc)
-                    resources.addToQueue(desc.clazz, source, compileType )
-                })
+            .filter(desc => resources.findWrapperClass(desc.clazz, desc.clazz.getClassLoader).isEmpty)
+            .foreach(desc => {
+                val (source, compileType) = genPuppetClassSourceCode(desc)
+                resources.addToQueue(desc.clazz, source, compileType)
+            })
         resources.compileQueue(defaultLoader)
     }
 
@@ -70,14 +72,14 @@ class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends Pupp
     }
 
     private def genPuppetClassSourceCode[S](description: PuppetDescription[S]): (String, CompilerType) = {
-        jcbp.toClassSource(description)
+        (scbp.toClassSource(description), CommonCompilerTypes.Scalac)
     }
 }
 
 object PuppetWrapperClassGenerator {
 
     class ClassValueScope(blueprint: String)
-            extends AbstractValueScope[PuppetDescription[_]]("CLASS", 0, blueprint) {
+        extends AbstractValueScope[PuppetDescription[_]]("CLASS", 0, blueprint) {
 
         registerValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
         registerValue("CompileTime" ~~> System.currentTimeMillis())
@@ -89,57 +91,55 @@ object PuppetWrapperClassGenerator {
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
 
-                    .distinctBy(_.methodId)
+                .distinctBy(_.methodId)
 
-                    .filterNot(desc => {
+                .filterNot(desc => {
 
-                        val mods = desc.method.getModifiers
-                        Modifier.isPrivate(mods) || Modifier.isStatic(mods) || Modifier.isFinal(mods)
-                    })
-                    .foreach(action)
+                    val mods = desc.method.getModifiers
+                    Modifier.isPrivate(mods) || Modifier.isStatic(mods) || Modifier.isFinal(mods)
+                })
+                .foreach(action)
         })
 
         private def getGenericParamsIn(desc: PuppetDescription[_]): String = {
             val result = TypeVariableTranslator.toJavaDeclaration(desc.clazz.getTypeParameters)
             if (result.isEmpty)
                 ""
-            else s"<$result>"
+            else s"[$result]"
         }
 
         private def getGenericParamsOut(desc: PuppetDescription[_]): String = {
             val result = desc
-                    .clazz
-                    .getTypeParameters
-                    .map(_.getName)
-                    .mkString(", ")
+                .clazz
+                .getTypeParameters
+                .map(_.getName)
+                .mkString(", ")
             if (result.isEmpty)
                 ""
-            else s"<$result>"
+            else s"[$result]"
         }
 
     }
 
     case class MethodValueScope(blueprint: String, pos: Int)
-            extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
+        extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
         registerValue("ReturnType" ~> getReturnType)
+        registerValue("DefaultReturnType" ~> (_.getDefaultTypeReturnValue))
         registerValue("GenericTypes" ~> getGenericParams)
         registerValue("MethodName" ~> (_.method.getName))
         registerValue("MethodExceptions" ~> getMethodThrows)
         registerValue("MethodID" ~> (_.methodId.toString))
-        registerValue("InvokeOnlyResult" ~> (_.getReplacedReturnValue))
+        registerValue("InvokeOnlyResult" ~> (_.getDefaultReturnValue))
         registerValue("ParamsIn" ~> getParametersIn)
         registerValue("ParamsOut" ~> getParametersOut)
 
         private def getReturnType(desc: MethodDescription): String = {
-            desc
+            val v = TypeVariableTranslator
+                .toScalaDeclaration(desc
                     .method
-                    .getGenericReturnType
-                    .getTypeName
-                    .replace("$", ".")
-                    .replace(". ", "$ ")
-                    .replace(".>", "$>")
-                    .replace(".,", "$,")
+                    .getGenericReturnType)
+            v
         }
 
         private def getGenericParams(desc: MethodDescription): String = {
@@ -147,7 +147,7 @@ object PuppetWrapperClassGenerator {
             if (tParams.isEmpty)
                 ""
             else
-                s"<${TypeVariableTranslator.toJavaDeclaration(tParams)}>"
+                s"[${TypeVariableTranslator.toScalaDeclaration(tParams)}]"
         }
 
         private def getMethodThrows(methodDesc: MethodDescription): String = {
@@ -155,31 +155,35 @@ object PuppetWrapperClassGenerator {
             if (exceptions.isEmpty)
                 return ""
             exceptions
-                    .map(s => toGenericTypeName(s))
-                    .mkString("throws ", ", ", "")
+                .map(s => toGenericTypeName(s))
+                .mkString("throws ", ", ", "")
         }
 
         private def getParametersIn(methodDesc: MethodDescription): String = {
             var count = 0
             val sb    = new StringBuilder
-            methodDesc.method.getGenericParameterTypes.foreach(clazz => {
-                val typeName = clazz.getTypeName.replaceAll("\\.,", "$")
+            methodDesc
+                .method
+                .getGenericParameterTypes.foreach(typ => {
+                val typeName = TypeVariableTranslator.toScalaDeclaration(typ)
                 count += 1
-                sb.append(typeName)
-                        .append(' ')
-                        .append("arg")
-                        .append(count)
-                        .append(", ")
+                sb
+                    .append("arg")
+                    .append(count)
+                    .append(": ")
+                    .append(typeName)
+                    .append(", ")
             })
-            sb.toString().dropRight(2) //Remove last ", " string.
+            val v = sb.toString().dropRight(2) //Remove last ", " string.
+            v
         }
 
         private def getParametersOut(methodDesc: MethodDescription): String = {
             val sb = new StringBuilder
             for (i <- 1 to methodDesc.method.getParameterCount) {
                 sb.append("arg")
-                        .append(i)
-                        .append(", ")
+                    .append(i)
+                    .append(", ")
             }
             sb.dropRight(2).toString()
         }

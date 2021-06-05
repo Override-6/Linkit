@@ -12,23 +12,23 @@
 
 package fr.linkit.engine.connection.cache.repo.generation
 
-import fr.linkit.api.local.generation.CompilerAccess
+import fr.linkit.api.local.generation.cbp.ClassBlueprint
 import fr.linkit.engine.connection.cache.repo.generation.ClassBlueprintCenter.{JCBPPath, SCBPPath}
 import fr.linkit.engine.connection.cache.repo.generation.PuppetWrapperClassGenerator.ClassValueScope
 import fr.linkit.engine.local.generation.cbp.SimpleClassBlueprint
 
 import scala.collection.mutable
 
-class ClassBlueprintCenter {
+class ClassBlueprintCenter[T] {
 
     private val defaultJcbp = new SimpleClassBlueprint(getClass.getResourceAsStream(JCBPPath), new ClassValueScope(_))
     private val defaultScbp = new SimpleClassBlueprint(getClass.getResourceAsStream(SCBPPath), new ClassValueScope(_))
 
-    private val otherCbps = mutable.Map.empty[Class[_], CompilerAccess]
+    private val otherCbps = mutable.Map.empty[Class[_], ClassBlueprint[T]]
 
-    def getBlueprint(clazz: Class[_]): String = otherCbps.getOrElse(clazz, {
-
-    })
+    /*def getBlueprint(clazz: Class[_]): ClassBlueprint[T] = otherCbps.getOrElse(clazz, {
+        defaultScbp
+    })*/
 
 }
 

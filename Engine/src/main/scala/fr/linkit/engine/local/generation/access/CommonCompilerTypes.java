@@ -30,4 +30,8 @@ public enum CommonCompilerTypes implements CompilerType {
         return langName;
     }
 
+    @Override
+    public String sourceFileExtension() {
+        return "scala"; //FIXME Fast patch
+    }
 }

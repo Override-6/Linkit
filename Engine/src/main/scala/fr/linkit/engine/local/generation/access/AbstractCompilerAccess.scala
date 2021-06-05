@@ -35,19 +35,20 @@ abstract class AbstractCompilerAccess extends CompilerAccess {
         }
         if (code != 0)
             throw new CompilerAccessException(s"Compilation went wrong: Exit code is not 0. (${getType.name} compiler for ${getType.languageName} language.)", code)
+        code
     }
 
     protected def compile(sourceFiles: Array[Path], destination: Path, classPaths: Seq[Path]): Int
 
     private def listSources(path: Path): Array[Path] = {
         Files.list(path)
-                .toArray(new Array[Path](_))
-                .filter(canCompileFile)
-                .flatMap(subPath => {
-                    if (Files.isDirectory(subPath))
-                        listSources(subPath)
-                    else Array(subPath)
-                })
+            .toArray(new Array[Path](_))
+            .flatMap(subPath => {
+                if (Files.isDirectory(subPath))
+                    listSources(subPath)
+                else Array(subPath)
+            })
+            .filter(canCompileFile)
     }
 
 }

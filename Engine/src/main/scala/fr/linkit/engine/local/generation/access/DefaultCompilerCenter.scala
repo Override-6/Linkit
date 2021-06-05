@@ -20,7 +20,7 @@ import scala.collection.mutable.ListBuffer
 
 class DefaultCompilerCenter extends CompilerCenter {
 
-    private val compilers = ListBuffer.from(Seq(JavacCompilerAccess, ScalacCompilerAccess))
+    private val compilers = ListBuffer.from[CompilerAccess](Seq(JavacCompilerAccess, ScalacCompilerAccess))
 
     override def addAccess(access: CompilerAccess): Unit = compilers += access
 

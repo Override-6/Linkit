@@ -13,6 +13,7 @@
 package fr.linkit.engine.local.generation.cbp
 
 import fr.linkit.api.local.generation.cbp._
+import fr.linkit.engine.local.generation.cbp.AbstractValueScope.FlowControllerChain
 import fr.linkit.engine.local.generation.cbp.controllers.BPController
 import fr.linkit.engine.local.generation.cbp.controllers.BPController.Else
 

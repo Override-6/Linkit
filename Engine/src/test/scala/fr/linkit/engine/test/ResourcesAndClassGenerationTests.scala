@@ -21,7 +21,7 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
-import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, TypeVariableTranslator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
@@ -31,8 +31,10 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
-
 import java.util
+
+import fr.linkit.api.local.generation.TypeVariableTranslator
+
 import scala.collection.mutable.ListBuffer
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -45,7 +47,7 @@ class ResourcesAndClassGenerationTests {
     def init(): Unit = {
         val config = new ApplicationConfiguration {
             override val pluginFolder   : Option[String]             = None
-            override val resourceFolder : String                     = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home"
+            override val resourceFolder : String                     = "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\Linkit\\Home"
             override val fsAdapter      : FileSystemAdapter          = LocalFileSystemAdapters.Nio
             override val securityManager: ApplicationSecurityManager = null
         }

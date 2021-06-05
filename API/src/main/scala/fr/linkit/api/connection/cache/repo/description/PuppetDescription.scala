@@ -15,9 +15,11 @@ package fr.linkit.api.connection.cache.repo.description
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvocationKind, InvokeOnly, MethodControl}
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription, toSyncParamsIndexes}
-
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method, Modifier}
+
+import fr.linkit.api.local.generation.TypeVariableTranslator
+
 import scala.collection.mutable.ListBuffer
 
 class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
@@ -45,7 +47,7 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
 
     def getFieldDesc(fieldID: Int): Option[FieldDescription] = {
         fields
-                .get(fieldID)
+            .get(fieldID)
     }
 
     def isRMIEnabled(methodId: Int): Boolean = {
@@ -66,28 +68,28 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
 
     private def collectMethods(): Seq[MethodDescription] = {
         val methods = clazz.getMethods
-                .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
-                .map(genMethodDescription)
+            .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
+            .map(genMethodDescription)
 
         val filteredMethods = ListBuffer.empty[MethodDescription]
         methods.foreach(desc => {
             filteredMethods.find(_.methodId == desc.methodId)
-                    .fold[Unit](filteredMethods += desc) { otherDesc =>
-                        if (hierarchyLevel(desc.method.getReturnType) > hierarchyLevel(otherDesc.method.getReturnType)) {
-                            filteredMethods -= otherDesc
-                            filteredMethods += desc
-                        }
+                .fold[Unit](filteredMethods += desc) { otherDesc =>
+                    if (hierarchyLevel(desc.method.getReturnType) > hierarchyLevel(otherDesc.method.getReturnType)) {
+                        filteredMethods -= otherDesc
+                        filteredMethods += desc
                     }
+                }
         })
         filteredMethods.toSeq
     }
 
     private def collectFields(): Map[Int, FieldDescription] = {
         clazz.getFields
-                .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
-                .map(genFieldDescription)
-                .map(desc => (desc.fieldID, desc))
-                .toMap
+            .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
+            .map(genFieldDescription)
+            .map(desc => (desc.fieldID, desc))
+            .toMap
     }
 
     private def genMethodDescription(method: Method): MethodDescription = {
@@ -131,12 +133,12 @@ object PuppetDescription {
 
     def toSyncParamsIndexes(literal: String, method: Method): Seq[Boolean] = {
         val synchronizedParamNumbers = literal
-                .split(",")
-                .filterNot(s => s == "this" || s.isBlank)
-                .map(s => s.trim
-                        .dropRight(s.lastIndexWhere(!_.isDigit))
-                        .toInt)
-                .distinct
+            .split(",")
+            .filterNot(s => s == "this" || s.isBlank)
+            .map(s => s.trim
+                .dropRight(s.lastIndexWhere(!_.isDigit))
+                .toInt)
+            .distinct
         for (n <- 1 to method.getParameterCount) yield {
             synchronizedParamNumbers.contains(n)
         }
@@ -163,19 +165,24 @@ object PuppetDescription {
             method.getName.hashCode + hashCode(parameters)
         }
 
-        def getReplacedReturnValue: String = {
-            invokeOnly.map(_.value())
-                    .getOrElse {
-                        val returnType = method.getReturnType
-                        import java.lang
-                        returnType match {
-                            case lang.Boolean.TYPE                                                     => "false"
-                            case lang.Float.TYPE | lang.Double.TYPE                                    => "-1.0"
-                            case lang.Integer.TYPE | lang.Byte.TYPE | lang.Long.TYPE | lang.Short.TYPE => "-1"
-                            case lang.Character.TYPE                                                   => "'\\u0000'"
-                            case _                                                                     => "null"
-                        }
-                    }
+        def getDefaultReturnValue: String = {
+            invokeOnly
+                .map(_.value())
+                .getOrElse {
+                    getDefaultTypeReturnValue
+                }
+        }
+
+        def getDefaultTypeReturnValue: String = {
+            val returnType = method.getReturnType
+            import java.lang
+            returnType match {
+                case lang.Boolean.TYPE                                                     => "false"
+                case lang.Float.TYPE | lang.Double.TYPE                                    => "-1.0"
+                case lang.Integer.TYPE | lang.Byte.TYPE | lang.Long.TYPE | lang.Short.TYPE => "-1"
+                case lang.Character.TYPE                                                   => "'\\u0000'"
+                case s                                                                     => s"fr.linkit.api.local.generation.JNullAssistant.getNull"
+            }
         }
 
         private def hashCode(a: Array[Class[_]]): Int = {

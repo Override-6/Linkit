@@ -21,9 +21,11 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder, WrapperPackage, WrapperPackageName, WrapperPrefixName}
 import fr.linkit.engine.local.generation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.mapping.ClassMappings
-
 import java.io.File
 import java.nio.file.{Files, Path, StandardOpenOption}
+
+import fr.linkit.engine.local.generation.access.common.ScalacCompilerAccess
+
 import scala.collection.mutable
 
 //FIXME Critical bug ! This naming system currently can't handle nested / anonymous classes !
@@ -72,7 +74,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
 
     def compileQueue(parent: ClassLoader): Unit = {
         val sources = listSources()
-                .map(pathToGeneratedClassName(_, 5))
+                .map(pathToGeneratedClassName)
         if (sources.isEmpty)
             return
 
@@ -81,7 +83,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
         val t0         = System.currentTimeMillis()
         val classPaths = ClassMappings.getClassPaths.map(source => Path.of(source.getLocation.toURI))
         try {
-            compilers.compileAll(queuePath, generatedClassesPath, classPaths)
+            ScalacCompilerAccess.compileAll(queuePath, generatedClassesPath, classPaths)
         } catch {
             case e: CompilerAccessException =>
                 throw new InvalidPuppetDefException("Some Compilers could not compile given source files. See above errors for more details.", e)
@@ -143,7 +145,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
                             listSources(subPath)
                         else Array(subPath.toString)
                     })
-                    .filter(_.endsWith(".java"))
+                    .filter(_.endsWith(".scala"))
         }
 
         listSources(queuePath)
@@ -161,10 +163,11 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
         clearQueue()
     }
 
-    private def pathToGeneratedClassName(generatedClassPath: String, suffixLength: Int): String = {
+    private def pathToGeneratedClassName(generatedClassPath: String): String = {
         val parent = if (generatedClassPath.startsWith(generatedClassesPath.toString)) generatedClassesPath else queuePath
-        val name   = generatedClassPath.drop(parent.toString.length + 1)
-        WrapperPackage + name.replace(File.separator, ".").dropRight(suffixLength)
+        val relativeIndex = parent.toString.length + 1
+        val name   = generatedClassPath.slice(relativeIndex, generatedClassPath.lastIndexOf('.'))
+        WrapperPackage + name.replace(File.separator, ".")
     }
 
     override def close(): Unit = {
