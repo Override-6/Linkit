@@ -14,8 +14,8 @@ package fr.linkit.engine.local.generation.access
 
 import fr.linkit.api.local.generation.{CompilerAccess, CompilerCenter}
 import fr.linkit.engine.local.generation.access.common.{JavacCompilerAccess, ScalacCompilerAccess}
+import java.nio.file.{Files, Path}
 
-import java.nio.file.Path
 import scala.collection.mutable.ListBuffer
 
 class DefaultCompilerCenter extends CompilerCenter {
@@ -26,7 +26,7 @@ class DefaultCompilerCenter extends CompilerCenter {
 
     override def getAccessForFile(filePath: Path): Option[CompilerAccess] = compilers.find(_.canCompileFile(filePath))
 
-    override def compileAll(files: Array[Path], destination: Path, classPaths: Seq[Path]): Unit = {
+    override def compileAll(files: Seq[Path], destination: Path, classPaths: Seq[Path]): Unit = {
         files.map(f => (getAccessForFile(f), f))
                 .filterNot(_._1.isEmpty)
                 .groupBy(_._1.get)
@@ -38,7 +38,14 @@ class DefaultCompilerCenter extends CompilerCenter {
                 })
     }
 
-    override def compileAll(folder: Path, destination: Path, classPaths: Seq[Path]): Unit = {
-        compilers.foreach(_.compileAll(folder, destination, classPaths))
+    override def compileAll(folder: Path, recursively: Boolean, destination: Path, classPaths: Seq[Path]): Unit = {
+        val files = {
+            def collect(f: Path): Seq[Path] = {
+                if (Files.isDirectory(f)) Files.list(f).toArray(new Array(_)).flatMap(collect)
+                else Seq(f)
+            }
+            if (recursively) collect(folder) else Files.list(folder)
+        }
+        compileAll(files, destination, classPaths)
     }
 }

@@ -18,12 +18,12 @@ import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
-import fr.linkit.api.local.generation.{CompilerType, TypeVariableTranslator}
+import fr.linkit.api.local.generation.{CompilerCenter, CompilerType, TypeVariableTranslator}
 import fr.linkit.engine.connection.cache.repo.generation.PuppetWrapperClassGenerator.ClassValueScope
 import fr.linkit.engine.local.generation.access.CommonCompilerTypes
 import fr.linkit.engine.local.generation.cbp.{AbstractValueScope, SimpleClassBlueprint}
 
-class PuppetWrapperClassGenerator(resources: WrappersClassResource) extends PuppetWrapperGenerator {
+class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersClassResource) extends PuppetWrapperGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     private val scbp = new SimpleClassBlueprint(classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp"), new ClassValueScope(_))

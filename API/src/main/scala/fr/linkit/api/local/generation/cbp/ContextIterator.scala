@@ -12,7 +12,7 @@
 
 package fr.linkit.api.local.generation.cbp
 
-trait ValueIterator[A, B] {
+trait ContextIterator[A, B] {
 
     def foreach(a: A, action: B => Unit): Unit
 

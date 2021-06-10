@@ -54,13 +54,13 @@ abstract class AbstractValueScope[A](override val name: String,
         values.put(pair._1, BlueprintValueSupplier[A](pair)(upperBlueprint))
     }
 
-    protected def bindSubScope[B](scopeFactory: (String, Int) => ValueScope[B], valueIterator: ValueIterator[A, B]): Unit = {
+    protected def bindSubScope[B](scopeFactory: (String, Int) => ValueScope[B], contextIterator: ContextIterator[A, B]): Unit = {
         val scopes = subBlocks.map(block => (scopeFactory(block.blockBlueprint, block.startPos), block))
         if (scopes.isEmpty) {
             throw new NoSuchElementException("Sub scope not present.")
         }
         val name = scopes.head._2.name
-        subScopes.put(name, new SubScopeCategory[B](scopes, valueIterator))
+        subScopes.put(name, new SubScopeCategory[B](scopes, contextIterator))
     }
 
     private def isPositionOwnedBySubScope(position: Int): Boolean = {
@@ -128,12 +128,12 @@ abstract class AbstractValueScope[A](override val name: String,
     implicit protected class Helper(private val self: String) {
 
         @inline
-        def ~>(supplier: A => String): (String, A => String) = {
+        def ~>(@inline supplier: A => String): (String, A => String) = {
             self -> supplier
         }
 
         @inline
-        def ~~>[T](supplier: T): (String, A => String) = {
+        def ~~>[T](@inline supplier: T): (String, A => String) = {
             self -> (_ => supplier.toString)
         }
     }
@@ -145,7 +145,7 @@ abstract class AbstractValueScope[A](override val name: String,
         }
     }
 
-    class SubScopeCategory[B](scopes: Seq[(ValueScope[B], ScopeBlock)], iterator: ValueIterator[A, B]) {
+    class SubScopeCategory[B](scopes: Seq[(ValueScope[B], ScopeBlock)], iterator: ContextIterator[A, B]) {
 
         def insertResult(inserter: BlueprintInserter, value: A): Unit = {
 

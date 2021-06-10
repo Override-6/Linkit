@@ -14,6 +14,8 @@ package fr.linkit.api.local.generation
 
 import java.nio.file.Path
 
+import scala.util.Try
+
 trait CompilerCenter {
 
     def +=(access: CompilerAccess): Unit = addAccess(access)
@@ -22,7 +24,9 @@ trait CompilerCenter {
 
     def getAccessForFile(path: Path): Option[CompilerAccess]
 
-    def compileAll(files: Array[Path], destination: Path, classPaths: Seq[Path]): Unit
+    def compileAll(files: Seq[Path], destination: Path, classPaths: Seq[Path]): Unit
 
-    def compileAll(folder: Path, destination: Path, classPaths: Seq[Path]): Unit
+    def compileAll(folder: Path, recursively: Boolean, destination: Path, classPaths: Seq[Path]): Unit
+
+    def generate[A](request: CompilationRequest): Try[Class[A]]
 }
