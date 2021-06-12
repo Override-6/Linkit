@@ -78,9 +78,9 @@ public class Puppet$WrappedClassSimpleName$ $TParamsIn$ extends $WrappedClassSim
         return puppeteerDescription;
     }
 
-$$INHERITED_METHODS$$ {
+!!INHERITED_METHODS!! {
     @Override
-    public $GenericTypes$ $ReturnType$ $MethodName$($ParamsIn$) $MethodExceptions$ {
+    public $GenericTypes$ $ReturnType$$MethodName$$ParamsIn$ $MethodExceptions$ {
         if (choreographer.isMethodExecutionForcedToLocal() || !description.isRMIEnabled($MethodID$)) {
         $|If ReturnType == "void"|$ {
             super.$MethodName$($ParamsOut$);

@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation.access.common
+package fr.linkit.engine.local.generation.compilation.access.common
 
-import fr.linkit.api.local.generation.CompilerType
-import fr.linkit.engine.local.generation.access.{AbstractCompilerAccess, CommonCompilerTypes}
+import fr.linkit.api.local.generation.compilation.access.CompilerType
+import fr.linkit.engine.local.generation.compilation.access.{AbstractCompilerAccess, CommonCompilerTypes}
 
 import java.nio.file.Path
 import javax.tools.ToolProvider
@@ -26,11 +26,16 @@ object JavacCompilerAccess extends AbstractCompilerAccess {
 
     override def canCompileFile(filePath: Path): Boolean = filePath.toString.endsWith(JavaFileExtension)
 
-    override def compile(sourceFiles: Array[Path], destination: Path, classPaths: Seq[Path]): Int = {
+    override def compile(sourceFiles: Seq[Path], destination: Path, classPaths: Seq[Path], additionalArguments: Seq[String]): Seq[Path] = {
         val javac                = ToolProvider.getSystemJavaCompiler
         val cpStrings            = classPaths.mkString(";")
-        val options: Seq[String] = Seq[String]("-d", destination.toString, "-Xlint:none", "-classpath", cpStrings) ++ sourceFiles.map(_.toString)
-        val code                 = javac.run(null, null, null, options: _*)
-        code
+        val options: Seq[String] =
+            Seq[String]("-d", destination.toString, "-Xlint:none", "-classpath", cpStrings) ++
+                    sourceFiles.map(_.toString) ++
+                    additionalArguments
+        javac.run(null, null, null, options: _*)
+        sourceFiles
+                .map(destination.relativize)
+                .map(destination.resolve)
     }
 }

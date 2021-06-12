@@ -14,17 +14,18 @@ package fr.linkit.engine.connection.cache.repo.generation
 
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
-import fr.linkit.api.local.generation.{CompilerAccess, CompilerAccessException, CompilerType}
+import fr.linkit.api.local.generation.CompilerType
+import fr.linkit.api.local.generation.compilation.access.{CompilerAccess, CompilerAccessException, CompilerType}
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{ClassesFolder, SourcesFolder, WrapperPackage, WrapperPackageName, WrapperPrefixName}
-import fr.linkit.engine.local.generation.access.DefaultCompilerCenter
+import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.mapping.ClassMappings
+
 import java.io.File
 import java.nio.file.{Files, Path, StandardOpenOption}
-
-import fr.linkit.engine.local.generation.access.common.ScalacCompilerAccess
+import fr.linkit.engine.local.generation.compilation.access.common.ScalacCompilerAccess
 
 import scala.collection.mutable
 
@@ -51,9 +52,6 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
         Files.writeString(path, classSource, StandardOpenOption.CREATE)
     }
 
-    private def toWrapperClassName(wrappedClass: Class[_]): String = {
-        WrapperPackage + wrappedClass.getPackageName + '.' + WrapperPrefixName + wrappedClass.getSimpleName
-    }
 
     def findWrapperClass[S](puppetClass: Class[_], parent: ClassLoader): Option[Class[S with PuppetWrapper[S]]] = {
         val puppetClassName  = puppetClass.getName
@@ -118,23 +116,6 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
 
         packageName + '.' + simpleName
     }*/
-
-    private def toWrapperClassName(puppetWrapperName: String): String = {
-        val className  = puppetWrapperName.replace(File.separator, ".")
-        val pivotIndex = className.lastIndexOf('.')
-
-        var simpleName = className.drop(pivotIndex + 1)
-        if (simpleName.startsWith(WrapperPrefixName))
-            return className
-        simpleName = WrapperPrefixName + simpleName
-
-        var packageName = className.take(pivotIndex)
-        if (packageName.startsWith(WrapperPackage))
-            return packageName + "." + simpleName
-        packageName = WrapperPackage + packageName
-
-        packageName + "." + simpleName
-    }
 
     private def listSources(): Array[String] = {
         def listSources(path: Path): Array[String] = {

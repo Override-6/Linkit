@@ -10,12 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation.access
+package fr.linkit.engine.local.generation.compilation.access
 
-import fr.linkit.api.local.generation.{CompilerAccess, CompilerCenter}
-import fr.linkit.engine.local.generation.access.common.{JavacCompilerAccess, ScalacCompilerAccess}
+import fr.linkit.api.local.generation.compilation.CompilerCenter
+import fr.linkit.api.local.generation.compilation.access.CompilerAccess
+import fr.linkit.engine.local.generation.compilation.access.common.{JavacCompilerAccess, ScalacCompilerAccess}
+
 import java.nio.file.{Files, Path}
-
 import scala.collection.mutable.ListBuffer
 
 class DefaultCompilerCenter extends CompilerCenter {

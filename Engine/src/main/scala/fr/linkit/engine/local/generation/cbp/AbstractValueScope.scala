@@ -26,7 +26,7 @@ abstract class AbstractValueScope[A](override val name: String,
 
     private val subBlocks  = {
         LexerUtils
-                .expressionsBetween("\\$\\$", "\\$\\$", upperBlueprint)
+                .expressionsBetween("!!", "!!", upperBlueprint)
                 .map(getScopeBlock)
     }
     private val conditions = findFlowControllers()

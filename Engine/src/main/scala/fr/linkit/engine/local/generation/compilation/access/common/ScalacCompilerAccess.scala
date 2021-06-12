@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation.access.common
+package fr.linkit.engine.local.generation.compilation.access.common
 
-import fr.linkit.api.local.generation.CompilerType
-import fr.linkit.engine.local.generation.access.{AbstractCompilerAccess, CommonCompilerTypes}
+import fr.linkit.api.local.generation.compilation.access.CompilerType
+import fr.linkit.engine.local.generation.compilation.access.{AbstractCompilerAccess, CommonCompilerTypes}
 
 import java.nio.file.Path
 import scala.tools.nsc.{Global, Settings}
@@ -23,19 +23,20 @@ object ScalacCompilerAccess extends AbstractCompilerAccess {
     val ScalacArguments: List[String] = List("-usejavacp", "-Xplugin:$classes")
     val ScalaFileExtension            = ".scala"
 
-    override def compile(sourceFiles: Array[Path], destination: Path, classPaths: Seq[Path]): Int = {
+    override def compile(sourceFiles: Seq[Path], destination: Path, classPaths: Seq[Path], additionalArguments: Seq[String]): Seq[Path] = {
         val settings = new Settings()
-        settings.processArguments(ScalacArguments ++ List("-d", destination.toString), true)
+        settings.processArguments(ScalacArguments ++ Seq("-d", destination.toString) ++ additionalArguments, true)
         val global = new Global(settings)
-        val run = new global.Run
+        val run    = new global.Run
         run.compile(sourceFiles.map(_.toString).toList)
-        0 //OK code
+        run.compiledFiles
+                .map(Path.of(_))
+                .toSeq
     }
 
     override def getType: CompilerType = CommonCompilerTypes.Scalac
 
     override def canCompileFile(file: Path): Boolean = {
-        val v = file.toString.endsWith(ScalaFileExtension)
-        v
+        file.toString.endsWith(ScalaFileExtension)
     }
 }

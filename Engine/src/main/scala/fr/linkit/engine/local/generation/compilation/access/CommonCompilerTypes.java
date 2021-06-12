@@ -10,9 +10,9 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation.access;
+package fr.linkit.engine.local.generation.compilation.access;
 
-import fr.linkit.api.local.generation.CompilerType;
+import fr.linkit.api.local.generation.compilation.access.CompilerType;
 
 public enum CommonCompilerTypes implements CompilerType {
 

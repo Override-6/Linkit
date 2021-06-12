@@ -12,12 +12,6 @@
 
 package fr.linkit.api.local.generation
 
-trait CompilerType {
-
-    val name: String
-
-    val languageName: String
-
-    val sourceFileExtension: String
+trait ClassDescription {
 
 }

@@ -10,10 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation
+package fr.linkit.api.local.generation.compilation
 
-import fr.linkit.api.local.system.AppException
+trait CompilationResult[T] {
 
-class CompilerAccessException(msg: String, errorCode: Int, cause: Throwable = null) extends AppException(msg, cause) {
+    def get: T
+
+    def getCompileTime: Long
+
+    def getRequest: CompilationRequest[_]
 
 }

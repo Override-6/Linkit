@@ -1,9 +1,0 @@
--d
-C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\PuppetGeneration\\Classes
--Xlint:all
--classpath
-C:\\Users\\maxim\\IdeaProjects\\Linkit\\Server\\build\\classes\\scala\\test;C:\\Users\\maxim\\.gradle\\caches\\modules-2\\files-2.1\\org.scala-lang\\scala-library\\2.13.5\\d0df6e78b6ccb0102cb0395bfa8cb806e9e81b61\\scala-library-2.13.5.jar;C:\\Users\\maxim\\IdeaProjects\\Linkit\\Engine\\build\\libs\\Engine.jar;C:\\Users\\maxim\\IdeaProjects\\Linkit\\API\\build\\libs\\API-1.0-SNAPSHOT.jar
-C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\PuppetGeneration\\Sources\\gen\\fr\\linkit\\engine\\local\\system\\fsa\\io\\PuppetIOFileAdapter.java
-C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\PuppetGeneration\\Sources\\gen\\fr\\linkit\\engine\\local\\system\\fsa\\io\\PuppetIOFileSystemAdapter.java
-C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\PuppetGeneration\\Sources\\gen\\fr\\linkit\\engine\\local\\system\\fsa\\nio\\PuppetNIOFileAdapter.java
-C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\PuppetGeneration\\Sources\\gen\\fr\\linkit\\engine\\local\\system\\fsa\\nio\\PuppetNIOFileSystemAdapter.java

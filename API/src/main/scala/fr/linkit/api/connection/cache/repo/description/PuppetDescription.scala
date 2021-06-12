@@ -15,14 +15,14 @@ package fr.linkit.api.connection.cache.repo.description
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvocationKind, InvokeOnly, MethodControl}
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription, toSyncParamsIndexes}
+
 import java.lang.annotation.Annotation
 import java.lang.reflect.{Field, Method, Modifier}
-
-import fr.linkit.api.local.generation.TypeVariableTranslator
+import fr.linkit.api.local.generation.{ClassDescription, TypeVariableTranslator}
 
 import scala.collection.mutable.ListBuffer
 
-class PuppetDescription[+T] private(val clazz: Class[_ <: T]) {
+class PuppetDescription[+T] private(val clazz: Class[_ <: T]) extends ClassDescription {
 
     /**
      * Methods and fields that comes from those classes will not be available for RMI Invocations.

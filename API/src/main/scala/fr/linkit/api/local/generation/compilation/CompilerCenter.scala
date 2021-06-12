@@ -10,10 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation
+package fr.linkit.api.local.generation.compilation
+
+import fr.linkit.api.local.generation.compilation.access.CompilerAccess
 
 import java.nio.file.Path
-
 import scala.util.Try
 
 trait CompilerCenter {
@@ -28,5 +29,5 @@ trait CompilerCenter {
 
     def compileAll(folder: Path, recursively: Boolean, destination: Path, classPaths: Seq[Path]): Unit
 
-    def generate[A](request: CompilationRequest): Try[Class[A]]
+    def generate[A](request: CompilationRequest[A]): CompilationResult[A]
 }

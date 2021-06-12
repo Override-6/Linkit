@@ -47,7 +47,7 @@ class ResourcesAndClassGenerationTests {
     def init(): Unit = {
         val config = new ApplicationConfiguration {
             override val pluginFolder   : Option[String]             = None
-            override val resourceFolder : String                     = "D:\\Users\\Maxime\\Desktop\\Dev\\Perso\\Linkit\\Home"
+            override val resourceFolder : String                     = System.getenv("LinkitHome")
             override val fsAdapter      : FileSystemAdapter          = LocalFileSystemAdapters.Nio
             override val securityManager: ApplicationSecurityManager = null
         }

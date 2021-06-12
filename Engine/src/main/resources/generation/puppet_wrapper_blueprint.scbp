@@ -21,11 +21,11 @@ import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException
 
 @SerialVersionUID($CompileTime$L)
-class Puppet$WrappedClassSimpleName$ $TParamsIn$(private var puppeteer: Puppeteer[$WrappedClassSimpleName$ $TParamsOut$],
-                                                 private val clone: $WrappedClassSimpleName$ $TParamsOut$)
-    extends $WrappedClassSimpleName$ $TParamsOut$(clone) with PuppetWrapper[$WrappedClassSimpleName$ $TParamsOut$] {
+class Puppet$WrappedClassSimpleName$$TParamsIn$(private var puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsOut$],
+                                                 private val clone: $WrappedClassSimpleName$$TParamsOut$)
+    extends $WrappedClassSimpleName$$TParamsOut$(clone) with PuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] {
 
-    @transient private var description: PuppetDescription[$WrappedClassSimpleName$ $TParamsOut$] = _
+    @transient private var description: PuppetDescription[$WrappedClassSimpleName$$TParamsOut$] = _
     @transient private var choreographer: InvocationChoreographer = _
     @transient private var puppeteerDescription: PuppeteerDescription = _
     initPuppeteer(puppeteer)
@@ -34,7 +34,7 @@ class Puppet$WrappedClassSimpleName$ $TParamsIn$(private var puppeteer: Puppetee
     //They does not affect abstraction or classes behaviors.
     //Override annotations are removed at compilation.
 
-    override def initPuppeteer(puppeteer: Puppeteer[$WrappedClassSimpleName$ $TParamsIn$]): Unit = {
+    override def initPuppeteer(puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsIn$]): Unit = {
         if (this.puppeteer != null)
             throw new PuppetAlreadyInitialisedException("This puppet is already initialized !")
         this.puppeteer = puppeteer
@@ -46,22 +46,22 @@ class Puppet$WrappedClassSimpleName$ $TParamsIn$(private var puppeteer: Puppetee
 
     override def isInitialized: Boolean = puppeteer != null
 
-    override def detachedSnapshot: $WrappedClassSimpleName$ $TParamsIn$ = {
+    override def detachedSnapshot: $WrappedClassSimpleName$$TParamsIn$ = {
         new $WrappedClassSimpleName$(this)
     }
 
-    override def getValue: $WrappedClassSimpleName$ $TParamsIn$ = this
+    override def getValue: $WrappedClassSimpleName$$TParamsIn$ = this
 
     override def getChoreographer: InvocationChoreographer = choreographer
 
-    override def getPuppeteer: Puppeteer[$WrappedClassSimpleName$ $TParamsIn$] = puppeteer
+    override def getPuppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsIn$] = puppeteer
 
     override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
 
-$$INHERITED_METHODS$$ {
-    override def $MethodName$ $GenericTypes$($ParamsIn$): $ReturnType$ = {
+!!INHERITED_METHODS!! {
+    override def $MethodName$$GenericTypes$$ParamsIn$: $ReturnType$ = {
         if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled($MethodID$)) {
-            return super.$MethodName$($ParamsOut$)
+            return super.$MethodName$$GenericTypesOut$($ParamsOut$)
         }
         val args = Array[Any]($ParamsOut$)
         //# From here we are sure that we want to perform a remote
@@ -70,7 +70,7 @@ $$INHERITED_METHODS$$ {
             puppeteer.sendInvoke($MethodID$, args)
             var localResult: $ReturnType$ = $DefaultReturnType$
             if (description.isLocalInvocationForced($MethodID$)) {
-                localResult = super.$MethodName$($ParamsIn$)
+                localResult = super.$MethodName$$GenericTypesOut$$ParamsIn$
             }
             //# Note1: value of 'InvokeOnlyResult' can be "localResult".
             //# Note2: Be aware that you can get a null value returned
@@ -81,7 +81,7 @@ $$INHERITED_METHODS$$ {
         }
         var result: $ReturnType$ = $DefaultReturnType$
         if (description.isLocalInvocationForced($MethodID$)) {
-            result = super.$MethodName$($ParamsIn$)
+            result = super.$MethodName$$GenericTypesOut$$ParamsIn$
             puppeteer.sendInvoke($MethodID$, args)
         } else {
             result = puppeteer.sendInvokeAndWaitResult($MethodID$, args)
