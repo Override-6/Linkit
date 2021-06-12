@@ -18,6 +18,7 @@ import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationRequestFactory, CompilationResult}
 import fr.linkit.engine.connection.cache.repo.generation.WrapperCompilationFactory.ClassValueScope
+import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.cbp.{AbstractValueScope, SimpleClassBlueprint}
 import fr.linkit.engine.local.generation.compilation.CompilationRequestBuilder
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
@@ -25,24 +26,51 @@ import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import java.lang.reflect.{Modifier, Type}
 import java.nio.file.Path
 
-class WrapperCompilationFactory extends CompilationRequestFactory[PuppetDescription[_], CompilationRequest] {
+class WrapperCompilationFactory extends CompilationRequestFactory[PuppetDescription[_], Class[_]] {
+
+    override val defaultWorkingDirectory: Path = Path.of(LinkitApplication.getProperty("compilation.working_dir"))
 
     override def makeRequest(context: PuppetDescription[_], workingDirectory: Path): CompilationRequest[Class[_]] = {
-        makeMultiRequest(Seq(context), workingDirectory)
+        val req = createMultiRequest(Seq(context), workingDirectory)
+
+        new CompilationRequestBuilder[Class[_]] {
+            override var sourceCodes     : Seq[(String, String)] = req.sourceCodes
+            override val workingDirectory: Path                  = req.workingDirectory
+
+            override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Class[_]] = {
+                new CompilationResult[Class[_]] {
+                    override def get: Class[_] = req.conclude(outs, compilationTime).get.head
+
+                    override def getCompileTime: Long = compilationTime
+
+                    override def getRequest: CompilationRequest[_] = req
+                }
+            }
+        }
     }
 
-    override def makeMultiRequest(contexts: Seq[PuppetDescription[_]], workingDirectory: Path): _ <: CompilationRequest[Class[_]] = {
+    override def makeMultiRequest(contexts: Seq[PuppetDescription[_]], workingDirectory: Path): CompilationRequest[Seq[Class[_]]] = {
+        createMultiRequest(contexts, workingDirectory)
+    }
+
+    private def createMultiRequest(contexts: Seq[PuppetDescription[_]], workingDir: Path): CompilationRequestBuilder[Seq[Class[_]]] = {
         val bp = blueprints(CommonCompilerTypes.Scalac)
-        new CompilationRequestBuilder[Class[_]] { request =>
-            override val workingDirectory: Path                  = workingDirectory
+        new CompilationRequestBuilder[Seq[Class[_]]] { request =>
+            override val workingDirectory: Path                  = workingDir
             override var sourceCodes     : Seq[(String, String)] = {
                 contexts.map(desc => (toWrapperClassName(desc.clazz.getName), bp.toClassSource(desc)))
             }
 
-            override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Array[Class[_]]] = {
-                new CompilationResult[Class[_]] {
-                    override def get: Array[Class[_]] = {
-                        outs.filter(workingDirectory.relativize( _))
+            override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[_]]] = {
+                new CompilationResult[Seq[Class[_]]] {
+                    override def get: Seq[Class[_]] = {
+                        contexts
+                                .filter(desc => outs.contains(workingDir.resolve(toWrapperClassName(desc.clazz.getName))))
+                                .map { desc =>
+                                    val clazz            = desc.clazz
+                                    val wrapperClassName = toWrapperClassName(clazz.getName)
+                                    new GeneratedClassClassLoader(workingDir, clazz.getClassLoader).loadClass(wrapperClassName)
+                                }
                     }
 
                     override def getCompileTime: Long = compilationTime

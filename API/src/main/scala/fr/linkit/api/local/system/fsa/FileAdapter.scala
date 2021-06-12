@@ -64,10 +64,10 @@ trait FileAdapter extends Serializable {
 
     def createAsFolder(): this.type
 
-    def newInputStream(append: Boolean = false): InputStream
+    def newInputStream(): InputStream
 
     def newOutputStream(append: Boolean = false): OutputStream
 
-    def write(bytes: Array[Byte], append: Boolean = false): Unit
+    def write(bytes: Array[Byte], append: Boolean = false): this.type
 
 }

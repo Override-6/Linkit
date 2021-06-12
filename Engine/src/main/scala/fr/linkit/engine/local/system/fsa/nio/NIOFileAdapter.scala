@@ -20,6 +20,7 @@ import java.net.URI
 import java.nio.file._
 
 case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystemAdapter) extends FileAdapter {
+
     def this(other: NIOFileAdapter) = {
         this(other.path, other.fsa)
     }
@@ -92,16 +93,17 @@ case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystem
 
     override def isPresentOnDisk: Boolean = exists
 
-    override def newInputStream(append: Boolean = false): InputStream = {
-        Files.newInputStream(path, options(append): _*)
+    override def newInputStream(): InputStream = {
+        Files.newInputStream(path)
     }
 
     override def newOutputStream(append: Boolean = false): OutputStream = {
         Files.newOutputStream(path, options(append): _*)
     }
 
-    override def write(bytes: Array[Byte], append: Boolean = false): Unit = {
+    override def write(bytes: Array[Byte], append: Boolean = false): this.type = {
         Files.write(path, bytes, options(append): _*)
+        this
     }
 
     private def options(append: Boolean): Array[OpenOption] =

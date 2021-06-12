@@ -44,11 +44,11 @@ class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) e
     override def close(): Unit = entry.close()
 }
 
-object LocalResourceFile extends ExternalResourceFactory[ResourceFile] {
+object LocalResourceFile extends ExternalResourceFactory[LocalResourceFile] {
 
-    override def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): ResourceFile = {
+    override def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): LocalResourceFile = {
         apply(parent, adapter)
     }
 
-    def apply(parent: ResourceFolder, adapter: FileAdapter): ResourceFile = new LocalResourceFile(parent, adapter)
+    def apply(parent: ResourceFolder, adapter: FileAdapter): LocalResourceFile = new LocalResourceFile(parent, adapter)
 }

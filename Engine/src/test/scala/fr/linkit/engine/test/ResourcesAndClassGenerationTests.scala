@@ -103,7 +103,7 @@ class ResourcesAndClassGenerationTests {
         Assertions.assertNotNull(resources)
         val cl = obj.getClass.asInstanceOf[Class[obj.type]]
 
-        val resource    = resources.getOrOpenShort[WrappersClassResource]("PuppetGeneration")
+        val resource    = resources.getOrOpenThenRepresent[WrappersClassResource]("PuppetGeneration")
         val generator   = new PuppetWrapperClassGenerator(resource)
         val puppetClass = generator.getClass(cl)
         println(s"puppetClass = ${puppetClass}")

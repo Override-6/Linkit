@@ -105,7 +105,7 @@ trait ResourceFolder extends ExternalResource {
     def getOrOpen[R <: ExternalResource : ClassTag](name: String)(implicit factory: ExternalResourceFactory[R]): R
 
     @NotNull
-    def getOrOpenShort[R <: ResourceRepresentation : ClassTag](actionShortener: OpenActionShortener[R]): R = {
+    def getOrOpenThenRepresent[R <: ResourceRepresentation : ClassTag](actionShortener: OpenActionShortener[R]): R = {
         actionShortener.performOpen(this)
     }
 

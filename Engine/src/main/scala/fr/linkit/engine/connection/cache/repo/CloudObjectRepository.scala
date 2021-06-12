@@ -215,7 +215,7 @@ object CloudObjectRepository {
         (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
             val channel     = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             val application = handler.network.connection.getContext
-            val resources   = application.getAppResources.getOrOpenShort[WrappersClassResource](ClassesResourceDirectory)
+            val resources   = application.getAppResources.getOrOpenThenRepresent[WrappersClassResource](ClassesResourceDirectory)
             val generator   = new PuppetWrapperClassGenerator(resources)
 
             new CloudObjectRepository[A](handler, identifier, channel, generator, descriptions)

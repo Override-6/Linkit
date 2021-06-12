@@ -18,7 +18,7 @@ import fr.linkit.api.local.generation.compilation.access.CompilerType
 import java.nio.file.Path
 import scala.collection.mutable
 
-trait CompilationRequestFactory[I, R[O] <: CompilationRequest[O]] {
+trait CompilationRequestFactory[I, O] {
 
     protected val blueprints = new mutable.HashMap[CompilerType, ClassBlueprint[I]]()
 

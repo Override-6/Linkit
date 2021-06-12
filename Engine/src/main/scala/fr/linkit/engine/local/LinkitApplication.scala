@@ -15,7 +15,7 @@ package fr.linkit.engine.local
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
+import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFile, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
@@ -24,14 +24,14 @@ import fr.linkit.engine.local.LinkitApplication.setInstance
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.mapping.ClassMapEngine
 import fr.linkit.engine.local.plugin.LinkitPluginManager
-import fr.linkit.engine.local.resource.external.{LocalResourceFactories, LocalResourceFolder}
+import fr.linkit.engine.local.resource.external.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.local.resource.{ResourceFolderMaintainer, SimpleResourceListener}
 import fr.linkit.engine.local.system.EngineConstants
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
 import fr.linkit.engine.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
 
-import java.util.Objects
+import java.util.{Objects, Properties}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
@@ -106,19 +106,35 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
 
 object LinkitApplication {
 
+    private val AppPropertiesName         = "app.properties"
+    private val AppDefaultsPropertiesName = "app_defaults.properties"
+
+    private val properties          : Properties        = new Properties()
     @volatile private var instance  : LinkitApplication = _
     @volatile private var isPrepared: Boolean           = false
 
     private def setInstance(instance: LinkitApplication): Unit = this.synchronized {
         if (this.instance != null)
-            throw new IllegalAccessError("Only one LinkitApplication per Java process is permitted.")
+            throw new IllegalAccessError("Only one LinkitApplication per JVM process is permitted.")
         if (!isPrepared)
             throw new IllegalStateException("Application must be prepared before any launch. Please use LinkitApplication.prepareApplication.")
         this.instance = instance
     }
 
+    def getProperty(name: String): String = properties.getProperty(name)
+
+    def setProperty(name: String, property: String): String = properties.setProperty(name, property) match {
+        case str: String => str
+        case null        => null
+        case obj         => obj.toString
+    }
+
+    def saveProperties(): Unit = {
+        val propertiesResource = instance.getAppResources.get[LocalResourceFile](AppPropertiesName)
+        properties.store(propertiesResource.getAdapter.newOutputStream(), null)
+    }
+
     def prepareApplication(implVersion: Version, configuration: ApplicationConfiguration, otherSources: Seq[Class[_]]): ResourceFolder = this.synchronized {
-        isPrepared = true
 
         System.setProperty(EngineConstants.ImplVersionProperty, implVersion.toString)
 
@@ -131,14 +147,25 @@ object LinkitApplication {
         AppLogger.info("Mapping classes, this task may take a time.")
 
         mapEnvironment(configuration.fsAdapter, otherSources)
-
         import LocalResourceFolder._
 
         val appResources = prepareAppResources(configuration)
-        val resource     = appResources.getOrOpenShort[WrappersClassResource]("/PuppetGeneration/")
+        val resource     = appResources.getOrOpenThenRepresent[WrappersClassResource]("/PuppetGeneration/")
         val generator    = new PuppetWrapperClassGenerator(resource)
 
+        def loadResources(resource: ResourceFile): Unit = properties.load(resource.getAdapter.newInputStream())
+
+        val propertiesResources = appResources.find[LocalResourceFile](AppPropertiesName)
+                .getOrElse {
+                    val res = appResources.openResource(AppPropertiesName, LocalResourceFile)
+                    res.getAdapter
+                            .write(getClass.getResourceAsStream(AppDefaultsPropertiesName).readAllBytes(), true)
+                    res
+                }
+        properties.load(propertiesResources.getAdapter.newInputStream())
+
         generator.preGenerateClasses(classOf[LinkitApplication].getClassLoader, Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter]))
+        isPrepared = true
         appResources
     }
 

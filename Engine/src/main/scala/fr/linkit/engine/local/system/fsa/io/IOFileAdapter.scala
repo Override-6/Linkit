@@ -79,17 +79,18 @@ case class IOFileAdapter private[io](file: File, @transient fsa: IOFileSystemAda
         this
     }
 
-    override def newInputStream(append: Boolean = false): InputStream = new FileInputStream(file)
+    override def newInputStream(): InputStream = new FileInputStream(file)
 
     override def newOutputStream(append: Boolean = false): OutputStream = new FileOutputStream(file)
 
-    override def write(bytes: Array[Byte], append: Boolean = false): Unit = {
+    override def write(bytes: Array[Byte], append: Boolean = false): this.type = {
         val out = newOutputStream(append)
         try out.write(bytes)
         finally {
             out.flush()
             out.close()
         }
+        this
     }
 
     override def isPresentOnDisk: Boolean = exists
