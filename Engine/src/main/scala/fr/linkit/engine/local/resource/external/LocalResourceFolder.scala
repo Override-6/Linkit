@@ -70,6 +70,6 @@ object LocalResourceFolder extends ExternalResourceFactory[LocalResourceFolder] 
         }
     }
 
-    val ForbiddenChars: Array[Char] = Array('\\', '/', ':', '?', '"', '<', '>', '|')
+    val ForbiddenChars: Array[Char] = Array(':', '?', '"', '<', '>', '|')
 
 }

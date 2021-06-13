@@ -23,13 +23,19 @@ abstract class AbstractCompilerAccess extends CompilerAccess {
     override def compileRequest[T](request: CompilationRequest[T]): CompilationResult[T] = {
         val files       = request.sourceCodesPaths
                 .filter(canCompileFile)
+        val t0          = System.currentTimeMillis()
         val outputFiles = try {
             compile(files, request.workingDirectory, request.classPaths, request.additionalParams(getType))
         } catch {
             case NonFatal(e) =>
                 throw new CompilerAccessException(s"Compilation went wrong: An exception occurred. (${getType.name} compiler for ${getType.languageName} language.)", e)
         }
-        request.conclude(outputFiles)
+        val t1          = System.currentTimeMillis()
+        request.conclude(outputFiles, t1 - t0)
+    }
+
+    override def compileAll(files: Seq[Path], destination: Path, classPaths: Seq[Path]): Unit = {
+        compile(files.filter(canCompileFile), destination, classPaths, Seq.empty)
     }
 
     /**

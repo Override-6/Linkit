@@ -15,19 +15,24 @@ package fr.linkit.api.connection.cache.repo.description
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvocationKind, InvokeOnly, MethodControl}
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription, toSyncParamsIndexes}
+import fr.linkit.api.local.generation.ClassDescription
 
 import java.lang.annotation.Annotation
-import java.lang.reflect.{Field, Method, Modifier}
-import fr.linkit.api.local.generation.{ClassDescription, TypeVariableTranslator}
-
+import java.lang.reflect.{Field, Modifier}
 import scala.collection.mutable.ListBuffer
+import scala.reflect.runtime.{universe => u}
 
-class PuppetDescription[+T] private(val clazz: Class[_ <: T]) extends ClassDescription {
+class PuppetDescription[+T] private(tag: u.Type, loader: ClassLoader) extends ClassDescription {
+
+    import u._
 
     /**
      * Methods and fields that comes from those classes will not be available for RMI Invocations.
      * */
-    private val BlacklistedSuperClasses = Array[Class[_]](classOf[Object], classOf[Product])
+    private val BlacklistedSuperClasses: Array[u.Symbol] = Array(typeTag[Object], typeTag[Product])
+
+    private val mirror      = u.runtimeMirror(loader)
+    private val classMirror = mirror.reflectClass(tag.typeSymbol.asClass)
 
     private val methods    = collectMethods()
     private val methodsMap = methods.map(desc => (desc.methodId, desc)).toMap
@@ -47,7 +52,7 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) extends ClassDescr
 
     def getFieldDesc(fieldID: Int): Option[FieldDescription] = {
         fields
-            .get(fieldID)
+                .get(fieldID)
     }
 
     def isRMIEnabled(methodId: Int): Boolean = {
@@ -67,40 +72,53 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) extends ClassDescr
     }
 
     private def collectMethods(): Seq[MethodDescription] = {
-        val methods = clazz.getMethods
-            .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
-            .map(genMethodDescription)
+        val methods = tag.decls
+                .filterNot(f => f.isFinal || BlacklistedSuperClasses.contains(f.owner))
+                .filter(_.isMethod)
+                .map(_.asMethod)
+                .map(genMethodDescription)
 
         val filteredMethods = ListBuffer.empty[MethodDescription]
         methods.foreach(desc => {
             filteredMethods.find(_.methodId == desc.methodId)
-                .fold[Unit](filteredMethods += desc) { otherDesc =>
-                    if (hierarchyLevel(desc.method.getReturnType) > hierarchyLevel(otherDesc.method.getReturnType)) {
-                        filteredMethods -= otherDesc
-                        filteredMethods += desc
+                    .fold[Unit](filteredMethods += desc) { otherDesc =>
+                        if (desc.method.returnType.baseClasses.size > otherDesc.method.returnType.baseClasses.size) {
+                            filteredMethods -= otherDesc
+                            filteredMethods += desc
+                        }
                     }
-                }
         })
         filteredMethods.toSeq
     }
 
     private def collectFields(): Map[Int, FieldDescription] = {
         clazz.getFields
-            .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
-            .map(genFieldDescription)
-            .map(desc => (desc.fieldID, desc))
-            .toMap
+                .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
+                .map(genFieldDescription)
+                .map(desc => (desc.fieldID, desc))
+                .toMap
     }
 
-    private def genMethodDescription(method: Method): MethodDescription = {
-        val control            = Option(method.getDeclaredAnnotation(classOf[MethodControl])).getOrElse(DefaultMethodControl)
+    def findAnnotation[A <: Annotation](method: u.Symbol, clazz: Class[A]): Option[A] = {
+        method.annotations
+                .find(_.tree.tpe.typeSymbol.asClass.fullName == clazz.getName)
+                .map { ann =>
+                    import scala.tools.reflect.ToolBox
+
+                    val toolBox = mirror.mkToolBox()
+                    toolBox.eval(ann.tree).asInstanceOf[A]
+                }
+    }
+
+    private def genMethodDescription(method: u.MethodSymbol): MethodDescription = {
+        val control            = findAnnotation(method, classOf[MethodControl]).getOrElse(DefaultMethodControl)
         val synchronizedParams = toSyncParamsIndexes(control.mutates(), method)
         val invocationKind     = control.value()
-        val invokeOnly         = method.getAnnotation(classOf[InvokeOnly])
+        val invokeOnly         = findAnnotation(method, classOf[InvokeOnly])
         val isPure             = control.pure() && control.mutates().nonEmpty
         val isHidden           = control.hide()
         val syncReturnValue    = control.synchronizeReturnValue()
-        val desc               = MethodDescription(method, Option(invokeOnly), synchronizedParams, invocationKind, syncReturnValue, isPure, isHidden)
+        val desc               = MethodDescription(method, invokeOnly, synchronizedParams, invocationKind, syncReturnValue, isPure, isHidden)
         desc
     }
 
@@ -111,46 +129,34 @@ class PuppetDescription[+T] private(val clazz: Class[_ <: T]) extends ClassDescr
         FieldDescription(field, isSynchronized, isHidden)
     }
 
-    private def hierarchyLevel(clazz: Class[_]): Int = {
-        var superClass = clazz.getSuperclass
-        var level      = 0
-        while (superClass != null) {
-            superClass = superClass.getSuperclass
-            level += 1
-        }
-
-        def hierarchyInterfaceLevel(clazz: Class[_]): Int = {
-            val interfaces = clazz.getInterfaces
-            interfaces.length + interfaces.map(hierarchyLevel).sum
-        }
-
-        level + hierarchyInterfaceLevel(clazz)
-    }
-
 }
 
 object PuppetDescription {
 
-    def toSyncParamsIndexes(literal: String, method: Method): Seq[Boolean] = {
+    import u._
+
+    def toSyncParamsIndexes(literal: String, method: u.Symbol): Seq[Boolean] = {
         val synchronizedParamNumbers = literal
-            .split(",")
-            .filterNot(s => s == "this" || s.isBlank)
-            .map(s => s.trim
-                .dropRight(s.lastIndexWhere(!_.isDigit))
-                .toInt)
-            .distinct
-        for (n <- 1 to method.getParameterCount) yield {
+                .split(",")
+                .filterNot(s => s == "this" || s.isBlank)
+                .map(s => s.trim
+                        .dropRight(s.lastIndexWhere(!_.isDigit))
+                        .toInt)
+                .distinct
+        for (n <- 1 to method.asMethod.paramLists.flatten.size) yield {
             synchronizedParamNumbers.contains(n)
         }
     }
 
-    def apply[T](clazz: Class[_ <: T]): PuppetDescription[T] = {
+    def apply[T: TypeTag](clazz: Class[_ <: T]): PuppetDescription[T] = {
         if (classOf[PuppetWrapper[T]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class can't extend PuppetWrapper")
-        new PuppetDescription(clazz)
+        new PuppetDescription(tpe[T], clazz.getClassLoader)
     }
 
-    case class MethodDescription(method: Method,
+    private def tpe[T](implicit tag: TypeTag[T]): Type = tag.tpe
+
+    case class MethodDescription(method: u.MethodSymbol,
                                  invokeOnly: Option[InvokeOnly],
                                  var synchronizedParams: Seq[Boolean], //TODO make synchronization
                                  var invocationKind: InvocationKind,
@@ -158,39 +164,39 @@ object PuppetDescription {
                                  var isPure: Boolean,
                                  var isHidden: Boolean) {
 
-        val clazz: Class[_] = method.getDeclaringClass
-
         val methodId: Int = {
-            val parameters: Array[Class[_]] = method.getParameterTypes
-            method.getName.hashCode + hashCode(parameters)
+            val parameters: Array[u.Symbol] = method.paramLists.flatten.toArray
+            method.name.toString.hashCode + hashCode(parameters)
         }
 
         def getDefaultReturnValue: String = {
             invokeOnly
-                .map(_.value())
-                .getOrElse {
-                    getDefaultTypeReturnValue
-                }
+                    .map(_.value())
+                    .getOrElse {
+                        getDefaultTypeReturnValue
+                    }
         }
 
-        def getDefaultTypeReturnValue: String = {
-            val returnType = method.getReturnType
-            import java.lang
-            returnType match {
-                case lang.Boolean.TYPE                                                     => "false"
-                case lang.Float.TYPE | lang.Double.TYPE                                    => "-1.0"
-                case lang.Integer.TYPE | lang.Byte.TYPE | lang.Long.TYPE | lang.Short.TYPE => "-1"
-                case lang.Character.TYPE                                                   => "'\\u0000'"
-                case s                                                                     => s"fr.linkit.api.local.generation.JNullAssistant.getNull"
-            }
+        private val numberTypes = Array(tpe[Float], tpe[Double], tpe[Int], tpe[Byte], tpe[Long], tpe[Short])
+
+        private def getDefaultTypeReturnValue: String = {
+            val r = method.returnType
+
+            if (r == tpe[Boolean])
+                "false"
+            else if (numberTypes.contains(r))
+                "-1"
+            else if (r == tpe[Char])
+                "'\\u0000'"
+            else "fr.linkit.api.local.generation.JNullAssistant.getNull"
         }
 
-        private def hashCode(a: Array[Class[_]]): Int = {
+        private def hashCode(a: Array[u.Symbol]): Int = {
             if (a == null) return 0
             var result = 1
             for (clazz <- a) {
                 result = 31 * result + (if (clazz == null) 0
-                else clazz.getName.hashCode)
+                else clazz.fullName.hashCode)
             }
             result
         }

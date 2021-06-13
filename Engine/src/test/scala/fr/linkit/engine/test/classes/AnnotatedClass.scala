@@ -10,18 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation.compilation
+package fr.linkit.engine.test.classes
 
-import java.nio.file.Path
+import fr.linkit.api.connection.cache.repo.annotations.{InvocationKind, MethodControl}
 
-trait CompilationResult[T] {
-
-    def getOuterFiles: Seq[Path]
-
-    def get: T
-
-    def getCompileTime: Long
-
-    def getRequest: CompilationRequest[_]
+@MethodControl(InvocationKind.ONLY_LOCAL, false, "arg2")
+class AnnotatedClass {
 
 }

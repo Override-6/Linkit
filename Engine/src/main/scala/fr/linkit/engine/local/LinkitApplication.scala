@@ -14,14 +14,16 @@ package fr.linkit.engine.local
 
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, workerExecution}
+import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFile, ResourceFolder}
+import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication.setInstance
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.mapping.ClassMapEngine
 import fr.linkit.engine.local.plugin.LinkitPluginManager
 import fr.linkit.engine.local.resource.external.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
@@ -31,14 +33,16 @@ import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
 import fr.linkit.engine.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
 
+import java.nio.file.Path
 import java.util.{Objects, Properties}
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success}
 
 abstract class LinkitApplication(configuration: ApplicationConfiguration, appResources: ResourceFolder) extends ApplicationContext {
 
-    override val pluginManager   : PluginManager = new LinkitPluginManager(this, configuration.fsAdapter)
-    @volatile protected var alive: Boolean       = false
+    override val pluginManager   : PluginManager  = new LinkitPluginManager(this, configuration.fsAdapter)
+    override val compilerCenter  : CompilerCenter = new DefaultCompilerCenter
+    @volatile protected var alive: Boolean        = false
     protected val appPool: BusyWorkerPool
 
     setInstance(this)
@@ -100,20 +104,25 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
             configuration.fsAdapter.getAdapter(pluginFolder)
             AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
         }
+
+        import LocalResourceFolder._
+        val resource  = appResources.getOrOpenThenRepresent[WrappersClassResource]("/PuppetGeneration/")
+        val generator = new PuppetWrapperClassGenerator(compilerCenter, resource)
+        generator.preGenerateClasses(classOf[LinkitApplication].getClassLoader, Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter]))
     }
 
 }
 
 object LinkitApplication {
 
-    private val AppPropertiesName         = "app.properties"
-    private val AppDefaultsPropertiesName = "app_defaults.properties"
+    private val AppPropertiesName     = "app.properties"
+    private val AppDefaultsProperties = "/app_defaults.properties"
 
     private val properties          : Properties        = new Properties()
     @volatile private var instance  : LinkitApplication = _
     @volatile private var isPrepared: Boolean           = false
 
-    private def setInstance(instance: LinkitApplication): Unit = this.synchronized {
+    def setInstance(instance: LinkitApplication): Unit = this.synchronized {
         if (this.instance != null)
             throw new IllegalAccessError("Only one LinkitApplication per JVM process is permitted.")
         if (!isPrepared)
@@ -122,6 +131,12 @@ object LinkitApplication {
     }
 
     def getProperty(name: String): String = properties.getProperty(name)
+
+    def getHomePath(path: String): Path = {
+        Path.of(instance.getAppResources.getAdapter.getPath + '/' + path)
+    }
+
+    def getHomePathProperty(name: String): Path = getHomePath(getProperty(name))
 
     def setProperty(name: String, property: String): String = properties.setProperty(name, property) match {
         case str: String => str
@@ -147,24 +162,17 @@ object LinkitApplication {
         AppLogger.info("Mapping classes, this task may take a time.")
 
         mapEnvironment(configuration.fsAdapter, otherSources)
-        import LocalResourceFolder._
 
-        val appResources = prepareAppResources(configuration)
-        val resource     = appResources.getOrOpenThenRepresent[WrappersClassResource]("/PuppetGeneration/")
-        val generator    = new PuppetWrapperClassGenerator(resource)
-
-        def loadResources(resource: ResourceFile): Unit = properties.load(resource.getAdapter.newInputStream())
-
+        val appResources        = prepareAppResources(configuration)
         val propertiesResources = appResources.find[LocalResourceFile](AppPropertiesName)
                 .getOrElse {
                     val res = appResources.openResource(AppPropertiesName, LocalResourceFile)
                     res.getAdapter
-                            .write(getClass.getResourceAsStream(AppDefaultsPropertiesName).readAllBytes(), true)
+                            .write(getClass.getResourceAsStream(AppDefaultsProperties).readAllBytes(), true)
                     res
                 }
         properties.load(propertiesResources.getAdapter.newInputStream())
 
-        generator.preGenerateClasses(classOf[LinkitApplication].getClassLoader, Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter]))
         isPrepared = true
         appResources
     }
@@ -177,7 +185,7 @@ object LinkitApplication {
         LocalFileSystemAdapters.Io.clearAdapters()
     }
 
-    def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {
+    private def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {
         AppLogger.trace("Loading app resources...")
         val resourceListener = new SimpleResourceListener()
         resourceListener.startWatchService()

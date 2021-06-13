@@ -31,9 +31,10 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
-import java.util
 
+import java.util
 import fr.linkit.api.local.generation.TypeVariableTranslator
+import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 
 import scala.collection.mutable.ListBuffer
 
@@ -42,6 +43,7 @@ import scala.collection.mutable.ListBuffer
 class ResourcesAndClassGenerationTests {
 
     private var resources: ResourceFolder = _
+    private val app: LinkitApplication = Mockito.mock(classOf[LinkitApplication])
 
     @BeforeAll
     def init(): Unit = {
@@ -51,10 +53,12 @@ class ResourcesAndClassGenerationTests {
             override val fsAdapter      : FileSystemAdapter          = LocalFileSystemAdapters.Nio
             override val securityManager: ApplicationSecurityManager = null
         }
-        System.setProperty("LinkitImplementationVersion", Version("Tests", "0.0.0", false).toString)
+        val testVersion = Version("Tests", "0.0.0", false)
+        System.setProperty("LinkitImplementationVersion", testVersion.toString)
 
-        LinkitApplication.mapEnvironment(LocalFileSystemAdapters.Nio, Seq(getClass))
-        resources = LinkitApplication.prepareAppResources(config)
+        resources = LinkitApplication.prepareApplication(testVersion, config, Seq(getClass))
+        Mockito.when(app.getAppResources).thenReturn(resources)
+        LinkitApplication.setInstance(app)
     }
 
 
@@ -103,8 +107,8 @@ class ResourcesAndClassGenerationTests {
         Assertions.assertNotNull(resources)
         val cl = obj.getClass.asInstanceOf[Class[obj.type]]
 
-        val resource    = resources.getOrOpenThenRepresent[WrappersClassResource]("PuppetGeneration")
-        val generator   = new PuppetWrapperClassGenerator(resource)
+        val resource    = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
+        val generator   = new PuppetWrapperClassGenerator(new DefaultCompilerCenter, resource)
         val puppetClass = generator.getClass(cl)
         println(s"puppetClass = ${puppetClass}")
         val pup    = new SimplePuppeteer[obj.type](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))

@@ -17,12 +17,14 @@ import fr.linkit.api.local.generation.compilation.access.CompilerType;
 public enum CommonCompilerTypes implements CompilerType {
 
     //TODO add Kotlin compiler support.
-    Javac("Java"), Scalac("Scala");
+    Javac("Java", ".java"), Scalac("Scala", ".scala");
 
     private final String langName;
+    private final String extension;
 
-    CommonCompilerTypes(String langName) {
+    CommonCompilerTypes(String langName, String extension) {
         this.langName = langName;
+        this.extension = extension;
     }
 
     @Override
@@ -32,6 +34,6 @@ public enum CommonCompilerTypes implements CompilerType {
 
     @Override
     public String sourceFileExtension() {
-        return "scala"; //FIXME Fast patch
+        return extension; //FIXME Fast patch
     }
 }

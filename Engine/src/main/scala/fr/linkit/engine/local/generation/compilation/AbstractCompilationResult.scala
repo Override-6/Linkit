@@ -10,18 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation.compilation
+package fr.linkit.engine.local.generation.compilation
+
+import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationResult}
 
 import java.nio.file.Path
 
-trait CompilationResult[T] {
+abstract class AbstractCompilationResult[T](outs: Seq[Path], compileTime: Long, request: CompilationRequest[_]) extends CompilationResult[T] {
 
-    def getOuterFiles: Seq[Path]
+    override def getOuterFiles: Seq[Path] = outs
 
-    def get: T
+    override def getCompileTime: Long = compileTime
 
-    def getCompileTime: Long
-
-    def getRequest: CompilationRequest[_]
-
+    override def getRequest: CompilationRequest[_] = request
 }

@@ -10,18 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation.compilation
+package fr.linkit.engine.local.generation.compilation
+
+import fr.linkit.api.local.generation.compilation.CompilationRequestFactory
+import fr.linkit.engine.local.LinkitApplication
 
 import java.nio.file.Path
 
-trait CompilationResult[T] {
+abstract class AbstractCompilationRequestFactory[I, O] extends CompilationRequestFactory[I, O] {
 
-    def getOuterFiles: Seq[Path]
-
-    def get: T
-
-    def getCompileTime: Long
-
-    def getRequest: CompilationRequest[_]
+    override val defaultWorkingDirectory: Path = LinkitApplication.getHomePathProperty("compilation.working_dir.sources")
 
 }

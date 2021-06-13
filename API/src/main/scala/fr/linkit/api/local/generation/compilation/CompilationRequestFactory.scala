@@ -28,8 +28,8 @@ trait CompilationRequestFactory[I, O] {
         blueprints.put(compilerType, bp)
     }
 
-    def makeRequest(context: I, workingDirectory: Path = defaultWorkingDirectory): R[_]
+    def makeRequest(context: I, workingDirectory: Path = defaultWorkingDirectory): CompilationRequest[O]
 
-    def makeMultiRequest(contexts: Seq[I], workingDirectory: Path = defaultWorkingDirectory): R[Array[_]]
+    def makeMultiRequest(contexts: Seq[I], workingDirectory: Path = defaultWorkingDirectory): CompilationRequest[Seq[O]]
 
 }

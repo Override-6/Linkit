@@ -19,17 +19,17 @@ import java.nio.file.Path
 
 trait CompilationRequest[T] {
 
+    val classPaths: Seq[Path]
+
     val workingDirectory: Path
 
     def sourceCodesPaths: Seq[Path]
 
-    def classPaths: Seq[Path]
+    def compilerInput: InputStream = System.in
 
-    def compilerInput: InputStream
+    def compilerOutput: OutputStream = System.out
 
-    def compilerOutput: OutputStream
-
-    def compilerErrOutput: OutputStream
+    def compilerErrOutput: OutputStream = System.err
 
     def additionalParams(cType: CompilerType): Array[String]
 

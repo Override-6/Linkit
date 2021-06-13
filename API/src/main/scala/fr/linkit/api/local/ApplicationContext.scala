@@ -14,6 +14,7 @@ package fr.linkit.api.local
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
+import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.config.ApplicationConfiguration
@@ -27,6 +28,8 @@ trait ApplicationContext extends Procrastinator {
     val configuration: ApplicationConfiguration
 
     val versions: Versions
+
+    val compilerCenter: CompilerCenter
 
     def pluginManager: PluginManager
 

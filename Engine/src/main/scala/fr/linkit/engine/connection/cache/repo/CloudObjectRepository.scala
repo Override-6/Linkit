@@ -213,10 +213,10 @@ object CloudObjectRepository {
 
     def apply[A <: Serializable : ClassTag](descriptions: PuppetDescriptions = PuppetDescriptions.getDefault): SharedCacheFactory[CloudObjectRepository[A] with InternalSharedCache] = {
         (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
-            val channel     = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
-            val application = handler.network.connection.getContext
-            val resources   = application.getAppResources.getOrOpenThenRepresent[WrappersClassResource](ClassesResourceDirectory)
-            val generator   = new PuppetWrapperClassGenerator(resources)
+            val channel   = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
+            val context   = handler.network.connection.getApp
+            val resources = context.getAppResources.getOrOpenThenRepresent[WrappersClassResource](ClassesResourceDirectory)
+            val generator = new PuppetWrapperClassGenerator(context.compilerCenter, resources)
 
             new CloudObjectRepository[A](handler, identifier, channel, generator, descriptions)
         }

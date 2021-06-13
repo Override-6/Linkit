@@ -19,6 +19,7 @@ import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.serialization.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.AppLogger
@@ -59,7 +60,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     //override def getResources: RemoteResourceFolder = null
 
-    override def getContext: this.type = this
+    override def getApp: ApplicationContext = applicationContext
 
     @workerExecution
     override def shutdown(): Unit = {

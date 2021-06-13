@@ -14,85 +14,17 @@ package fr.linkit.engine.connection.cache.repo.generation
 
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
-import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.generation.TypeVariableTranslator
-import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationRequestFactory, CompilationResult}
-import fr.linkit.engine.connection.cache.repo.generation.WrapperCompilationFactory.ClassValueScope
-import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.generation.cbp.{AbstractValueScope, SimpleClassBlueprint}
-import fr.linkit.engine.local.generation.compilation.CompilationRequestBuilder
-import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
+import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.MethodValueScope
+import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
 
+import scala.reflect.runtime.universe
+import scala.reflect.runtime.universe.typeTag
 import java.lang.reflect.{Modifier, Type}
-import java.nio.file.Path
 
-class WrapperCompilationFactory extends CompilationRequestFactory[PuppetDescription[_], Class[_]] {
+class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
 
-    override val defaultWorkingDirectory: Path = Path.of(LinkitApplication.getProperty("compilation.working_dir"))
-
-    override def makeRequest(context: PuppetDescription[_], workingDirectory: Path): CompilationRequest[Class[_]] = {
-        val req = createMultiRequest(Seq(context), workingDirectory)
-
-        new CompilationRequestBuilder[Class[_]] {
-            override var sourceCodes     : Seq[(String, String)] = req.sourceCodes
-            override val workingDirectory: Path                  = req.workingDirectory
-
-            override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Class[_]] = {
-                new CompilationResult[Class[_]] {
-                    override def get: Class[_] = req.conclude(outs, compilationTime).get.head
-
-                    override def getCompileTime: Long = compilationTime
-
-                    override def getRequest: CompilationRequest[_] = req
-                }
-            }
-        }
-    }
-
-    override def makeMultiRequest(contexts: Seq[PuppetDescription[_]], workingDirectory: Path): CompilationRequest[Seq[Class[_]]] = {
-        createMultiRequest(contexts, workingDirectory)
-    }
-
-    private def createMultiRequest(contexts: Seq[PuppetDescription[_]], workingDir: Path): CompilationRequestBuilder[Seq[Class[_]]] = {
-        val bp = blueprints(CommonCompilerTypes.Scalac)
-        new CompilationRequestBuilder[Seq[Class[_]]] { request =>
-            override val workingDirectory: Path                  = workingDir
-            override var sourceCodes     : Seq[(String, String)] = {
-                contexts.map(desc => (toWrapperClassName(desc.clazz.getName), bp.toClassSource(desc)))
-            }
-
-            override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[_]]] = {
-                new CompilationResult[Seq[Class[_]]] {
-                    override def get: Seq[Class[_]] = {
-                        contexts
-                                .filter(desc => outs.contains(workingDir.resolve(toWrapperClassName(desc.clazz.getName))))
-                                .map { desc =>
-                                    val clazz            = desc.clazz
-                                    val wrapperClassName = toWrapperClassName(clazz.getName)
-                                    new GeneratedClassClassLoader(workingDir, clazz.getClassLoader).loadClass(wrapperClassName)
-                                }
-                    }
-
-                    override def getCompileTime: Long = compilationTime
-
-                    override def getRequest: CompilationRequest[_] = request
-                }
-            }
-        }
-    }
-
-    {
-        val scbp = new SimpleClassBlueprint(classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp"), new ClassValueScope(_))
-        registerClassBlueprint(CommonCompilerTypes.Scalac, scbp)
-    }
-
-}
-
-object WrapperCompilationFactory {
-
-    class ClassValueScope(blueprint: String)
-            extends AbstractValueScope[PuppetDescription[_]]("CLASS", 0, blueprint) {
-
+    override val rootScope: RootValueScope[PuppetDescription[_]] = new RootValueScope[PuppetDescription[_]](blueprint) {
         registerValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
         registerValue("CompileTime" ~~> System.currentTimeMillis())
         registerValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
@@ -102,36 +34,36 @@ object WrapperCompilationFactory {
 
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
-
                     .distinctBy(_.methodId)
-
                     .filterNot(desc => {
-
                         val mods = desc.method.getModifiers
                         Modifier.isPrivate(mods) || Modifier.isStatic(mods) || Modifier.isFinal(mods)
                     })
                     .foreach(action)
         })
 
-        private def getGenericParamsIn(desc: PuppetDescription[_]): String = {
-            val result = TypeVariableTranslator.toJavaDeclaration(desc.clazz.getTypeParameters)
-            if (result.isEmpty)
-                ""
-            else s"[$result]"
-        }
-
-        private def getGenericParamsOut(desc: PuppetDescription[_]): String = {
-            val result = desc
-                    .clazz
-                    .getTypeParameters
-                    .map(_.getName)
-                    .mkString(", ")
-            if (result.isEmpty)
-                ""
-            else s"[$result]"
-        }
-
     }
+
+    private def getGenericParamsIn(desc: PuppetDescription[_]): String = {
+        val result = TypeVariableTranslator.toJavaDeclaration(desc.clazz.getTypeParameters)
+        if (result.isEmpty)
+            ""
+        else s"[$result]"
+    }
+
+    private def getGenericParamsOut(desc: PuppetDescription[_]): String = {
+        val result = desc
+                .clazz
+                .getTypeParameters
+                .map(_.getName)
+                .mkString(", ")
+        if (result.isEmpty)
+            ""
+        else s"[$result]"
+    }
+}
+
+object ScalaWrapperClassBlueprint {
 
     case class MethodValueScope(blueprint: String, pos: Int)
             extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
@@ -146,12 +78,12 @@ object WrapperCompilationFactory {
         registerValue("ParamsIn" ~> getParametersIn)
         registerValue("ParamsOut" ~> getParametersOut)
 
+
         private def getReturnType(desc: MethodDescription): String = {
-            val v = TypeVariableTranslator
+            TypeVariableTranslator
                     .toScalaDeclaration(desc
                             .method
                             .getGenericReturnType)
-            v
         }
 
         private def getGenericParams(desc: MethodDescription): String = {

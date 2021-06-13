@@ -22,6 +22,7 @@ import fr.linkit.engine.local.resource.external.LocalResourceFolder.ForbiddenCha
 import org.jetbrains.annotations.NotNull
 
 import java.io.File
+import java.nio.file.{Files, Path}
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -93,8 +94,7 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
     private def ensureResourceOpenable(name: String): Unit = {
         checkResourceName(name)
 
-        val adapter = fsa.getAdapter(getAdapter.getAbsolutePath + "/" + name)
-        if (adapter.exists)
+        if (Files.exists(Path.of(name)))
             throw ResourceAlreadyPresentException("The requested resource already exists on this machine's drive.")
     }
 
@@ -123,6 +123,9 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
     }
 
     protected def checkResourceName(name: String): Unit = {
-        name.exists(ForbiddenChars.contains)
+        if (name == null)
+            throw new NullPointerException
+        if (name.exists(ForbiddenChars.contains))
+            throw new IllegalResourceException(s"Provided source name is invalid. ($name)")
     }
 }

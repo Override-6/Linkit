@@ -10,18 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation.compilation
+package fr.linkit.engine.local.generation.cbp
 
-import java.nio.file.Path
-
-trait CompilationResult[T] {
-
-    def getOuterFiles: Seq[Path]
-
-    def get: T
-
-    def getCompileTime: Long
-
-    def getRequest: CompilationRequest[_]
+class RootValueScope[A](blueprint: String) extends AbstractValueScope[A]("ROOT", 0, blueprint) {
 
 }

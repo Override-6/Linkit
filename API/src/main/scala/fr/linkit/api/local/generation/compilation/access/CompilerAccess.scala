@@ -32,4 +32,6 @@ trait CompilerAccess {
      * */
     def compileRequest[T](request: CompilationRequest[T]): CompilationResult[T]
 
+    def compileAll(files: Seq[Path], destination: Path, classPaths: Seq[Path]): Unit
+
 }

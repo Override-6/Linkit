@@ -13,19 +13,21 @@
 package fr.linkit.engine.local.generation.cbp
 
 import fr.linkit.api.local.generation.cbp.{ClassBlueprint, ValueScope}
-import fr.linkit.engine.local.generation.cbp.SimpleClassBlueprint.removeBPComments
+import fr.linkit.engine.local.generation.cbp.AbstractClassBlueprint.removeBPComments
 
 import java.io.InputStream
 
-class SimpleClassBlueprint[V] private(blueprint: String, rootScope: ValueScope[V]) extends ClassBlueprint[V] {
+abstract class AbstractClassBlueprint[V] private(protected val blueprint: String) extends ClassBlueprint[V] {
 
-    def this(blueprint: String, rootProvider: String => ValueScope[V]) = {
-        this(blueprint, rootProvider(removeBPComments(blueprint)))
+    def this(blueprint: String) = {
+        this(blueprint)
     }
 
-    def this(stream: InputStream, rootProvider: String => ValueScope[V]) = {
-        this(new String(stream.readAllBytes()), rootProvider)
+    def this(stream: InputStream) = {
+        this(new String(stream.readAllBytes()))
     }
+
+    val rootScope: RootValueScope[V]
 
     override def getBlueprintString: String = blueprint
 
@@ -33,7 +35,7 @@ class SimpleClassBlueprint[V] private(blueprint: String, rootScope: ValueScope[V
 
 }
 
-object SimpleClassBlueprint {
+object AbstractClassBlueprint {
 
     val BlueprintCommentPrefix: String = "//#"
 

@@ -19,6 +19,7 @@ import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult,
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
+import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.AppLogger
@@ -147,9 +148,9 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }
     }
 
-    override def getAppResources: ResourceFolder = session.server.getAppResources
+    override def getAppResources: ResourceFolder = server.getAppResources
 
-    override def getContext: this.type = this
+    override def getApp: ApplicationContext = server.getApp
 }
 
 object ServerExternalConnection {

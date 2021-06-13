@@ -35,6 +35,8 @@ dependencies {
     api group: 'org.scala-lang', name: 'scala-library', version: '2.13.5'
     api group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
     implementation group: 'org.scala-lang', name: 'scala-reflect', version: '2.13.5'
+    implementation group: 'org.scala-lang', name: 'scala-compiler', version: '2.13.6'
+
     implementation group: 'log4j', name: 'log4j', version: '1.2.17'
     implementation group: 'com.jcabi', name: 'jcabi-log', version: '0.19.0'
 }

@@ -14,42 +14,44 @@ package fr.linkit.engine.local.generation.compilation
 
 import fr.linkit.api.local.generation.compilation.CompilationRequest
 import fr.linkit.api.local.generation.compilation.access.CompilerType
+import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.local.mapping.ClassMappings
 
-import java.io.{InputStream, OutputStream}
+import java.io.File
 import java.nio.file.{Files, Path, StandardOpenOption}
 
-abstract class CompilationRequestBuilder[T] extends CompilationRequest[T] {
+abstract class SourceCodeCompilationRequest[T] extends CompilationRequest[T] {
 
     /*
      * _1: The top class's package and name.
      * _2: The Class source code.
      */
-    var sourceCodes: Seq[(String, String)]
+    var sourceCodes: Seq[SourceCode]
 
-    override var classPaths: Seq[Path] = {
+    override val classPaths: Seq[Path] = {
         ClassMappings
                 .getClassPaths
                 .map(cp => Path.of(cp.getLocation.toURI))
     }
 
-    override var compilerInput: InputStream = System.in
-
-    override var compilerOutput: OutputStream = System.out
-
-    override var compilerErrOutput: OutputStream = System.err
-
     override def additionalParams(cType: CompilerType): Array[String] = Array()
 
     override lazy val sourceCodesPaths: Seq[Path] = {
-        sourceCodes.map(pair => {
-            val path = Path.of(pair._1)
-            val sourceCode = pair._2
+        sourceCodes.map(sc => {
+            val path = workingDirectory.resolve(sc.className.replace(".", File.separator) + sc.codeType.sourceFileExtension)
+            val sourceCode = sc.sourceCode
             if (Files.notExists(path))
                 Files.createDirectories(path.getParent)
             Files.writeString(path, sourceCode, StandardOpenOption.CREATE)
             path
         })
     }
+}
 
+object SourceCodeCompilationRequest {
+    case class SourceCode(className: String, sourceCode: String, codeType: CompilerType)
+
+    implicit class SourceCodeHelper(className: String) {
+        def ~> (sourceCode: String, codeType: CompilerType): SourceCode = SourceCode(className, sourceCode, codeType)
+    }
 }

@@ -16,13 +16,12 @@ import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
 import fr.linkit.api.local.generation.compilation.CompilerCenter
-import fr.linkit.api.local.generation.compilation.access.CompilerType
-import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
+import fr.linkit.api.local.system.AppLogger
 
 class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersClassResource) extends PuppetWrapperGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
-
+    val requestFactory                  = new WrapperCompilationRequestFactory
 
     override def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
         getClass[S](PuppetDescription(clazz))
@@ -32,17 +31,18 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is an interface.")
-        var loader = clazz.getClassLoader
-        if (loader == null)
-            loader = classOf[PuppetWrapperClassGenerator].getClassLoader //Use the Application classloader
+        if (clazz.isArray)
+            throw new InvalidPuppetDefException("Provided class is an array.")
         resources
-            .findWrapperClass[S](clazz, loader)
-            .getOrElse {
-                val (sourceCode, compilerType) = genPuppetClassSourceCode(desc)
-                resources.addToQueue(clazz, sourceCode, compilerType)
-                resources.compileQueue(loader)
-                resources.findWrapperClass[S](clazz, loader).get
-            }
+                .findWrapperClass[S](clazz)
+                .getOrElse {
+                    val result = center.generate {
+                        AppLogger.debug(s"Compiling Class Wrapper for class ${clazz.getName}...")
+                        requestFactory.makeRequest(desc)
+                    }
+                    AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
+                    result.get.asInstanceOf[Class[S with PuppetWrapper[S]]]
+                }
     }
 
     override def preGenerateClasses[S](defaultLoader: ClassLoader, classes: Seq[Class[_ <: S]]): Unit = {
@@ -50,25 +50,17 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
     }
 
     override def preGenerateDescs[S](defaultLoader: ClassLoader, descriptions: Seq[PuppetDescription[S]]): Unit = {
-        descriptions
-            .filter(desc => resources.findWrapperClass(desc.clazz, desc.clazz.getClassLoader).isEmpty)
-            .foreach(desc => {
-                val (source, compileType) = genPuppetClassSourceCode(desc)
-                resources.addToQueue(desc.clazz, source, compileType)
-            })
-        resources.compileQueue(defaultLoader)
+        center.generate {
+            requestFactory.makeMultiRequest(descriptions)
+        }
     }
 
     override def isWrapperClassGenerated[S](clazz: Class[S]): Boolean = {
-        resources.findWrapperClass[S](clazz, clazz.getClassLoader).isDefined
+        resources.findWrapperClass[S](clazz).isDefined
     }
 
     override def isClassGenerated[S <: PuppetWrapper[S]](clazz: Class[S]): Boolean = {
-        resources.findWrapperClass[S](clazz, clazz.getClassLoader).isDefined
-    }
-
-    private def genPuppetClassSourceCode[S](description: PuppetDescription[S]): (String, CompilerType) = {
-        (scbp.toClassSource(description), CommonCompilerTypes.Scalac)
+        resources.findWrapperClass[S](clazz).isDefined
     }
 }
 
