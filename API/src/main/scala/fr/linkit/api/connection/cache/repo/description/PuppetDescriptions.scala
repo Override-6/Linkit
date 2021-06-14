@@ -14,15 +14,31 @@ package fr.linkit.api.connection.cache.repo.description
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
+import scala.reflect.runtime.universe._
+import scala.reflect.api
+import scala.reflect.api.{TypeCreator, Universe}
 
 class PuppetDescriptions {
 
     private val descriptions = new mutable.HashMap[Class[_], PuppetDescription[_]]
 
-    def getDescription[B: ClassTag]: PuppetDescription[B] = {
+    def getDescription[B: TypeTag : ClassTag]: PuppetDescription[B] = {
         val rClass = classTag[B].runtimeClass.asInstanceOf[Class[B]]
         descriptions.getOrElseUpdate(rClass, PuppetDescription[B](rClass))
-                .asInstanceOf[PuppetDescription[B]]
+            .asInstanceOf[PuppetDescription[B]]
+    }
+
+    def getDescFromClass[B](clazz: Class[_]): PuppetDescription[B] = {
+        val mirror   = runtimeMirror(clazz.getClassLoader)
+        val clSymbol = mirror.staticClass(clazz.getName)
+        val tpe      = clSymbol.selfType
+        val tag      = TypeTag[B](mirror, new TypeCreator {
+            override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type = {
+                tpe.asInstanceOf[U#Type]
+            }
+        })
+        descriptions.getOrElseUpdate(clazz, PuppetDescription[B](clazz)(tag))
+            .asInstanceOf[PuppetDescription[B]]
     }
 }
 

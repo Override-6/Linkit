@@ -19,40 +19,52 @@ import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 import fr.linkit.engine.local.utils.ScalaUtils
-
 import java.lang.reflect.Modifier
+import java.util.NoSuchElementException
+
+import scala.reflect.ClassTag
 import scala.util.control.NonFatal
+import scala.reflect.runtime.universe._
 
 case class ObjectChip[S] private(owner: String,
                                  description: PuppetDescription[S],
                                  wrapper: S with PuppetWrapper[S]) extends Chip[S] {
 
+    private val mirror = runtimeMirror(wrapper.getClass.getClassLoader).reflect(wrapper)
+
     override def updateField(fieldID: Int, value: Any): Unit = {
         description.getFieldDesc(fieldID)
-                .filterNot(_.isHidden)
-                .foreach(desc => ScalaUtils.setValue(wrapper, desc.field, value))
+            .filterNot(_.isHidden)
+            .fold {
+                throw new PuppetException(s"Attempted to set hidden field '${
+                    description
+                        .getFieldDesc(fieldID)
+                        .getOrElse(s"(unknown field id '$fieldID')")
+                }' to value '$value'")
+            } { desc => mirror.reflectMethod(desc.fieldSetter)(value) }
     }
 
     override def updateAllFields(obj: S): Unit = {
+        val objMirror = runtimeMirror(obj.getClass.getClassLoader)
+            .reflect(obj)(ClassTag(obj.getClass))
         description.listFields()
-                .foreach(desc => if (!desc.isHidden) {
-                    val field = desc.field
-                    val value = field.get(obj)
-                    ScalaUtils.setValue(wrapper, field, value)
-                })
+            .foreach(desc => if (!desc.isHidden) {
+                val getter = desc.fieldGetter
+                val value  = objMirror.reflectMethod(getter)()
+                mirror.reflectMethod(getter)(value)
+            })
     }
 
     override def callMethod(methodID: Int, params: Seq[Any]): Any = {
         val methodDesc = description.getMethodDesc(methodID)
         if (methodDesc.forall(_.isHidden)) {
             throw new PuppetException(s"Attempted to invoke ${methodDesc.fold("unknown")(_ => "hidden")} method '${
-                methodDesc.map(_.method.getName).getOrElse(s"(unknown method id '$methodID')")
-            }(${params.mkString(", ")}) in class ${methodDesc.get.clazz}'")
+                methodDesc.map(_.method.name.toString).getOrElse(s"(unknown method id '$methodID')")
+            }(${params.mkString(", ")}) in class ${methodDesc.get.method}'")
         }
         wrapper.getChoreographer.forceLocalInvocation {
-            methodDesc.get
-                    .method
-                    .invoke(wrapper, params: _*)
+            mirror.reflectMethod(methodDesc.get.method)
+                .apply(params)
         }
     }
 
@@ -70,20 +82,13 @@ case class ObjectChip[S] private(owner: String,
                     //result = ThrowableWrapper(e)
                 }
                 submitter
-                        .addPacket(RefPacket(result))
-                        .submit()
+                    .addPacket(RefPacket(result))
+                    .submit()
 
             case ObjectPacket((fieldId: Int, value: Any)) =>
                 val fieldDesc = description.getFieldDesc(fieldId)
-                fieldDesc
-                        .filterNot(_.isHidden)
-                        .getOrElse(
-                            throw new PuppetException(s"Attempted to set hidden field '${
-                                fieldDesc.getOrElse(s"(unknown field id '$fieldId')")
-                            }' to value '$value'")
-                        )
-                val field = fieldDesc.get.field
-                ScalaUtils.setValue(wrapper, field, value)
+
+                updateField(fieldId, value)
         }
     }
 

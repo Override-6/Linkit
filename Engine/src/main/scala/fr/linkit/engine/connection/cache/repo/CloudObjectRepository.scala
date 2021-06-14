@@ -33,21 +33,29 @@ import java.lang.reflect.Field
 import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
                                                cacheID: Int,
                                                channel: RequestPacketChannel,
                                                generator: PuppetWrapperGenerator,
                                                override val descriptions: PuppetDescriptions)
-        extends AbstractSharedCache(handler, cacheID, channel) with ObjectRepository[A] {
+    extends AbstractSharedCache(handler, cacheID, channel) with ObjectRepository[A] {
 
     override val center            = new DefaultPuppetCenter[A]
     private  val fieldRestorer     = new FieldRestorer
     private  val supportIdentifier = channel.traffic.supportIdentifier
 
-    override def getPuppetDescription[B <: A : ClassTag]: PuppetDescription[B] = descriptions.getDescription[B]
+    override def getPuppetDescription[B <: A : ClassTag : TypeTag]: PuppetDescription[B] = {
+        descriptions.getDescription[B]
+    }
 
-    override def postObject[B <: A : ClassTag](id: Int, snapshot: B): B with PuppetWrapper[B] = {
+    override def getDescFromClass[B](clazz: Class[_]): PuppetDescription[B] = {
+        descriptions.getDescFromClass(clazz)
+    }
+
+
+    override def postObject[B <: A : ClassTag : TypeTag](id: Int, snapshot: B): B with PuppetWrapper[B] = {
         ensureNotWrapped(snapshot)
         if (isRegistered(id))
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
@@ -55,9 +63,9 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         val path    = Array(id)
         val wrapper = localRegisterRemotePuppet[B](Array(id), supportIdentifier, snapshot)
         channel.makeRequest(ChannelScopes.discardCurrent)
-                .addPacket(ObjectPacket(PuppetProfile(path, snapshot, supportIdentifier)))
-                .putAllAttributes(this)
-                .submit()
+            .addPacket(ObjectPacket(PuppetProfile(path, snapshot, supportIdentifier)))
+            .putAllAttributes(this)
+            .submit()
 
         wrapper
     }
@@ -70,7 +78,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         isRegistered(Array(id))
     }
 
-    override def initPuppetWrapper[B <: A : ClassTag](wrapper: B with PuppetWrapper[B]): Unit = {
+    override def initPuppetWrapper[B <: A : ClassTag : TypeTag](wrapper: B with PuppetWrapper[B]): Unit = {
         if (wrapper.isInitialized)
             return
         val puppeteerDesc = wrapper.getPuppeteerDescription
@@ -140,18 +148,20 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         if (obj == null)
             throw new NullPointerException
 
-        val puppetDesc    = descriptions.getDescription[B]
+        val puppetDesc    = descriptions.getDescFromClass[B](obj.getClass)
         val puppeteerDesc = PuppeteerDescription(family, cacheID, owner, treeViewPath)
         val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, puppetDesc)
         val wrapper       = genPuppetWrapper[B](puppeteer, obj)
         foreachSyncObjAction(wrapper, treeViewPath)
+        val mirror = runtimeMirror(puppetDesc.loader).reflect(wrapper)
         for (desc <- puppetDesc.listFields() if desc.isSynchronized) {
+
             val id            = ThreadLocalRandom.current().nextInt()
-            val field         = desc.field
-            val fieldValue    = field.get(wrapper)
+            val field         = desc.fieldGetter
+            val fieldValue    = mirror.reflectMethod(field)()
             val childTreePath = treeViewPath ++ Array(id)
             val syncObject    = genSynchronizedObject(childTreePath, fieldValue, owner, descriptions)(foreachSyncObjAction)(ClassTag(fieldValue.getClass))
-            ScalaUtils.setValue(wrapper, field, syncObject)
+            mirror.reflectMethod(field.setter.asMethod)(syncObject)
         }
         wrapper
     }
@@ -185,7 +195,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         val wrappedPuppet = genSynchronizedObject(path, puppet, owner, descriptions) {
             (wrapper, childPath) =>
                 val id          = childPath.last
-                val description = descriptions.getDescription[B](ClassTag(wrapper.getClass.getSuperclass))
+                val description = descriptions.getDescFromClass[B](wrapper.getClass)
                 parent.fold {
                     val rootWrapper = wrapper.asInstanceOf[B with PuppetWrapper[B]]
                     val chip        = ObjectChip[B](owner, description, rootWrapper)
@@ -194,12 +204,12 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
                     parent = Some(parentNode)
                 } { parentNode =>
                     parentNode.getGrandChild(childPath.drop(path.length).dropRight(1))
-                            .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${childPath.mkString("$", " -> ", "")}")) {
-                                parent =>
-                                    val chip      = ObjectChip[Any](owner, description, wrapper.asInstanceOf[Any with PuppetWrapper[Any]])
-                                    val puppeteer = wrapper.getPuppeteer.asInstanceOf[Puppeteer[Any]]
-                                    parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, isIntended, id, _))
-                            }
+                        .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${childPath.mkString("$", " -> ", "")}")) {
+                            parent =>
+                                val chip      = ObjectChip[Any](owner, description, wrapper.asInstanceOf[Any with PuppetWrapper[Any]])
+                                val puppeteer = wrapper.getPuppeteer.asInstanceOf[Puppeteer[Any]]
+                                parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, isIntended, id, _))
+                        }
                 }
         }
 

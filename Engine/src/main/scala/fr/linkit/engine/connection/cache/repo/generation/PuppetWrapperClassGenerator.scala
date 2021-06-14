@@ -29,15 +29,15 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
 
     override def getClass[S](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]] = {
         val clazz = desc.clazz
-        if (clazz.isInterface)
-            throw new InvalidPuppetDefException("Provided class is an interface.")
+        if (clazz.isAbstract)
+            throw new InvalidPuppetDefException("Provided class is abstract.")
         if (clazz.isArray)
-            throw new InvalidPuppetDefException("Provided class is an array.")
+            throw new InvalidPuppetDefException("Proficed class is an Array.")
         resources
-                .findWrapperClass[S](clazz)
+                .findWrapperClass[S](Class.forName(symbol.fullName))
                 .getOrElse {
                     val result = center.generate {
-                        AppLogger.debug(s"Compiling Class Wrapper for class ${clazz.getName}...")
+                        AppLogger.debug(s"Compiling Class Wrapper for class ${symbol.getName}...")
                         requestFactory.makeRequest(desc)
                     }
                     AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")

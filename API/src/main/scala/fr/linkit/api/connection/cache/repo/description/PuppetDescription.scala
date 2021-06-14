@@ -14,29 +14,27 @@ package fr.linkit.api.connection.cache.repo.description
 
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, InvocationKind, InvokeOnly, MethodControl}
-import fr.linkit.api.connection.cache.repo.description.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription, toSyncParamsIndexes}
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription.{DefaultMethodControl, FieldDescription, MethodDescription, toSyncParamsIndexes, tpe}
 import fr.linkit.api.local.generation.ClassDescription
 
-import java.lang.annotation.Annotation
-import java.lang.reflect.{Field, Modifier}
 import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
-class PuppetDescription[+T] private(tag: u.Type, loader: ClassLoader) extends ClassDescription {
+class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoader) extends ClassDescription {
 
     import u._
 
     /**
      * Methods and fields that comes from those classes will not be available for RMI Invocations.
      * */
-    private val BlacklistedSuperClasses: Array[u.Symbol] = Array(typeTag[Object], typeTag[Product])
+    private val BlacklistedSuperClasses: Array[Symbol] = Array(tpe[Object].typeSymbol, tpe[Product].typeSymbol)
 
-    private val mirror      = u.runtimeMirror(loader)
-    private val classMirror = mirror.reflectClass(tag.typeSymbol.asClass)
+    private val mirror = u.runtimeMirror(loader)
 
     private val methods    = collectMethods()
     private val methodsMap = methods.map(desc => (desc.methodId, desc)).toMap
     private val fields     = collectFields()
+    val clazz: Class[_ <: T] = Class.forName(classType.typeSymbol.fullName, false, loader).asInstanceOf[Class[T]]
 
     def listMethods(): Seq[MethodDescription] = {
         methods
@@ -52,7 +50,7 @@ class PuppetDescription[+T] private(tag: u.Type, loader: ClassLoader) extends Cl
 
     def getFieldDesc(fieldID: Int): Option[FieldDescription] = {
         fields
-                .get(fieldID)
+            .get(fieldID)
     }
 
     def isRMIEnabled(methodId: Int): Boolean = {
@@ -72,42 +70,45 @@ class PuppetDescription[+T] private(tag: u.Type, loader: ClassLoader) extends Cl
     }
 
     private def collectMethods(): Seq[MethodDescription] = {
-        val methods = tag.decls
-                .filterNot(f => f.isFinal || BlacklistedSuperClasses.contains(f.owner))
-                .filter(_.isMethod)
-                .map(_.asMethod)
-                .map(genMethodDescription)
+        val methods = classType.decls
+            .filter(_.isMethod)
+            .filterNot(f => f.isFinal || BlacklistedSuperClasses.contains(f.owner))
+            .map(_.asMethod)
+            .map(genMethodDescription)
 
         val filteredMethods = ListBuffer.empty[MethodDescription]
         methods.foreach(desc => {
             filteredMethods.find(_.methodId == desc.methodId)
-                    .fold[Unit](filteredMethods += desc) { otherDesc =>
-                        if (desc.method.returnType.baseClasses.size > otherDesc.method.returnType.baseClasses.size) {
-                            filteredMethods -= otherDesc
-                            filteredMethods += desc
-                        }
+                .fold[Unit](filteredMethods += desc) { otherDesc =>
+                    if (desc.method.returnType.baseClasses.size > otherDesc.method.returnType.baseClasses.size) {
+                        filteredMethods -= otherDesc
+                        filteredMethods += desc
                     }
+                }
         })
         filteredMethods.toSeq
     }
 
     private def collectFields(): Map[Int, FieldDescription] = {
-        clazz.getFields
-                .filterNot(f => Modifier.isFinal(f.getModifiers) || BlacklistedSuperClasses.contains(f.getDeclaringClass))
-                .map(genFieldDescription)
-                .map(desc => (desc.fieldID, desc))
-                .toMap
+        classType.decls
+            .filter(_.isMethod)
+            .map(_.asMethod)
+            .filter(_.isGetter)
+            .filterNot(f => BlacklistedSuperClasses.contains(f.owner))
+            .map(genFieldDescription)
+            .map(desc => (desc.fieldID, desc))
+            .toMap
     }
 
-    def findAnnotation[A <: Annotation](method: u.Symbol, clazz: Class[A]): Option[A] = {
+    def findAnnotation[A <: java.lang.annotation.Annotation](method: u.Symbol, clazz: Class[A]): Option[A] = {
         method.annotations
-                .find(_.tree.tpe.typeSymbol.asClass.fullName == clazz.getName)
-                .map { ann =>
-                    import scala.tools.reflect.ToolBox
+            .find(_.tree.tpe.typeSymbol.asClass.fullName == clazz.getName)
+            .map { ann =>
+                import scala.tools.reflect.ToolBox
 
-                    val toolBox = mirror.mkToolBox()
-                    toolBox.eval(ann.tree).asInstanceOf[A]
-                }
+                val toolBox = mirror.mkToolBox()
+                toolBox.eval(ann.tree).asInstanceOf[A]
+            }
     }
 
     private def genMethodDescription(method: u.MethodSymbol): MethodDescription = {
@@ -122,8 +123,8 @@ class PuppetDescription[+T] private(tag: u.Type, loader: ClassLoader) extends Cl
         desc
     }
 
-    private def genFieldDescription(field: Field): FieldDescription = {
-        val control        = Option(field.getAnnotation(classOf[FieldControl]))
+    private def genFieldDescription(field: MethodSymbol): FieldDescription = {
+        val control        = findAnnotation(field, classOf[FieldControl])
         val isSynchronized = control.exists(_.synchronize())
         val isHidden       = control.exists(_.hide())
         FieldDescription(field, isSynchronized, isHidden)
@@ -137,18 +138,18 @@ object PuppetDescription {
 
     def toSyncParamsIndexes(literal: String, method: u.Symbol): Seq[Boolean] = {
         val synchronizedParamNumbers = literal
-                .split(",")
-                .filterNot(s => s == "this" || s.isBlank)
-                .map(s => s.trim
-                        .dropRight(s.lastIndexWhere(!_.isDigit))
-                        .toInt)
-                .distinct
+            .split(",")
+            .filterNot(s => s == "this" || s.isBlank)
+            .map(s => s.trim
+                .dropRight(s.lastIndexWhere(!_.isDigit))
+                .toInt)
+            .distinct
         for (n <- 1 to method.asMethod.paramLists.flatten.size) yield {
             synchronizedParamNumbers.contains(n)
         }
     }
 
-    def apply[T: TypeTag](clazz: Class[_ <: T]): PuppetDescription[T] = {
+    def apply[T: TypeTag](clazz: Class[_]): PuppetDescription[T] = {
         if (classOf[PuppetWrapper[T]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class can't extend PuppetWrapper")
         new PuppetDescription(tpe[T], clazz.getClassLoader)
@@ -171,10 +172,10 @@ object PuppetDescription {
 
         def getDefaultReturnValue: String = {
             invokeOnly
-                    .map(_.value())
-                    .getOrElse {
-                        getDefaultTypeReturnValue
-                    }
+                .map(_.value())
+                .getOrElse {
+                    getDefaultTypeReturnValue
+                }
         }
 
         private val numberTypes = Array(tpe[Float], tpe[Double], tpe[Int], tpe[Byte], tpe[Long], tpe[Short])
@@ -203,12 +204,14 @@ object PuppetDescription {
     }
 
     //TODO make synchronization
-    case class FieldDescription(field: Field,
+    case class FieldDescription(fieldGetter: MethodSymbol,
                                 isSynchronized: Boolean,
                                 isHidden: Boolean) {
 
+        val fieldSetter: u.MethodSymbol = fieldGetter.setter.asMethod
+
         val fieldID: Int = {
-            field.hashCode() + field.getType.hashCode()
+            fieldGetter.hashCode() + fieldGetter.returnType.hashCode()
         }
     }
 
@@ -224,7 +227,7 @@ object PuppetDescription {
 
             override def hide(): Boolean = false
 
-            override def annotationType(): Class[_ <: Annotation] = getClass
+            override def annotationType(): Class[_ <: java.lang.annotation.Annotation] = getClass
         }
     }
 }

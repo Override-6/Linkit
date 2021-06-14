@@ -27,6 +27,7 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketC
 
 import java.util.concurrent.ThreadLocalRandom
 import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
 class SimplePuppeteer[S](channel: RequestPacketChannel,
                          override val repo: ObjectRepository[_],
@@ -47,7 +48,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
             throw new NoSuchMethodException(s"Remote method not found for id '$methodId'")
         }
 
-        AppLogger.debug(s"Remotely invoking method ${desc.method.getName}(${args.mkString(",")})")
+        AppLogger.debug(s"Remotely invoking method ${desc.method.name}(${args.mkString(",")})")
         val treeViewPath = puppeteerDescription.treeViewPath
         val result       = channel.makeRequest(chooseScope(desc.invocationKind))
                 .addPacket(InvocationPacket(treeViewPath, methodId, synchronizedArgs(desc, args)))
@@ -65,7 +66,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         val desc = puppetDescription.getMethodDesc(methodId).getOrElse {
             throw new NoSuchMethodException(s"Remote method not found for id '$methodId'")
         }
-        AppLogger.debug(s"Remotely invoking method ${desc.method.getName}(${args.mkString(",")})")
+        AppLogger.debug(s"Remotely invoking method ${desc.method.name}(${args.mkString(",")})")
 
         if (!desc.isHidden) {
             channel.makeRequest(chooseScope(desc.invocationKind))
@@ -77,7 +78,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
 
     override def sendFieldUpdate(fieldId: Int, newValue: Any): Unit = {
         AppLogger.vDebug(s"Remotely associating field '${
-            puppetDescription.getFieldDesc(fieldId).get.field.getName
+            puppetDescription.getFieldDesc(fieldId).get.fieldGetter.name
         }' to value $newValue.")
         val desc  = puppetDescription.getFieldDesc(fieldId).getOrElse {
             throw new NoSuchMethodException(s"Remote field not found for id '$fieldId'")
@@ -91,9 +92,10 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
 
     override def sendPuppetUpdate(newVersion: S): Unit = {
         //TODO optimize, directly send the newVersion object to copy paste instead of all its fields.
+        val mirror = runtimeMirror(newVersion.getClass.getClassLoader).reflect(newVersion)(ClassTag(newVersion.getClass))
         puppetDescription.listFields()
                 .foreach(fieldDesc => if (!fieldDesc.isHidden) {
-                    sendFieldUpdate(fieldDesc.fieldID, fieldDesc.field.get(newVersion))
+                    sendFieldUpdate(fieldDesc.fieldID, mirror.reflectMethod(fieldDesc.fieldGetter)())
                 })
     }
 
@@ -130,7 +132,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         repo.genSynchronizedObject(objPath, obj, ownerID, descriptions) {
             (wrapper, childPath) =>
                 val id          = childPath.last
-                val description = repo.getPuppetDescription(ClassTag(wrapper.getClass))
+                val description = repo.getDescFromClass(wrapper.getClass)
                 repo.center.getNode(currentPath).get.getGrandChild(childPath.drop(currentPath.length).dropRight(1))
                         .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${childPath.mkString("$", " -> ", "")}")) {
                             parent =>

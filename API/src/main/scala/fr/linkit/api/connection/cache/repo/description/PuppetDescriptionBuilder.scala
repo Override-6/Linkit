@@ -18,11 +18,12 @@ import fr.linkit.api.connection.cache.repo.description.PuppetDescriptionBuilder.
 
 import java.util
 import scala.collection.mutable.ListBuffer
+import scala.reflect.runtime.universe._
 
-class PuppetDescriptionBuilder[T](desc: PuppetDescription[T]) {
+class PuppetDescriptionBuilder[T](desc: PuppetDescription[T])(implicit tag: TypeTag[T]) {
 
-    def this(clazz: Class[T]) {
-        this(PuppetDescription(clazz))
+    def this(clazz: Class[T])(implicit tag: TypeTag[T]) {
+        this(PuppetDescription(clazz)(tag))
     }
 
     final def annotate(name: String, params: Class[_]*): MethodModification = {
@@ -31,10 +32,10 @@ class PuppetDescriptionBuilder[T](desc: PuppetDescription[T]) {
         new MethodModification(method)
     }
 
-    @inline final def annotateAll(name: String): MethodModification = {
+    final def annotateAll(name: String): MethodModification = {
         new MethodModification(
             desc.listMethods()
-                    .filter(_.method.getName == name): _*
+                    .filter(_.method.name.toString == name): _*
         )
     }
 
