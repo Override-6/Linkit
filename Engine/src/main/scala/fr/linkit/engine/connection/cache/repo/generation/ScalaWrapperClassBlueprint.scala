@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.cache.repo.generation
 
+import scala.reflect.runtime.universe._
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.local.generation.TypeVariableTranslator
@@ -34,12 +35,12 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
 
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
-                    .distinctBy(_.methodId)
-                    .filterNot(desc => {
-                        val mods = desc.method.getModifiers
-                        Modifier.isPrivate(mods) || Modifier.isStatic(mods) || Modifier.isFinal(mods)
-                    })
-                    .foreach(action)
+                .distinctBy(_.methodId)
+                .filterNot(desc => {
+                    val m = desc.method
+                    m.isPrivate || m.isStatic || m.isFinal
+                })
+                .foreach(action)
         })
 
     }
@@ -53,10 +54,10 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
 
     private def getGenericParamsOut(desc: PuppetDescription[_]): String = {
         val result = desc
-                .clazz
-                .getTypeParameters
-                .map(_.getName)
-                .mkString(", ")
+            .clazz
+            .getTypeParameters
+            .map(_.getName)
+            .mkString(", ")
         if (result.isEmpty)
             ""
         else s"[$result]"
@@ -66,68 +67,36 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
 object ScalaWrapperClassBlueprint {
 
     case class MethodValueScope(blueprint: String, pos: Int)
-            extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
+        extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
-        registerValue("ReturnType" ~> getReturnType)
+        registerValue("ReturnType" ~> (_.method.returnType.toString))
         registerValue("DefaultReturnType" ~> (_.getDefaultTypeReturnValue))
         registerValue("GenericTypes" ~> getGenericParams)
-        registerValue("MethodName" ~> (_.method.getName))
-        registerValue("MethodExceptions" ~> getMethodThrows)
+        registerValue("MethodName" ~> (_.method.name.toString))
+        //registerValue("MethodExceptions" ~> getMethodThrows)
         registerValue("MethodID" ~> (_.methodId.toString))
         registerValue("InvokeOnlyResult" ~> (_.getDefaultReturnValue))
         registerValue("ParamsIn" ~> getParametersIn)
         registerValue("ParamsOut" ~> getParametersOut)
 
-
-        private def getReturnType(desc: MethodDescription): String = {
-            TypeVariableTranslator
-                    .toScalaDeclaration(desc
-                            .method
-                            .getGenericReturnType)
-        }
-
         private def getGenericParams(desc: MethodDescription): String = {
-            val tParams = desc.method.getTypeParameters
-            if (tParams.isEmpty)
-                ""
-            else
-                s"[${TypeVariableTranslator.toScalaDeclaration(tParams)}]"
-        }
-
-        private def getMethodThrows(methodDesc: MethodDescription): String = {
-            val exceptions = methodDesc.method.getGenericExceptionTypes
-            if (exceptions.isEmpty)
-                return ""
-            exceptions
-                    .map(s => toGenericTypeName(s))
-                    .mkString("throws ", ", ", "")
+            desc.method.typeParams.mkString("[", ", ", "]")
         }
 
         private def getParametersIn(methodDesc: MethodDescription): String = {
-            var count = 0
-            val sb    = new StringBuilder
             methodDesc
-                    .method
-                    .getGenericParameterTypes.foreach(typ => {
-                val typeName = TypeVariableTranslator.toScalaDeclaration(typ)
-                count += 1
-                sb
-                        .append("arg")
-                        .append(count)
-                        .append(": ")
-                        .append(typeName)
-                        .append(", ")
-            })
-            val v = sb.toString().dropRight(2) //Remove last ", " string.
-            v
+                .method
+                .paramLists
+                .map(_.mkString(", "))
+                .mkString("")
         }
 
         private def getParametersOut(methodDesc: MethodDescription): String = {
             val sb = new StringBuilder
-            for (i <- 1 to methodDesc.method.getParameterCount) {
+            for (i <- 1 to methodDesc.method.paramLists.flatten.size) {
                 sb.append("arg")
-                        .append(i)
-                        .append(", ")
+                    .append(i)
+                    .append(", ")
             }
             sb.dropRight(2).toString()
         }
@@ -143,4 +112,5 @@ object ScalaWrapperClassBlueprint {
             name
         }
     }
+
 }

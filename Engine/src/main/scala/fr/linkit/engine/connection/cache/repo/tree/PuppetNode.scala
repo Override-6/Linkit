@@ -85,7 +85,7 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                 result = synchronizer.genSynchronizedObject(resultNodePath, result, ownerID, descriptions) {
                     (wrapper, path) =>
                         val id          = path.last
-                        val description = descriptions.getDescription(ClassTag(wrapper.getClass))
+                        val description = descriptions.getDescFromClass(wrapper.getClass)
                         getGrandChild(path.drop(treeViewPath.length).dropRight(1))
                                 .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${path.mkString("$", " -> ", "")}")) {
                                     parent =>

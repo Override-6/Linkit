@@ -19,10 +19,6 @@ import java.io.InputStream
 
 abstract class AbstractClassBlueprint[V] private(protected val blueprint: String) extends ClassBlueprint[V] {
 
-    def this(blueprint: String) = {
-        this(blueprint)
-    }
-
     def this(stream: InputStream) = {
         this(new String(stream.readAllBytes()))
     }

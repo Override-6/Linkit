@@ -12,19 +12,14 @@
 
 package fr.linkit.engine.connection.cache.repo.generation
 
+import java.nio.file.Path
+
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
-import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
-import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationResult}
-import fr.linkit.engine.connection.cache.repo.generation.WrapperCompilationRequestFactory.ClassValueScope
-import fr.linkit.engine.local.generation.cbp.{AbstractValueScope, AbstractClassBlueprint}
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.local.generation.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
-
-import java.lang.reflect.{Modifier, Type}
-import java.nio.file.Path
 
 class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory[PuppetDescription[_], Class[_]] {
 

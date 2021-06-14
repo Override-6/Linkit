@@ -152,7 +152,7 @@ object PuppetDescription {
     def apply[T: TypeTag](clazz: Class[_]): PuppetDescription[T] = {
         if (classOf[PuppetWrapper[T]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class can't extend PuppetWrapper")
-        new PuppetDescription(tpe[T], clazz.getClassLoader)
+        new PuppetDescription[T](tpe[T], clazz.getClassLoader)
     }
 
     private def tpe[T](implicit tag: TypeTag[T]): Type = tag.tpe
@@ -180,7 +180,7 @@ object PuppetDescription {
 
         private val numberTypes = Array(tpe[Float], tpe[Double], tpe[Int], tpe[Byte], tpe[Long], tpe[Short])
 
-        private def getDefaultTypeReturnValue: String = {
+        def getDefaultTypeReturnValue: String = {
             val r = method.returnType
 
             if (r == tpe[Boolean])
