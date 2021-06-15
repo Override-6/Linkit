@@ -81,7 +81,7 @@ class Puppet$WrappedClassSimpleName$$TParamsIn$(private var puppeteer: Puppeteer
         }
         var result: $ReturnType$ = $DefaultReturnType$
         if (description.isLocalInvocationForced($MethodID$)) {
-            result = super.$MethodName$$GenericTypesOut$$ParamsIn$
+            result = super.$MethodName$$GenericTypesOut$$ParamsOut$
             puppeteer.sendInvoke($MethodID$, args)
         } else {
             result = puppeteer.sendInvokeAndWaitResult($MethodID$, args)

@@ -71,7 +71,7 @@ class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoad
     }
 
     private def collectMethods(): Seq[MethodDescription] = {
-        val methods = classType.decls
+        val methods = (classType.decls ++ classType.baseClasses.flatMap(_.asClass.selfType.decls))
             .filter(_.isMethod)
             .filterNot(f => f.isFinal || BlacklistedSuperClasses.contains(f.owner) || f.isConstructor)
             .map(_.asMethod)

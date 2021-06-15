@@ -64,7 +64,7 @@ object ScalaWrapperClassBlueprint {
     case class MethodValueScope(blueprint: String, pos: Int)
         extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
-        registerValue("ReturnType" ~> (_.method.returnType.typeSymbol.fullName))
+        registerValue("ReturnType" ~> (getReturnType))
         registerValue("DefaultReturnType" ~> (_.getDefaultTypeReturnValue))
         registerValue("GenericTypesIn" ~> getGenericParamsIn)
         registerValue("GenericTypesOut" ~> getGenericParamsOut)
@@ -77,11 +77,21 @@ object ScalaWrapperClassBlueprint {
         registerValue("ParamsIn" ~> getParametersIn)
         registerValue("ParamsOut" ~> getParametersOut)
 
+        private def getReturnType(desc: MethodDescription): String = {
+            val method = desc.method
+            val typeString = method.returnType.toString
+            if (typeString == method.owner.name + ".this.type")
+                "this.type"
+            else typeString
+        }
+
         private def getGenericParamsIn(desc: MethodDescription): String = {
             val tParams = desc.method.typeParams
             if (tParams.isEmpty)
                 return ""
-            tParams.mkString("[", ", ", "]")
+            tParams
+                .map(s => s.name + s.typeSignature.toString)
+                .mkString("[", ", ", "]")
         }
 
         def getGenericParamsOut(desc: MethodDescription): String = {
@@ -93,33 +103,37 @@ object ScalaWrapperClassBlueprint {
 
         private def getParametersIn(methodDesc: MethodDescription): String = {
             var i = 0
+
             def n = {
                 i += 1
                 i
             }
+
             val v = methodDesc
                 .method
                 .paramLists
                 .map(_
-                        .map(s => s"arg${n}: ${s.typeSignature.typeSymbol.fullName}")
-                        .mkString("(", ", ", ")"))
+                    .map(s => s"arg${n}: ${s.typeSignature.toString}")
+                    .mkString("(", ", ", ")"))
                 .mkString("")
             v
         }
 
         private def getParametersOut(methodDesc: MethodDescription): String = {
             var i = 0
+
             def n = {
                 i += 1
                 i
             }
+
             val v = methodDesc
-                    .method
-                    .paramLists
-                    .map(_
-                            .map(s => s"arg${n}v")
-                            .mkString("(", ", ", ")"))
-                    .mkString("")
+                .method
+                .paramLists
+                .map(_
+                    .map(s => s"arg${n}")
+                    .mkString("(", ", ", ")"))
+                .mkString("")
             v
         }
 

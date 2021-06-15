@@ -23,10 +23,26 @@ import scala.reflect.runtime.universe._
 class ScalaReflectionTests {
 
     @Test
-    def runTests(): Unit = {
+    def simpleRender(): Unit = {
         val tpe = typeTag[TestClass].tpe
-        def typeToString()
-        println(tpe.decls.map(_.asMethod.typeParams.map(s => s.name + s.typeSignature.typeSymbol.toString).mkString("[", ", ", "]")))
+        println(tpe.decls.map(_.asMethod.typeParams.map(s => s.name + s.typeSignature.toString).mkString("[", ", ", "]")))
+    }
+
+    @Test
+    def simpleRenderReturnTypes(): Unit = {
+        val tpe = typeTag[TestClass].tpe
+        println(tpe.decls.map(_.asMethod.returnType.toString))
+    }
+
+    @Test
+    def renderRecursively(): Unit = {
+        val tpe = typeTag[TestClass].tpe
+        def typeToString(tpe: Type): String = {
+            if (!tpe.takesTypeArgs)
+                return tpe.toString
+            tpe.toString + tpe.typeArgs.map(typeToString).mkString("[", ", ", "]")
+        }
+        println(tpe.decls.map(_.asMethod.typeParams.map(s => s.name + typeToString(s.typeSignature)).mkString("[", ", ", "]")))
     }
 
 }
@@ -35,7 +51,7 @@ object ScalaReflectionTests {
 
     class TestClass {
 
-        def genericMethod2[EFFE <: ResourceFolder, S <: ResourceFile, V, G, TS >: V, F <: List[(EFFE, S)]]: Option[_ >: List[EFFE]] = None
+        def genericMethod2[EFFE <: ResourceFolder, S <: ResourceFile, V, G, TS >: V, F <: Option[_ >: List[(EFFE, S)]]]: Option[_ >: List[EFFE]] = None
 
         def genericMethod[EFFE >: ResourceFolder, I >: ResourceFolder]: Option[_ >: List[EFFE]] = None
     }
