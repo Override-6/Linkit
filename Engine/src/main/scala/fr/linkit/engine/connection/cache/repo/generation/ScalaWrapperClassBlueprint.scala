@@ -18,6 +18,7 @@ import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.MethodValueScope
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
 
+import java.util.regex.{MatchResult, Pattern}
 import scala.reflect.runtime.universe._
 
 class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
@@ -86,7 +87,8 @@ object ScalaWrapperClassBlueprint {
                 tpe.asSeenFrom(base, methodOwner).finalResultType
             }
             val tParams = symbol.typeParams
-            fixAmbiguousNames(result, tParams, getNonAmbiguousTypeParamName(tParams, tParams.length))
+            val names = getNonAmbiguousTypeParamName(tParams, tParams.length)
+            fixAmbiguousNames(result, tParams, names)
         }
 
         private def getGenericParamsIn(method: MethodDescription): String = {
@@ -155,10 +157,18 @@ object ScalaWrapperClassBlueprint {
 
         private def fixAmbiguousNames(str: String, tParams: Seq[Symbol], names: Array[String]): String = {
             var result = str
-            for (i <- tParams.indices.reverse) {
-                val param = tParams(i)
-                val name = param.name.toString
-                result = result.replaceAll(s"[\\[,$name", names(i))
+            for (i <- tParams.indices) {
+                val param   = tParams(i)
+                val name    = param.name.toString
+                val matcher = Pattern.compile(s"(^[\\[,]|[\\[,])$name").matcher(result)
+                result = {
+                    matcher.replaceAll((result: MatchResult) => {
+                        val g = result.group(0)
+                        if (g.isEmpty)
+                            names(i)
+                        else g(0) + names(i)
+                    })
+                }
             }
             result
         }
