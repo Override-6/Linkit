@@ -15,7 +15,8 @@ package fr.linkit.engine.test
 import fr.linkit.api.connection.cache.repo.Puppeteer
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
-import fr.linkit.api.local.resource.external.{ResourceFile, ResourceFolder}
+import fr.linkit.api.local.generation.TypeVariableTranslator
+import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.Version
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
@@ -23,9 +24,10 @@ import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.test.ResourcesAndClassGenerationTests.TestClass
+import fr.linkit.engine.test.ScalaReflectionTests.TestClass
 import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
@@ -33,9 +35,6 @@ import org.junit.jupiter.api._
 import org.mockito.Mockito
 
 import java.util
-import fr.linkit.api.local.generation.TypeVariableTranslator
-import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
-
 import scala.collection.mutable.ListBuffer
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -109,7 +108,7 @@ class ResourcesAndClassGenerationTests {
 
         val resource    = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
         val generator   = new PuppetWrapperClassGenerator(new DefaultCompilerCenter, resource)
-        val puppetClass = generator.getClass(cl)
+        val puppetClass = generator.getClass[obj.type](cl)
         println(s"puppetClass = ${puppetClass}")
         val pup    = new SimplePuppeteer[obj.type](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))
         val puppet = puppetClass.getDeclaredConstructor(classOf[Puppeteer[_]], cl).newInstance(pup, obj)
@@ -118,11 +117,3 @@ class ResourcesAndClassGenerationTests {
 
 }
 
-object ResourcesAndClassGenerationTests {
-    class TestClass {
-
-        def genericMethod2[EFFE <: ResourceFolder, S <: ResourceFile, V, G, TS >: V, F <: List[(EFFE, S)]]: EFFE = ???
-
-        def genericMethod[EFFE >: ResourceFolder, I >: ResourceFolder]: EFFE = null
-    }
-}

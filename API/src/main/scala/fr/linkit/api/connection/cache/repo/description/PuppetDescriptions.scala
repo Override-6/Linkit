@@ -13,10 +13,8 @@
 package fr.linkit.api.connection.cache.repo.description
 
 import scala.collection.mutable
-import scala.reflect.{ClassTag, classTag}
 import scala.reflect.runtime.universe._
-import scala.reflect.api
-import scala.reflect.api.{TypeCreator, Universe}
+import scala.reflect.{ClassTag, classTag}
 
 class PuppetDescriptions {
 
@@ -32,12 +30,7 @@ class PuppetDescriptions {
         val mirror   = runtimeMirror(clazz.getClassLoader)
         val clSymbol = mirror.staticClass(clazz.getName)
         val tpe      = clSymbol.selfType
-        val tag      = TypeTag[B](mirror, new TypeCreator {
-            override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type = {
-                tpe.asInstanceOf[U#Type]
-            }
-        })
-        descriptions.getOrElseUpdate(clazz, PuppetDescription[B](clazz)(tag))
+        descriptions.getOrElseUpdate(clazz, PuppetDescription[B](clazz)(toTypeTag[B](tpe, clazz.getClassLoader)))
             .asInstanceOf[PuppetDescription[B]]
     }
 }

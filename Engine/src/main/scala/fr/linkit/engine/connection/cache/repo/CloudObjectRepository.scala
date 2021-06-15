@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.repo
 
 import fr.linkit.api.connection.cache.repo._
-import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppetDescriptions}
+import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppetDescriptions, toTypeTag}
 import fr.linkit.api.connection.cache.repo.generation.{PuppetWrapperGenerator, PuppeteerDescription}
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
@@ -34,6 +34,7 @@ import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
+import scala.reflect.runtime.universe
 
 class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
                                                cacheID: Int,
@@ -41,6 +42,8 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
                                                generator: PuppetWrapperGenerator,
                                                override val descriptions: PuppetDescriptions)
     extends AbstractSharedCache(handler, cacheID, channel) with ObjectRepository[A] {
+
+    reflect.runtime.universe.MemberScopeTag
 
     override val center            = new DefaultPuppetCenter[A]
     private  val fieldRestorer     = new FieldRestorer
@@ -95,7 +98,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
             throw new IllegalPuppetException("This object is already shared.")
     }
 
-    private def genPuppetWrapper[B: ClassTag](puppeteer: Puppeteer[B], puppet: B): B with PuppetWrapper[B] = {
+    private def genPuppetWrapper[B: ClassTag](puppeteer: Puppeteer[B], puppet: B, tpe: Type): B with PuppetWrapper[B] = {
         val puppetClass = generator.getClass[B](puppet.getClass.asInstanceOf[Class[B]])
         instantiatePuppetWrapper[B](puppeteer, puppet, puppetClass)
     }
@@ -151,7 +154,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         val puppetDesc    = descriptions.getDescFromClass[B](obj.getClass)
         val puppeteerDesc = PuppeteerDescription(family, cacheID, owner, treeViewPath)
         val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, puppetDesc)
-        val wrapper       = genPuppetWrapper[B](puppeteer, obj)
+        val wrapper       = genPuppetWrapper[B](puppeteer, obj, puppetDesc.classType)
         foreachSyncObjAction(wrapper, treeViewPath)
         val mirror = runtimeMirror(puppetDesc.loader).reflect(wrapper)
         for (desc <- puppetDesc.listFields() if desc.isSynchronized) {

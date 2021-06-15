@@ -1,6 +1,5 @@
 package fr.linkit.api.connection.cache.repo.generation
 
-import com.sun.jdi.ClassType
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 
@@ -12,9 +11,9 @@ import scala.reflect.{ClassTag, classTag}
  * */
 trait PuppetWrapperGenerator {
 
-    def getClass[S: TypeTag](clazz: Class[S]): Class[S with PuppetWrapper[S]]
+    def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]]
 
-    def getClass[S: universe.TypeTag]: Class[S with PuppetWrapper[S]] = getClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
+    def getClass[S: universe.TypeTag : ClassTag]: Class[S with PuppetWrapper[S]] = getClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
     def preGenerateDescs[S](defaultLoader: ClassLoader, descriptions: Seq[PuppetDescription[S]]): Unit
 

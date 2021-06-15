@@ -12,28 +12,30 @@
 
 package fr.linkit.engine.connection.cache.repo.generation
 
-import scala.reflect.runtime.universe.TypeTag
-import fr.linkit.api.connection.cache.repo.description.PuppetDescription
+import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, toTypeTag}
 import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.system.AppLogger
+
+import scala.reflect.runtime.universe.TypeTag
 
 class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersClassResource) extends PuppetWrapperGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val requestFactory                  = new WrapperCompilationRequestFactory
 
-    override def getClass[S : TypeTag](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
-        getClass[S](PuppetDescription[S](clazz))
+    override def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
+        val tag = toTypeTag[S](clazz)
+        getClass[S](PuppetDescription[S](clazz)(tag))(tag)
     }
 
-    override def getClass[S](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]] = {
+    override def getClass[S : TypeTag](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]] = {
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is abstract.")
         if (clazz.isArray)
-            throw new InvalidPuppetDefException("Proficed class is an Array.")
+            throw new InvalidPuppetDefException("Provided class is an Array.")
         resources
             .findWrapperClass[S](clazz)
             .getOrElse {

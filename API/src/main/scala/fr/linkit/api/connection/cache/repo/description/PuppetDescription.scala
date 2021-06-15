@@ -31,10 +31,11 @@ class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoad
 
     private val mirror = u.runtimeMirror(loader)
 
+    val clazz: Class[_ <: T] = Class.forName(classType.typeSymbol.asClass.fullName, false, loader).asInstanceOf[Class[T]]
+
     private val methods    = collectMethods()
     private val methodsMap = methods.map(desc => (desc.methodId, desc)).toMap
     private val fields     = collectFields()
-    val clazz: Class[_ <: T] = Class.forName(classType.typeSymbol.fullName, false, loader).asInstanceOf[Class[T]]
 
     def listMethods(): Seq[MethodDescription] = {
         methods
@@ -72,7 +73,7 @@ class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoad
     private def collectMethods(): Seq[MethodDescription] = {
         val methods = classType.decls
             .filter(_.isMethod)
-            .filterNot(f => f.isFinal || BlacklistedSuperClasses.contains(f.owner))
+            .filterNot(f => f.isFinal || BlacklistedSuperClasses.contains(f.owner) || f.isConstructor)
             .map(_.asMethod)
             .map(genMethodDescription)
 

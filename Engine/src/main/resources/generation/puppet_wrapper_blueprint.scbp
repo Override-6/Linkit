@@ -59,9 +59,9 @@ class Puppet$WrappedClassSimpleName$$TParamsIn$(private var puppeteer: Puppeteer
     override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
 
 !!INHERITED_METHODS!! {
-    override def $MethodName$$GenericTypes$$ParamsIn$: $ReturnType$ = {
+    override def $MethodName$$GenericTypesIn$$ParamsIn$: $ReturnType$ = {
         if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled($MethodID$)) {
-            return super.$MethodName$$GenericTypesOut$($ParamsOut$)
+            return super.$MethodName$$GenericTypesOut$$ParamsOut$
         }
         val args = Array[Any]($ParamsOut$)
         //# From here we are sure that we want to perform a remote
@@ -70,7 +70,7 @@ class Puppet$WrappedClassSimpleName$$TParamsIn$(private var puppeteer: Puppeteer
             puppeteer.sendInvoke($MethodID$, args)
             var localResult: $ReturnType$ = $DefaultReturnType$
             if (description.isLocalInvocationForced($MethodID$)) {
-                localResult = super.$MethodName$$GenericTypesOut$$ParamsIn$
+                localResult = super.$MethodName$$GenericTypesOut$$ParamsOut$
             }
             //# Note1: value of 'InvokeOnlyResult' can be "localResult".
             //# Note2: Be aware that you can get a null value returned

@@ -32,7 +32,12 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
 
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Class[_]] = {
                 new AbstractCompilationResult[Class[_]](outs, compilationTime, req) {
-                    override def get: Class[_] = req.conclude(outs, compilationTime).get.head
+                    override def get: Class[_] = {
+                        val test = req.conclude(outs, compilationTime).get
+                        if (test.isEmpty)
+                            null
+                        else test.head
+                    }
                 }
             }
         }
