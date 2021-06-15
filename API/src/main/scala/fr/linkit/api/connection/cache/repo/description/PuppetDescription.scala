@@ -81,7 +81,7 @@ class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoad
         methods.foreach(desc => {
             filteredMethods.find(_.methodId == desc.methodId)
                 .fold[Unit](filteredMethods += desc) { otherDesc =>
-                    if (desc.method.returnType.baseClasses.size > otherDesc.method.returnType.baseClasses.size) {
+                    if (desc.symbol.returnType.baseClasses.size > otherDesc.symbol.returnType.baseClasses.size) {
                         filteredMethods -= otherDesc
                         filteredMethods += desc
                     }
@@ -120,7 +120,7 @@ class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoad
         val isPure             = control.pure() && control.mutates().nonEmpty
         val isHidden           = control.hide()
         val syncReturnValue    = control.synchronizeReturnValue()
-        val desc               = MethodDescription(method, invokeOnly, synchronizedParams, invocationKind, syncReturnValue, isPure, isHidden)
+        val desc               = MethodDescription(method, this, invokeOnly, synchronizedParams, invocationKind, syncReturnValue, isPure, isHidden)
         desc
     }
 
@@ -158,7 +158,8 @@ object PuppetDescription {
 
     private def tpe[T](implicit tag: TypeTag[T]): Type = tag.tpe
 
-    case class MethodDescription(method: u.MethodSymbol,
+    case class MethodDescription(symbol: u.MethodSymbol,
+                                 desc: PuppetDescription[_],
                                  invokeOnly: Option[InvokeOnly],
                                  var synchronizedParams: Seq[Boolean], //TODO make synchronization
                                  var invocationKind: InvocationKind,
@@ -167,8 +168,8 @@ object PuppetDescription {
                                  var isHidden: Boolean) {
 
         val methodId: Int = {
-            val parameters: Array[u.Symbol] = method.paramLists.flatten.toArray
-            method.name.toString.hashCode + hashCode(parameters)
+            val parameters: Array[u.Symbol] = symbol.paramLists.flatten.toArray
+            symbol.name.toString.hashCode + hashCode(parameters)
         }
 
         def getDefaultReturnValue: String = {
@@ -182,7 +183,7 @@ object PuppetDescription {
         private val numberTypes = Array(tpe[Float], tpe[Double], tpe[Int], tpe[Byte], tpe[Long], tpe[Short])
 
         def getDefaultTypeReturnValue: String = {
-            val r = method.returnType
+            val r = symbol.returnType
 
             if (r == tpe[Boolean])
                 "false"
@@ -198,7 +199,7 @@ object PuppetDescription {
             var result = 1
             for (clazz <- a) {
                 result = 31 * result + (if (clazz == null) 0
-                else clazz.fullName.hashCode)
+                else clazz.name.hashCode)
             }
             result
         }

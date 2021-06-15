@@ -63,7 +63,7 @@ class Puppet$WrappedClassSimpleName$$TParamsIn$(private var puppeteer: Puppeteer
         if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled($MethodID$)) {
             return super.$MethodName$$GenericTypesOut$$ParamsOut$
         }
-        val args = Array[Any]($ParamsOut$)
+        val args = Array[Any]($ParamsOutArray$)
         //# From here we are sure that we want to perform a remote
         //# method invocation. (A Local invocation (super.xxx()) can be added).
         if (description.isInvokeOnly($MethodID$)) {

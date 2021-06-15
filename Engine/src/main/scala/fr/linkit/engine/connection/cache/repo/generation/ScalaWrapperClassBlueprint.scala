@@ -18,6 +18,8 @@ import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.MethodValueScope
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
 
+import scala.reflect.runtime.universe._
+
 class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
 
     override val rootScope: RootValueScope[PuppetDescription[_]] = new RootValueScope[PuppetDescription[_]](blueprint) {
@@ -30,12 +32,12 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
 
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
-                .distinctBy(_.methodId)
-                .filterNot(desc => {
-                    val m = desc.method
-                    m.isPrivate || m.isStatic || m.isFinal
-                })
-                .foreach(action)
+                    .distinctBy(_.methodId)
+                    .filterNot(desc => {
+                        val m = desc.symbol
+                        m.isPrivate || m.isStatic || m.isFinal
+                    })
+                    .foreach(action)
         })
 
     }
@@ -49,10 +51,10 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
 
     private def getGenericParamsOut(desc: PuppetDescription[_]): String = {
         val result = desc
-            .clazz
-            .getTypeParameters
-            .map(_.getName)
-            .mkString(", ")
+                .clazz
+                .getTypeParameters
+                .map(_.getName)
+                .mkString(", ")
         if (result.isEmpty)
             ""
         else s"[$result]"
@@ -62,46 +64,55 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
 object ScalaWrapperClassBlueprint {
 
     case class MethodValueScope(blueprint: String, pos: Int)
-        extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
+            extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
-        registerValue("ReturnType" ~> (getReturnType))
+        registerValue("ReturnType" ~> getReturnType)
         registerValue("DefaultReturnType" ~> (_.getDefaultTypeReturnValue))
         registerValue("GenericTypesIn" ~> getGenericParamsIn)
         registerValue("GenericTypesOut" ~> getGenericParamsOut)
-        registerValue("MethodName" ~> (d => {
-            d.method.name.toString
-        }))
-        //registerValue("MethodExceptions" ~> getMethodThrows)
+        registerValue("MethodName" ~> (_.symbol.name.toString))
         registerValue("MethodID" ~> (_.methodId.toString))
         registerValue("InvokeOnlyResult" ~> (_.getDefaultReturnValue))
-        registerValue("ParamsIn" ~> getParametersIn)
-        registerValue("ParamsOut" ~> getParametersOut)
+        registerValue("ParamsIn" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), true)))
+        registerValue("ParamsOut" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), false)))
+        registerValue("ParamsOutArray" ~> (getParameters(_)(_.mkString(", "), _.mkString("Array[Any](", ", ", ")"), false)))
 
-        private def getReturnType(desc: MethodDescription): String = {
-            val method = desc.method
-            val typeString = method.returnType.toString
-            if (typeString == method.owner.name + ".this.type")
-                "this.type"
-            else typeString
+        private def getReturnType(method: MethodDescription): String = {
+            val symbol  = method.symbol
+            val result  = renderType {
+                val base        = method.desc.classType
+                val methodOwner = symbol.owner
+                val tpe         = symbol.returnType
+                tpe.asSeenFrom(base, methodOwner).finalResultType
+            }
+            val tParams = symbol.typeParams
+            fixAmbiguousNames(result, tParams, getNonAmbiguousTypeParamName(tParams, tParams.length))
         }
 
-        private def getGenericParamsIn(desc: MethodDescription): String = {
-            val tParams = desc.method.typeParams
+        private def getGenericParamsIn(method: MethodDescription): String = {
+            val symbol  = method.symbol
+            val tParams = symbol.typeParams
             if (tParams.isEmpty)
                 return ""
-            tParams
-                .map(s => s.name + s.typeSignature.toString)
-                .mkString("[", ", ", "]")
+            val names  = getNonAmbiguousTypeParamName(method.desc.classType.typeParams, tParams.size)
+            val result = tParams
+                    .zip(names)
+                    .map(pair => pair._2 + pair._1.typeSignature.asSeenFrom(method.desc.classType, symbol.owner).toString)
+                    .mkString("[", ", ", "]")
+            fixAmbiguousNames(result, tParams, names)
         }
 
-        def getGenericParamsOut(desc: MethodDescription): String = {
-            val tParams = desc.method.typeParams.map(_.name)
+        def getGenericParamsOut(method: MethodDescription): String = {
+            val tParams = method.symbol.typeParams.map(_.name)
             if (tParams.isEmpty)
                 return ""
-            tParams.mkString("[", ", ", "]")
+            getNonAmbiguousTypeParamName(method.desc.classType.typeParams, tParams.size)
+                    .mkString("[", ", ", "]")
         }
 
-        private def getParametersIn(methodDesc: MethodDescription): String = {
+        private def getParameters(method: MethodDescription)(firstMkString: Seq[String] => String,
+                                                             secondMkString: Seq[String] => String,
+                                                             povIn: Boolean): String = {
             var i = 0
 
             def n = {
@@ -109,32 +120,71 @@ object ScalaWrapperClassBlueprint {
                 i
             }
 
-            val v = methodDesc
-                .method
-                .paramLists
-                .map(_
-                    .map(s => s"arg${n}: ${s.typeSignature.toString}")
-                    .mkString("(", ", ", ")"))
-                .mkString("")
-            v
-        }
+            val symbol  = method.symbol
+            val tParams = symbol.typeParams
 
-        private def getParametersOut(methodDesc: MethodDescription): String = {
-            var i = 0
-
-            def n = {
-                i += 1
-                i
+            def argType(s: Symbol): String = {
+                val str = s.typeSignature.asSeenFrom(method.desc.classType, symbol.owner).toString
+                if (str.endsWith("*"))
+                    if (povIn) {
+                        s": Seq[${str.dropRight(1)}]"
+                    }
+                    else s": _*"
+                else if (povIn) ": " + str else ""
             }
 
-            val v = methodDesc
-                .method
-                .paramLists
-                .map(_
-                    .map(s => s"arg${n}")
-                    .mkString("(", ", ", ")"))
-                .mkString("")
-            v
+            val result = secondMkString {
+                symbol
+                        .paramLists
+                        .map(l => firstMkString(l.map(s => s"arg${n}${argType(s)}")))
+            }
+
+            val names = getNonAmbiguousTypeParamName(symbol.typeParams, symbol.typeParams.length)
+            fixAmbiguousNames(result, tParams, names)
+        }
+
+        private def renderType(tpe: Type): String = {
+            val args = tpe.typeArgs
+            if (args.isEmpty)
+                return tpe.finalResultType.toString
+            val v = args
+                    .map(renderType)
+                    .mkString("[", ", ", "]")
+            tpe.typeSymbol.fullName + v
+        }
+
+        private def fixAmbiguousNames(str: String, tParams: Seq[Symbol], names: Array[String]): String = {
+            var result = str
+            for (i <- tParams.indices.reverse) {
+                val param = tParams(i)
+                val name = param.name.toString
+                result = result.replaceAll(s"[\\[,$name", names(i))
+            }
+            result
+        }
+
+        private val pattern = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+
+        private def getNonAmbiguousTypeParamName(forbiddenTypesNames: Seq[Symbol], length: Int): Array[String] = {
+            val forbiddenNames = forbiddenTypesNames.map(_.name)
+            val params         = new Array[String](length)
+            var patternIndex   = 0
+            var prefix         = ""
+            for (i <- params.indices) {
+                var n = patternIndex
+                do {
+                    n += 1
+                    if (n >= pattern.length) {
+                        prefix += "A"
+                        n = 0
+                        patternIndex = 0
+                    }
+                } while (forbiddenNames.contains(prefix + pattern(n).toString))
+                val name = prefix + pattern(n)
+                params(i) = name
+                patternIndex = n
+            }
+            params
         }
 
     }

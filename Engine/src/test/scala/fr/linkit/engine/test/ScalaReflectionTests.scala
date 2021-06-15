@@ -13,10 +13,11 @@
 package fr.linkit.engine.test
 
 import fr.linkit.api.local.resource.external.{ResourceFile, ResourceFolder}
-import fr.linkit.engine.test.ScalaReflectionTests.TestClass
+import fr.linkit.engine.test.ScalaReflectionTests.{B, TestClass}
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Test, TestInstance}
 
+import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.universe._
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -30,8 +31,14 @@ class ScalaReflectionTests {
 
     @Test
     def simpleRenderReturnTypes(): Unit = {
-        val tpe = typeTag[TestClass].tpe
-        println(tpe.decls.map(_.asMethod.returnType.toString))
+        val tpe = typeTag[B].tpe
+
+        println(tpe.decls.map(s => {
+            val d = s.asMethod.returnType.typeSymbol.owner.asClass
+            val c = s.asMethod.returnType.typeSymbol.asClass
+            val t = s.asMethod.returnType
+            t.asSeenFrom(c.selfType, d)
+        }))
     }
 
     @Test
@@ -48,6 +55,14 @@ class ScalaReflectionTests {
 }
 
 object ScalaReflectionTests {
+
+    trait A[A] {
+        def haha: A = ???
+    }
+
+    class B extends A[ListBuffer[String]] {
+
+    }
 
     class TestClass {
 

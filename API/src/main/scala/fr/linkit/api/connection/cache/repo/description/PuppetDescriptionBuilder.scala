@@ -35,7 +35,7 @@ class PuppetDescriptionBuilder[T](desc: PuppetDescription[T])(implicit tag: Type
     final def annotateAll(name: String): MethodModification = {
         new MethodModification(
             desc.listMethods()
-                    .filter(_.method.name.toString == name): _*
+                    .filter(_.symbol.name.toString == name): _*
         )
     }
 
@@ -43,7 +43,7 @@ class PuppetDescriptionBuilder[T](desc: PuppetDescription[T])(implicit tag: Type
 
         def by(control: MethodControl): Unit = descs.foreach { desc =>
             desc.invocationKind = control.value
-            desc.synchronizedParams = PuppetDescription.toSyncParamsIndexes(control.mutates, desc.method)
+            desc.synchronizedParams = PuppetDescription.toSyncParamsIndexes(control.mutates, desc.symbol)
             desc.isPure = control.pure
             desc.syncReturnValue = control.synchronizeReturnValue
             desc.isHidden = control.hide

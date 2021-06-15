@@ -59,11 +59,11 @@ case class ObjectChip[S] private(owner: String,
         val methodDesc = description.getMethodDesc(methodID)
         if (methodDesc.forall(_.isHidden)) {
             throw new PuppetException(s"Attempted to invoke ${methodDesc.fold("unknown")(_ => "hidden")} method '${
-                methodDesc.map(_.method.name.toString).getOrElse(s"(unknown method id '$methodID')")
-            }(${params.mkString(", ")}) in class ${methodDesc.get.method}'")
+                methodDesc.map(_.symbol.name.toString).getOrElse(s"(unknown method id '$methodID')")
+            }(${params.mkString(", ")}) in class ${methodDesc.get.symbol}'")
         }
         wrapper.getChoreographer.forceLocalInvocation {
-            mirror.reflectMethod(methodDesc.get.method)
+            mirror.reflectMethod(methodDesc.get.symbol)
                 .apply(params)
         }
     }

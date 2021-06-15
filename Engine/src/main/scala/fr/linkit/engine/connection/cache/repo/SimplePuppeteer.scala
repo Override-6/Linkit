@@ -48,7 +48,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
             throw new NoSuchMethodException(s"Remote method not found for id '$methodId'")
         }
 
-        AppLogger.debug(s"Remotely invoking method ${desc.method.name}(${args.mkString(",")})")
+        AppLogger.debug(s"Remotely invoking method ${desc.symbol.name}(${args.mkString(",")})")
         val treeViewPath = puppeteerDescription.treeViewPath
         val result       = channel.makeRequest(chooseScope(desc.invocationKind))
                 .addPacket(InvocationPacket(treeViewPath, methodId, synchronizedArgs(desc, args)))
@@ -66,7 +66,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         val desc = puppetDescription.getMethodDesc(methodId).getOrElse {
             throw new NoSuchMethodException(s"Remote method not found for id '$methodId'")
         }
-        AppLogger.debug(s"Remotely invoking method ${desc.method.name}(${args.mkString(",")})")
+        AppLogger.debug(s"Remotely invoking method ${desc.symbol.name}(${args.mkString(",")})")
 
         if (!desc.isHidden) {
             channel.makeRequest(chooseScope(desc.invocationKind))

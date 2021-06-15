@@ -5,5 +5,6 @@ import scala.collection.mutable.ListBuffer
 class TestListBuffer[A] extends ListBuffer[A] {
     override def tapEach[U](f: A => U): ListBuffer[A] = super.tapEach(f)
 
-    super.tapEach(null)
+    override def compose[S](g: S => Int): S => A = super.compose[S](g)
+
 }
