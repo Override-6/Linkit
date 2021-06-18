@@ -2,9 +2,15 @@ package fr.linkit.engine.test.classes
 
 import scala.collection.mutable.ListBuffer
 
-class TestListBuffer[A] extends ListBuffer[A] {
+class TestListBuffer[A](other: TestListBuffer[A]) extends ListBuffer[A] {
     override def tapEach[U](f: A => U): ListBuffer[A] = super.tapEach(f)
 
-    override def compose[S](g: S => Int): S => A = super.compose[S](g)
+    class AC {
+        def test(t: AC): AC = ???
+    }
 
+    class B extends AC {
+
+        override def test(t: AC): this.type = ???
+    }
 }

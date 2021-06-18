@@ -12,42 +12,27 @@
 
 package fr.linkit.engine.connection.cache.repo.generation
 
-import java.nio.file.Path
-
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
-import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationResult}
+import fr.linkit.api.local.generation.cbp.ClassBlueprint
+import fr.linkit.api.local.generation.compilation.CompilationResult
+import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.local.generation.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
 
+import java.nio.file.Path
+import scala.collection.mutable
+
 class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory[PuppetDescription[_], Class[_]] {
 
-    override def makeRequest(context: PuppetDescription[_], workingDirectory: Path): CompilationRequest[Class[_]] = {
-        val req = createMultiRequest(Seq(context), workingDirectory)
+    private val blueprints = new mutable.HashMap[CompilerType, ClassBlueprint[PuppetDescription[_]]]()
 
-        new SourceCodeCompilationRequest[Class[_]] {
-            override var sourceCodes     : Seq[SourceCode] = req.sourceCodes
-            override val workingDirectory: Path            = req.workingDirectory
-
-            override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Class[_]] = {
-                new AbstractCompilationResult[Class[_]](outs, compilationTime, req) {
-                    override def get: Class[_] = {
-                        val test = req.conclude(outs, compilationTime).get
-                        if (test.isEmpty)
-                            null
-                        else test.head
-                    }
-                }
-            }
-        }
+    def registerClassBlueprint(compilerType: CompilerType, bp: ClassBlueprint[PuppetDescription[_]]): Unit = {
+        blueprints.put(compilerType, bp)
     }
 
-    override def makeMultiRequest(contexts: Seq[PuppetDescription[_]], workingDirectory: Path): CompilationRequest[Seq[Class[_]]] = {
-        createMultiRequest(contexts, workingDirectory)
-    }
-
-    private def createMultiRequest(contexts: Seq[PuppetDescription[_]], workingDir: Path): SourceCodeCompilationRequest[Seq[Class[_]]] = {
+    override def createMultiRequest(contexts: Seq[PuppetDescription[_]], workingDir: Path): SourceCodeCompilationRequest[Seq[Class[_]]] = {
         val bp = blueprints(CommonCompilerTypes.Scalac)
         new SourceCodeCompilationRequest[Seq[Class[_]]] { request =>
             override val workingDirectory: Path            = workingDir
@@ -57,14 +42,14 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
 
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[_]]] = {
                 new AbstractCompilationResult[Seq[Class[_]]](outs, compilationTime, request) {
-                    override def get: Seq[Class[_]] = {
-                        contexts
+                    override def get: Option[Seq[Class[_]]] = {
+                        Some(contexts
                                 .filter(desc => outs.contains(workingDir.resolve(toWrapperClassName(desc.clazz.getName))))
                                 .map { desc =>
                                     val clazz            = desc.clazz
                                     val wrapperClassName = toWrapperClassName(clazz.getName)
                                     new GeneratedClassClassLoader(workingDir, clazz.getClassLoader).loadClass(wrapperClassName)
-                                }
+                                })
                     }
                 }
             }

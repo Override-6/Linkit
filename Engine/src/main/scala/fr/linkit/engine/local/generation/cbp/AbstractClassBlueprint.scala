@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.generation.cbp
 
-import fr.linkit.api.local.generation.cbp.{ClassBlueprint, ValueScope}
+import fr.linkit.api.local.generation.cbp.ClassBlueprint
 import fr.linkit.engine.local.generation.cbp.AbstractClassBlueprint.removeBPComments
 
 import java.io.InputStream
@@ -20,7 +20,7 @@ import java.io.InputStream
 abstract class AbstractClassBlueprint[V] private(protected val blueprint: String) extends ClassBlueprint[V] {
 
     def this(stream: InputStream) = {
-        this(new String(stream.readAllBytes()))
+        this(removeBPComments(new String(stream.readAllBytes())))
     }
 
     val rootScope: RootValueScope[V]
@@ -49,7 +49,7 @@ object AbstractClassBlueprint {
 
         while (nextCommentPos != -1) {
             val commentEndPos = result.indexOf('\n', nextCommentPos)
-            val lineStartPos = result.lastIndexOf('\n', nextCommentPos)
+            val lineStartPos  = result.lastIndexOf('\n', nextCommentPos)
             result.delete(nextCommentPos, commentEndPos)
             if (shouldDeleteWholeLine(lineStartPos)) {
                 result.delete(lineStartPos, nextCommentPos)

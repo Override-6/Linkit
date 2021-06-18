@@ -20,13 +20,8 @@ import scala.collection.mutable
 
 trait CompilationRequestFactory[I, O] {
 
-    protected val blueprints = new mutable.HashMap[CompilerType, ClassBlueprint[I]]()
 
     val defaultWorkingDirectory: Path
-
-    def registerClassBlueprint(compilerType: CompilerType, bp: ClassBlueprint[I]): Unit = {
-        blueprints.put(compilerType, bp)
-    }
 
     def makeRequest(context: I, workingDirectory: Path = defaultWorkingDirectory): CompilationRequest[O]
 

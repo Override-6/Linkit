@@ -28,6 +28,7 @@ import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCente
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
+import fr.linkit.engine.test.classes.TestListBuffer
 import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
@@ -93,7 +94,7 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = {
-       forObject(ListBuffer.empty[String])
+       forObject(new TestListBuffer[String](null))
     }
 
     @Test

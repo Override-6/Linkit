@@ -12,13 +12,40 @@
 
 package fr.linkit.engine.local.generation.compilation
 
-import fr.linkit.api.local.generation.compilation.CompilationRequestFactory
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription
+import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationRequestFactory, CompilationResult}
 import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 
 import java.nio.file.Path
 
 abstract class AbstractCompilationRequestFactory[I, O] extends CompilationRequestFactory[I, O] {
 
     override val defaultWorkingDirectory: Path = LinkitApplication.getHomePathProperty("compilation.working_dir.sources")
+
+    override def makeRequest(context: I, workingDirectory: Path): CompilationRequest[O] = {
+        val req = createMultiRequest(Seq(context), workingDirectory)
+
+        new SourceCodeCompilationRequest[O] {
+            override var sourceCodes     : Seq[SourceCode] = req.sourceCodes
+            override val workingDirectory: Path            = req.workingDirectory
+
+            override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[O] = {
+                new AbstractCompilationResult[O](outs, compilationTime, req) {
+                    override def get: Option[O] = {
+                        req.conclude(outs, compilationTime)
+                                .get
+                                .flatMap(_.headOption)
+                    }
+                }
+            }
+        }
+    }
+
+    override def makeMultiRequest(contexts: Seq[I], workingDirectory: Path): CompilationRequest[Seq[O]] = {
+        createMultiRequest(contexts, workingDirectory)
+    }
+
+    protected def createMultiRequest(contexts: Seq[I], workingDir: Path): SourceCodeCompilationRequest[Seq[O]]
 
 }

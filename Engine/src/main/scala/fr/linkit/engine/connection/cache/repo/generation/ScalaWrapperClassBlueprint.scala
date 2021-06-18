@@ -18,7 +18,6 @@ import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.MethodValueScope
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
 
-import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.universe._
 
 class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
@@ -93,7 +92,7 @@ object ScalaWrapperClassBlueprint {
         }
 
         private def getGenericParamsIn(method: MethodDescription): String = {
-            val symbol  = method.symbol
+            val symbol      = method.symbol
             val cTypeParams = method
                     .desc
                     .classType
@@ -182,26 +181,36 @@ object ScalaWrapperClassBlueprint {
             v
         }
 
-        private def renderTypes(types: Seq[(Type, Int)], classLevelTypes: Seq[Symbol]): Seq[String] = {
+        private def renderTypes(types: Seq[(Type, Int)], method: Symbol, classLevelTypes: Seq[Symbol]): Seq[String] = {
             if (types.isEmpty)
                 return Seq.empty
 
-            def renderType(tpe: Type, mainTypePosition: Int): String = {
+            def renderType(tpe: Type, owner: Symbol, typePos: Int, declarationPos: Int): String = {
                 val args = tpe.typeArgs
+                val name = tpe.typeSymbol.fullName
+                if (owner != null && owner.typeSignature.takesTypeArgs) {
+                    val ownerType       = owner.typeSignature
+                    val typeDeclaration = ownerType.typeParams(typePos)
+                    if (typeDeclaration.typeSignature.takesTypeArgs)
+                        return name
+                    if (isThisType(tpe, typeDeclaration, method))
+                        return "this.type"
+                }
                 if (args.isEmpty)
                     return tpe.finalResultType.toString
                 val value = {
                     args
-                            .map(renderType(_, mainTypePosition))
+                            .zipWithIndex
+                            .map(pair => renderType(pair._1, tpe.typeSymbol, pair._2, declarationPos))
                             .mkString("[", ", ", "]")
                 }
                 if (classLevelTypes.contains(tpe)) {
-                    return s"$$_$mainTypePosition " + value
+                    return s"$$_$declarationPos " + value
                 }
-                tpe.typeSymbol.fullName + value
+                name + value
             }
 
-            for ((tpe, i) <- types) yield renderType(tpe, i)
+            for ((tpe, i) <- types) yield renderType(tpe, null, 0, i)
         }
 
     }

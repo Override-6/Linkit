@@ -13,19 +13,21 @@
 package fr.linkit.engine.local.generation.compilation
 
 import fr.linkit.api.local.generation.compilation.access.CompilerType
-import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationResult}
+import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationRequestFactory, CompilationResult}
+import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.SourceFileCompilationRequestFactory.AbstractRequest
 import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.nio.file.Path
 
-class SourceFileCompilationRequestFactory extends AbstractCompilationRequestFactory[Path, Path] {
+class SourceFileCompilationRequestFactory extends CompilationRequestFactory[Path, Path] {
+    override val defaultWorkingDirectory: Path = LinkitApplication.getHomePathProperty("compilation.working_dir.sources")
 
     override def makeRequest(context: Path, workingDir: Path): CompilationRequest[Path] = {
         new AbstractRequest[Path](workingDir, Seq(context)) {
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Path] = {
                 new AbstractCompilationResult[Path](outs, compilationTime, this) {
-                    override def get: Path = outs.head
+                    override def get: Option[Path] = outs.headOption
                 }
             }
         }
@@ -35,11 +37,12 @@ class SourceFileCompilationRequestFactory extends AbstractCompilationRequestFact
         new AbstractRequest[Seq[Path]](workingDirectory, contexts) {
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Path]] = {
                 new AbstractCompilationResult[Seq[Path]](outs, compilationTime, this) {
-                    override def get: Seq[Path] = outs
+                    override def get: Option[Seq[Path]] = Some(outs)
                 }
             }
         }
     }
+
 
 }
 
