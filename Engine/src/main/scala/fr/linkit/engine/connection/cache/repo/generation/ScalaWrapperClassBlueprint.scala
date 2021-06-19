@@ -18,6 +18,7 @@ import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.MethodValueScope
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
 
+import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.universe._
 
 class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
@@ -87,7 +88,7 @@ object ScalaWrapperClassBlueprint {
                 val base        = method.desc.classType
                 val methodOwner = symbol.owner
                 tpe.asSeenFrom(base, methodOwner).finalResultType
-            }, tParams.indexOf(tpe))), tParams)
+            }, tParams.indexOf(tpe))), symbol, tParams)
                     .mkString("")
         }
 
@@ -104,6 +105,7 @@ object ScalaWrapperClassBlueprint {
                     .map(pair =>
                         renderTypes(
                             Seq((pair._1.typeSignature.asSeenFrom(method.desc.classType, symbol.owner), pair._2)),
+                            symbol,
                             symbol.owner.asClass.typeParams).head
                     )
                     .zipWithIndex
@@ -158,7 +160,7 @@ object ScalaWrapperClassBlueprint {
                     Seq(s
                             .typeSignature
                             .asSeenFrom(method.desc.classType, symbol.owner) -> position)
-                }, symbol.owner.asClass.typeParams).head
+                }, symbol, symbol.owner.asClass.typeParams).head
                 if (str.startsWith(VarargCompilerToken))
                     if (povIn) {
                         s": Seq${str.drop(VarargCompilerToken.length)}"
@@ -193,8 +195,8 @@ object ScalaWrapperClassBlueprint {
                     val typeDeclaration = ownerType.typeParams(typePos)
                     if (typeDeclaration.typeSignature.takesTypeArgs)
                         return name
-                    if (isThisType(tpe, typeDeclaration, method))
-                        return "this.type"
+                    //if (isThisType(tpe, typeDeclaration, method))
+                    //    return "this.type"
                 }
                 if (args.isEmpty)
                     return tpe.finalResultType.toString

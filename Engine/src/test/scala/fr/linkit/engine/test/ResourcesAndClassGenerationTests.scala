@@ -94,7 +94,7 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = {
-       forObject(new TestListBuffer[String](null))
+       forObject(ListBuffer.empty[String])
     }
 
     @Test

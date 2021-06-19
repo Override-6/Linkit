@@ -21,7 +21,7 @@ import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException
 
 @SerialVersionUID($CompileTime$L)
-class Puppet$WrappedClassSimpleName$$TParamsIn$(private var puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsOut$],
+class Puppet$WrappedClassSimpleName$$TParamsIn$(@transient private var puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsOut$],
                                                  private val puppetClone: $WrappedClassSimpleName$$TParamsOut$)
     extends $WrappedClassSimpleName$$TParamsOut$(puppetClone) with PuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] {
 

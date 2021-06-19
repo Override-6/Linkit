@@ -24,7 +24,8 @@ class TypeHelper(compilerCenter: CompilerCenter) {
         val className          = clazz.name.toString
         val generatedClassName = className + "Impl"
         val sourceCode         = s"class $generatedClassName extends $className"
-        compilerCenter.generate(SourceCodeCompilationRequestFactory.makeRequest(SourceCode(clazzName,)))
+        //compilerCenter.generate(SourceCodeCompilationRequestFactory.makeRequest(SourceCode(clazzName,)))
+        ???
     }
 
 }
