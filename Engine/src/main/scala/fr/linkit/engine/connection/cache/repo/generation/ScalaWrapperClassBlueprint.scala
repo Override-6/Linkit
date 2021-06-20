@@ -70,7 +70,7 @@ object ScalaWrapperClassBlueprint {
             extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
         registerValue("ReturnType" ~> getReturnType)
-        registerValue("DefaultReturnType" ~> (_.getDefaultTypeReturnValue))
+        registerValue("DefaultReturnValue" ~> (_.getDefaultTypeReturnValue))
         registerValue("GenericTypesIn" ~> getGenericParamsIn)
         registerValue("GenericTypesOut" ~> getGenericParamsOut)
         registerValue("MethodName" ~> (_.symbol.name.toString))

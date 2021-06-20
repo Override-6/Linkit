@@ -25,6 +25,10 @@ public class JavaUtils {
             out.println("\tat " + traceElement);
     }
 
+    public static <T> T getNull() {
+        return null;
+    }
+
 
 
 }

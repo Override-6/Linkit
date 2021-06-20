@@ -11,6 +11,6 @@ class TestListBuffer[A](other: TestListBuffer[A]) extends ListBuffer[A] {
 
     class B extends AC {
 
-        override def test(t: B): B = ???
+//        override def test(t: B): B = ???
     }
 }

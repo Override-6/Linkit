@@ -27,6 +27,7 @@ import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.engine.local.utils.JavaUtils
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
 import fr.linkit.engine.test.classes.TestListBuffer
 import fr.linkit.engine.test.objects.PlayerObject

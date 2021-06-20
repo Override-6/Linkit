@@ -196,7 +196,7 @@ object PuppetDescription {
                 "-1"
             else if (nme == name[Char])
                 "'\\u0000'"
-            else "fr.linkit.api.local.generation.JNullAssistant.getNull"
+            else "JavaUtils.getNull"
         }
 
         private def hashCode(a: Array[u.Type]): Int = {
