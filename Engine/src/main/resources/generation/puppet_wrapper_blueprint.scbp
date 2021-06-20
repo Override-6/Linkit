@@ -59,35 +59,39 @@ class Puppet$WrappedClassSimpleName$$TParamsIn$(@transient private var puppeteer
 
     override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
 
-!!INHERITED_METHODS!! {
-    override def $MethodName$$GenericTypesIn$$ParamsIn$: $ReturnType$ = {
-        if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled($MethodID$)) {
-            return super.$MethodName$$GenericTypesOut$$ParamsOut$
+    @inline private def performRMI[R](@inline id: Int, @inline defaultReturnValue: R, @inline invokeOnlyResult: R)
+                                     (@inline args: Array[Array[Any]])(@inline superCall: => R): R = {
+        if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled(id)) {
+            return superCall
         }
-        val args = Array[Any]($ParamsOutArray$)
-        //# From here we are sure that we want to perform a remote
-        //# method invocation. (A Local invocation (super.xxx()) can be added).
-        if (description.isInvokeOnly($MethodID$)) {
-            puppeteer.sendInvoke($MethodID$, args)
-            var localResult: $ReturnType$ = $DefaultReturnValue$
-            if (description.isLocalInvocationForced($MethodID$)) {
-                localResult = super.$MethodName$$GenericTypesOut$$ParamsOut$
+        // From here we are sure that we want to perform a remote
+        // method invocation. (A Local invocation (super.xxx()) can be added).
+        if (description.isInvokeOnly(id)) {
+            puppeteer.sendInvoke(id, args)
+            var localResult: R = defaultReturnValue
+            if (description.isLocalInvocationForced(id)) {
+                localResult = superCall
             }
             //# Note1: value of 'InvokeOnlyResult' can be "localResult", which will return the variable.
             //# Note2: Be aware that you can get a null value returned
             //#        if the 'InvokeOnlyResult' value of the annotated
             //#        method is set to "localResult" and the invocation
             //#        kind does not force local invocation.
-            return $InvokeOnlyResult$
+            return invokeOnlyResult
         }
-        var result: $ReturnType$ = $DefaultReturnValue$
-        if (description.isLocalInvocationForced($MethodID$)) {
-            result = super.$MethodName$$GenericTypesOut$$ParamsOut$
-            puppeteer.sendInvoke($MethodID$, args)
+        var result: R = defaultReturnValue
+        if (description.isLocalInvocationForced(id)) {
+            result = superCall
+            puppeteer.sendInvoke(id, args)
         } else {
-            result = puppeteer.sendInvokeAndWaitResult($MethodID$, args)
+            result = puppeteer.sendInvokeAndWaitResult(id, args)
         }
         result
+    }
+
+!!INHERITED_METHODS!! {
+    override def $MethodName$$GenericTypesIn$$ParamsIn$: $ReturnType$ = {
+        performRMI[$ReturnType$]($MethodID$, $DefaultReturnValue$, $InvokeOnlyResult$)(Array[Array[Any]]($ParamsOutArray$))(super.$MethodName$$GenericTypesOut$$ParamsOut$)
     }
 
 }

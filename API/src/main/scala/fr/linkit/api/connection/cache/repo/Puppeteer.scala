@@ -29,13 +29,13 @@ trait Puppeteer[S] {
 
     def getPuppetWrapper: S with PuppetWrapper[S]
 
-    def sendInvokeAndWaitResult[R](methodId: Int, args: Array[Any]): R
+    def sendInvokeAndWaitResult[R](methodId: Int, args: Array[Array[Any]]): R
 
     def sendPuppetUpdate(newVersion: S): Unit
 
     def init(wrapper: S with PuppetWrapper[S]): Unit
 
-    def sendInvoke(methodId: Int, args: Array[Any]): Unit
+    def sendInvoke(methodId: Int, args: Array[Array[Any]]): Unit
 
     def sendFieldUpdate(fieldId: Int, newValue: Any): Unit
 }

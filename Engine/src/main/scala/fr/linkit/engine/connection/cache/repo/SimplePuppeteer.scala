@@ -43,7 +43,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
 
     override def getPuppetWrapper: S with PuppetWrapper[S] = puppetWrapper
 
-    override def sendInvokeAndWaitResult[R](methodId: Int, args: Array[Any]): R = {
+    override def sendInvokeAndWaitResult[R](methodId: Int, args: Array[Array[Any]]): R = {
         val desc = puppetDescription.getMethodDesc(methodId).getOrElse {
             throw new NoSuchMethodException(s"Remote method not found for id '$methodId'")
         }
@@ -62,7 +62,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         }
     }
 
-    override def sendInvoke(methodId: Int, args: Array[Any]): Unit = {
+    override def sendInvoke(methodId: Int, args: Array[Array[Any]]): Unit = {
         val desc = puppetDescription.getMethodDesc(methodId).getOrElse {
             throw new NoSuchMethodException(s"Remote method not found for id '$methodId'")
         }
@@ -85,7 +85,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         }
         val value = if (desc.isSynchronized) synchronizedObj(newValue) else newValue
         channel.makeRequest(bcScope)
-                .addPacket(InvocationPacket(puppeteerDescription.treeViewPath, fieldId, Array(value)))
+                .addPacket(InvocationPacket(puppeteerDescription.treeViewPath, fieldId, Array(Array(value))))
                 .submit()
                 .detach()
     }
@@ -116,10 +116,10 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         }
     }
 
-    private def synchronizedArgs(desc: MethodDescription, args: Array[Any]): Array[Any] = {
+    private def synchronizedArgs(desc: MethodDescription, args: Array[Array[Any]]): Array[Array[Any]] = {
         desc.synchronizedParams
                 .zip(args)
-                .map(pair => if (pair._1) synchronizedObj(pair._2) else pair._2)
+                .map(pair => if (pair._1) pair._2.map(synchronizedObj) else pair._2)
                 .toArray
     }
 

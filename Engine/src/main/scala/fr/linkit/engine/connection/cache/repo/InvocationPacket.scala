@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.cache.repo
 
 import fr.linkit.api.connection.packet.Packet
 
-case class InvocationPacket(path: Array[Int], methodID: Int, params: Array[Any]) extends Packet {
+case class InvocationPacket(path: Array[Int], methodID: Int, params: Array[Array[Any]]) extends Packet {
 
 }
 
