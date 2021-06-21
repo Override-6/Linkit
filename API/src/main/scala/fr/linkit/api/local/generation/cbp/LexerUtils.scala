@@ -28,7 +28,7 @@ object LexerUtils {
     }
 
     def expressionsBetween(regexA: String, regexB: String, blueprint: String): Seq[(String, Int)] = {
-        val matcher = Pattern.compile(s"$regexA(.*)$regexB").matcher(blueprint)
+        val matcher = Pattern.compile(s"$regexA(.*?)$regexB").matcher(blueprint)
         val buffer  = ListBuffer.empty[(String, Int)]
         while (matcher.find()) {
             buffer += ((matcher.group(1).trim, matcher.start()))

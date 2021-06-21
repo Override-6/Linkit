@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.repo.generation
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.local.generation.TypeVariableTranslator
-import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.MethodValueScope
+import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.{MethodValueScope, getClassGenericParamsOut}
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
 
 import scala.reflect.runtime.universe._
@@ -28,16 +28,16 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
         registerValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
         registerValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
         registerValue("TParamsIn" ~> getGenericParamsIn)
-        registerValue("TParamsOut" ~> getGenericParamsOut)
+        registerValue("TParamsOut" ~> getClassGenericParamsOut)
 
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
-                    .distinctBy(_.methodId)
-                    .filterNot(desc => {
-                        val m = desc.symbol
-                        m.isPrivate || m.isStatic || m.isFinal
-                    })
-                    .foreach(action)
+                .distinctBy(_.methodId)
+                .filterNot(desc => {
+                    val m = desc.symbol
+                    m.isPrivate || m.isStatic || m.isFinal
+                })
+                .foreach(action)
         })
 
     }
@@ -49,24 +49,25 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
         else s"[$result]"
     }
 
-    private def getGenericParamsOut(desc: PuppetDescription[_]): String = {
-        val result = desc
-                .clazz
-                .getTypeParameters
-                .map(_.getName)
-                .mkString(", ")
-        if (result.isEmpty)
-            ""
-        else s"[$result]"
-    }
 }
 
 object ScalaWrapperClassBlueprint {
 
     private val VarargCompilerToken = "scala.<repeated>"
 
+    private def getClassGenericParamsOut(desc: PuppetDescription[_]): String = {
+        val result = desc
+            .clazz
+            .getTypeParameters
+            .map(_.getName)
+            .mkString(", ")
+        if (result.isEmpty)
+            ""
+        else s"[$result]"
+    }
+
     case class MethodValueScope(blueprint: String, pos: Int)
-            extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
+        extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
         registerValue("ReturnType" ~> getReturnType)
         registerValue("DefaultReturnValue" ~> (_.getDefaultTypeReturnValue))
@@ -80,65 +81,67 @@ object ScalaWrapperClassBlueprint {
         registerValue("ParamsOutArray" ~> (getParameters(_)(_.mkString(", "), _.mkString("Array[Any](", ", ", ")"), false)))
 
         private def getReturnType(method: MethodDescription): String = {
-            val symbol  = method.symbol
-            val tParams = method.desc.classType.typeParams
-            val tpe     = symbol.returnType
-            renderTypes(Seq(( {
+            val methodSymbol = method.symbol
+            val classSymbol  = method.desc.classType.typeSymbol
+            val tParams      = classSymbol.typeSignature.typeParams
+            val tpe          = methodSymbol.returnType
+            val v            = renderTypes(Seq(( {
                 val base        = method.desc.classType
-                val methodOwner = symbol.owner
+                val methodOwner = methodSymbol.owner
                 tpe.asSeenFrom(base, methodOwner).finalResultType
-            }, tParams.indexOf(tpe))), symbol, tParams)
-                    .mkString("")
+            }, tParams.indexOf(tpe))), methodSymbol, tParams)
+                .mkString("")
+            v.replace({classSymbol.fullName} + getClassGenericParamsOut(method.desc), "this.type")
         }
 
         private def getGenericParamsIn(method: MethodDescription): String = {
             val symbol      = method.symbol
             val cTypeParams = method
-                    .desc
-                    .classType
-                    .typeParams
+                .desc
+                .classType
+                .typeParams
             val mTypeParams = symbol.typeParams.zipWithIndex
             if (mTypeParams.isEmpty)
                 return ""
             val v = mTypeParams
-                    .map(pair =>
-                        renderTypes(
-                            Seq((pair._1.typeSignature.asSeenFrom(method.desc.classType, symbol.owner), pair._2)),
-                            symbol,
-                            symbol.owner.asClass.typeParams).head
-                    )
-                    .zipWithIndex
-                    .map(pair => {
-                        val i   = pair._2
-                        val tpe = mTypeParams(i)._1
-                        if (cTypeParams.exists(_.name == tpe.name)) s"$$_$i" + pair._2
-                        else tpe.name.toString + pair._1
-                    })
-                    .mkString("[", ", ", "]")
+                .map(pair =>
+                    renderTypes(
+                        Seq((pair._1.typeSignature.asSeenFrom(method.desc.classType, symbol.owner), pair._2)),
+                        symbol,
+                        symbol.owner.asClass.typeParams).head
+                )
+                .zipWithIndex
+                .map(pair => {
+                    val i   = pair._2
+                    val tpe = mTypeParams(i)._1
+                    if (cTypeParams.exists(_.name == tpe.name)) s"$$_$i" + pair._2
+                    else tpe.name.toString + pair._1
+                })
+                .mkString("[", ", ", "]")
             v
         }
 
         def getGenericParamsOut(method: MethodDescription): String = {
             val cTypeParams = method
-                    .desc
-                    .classType
-                    .typeParams
+                .desc
+                .classType
+                .typeParams
             val mTypeParams = method
-                    .symbol
-                    .typeSignature
-                    .typeParams
-                    .zipWithIndex
+                .symbol
+                .typeSignature
+                .typeParams
+                .zipWithIndex
             if (mTypeParams.isEmpty)
                 return ""
             val v = mTypeParams
-                    .zipWithIndex
-                    .map(pair => {
-                        val i   = pair._2
-                        val tpe = mTypeParams(i)._1
-                        if (cTypeParams.contains(tpe)) s"$$_$i"
-                        else tpe.name
-                    })
-                    .mkString("[", ", ", "]")
+                .zipWithIndex
+                .map(pair => {
+                    val i   = pair._2
+                    val tpe = mTypeParams(i)._1
+                    if (cTypeParams.contains(tpe)) s"$$_$i"
+                    else tpe.name
+                })
+                .mkString("[", ", ", "]")
             v
         }
 
@@ -157,8 +160,8 @@ object ScalaWrapperClassBlueprint {
             def argType(s: Symbol, position: Int): String = {
                 val str = renderTypes({
                     Seq(s
-                            .typeSignature
-                            .asSeenFrom(method.desc.classType, symbol.owner) -> position)
+                        .typeSignature
+                        .asSeenFrom(method.desc.classType, symbol.owner) -> position)
                 }, symbol, symbol.owner.asClass.typeParams).head
                 if (str.startsWith(VarargCompilerToken))
                     if (povIn) {
@@ -170,14 +173,14 @@ object ScalaWrapperClassBlueprint {
 
             val v = secondMkString {
                 symbol
-                        .paramLists
-                        .map(l => {
-                            val r = firstMkString(l.map(s => {
-                                val result = s"arg${n}${argType(s, i)}"
-                                result
-                            }))
-                            r
-                        })
+                    .paramLists
+                    .map(l => {
+                        val r = firstMkString(l.map(s => {
+                            val result = s"arg${n}${argType(s, i)}"
+                            result
+                        }))
+                        r
+                    })
             }
             v
         }
@@ -194,16 +197,14 @@ object ScalaWrapperClassBlueprint {
                     val typeDeclaration = ownerType.typeParams(typePos)
                     if (typeDeclaration.typeSignature.takesTypeArgs)
                         return name
-                    //if (isThisType(tpe, typeDeclaration, method))
-                    //    return "this.type"
                 }
                 if (args.isEmpty)
                     return tpe.finalResultType.toString
                 val value = {
                     args
-                            .zipWithIndex
-                            .map(pair => renderType(pair._1, tpe.typeSymbol, pair._2, declarationPos))
-                            .mkString("[", ", ", "]")
+                        .zipWithIndex
+                        .map(pair => renderType(pair._1, tpe.typeSymbol, pair._2, declarationPos))
+                        .mkString("[", ", ", "]")
                 }
                 if (classLevelTypes.contains(tpe)) {
                     return s"$$_$declarationPos " + value
