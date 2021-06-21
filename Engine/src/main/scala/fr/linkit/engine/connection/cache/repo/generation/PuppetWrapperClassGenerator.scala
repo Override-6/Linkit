@@ -44,7 +44,7 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
                     requestFactory.makeRequest(desc)
                 }
                 AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
-                result.get.asInstanceOf[Class[S with PuppetWrapper[S]]]
+                result.getResult.asInstanceOf[Class[S with PuppetWrapper[S]]]
             }
     }
 

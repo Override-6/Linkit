@@ -160,7 +160,7 @@ object PuppetDescription {
     private def name[T](implicit tag: TypeTag[T]): String = tag.tpe.typeSymbol.fullName
 
     case class MethodDescription(symbol: u.MethodSymbol,
-                                 desc: PuppetDescription[_],
+                                 classDesc: PuppetDescription[_],
                                  invokeOnly: Option[InvokeOnly],
                                  var synchronizedParams: Seq[Boolean], //TODO make synchronization
                                  var invocationKind: InvocationKind,
@@ -172,7 +172,7 @@ object PuppetDescription {
             val parameters: Array[u.Type] = symbol
                     .paramLists
                     .flatten
-                    .map(_.typeSignature.asSeenFrom(desc.classType, symbol.owner))
+                    .map(_.typeSignature.asSeenFrom(classDesc.classType, symbol.owner))
                     .toArray
             symbol.name.toString.hashCode + hashCode(parameters)
         }

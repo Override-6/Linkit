@@ -28,7 +28,7 @@ object SourceCodeCompilationRequestFactory extends AbstractCompilationRequestFac
 
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[_]]] = {
                 new AbstractCompilationResult[Seq[Class[_]]](outs, compilationTime, request) {
-                    override def get: Option[Seq[Class[_]]] = {
+                    override def getResult: Option[Seq[Class[_]]] = {
                         Some(contexts
                                 .filter(context => outs.contains(workingDir.resolve(context._1.className)))
                                 .map { context =>

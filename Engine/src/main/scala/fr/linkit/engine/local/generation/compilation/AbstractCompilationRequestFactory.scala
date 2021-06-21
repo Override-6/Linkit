@@ -32,9 +32,9 @@ abstract class AbstractCompilationRequestFactory[I, O] extends CompilationReques
 
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[O] = {
                 new AbstractCompilationResult[O](outs, compilationTime, req) {
-                    override def get: Option[O] = {
+                    override def getResult: Option[O] = {
                         req.conclude(outs, compilationTime)
-                                .get
+                                .getResult
                                 .flatMap(_.headOption)
                     }
                 }

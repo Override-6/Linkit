@@ -42,7 +42,7 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
 
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[_]]] = {
                 new AbstractCompilationResult[Seq[Class[_]]](outs, compilationTime, request) {
-                    override def get: Option[Seq[Class[_]]] = {
+                    override def getResult: Option[Seq[Class[_]]] = {
                         Some(contexts
                                 .filter(desc => outs.contains(workingDir.resolve(toWrapperClassName(desc.clazz.getName))))
                                 .map { desc =>

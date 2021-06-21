@@ -28,7 +28,9 @@ object ScalacCompilerAccess extends AbstractCompilerAccess {
         settings.processArguments(ScalacArguments ++ Seq("-d", destination.toString) ++ additionalArguments, true)
         val global = new Global(settings)
         val run    = new global.Run
+        println("COMPILATION...")
         run.compile(sourceFiles.map(_.toString).toList)
+        println("DONE :D")
         run.compiledFiles
                 .map(Path.of(_))
                 .toSeq
