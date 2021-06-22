@@ -25,7 +25,7 @@ abstract class AbstractCompilerAccess extends CompilerAccess {
                 .filter(canCompileFile)
         val t0          = System.currentTimeMillis()
         val outputFiles = try {
-            compile(files, request.workingDirectory, request.classPaths, request.additionalParams(getType))
+            compile(files, request.classDir, request.classPaths, request.additionalParams(getType))
         } catch {
             case NonFatal(e) =>
                 throw new CompilerAccessException(s"Compilation went wrong: An exception occurred. (${getType.name} compiler for ${getType.languageName} language.)", e)

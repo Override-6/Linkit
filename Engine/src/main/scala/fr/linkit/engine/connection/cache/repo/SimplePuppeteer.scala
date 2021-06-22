@@ -14,9 +14,8 @@ package fr.linkit.engine.connection.cache.repo
 
 import fr.linkit.api.connection.cache.repo._
 import fr.linkit.api.connection.cache.repo.annotations.InvocationKind
-import fr.linkit.api.connection.cache.repo.description.PuppetDescription
+import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
-import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.local.system.AppLogger

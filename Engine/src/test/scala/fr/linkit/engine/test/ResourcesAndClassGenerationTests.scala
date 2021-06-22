@@ -13,8 +13,7 @@
 package fr.linkit.engine.test
 
 import fr.linkit.api.connection.cache.repo.Puppeteer
-import fr.linkit.api.connection.cache.repo.description.PuppetDescription
-import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
+import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.Version
@@ -29,7 +28,7 @@ import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.JavaUtils
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
-import fr.linkit.engine.test.classes.TestListBuffer
+import fr.linkit.engine.test.classes.{TestHashMap, TestListBuffer}
 import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
@@ -95,7 +94,7 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = {
-       forObject(new TestListBuffer[String](null))
+       forObject(new TestHashMap[String, String](null))
     }
 
     @Test

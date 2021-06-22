@@ -38,7 +38,7 @@ abstract class SourceCodeCompilationRequest[T] extends CompilationRequest[T] {
 
     override lazy val sourceCodesPaths: Seq[Path] = {
         sourceCodes.map(sc => {
-            val path = workingDirectory.resolve(sc.className.replace(".", File.separator) + sc.codeType.sourceFileExtension)
+            val path = sourcesDir.resolve(sc.className.replace(".", File.separator) + sc.codeType.sourceFileExtension)
             val sourceCode = sc.sourceCode
             if (Files.notExists(path))
                 Files.createDirectories(path.getParent)

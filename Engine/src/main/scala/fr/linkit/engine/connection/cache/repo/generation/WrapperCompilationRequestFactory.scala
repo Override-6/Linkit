@@ -34,21 +34,20 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
 
     override def createMultiRequest(contexts: Seq[PuppetDescription[_]], workingDir: Path): SourceCodeCompilationRequest[Seq[Class[_]]] = {
         val bp = blueprints(CommonCompilerTypes.Scalac)
-        new SourceCodeCompilationRequest[Seq[Class[_]]] { request =>
+        new SourceCodeCompilationRequest[Seq[Class[_]]] { req =>
             override val workingDirectory: Path            = workingDir
             override var sourceCodes     : Seq[SourceCode] = {
                 contexts.map(desc => SourceCode(toWrapperClassName(desc.clazz.getName), bp.toClassSource(desc), CommonCompilerTypes.Scalac)) //TODO put in PuppetDescription the preferred compiler type
             }
 
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[_]]] = {
-                new AbstractCompilationResult[Seq[Class[_]]](outs, compilationTime, request) {
+                new AbstractCompilationResult[Seq[Class[_]]](outs, compilationTime, req) {
                     override def getResult: Option[Seq[Class[_]]] = {
                         Some(contexts
-                                .filter(desc => outs.contains(workingDir.resolve(toWrapperClassName(desc.clazz.getName))))
                                 .map { desc =>
                                     val clazz            = desc.clazz
                                     val wrapperClassName = toWrapperClassName(clazz.getName)
-                                    new GeneratedClassClassLoader(workingDir, clazz.getClassLoader).loadClass(wrapperClassName)
+                                    new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader).loadClass(wrapperClassName)
                                 })
                     }
                 }

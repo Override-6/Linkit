@@ -20,7 +20,7 @@ import fr.linkit.api.local.generation.ClassDescription
 import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
-class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoader) extends ClassDescription {
+class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], val loader: ClassLoader) extends ClassDescription {
 
     import u._
 
@@ -30,8 +30,6 @@ class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoad
     private val BlacklistedSuperClasses: Array[String] = Array(name[Object], name[Product])
 
     private val mirror = u.runtimeMirror(loader)
-
-    val clazz: Class[_ <: T] = Class.forName(classType.typeSymbol.asClass.fullName, false, loader).asInstanceOf[Class[T]]
 
     private val methods    = collectMethods()
     private val methodsMap = methods.map(desc => (desc.methodId, desc)).toMap
@@ -50,8 +48,7 @@ class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoad
     }
 
     def getFieldDesc(fieldID: Int): Option[FieldDescription] = {
-        fields
-                .get(fieldID)
+        fields.get(fieldID)
     }
 
     def isRMIEnabled(methodId: Int): Boolean = {
@@ -71,11 +68,12 @@ class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoad
     }
 
     private def collectMethods(): Seq[MethodDescription] = {
-        val methods = classType.members
+        val methods = tpe.members
                 .filter(_.isMethod)
-                .filterNot(f => f.isFinal || BlacklistedSuperClasses.contains(f.owner.fullName) || f.isConstructor)
-                .filterNot(f => f.owner.fullName.startsWith("scala.Function") || f.owner.fullName.startsWith("scala.PartialFunction"))
                 .map(_.asMethod)
+                .filterNot(f => f.isFinal || f.isStatic || f.isConstructor || f.isPrivate || f.isPrivateThis || f.privateWithin != NoSymbol)
+                .filterNot(f => f.owner.fullName.startsWith("scala.Function") || f.owner.fullName.startsWith("scala.PartialFunction"))
+                .filterNot(f => BlacklistedSuperClasses.contains(f.owner.fullName))
                 .map(genMethodDescription)
 
         val filteredMethods = ListBuffer.empty[MethodDescription]
@@ -92,7 +90,7 @@ class PuppetDescription[+T] private(val classType: u.Type, val loader: ClassLoad
     }
 
     private def collectFields(): Map[Int, FieldDescription] = {
-        classType.decls
+        tpe.decls
                 .filter(_.isMethod)
                 .map(_.asMethod)
                 .filter(_.isGetter)
@@ -151,10 +149,10 @@ object PuppetDescription {
         }
     }
 
-    def apply[T: TypeTag](clazz: Class[_]): PuppetDescription[T] = {
+    def apply[T: TypeTag](clazz: Class[_ <: T]): PuppetDescription[T] = {
         if (classOf[PuppetWrapper[T]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class can't extend PuppetWrapper")
-        new PuppetDescription[T](typeOf[T], clazz.getClassLoader)
+        new PuppetDescription[T](typeTag[T].tpe, clazz, clazz.getClassLoader)
     }
 
     private def name[T](implicit tag: TypeTag[T]): String = tag.tpe.typeSymbol.fullName
@@ -172,7 +170,7 @@ object PuppetDescription {
             val parameters: Array[u.Type] = symbol
                     .paramLists
                     .flatten
-                    .map(_.typeSignature.asSeenFrom(classDesc.classType, symbol.owner))
+                    .map(_.typeSignature.asSeenFrom(classDesc.tpe, symbol.owner))
                     .toArray
             symbol.name.toString.hashCode + hashCode(parameters)
         }

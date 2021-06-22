@@ -13,8 +13,8 @@
 package fr.linkit.engine.connection.cache.repo
 
 import fr.linkit.api.connection.cache.repo._
-import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppetDescriptions, toTypeTag}
-import fr.linkit.api.connection.cache.repo.generation.{PuppetWrapperGenerator, PuppeteerDescription}
+import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppetDescriptions, PuppeteerDescription, toTypeTag}
+import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
@@ -53,7 +53,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         descriptions.getDescription[B]
     }
 
-    override def getDescFromClass[B](clazz: Class[_]): PuppetDescription[B] = {
+    override def getDescFromClass[B](clazz: Class[B]): PuppetDescription[B] = {
         descriptions.getDescFromClass(clazz)
     }
 
@@ -151,10 +151,10 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         if (obj == null)
             throw new NullPointerException
 
-        val puppetDesc    = descriptions.getDescFromClass[B](obj.getClass)
+        val puppetDesc    = descriptions.getDescFromClass[B](obj.getClass.asInstanceOf[Class[B]])
         val puppeteerDesc = PuppeteerDescription(family, cacheID, owner, treeViewPath)
         val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, puppetDesc)
-        val wrapper       = genPuppetWrapper[B](puppeteer, obj, puppetDesc.classType)
+        val wrapper       = genPuppetWrapper[B](puppeteer, obj, puppetDesc.tpe)
         foreachSyncObjAction(wrapper, treeViewPath)
         val mirror = runtimeMirror(puppetDesc.loader).reflect(wrapper)
         for (desc <- puppetDesc.listFields() if desc.isSynchronized) {
@@ -198,7 +198,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         val wrappedPuppet = genSynchronizedObject(path, puppet, owner, descriptions) {
             (wrapper, childPath) =>
                 val id          = childPath.last
-                val description = descriptions.getDescFromClass[B](wrapper.getClass)
+                val description = descriptions.getDescFromClass[B](wrapper.getClass.asInstanceOf[Class[B]])
                 parent.fold {
                     val rootWrapper = wrapper.asInstanceOf[B with PuppetWrapper[B]]
                     val chip        = ObjectChip[B](owner, description, rootWrapper)

@@ -23,6 +23,10 @@ trait CompilationRequest[T] {
 
     val workingDirectory: Path
 
+    lazy val sourcesDir: Path = Path.of(workingDirectory + "/Sources/")
+
+    lazy val classDir: Path = Path.of(workingDirectory + "/Classes/")
+
     def sourceCodesPaths: Seq[Path]
 
     def compilerInput: InputStream = System.in

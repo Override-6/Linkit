@@ -33,10 +33,6 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
                     .distinctBy(_.methodId)
-                    .filterNot(desc => {
-                        val m = desc.symbol
-                        m.isPrivate || m.isStatic || m.isFinal
-                    })
                     .foreach(action)
         })
 
@@ -82,25 +78,23 @@ object ScalaWrapperClassBlueprint {
 
         private def getReturnType(method: MethodDescription): String = {
             val methodSymbol = method.symbol
-            val classSymbol  = method.classDesc.classType.typeSymbol
+            val classSymbol  = method.classDesc.tpe.typeSymbol
             val tParams      = classSymbol.typeSignature.typeParams
             val tpe          = methodSymbol.returnType
             val v            = renderTypes(Seq(( {
-                val base        = method.classDesc.classType
+                val base        = method.classDesc.tpe
                 val methodOwner = methodSymbol.owner
                 tpe.asSeenFrom(base, methodOwner).finalResultType
             }, tParams.indexOf(tpe))), tParams)
                     .mkString("")
-            v.replace({
-                classSymbol.fullName
-            } + getClassGenericParamsOut(method.classDesc), "this.type")
+            v.replace(classSymbol.fullName + getClassGenericParamsOut(method.classDesc), "this.type")
         }
 
         private def getGenericParamsIn(method: MethodDescription): String = {
             val symbol      = method.symbol
             val cTypeParams = method
                     .classDesc
-                    .classType
+                    .tpe
                     .typeParams
             val mTypeParams = symbol.typeParams.zipWithIndex
             if (mTypeParams.isEmpty)
@@ -108,7 +102,7 @@ object ScalaWrapperClassBlueprint {
             val v = mTypeParams
                     .map(pair =>
                         renderTypes(
-                            Seq((pair._1.typeSignature.asSeenFrom(method.classDesc.classType, symbol.owner).finalResultType, pair._2)),
+                            Seq((pair._1.typeSignature.asSeenFrom(method.classDesc.tpe, symbol.owner).finalResultType, pair._2)),
                             symbol.owner.asClass.typeParams).head
                     )
                     .zipWithIndex
@@ -125,7 +119,7 @@ object ScalaWrapperClassBlueprint {
         def getGenericParamsOut(method: MethodDescription): String = {
             val cTypeParams = method
                     .classDesc
-                    .classType
+                    .tpe
                     .typeParams
             val mTypeParams = method
                     .symbol
@@ -162,7 +156,7 @@ object ScalaWrapperClassBlueprint {
                 val str = renderTypes({
                     Seq(s
                             .typeSignature
-                            .asSeenFrom(method.classDesc.classType, symbol.owner).finalResultType -> position)
+                            .asSeenFrom(method.classDesc.tpe, symbol.owner).finalResultType -> position)
                 }, symbol.owner.asClass.typeParams).head
                 if (str.endsWith("*") && allowVarargUpcast) s": _*"
                 else if (allowTypes) ": " + str else ""

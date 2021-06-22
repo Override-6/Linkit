@@ -10,16 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation.compilation
+package fr.linkit.engine.test.classes
 
-import java.nio.file.Path
+import scala.collection.mutable
 
-trait CompilationRequestFactory[I, O] {
-
-    val defaultWorkingDirectory: Path
-
-    def makeRequest(context: I, workingDirectory: Path = defaultWorkingDirectory): CompilationRequest[O]
-
-    def makeMultiRequest(contexts: Seq[I], workingDirectory: Path = defaultWorkingDirectory): CompilationRequest[Seq[O]]
-
+class TestHashMap[K, V](other: TestHashMap[K, V]) extends mutable.HashMap[K, V]{
+    private[classes] def test: Unit = ???
+    private def test2: Unit = ???
 }

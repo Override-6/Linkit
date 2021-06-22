@@ -10,16 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation.compilation
+package fr.linkit.api.connection.cache.repo.description
 
-import java.nio.file.Path
-
-trait CompilationRequestFactory[I, O] {
-
-    val defaultWorkingDirectory: Path
-
-    def makeRequest(context: I, workingDirectory: Path = defaultWorkingDirectory): CompilationRequest[O]
-
-    def makeMultiRequest(contexts: Seq[I], workingDirectory: Path = defaultWorkingDirectory): CompilationRequest[Seq[O]]
+case class PuppeteerDescription(cacheFamily: String,
+                                cacheID: Int,
+                                owner: String,
+                                treeViewPath: Array[Int]) {
 
 }

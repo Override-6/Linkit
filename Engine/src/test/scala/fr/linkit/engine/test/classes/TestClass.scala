@@ -10,16 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.local.generation.compilation
+package fr.linkit.engine.test.classes
 
-import java.nio.file.Path
+class TestClass {
 
-trait CompilationRequestFactory[I, O] {
-
-    val defaultWorkingDirectory: Path
-
-    def makeRequest(context: I, workingDirectory: Path = defaultWorkingDirectory): CompilationRequest[O]
-
-    def makeMultiRequest(contexts: Seq[I], workingDirectory: Path = defaultWorkingDirectory): CompilationRequest[Seq[O]]
+    private[test] def test: Unit = ???
 
 }

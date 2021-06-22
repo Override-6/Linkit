@@ -37,5 +37,5 @@ trait ObjectRepository[A <: Serializable] extends ObjectSynchronizer with Packet
 
     def isRegistered(id: Int): Boolean
 
-    def getDescFromClass[B](clazz: Class[_]): PuppetDescription[B]
+    def getDescFromClass[B](clazz: Class[B]): PuppetDescription[B]
 }

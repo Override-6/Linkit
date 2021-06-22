@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.cache.repo;
 
-import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription;
+import fr.linkit.api.connection.cache.repo.description.PuppeteerDescription;
 
 import java.io.Serializable;
 

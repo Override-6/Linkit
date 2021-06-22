@@ -12,8 +12,7 @@
 
 package fr.linkit.api.connection.cache.repo
 
-import fr.linkit.api.connection.cache.repo.description.PuppetDescription
-import fr.linkit.api.connection.cache.repo.generation.PuppeteerDescription
+import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
 
 trait Puppeteer[S] {
     

@@ -26,7 +26,7 @@ class PuppetDescriptions {
             .asInstanceOf[PuppetDescription[B]]
     }
 
-    def getDescFromClass[B](clazz: Class[_]): PuppetDescription[B] = {
+    def getDescFromClass[B](clazz: Class[B]): PuppetDescription[B] = {
         val mirror   = runtimeMirror(clazz.getClassLoader)
         val clSymbol = mirror.staticClass(clazz.getName)
         val tpe      = clSymbol.selfType
