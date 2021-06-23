@@ -18,6 +18,7 @@ import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.{MethodValueScope, getClassGenericParamsOut}
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
 
+import scala.collection.mutable
 import scala.reflect.runtime.universe._
 
 class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
@@ -49,14 +50,12 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
 
 object ScalaWrapperClassBlueprint {
 
-    private val VarargCompilerToken = "scala.<repeated>"
-
     private def getClassGenericParamsOut(desc: PuppetDescription[_]): String = {
         val result = desc
                 .clazz
                 .getTypeParameters
                 .map(_.getName)
-                .mkString(", ")
+                .mkString(",")
         if (result.isEmpty)
             ""
         else s"[$result]"
@@ -112,7 +111,7 @@ object ScalaWrapperClassBlueprint {
                         if (cTypeParams.exists(_.name == tpe.name)) s"$$_$i" + pair._2
                         else tpe.name.toString + pair._1
                     })
-                    .mkString("[", ", ", "]")
+                    .mkString("[", ",", "]")
             v
         }
 
@@ -136,7 +135,7 @@ object ScalaWrapperClassBlueprint {
                         if (cTypeParams.contains(tpe)) s"$$_$i"
                         else tpe.name
                     })
-                    .mkString("[", ", ", "]")
+                    .mkString("[", ",", "]")
             v
         }
 
@@ -202,9 +201,9 @@ object ScalaWrapperClassBlueprint {
                     args
                             .zipWithIndex
                             .map(pair => renderType(pair._1, tpe.typeSymbol, pair._2, declarationPos))
-                            .mkString("[", ", ", "]")
+                            .mkString("[", ",", "]")
                 }
-                if (classLevelTypes.contains(tpe)) {
+                if (classLevelTypes.exists(_.fullName == tpe.typeSymbol.fullName)) {
                     return s"$$_$declarationPos " + value
                 }
                 name + value
