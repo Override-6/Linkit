@@ -18,7 +18,6 @@ import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.{MethodValueScope, getClassGenericParamsOut}
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
 
-import scala.collection.mutable
 import scala.reflect.runtime.universe._
 
 class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
@@ -80,11 +79,11 @@ object ScalaWrapperClassBlueprint {
             val classSymbol  = method.classDesc.tpe.typeSymbol
             val tParams      = classSymbol.typeSignature.typeParams
             val tpe          = methodSymbol.returnType
-            val v            = renderTypes(Seq(( {
+            val v            = renderTypes(Seq({
                 val base        = method.classDesc.tpe
                 val methodOwner = methodSymbol.owner
                 tpe.asSeenFrom(base, methodOwner).finalResultType
-            }, tParams.indexOf(tpe))), tParams)
+            }), tParams)
                     .mkString("")
             v.replace(classSymbol.fullName + getClassGenericParamsOut(method.classDesc), "this.type")
         }
@@ -95,20 +94,20 @@ object ScalaWrapperClassBlueprint {
                     .classDesc
                     .tpe
                     .typeParams
-            val mTypeParams = symbol.typeParams.zipWithIndex
+            val mTypeParams = symbol.typeParams
             if (mTypeParams.isEmpty)
                 return ""
             val v = mTypeParams
-                    .map(pair =>
+                    .map(param =>
                         renderTypes(
-                            Seq((pair._1.typeSignature.asSeenFrom(method.classDesc.tpe, symbol.owner).finalResultType, pair._2)),
-                            symbol.owner.asClass.typeParams).head
+                            Seq(param.typeSignature.asSeenFrom(method.classDesc.tpe, param.owner).finalResultType),
+                            method.classDesc.tpe.typeParams).head
                     )
                     .zipWithIndex
                     .map(pair => {
                         val i   = pair._2
-                        val tpe = mTypeParams(i)._1
-                        if (cTypeParams.exists(_.name == tpe.name)) s"$$_$i" + pair._2
+                        val tpe = mTypeParams(i)
+                        if (cTypeParams.exists(_.name == tpe.name)) s"$$_$i"
                         else tpe.name.toString + pair._1
                     })
                     .mkString("[", ",", "]")
@@ -151,12 +150,13 @@ object ScalaWrapperClassBlueprint {
 
             val symbol = method.symbol
 
-            def argType(s: Symbol, position: Int): String = {
-                val str = renderTypes({
+            def argType(s: Symbol): String = {
+                val classType = method.classDesc.tpe
+                val str       = renderTypes({
                     Seq(s
                             .typeSignature
-                            .asSeenFrom(method.classDesc.tpe, symbol.owner).finalResultType -> position)
-                }, symbol.owner.asClass.typeParams).head
+                            .asSeenFrom(classType, symbol.owner).finalResultType)
+                }, classType.typeParams).head
                 if (str.endsWith("*") && allowVarargUpcast) s": _*"
                 else if (allowTypes) ": " + str else ""
             }
@@ -167,7 +167,7 @@ object ScalaWrapperClassBlueprint {
                         .map(l => {
                             var markedAsImplicit = false
                             firstMkString(l.map(s => {
-                                val result = s"arg${n}${argType(s, i)}"
+                                val result = s"arg${n}${argType(s)}"
                                 if (allowTypes && !markedAsImplicit && s.isImplicit) {
                                     markedAsImplicit = true
                                     "implicit " + result
@@ -178,38 +178,39 @@ object ScalaWrapperClassBlueprint {
             v
         }
 
-        private def renderTypes(types: Seq[(Type, Int)], classLevelTypes: Seq[Symbol]): Seq[String] = {
+        private def renderTypes(types: Seq[Type], classLevelTypes: Seq[Symbol]): Seq[String] = {
             if (types.isEmpty)
                 return Seq.empty
 
-            def renderType(tpe: Type, owner: Symbol, typePos: Int, declarationPos: Int): String = {
-                val args = tpe.typeArgs
-                val name = tpe.typeSymbol.fullName
-                if (owner != null && owner.typeSignature.takesTypeArgs) {
-                    val ownerType       = owner.typeSignature
+            def renderType(tpe: Type, slot: Symbol, typePos: Int): String = {
+                val args     = tpe.typeArgs
+                val symbol   = tpe.typeSymbol
+                val fullName = symbol.fullName
+                if (slot != null && slot.typeSignature.takesTypeArgs) {
+                    val ownerType       = slot.typeSignature
                     val typeDeclaration = ownerType.typeParams(typePos)
                     if (typeDeclaration.typeSignature.takesTypeArgs)
-                        return name
+                        return if (symbol.isParameter) symbol.name.toString else fullName
                 }
-                if (name.startsWith("scala.<"))
-                    return tpe.toString
-                if (args.isEmpty)
-                    return tpe.finalResultType.toString
-                if (tpe.toString.endsWith("[_]"))
-                    return tpe.toString
-                val value = {
-                    args
+                lazy val value = {
+                    if (args.isEmpty) tpe.toString
+                    else args
                             .zipWithIndex
-                            .map(pair => renderType(pair._1, tpe.typeSymbol, pair._2, declarationPos))
+                            .map(pair => renderType(pair._1, symbol, pair._2))
                             .mkString("[", ",", "]")
                 }
-                if (classLevelTypes.exists(_.fullName == tpe.typeSymbol.fullName)) {
-                    return s"$$_$declarationPos " + value
-                }
-                name + value
+                if (fullName.startsWith("scala.<"))
+                    return tpe.toString
+                val idx = classLevelTypes.indexWhere(_.name.toString == symbol.name.toString)
+                if (idx != -1 && classLevelTypes.forall(_.fullName != fullName))
+                    return s"$$_$idx" + (if (args.nonEmpty) ' ' + value else "")
+                if (tpe.toString.endsWith("[_]"))
+                    return tpe.toString
+                val result = (if (symbol.isParameter) symbol.name.toString else fullName) + value
+                result
             }
 
-            for ((tpe, i) <- types) yield renderType(tpe, null, 0, i)
+            for (tpe <- types) yield renderType(tpe, null, 0)
         }
 
     }

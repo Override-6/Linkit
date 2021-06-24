@@ -74,6 +74,7 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
                 .filterNot(f => f.isFinal || f.isStatic || f.isConstructor || f.isPrivate || f.isPrivateThis || f.privateWithin != NoSymbol)
                 .filterNot(f => f.owner.fullName.startsWith("scala.Function") || f.owner.fullName.startsWith("scala.PartialFunction"))
                 .filterNot(f => BlacklistedSuperClasses.contains(f.owner.fullName))
+                .filter(_.owner.isClass)
                 .map(genMethodDescription)
 
         val filteredMethods = ListBuffer.empty[MethodDescription]
