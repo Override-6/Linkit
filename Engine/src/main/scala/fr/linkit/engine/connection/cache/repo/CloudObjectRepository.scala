@@ -21,7 +21,7 @@ import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.repo.CloudObjectRepository.{FieldRestorer, PuppetProfile}
-import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
 import fr.linkit.engine.connection.cache.repo.tree.{DefaultPuppetCenter, MemberSyncNode, PuppetNode}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
@@ -98,14 +98,11 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
             throw new IllegalPuppetException("This object is already shared.")
     }
 
-    private def genPuppetWrapper[B: ClassTag](puppeteer: Puppeteer[B], puppet: B, tpe: Type): B with PuppetWrapper[B] = {
+    private def genPuppetWrapper[B: ClassTag](puppeteer: Puppeteer[B], puppet: B): B with PuppetWrapper[B] = {
         val puppetClass = generator.getClass[B](puppet.getClass.asInstanceOf[Class[B]])
-        instantiatePuppetWrapper[B](puppeteer, puppet, puppetClass)
-    }
-
-    private def instantiatePuppetWrapper[B](puppeteer: Puppeteer[B], clone: B, puppetClass: Class[B with PuppetWrapper[B]]): B with PuppetWrapper[B] = {
-        val constructor = puppetClass.getDeclaredConstructor(classOf[Puppeteer[_]], clone.getClass)
-        constructor.newInstance(puppeteer, clone)
+        val instance = WrapperInstantiator.instantiateFromOrigin[B](puppetClass, puppet)
+        instance.initPuppeteer(puppeteer)
+        instance
     }
 
     override protected def handleBundle(bundle: RequestBundle): Unit = {
@@ -154,7 +151,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         val puppetDesc    = descriptions.getDescFromClass[B](obj.getClass.asInstanceOf[Class[B]])
         val puppeteerDesc = PuppeteerDescription(family, cacheID, owner, treeViewPath)
         val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, puppetDesc)
-        val wrapper       = genPuppetWrapper[B](puppeteer, obj, puppetDesc.tpe)
+        val wrapper       = genPuppetWrapper[B](puppeteer, obj)
         foreachSyncObjAction(wrapper, treeViewPath)
         val mirror = runtimeMirror(puppetDesc.loader).reflect(wrapper)
         for (desc <- puppetDesc.listFields() if desc.isSynchronized) {

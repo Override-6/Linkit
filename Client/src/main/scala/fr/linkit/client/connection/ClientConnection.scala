@@ -157,8 +157,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         }
     }
 
-    override def getAppResources: ResourceFolder = appContext.getAppResources
-
     override def getApp: ApplicationContext = appContext
 }
 

@@ -18,13 +18,15 @@ import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, Puppe
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.Puppeteer
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException
-import fr.linkit.engine.local.utils.JavaUtils
+import fr.linkit.engine.connection.cache.repo.generation.WrapperInstantiator
+import fr.linkit.engine.local.utils.JavaUtils.{getNull => nl}
+import fr.linkit.engine.local.utils.ScalaUtils
 
 @SerialVersionUID($CompileTime$L)
-class Puppet$WrappedClassSimpleName$$TParamsIn$(@transient private var puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsOut$],
-                                                 private val puppetClone: $WrappedClassSimpleName$$TParamsOut$)
-    extends $WrappedClassSimpleName$$TParamsOut$(puppetClone) with PuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] {
+class Puppet$WrappedClassSimpleName$$TParamsIn$
+    extends $WrappedClassSimpleName$$TParamsOut$$BustedConstructor$ with PuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] {
 
+    @transient private var puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsOut$] = _
     @transient private var description: PuppetDescription[$WrappedClassSimpleName$$TParamsOut$] = _
     @transient private var choreographer: InvocationChoreographer = _
     @transient private var puppeteerDescription: PuppeteerDescription = _
@@ -47,7 +49,7 @@ class Puppet$WrappedClassSimpleName$$TParamsIn$(@transient private var puppeteer
     override def isInitialized: Boolean = puppeteer != null
 
     override def detachedSnapshot: $WrappedClassSimpleName$$TParamsIn$ = {
-        new $WrappedClassSimpleName$(this)
+        WrapperInstantiator.detachedClone(this)
     }
 
     override def getValue: $WrappedClassSimpleName$$TParamsIn$ = this

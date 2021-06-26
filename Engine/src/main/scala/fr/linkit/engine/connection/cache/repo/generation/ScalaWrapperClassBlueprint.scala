@@ -14,7 +14,6 @@ package fr.linkit.engine.connection.cache.repo.generation
 
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
-import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.{MethodValueScope, getClassGenericParamsOut}
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
 
@@ -29,6 +28,20 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
         registerValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
         registerValue("TParamsIn" ~> getGenericParamsIn)
         registerValue("TParamsOut" ~> getClassGenericParamsOut)
+        registerValue("BustedConstructor" ~> getBustedConstructor)
+
+        def getBustedConstructor(desc: PuppetDescription[_]): String = {
+            val v = desc.tpe
+                    .decls
+                    .find(dec => dec.isConstructor && (dec.isPublic || dec.isProtected))
+                    .fold("") {
+                        _.asMethod
+                                .paramLists
+                                .map(_.map(_ => "nl").mkString("(", ",", ")"))
+                                .mkString(",")
+                    }
+            v
+        }
 
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
@@ -39,9 +52,12 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
     }
 
     private def getGenericParamsIn(desc: PuppetDescription[_]): String = {
-        val result = TypeVariableTranslator.toJavaDeclaration(desc.clazz.getTypeParameters)
-        if (result.isEmpty)
-            ""
+        val result = desc
+                .tpe
+                .typeParams
+                .map(_.asType.toType.finalResultType)
+                .mkString(",")
+        if (result.isEmpty) ""
         else s"[$result]"
     }
 
@@ -98,11 +114,12 @@ object ScalaWrapperClassBlueprint {
             if (mTypeParams.isEmpty)
                 return ""
             val v = mTypeParams
-                    .map(param =>
-                        renderTypes(
-                            Seq(param.typeSignature.asSeenFrom(method.classDesc.tpe, param.owner).finalResultType),
-                            method.classDesc.tpe.typeParams).head
-                    )
+                    .map(param => {
+                        val v = param
+                                .typeSignature
+                                .asSeenFrom(method.classDesc.tpe, symbol.owner).finalResultType
+                        v
+                    })
                     .zipWithIndex
                     .map(pair => {
                         val i   = pair._2
@@ -129,10 +146,10 @@ object ScalaWrapperClassBlueprint {
             val v = mTypeParams
                     .zipWithIndex
                     .map(pair => {
-                        val i   = pair._2
-                        val tpe = mTypeParams(i)._1
-                        if (cTypeParams.contains(tpe)) s"$$_$i"
-                        else tpe.name
+                        val i    = pair._2
+                        val name = mTypeParams(i)._1.name.toString
+                        if (cTypeParams.exists(_.name.toString == name)) s"$$_$i"
+                        else name
                     })
                     .mkString("[", ",", "]")
             v
@@ -182,7 +199,8 @@ object ScalaWrapperClassBlueprint {
             if (types.isEmpty)
                 return Seq.empty
 
-            def renderType(tpe: Type, slot: Symbol, typePos: Int): String = {
+            def renderType(t: Type, slot: Symbol, typePos: Int): String = {
+                val tpe      = t.finalResultType
                 val args     = tpe.typeArgs
                 val symbol   = tpe.typeSymbol
                 val fullName = symbol.fullName
@@ -193,7 +211,7 @@ object ScalaWrapperClassBlueprint {
                         return if (symbol.isParameter) symbol.name.toString else fullName
                 }
                 lazy val value = {
-                    if (args.isEmpty) tpe.toString
+                    if (args.isEmpty) ""
                     else args
                             .zipWithIndex
                             .map(pair => renderType(pair._1, symbol, pair._2))
@@ -204,7 +222,7 @@ object ScalaWrapperClassBlueprint {
                 val idx = classLevelTypes.indexWhere(_.name.toString == symbol.name.toString)
                 if (idx != -1 && classLevelTypes.forall(_.fullName != fullName))
                     return s"$$_$idx" + (if (args.nonEmpty) ' ' + value else "")
-                if (tpe.toString.endsWith("[_]"))
+                if (tpe.toString.endsWith("[_]") || fullName.endsWith("<refinement>"))
                     return tpe.toString
                 val result = (if (symbol.isParameter) symbol.name.toString else fullName) + value
                 result

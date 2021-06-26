@@ -21,7 +21,7 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
-import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
@@ -37,6 +37,7 @@ import org.mockito.Mockito
 
 import java.util
 import scala.collection.mutable.ListBuffer
+import scala.concurrent.Future
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(classOf[OrderAnnotation])
@@ -94,7 +95,7 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = {
-       forObject(new TestHashMap[String, String](null))
+       forObject(LocalFileSystemAdapters.Nio)
     }
 
     @Test
@@ -112,7 +113,8 @@ class ResourcesAndClassGenerationTests {
         val puppetClass = generator.getClass[obj.type](cl)
         println(s"puppetClass = ${puppetClass}")
         val pup    = new SimplePuppeteer[obj.type](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))
-        val puppet = puppetClass.getDeclaredConstructor(classOf[Puppeteer[_]], cl).newInstance(pup, obj)
+        val puppet = WrapperInstantiator.instantiateFromOrigin[obj.type](puppetClass, obj)
+        puppet.initPuppeteer(pup)
         println(s"puppet = ${puppet.detachedSnapshot()}")
     }
 

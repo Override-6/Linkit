@@ -56,10 +56,6 @@ class ServerConnection(applicationContext: ServerApplication,
 
     @volatile private var alive = false
 
-    override def getAppResources: ResourceFolder = applicationContext.getAppResources
-
-    //override def getResources: RemoteResourceFolder = null
-
     override def getApp: ApplicationContext = applicationContext
 
     @workerExecution

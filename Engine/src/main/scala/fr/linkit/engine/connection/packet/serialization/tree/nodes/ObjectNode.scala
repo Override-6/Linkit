@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.packet.serialization.tree.nodes
 import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.local.mapping.ClassNotMappedException
-import fr.linkit.engine.local.utils.ScalaUtils.toPresentableString
+import fr.linkit.engine.local.utils.ScalaUtils.{findUnsafe, toPresentableString}
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 import sun.misc.Unsafe
 
@@ -44,17 +44,7 @@ object ObjectNode {
 
     private val TheUnsafe = findUnsafe()
 
-    @throws[IllegalAccessException]
-    private def findUnsafe(): Unsafe = {
-        val unsafeClass = Class.forName("sun.misc.Unsafe")
-        for (field <- unsafeClass.getDeclaredFields) {
-            if (field.getType eq unsafeClass) {
-                field.setAccessible(true)
-                return field.get(null).asInstanceOf[Unsafe]
-            }
-        }
-        throw new IllegalStateException("No instance of Unsafe found")
-    }
+
 
     class ObjectSerialNode(profile: ClassProfile[Any], context: SerialContext) extends SerialNode[Any] {
 

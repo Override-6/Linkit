@@ -10,11 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.engine.test.classes
+package fr.linkit.engine.test.classes;
 
-import scala.collection.mutable
+public class JavaClass extends TestNIOFSAdapter.A {
 
-class TestHashMap[K, V](other: TestHashMap[K, V]) extends mutable.HashMap[K, V] {
-    private[classes] def test: Unit = ???
-    private def test2: Unit = ???
+    @Override
+    public void t_$eq(String s) {
+
+    }
+
 }

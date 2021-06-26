@@ -14,13 +14,11 @@ package fr.linkit.engine.local.utils
 
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
-import fr.linkit.engine.connection.packet.serialization.tree.nodes.ObjectNode.TheUnsafe
 import sun.misc.Unsafe
 
 import java.io.File
-import java.lang.reflect.Field
+import java.lang.reflect.{Field, Modifier}
 import scala.reflect.{ClassTag, classTag}
-import scala.util.Try
 import scala.util.control.NonFatal
 
 object ScalaUtils {
@@ -72,12 +70,10 @@ object ScalaUtils {
 
     def setValue(instance: Any, field: Field, value: Any): Unit = {
         val fieldOffset = TheUnsafe.objectFieldOffset(field)
+        import NumberSerializer.convertValue
 
         import java.lang
 
-        import NumberSerializer.convertValue
-
-        //println(s"value.getClass = ${Try(value.getClass).getOrElse(null)}")
         val action: (Any, Long) => Unit = if (field.getType.isPrimitive) {
             value match {
                 case i: Integer      => TheUnsafe.putInt(_, _, i)
@@ -116,7 +112,7 @@ object ScalaUtils {
     private val TheUnsafe = findUnsafe()
 
     @throws[IllegalAccessException]
-    private def findUnsafe(): Unsafe = {
+    def findUnsafe(): Unsafe = {
         val unsafeClass = Class.forName("sun.misc.Unsafe")
         for (field <- unsafeClass.getDeclaredFields) {
             if (field.getType eq unsafeClass) {
@@ -125,6 +121,29 @@ object ScalaUtils {
             }
         }
         throw new IllegalStateException("No instance of Unsafe found")
+    }
+
+    def pasteAllFields[A](instance: A, data: A): Unit = {
+        retrieveAllFields(data.getClass)
+                .foreach(field => {
+                    field.setAccessible(true)
+                    ScalaUtils.setValue(instance, field, field.get(data))
+                })
+    }
+
+    def allocate[A](clazz: Class[_]): A = {
+        TheUnsafe.allocateInstance(clazz).asInstanceOf[A]
+    }
+
+    private def retrieveAllFields(clazz: Class[_]): Seq[Field] = {
+        var superClass = clazz
+        var superFields = Seq.empty[Field]
+        while (superClass != null) {
+            superFields ++= superClass.getDeclaredFields
+            superClass = superClass.getSuperclass
+        }
+        superFields
+                .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isNative(f.getModifiers))
     }
 
 }

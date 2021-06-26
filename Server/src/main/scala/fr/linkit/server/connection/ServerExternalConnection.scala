@@ -148,8 +148,6 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }
     }
 
-    override def getAppResources: ResourceFolder = server.getAppResources
-
     override def getApp: ApplicationContext = server.getApp
 }
 

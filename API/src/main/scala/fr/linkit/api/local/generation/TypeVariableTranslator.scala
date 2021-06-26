@@ -78,7 +78,7 @@ object TypeVariableTranslator {
         val builder = new StringBuilder
         types.foreach { typeVar =>
             builder.append(toJavaGenericParameter(typeVar))
-                .append(", ")
+                .append(",")
         }
         fixDots {
             builder

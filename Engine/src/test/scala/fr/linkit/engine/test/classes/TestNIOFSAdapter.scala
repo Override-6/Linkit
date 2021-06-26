@@ -12,9 +12,17 @@
 
 package fr.linkit.engine.test.classes
 
-import scala.collection.mutable
+import fr.linkit.engine.local.system.fsa.nio.NIOFileSystemAdapter
 
-class TestHashMap[K, V](other: TestHashMap[K, V]) extends mutable.HashMap[K, V] {
-    private[classes] def test: Unit = ???
-    private def test2: Unit = ???
+class TestNIOFSAdapter extends NIOFileSystemAdapter(null) {
+
+    override val name: String = super.name
+
+
+}
+
+object TestNIOFSAdapter {
+    class A {
+        var t: String = ""
+    }
 }
