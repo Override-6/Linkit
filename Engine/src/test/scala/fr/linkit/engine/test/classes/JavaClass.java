@@ -16,7 +16,10 @@ public class JavaClass extends TestNIOFSAdapter.A {
 
     @Override
     public void t_$eq(String s) {
+    }
 
+    public int test() {
+        return new Integer(0);
     }
 
 }

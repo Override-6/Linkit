@@ -61,9 +61,9 @@ class Puppet$WrappedClassSimpleName$$TParamsIn$
     override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
 
     @inline private def performRMI[R](@inline id: Int, @inline defaultReturnValue: R, @inline invokeOnlyResult: R)
-                                     (@inline args: Array[Array[Any]])(@inline superCall: => Any): R = {
+                                     (@inline args: Array[Array[Any]])(@inline superCall: => R): R = {
         if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled(id)) {
-            return superCall.asInstanceOf[R]
+            return superCall
         }
         // From here we are sure that we want to perform a remote
         // method invocation. (A Local invocation (super.xxx()) can be added).
@@ -78,16 +78,16 @@ class Puppet$WrappedClassSimpleName$$TParamsIn$
             //#        if the 'InvokeOnlyResult' value of the annotated
             //#        method is set to "localResult" and the invocation
             //#        kind does not force local invocation.
-            return invokeOnlyResult.asInstanceOf[R]
+            return invokeOnlyResult
         }
-        var result: Any = defaultReturnValue
+        var result: R = defaultReturnValue
         if (description.isLocalInvocationForced(id)) {
             result = superCall
             puppeteer.sendInvoke(id, args)
         } else {
-            result = puppeteer.sendInvokeAndWaitResult(id, args)
+            result = puppeteer.sendInvokeAndWaitResult[R](id, args)
         }
-        result.asInstanceOf[R]
+        result
     }
 
 !!INHERITED_METHODS!! {
