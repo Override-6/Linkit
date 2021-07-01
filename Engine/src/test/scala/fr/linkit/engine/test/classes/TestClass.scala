@@ -12,8 +12,10 @@
 
 package fr.linkit.engine.test.classes
 
-class TestClass {
+class TestClass(a: Int)(b: Int)(implicit c: Int) {
 
     private[test] def test: Unit = ???
+
+
 
 }

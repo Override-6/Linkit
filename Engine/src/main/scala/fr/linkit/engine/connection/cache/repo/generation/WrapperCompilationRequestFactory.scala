@@ -17,6 +17,7 @@ import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.generation.cbp.ClassBlueprint
 import fr.linkit.api.local.generation.compilation.CompilationResult
 import fr.linkit.api.local.generation.compilation.access.CompilerType
+import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{WrapperMetaPrefixName, WrapperPrefixName}
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.local.generation.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
@@ -47,7 +48,7 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                         Some(contexts
                                 .map { desc =>
                                     val clazz            = desc.clazz
-                                    val wrapperClassName = toWrapperClassName(clazz.getName)
+                                    val wrapperClassName = adaptClassName(clazz.getName, WrapperPrefixName)
                                     new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader).loadClass(wrapperClassName)
                                 })
                     }
@@ -61,18 +62,14 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
         val jcbp = blueprints(CommonCompilerTypes.Javac)
         val name = desc.clazz.getName
         Seq(
-            SourceCode(adaptClassName(name, "Puppet"), scbp.toClassSource(desc), scbp.compilerType),
-            SourceCode(adaptClassName(name, "Setters"), jcbp.toClassSource(desc), jcbp.compilerType)
+            SourceCode(adaptClassName(name, WrapperPrefixName), scbp.toClassSource(desc), scbp.compilerType),
+            SourceCode(adaptClassName(name, WrapperMetaPrefixName), jcbp.toClassSource(desc), jcbp.compilerType)
         )
     }
 
     {
-        val scbp = new ScalaWrapperClassBlueprint
-        registerClassBlueprint(CommonCompilerTypes.Scalac, scbp)
+        registerClassBlueprint(CommonCompilerTypes.Scalac, new ScalaWrapperClassBlueprint)
+        registerClassBlueprint(CommonCompilerTypes.Javac, new ScalaWrapperClassBlueprint)
     }
-
-}
-
-object WrapperCompilationRequestFactory {
 
 }

@@ -16,16 +16,16 @@ import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.{MethodValueScope, getClassGenericParamsOut}
-import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
+import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope}
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 
 import scala.reflect.runtime.universe._
 
-class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
+class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](getClass.getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
 
     override val compilerType: CompilerType = CommonCompilerTypes.Scalac
 
-    override val rootScope: RootValueScope[PuppetDescription[_]] = new RootValueScope[PuppetDescription[_]](blueprint) {
+    override val rootScope: RootValueScope = new RootValueScope {
         registerValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
         registerValue("CompileTime" ~~> System.currentTimeMillis())
         registerValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
@@ -34,7 +34,7 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
         registerValue("TParamsOut" ~> getClassGenericParamsOut)
         registerValue("BustedConstructor" ~> getBustedConstructor)
 
-        def getBustedConstructor(desc: PuppetDescription[_]): String = {
+        private def getBustedConstructor(desc: PuppetDescription[_]): String = {
             val v = desc.tpe
                     .decls
                     .find(dec => dec.isConstructor && (dec.isPublic || dec.isProtected))
@@ -50,6 +50,7 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
                     .distinctBy(_.methodId)
+                    .filterNot(m => m.symbol.isSetter || m.symbol.isGetter)
                     .foreach(action)
         })
 

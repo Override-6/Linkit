@@ -23,11 +23,15 @@ abstract class AbstractClassBlueprint[V] private(protected val blueprint: String
         this(removeBPComments(new String(stream.readAllBytes())))
     }
 
-    val rootScope: RootValueScope[V]
+    val rootScope: RootValueScope
 
     override def getBlueprintString: String = blueprint
 
     override def toClassSource(v: V): String = rootScope.getSourceCode(v)
+
+    class RootValueScope extends AbstractValueScope[V]("ROOT", 0, blueprint) {
+
+    }
 
 }
 

@@ -16,10 +16,10 @@ import fr.linkit.api.local.generation.compilation.access.CompilerType
 
 trait ClassBlueprint[V] {
 
+    val compilerType: CompilerType
+
     def getBlueprintString: String
 
     def toClassSource(v: V): String
-
-    val compilerType: CompilerType
 
 }

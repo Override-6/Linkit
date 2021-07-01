@@ -12,18 +12,9 @@
 
 package fr.linkit.engine.test.classes;
 
-public class JavaClass extends TestNIOFSAdapter.A {
+public class JavaClass extends TestClass {
 
-    @Override
-    public void t_$eq(String s) {
-    }
-
-    public int test() {
-        return new Integer(0);
-    }
-
-    @Override
-    public String t() {
-        return super.t();
+    public JavaClass(int a, int b, int c) {
+        super(a, b, c);
     }
 }
