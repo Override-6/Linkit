@@ -24,41 +24,11 @@ import fr.linkit.engine.local.utils.ScalaUtils
 
 @SerialVersionUID($CompileTime$L)
 class Puppet$WrappedClassSimpleName$$TParamsIn$
-    extends $WrappedClassSimpleName$$TParamsOut$$BustedConstructor$ with PuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] {
-
-    @transient private var puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsOut$] = _
-    @transient private var description: PuppetDescription[$WrappedClassSimpleName$$TParamsOut$] = _
-    @transient private var choreographer: InvocationChoreographer = _
-    @transient private var puppeteerDescription: PuppeteerDescription = _
-    initPuppeteer(puppeteer)
+    extends Setters$WrappedClassSimpleName$$TParamsOut$ {
 
     //Fun fact: Override annotations are conventional.
     //They does not affect abstraction or classes behaviors.
     //Override annotations are removed at compilation.
-
-    override def initPuppeteer(puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsIn$]): Unit = {
-        if (this.description != null)
-            throw new PuppetAlreadyInitialisedException("This puppet is already initialized !")
-        this.puppeteer = puppeteer
-        this.puppeteerDescription = this.puppeteer.puppeteerDescription
-        this.description = puppeteer.puppetDescription
-        this.puppeteer.init(this)
-        this.choreographer = new InvocationChoreographer()
-    }
-
-    override def isInitialized: Boolean = puppeteer != null
-
-    override def detachedSnapshot: $WrappedClassSimpleName$$TParamsIn$ = {
-        WrapperInstantiator.detachedClone(this)
-    }
-
-    override def getValue: $WrappedClassSimpleName$$TParamsIn$ = this
-
-    override def getChoreographer: InvocationChoreographer = choreographer
-
-    override def getPuppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsIn$] = puppeteer
-
-    override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
 
     @inline private def performRMI[R](@inline id: Int, @inline defaultReturnValue: R, @inline invokeOnlyResult: R)
                                      (@inline args: Array[Array[Any]])(@inline superCall: => R): R = {
@@ -94,6 +64,5 @@ class Puppet$WrappedClassSimpleName$$TParamsIn$
     override def $MethodName$$GenericTypesIn$$ParamsIn$: $ReturnType$ = {
         performRMI[$ReturnType$]($MethodID$, $DefaultReturnValue$, $InvokeOnlyResult$)(Array[Array[Any]]($ParamsOutArray$))(super.$MethodName$$GenericTypesOut$$ParamsOut$)
     }
-
 }
 }

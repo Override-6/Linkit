@@ -33,11 +33,12 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
     }
 
     override def createMultiRequest(contexts: Seq[PuppetDescription[_]], workingDir: Path): SourceCodeCompilationRequest[Seq[Class[_]]] = {
-        val bp = blueprints(CommonCompilerTypes.Scalac)
         new SourceCodeCompilationRequest[Seq[Class[_]]] { req =>
-            override val workingDirectory: Path            = workingDir
-            override var sourceCodes     : Seq[SourceCode] = {
-                contexts.map(desc => SourceCode(toWrapperClassName(desc.clazz.getName), bp.toClassSource(desc), CommonCompilerTypes.Scalac)) //TODO put in PuppetDescription the preferred compiler type
+
+            override val workingDirectory: Path = workingDir
+
+            override var sourceCodes: Seq[SourceCode] = {
+                contexts.flatMap(getSourceCode) //TODO put in PuppetDescription the preferred compiler type
             }
 
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[_]]] = {
@@ -53,6 +54,16 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                 }
             }
         }
+    }
+
+    private def getSourceCode(desc: PuppetDescription[_]): IterableOnce[SourceCode] = {
+        val scbp = blueprints(CommonCompilerTypes.Scalac)
+        val jcbp = blueprints(CommonCompilerTypes.Javac)
+        val name = desc.clazz.getName
+        Seq(
+            SourceCode(adaptClassName(name, "Puppet"), scbp.toClassSource(desc), scbp.compilerType),
+            SourceCode(adaptClassName(name, "Setters"), jcbp.toClassSource(desc), jcbp.compilerType)
+        )
     }
 
     {

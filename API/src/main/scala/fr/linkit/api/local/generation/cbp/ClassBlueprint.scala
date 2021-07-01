@@ -12,10 +12,14 @@
 
 package fr.linkit.api.local.generation.cbp
 
+import fr.linkit.api.local.generation.compilation.access.CompilerType
+
 trait ClassBlueprint[V] {
 
     def getBlueprintString: String
 
     def toClassSource(v: V): String
+
+    val compilerType: CompilerType
 
 }

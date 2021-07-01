@@ -16,13 +16,11 @@ import fr.linkit.engine.local.system.fsa.nio.NIOFileSystemAdapter
 
 class TestNIOFSAdapter extends NIOFileSystemAdapter(null) {
 
-    override val name: String = super.name
-
 
 }
 
 object TestNIOFSAdapter {
-    class A {
+    class A[X] {
         var t: String = ""
     }
 }

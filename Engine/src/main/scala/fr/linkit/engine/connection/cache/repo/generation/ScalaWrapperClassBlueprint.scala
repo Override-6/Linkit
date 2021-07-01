@@ -14,12 +14,16 @@ package fr.linkit.engine.connection.cache.repo.generation
 
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
+import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.{MethodValueScope, getClassGenericParamsOut}
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope, RootValueScope}
+import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 
 import scala.reflect.runtime.universe._
 
 class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[PuppetWrapperClassGenerator].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
+
+    override val compilerType: CompilerType = CommonCompilerTypes.Scalac
 
     override val rootScope: RootValueScope[PuppetDescription[_]] = new RootValueScope[PuppetDescription[_]](blueprint) {
         registerValue("WrappedClassPackage" ~> (_.clazz.getPackageName))

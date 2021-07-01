@@ -22,4 +22,8 @@ public class JavaClass extends TestNIOFSAdapter.A {
         return new Integer(0);
     }
 
+    @Override
+    public String t() {
+        return super.t();
+    }
 }

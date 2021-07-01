@@ -18,14 +18,14 @@ import java.io.File
 
 package object generation {
 
-    def toWrapperClassName(puppetWrapperName: String): String = {
-        val className  = puppetWrapperName.replace(File.separator, ".")
+    def adaptClassName(wrappedClass: String, prefixName: String): String = {
+        val className  = wrappedClass.replace(File.separator, ".")
         val pivotIndex = className.lastIndexOf('.')
 
         var simpleName = className.drop(pivotIndex + 1)
-        if (simpleName.startsWith(WrapperPrefixName))
+        if (simpleName.startsWith(prefixName))
             return className
-        simpleName = WrapperPrefixName + simpleName
+        simpleName = prefixName + simpleName
 
         var packageName = className.take(pivotIndex)
         if (packageName.startsWith(WrapperPackage))

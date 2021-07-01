@@ -14,13 +14,13 @@ package gen.$WrappedClassPackage$;
 
 import $WrappedClassName$;
 
-public class Puppet$WrappedClassSimpleName$ $TParamsIn$ extends $WrappedClassSimpleName$ $TParamsOut$ implements PuppetWrapper<$WrappedClassSimpleName$> {
+public class Setters$WrappedClassSimpleName$ $TParamsIn$ extends $WrappedClassSimpleName$ $TParamsOut$ implements PuppetWrapper<$WrappedClassSimpleName$> {
 
     public static final long serialVersionUID = $CompileTime$L;
-    private transient Puppeteer<$WrappedClassSimpleName$> puppeteer;
-    private transient PuppetDescription<$WrappedClassSimpleName$> description;
-    private transient InvocationChoreographer choreographer;
-    private PuppeteerDescription puppeteerDescription;
+    protected transient Puppeteer<$WrappedClassSimpleName$> puppeteer;
+    protected transient PuppetDescription<$WrappedClassSimpleName$> description;
+    protected transient InvocationChoreographer choreographer;
+    protected PuppeteerDescription puppeteerDescription;
 
     public Puppet$WrappedClassSimpleName$(Puppeteer<$WrappedClassSimpleName$> bundle, $WrappedClassSimpleName$ clone) {
         super(clone);
