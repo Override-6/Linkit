@@ -28,8 +28,10 @@ public interface PuppetWrapper<T> extends Serializable {
 
     boolean isInitialized();
 
-    T getValue();
+    T asWrapped();
 
     T detachedSnapshot();
+
+    Class<?> getWrappedClass();
 
 }

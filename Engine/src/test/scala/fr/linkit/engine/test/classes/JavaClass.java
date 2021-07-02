@@ -12,6 +12,9 @@
 
 package fr.linkit.engine.test.classes;
 
-public class JavaClass extends ScalaClass<String> implements PuppetScalaClass {
+import scala.collection.mutable.ListBuffer;
+
+public class JavaClass<A> {
+
 
 }

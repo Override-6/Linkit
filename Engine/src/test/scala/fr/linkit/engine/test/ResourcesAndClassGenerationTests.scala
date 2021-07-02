@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.repo.Puppeteer
 import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system.Version
+import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
@@ -60,6 +60,7 @@ class ResourcesAndClassGenerationTests {
         resources = LinkitApplication.prepareApplication(testVersion, config, Seq(getClass))
         Mockito.when(app.getAppResources).thenReturn(resources)
         LinkitApplication.setInstance(app)
+        AppLogger.useVerbose = true
     }
 
 
@@ -95,7 +96,11 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = {
-       forObject(LocalFileSystemAdapters.Nio)
+       /*val obj = forObject(LocalFileSystemAdapters.Nio)
+        obj.name = "WOLA :D"
+        println(obj.name)*/
+        val buff = forObject(ListBuffer.empty[String]) += "sdqzd"
+        println(s"buff = ${buff}")
     }
 
     @Test
@@ -104,7 +109,7 @@ class ResourcesAndClassGenerationTests {
         forObject(new util.ArrayList[String]())
     }
 
-    private def forObject(obj: Any): Unit = {
+    private def forObject(obj: Any): obj.type = {
         Assertions.assertNotNull(resources)
         val cl = obj.getClass.asInstanceOf[Class[obj.type]]
 
@@ -115,7 +120,8 @@ class ResourcesAndClassGenerationTests {
         val pup    = new SimplePuppeteer[obj.type](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))
         val puppet = WrapperInstantiator.instantiateFromOrigin[obj.type](puppetClass, obj)
         puppet.initPuppeteer(pup)
-        println(s"puppet = ${puppet.detachedSnapshot()}")
+        println(s"puppet = ${puppet}")
+        puppet
     }
 
 }

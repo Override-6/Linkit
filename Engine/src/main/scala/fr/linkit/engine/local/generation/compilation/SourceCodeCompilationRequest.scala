@@ -12,12 +12,12 @@
 
 package fr.linkit.engine.local.generation.compilation
 
-import fr.linkit.api.local.generation.compilation.CompilationRequest
 import fr.linkit.api.local.generation.compilation.access.CompilerType
+import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationResult}
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.local.mapping.ClassMappings
 
-import java.io.File
+import java.io.{File, InputStream, OutputStream}
 import java.nio.file.{Files, Path, StandardOpenOption}
 
 abstract class SourceCodeCompilationRequest[T] extends CompilationRequest[T] {
@@ -28,30 +28,54 @@ abstract class SourceCodeCompilationRequest[T] extends CompilationRequest[T] {
      */
     var sourceCodes: Seq[SourceCode]
 
-    override val classPaths: Seq[Path] = {
+    protected final val defaultClassPaths: Seq[Path] = {
         ClassMappings
                 .getClassPaths
                 .map(cp => Path.of(cp.getLocation.toURI))
     }
 
+    override val classPaths: Seq[Path] = defaultClassPaths
+
     override def additionalParams(cType: CompilerType): Array[String] = Array()
 
     override lazy val sourceCodesPaths: Seq[Path] = {
         sourceCodes.map(sc => {
-            val path = sourcesDir.resolve(sc.className.replace(".", File.separator) + sc.codeType.sourceFileExtension)
+            val path       = sourcesDir.resolve(sc.className.replace(".", File.separator) + sc.codeType.sourceFileExtension)
             val sourceCode = sc.sourceCode
             if (Files.notExists(path))
                 Files.createDirectories(path.getParent)
-            Files.writeString(path, sourceCode, StandardOpenOption.CREATE)
+            Files.writeString(path, sourceCode, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
             path
         })
     }
 }
 
 object SourceCodeCompilationRequest {
+
     case class SourceCode(className: String, sourceCode: String, codeType: CompilerType)
 
     implicit class SourceCodeHelper(className: String) {
-        def ~> (sourceCode: String, codeType: CompilerType): SourceCode = SourceCode(className, sourceCode, codeType)
+
+        def ~>(sourceCode: String, codeType: CompilerType): SourceCode = SourceCode(className, sourceCode, codeType)
+    }
+
+    abstract class Delegated[T](delegate: SourceCodeCompilationRequest[_]) extends SourceCodeCompilationRequest[T] {
+
+        override val classPaths: Seq[Path] = delegate.classPaths
+
+        override def additionalParams(cType: CompilerType): Array[String] = delegate.additionalParams(cType)
+
+        override lazy val sourceCodesPaths: Seq[Path]         = delegate.sourceCodesPaths
+        override lazy val sourcesDir      : Path              = delegate.sourcesDir
+        override lazy val classDir        : Path              = delegate.classDir
+        override var sourceCodes          : Seq[SourceCode]   = delegate.sourceCodes
+        override      val workingDirectory: Path              = delegate.workingDirectory
+        override      val compilationOrder: Seq[CompilerType] = delegate.compilationOrder
+
+        override def compilerInput: InputStream = delegate.compilerInput
+
+        override def compilerOutput: OutputStream = delegate.compilerOutput
+
+        override def compilerErrOutput: OutputStream = delegate.compilerErrOutput
     }
 }

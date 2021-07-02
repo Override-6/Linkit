@@ -37,7 +37,8 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
         new SourceCodeCompilationRequest[Seq[Class[_]]] { req =>
 
             override val workingDirectory: Path = workingDir
-
+            override val classPaths: Seq[Path] = defaultClassPaths :+ classDir
+            override val compilationOrder: Seq[CompilerType] = Seq(CommonCompilerTypes.Scalac, CommonCompilerTypes.Javac)
             override var sourceCodes: Seq[SourceCode] = {
                 contexts.flatMap(getSourceCode) //TODO put in PuppetDescription the preferred compiler type
             }
@@ -48,7 +49,7 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                         Some(contexts
                                 .map { desc =>
                                     val clazz            = desc.clazz
-                                    val wrapperClassName = adaptClassName(clazz.getName, WrapperPrefixName)
+                                    val wrapperClassName = adaptClassName(clazz.getName, WrapperMetaPrefixName)
                                     new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader).loadClass(wrapperClassName)
                                 })
                     }

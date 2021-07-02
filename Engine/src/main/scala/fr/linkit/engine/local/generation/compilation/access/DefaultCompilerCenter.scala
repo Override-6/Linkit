@@ -43,7 +43,7 @@ class DefaultCompilerCenter extends CompilerCenter {
     override def compileAll(folder: Path, recursively: Boolean, destination: Path, classPaths: Seq[Path]): Unit = {
         val files = {
             def collect(f: Path): Seq[Path] = {
-                if (Files.isDirectory(f)) Files.list(f).toArray((i: Int) => new Array[Path](i)).flatMap(collect(_))
+                if (Files.isDirectory(f)) Files.list(f).toArray((i: Int) => new Array[Path](i)).flatMap(collect)
                 else Seq(f)
             }
 
@@ -56,8 +56,16 @@ class DefaultCompilerCenter extends CompilerCenter {
     }
 
     override def generate[A](request: CompilationRequest[A]): CompilationResult[A] = {
-        val results = accesses.map(_.compileRequest(request))
-        val outs = results.flatMap(_.getOuterFiles).toSeq
+        val restAccesses = accesses.clone()
+        var results = request
+                .compilationOrder
+                .flatMap(kind => {
+                    accesses.filter(_.getType == kind)
+                            .tapEach(restAccesses.remove)
+                            .map(_.compileRequest(request))
+                })
+        results ++= restAccesses.map(_.compileRequest(request))
+        val outs = results.flatMap(_.getOuterFiles)
         val compileTime = results.map(_.getCompileTime).sum
         request.conclude(outs, compileTime)
     }

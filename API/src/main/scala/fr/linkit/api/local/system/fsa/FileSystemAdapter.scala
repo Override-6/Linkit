@@ -30,7 +30,7 @@ import scala.util.Try
 //TODO implements more methods from java.nio.file.Files
 trait FileSystemAdapter {
 
-    @transient val name: String
+    @transient var name: String
 
     implicit def getAdapter(path: String): FileAdapter
 

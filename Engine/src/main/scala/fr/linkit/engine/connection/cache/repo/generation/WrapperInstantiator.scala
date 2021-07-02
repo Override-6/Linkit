@@ -30,10 +30,11 @@ object WrapperInstantiator {
         instance
     }
 
-    def detachedClone[A](origin: A): A = {
-        val instance = allocate[A](origin.getClass.getSuperclass)
+    def detachedClone[A](origin: PuppetWrapper[A]): A = {
+        val instance = allocate[A](origin.getWrappedClass)
         pasteAllFields(instance, origin)
         instance
     }
+
 
 }

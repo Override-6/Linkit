@@ -13,51 +13,25 @@
 package gen.$WrappedClassPackage$;
 
 import $WrappedClassName$;
-import fr.linkit.api.connection.cache.repo.InvocationChoreographer
-import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
-import fr.linkit.api.connection.cache.repo.PuppetWrapper
-import fr.linkit.api.connection.cache.repo.Puppeteer
-import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException
-import fr.linkit.engine.connection.cache.repo.generation.WrapperInstantiator
-import fr.linkit.engine.local.utils.JavaUtils.{getNull => nl}
-import fr.linkit.engine.local.utils.ScalaUtils
+import gen.$WrappedClassPackage$.Puppet$WrappedClassSimpleName$;
+import fr.linkit.api.local.system.AppLogger;
+import static fr.linkit.engine.local.utils.JavaUtils.nl;
+
+import java.util.Arrays;
+
 /*
  * This class overrides every scala's setters, getters and other scalac's meta stuff
  * because this is impossible to override them from scala language.
  */
-public class Meta$WrappedClassSimpleName$$TParamsIn$ extends Puppet$WrappedClassSimpleName$$TParamsOut$ {
-
-    private <T> T performRmi(int id, Object[] args, Supplier<T> superCall, T defaultResult) {
-        if (choreographer.isMethodExecutionForcedToLocal() || !description.isRMIEnabled(id)) {
-            return superCall.get();
-        }
-        //# From here we are sure that we want to perform a remote
-        //# method invocation. (A Local invocation (super.xxx()) can be added).
-        if (description.isInvokeOnly(id)) {
-            puppeteer.sendInvoke(id, args);
-            T localResult = defaultResult;
-            if (description.isLocalInvocationForced(id)) {
-                localResult = superCall.get();
-            }
-            return localResult;
-        }
-        T result;
-        if (description.isLocalInvocationForced(id)) {
-            result = superCall.get();
-            puppeteer.sendInvoke(id, args);
-        } else {
-            result = puppeteer.sendInvokeAndWaitResult(id, args);
-        }
-        return result;
-    }
+abstract class Meta$WrappedClassSimpleName$$TParamsIn$ extends Puppet$WrappedClassSimpleName$$TParamsOut$ {
 
 !!INHERITED_META!! {
     @Override
-    public $GenericTypes$ $ReturnType$ $MethodName$$ParamsIn$ {
+    public $GenericTypes$ $ReturnType$ $MethodName$($ParamsIn$) {
         $|If ReturnType == "void"|$ {
-            performRmi($MethodID$, new Object[]{$ParamsOut$}, () -> super.$MethodName$($ParamsOut$), $DefaultReturnType$)
+                handleCall($MethodID$, $DefaultReturnType$, $InvokeOnlyResult$, new Object[]{$ParamsOut$}, () -> super.$MethodName$($ParamsOut$));
         } $|Else|$ {
-            return performRmi($MethodID$, new Object[]{$ParamsOut$}, () -> super.$MethodName$($ParamsOut$), $DefaultReturnType$)
+            return handleCall($MethodID$, $DefaultReturnType$, $InvokeOnlyResult$, new Object[]{$ParamsOut$}, () -> super.$MethodName$($ParamsOut$));
         }
     }
 }

@@ -12,13 +12,10 @@
 
 package fr.linkit.engine.test.classes
 
-class ScalaClass[X >: String]() {
+import scala.collection.mutable.ListBuffer
 
-    var b: String = ""
+case class ScalaClass[X >: String]() {
 
-}
-trait PuppetScalaClass {
-    def b: String = "Test"
+    protected var b: String = ""
 
-    def b_$eq(b: String): Unit = "Wow"
 }

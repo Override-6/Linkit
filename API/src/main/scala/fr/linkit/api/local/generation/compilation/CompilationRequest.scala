@@ -27,6 +27,8 @@ trait CompilationRequest[T] {
 
     lazy val classDir: Path = Path.of(workingDirectory + "/Classes/")
 
+    val compilationOrder: Seq[CompilerType] = Seq.empty
+
     def sourceCodesPaths: Seq[Path]
 
     def compilerInput: InputStream = System.in

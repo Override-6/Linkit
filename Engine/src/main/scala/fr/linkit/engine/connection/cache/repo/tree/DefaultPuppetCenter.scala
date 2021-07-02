@@ -42,7 +42,7 @@ class DefaultPuppetCenter[A <: Serializable] extends PuppetCenter[A] {
     override def snapshotContent: CacheRepoContent[A] = {
         def toProfile(node: SyncNode[_ <: A]): PuppetProfile[A] = {
             val puppeteer = node.puppeteer
-            PuppetProfile[A](node.treeViewPath, puppeteer.getPuppetWrapper, puppeteer.puppeteerDescription.owner)
+            PuppetProfile[A](node.treeViewPath, puppeteer.getPuppetWrapper.asWrapped(), puppeteer.puppeteerDescription.owner)
         }
 
         val array = puppets.values.map(toProfile).toArray

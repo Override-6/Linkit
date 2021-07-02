@@ -47,9 +47,9 @@ object JavaWrapperMetaClassBlueprint {
             extends AbstractValueScope[MethodDescription]("INHERITED_META", pos, blueprint) {
 
         bindValue("GenericTypes" ~> (m => getTParams(m.method, _.toString)))
-        bindValue("ReturnType" ~> (_.method.getGenericReturnType.toString))
+        bindValue("ReturnType" ~> (_.method.getGenericReturnType.getTypeName))
         bindValue("MethodName" ~> (_.method.getName))
-        bindValue("ParamsIn" ~> (getParameters(_, pair => s"${pair._1} arg${pair._2}")))
+        bindValue("ParamsIn" ~> (getParameters(_, pair => s"${pair._1.getTypeName} arg${pair._2}")))
         bindValue("ParamsOut" ~> (getParameters(_, pair => s"arg${pair._2}")))
         bindValue("MethodID" ~> (_.methodId.toString))
         bindValue("DefaultReturnType" ~> (_.getDefaultTypeReturnValue))
@@ -60,7 +60,7 @@ object JavaWrapperMetaClassBlueprint {
                 .getGenericParameterTypes
                 .zipWithIndex
                 .map(transform)
-                .mkString("(", ", ", ")")
+                .mkString(", ")
     }
 
     private def getTParams(dec: GenericDeclaration, transform: TypeVariable[_] => String): String = {

@@ -20,7 +20,7 @@ import scala.collection.mutable
 
 abstract class AbstractFileSystemAdapter extends FileSystemAdapter with Serializable {
 
-    override val name: String = getClass.getSimpleName
+    override var name: String = getClass.getSimpleName
 
     @transient private val adapters = mutable.Map.empty[String, FileAdapter]
 

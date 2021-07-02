@@ -12,10 +12,8 @@
 
 package fr.linkit.engine.local.generation.compilation
 
-import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationRequestFactory, CompilationResult}
 import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 
 import java.nio.file.Path
 
@@ -26,10 +24,7 @@ abstract class AbstractCompilationRequestFactory[I, O] extends CompilationReques
     override def makeRequest(context: I, workingDirectory: Path): CompilationRequest[O] = {
         val req = createMultiRequest(Seq(context), workingDirectory)
 
-        new SourceCodeCompilationRequest[O] {
-            override var sourceCodes     : Seq[SourceCode] = req.sourceCodes
-            override val workingDirectory: Path            = req.workingDirectory
-
+        new SourceCodeCompilationRequest.Delegated[O](req) {
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[O] = {
                 new AbstractCompilationResult[O](outs, compilationTime, req) {
                     override def getResult: Option[O] = {

@@ -26,6 +26,10 @@ public class JavaUtils {
     }
 
     public static <T> T getNull() {
+        return nl();
+    }
+
+    public static <T> T nl() {
         return null;
     }
 

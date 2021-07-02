@@ -69,16 +69,15 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
     }
 
     private def collectMethods(): Seq[MethodDescription] = {
-        implicit def convert(zip: (Symbol, Method)): Symbol = zip._1
-        val methods = tpe.members
+        val javaMethods = clazz.getMethods
+        val methods     = tpe.members
                 .filter(_.isMethod)
                 .map(_.asMethod)
-                .zip(clazz.getMethods)
                 .filterNot(f => f.isFinal || f.isStatic || f.isConstructor || f.isPrivate || f.isPrivateThis || f.privateWithin != NoSymbol)
                 .filterNot(f => f.owner.fullName.startsWith("scala.Function") || f.owner.fullName.startsWith("scala.PartialFunction"))
                 .filterNot(f => BlacklistedSuperClasses.contains(f.owner.fullName))
                 .filter(_.owner.isClass)
-                .map(zip => genMethodDescription(zip._1, zip._2))
+                .map(genMethodDescription)
 
         val filteredMethods = ListBuffer.empty[MethodDescription]
         methods.foreach(desc => {
@@ -115,7 +114,7 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
                 }
     }
 
-    private def genMethodDescription(symbol: u.MethodSymbol, javaMethod: Method): MethodDescription = {
+    private def genMethodDescription(symbol: u.MethodSymbol): MethodDescription = {
         val control            = findAnnotation(symbol, classOf[MethodControl]).getOrElse(DefaultMethodControl)
         val synchronizedParams = toSyncParamsIndexes(control.mutates(), symbol)
         val invocationKind     = control.value()
@@ -123,8 +122,8 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
         val isPure             = control.pure() && control.mutates().nonEmpty
         val isHidden           = control.hide()
         val syncReturnValue    = control.synchronizeReturnValue()
-        MethodDescription (
-            symbol, javaMethod, this, invokeOnly, synchronizedParams,
+        MethodDescription(
+            symbol, this, invokeOnly, synchronizedParams,
             invocationKind, syncReturnValue, isPure, isHidden
         )
     }
@@ -164,7 +163,6 @@ object PuppetDescription {
     private def name[T](implicit tag: TypeTag[T]): String = tag.tpe.typeSymbol.fullName
 
     case class MethodDescription(symbol: u.MethodSymbol,
-                                 method: Method,
                                  classDesc: PuppetDescription[_],
                                  invokeOnly: Option[InvokeOnly],
                                  var synchronizedParams: Seq[Boolean], //TODO make synchronization
@@ -182,6 +180,22 @@ object PuppetDescription {
             symbol.name.toString.hashCode + hashCode(parameters)
         }
 
+        lazy val method: Method = {
+            val symbolParams = symbol.paramLists.flatten
+            classDesc.clazz
+                    .getMethods
+                    .filter(_.getName == symbol.name.toString)
+                    .filter(_.getGenericParameterTypes.length == symbolParams.size)
+                    .find(x => {
+                        x.getGenericParameterTypes
+                                .zipWithIndex
+                                .forall(pair => {
+                                    symbolParams(pair._2).typeSignature.typeSymbol.fullName == pair._1.getTypeName
+                                })
+                    })
+                    .get
+        }
+
         def getDefaultReturnValue: String = {
             invokeOnly
                     .map(_.value())
@@ -195,10 +209,10 @@ object PuppetDescription {
         def getDefaultTypeReturnValue: String = {
             val nme = symbol.returnType.typeSymbol.fullName
 
-            if (nme == name[Boolean])            "false"
+            if (nme == name[Boolean]) "false"
             else if (numberTypes.contains(name)) "-1"
-            else if (nme == name[Char])          "'\\u0000'"
-            else                                 "nl" //contracted call to JavaUtils.getNull
+            else if (nme == name[Char]) "'\\u0000'"
+            else "nl()" //contracted call to JavaUtils.getNull
         }
 
         private def hashCode(a: Array[u.Type]): Int = {

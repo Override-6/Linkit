@@ -17,86 +17,34 @@ import fr.linkit.api.connection.cache.repo.InvocationChoreographer
 import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.Puppeteer
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException
-import fr.linkit.engine.connection.cache.repo.generation.WrapperInstantiator
-import fr.linkit.engine.local.utils.JavaUtils.{getNull => nl}
+import fr.linkit.engine.connection.cache.repo.generation.{WrapperInstantiator, AbstractPuppetWrapper}
+import fr.linkit.engine.local.utils.JavaUtils.nl
 import fr.linkit.engine.local.utils.ScalaUtils
+
+import java.util
+import java.util.Arrays
 
 /*
 * this class defines the main fields
 * and methods required for a PuppetWrapper
 * */
 @SerialVersionUID($CompileTime$L)
-abstract class Puppet$WrappedClassSimpleName$$TParamsIn$
-        extends $WrappedClassSimpleName$$TParamsOut$$BustedConstructor$ with PuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] {
-
-    @transient protected var puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsOut$] = _
-    @transient protected var description: PuppetDescription[$WrappedClassSimpleName$$TParamsOut$] = _
-    @transient protected var choreographer: InvocationChoreographer = _
-    @transient protected var puppeteerDescription: PuppeteerDescription = _
+class Puppet$WrappedClassSimpleName$$TParamsIn$
+        extends $WrappedClassSimpleName$$TParamsOut$$BustedConstructor$ with AbstractPuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] {
 
     //Fun fact: Override annotations are conventional.
     //They does not affect abstraction or classes behaviors.
     //Override annotations are removed at compilation.
 
-    override def initPuppeteer(puppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsIn$]): Unit = {
-        if (this.description != null)
-            throw new PuppetAlreadyInitialisedException("This puppet is already initialized !")
-        this.puppeteer = puppeteer
-        this.puppeteerDescription = this.puppeteer.puppeteerDescription
-        this.description = puppeteer.puppetDescription
-        this.puppeteer.init(this)
-        this.choreographer = new InvocationChoreographer()
-    }
+    override def asWrapper: $WrappedClassSimpleName$$TParamsOut$ with PuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] = this
 
-    override def isInitialized: Boolean = puppeteer != null
-
-    override def detachedSnapshot: $WrappedClassSimpleName$$TParamsIn$ = {
-        WrapperInstantiator.detachedClone(this)
-    }
-
-    override def getValue: $WrappedClassSimpleName$$TParamsIn$ = this
-
-    override def getChoreographer: InvocationChoreographer = choreographer
-
-    override def getPuppeteer: Puppeteer[$WrappedClassSimpleName$$TParamsIn$] = puppeteer
-
-    override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
-
-    @inline private def performRMI[R](@inline id: Int, @inline defaultReturnValue: R, @inline invokeOnlyResult: R)
-                                     (@inline args: Array[Array[Any]])(@inline superCall: => R): R = {
-        if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled(id)) {
-            return superCall
-        }
-        // From here we are sure that we want to perform a remote
-        // method invocation. (A Local invocation (super.xxx()) can be added).
-        if (description.isInvokeOnly(id)) {
-            puppeteer.sendInvoke(id, args)
-            var localResult: Any = defaultReturnValue
-            if (description.isLocalInvocationForced(id)) {
-                localResult = superCall
-            }
-            //# Note1: value of 'InvokeOnlyResult' can be "localResult", which will return the variable.
-            //# Note2: Be aware that you can get a null value returned
-            //#        if the 'InvokeOnlyResult' value of the annotated
-            //#        method is set to "localResult" and the invocation
-            //#        kind does not force local invocation.
-            return invokeOnlyResult
-        }
-        var result: R = defaultReturnValue
-        if (description.isLocalInvocationForced(id)) {
-            result = superCall
-            puppeteer.sendInvoke(id, args)
-        } else {
-            result = puppeteer.sendInvokeAndWaitResult[R](id, args)
-        }
-        result
-    }
+    override def getWrappedClass: Class[_] = classOf[$WrappedClassSimpleName$$TParamsInBusted$]
 
     !!INHERITED_METHODS!! {
         override def $MethodName$$GenericTypesIn$$ParamsIn$: $ReturnType$ = {
-            performRMI[$ReturnType$]($MethodID$, $DefaultReturnValue$, $InvokeOnlyResult$)(Array[Array[Any]]($ParamsOutArray$))(super.$MethodName$$GenericTypesOut$$ParamsOut$)
+            handleCall[$ReturnType$]($MethodID$, $DefaultReturnValue$, $InvokeOnlyResult$)(Array[Array[Any]]($ParamsOutArray$))(super.$MethodName$$GenericTypesOut$$ParamsOut$)
         }
-
     }
 }
