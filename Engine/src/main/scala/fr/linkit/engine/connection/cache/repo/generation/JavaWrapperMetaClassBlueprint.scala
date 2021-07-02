@@ -13,17 +13,59 @@
 package fr.linkit.engine.connection.cache.repo.generation
 
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.local.generation.compilation.access.CompilerType
-import fr.linkit.engine.local.generation.cbp.AbstractClassBlueprint
+import fr.linkit.engine.connection.cache.repo.generation.JavaWrapperMetaClassBlueprint.{MethodValueScope, getTParams}
+import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope}
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 
-class JavaWrapperMetaClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](getClass.getResourceAsStream("/generation/puppet_wrapper_meta_blueprint.jcbp")) {
+import java.lang.reflect.{GenericDeclaration, Type, TypeVariable}
 
-    override val compilerType: CompilerType                         = CommonCompilerTypes.Javac
+class JavaWrapperMetaClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[LinkitApplication].getResourceAsStream("/generation/puppet_wrapper_meta_blueprint.jcbp")) {
+
+    override val compilerType: CompilerType   = CommonCompilerTypes.Javac
     override val rootScope   : RootValueScope = new RootValueScope {
-        registerValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
-        registerValue("CompileTime" ~~> System.currentTimeMillis())
-        registerValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
-        registerValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
+        bindValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
+        bindValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
+        bindValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
+        bindValue("TParamsIn" ~> (s => getTParams(s.clazz, _.toString)))
+        bindValue("TParamsOut" ~> (s => getTParams(s.clazz, _.getTypeName)))
+        bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
+            desc.listMethods()
+                    .distinctBy(_.methodId)
+                    .filter(m => m.symbol.isSetter || m.symbol.isGetter)
+                    .foreach(action)
+        })
+    }
+
+}
+
+object JavaWrapperMetaClassBlueprint {
+
+    case class MethodValueScope(blueprint: String, pos: Int)
+            extends AbstractValueScope[MethodDescription]("INHERITED_META", pos, blueprint) {
+
+        bindValue("GenericTypes" ~> (m => getTParams(m.method, _.toString)))
+        bindValue("ReturnType" ~> (_.method.getGenericReturnType.toString))
+        bindValue("MethodName" ~> (_.method.getName))
+        bindValue("ParamsIn" ~> (getParameters(_, pair => s"${pair._1} arg${pair._2}")))
+        bindValue("ParamsOut" ~> (getParameters(_, pair => s"arg${pair._2}")))
+        bindValue("MethodID" ~> (_.methodId.toString))
+        bindValue("DefaultReturnType" ~> (_.getDefaultTypeReturnValue))
+    }
+
+    private def getParameters(desc: MethodDescription, transform: ((Type, Int)) => String): String = {
+        desc.method
+                .getGenericParameterTypes
+                .zipWithIndex
+                .map(transform)
+                .mkString("(", ", ", ")")
+    }
+
+    private def getTParams(dec: GenericDeclaration, transform: TypeVariable[_] => String): String = {
+        val params = dec.getTypeParameters
+        if (params.isEmpty) ""
+        else params.map(transform).mkString("<", ",", ">")
     }
 }

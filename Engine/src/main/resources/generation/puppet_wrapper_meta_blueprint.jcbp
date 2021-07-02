@@ -51,10 +51,10 @@ public class Meta$WrappedClassSimpleName$$TParamsIn$ extends Puppet$WrappedClass
         return result;
     }
 
-!!INHERITED_METHODS!! {
+!!INHERITED_META!! {
     @Override
-    public $GenericTypes$ $ReturnType$ $MethodName$$ParamsIn$ $MethodExceptions$ {
-        $|If ReturnType == "void" |$ {
+    public $GenericTypes$ $ReturnType$ $MethodName$$ParamsIn$ {
+        $|If ReturnType == "void"|$ {
             performRmi($MethodID$, new Object[]{$ParamsOut$}, () -> super.$MethodName$($ParamsOut$), $DefaultReturnType$)
         } $|Else|$ {
             return performRmi($MethodID$, new Object[]{$ParamsOut$}, () -> super.$MethodName$($ParamsOut$), $DefaultReturnType$)

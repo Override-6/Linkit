@@ -12,10 +12,13 @@
 
 package fr.linkit.engine.test.classes
 
-class TestClass(a: Int)(b: Int)(implicit c: Int) {
+class ScalaClass[X >: String]() {
 
-    private[test] def test: Unit = ???
+    var b: String = ""
 
+}
+trait PuppetScalaClass {
+    def b: String = "Test"
 
-
+    def b_$eq(b: String): Unit = "Wow"
 }

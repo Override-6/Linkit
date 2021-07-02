@@ -12,9 +12,6 @@
 
 package fr.linkit.engine.test.classes;
 
-public class JavaClass extends TestClass {
+public class JavaClass extends ScalaClass<String> implements PuppetScalaClass {
 
-    public JavaClass(int a, int b, int c) {
-        super(a, b, c);
-    }
 }

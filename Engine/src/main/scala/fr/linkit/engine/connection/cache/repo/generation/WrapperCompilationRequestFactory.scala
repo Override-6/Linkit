@@ -69,7 +69,7 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
 
     {
         registerClassBlueprint(CommonCompilerTypes.Scalac, new ScalaWrapperClassBlueprint)
-        registerClassBlueprint(CommonCompilerTypes.Javac, new ScalaWrapperClassBlueprint)
+        registerClassBlueprint(CommonCompilerTypes.Javac, new JavaWrapperMetaClassBlueprint)
     }
 
 }

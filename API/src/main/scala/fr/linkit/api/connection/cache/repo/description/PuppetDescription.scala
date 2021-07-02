@@ -17,6 +17,7 @@ import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, Invocation
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription._
 import fr.linkit.api.local.generation.ClassDescription
 
+import java.lang.reflect.Method
 import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
@@ -68,14 +69,16 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
     }
 
     private def collectMethods(): Seq[MethodDescription] = {
+        implicit def convert(zip: (Symbol, Method)): Symbol = zip._1
         val methods = tpe.members
                 .filter(_.isMethod)
                 .map(_.asMethod)
+                .zip(clazz.getMethods)
                 .filterNot(f => f.isFinal || f.isStatic || f.isConstructor || f.isPrivate || f.isPrivateThis || f.privateWithin != NoSymbol)
                 .filterNot(f => f.owner.fullName.startsWith("scala.Function") || f.owner.fullName.startsWith("scala.PartialFunction"))
                 .filterNot(f => BlacklistedSuperClasses.contains(f.owner.fullName))
                 .filter(_.owner.isClass)
-                .map(genMethodDescription)
+                .map(zip => genMethodDescription(zip._1, zip._2))
 
         val filteredMethods = ListBuffer.empty[MethodDescription]
         methods.foreach(desc => {
@@ -112,16 +115,18 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
                 }
     }
 
-    private def genMethodDescription(method: u.MethodSymbol): MethodDescription = {
-        val control            = findAnnotation(method, classOf[MethodControl]).getOrElse(DefaultMethodControl)
-        val synchronizedParams = toSyncParamsIndexes(control.mutates(), method)
+    private def genMethodDescription(symbol: u.MethodSymbol, javaMethod: Method): MethodDescription = {
+        val control            = findAnnotation(symbol, classOf[MethodControl]).getOrElse(DefaultMethodControl)
+        val synchronizedParams = toSyncParamsIndexes(control.mutates(), symbol)
         val invocationKind     = control.value()
-        val invokeOnly         = findAnnotation(method, classOf[InvokeOnly])
+        val invokeOnly         = findAnnotation(symbol, classOf[InvokeOnly])
         val isPure             = control.pure() && control.mutates().nonEmpty
         val isHidden           = control.hide()
         val syncReturnValue    = control.synchronizeReturnValue()
-        val desc               = MethodDescription(method, this, invokeOnly, synchronizedParams, invocationKind, syncReturnValue, isPure, isHidden)
-        desc
+        MethodDescription (
+            symbol, javaMethod, this, invokeOnly, synchronizedParams,
+            invocationKind, syncReturnValue, isPure, isHidden
+        )
     }
 
     private def genFieldDescription(field: MethodSymbol): FieldDescription = {
@@ -159,6 +164,7 @@ object PuppetDescription {
     private def name[T](implicit tag: TypeTag[T]): String = tag.tpe.typeSymbol.fullName
 
     case class MethodDescription(symbol: u.MethodSymbol,
+                                 method: Method,
                                  classDesc: PuppetDescription[_],
                                  invokeOnly: Option[InvokeOnly],
                                  var synchronizedParams: Seq[Boolean], //TODO make synchronization
@@ -189,13 +195,10 @@ object PuppetDescription {
         def getDefaultTypeReturnValue: String = {
             val nme = symbol.returnType.typeSymbol.fullName
 
-            if (nme == name[Boolean])
-                "false"
-            else if (numberTypes.contains(name))
-                "-1"
-            else if (nme == name[Char])
-                "'\\u0000'"
-            else "nl" //contracted call to JavaUtils.getNull
+            if (nme == name[Boolean])            "false"
+            else if (numberTypes.contains(name)) "-1"
+            else if (nme == name[Char])          "'\\u0000'"
+            else                                 "nl" //contracted call to JavaUtils.getNull
         }
 
         private def hashCode(a: Array[u.Type]): Int = {

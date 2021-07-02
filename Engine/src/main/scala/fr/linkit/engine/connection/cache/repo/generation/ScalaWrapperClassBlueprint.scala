@@ -16,36 +16,24 @@ import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.{MethodValueScope, getClassGenericParamsOut}
+import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope}
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 
 import scala.reflect.runtime.universe._
 
-class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](getClass.getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
+class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[LinkitApplication].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
 
     override val compilerType: CompilerType = CommonCompilerTypes.Scalac
 
     override val rootScope: RootValueScope = new RootValueScope {
-        registerValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
-        registerValue("CompileTime" ~~> System.currentTimeMillis())
-        registerValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
-        registerValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
-        registerValue("TParamsIn" ~> getGenericParamsIn)
-        registerValue("TParamsOut" ~> getClassGenericParamsOut)
-        registerValue("BustedConstructor" ~> getBustedConstructor)
-
-        private def getBustedConstructor(desc: PuppetDescription[_]): String = {
-            val v = desc.tpe
-                    .decls
-                    .find(dec => dec.isConstructor && (dec.isPublic || dec.isProtected))
-                    .fold("") {
-                        _.asMethod
-                                .paramLists
-                                .map(_.map(_ => "nl").mkString("(", ",", ")"))
-                                .mkString(",")
-                    }
-            v
-        }
+        bindValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
+        bindValue("CompileTime" ~~> System.currentTimeMillis())
+        bindValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
+        bindValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
+        bindValue("TParamsIn" ~> getGenericParamsIn)
+        bindValue("TParamsOut" ~> getClassGenericParamsOut)
+        bindValue("BustedConstructor" ~> getBustedConstructor)
 
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
@@ -54,6 +42,18 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
                     .foreach(action)
         })
 
+    }
+    private def getBustedConstructor(desc: PuppetDescription[_]): String = {
+        val v = desc.tpe
+                .decls
+                .find(dec => dec.isConstructor && (dec.isPublic || dec.isProtected))
+                .fold("") {
+                    _.asMethod
+                            .paramLists
+                            .map(_.map(_ => "nl").mkString("(", ",", ")"))
+                            .mkString(",")
+                }
+        v
     }
 
     private def getGenericParamsIn(desc: PuppetDescription[_]): String = {
@@ -84,16 +84,16 @@ object ScalaWrapperClassBlueprint {
     case class MethodValueScope(blueprint: String, pos: Int)
             extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
 
-        registerValue("ReturnType" ~> getReturnType)
-        registerValue("DefaultReturnValue" ~> (_.getDefaultTypeReturnValue))
-        registerValue("GenericTypesIn" ~> getGenericParamsIn)
-        registerValue("GenericTypesOut" ~> getGenericParamsOut)
-        registerValue("MethodName" ~> (_.symbol.name.toString))
-        registerValue("MethodID" ~> (_.methodId.toString))
-        registerValue("InvokeOnlyResult" ~> (_.getDefaultReturnValue))
-        registerValue("ParamsIn" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), true, false)))
-        registerValue("ParamsOut" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), false, true)))
-        registerValue("ParamsOutArray" ~> (getParameters(_)(_.mkString(", "), _.mkString("Array(", ", ", ")"), false, false)))
+        bindValue("ReturnType" ~> getReturnType)
+        bindValue("DefaultReturnValue" ~> (_.getDefaultTypeReturnValue))
+        bindValue("GenericTypesIn" ~> getGenericParamsIn)
+        bindValue("GenericTypesOut" ~> getGenericParamsOut)
+        bindValue("MethodName" ~> (_.symbol.name.toString))
+        bindValue("MethodID" ~> (_.methodId.toString))
+        bindValue("InvokeOnlyResult" ~> (_.getDefaultReturnValue))
+        bindValue("ParamsIn" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), true, false)))
+        bindValue("ParamsOut" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), false, true)))
+        bindValue("ParamsOutArray" ~> (getParameters(_)(_.mkString(", "), _.mkString("Array(", ", ", ")"), false, false)))
 
         private def getReturnType(method: MethodDescription): String = {
             val methodSymbol = method.symbol

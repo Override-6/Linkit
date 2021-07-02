@@ -50,7 +50,7 @@ abstract class AbstractValueScope[A](override val name: String,
         ScopeBlock(name, pos, LexerUtils.nextBlock(upperBlueprint, pos))
     }
 
-    protected def registerValue(pair: (String, A => String)): Unit = {
+    protected def bindValue(pair: (String, A => String)): Unit = {
         values.put(pair._1, BlueprintValueSupplier[A](pair)(upperBlueprint))
     }
 
@@ -95,11 +95,11 @@ abstract class AbstractValueScope[A](override val name: String,
                     before = BPController.IfElif(blockStartPos, exprPos, blockBlueprint, expression.drop(kind.length), null)
                 case "elif" =>
                     if (before == null)
-                        throw new IllegalArgumentException("Illegal head elif expression.")
+                        throw new IllegalArgumentException("Illegal heading elif expression.")
                     before = BPController.IfElif(blockStartPos, exprPos, blockBlueprint, expression.drop(kind.length), before)
                 case "else" =>
                     if (before == null)
-                        throw new IllegalArgumentException("Illegal head else expression.")
+                        throw new IllegalArgumentException("Illegal heading else expression.")
                     before = BPController.Else(blockStartPos, exprPos, blockBlueprint, before)
                 case _      => throw new IllegalArgumentException(s"Unknown flow controller expression '$expression'.")
             }
