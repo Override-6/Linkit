@@ -31,20 +31,17 @@ import java.util.Arrays
 * and methods required for a PuppetWrapper
 * */
 @SerialVersionUID($CompileTime$L)
-class Puppet$WrappedClassSimpleName$$TParamsIn$
-        extends $WrappedClassSimpleName$$TParamsOut$$BustedConstructor$ with AbstractPuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] {
+class Puppet$WrappedClassSimpleName$$TParamsIn$ extends AbstractPuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] {
 
     //Fun fact: Override annotations are conventional.
     //They does not affect abstraction or classes behaviors.
     //Override annotations are removed at compilation.
 
-    override def asWrapper: $WrappedClassSimpleName$$TParamsOut$ with PuppetWrapper[$WrappedClassSimpleName$$TParamsOut$] = this
-
     override def getWrappedClass: Class[_] = classOf[$WrappedClassSimpleName$$TParamsInBusted$]
 
     !!INHERITED_METHODS!! {
-        override def $MethodName$$GenericTypesIn$$ParamsIn$: $ReturnType$ = {
-            handleCall[$ReturnType$]($MethodID$, $DefaultReturnValue$, $InvokeOnlyResult$)(Array[Array[Any]]($ParamsOutArray$))(super.$MethodName$$GenericTypesOut$$ParamsOut$)
+        def $MethodName$$GenericTypesIn$$ParamsIn$: $ReturnType$ = {
+            handleCall[$ReturnType$]($MethodID$, $DefaultReturnValue$, $InvokeOnlyResult$)(Array[Array[Any]]($ParamsOutArray$))(null)
         }
     }
 }

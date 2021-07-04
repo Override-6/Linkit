@@ -39,7 +39,7 @@ class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescriptio
         bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
                     .distinctBy(_.methodId)
-                    .filterNot(m => m.symbol.isSetter || m.symbol.isGetter)
+                   // .filterNot(m => m.symbol.isSetter || m.symbol.isGetter)
                     .foreach(action)
         })
 

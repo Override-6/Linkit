@@ -22,7 +22,7 @@ import java.io.File
 import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
-//FIXME Critical bug ! This naming system currently can't handle nested / anonymous classes !
+//FIXME Critical bug ! The naming system currently can't handle nested / anonymous classes !
 class WrappersClassResource(override val resource: ResourceFolder) extends FolderRepresentation {
 
     private val folderPath           = Path.of(resource.getAdapter.getAbsolutePath)

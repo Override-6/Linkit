@@ -49,7 +49,7 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                         Some(contexts
                                 .map { desc =>
                                     val clazz            = desc.clazz
-                                    val wrapperClassName = adaptClassName(clazz.getName, WrapperMetaPrefixName)
+                                    val wrapperClassName = adaptClassName(clazz.getName, WrapperPrefixName)
                                     new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader).loadClass(wrapperClassName)
                                 })
                     }
@@ -63,8 +63,8 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
         val jcbp = blueprints(CommonCompilerTypes.Javac)
         val name = desc.clazz.getName
         Seq(
-            SourceCode(adaptClassName(name, WrapperPrefixName), scbp.toClassSource(desc), scbp.compilerType),
-            SourceCode(adaptClassName(name, WrapperMetaPrefixName), jcbp.toClassSource(desc), jcbp.compilerType)
+            SourceCode(adaptClassName(name, WrapperPrefixName), scbp.toClassSource(desc), scbp.compilerType)//,
+            //SourceCode(adaptClassName(name, WrapperMetaPrefixName), jcbp.toClassSource(desc), jcbp.compilerType)
         )
     }
 

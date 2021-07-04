@@ -12,43 +12,41 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.repo.Puppeteer
 import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
+import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
+import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
-import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.repo.generation.{ByteCodeModifier, PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.utils.JavaUtils
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
-import fr.linkit.engine.test.classes.{TestHashMap, TestListBuffer}
 import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
 
+import java.nio.file.Path
 import java.util
 import scala.collection.mutable.ListBuffer
-import scala.concurrent.Future
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(classOf[OrderAnnotation])
 class ResourcesAndClassGenerationTests {
 
-    private var resources: ResourceFolder = _
-    private val app: LinkitApplication = Mockito.mock(classOf[LinkitApplication])
+    private var resources: ResourceFolder    = _
+    private val app      : LinkitApplication = Mockito.mock(classOf[LinkitApplication])
 
     @BeforeAll
     def init(): Unit = {
-        val config = new ApplicationConfiguration {
+        val config      = new ApplicationConfiguration {
             override val pluginFolder   : Option[String]             = None
             override val resourceFolder : String                     = System.getenv("LinkitHome")
             override val fsAdapter      : FileSystemAdapter          = LocalFileSystemAdapters.Nio
@@ -63,14 +61,13 @@ class ResourcesAndClassGenerationTests {
         AppLogger.useVerbose = true
     }
 
-
     @Test
     @Order(-1)
     def genericParameterTests(): Unit = {
-        val testMethod = classOf[TestClass].getMethod("genericMethod2")
-        val javaResult = TypeVariableTranslator.toJavaDeclaration(testMethod.getTypeParameters)
+        val testMethod  = classOf[TestClass].getMethod("genericMethod2")
+        val javaResult  = TypeVariableTranslator.toJavaDeclaration(testMethod.getTypeParameters)
         val scalaResult = TypeVariableTranslator.toScalaDeclaration(testMethod.getTypeParameters)
-         println(s"Java result = ${javaResult}")
+        println(s"Java result = ${javaResult}")
         println(s"Scala result = ${scalaResult}")
     }
 
@@ -96,11 +93,37 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = {
-       /*val obj = forObject(LocalFileSystemAdapters.Nio)
-        obj.name = "WOLA :D"
-        println(obj.name)*/
+        /*val obj = forObject(LocalFileSystemAdapters.Nio)
+         obj.name = "WOLA :D"
+         println(obj.name)*/
         val buff = forObject(ListBuffer.empty[String]) += "sdqzd"
         println(s"buff = ${buff}")
+    }
+
+    @Test
+    def classModificationTests(): Unit = {
+        val classPath     = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\CompilationCenter\\Classes"
+        val loader        = new GeneratedClassClassLoader(Path.of(classPath), getClass.getClassLoader)
+        val modifier      = new ByteCodeModifier("gen.scala.collection.mutable.PuppetListBuffer", loader, classOf[ListBuffer[_]])
+        val modifiedClass = modifier.modifiedClass
+        println(s"modifiedClass = ${modifiedClass}")
+        println(s"modifiedClass.getSuperclass = ${modifiedClass.getSuperclass}")
+        /*val path = Path.of("C:\\Users\\maxim\\Desktop\\BCScanning\\PuppetListBufferExtendingListBufferAndWithSuperCalls.class")
+        val bytes = Files.readAllBytes(path)
+        val result = ListBuffer.from(Files.readAllBytes(path))
+        val fileBuff = ByteBuffer.wrap(bytes)
+
+        if (fileBuff.order(ByteOrder.BIG_ENDIAN).getInt != 0xcafebabe) //Head
+            throw new IllegalClassFormatException()
+
+        val minor: Int = fileBuff.getChar
+        val version: Int = fileBuff.getChar
+        println(s"class file version: $version.$minor")
+        val constantPoolLength: Int = fileBuff.getChar
+        println(s"constantPoolLength = ${constantPoolLength}")
+
+        println("end.")
+        println(s"Next flag is : ${fileBuff.get}")*/
     }
 
     @Test

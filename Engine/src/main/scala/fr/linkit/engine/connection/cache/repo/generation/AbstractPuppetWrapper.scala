@@ -23,7 +23,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
     @transient protected var choreographer: InvocationChoreographer = _
     @transient protected var puppeteerDescription: PuppeteerDescription = _
 
-    def asWrapper: A with PuppetWrapper[A] = this.asInstanceOf[A with PuppetWrapper[A]]
+    private def asWrapper: A with PuppetWrapper[A] = this.asInstanceOf[A with PuppetWrapper[A]]
 
     override def initPuppeteer(puppeteer: Puppeteer[A]): Unit = {
         if (this.description != null)
@@ -49,8 +49,8 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
 
-    @inline protected def handleCall[R](@inline id: Int, defaultReturnValue: R, invokeOnlyResult: R)
-                                     (args: Array[Array[Any]])(@inline superCall: => Any): R = {
+    protected def handleCall[R](id: Int, defaultReturnValue: R, invokeOnlyResult: R)
+                                     (args: Array[Array[Any]])(superCall: => Any = null): R = {
         AppLogger.vDebug("Performing rmi call for id '" + id + "' with arguments '" + args.mkString(", ") + "'")
         AppLogger.discoverLines(3, 7)
         if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled(id)) {
