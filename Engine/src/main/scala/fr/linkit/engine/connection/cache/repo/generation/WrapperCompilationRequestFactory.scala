@@ -18,6 +18,7 @@ import fr.linkit.api.local.generation.cbp.ClassBlueprint
 import fr.linkit.api.local.generation.compilation.CompilationResult
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{WrapperMetaPrefixName, WrapperPrefixName}
+import fr.linkit.engine.connection.cache.repo.generation.rectifier.ByteCodeRectifier
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.local.generation.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
@@ -50,7 +51,8 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                                 .map { desc =>
                                     val clazz            = desc.clazz
                                     val wrapperClassName = adaptClassName(clazz.getName, WrapperPrefixName)
-                                    new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader).loadClass(wrapperClassName)
+                                    val loader = new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader)
+                                    new ByteCodeRectifier(wrapperClassName, loader, clazz).rectifiedClass
                                 })
                     }
                 }

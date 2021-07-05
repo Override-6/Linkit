@@ -10,14 +10,24 @@
  *  questions.
  */
 
-package fr.linkit.engine.test.classes
+package fr.linkit.api.local.generation.cbp
 
-case class ScalaClass() {
+trait ValueInserter {
 
-    protected var b: String = "Wesh la bite bien ou queue ?"
+    def recenterPosFromScopeBp(pos: Int): Int
 
-    def testRMI(): Unit = {
-        println(s"RMI Done ! (${b})")
-    }
+    def isIgnoredPosition(pos: Int): Boolean
+
+    def insertValue(value: String, valueName: String, pos: Int): Unit
+
+    def insertOther(inserter: ValueInserter, pos: Int): Unit
+
+    def insertBlock(block: String, pos: Int): Unit
+
+    def deleteBlock(pos: Int, len: Int): Unit
+
+    def getStringResult: String
+
+    def getShiftAt(pos: Int): Int
 
 }

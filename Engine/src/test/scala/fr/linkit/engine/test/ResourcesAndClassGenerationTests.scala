@@ -21,12 +21,14 @@ import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
-import fr.linkit.engine.connection.cache.repo.generation.{ByteCodeModifier, PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.repo.generation.rectifier.ByteCodeRectifier
+import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
+import fr.linkit.engine.test.classes.ScalaClass
 import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
@@ -87,15 +89,14 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(2)
     def generateSimpleClass(): Unit = {
-        forObject(PlayerObject(7, "sheeeesh", "slt", 1, 5))
+        val obj = forObject(new ScalaClass)
+        println(s"obj = ${obj}")
+        obj.testRMI()
     }
 
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = {
-        /*val obj = forObject(LocalFileSystemAdapters.Nio)
-         obj.name = "WOLA :D"
-         println(obj.name)*/
         val buff = forObject(ListBuffer.empty[String]) += "sdqzd"
         println(s"buff = ${buff}")
     }
@@ -104,8 +105,8 @@ class ResourcesAndClassGenerationTests {
     def classModificationTests(): Unit = {
         val classPath     = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\CompilationCenter\\Classes"
         val loader        = new GeneratedClassClassLoader(Path.of(classPath), getClass.getClassLoader)
-        val modifier      = new ByteCodeModifier("gen.scala.collection.mutable.PuppetListBuffer", loader, classOf[ListBuffer[_]])
-        val modifiedClass = modifier.modifiedClass
+        val modifier      = new ByteCodeRectifier("gen.scala.collection.mutable.PuppetListBuffer", loader, classOf[ListBuffer[_]])
+        val modifiedClass = modifier.rectifiedClass
         println(s"modifiedClass = ${modifiedClass}")
         println(s"modifiedClass.getSuperclass = ${modifiedClass.getSuperclass}")
         /*val path = Path.of("C:\\Users\\maxim\\Desktop\\BCScanning\\PuppetListBufferExtendingListBufferAndWithSuperCalls.class")
@@ -143,7 +144,7 @@ class ResourcesAndClassGenerationTests {
         val pup    = new SimplePuppeteer[obj.type](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))
         val puppet = WrapperInstantiator.instantiateFromOrigin[obj.type](puppetClass, obj)
         puppet.initPuppeteer(pup)
-        println(s"puppet = ${puppet}")
+        //println(s"puppet = ${puppet}")
         puppet
     }
 

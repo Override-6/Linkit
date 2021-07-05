@@ -160,8 +160,6 @@ object PuppetDescription {
         new PuppetDescription[T](typeTag[T].tpe, clazz, clazz.getClassLoader)
     }
 
-    private def name[T](implicit tag: TypeTag[T]): String = tag.tpe.typeSymbol.fullName
-
     case class MethodDescription(symbol: u.MethodSymbol,
                                  classDesc: PuppetDescription[_],
                                  invokeOnly: Option[InvokeOnly],

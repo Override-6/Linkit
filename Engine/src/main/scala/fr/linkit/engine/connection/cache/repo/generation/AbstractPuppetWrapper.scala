@@ -51,7 +51,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     protected def handleCall[R](id: Int, defaultReturnValue: R, invokeOnlyResult: R)
                                      (args: Array[Array[Any]])(superCall: => Any = null): R = {
-        AppLogger.vDebug("Performing rmi call for id '" + id + "' with arguments '" + args.mkString(", ") + "'")
+        AppLogger.vDebug("Performing rmi call for id '" + id + "' with arguments '" + args.map(_.mkString(", ")).mkString(", ") + "'")
         AppLogger.discoverLines(3, 7)
         if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled(id)) {
             AppLogger.vDebug("The call is redirected to current object...")

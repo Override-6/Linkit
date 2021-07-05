@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.test.classes
+package fr.linkit.engine.connection.cache.repo.generation.rectifier
 
-case class ScalaClass() {
+import java.lang.reflect.Method
 
-    protected var b: String = "Wesh la bite bien ou queue ?"
-
-    def testRMI(): Unit = {
-        println(s"RMI Done ! (${b})")
-    }
+case class MethodBytecode(javaMethod: Method, nameIdx: Short, signatureIdx: Short, nameAndTypeIdx: Short, refIdx: Short) {
 
 }

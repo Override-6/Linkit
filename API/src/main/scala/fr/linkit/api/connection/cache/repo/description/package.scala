@@ -26,6 +26,8 @@ package object description {
         })
     }
 
+    def name[T](implicit tag: TypeTag[T]): String = tag.tpe.typeSymbol.fullName
+
     def toTypeTag[A](clazz: Class[_]): TypeTag[A] = toTypeTag({
         runtimeMirror(clazz.getClassLoader)
                 .staticClass(clazz.getName)

@@ -34,13 +34,13 @@ abstract class AbstractValueScope[A](override val name: String,
     private val subScopes  = mutable.Map.empty[String, SubScopeCategory[_]]
 
     def getSourceCode(value: A): String = {
-        val inserter = new BlueprintInserter(0, upperBlueprint)
+        val inserter = new SimpleValueInserter(0, upperBlueprint)
         conditions.foreach(_.insertResult(inserter, value))
         insertValues(inserter, value)
-        inserter.getResult
+        inserter.getStringResult
     }
 
-    def insertValues(inserter: BlueprintInserter, value: A): Unit = {
+    def insertValues(inserter: ValueInserter, value: A): Unit = {
         values.values.foreach(_.replaceValues(inserter, value))
         subScopes.values.foreach(_.insertResult(inserter, value))
     }
@@ -147,7 +147,7 @@ abstract class AbstractValueScope[A](override val name: String,
 
     class SubScopeCategory[B](scopes: Seq[(ValueScope[B], ScopeBlock)], iterator: ContextIterator[A, B]) {
 
-        def insertResult(inserter: BlueprintInserter, value: A): Unit = {
+        def insertResult(inserter: ValueInserter, value: A): Unit = {
 
             scopes.foreach(pair => {
                 val scope = pair._1
@@ -168,7 +168,7 @@ object AbstractValueScope {
 
         private val (startPos, totalLength) = getDimensions
 
-        def insertResult(upperInserter: BlueprintInserter, value: A): Unit = {
+        def insertResult(upperInserter: ValueInserter, value: A): Unit = {
             val result = control.getBlueprint(name => {
                 scope.values
                         .get(name)
@@ -179,7 +179,7 @@ object AbstractValueScope {
                 return
 
             val (blueprint, pos) = result.get
-            val inserter         = new BlueprintInserter(pos - 1, blueprint)
+            val inserter         = new SimpleValueInserter(pos - 1, blueprint)
             upperInserter.deleteBlock(startPos, totalLength)
             scope.insertValues(inserter, value)
             upperInserter.insertOther(inserter, startPos)

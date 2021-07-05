@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.generation.cbp
 
-import fr.linkit.api.local.generation.cbp.{BlueprintInserter, BlueprintValue, LexerUtils}
+import fr.linkit.api.local.generation.cbp.{ValueInserter, BlueprintValue, LexerUtils}
 
 abstract class AbstractBlueprintValue[A](override val name: String, blueprint: String) extends BlueprintValue[A] {
 
@@ -21,7 +21,7 @@ abstract class AbstractBlueprintValue[A](override val name: String, blueprint: S
 
     private val positions = LexerUtils.positions('$' + name + '$', blueprint)
 
-    override def replaceValues(inserter: BlueprintInserter, value: A): Unit = {
+    override def replaceValues(inserter: ValueInserter, value: A): Unit = {
         val str = getValue(value)
         positions.foreach { pos =>
             val centeredPos = inserter.recenterPosFromScopeBp(pos)
