@@ -19,7 +19,7 @@ import fr.linkit.engine.local.utils.NumberSerializer.{serializeShort => serialSh
 
 import java.lang.reflect.{Method, Modifier}
 import java.nio.ByteBuffer
-import java.nio.file.Files
+import java.nio.file.{Files, Path}
 import java.util
 import scala.collection.mutable.ListBuffer
 
@@ -28,13 +28,15 @@ import scala.collection.mutable.ListBuffer
  * */
 class ByteCodeRectifier(className: String, classLoader: GeneratedClassClassLoader, expectedSuperClass: Class[_]) {
 
+    import ByteCodeRectifier.shortConversion
+
     private val classPath = classLoader.classRootFolder.resolve(className.replace(".", "/") + ".class")
     private val bytes     = Files.readAllBytes(classPath)
     private val inserter  = new ArrayByteInserter(bytes)
     private val buff      = ByteBuffer.wrap(bytes)
 
     buff.position(8)
-    private var constantPoolCount = ((buff.getChar: Short) - 1).toShort
+    private var constantPoolCount = (buff.getChar - 1).toShort
     println(s"constantPoolCount = ${constantPoolCount}")
 
     private var constantPoolPositions = new Array[Int](constantPoolCount)
@@ -42,7 +44,8 @@ class ByteCodeRectifier(className: String, classLoader: GeneratedClassClassLoade
 
     iterateConstantPool(buff)
     private val bufferPoolEndPos          = buff.position()
-    private val superClassIndex           = buff.getChar(bufferPoolEndPos + 4): Int //skips two shorts, this_class and super_class
+    private val thisClassIndex            = buff.getChar(bufferPoolEndPos + 2): Int
+    private val superClassIndex           = buff.getChar(bufferPoolEndPos + 4): Int //skips three shorts, access_flag, this_class and super_class
     private var codeAttributeIndex: Short = -1 //will be set into addValuesInConstantPool method
     private val methods                   = ListBuffer.empty[MethodBytecode] // will be fill in the addValuesInConstantPool method
 
@@ -53,7 +56,9 @@ class ByteCodeRectifier(className: String, classLoader: GeneratedClassClassLoade
     iterateConstantPool(ByteBuffer.wrap(inserter.getResult.drop(bufferPoolStartPos)))
 
     lazy val rectifiedClass: Class[_] = {
-        classLoader.defineClass(className, inserter.getResult)
+        val bytes = inserter.getResult
+        Files.write(Path.of("C:\\Users\\maxim\\Desktop\\BCScanning\\PuppetScalaClassModifiedBC.class"), bytes)
+        classLoader.defineClass(className, bytes)
     }
 
     private def iterateConstantPool(buff: ByteBuffer): Unit = {
@@ -143,41 +148,43 @@ class ByteCodeRectifier(className: String, classLoader: GeneratedClassClassLoade
      * and also add some needed constants such as the 'Code' attribute name
      */
     private def addValuesInConstantPool(): Unit = {
-        val javaMethods = expectedSuperClass.getMethods
+        val javaMethods = expectedSuperClass.getDeclaredMethods.filter(m => Modifier.isPublic(m.getModifiers))
         constantPoolCount += (4 * javaMethods.length) + 1 //+1 for the attribute
         inserter.deleteBlock(8, 2)
-        inserter.insertBytes(8, serialShort(constantPoolCount.toShort))
+        inserter.insertBytes(8, serialShort(constantPoolCount))
         constantPoolPositions = util.Arrays.copyOf(constantPoolPositions, constantPoolCount + 2)
         var currentNameIndex = constantPoolCount
         for (javaMethod <- javaMethods) {
             currentNameIndex -= 4
             val name      = s"super$$${javaMethod.getName}"
             val signature = generateSuperMethodSignature(javaMethod)
-            inserter.insertBytes(bufferPoolEndPos, Array(MethodRef) ++ serialShort(superClassIndex.toShort) ++ serialShort((currentNameIndex + 2).toShort))
-            inserter.insertBytes(bufferPoolEndPos, Array(NameAndType) ++ serialShort(currentNameIndex.toShort) ++ serialShort((currentNameIndex + 1).toShort))
+            inserter.insertBytes(bufferPoolEndPos, Array(MethodRef) ++ serialShort(thisClassIndex.toShort) ++ serialShort((currentNameIndex + 2).toShort))
+            inserter.insertBytes(bufferPoolEndPos, Array(NameAndType) ++ serialShort(currentNameIndex) ++ serialShort((currentNameIndex + 1).toShort))
             inserter.insertBytes(bufferPoolEndPos, Array(Utf8, asUtfValue(signature.getBytes): _*))
             inserter.insertBytes(bufferPoolEndPos, Array(Utf8, asUtfValue(name.getBytes): _*))
             val method = MethodBytecode(javaMethod, currentNameIndex, currentNameIndex + 1, currentNameIndex + 2, currentNameIndex + 4)
             methods += method
         }
-        inserter.insertBytes(bufferPoolEndPos, Array(Utf8, asUtfValue("Code".getBytes())))
+        inserter.insertBytes(bufferPoolEndPos, Array(Utf8) ++ asUtfValue("Code".getBytes()))
         codeAttributeIndex = constantPoolCount
     }
 
     private def addSuperMethodsInMethodPool(): Unit = {
         gotoMethodPool()
-        val methodCount = buff.getChar(): Int
         val pos         = buff.position()
+        val methodCount = buff.getChar: Int
+        inserter.deleteBlock(pos - 2, 2)
+        inserter.insertBytes(pos - 2, serialShort(methodCount + methods.length))
+        //buffSkip(2) //skip the method pool count number
         for (method <- methods) {
             val bytes: Array[Array[Byte]] = Array(
                 serialShort((Modifier.PRIVATE + Access_Synthetic).toShort),
                 serialShort(method.nameIdx),
                 serialShort(method.signatureIdx), //actually descriptor_index, but i decided to keep the "signature" word in order to don't be lost in my mind
-                serialShort(1), //Only one attribute: the Code attribute.
+                one, //Only one attribute: the Code attribute.
                 //Entering in the attributes array.
                 //Creating the only attribute of the method: named 'Code'
-                generateMethodCodeAttribute(method): _*
-            )
+            ) ++ generateMethodCodeAttribute(method)
             //here, the iteration is reversed because the insertBytes will have for effect to reverse the order of
             //inserted bytes, so reversing the byte insertion order will counterbalance the reversion
             for (i <- bytes.indices.reverse) {
@@ -186,28 +193,25 @@ class ByteCodeRectifier(className: String, classLoader: GeneratedClassClassLoade
         }
     }
 
-    private val zero = serialShort(0)
-    private val one  = serialShort(1)
-
     private def generateMethodCodeAttribute(method: MethodBytecode): Array[Array[Byte]] = {
         val attributeNameIndex = serialShort(codeAttributeIndex)
         val byteCode           = generateMethodByteCode(method)
         val body               = Array[Array[Byte]](
             one, //max_stack = 1
-            serialShort(1 + method.javaMethod.getParameterCount), //max_locals (+1 because we need to keep the actual instance of the method invocation)
-            serialShort(byteCode.length), //code_length
+            serialShort((1 + method.javaMethod.getParameterCount).toShort), //max_locals (+1 because we need to keep the actual instance for the method invocation)
+            serialShort(byteCode.length.toShort), //code_length
             byteCode, //code
             zero, //exception_table_length (no exception to handle)
             zero //attributes_count (no attributes to add in the Code attribute)
         )
         Array(
             attributeNameIndex,
-            serialShort(body.length)
+            serialShort(body.length.toShort)
         ) ++ body
     }
 
     private def generateMethodByteCode(method: MethodBytecode): Array[Byte] = {
-
+        Array()
     }
 
     private def gotoMethodPool(): Unit = {
@@ -218,10 +222,14 @@ class ByteCodeRectifier(className: String, classLoader: GeneratedClassClassLoade
 
         //Jumping over fields information
         val fieldCount = buff.getChar(): Int
-        for (_ <- 0 to fieldCount) {
-            buffSkip(8) //skip access_flag, name_index and descriptor_index
+        for (_ <- 1 to fieldCount) {
+            buffSkip(6) //skip access_flag, name_index and descriptor_index
             val attributesCounts = buff.getChar(): Int
-            buffSkip(7 * attributesCounts) //skips all attributes_info (attributes_info is 7 bytes length)
+            //skips all attributes_info
+            for (_ <- 1 to attributesCounts) {
+                buffSkip(2) //skip the NameIndex
+                buffSkip(buff.getInt) //skip the attribute length
+            }
         }
     }
 
@@ -263,6 +271,10 @@ object ByteCodeRectifier {
 
     //used AccessFlags that are not in the java's reflection public api
     val Access_Synthetic = 0x00001000
+
+    //Small Optimisation tricks
+    private val zero = serialShort(0)
+    private val one  = serialShort(1)
 
     implicit private def shortConversion(int: Int): Short = int.toShort
 }

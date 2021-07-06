@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test.classes
 
-case class ScalaClass() {
+class ScalaClass() {
 
     protected var b: String = "Wesh la bite bien ou queue ?"
 

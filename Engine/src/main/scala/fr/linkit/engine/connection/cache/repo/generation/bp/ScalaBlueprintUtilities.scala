@@ -10,73 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.repo.generation
+package fr.linkit.engine.connection.cache.repo.generation.bp
 
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
-import fr.linkit.api.local.generation.compilation.access.CompilerType
-import fr.linkit.engine.connection.cache.repo.generation.ScalaWrapperClassBlueprint.{MethodValueScope, getGenericParams}
-import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope}
-import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
-
 import scala.reflect.runtime.universe._
 
-class ScalaWrapperClassBlueprint extends AbstractClassBlueprint[PuppetDescription[_]](classOf[LinkitApplication].getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp")) {
+object ScalaBlueprintUtilities {
 
-    override val compilerType: CompilerType = CommonCompilerTypes.Scalac
-
-    override val rootScope: RootValueScope = new RootValueScope {
-        bindValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
-        bindValue("CompileTime" ~~> System.currentTimeMillis())
-        bindValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
-        bindValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
-        bindValue("TParamsIn" ~> (getGenericParams(_, _.asType.toType.finalResultType)))
-        bindValue("TParamsOut" ~> (getGenericParams(_, _.name)))
-        bindValue("TParamsInBusted" ~> (getGenericParams(_, _ => "_")))
-        bindValue("BustedConstructor" ~> getBustedConstructor)
-
-        bindSubScope(MethodValueScope, (desc, action: MethodDescription => Unit) => {
-            desc.listMethods()
-                    .distinctBy(_.methodId)
-                   // .filterNot(m => m.symbol.isSetter || m.symbol.isGetter)
-                    .foreach(action)
-        })
-
-    }
-    private def getBustedConstructor(desc: PuppetDescription[_]): String = {
-        val v = desc.tpe
-                .decls
-                .find(dec => dec.isConstructor && (dec.isPublic || dec.isProtected))
-                .fold("") {
-                    _.asMethod
-                            .paramLists
-                            .map(_.map(_ => "nl").mkString("(", ",", ")"))
-                            .mkString(",")
-                }
-        v
-    }
-
-}
-
-object ScalaWrapperClassBlueprint {
-
-    case class MethodValueScope(blueprint: String, pos: Int)
-            extends AbstractValueScope[MethodDescription]("INHERITED_METHODS", pos, blueprint) {
-
-        bindValue("ReturnType" ~> getReturnType)
-        bindValue("DefaultReturnValue" ~> (_.getDefaultTypeReturnValue))
-        bindValue("GenericTypesIn" ~> getGenericParamsIn)
-        bindValue("GenericTypesOut" ~> getGenericParamsOut)
-        bindValue("MethodName" ~> (_.symbol.name.toString))
-        bindValue("MethodID" ~> (_.methodId.toString))
-        bindValue("InvokeOnlyResult" ~> (_.getDefaultReturnValue))
-        bindValue("ParamsIn" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), true, false)))
-        bindValue("ParamsOut" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), false, true)))
-        bindValue("ParamsOutArray" ~> (getParameters(_)(_.mkString(", "), _.mkString("Array(", ", ", ")"), false, false)))
-    }
-
-    private def getGenericParams(desc: PuppetDescription[_], transform: Symbol => Any): String = {
+    def getGenericParams(desc: PuppetDescription[_], transform: Symbol => Any): String = {
         val result = desc
                 .tpe
                 .typeParams
@@ -86,7 +28,7 @@ object ScalaWrapperClassBlueprint {
         else s"[$result]"
     }
 
-    private def getReturnType(method: MethodDescription): String = {
+    def getReturnType(method: MethodDescription): String = {
         val methodSymbol = method.symbol
         val classSymbol  = method.classDesc.tpe.typeSymbol
         val tParams      = classSymbol.typeSignature.typeParams
@@ -100,7 +42,7 @@ object ScalaWrapperClassBlueprint {
         v.replace(classSymbol.fullName + getGenericParams(method.classDesc, _.name), "this.type")
     }
 
-    private def getGenericParamsIn(method: MethodDescription): String = {
+    def getGenericParamsIn(method: MethodDescription): String = {
         val symbol      = method.symbol
         val cTypeParams = method
                 .classDesc
@@ -151,7 +93,7 @@ object ScalaWrapperClassBlueprint {
         v
     }
 
-    private def getParameters(method: MethodDescription)(firstMkString: Seq[String] => String,
+    def getParameters(method: MethodDescription)(firstMkString: Seq[String] => String,
                                                          secondMkString: Seq[String] => String,
                                                          allowTypes: Boolean, allowVarargUpcast: Boolean): String = {
         var i = 0
@@ -191,7 +133,7 @@ object ScalaWrapperClassBlueprint {
         v
     }
 
-    private def renderTypes(types: Seq[Type], classLevelTypes: Seq[Symbol]): Seq[String] = {
+    def renderTypes(types: Seq[Type], classLevelTypes: Seq[Symbol]): Seq[String] = {
         if (types.isEmpty)
             return Seq.empty
 
@@ -226,7 +168,5 @@ object ScalaWrapperClassBlueprint {
 
         for (tpe <- types) yield renderType(tpe, null, 0)
     }
-
-
 
 }

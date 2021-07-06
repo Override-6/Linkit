@@ -178,17 +178,25 @@ object PuppetDescription {
             symbol.name.toString.hashCode + hashCode(parameters)
         }
 
+        canEqual()
+
         lazy val method: Method = {
+            def getJavaName(s: Symbol): String = {
+                val name = s.fullName
+                if (name == "scala.Any")
+                    "java.lang.Object"
+                else name
+            }
             val symbolParams = symbol.paramLists.flatten
             classDesc.clazz
                     .getMethods
                     .filter(_.getName == symbol.name.toString)
-                    .filter(_.getGenericParameterTypes.length == symbolParams.size)
+                    .filter(_.getParameterCount == symbolParams.size)
                     .find(x => {
                         x.getGenericParameterTypes
                                 .zipWithIndex
                                 .forall(pair => {
-                                    symbolParams(pair._2).typeSignature.typeSymbol.fullName == pair._1.getTypeName
+                                    getJavaName(symbolParams(pair._2).typeSignature.typeSymbol) == pair._1.getTypeName
                                 })
                     })
                     .get

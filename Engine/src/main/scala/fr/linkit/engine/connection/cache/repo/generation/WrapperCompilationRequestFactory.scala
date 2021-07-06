@@ -13,47 +13,45 @@
 package fr.linkit.engine.connection.cache.repo.generation
 
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.generation.cbp.ClassBlueprint
 import fr.linkit.api.local.generation.compilation.CompilationResult
 import fr.linkit.api.local.generation.compilation.access.CompilerType
-import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{WrapperMetaPrefixName, WrapperPrefixName}
-import fr.linkit.engine.connection.cache.repo.generation.rectifier.ByteCodeRectifier
+import fr.linkit.engine.connection.cache.repo.generation.WrapperCompilationRequestFactory.DefaultClassBlueprint
+import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.WrapperPrefixName
+import fr.linkit.engine.connection.cache.repo.generation.bp.ScalaWrapperClassBlueprint
+import fr.linkit.engine.connection.cache.repo.generation.rectifier.ClassRectifier
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.local.generation.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
 
 import java.nio.file.Path
-import scala.collection.mutable
 
 class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory[PuppetDescription[_], Class[_]] {
 
-    private val blueprints = new mutable.HashMap[CompilerType, ClassBlueprint[PuppetDescription[_]]]()
-
-    def registerClassBlueprint(compilerType: CompilerType, bp: ClassBlueprint[PuppetDescription[_]]): Unit = {
-        blueprints.put(compilerType, bp)
-    }
+    var classBlueprint      : ClassBlueprint[PuppetDescription[_]] = DefaultClassBlueprint
 
     override def createMultiRequest(contexts: Seq[PuppetDescription[_]], workingDir: Path): SourceCodeCompilationRequest[Seq[Class[_]]] = {
         new SourceCodeCompilationRequest[Seq[Class[_]]] { req =>
 
-            override val workingDirectory: Path = workingDir
-            override val classPaths: Seq[Path] = defaultClassPaths :+ classDir
+            override val workingDirectory: Path              = workingDir
+            override val classPaths      : Seq[Path]         = defaultClassPaths :+ classDir
             override val compilationOrder: Seq[CompilerType] = Seq(CommonCompilerTypes.Scalac, CommonCompilerTypes.Javac)
-            override var sourceCodes: Seq[SourceCode] = {
+            override var sourceCodes     : Seq[SourceCode]   = {
                 contexts.flatMap(getSourceCode) //TODO put in PuppetDescription the preferred compiler type
             }
 
             override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[_]]] = {
                 new AbstractCompilationResult[Seq[Class[_]]](outs, compilationTime, req) {
                     override def getResult: Option[Seq[Class[_]]] = {
-                        Some(contexts
-                                .map { desc =>
-                                    val clazz            = desc.clazz
-                                    val wrapperClassName = adaptClassName(clazz.getName, WrapperPrefixName)
-                                    val loader = new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader)
-                                    new ByteCodeRectifier(wrapperClassName, loader, clazz).rectifiedClass
-                                })
+                            Some(contexts
+                                    .map { desc =>
+                                        val clazz            = desc.clazz
+                                        val wrapperClassName = adaptClassName(clazz.getName, WrapperPrefixName)
+                                        val loader           = new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader)
+                                        new ClassRectifier(desc, wrapperClassName, loader, clazz).rectifiedClass
+                                    })
                     }
                 }
             }
@@ -61,18 +59,13 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
     }
 
     private def getSourceCode(desc: PuppetDescription[_]): IterableOnce[SourceCode] = {
-        val scbp = blueprints(CommonCompilerTypes.Scalac)
-        val jcbp = blueprints(CommonCompilerTypes.Javac)
         val name = desc.clazz.getName
-        Seq(
-            SourceCode(adaptClassName(name, WrapperPrefixName), scbp.toClassSource(desc), scbp.compilerType)//,
-            //SourceCode(adaptClassName(name, WrapperMetaPrefixName), jcbp.toClassSource(desc), jcbp.compilerType)
-        )
+        Seq(SourceCode(adaptClassName(name, WrapperPrefixName), classBlueprint.toClassSource(desc), classBlueprint.compilerType))
     }
 
-    {
-        registerClassBlueprint(CommonCompilerTypes.Scalac, new ScalaWrapperClassBlueprint)
-        registerClassBlueprint(CommonCompilerTypes.Javac, new JavaWrapperMetaClassBlueprint)
-    }
+}
 
+object WrapperCompilationRequestFactory {
+
+    private val DefaultClassBlueprint       = new ScalaWrapperClassBlueprint(getClass.getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp"))
 }

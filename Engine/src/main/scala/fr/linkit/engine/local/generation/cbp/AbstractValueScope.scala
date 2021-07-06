@@ -31,7 +31,8 @@ abstract class AbstractValueScope[A](override val name: String,
     }
     private val conditions = findFlowControllers()
     private val values     = mutable.Map.empty[String, BlueprintValue[A]]
-    private val subScopes  = mutable.Map.empty[String, SubScopeCategory[_]]
+    private val subScopes  = mutable.Map.empty[String, AbstractValueScope[A]#SubScopeCategory[_]]
+    private val bindingLogics = ListBuffer.empty[AbstractValueScope[A] => Unit]
 
     def getSourceCode(value: A): String = {
         val inserter = new SimpleValueInserter(0, upperBlueprint)
@@ -45,16 +46,22 @@ abstract class AbstractValueScope[A](override val name: String,
         subScopes.values.foreach(_.insertResult(inserter, value))
     }
 
+    def bindAll(other: AbstractValueScope[A]): Unit = {
+        other.bindingLogics.foreach(_.apply(this))
+    }
+
     private def getScopeBlock(pair: (String, Int)): ScopeBlock = {
         val (name, pos) = pair
         ScopeBlock(name, pos, LexerUtils.nextBlock(upperBlueprint, pos))
     }
 
     protected def bindValue(pair: (String, A => String)): Unit = {
+        bindingLogics += (_.bindValue(pair))
         values.put(pair._1, BlueprintValueSupplier[A](pair)(upperBlueprint))
     }
 
     protected def bindSubScope[B](scopeFactory: (String, Int) => ValueScope[B], contextIterator: ContextIterator[A, B]): Unit = {
+        bindingLogics += (_.bindSubScope(scopeFactory, contextIterator))
         val scopes = subBlocks.map(block => (scopeFactory(block.blockBlueprint, block.startPos), block))
         if (scopes.isEmpty) {
             throw new NoSuchElementException("Sub scope not present.")
@@ -89,7 +96,7 @@ abstract class AbstractValueScope[A](override val name: String,
             if (isPositionOwnedBySubScope(exprPos))
                 return
 
-            val kind      = expression.takeWhile(!_.isWhitespace).toLowerCase
+            val kind = expression.takeWhile(!_.isWhitespace).toLowerCase
             kind match {
                 case "if"   =>
                     before = BPController.IfElif(blockStartPos, exprPos, blockBlueprint, expression.drop(kind.length), null)
@@ -170,10 +177,10 @@ object AbstractValueScope {
 
         def insertResult(upperInserter: ValueInserter, value: A): Unit = {
             val result = control.getBlueprint(name => {
-                scope.values
+                val r = scope.values
                         .get(name)
                         .map(_.getValue(value))
-                        .getOrElse(throw new NoSuchElementException(s"Unknown value '$name'"))
+                r.getOrElse(throw new NoSuchElementException(s"Unknown value '$name'"))
             })
             if (result.isEmpty)
                 return
