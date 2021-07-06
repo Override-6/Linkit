@@ -104,12 +104,6 @@ class ResourcesAndClassGenerationTests {
 
     @Test
     def classModificationTests(): Unit = {
-        val classPath     = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\CompilationCenter\\Classes"
-        val loader        = new GeneratedClassClassLoader(Path.of(classPath), getClass.getClassLoader)
-        val modifier      = new ClassRectifier("gen.scala.collection.mutable.PuppetListBuffer", loader, classOf[ListBuffer[_]])
-        val modifiedClass = modifier.rectifiedClass
-        println(s"modifiedClass = ${modifiedClass}")
-        println(s"modifiedClass.getSuperclass = ${modifiedClass.getSuperclass}")
         /*val path = Path.of("C:\\Users\\maxim\\Desktop\\BCScanning\\PuppetListBufferExtendingListBufferAndWithSuperCalls.class")
         val bytes = Files.readAllBytes(path)
         val result = ListBuffer.from(Files.readAllBytes(path))

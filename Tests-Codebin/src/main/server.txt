@@ -1,0 +1,14 @@
+package fr.test.example
+
+describe class SampleClass {
+    allMethods := enabled
+
+    enable move {
+        invoked -> {
+
+        }
+        disable invoking //les clients ne peuvent pas faire bouger (invoquer cette méthode sur) un autre client
+    }
+
+    disable printDebug //le client ne peut pas print le debugage d'un joueur sur un autre client
+}
