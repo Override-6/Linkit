@@ -17,25 +17,36 @@ import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import javassist.bytecode.MethodInfo
 import javassist.{ClassPool, CtMethod, LoaderClassPath}
 
+import java.lang.reflect.Modifier.{isNative, isProtected, isStatic}
 import java.lang.reflect.{Method, Modifier}
 
-class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String,
-                     classLoader: GeneratedClassClassLoader, expectedSuperClass: Class[_]) {
+class ClassRectifier(puppetClassName: String, classLoader: GeneratedClassClassLoader, superClass: Class[_]) {
 
     private val pool = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))
     private val ctClass = pool.get(puppetClassName)
-    ctClass.setSuperclass(pool.get(expectedSuperClass.getName))
+
+    removeAllSuperClassFinalFlags()
+    ctClass.setSuperclass(pool.get(superClass.getName))
     addAllSuperMethods()
 
     lazy val rectifiedClass: Class[_] = {
-        ctClass.toClass(classLoader, expectedSuperClass.getProtectionDomain)
+        ctClass.toClass(classLoader, superClass.getProtectionDomain)
+    }
+
+    private def removeAllSuperClassFinalFlags(): Unit = {
+        implicit def extractModifiers(m: CtMethod): Int = m.getModifiers
+        import Modifier._
+        val superCtClass = pool.get(superClass.getName)
+        superCtClass.setModifiers(PUBLIC)
+        superCtClass.getMethods.filterNot(m => isStatic(m) || isNative(m) || isProtected(m)).foreach(_.setModifiers(PUBLIC))
+        superCtClass.toClass(superClass.getClassLoader, superClass.getProtectionDomain)
     }
 
     private def addAllSuperMethods(): Unit = {
-        val methodDescs = desc.listMethods()
-        for (desc <- methodDescs) {
-            val javaMethod   = desc.method
+        implicit def extractModifiers(m: Method): Int = m.getModifiers
+        val methodDescs = superClass.getMethods.filterNot(m => isStatic(m) || isNative(m) || isProtected(m))
+        for (javaMethod <- methodDescs) {
             val name         = javaMethod.getName
             val superfunName = s"super$$$name"
             val anonfunName  = "$anonfun$" + name + "$1"
@@ -46,21 +57,20 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String,
             ctClass.addMethod(superfun)
             superfun.setBody(getSuperFunBody(javaMethod))
             anonfun.setBody(getAnonFunBody(javaMethod, superfunName))
-            anonfun.bo
         }
     }
 
     private def getAnonFunBody(javaMethod: Method, superFunName: String): String = {
-        s"return $$1.$superFunName(${(1 to javaMethod.getParameterCount).map(i => s"$$${i + 1}").mkString(",")});"
+        val str = s"$$1.$superFunName(${(1 to javaMethod.getParameterCount).map(i => s"$$${i + 1}").mkString(",")});"
+        if (javaMethod.getReturnType == Void.TYPE)
+            "{" + str + "return null;}"
+        else s"{return $str}"
     }
 
-    private def getSuperFunBody(javaMethod: Method): String = valueReturnBody(javaMethod) {
-        s"""
+    private def getSuperFunBody(javaMethod: Method): String = {
+        val str = s"""
            |super.${javaMethod.getName}(${(1 to javaMethod.getParameterCount).map(i => s"$$$i").mkString(",")});
            |""".stripMargin
-    }
-
-    private def valueReturnBody(javaMethod: Method)(str: String): String = {
         if (javaMethod.getReturnType == Void.TYPE)
             str
         else s"return $str"

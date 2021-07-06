@@ -21,7 +21,7 @@ import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
-import fr.linkit.engine.connection.cache.repo.generation.rectifier.ByteCodeRectifier
+import fr.linkit.engine.connection.cache.repo.generation.rectifier.ClassRectifier
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
@@ -29,7 +29,6 @@ import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
 import fr.linkit.engine.test.classes.ScalaClass
-import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
@@ -92,6 +91,8 @@ class ResourcesAndClassGenerationTests {
         val obj = forObject(new ScalaClass)
         println(s"obj = ${obj}")
         obj.testRMI()
+        obj.b = "Le sexe"
+        println(s"ojb.b = ${obj.b}")
     }
 
     @Test
@@ -105,7 +106,7 @@ class ResourcesAndClassGenerationTests {
     def classModificationTests(): Unit = {
         val classPath     = "C:\\Users\\maxim\\Desktop\\Dev\\Linkit\\Home\\CompilationCenter\\Classes"
         val loader        = new GeneratedClassClassLoader(Path.of(classPath), getClass.getClassLoader)
-        val modifier      = new ByteCodeRectifier("gen.scala.collection.mutable.PuppetListBuffer", loader, classOf[ListBuffer[_]])
+        val modifier      = new ClassRectifier("gen.scala.collection.mutable.PuppetListBuffer", loader, classOf[ListBuffer[_]])
         val modifiedClass = modifier.rectifiedClass
         println(s"modifiedClass = ${modifiedClass}")
         println(s"modifiedClass.getSuperclass = ${modifiedClass.getSuperclass}")

@@ -14,7 +14,7 @@ package fr.linkit.engine.test.classes
 
 class ScalaClass() {
 
-    protected var b: String = "Wesh la bite bien ou queue ?"
+    var b: String = "Wesh la bite bien ou queue ?"
 
     def testRMI(): Unit = {
         println(s"RMI Done ! (${b})")
