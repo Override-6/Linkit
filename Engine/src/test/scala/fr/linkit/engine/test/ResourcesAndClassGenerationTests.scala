@@ -37,6 +37,7 @@ import org.mockito.Mockito
 import java.nio.file.Path
 import java.util
 import scala.collection.mutable.ListBuffer
+import scala.reflect.ClassTag
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(classOf[OrderAnnotation])
@@ -128,16 +129,16 @@ class ResourcesAndClassGenerationTests {
         forObject(new util.ArrayList[String]())
     }
 
-    private def forObject(obj: Any): obj.type = {
+    private def forObject[A : ClassTag](obj: A): A = {
         Assertions.assertNotNull(resources)
         val cl = obj.getClass.asInstanceOf[Class[obj.type]]
 
         val resource    = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
         val generator   = new PuppetWrapperClassGenerator(new DefaultCompilerCenter, resource)
-        val puppetClass = generator.getClass[obj.type](cl)
+        val puppetClass = generator.getClass[A](cl)
         println(s"puppetClass = ${puppetClass}")
-        val pup    = new SimplePuppeteer[obj.type](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))
-        val puppet = WrapperInstantiator.instantiateFromOrigin[obj.type](puppetClass, obj)
+        val pup    = new SimplePuppeteer[A](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))
+        val puppet = WrapperInstantiator.instantiateFromOrigin[A](puppetClass, obj)
         puppet.initPuppeteer(pup)
         puppet.getChoreographer.forceLocalInvocation {
             println(s"puppet = ${puppet}")
