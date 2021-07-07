@@ -123,6 +123,8 @@ object ScalaUtils {
         throw new IllegalStateException("No instance of Unsafe found")
     }
 
+
+
     def pasteAllFields[A](instance: A, data: A): Unit = {
         retrieveAllFields(data.getClass)
                 .foreach(field => {

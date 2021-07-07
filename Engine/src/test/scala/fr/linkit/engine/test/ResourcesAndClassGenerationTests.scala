@@ -139,8 +139,10 @@ class ResourcesAndClassGenerationTests {
         val pup    = new SimplePuppeteer[obj.type](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))
         val puppet = WrapperInstantiator.instantiateFromOrigin[obj.type](puppetClass, obj)
         puppet.initPuppeteer(pup)
-        println(s"puppet = ${puppet}")
-        println(s"puppet.getClass.getSuperclass = ${puppet.getClass.getSuperclass}")
+        puppet.getChoreographer.forceLocalInvocation {
+            println(s"puppet = ${puppet}")
+            println(s"puppet.getClass.getSuperclass = ${puppet.getClass.getSuperclass}")
+        }
         puppet
     }
 

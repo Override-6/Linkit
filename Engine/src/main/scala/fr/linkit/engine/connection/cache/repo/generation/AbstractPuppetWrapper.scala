@@ -51,11 +51,15 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     protected def handleCall[R](id: Int, defaultReturnValue: R, invokeOnlyResult: R)
                                      (args: Array[Array[Any]])(superCall: => Any = null): R = {
-        AppLogger.vDebug("Performing rmi call for id '" + id + "' with arguments '" + args.map(_.mkString(", ")).mkString(", ") + "'")
-        AppLogger.discoverLines(3, 7)
-        if (choreographer.isMethodExecutionForcedToLocal || !description.isRMIEnabled(id)) {
-            AppLogger.vDebug("The call is redirected to current object...")
+        val name = description.getMethodDesc(id).get.method.getName
+        if (choreographer.isMethodExecutionForcedToLocal) {
+            println(s"skipped $name.")
             return superCall.asInstanceOf[R]
+        }
+        AppLogger.vDebug(s"$name: Performing rmi call for id '$id' with arguments '" + args.map(_.mkString(", ")).mkString(", ") + "'")
+        if (!description.isRMIEnabled(id)) {
+            AppLogger.vDebug("The call is redirected to current object...")
+            return performSuperCall(superCall)
         }
         // From here we are sure that we want to perform a remote
         // method invocation. (A Local invocation (super.xxx()) can be added).
@@ -64,7 +68,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
             puppeteer.sendInvoke(id, args)
             var localResult: Any = defaultReturnValue
             if (description.isLocalInvocationForced(id)) {
-                localResult = superCall
+                localResult = performSuperCall(superCall)
             }
             AppLogger.vDebug("Returned local result = " + localResult)
             //# Note1: value of 'InvokeOnlyResult' can be "localResult", which will return the variable.
@@ -72,12 +76,12 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
             //#        if the 'InvokeOnlyResult' value of the annotated
             //#        method is set to "localResult" and the invocation
             //#        kind does not force local invocation.
-            return invokeOnlyResult.asInstanceOf[R]
+            return invokeOnlyResult
         }
         var result: Any = defaultReturnValue
         if (description.isLocalInvocationForced(id)) {
             AppLogger.vDebug("The method invocation is redirected to current object...")
-            result = superCall
+            result = performSuperCall(superCall)
             AppLogger.vDebug("Also performing asynchronous remote method invocation...")
             puppeteer.sendInvoke(id, args)
         } else {
@@ -86,6 +90,14 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
         }
         AppLogger.vDebug("Returned rmi result = " + result)
         result.asInstanceOf[R]
+    }
+
+    private def performSuperCall[R](superCall: => Any): R = {
+        choreographer.forceLocalInvocation[R] {
+            val v = superCall.asInstanceOf[R]
+            println("Invokation ended !")
+            v
+        }
     }
 
     class Test[S >: String] extends AbstractPuppetWrapper[Test[S]] {

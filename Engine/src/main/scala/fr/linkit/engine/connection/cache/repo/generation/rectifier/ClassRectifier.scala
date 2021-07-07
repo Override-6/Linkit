@@ -12,13 +12,12 @@
 
 package fr.linkit.engine.connection.cache.repo.generation.rectifier
 
-import java.lang.reflect.Modifier.{isNative, isProtected, isStatic}
-import java.lang.reflect.{Method, Modifier}
-
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import javassist.bytecode.MethodInfo
-import javassist.{ClassPool, CtMethod, LoaderClassPath}
+import javassist.{ClassPool, CtClass, CtMethod, LoaderClassPath}
+
+import java.lang.reflect.{Method, Modifier}
 
 class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classLoader: GeneratedClassClassLoader, superClass: Class[_]) {
 
@@ -57,27 +56,39 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classL
 
             ctClass.addMethod(superfun)
             superfun.setBody(getSuperFunBody(javaMethod))
-            anonfun.setBody(getAnonFunBody(javaMethod, superfunName))
+            anonfun.setBody(getAnonFunBody(javaMethod, superfun))
         }
     }
 
     private def getAnonFun(javaMethod: Method): CtMethod = {
         val argsStrings = javaMethod.getParameterTypes.map(_.getName)
         val v           = ctClass
-            .getDeclaredMethods
-            .filter(_.getName.startsWith("$anonfun$" + javaMethod.getName))
-            .find(m => {
-                val v = m.getParameterTypes.drop(1).map(_.getName)
-                v sameElements argsStrings
-            })
+                .getDeclaredMethods
+                .filter(_.getName.startsWith("$anonfun$" + javaMethod.getName))
+                .find(m => {
+                    val v = m.getParameterTypes.drop(1).map(_.getName)
+                    v sameElements argsStrings
+                })
         v.get
     }
 
-    private def getAnonFunBody(javaMethod: Method, superFunName: String): String = {
-        val str = s"$$1.$superFunName(${(1 to javaMethod.getParameterCount).map(i => s"$$${i + 1}").mkString(",")});"
+    private def getAnonFunBody(javaMethod: Method, superFun: CtMethod): String = {
+        val str = s"$$1.${superFun.getName}(${(1 to javaMethod.getParameterCount).map(i => s"$$${i + 1}").mkString(",")})"
         if (javaMethod.getReturnType == Void.TYPE)
-            "{" + str + "return null;}"
-        else s"{return $str}"
+            "{" + str + ";return null;}"
+        else {
+            s"{return ${getWrapperFor(superFun.getReturnType, str)};}"
+        }
+    }
+
+    private def getWrapperFor(returnType: CtClass, str: String): String = {
+        if (returnType.isPrimitive) {
+            var wrapperName = returnType.getName.head.toUpper + returnType.getName.drop(1)
+            if (wrapperName == "Int")
+                wrapperName = "Integer"
+            s"$wrapperName.valueOf($str)"
+        }
+        else str
     }
 
     private def getSuperFunBody(javaMethod: Method): String = {
@@ -91,7 +102,6 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classL
     }
 
     private def generateSuperFunDescriptor(method: Method): String = {
-
         def typeString(clazz: Class[_]): String = {
             if (clazz == Void.TYPE)
                 return "V"
@@ -104,7 +114,7 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classL
             sb.append(typeString(clazz))
         }
         sb.append(')')
-            .append(typeString(method.getReturnType))
+                .append(typeString(method.getReturnType))
         sb.toString()
     }
 }

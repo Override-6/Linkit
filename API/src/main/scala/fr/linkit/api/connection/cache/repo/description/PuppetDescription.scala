@@ -17,7 +17,6 @@ import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, Invocation
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription._
 import fr.linkit.api.local.generation.ClassDescription
 
-import java.lang.invoke.{MethodHandle, MethodHandles}
 import java.lang.reflect.Method
 import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
@@ -177,27 +176,19 @@ object PuppetDescription {
                     .toArray
             symbol.name.toString.hashCode + hashCode(parameters)
         }
-
-        canEqual()
-
         lazy val method: Method = {
-            def getJavaName(s: Symbol): String = {
-                val name = s.fullName
-                if (name == "scala.Any")
-                    "java.lang.Object"
-                else name
-            }
-            val symbolParams = symbol.paramLists.flatten
+            val symbolParams = symbol.paramLists
+                    .flatten
+                    .map(t => classDesc.mirror
+                            .runtimeClass(t.typeSignature.erasure.typeSymbol.asClass)
+                            .descriptorString())
             classDesc.clazz
                     .getMethods
                     .filter(_.getName == symbol.name.toString)
-                    .filter(_.getParameterCount == symbolParams.size)
                     .find(x => {
-                        x.getGenericParameterTypes
-                                .zipWithIndex
-                                .forall(pair => {
-                                    getJavaName(symbolParams(pair._2).typeSignature.typeSymbol) == pair._1.getTypeName
-                                })
+                        val v = x.getParameterTypes
+                                .map(_.descriptorString())
+                        v sameElements symbolParams
                     })
                     .get
         }
