@@ -17,8 +17,12 @@ describe class scala.collection.mutable.ListBuffer {
     }
 
     enable += as append
-    enable remove as append
-    enable -= as append
+    enable remove as append {
+        args {
+            elem -> disable
+        }
+    }
+    enable -= as remove
 
     disable map
     disable filter
