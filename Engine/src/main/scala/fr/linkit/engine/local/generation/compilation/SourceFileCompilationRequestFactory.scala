@@ -21,7 +21,7 @@ import fr.linkit.engine.local.mapping.ClassMappings
 import java.nio.file.Path
 
 class SourceFileCompilationRequestFactory extends CompilationRequestFactory[Path, Path] {
-    override val defaultWorkingDirectory: Path = LinkitApplication.getHomePathProperty("compilation.working_dir")
+    override val defaultWorkingDirectory: Path = LinkitApplication.getPathProperty("compilation.working_dir")
 
     override def makeRequest(context: Path, workingDir: Path): CompilationRequest[Path] = {
         new AbstractRequest[Path](workingDir, Seq(context)) {

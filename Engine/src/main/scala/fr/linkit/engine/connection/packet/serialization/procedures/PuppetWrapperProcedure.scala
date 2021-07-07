@@ -12,9 +12,9 @@
 
 package fr.linkit.engine.connection.packet.serialization.procedures
 
-import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.cache.CacheOpenBehavior
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.CloudObjectRepository
 import fr.linkit.engine.connection.packet.serialization.Procedure
@@ -28,7 +28,7 @@ object PuppetWrapperProcedure extends Procedure[PuppetWrapper[Serializable]] {
     }
 
     override def afterDeserial(wrapper: PuppetWrapper[Serializable], network: Network): Unit = {
-        val puppeteerDesc = wrapper.getPuppeteerDescription
+        val puppeteerDesc = wrapper.getPuppeteer.puppeteerDescription
         val family        = puppeteerDesc.cacheFamily
         val cacheID       = puppeteerDesc.cacheID
         network.getCacheManager(puppeteerDesc.cacheFamily).fold {
@@ -39,12 +39,9 @@ object PuppetWrapperProcedure extends Procedure[PuppetWrapper[Serializable]] {
                 AppLogger.warn(s"     In order to retrieve this object.")
             }
             failCount += 1
-        } { cache => {
-            val connection   = network.connection
-
-            val repo      = cache.getCache(cacheID, CloudObjectRepository[Serializable](), CacheOpenBehavior.GET_OR_CRASH)
+        } { cache =>
+            val repo = cache.getCache(cacheID, CloudObjectRepository[Serializable](), CacheOpenBehavior.GET_OR_CRASH)
             repo.initPuppetWrapper(wrapper)
-        }
         }
     }
 }

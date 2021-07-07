@@ -155,7 +155,7 @@ object PuppetDescription {
 
     def apply[T: TypeTag](clazz: Class[_ <: T]): PuppetDescription[T] = {
         if (classOf[PuppetWrapper[T]].isAssignableFrom(clazz))
-            throw new IllegalArgumentException("Provided class can't extend PuppetWrapper")
+            throw new IllegalArgumentException("Provided class already extends from PuppetWrapper")
         new PuppetDescription[T](typeTag[T].tpe, clazz, clazz.getClassLoader)
     }
 

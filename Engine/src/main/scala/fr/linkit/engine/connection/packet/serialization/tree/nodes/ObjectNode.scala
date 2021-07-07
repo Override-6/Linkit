@@ -49,16 +49,16 @@ object ObjectNode {
     class ObjectSerialNode(profile: ClassProfile[Any], context: SerialContext) extends SerialNode[Any] {
 
         override def serialize(t: Any, putTypeHint: Boolean): Array[Byte] = {
-            //println(s"Serializing Object ${t}")
+            println(s"Serializing Object ${t}")
 
             val desc = profile.desc
-            //println(s"Object desc = ${desc}")
+            println(s"Object desc = ${desc}")
             profile.applyAllSerialProcedures(t)
 
             if (t == null)
                 return Array(NullObjectFlag)
 
-            //println(s"t.getClass = ${t.getClass}")
+            println(s"t.getClass = ${t.getClass} (${t.getClass.hashCode()})")
             val children = context.listNodes[Any](profile, t)
             //println(s"children = ${children}")
 
@@ -80,12 +80,12 @@ object ObjectNode {
             if (bytes(0) == NullObjectFlag)
                 return null
 
-            //println(s"Deserializing object from bytes ${toPresentableString(bytes)}")
+            println(s"Deserializing object from bytes ${toPresentableString(bytes)}")
             val objectType = bytes.getHeaderClass
 
-            //println(s"objectType = ${objectType}")
+            println(s"objectType = ${objectType}")
             val desc = profile.desc
-            //println(s"Object desc = ${desc}")
+            println(s"Object desc = ${desc}")
 
             val sign     = LengthSign.from(desc.signItemCount, bytes, bytes.length, 4)
             val instance = TheUnsafe.allocateInstance(desc.clazz)

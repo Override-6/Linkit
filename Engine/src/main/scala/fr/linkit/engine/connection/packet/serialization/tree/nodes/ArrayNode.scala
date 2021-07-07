@@ -89,6 +89,9 @@ object ArrayNode extends NodeFactory[Array[_]] {
             //println(s"array sign = ${toPresentableString(sign)}")
             val signLength = serializeNumber(lengths.length, true)
             //println(s"sign length = ${signLength.mkString("Array(", ", ", ")")}")
+            val arrayTypeCode = array.getClass.componentType().getName.hashCode
+            println(s"arrayTypeCode = ${arrayTypeCode}")
+            println(s"array.getClass.getComponentType = ${array.getClass.getComponentType}")
             val arrayType = NumberSerializer.serializeInt(array.getClass.componentType().getName.hashCode)
             val result = ArrayFlag /\ arrayType ++ signLength ++ sign ++ byteArrays.flatten
             //println(s"result = ${toPresentableString(result)}")

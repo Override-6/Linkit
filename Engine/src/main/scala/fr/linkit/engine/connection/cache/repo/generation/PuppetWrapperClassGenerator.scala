@@ -17,6 +17,7 @@ import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.local.mapping.ClassMappings
 
 import scala.reflect.runtime.universe.TypeTag
 
@@ -25,12 +26,12 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val requestFactory                  = new WrapperCompilationRequestFactory
 
-    override def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
+    override def getPuppetClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
         val tag = toTypeTag[S](clazz)
-        getClass[S](PuppetDescription[S](clazz)(tag))(tag)
+        getPuppetClass[S](PuppetDescription[S](clazz)(tag))(tag)
     }
 
-    override def getClass[S : TypeTag](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]] = {
+    override def getPuppetClass[S : TypeTag](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]] = {
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is abstract.")
@@ -44,7 +45,11 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
                     requestFactory.makeRequest(desc)
                 }
                 AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
-                result.getResult.get.asInstanceOf[Class[S with PuppetWrapper[S]]]
+                val puppetClass = result.getResult
+                        .get
+                        .asInstanceOf[Class[S with PuppetWrapper[S]]]
+                ClassMappings.putClass(puppetClass)
+                puppetClass
             }
     }
 

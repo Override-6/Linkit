@@ -17,6 +17,8 @@ import fr.linkit.api.connection.cache.repo.{InvocationChoreographer, PuppetWrapp
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException
 
+import scala.collection.mutable.ListBuffer
+
 trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
     @transient protected var puppeteer: Puppeteer[A] = _
     @transient protected var description: PuppetDescription[A] = _
@@ -47,16 +49,17 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     override def getPuppeteer: Puppeteer[A] = puppeteer
 
-    override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
+    override def getPuppetDescription: PuppetDescription[A] = description
 
     protected def handleCall[R](id: Int, defaultReturnValue: R, invokeOnlyResult: R)
                                      (args: Array[Array[Any]])(superCall: => Any = null): R = {
         val name = description.getMethodDesc(id).get.method.getName
+        val argsString = args.map(_.mkString("(", ", ", ")")).mkString("(", ", ", ")")
         if (choreographer.isMethodExecutionForcedToLocal) {
-            println(s"skipped $name.")
+            println(s"Skipped method call $name$argsString.")
             return superCall.asInstanceOf[R]
         }
-        AppLogger.vDebug(s"$name: Performing rmi call for id '$id' with arguments '" + args.map(_.mkString(", ")).mkString(", ") + "'")
+        AppLogger.vDebug(s"$name: Performing rmi call for $name$argsString (id: $id)")
         if (!description.isRMIEnabled(id)) {
             AppLogger.vDebug("The call is redirected to current object...")
             return performSuperCall(superCall)
@@ -92,11 +95,9 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
         result.asInstanceOf[R]
     }
 
-    private def performSuperCall[R](superCall: => Any): R = {
+    @inline private def performSuperCall[R](@inline superCall: => Any): R = {
         choreographer.forceLocalInvocation[R] {
-            val v = superCall.asInstanceOf[R]
-            println("Invokation ended !")
-            v
+            superCall.asInstanceOf[R]
         }
     }
 

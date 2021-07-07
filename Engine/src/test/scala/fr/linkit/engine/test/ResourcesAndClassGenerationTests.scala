@@ -13,7 +13,6 @@
 package fr.linkit.engine.test
 
 import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
-import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.config.ApplicationConfiguration
@@ -21,7 +20,6 @@ import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
-import fr.linkit.engine.connection.cache.repo.generation.rectifier.ClassRectifier
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
@@ -34,10 +32,9 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
 
-import java.nio.file.Path
 import java.util
 import scala.collection.mutable.ListBuffer
-import scala.reflect.ClassTag
+import scala.reflect.runtime.universe.TypeTag
 
 @TestInstance(Lifecycle.PER_CLASS)
 @TestMethodOrder(classOf[OrderAnnotation])
@@ -129,15 +126,15 @@ class ResourcesAndClassGenerationTests {
         forObject(new util.ArrayList[String]())
     }
 
-    private def forObject[A : ClassTag](obj: A): A = {
+    private def forObject[A : TypeTag](obj: A): A = {
         Assertions.assertNotNull(resources)
-        val cl = obj.getClass.asInstanceOf[Class[obj.type]]
+        val cl = obj.getClass.asInstanceOf[Class[A]]
 
         val resource    = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
         val generator   = new PuppetWrapperClassGenerator(new DefaultCompilerCenter, resource)
-        val puppetClass = generator.getClass[A](cl)
+        val puppetClass = generator.getPuppetClass[A](cl)
         println(s"puppetClass = ${puppetClass}")
-        val pup    = new SimplePuppeteer[A](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[obj.type](cl))
+        val pup    = new SimplePuppeteer[A](null, null, PuppeteerDescription("", 8, "", Array(1)), PuppetDescription[A](cl))
         val puppet = WrapperInstantiator.instantiateFromOrigin[A](puppetClass, obj)
         puppet.initPuppeteer(pup)
         puppet.getChoreographer.forceLocalInvocation {

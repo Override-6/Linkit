@@ -1,0 +1,26 @@
+describe class scala.collection.mutable.ListBuffer {
+    default := enable as broadcasted
+
+    enable append as broadcasted {
+        filters {
+            calling -> //gérér les filtres plus tard
+            called  -> //gérer les filtres plus tard
+        }
+        args {
+            elem -> enable //quand on ajoute un item dans la liste, on souhaite que l'objet soit lui aussi synchronisé
+        }
+        /*
+          on ne souhaite pas synchroniser la valeur de retour, ceci est le comportement par défaut
+          (de toutes façons ListBuffer#append retourne void donc sébon
+        */
+        returnvalue -> disable
+    }
+
+    enable += as append
+    enable remove as append
+    enable -= as append
+
+    disable map
+    disable filter
+    //disable ...
+}

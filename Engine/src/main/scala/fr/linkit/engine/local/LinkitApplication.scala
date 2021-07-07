@@ -21,7 +21,7 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
-import fr.linkit.engine.local.LinkitApplication.setInstance
+import fr.linkit.engine.local.LinkitApplication.{getProperty, setInstance}
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.mapping.ClassMapEngine
@@ -106,7 +106,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
         }
 
         import LocalResourceFolder._
-        val resource  = appResources.getOrOpenThenRepresent[WrappersClassResource]("/PuppetGeneration/")
+        val resource  = appResources.getOrOpenThenRepresent[WrappersClassResource](getProperty("compilation.working_dir.classes"))
         val generator = new PuppetWrapperClassGenerator(compilerCenter, resource)
         generator.preGenerateClasses(classOf[LinkitApplication].getClassLoader, Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter]))
     }
@@ -136,7 +136,7 @@ object LinkitApplication {
         Path.of(instance.getAppResources.getAdapter.getPath + '/' + path)
     }
 
-    def getHomePathProperty(name: String): Path = getHomePath(getProperty(name))
+    def getPathProperty(name: String): Path = getHomePath(getProperty(name))
 
     def setProperty(name: String, property: String): String = properties.setProperty(name, property) match {
         case str: String => str

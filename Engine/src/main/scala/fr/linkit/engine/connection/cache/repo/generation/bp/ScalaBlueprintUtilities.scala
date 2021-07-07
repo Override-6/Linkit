@@ -21,8 +21,8 @@ object ScalaBlueprintUtilities {
     def getGenericParams(desc: PuppetDescription[_], transform: Symbol => Any): String = {
         val result = desc
                 .tpe
-                .typeParams
-                .map(transform)
+                .typeArgs
+                .map(t => transform(t.typeSymbol))
                 .mkString(",")
         if (result.isEmpty) ""
         else s"[$result]"

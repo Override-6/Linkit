@@ -19,7 +19,7 @@ import java.nio.file.Path
 
 abstract class AbstractCompilationRequestFactory[I, O] extends CompilationRequestFactory[I, O] {
 
-    override val defaultWorkingDirectory: Path = LinkitApplication.getHomePathProperty("compilation.working_dir")
+    override val defaultWorkingDirectory: Path = LinkitApplication.getPathProperty("compilation.working_dir")
 
     override def makeRequest(context: I, workingDirectory: Path): CompilationRequest[O] = {
         val req = createMultiRequest(Seq(context), workingDirectory)

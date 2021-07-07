@@ -11,9 +11,9 @@ import scala.reflect.{ClassTag, classTag}
  * */
 trait PuppetWrapperGenerator {
 
-    def getClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]]
+    def getPuppetClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]]
 
-    def getClass[S: universe.TypeTag : ClassTag]: Class[S with PuppetWrapper[S]] = getClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
+    def getClass[S: universe.TypeTag : ClassTag]: Class[S with PuppetWrapper[S]] = getPuppetClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
     def preGenerateDescs[S](defaultLoader: ClassLoader, descriptions: Seq[PuppetDescription[S]]): Unit
 
@@ -23,7 +23,7 @@ trait PuppetWrapperGenerator {
 
     def isClassGenerated[S <: PuppetWrapper[S]](clazz: Class[S]): Boolean
 
-    def getClass[S: universe.TypeTag](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]]
+    def getPuppetClass[S: universe.TypeTag](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]]
 
     def preGenerateClasses[S: universe.TypeTag](defaultLoader: ClassLoader, classes: Seq[Class[_ <: S]]): Unit
 }

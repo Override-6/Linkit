@@ -26,6 +26,7 @@ import fr.linkit.engine.connection.cache.repo.tree.{DefaultPuppetCenter, MemberS
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
+import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.utils.ScalaUtils
 
@@ -84,7 +85,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
     override def initPuppetWrapper[B <: A : ClassTag : TypeTag](wrapper: B with PuppetWrapper[B]): Unit = {
         if (wrapper.isInitialized)
             return
-        val puppeteerDesc = wrapper.getPuppeteerDescription
+        val puppeteerDesc = wrapper.getPuppeteer.puppeteerDescription
         val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, getPuppetDescription[B])
         wrapper.initPuppeteer(puppeteer)
     }
@@ -99,7 +100,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
     }
 
     private def genPuppetWrapper[B: ClassTag](puppeteer: Puppeteer[B], puppet: B): B with PuppetWrapper[B] = {
-        val puppetClass = generator.getClass[B](puppet.getClass.asInstanceOf[Class[B]])
+        val puppetClass = generator.getPuppetClass[B](puppet.getClass.asInstanceOf[Class[B]])
         val instance = WrapperInstantiator.instantiateFromOrigin[B](puppetClass, puppet)
         instance.initPuppeteer(puppeteer)
         instance
@@ -195,7 +196,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
         val wrappedPuppet = genSynchronizedObject(path, puppet, owner, descriptions) {
             (wrapper, childPath) =>
                 val id          = childPath.last
-                val description = descriptions.getDescFromClass[B](wrapper.getClass.asInstanceOf[Class[B]])
+                val description = wrapper.getPuppetDescription.asInstanceOf[PuppetDescription[B]]
                 parent.fold {
                     val rootWrapper = wrapper.asInstanceOf[B with PuppetWrapper[B]]
                     val chip        = ObjectChip[B](owner, description, rootWrapper)
@@ -219,7 +220,7 @@ class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
 
 object CloudObjectRepository {
 
-    private val ClassesResourceDirectory = "/PuppetGeneration/"
+    private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
     def apply[A <: Serializable : ClassTag](descriptions: PuppetDescriptions = PuppetDescriptions.getDefault): SharedCacheFactory[CloudObjectRepository[A] with InternalSharedCache] = {
         (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
