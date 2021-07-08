@@ -33,7 +33,7 @@ object ServerLauncher {
     def main(args: Array[String]): Unit = {
         AppLogger.info(s"Running server with arguments '${args.mkString(" ")}'")
 
-        val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
+        //val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
         val resourcesFolder         = getOrElse(args, "--home-path", getDefaultLinkitHome)
 
         val config           = new ServerApplicationConfigBuilder {
@@ -44,7 +44,7 @@ object ServerLauncher {
                 servers += new ServerConnectionConfigBuilder {
                     override val identifier: String = DefaultServerID
                     override val port      : Int    = 48484
-                    nWorkerThreadFunction = _ + 1 //Two threads per connections.
+                    nWorkerThreadFunction = c => c + 1//one thread per connections.
 
                     configName = "config1"
                 }

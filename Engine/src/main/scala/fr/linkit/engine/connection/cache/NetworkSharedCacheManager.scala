@@ -139,7 +139,7 @@ class NetworkSharedCacheManager(override val family: String,
                 case GET_OR_CRASH =>
                     val msg = s"Requested cache of identifier '$cacheID' is not opened or isn't handled by this connection."
                     response.putAttribute("errorMsg", msg)
-                case GET_OR_WAIT  =>
+                case GET_OR_WAIT =>
                     //If the requester is not the owner, wait the owner to open the cache.
                     if (senderID != ownerID) {
                         requestChannel.storeBundle(requestBundle)
@@ -148,7 +148,7 @@ class NetworkSharedCacheManager(override val family: String,
                     }
                     //The sender is the owner : this class must create the cache content.
                     response.addPacket(RefPacket[Option[CacheContent]](None))
-                case GET_OR_EMPTY =>
+                case GET_OR_OPEN =>
                     response.addPacket(RefPacket[Option[CacheContent]](None))
             }
         }
@@ -240,8 +240,8 @@ class NetworkSharedCacheManager(override val family: String,
 
     }
 
-    private def println(msg: String): Unit = {
-        AppLogger.vTrace(s"$currentTasksId <> <$family, $ownerID> $msg")
+    private def println(msg: => String): Unit = {
+        AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
 }

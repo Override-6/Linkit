@@ -38,6 +38,7 @@ task fatJar(type: Jar) {
 test {
     useJUnitPlatform()
 }
+
 dependencies {
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.8.0-M1'
     testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.8.0-M1'
@@ -48,6 +49,7 @@ dependencies {
     testImplementation project(':Engine').sourceSets.test.output
 
     implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.5'
+    implementation group: 'org.scala-lang', name: 'scala-reflect', version: '2.13.6'
     implementation group: 'log4j', name: 'log4j', version: '1.2.17'
     implementation group: 'org.jetbrains', name: 'annotations', version: '16.0.1'
 

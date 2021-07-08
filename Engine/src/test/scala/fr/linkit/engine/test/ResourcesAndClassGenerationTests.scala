@@ -25,6 +25,7 @@ import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.engine.local.system.fsa.nio.NIOFileAdapter
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
 import fr.linkit.engine.test.classes.ScalaClass
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
@@ -96,8 +97,8 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = {
-        val buff = forObject(ListBuffer.empty[String]) += "sdqzd"
-        println(s"buff = ${buff}")
+        val obj: ListBuffer[String] = forObject(ListBuffer.empty[String])
+        println(s"obj = $obj")
     }
 
     @Test
@@ -123,7 +124,7 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexJavaClass(): Unit = {
-        forObject(new util.ArrayList[String]())
+        forObject(LocalFileSystemAdapters.Nio)
     }
 
     private def forObject[A : TypeTag](obj: A): A = {

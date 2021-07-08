@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
-import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.{ClassesFolder, WrapperPrefixName}
+import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.WrapperPrefixName
 
 import java.io.File
 import java.nio.file.{Files, Path}
@@ -26,14 +26,13 @@ import scala.collection.mutable
 class WrappersClassResource(override val resource: ResourceFolder) extends FolderRepresentation {
 
     private val folderPath           = Path.of(resource.getAdapter.getAbsolutePath)
-    private val generatedClassesPath = Path.of(folderPath + ClassesFolder)
     private val generatedClasses     = mutable.Map.empty[String, Class[_ <: PuppetWrapper[AnyRef]]]
 
     def findWrapperClass[S](puppetClass: Class[_]): Option[Class[S with PuppetWrapper[S]]] = {
         val puppetClassName  = puppetClass.getName
         val wrapperClassName = adaptClassName(puppetClassName, WrapperPrefixName)
         generatedClasses.getOrElseUpdate(wrapperClassName, {
-            val wrapperClassPath = generatedClassesPath.resolve(wrapperClassName.replace('.', File.separatorChar) + ".class")
+            val wrapperClassPath = folderPath.resolve(wrapperClassName.replace('.', File.separatorChar) + ".class")
             if (Files.notExists(wrapperClassPath))
                 null
             else {
@@ -41,7 +40,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
                 if (loader == null)
                     loader = getClass.getClassLoader //Use the Application's classloader
 
-                val classLoader = new GeneratedClassClassLoader(generatedClassesPath, loader)
+                val classLoader = new GeneratedClassClassLoader(folderPath, loader)
                 Class.forName(wrapperClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]]
             }
         }) match {
@@ -55,8 +54,6 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
 
 object WrappersClassResource extends ResourceRepresentationFactory[WrappersClassResource, ResourceFolder] {
 
-    val SourcesFolder     : String = "/Sources/"
-    val ClassesFolder     : String = "/Classes/"
     val WrapperPrefixName : String = "Puppet"
     val WrapperMetaPrefixName : String = "Meta"
     val WrapperPackageName: String = "gen"

@@ -13,6 +13,8 @@ trait PuppetWrapperGenerator {
 
     def getPuppetClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]]
 
+    def getPuppetClass[S](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]]
+
     def getClass[S: universe.TypeTag : ClassTag]: Class[S with PuppetWrapper[S]] = getPuppetClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
     def preGenerateDescs[S](defaultLoader: ClassLoader, descriptions: Seq[PuppetDescription[S]]): Unit
@@ -22,8 +24,6 @@ trait PuppetWrapperGenerator {
     def isWrapperClassGenerated[T](clazz: Class[T]): Boolean
 
     def isClassGenerated[S <: PuppetWrapper[S]](clazz: Class[S]): Boolean
-
-    def getPuppetClass[S: universe.TypeTag](desc: PuppetDescription[S]): Class[S with PuppetWrapper[S]]
 
     def preGenerateClasses[S: universe.TypeTag](defaultLoader: ClassLoader, classes: Seq[Class[_ <: S]]): Unit
 }

@@ -27,10 +27,10 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classL
 
     //FIXME removeAllSuperClassFinalFlags()
     ctClass.setSuperclass(pool.get(superClass.getName))
-    addAllSuperMethods()
+    fixAllMethods()
 
-    lazy val rectifiedClass: Class[_] = {
-        ctClass.toClass(classLoader, superClass.getProtectionDomain)
+    lazy val rectifiedClass: (Array[Byte], Class[_]) = {
+        (ctClass.toBytecode, ctClass.toClass(classLoader, superClass.getProtectionDomain))
     }
 
     private def removeAllSuperClassFinalFlags(): Unit = {
@@ -42,12 +42,12 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classL
         superCtClass.toClass(superClass.getClassLoader, superClass.getProtectionDomain)
     }
 
-    private def addAllSuperMethods(): Unit = {
+    private def fixAllMethods(): Unit = {
         implicit def extractModifiers(m: Method): Int = m.getModifiers
 
         val methodDescs = desc.listMethods()
         for (descs <- methodDescs) {
-            val javaMethod   = descs.method
+            val javaMethod   = descs.javaMethod
             val name         = javaMethod.getName
             val superfunName = s"super$$$name"
             val superfunInfo = new MethodInfo(ctClass.getClassFile.getConstPool, superfunName, generateSuperFunDescriptor(javaMethod))
@@ -61,12 +61,12 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classL
     }
 
     private def getAnonFun(javaMethod: Method): CtMethod = {
-        val argsStrings = javaMethod.getParameterTypes.map(_.getName)
+        val argsStrings = javaMethod.getParameterTypes.map(cl => cl.getSimpleName)
         val v           = ctClass
                 .getDeclaredMethods
                 .filter(_.getName.startsWith("$anonfun$" + javaMethod.getName))
                 .find(m => {
-                    val v = m.getParameterTypes.drop(1).map(_.getName)
+                    val v = m.getParameterTypes.drop(1).map(cl => cl.getSimpleName)
                     v sameElements argsStrings
                 })
         v.get

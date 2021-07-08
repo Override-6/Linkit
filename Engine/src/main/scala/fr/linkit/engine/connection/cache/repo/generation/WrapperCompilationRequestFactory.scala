@@ -26,7 +26,8 @@ import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationReques
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.local.generation.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
 
-import java.nio.file.Path
+import java.io.File
+import java.nio.file.{Files, Path}
 
 class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory[PuppetDescription[_], Class[_]] {
 
@@ -50,7 +51,10 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                                         val clazz            = desc.clazz
                                         val wrapperClassName = adaptClassName(clazz.getName, WrapperPrefixName)
                                         val loader           = new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader)
-                                        new ClassRectifier(desc, wrapperClassName, loader, clazz).rectifiedClass
+                                        val (byteCode, wrapperClass) = new ClassRectifier(desc, wrapperClassName, loader, clazz).rectifiedClass
+                                        val wrapperClassFile = req.classDir.resolve(wrapperClassName.replace(".", File.separator) + ".class")
+                                        Files.write(wrapperClassFile, byteCode)
+                                        wrapperClass
                                     })
                     }
                 }

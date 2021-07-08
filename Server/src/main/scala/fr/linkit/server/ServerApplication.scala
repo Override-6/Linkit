@@ -40,7 +40,7 @@ class ServerApplication private(override val configuration: ServerApplicationCon
 
     override def countConnections: Int = {
         /*
-         * We need to divide the servers map size by two because servers are twice put into this map,
+         * We need to divide the servers map size by two because servers connections are twice put into this map,
          * once for port association, and once for identifier association.
          */
         serverCache.size / 2
@@ -69,7 +69,8 @@ class ServerApplication private(override val configuration: ServerApplicationCon
             if (downCount == totalConnectionCount)
                 shutdownTask.wakeup()
         })
-        appPool.pauseCurrentTask()
+        if (countConnections > 0)
+            appPool.pauseCurrentTask()
 
         alive = false
         AppLogger.info("Server application successfully shutdown.")

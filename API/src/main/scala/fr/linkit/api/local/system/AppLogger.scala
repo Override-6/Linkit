@@ -69,7 +69,7 @@ object AppLogger {
 
     def debug(msg: AnyRef): Unit = logger.debug(msg)
 
-    def vDebug(msg: AnyRef): Unit = verbose {
+    def vDebug(msg: => AnyRef): Unit = verbose {
         debug(msg)
     }
 

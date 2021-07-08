@@ -17,7 +17,7 @@ import fr.linkit.api.connection.cache.repo.annotations.{FieldControl, Invocation
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription._
 import fr.linkit.api.local.generation.ClassDescription
 
-import java.lang.reflect.Method
+import java.lang.reflect.{Field, Method}
 import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
@@ -28,7 +28,7 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
     /**
      * Methods and fields that comes from those classes will not be available for RMI Invocations.
      * */
-    private val BlacklistedSuperClasses: Array[String] = Array(name[Any], name[Object], name[Product])
+    private val BlacklistedSuperClasses: Array[String] = Array(fullNameOf[Any], fullNameOf[Object], fullNameOf[Product])
 
     private val mirror = u.runtimeMirror(loader)
 
@@ -69,13 +69,19 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
     }
 
     private def collectMethods(): Seq[MethodDescription] = {
-        val methods     = tpe.members
-                .filter(_.isMethod)
-                .map(_.asMethod)
-                .filter(_.owner.isClass)
-                .filterNot(f => f.isFinal || f.isStatic || f.isConstructor || f.isPrivate || f.isPrivateThis || f.privateWithin != NoSymbol)
-                .filterNot(f => f.owner.fullName.startsWith("scala.Function") || f.owner.fullName.startsWith("scala.PartialFunction"))
-                .filterNot(_.overrides.lastOption.exists(f => BlacklistedSuperClasses.contains(f.owner.fullName)))
+        def getFiltered(tpe: Type): Iterable[MethodSymbol] = {
+            tpe.members
+                    .filter(_.isMethod)
+                    .map(_.asMethod)
+                    .filter(_.owner.isClass)
+                    .filterNot(f => f.isFinal || f.isStatic || f.isConstructor || f.isPrivate || f.isPrivateThis || f.privateWithin != NoSymbol)
+                    .filterNot(f => f.owner.fullName.startsWith("scala.Function") || f.owner.fullName.startsWith("scala.PartialFunction"))
+        }
+
+        val methods = getFiltered(tpe)
+                .filterNot(m => BlacklistedSuperClasses.contains(m.owner.fullName))
+                .concat(getFiltered(typeOf[Any])
+                .filter(_.name.toString != "getClass")) //don't know why, but the "getClass" method if scala.Any is not defined as final
                 .map(genMethodDescription)
 
         val filteredMethods = ListBuffer.empty[MethodDescription]
@@ -104,25 +110,30 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
 
     def findAnnotation[A <: java.lang.annotation.Annotation](method: u.Symbol, clazz: Class[A]): Option[A] = {
         method.annotations
-                .find(_.tree.tpe.typeSymbol.asClass.fullName == clazz.getName)
+                .find(_.tree
+                        .tpe
+                        .typeSymbol
+                        .asClass
+                        .fullName == clazz.getName)
                 .map { ann =>
                     import scala.tools.reflect.ToolBox
 
                     val toolBox = mirror.mkToolBox()
-                    toolBox.eval(ann.tree).asInstanceOf[A]
+                    toolBox.eval(toolBox.untypecheck(ann.tree)).asInstanceOf[A]
                 }
     }
 
     private def genMethodDescription(symbol: u.MethodSymbol): MethodDescription = {
-        val control            = findAnnotation(symbol, classOf[MethodControl]).getOrElse(DefaultMethodControl)
+        val javaMethod         = asJavaMethod(symbol)
+        val control            = Option(javaMethod.getAnnotation(classOf[MethodControl])).getOrElse(DefaultMethodControl)
         val synchronizedParams = toSyncParamsIndexes(control.mutates(), symbol)
         val invocationKind     = control.value()
-        val invokeOnly         = findAnnotation(symbol, classOf[InvokeOnly])
+        val invokeOnly         = Option(javaMethod.getAnnotation(classOf[InvokeOnly]))
         val isPure             = control.pure() && control.mutates().nonEmpty
         val isHidden           = control.hide()
         val syncReturnValue    = control.synchronizeReturnValue()
         MethodDescription(
-            symbol, this, invokeOnly, synchronizedParams,
+            symbol, javaMethod, this, invokeOnly, synchronizedParams,
             invocationKind, syncReturnValue, isPure, isHidden
         )
     }
@@ -131,7 +142,30 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
         val control        = findAnnotation(field, classOf[FieldControl])
         val isSynchronized = control.exists(_.synchronize())
         val isHidden       = control.exists(_.hide())
-        FieldDescription(field, isSynchronized, isHidden)
+        FieldDescription(field, this, isSynchronized, isHidden)
+    }
+
+    def asJavaMethod(method: u.MethodSymbol): Method = {
+        val symbolParams = method.paramLists
+                .flatten
+                .map(t => {
+                    val argClass = t.typeSignature.erasure.typeSymbol.asClass
+                    if (argClass.fullName == "scala.Array")
+                        "array"
+                    else mirror
+                            .runtimeClass(argClass)
+                            .descriptorString()
+                }
+                )
+        clazz
+                .getMethods
+                .filter(_.getName == method.name.toString)
+                .find(x => {
+                    val v = x.getParameterTypes
+                            .map(t => if (t.isArray) "array" else t.descriptorString())
+                    v sameElements symbolParams
+                })
+                .get
     }
 
 }
@@ -153,13 +187,15 @@ object PuppetDescription {
         }
     }
 
-    def apply[T: TypeTag](clazz: Class[_ <: T]): PuppetDescription[T] = {
+    def apply[T](clazz: Class[_ <: T]): PuppetDescription[T] = {
         if (classOf[PuppetWrapper[T]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from PuppetWrapper")
-        new PuppetDescription[T](typeTag[T].tpe, clazz, clazz.getClassLoader)
+        val tpe = runtimeMirror(clazz.getClassLoader).classSymbol(clazz).selfType
+        new PuppetDescription[T](tpe, clazz, clazz.getClassLoader)
     }
 
     case class MethodDescription(symbol: u.MethodSymbol,
+                                 javaMethod: Method,
                                  classDesc: PuppetDescription[_],
                                  invokeOnly: Option[InvokeOnly],
                                  var synchronizedParams: Seq[Boolean], //TODO make synchronization
@@ -176,22 +212,6 @@ object PuppetDescription {
                     .toArray
             symbol.name.toString.hashCode + hashCode(parameters)
         }
-        lazy val method: Method = {
-            val symbolParams = symbol.paramLists
-                    .flatten
-                    .map(t => classDesc.mirror
-                            .runtimeClass(t.typeSignature.erasure.typeSymbol.asClass)
-                            .descriptorString())
-            classDesc.clazz
-                    .getMethods
-                    .filter(_.getName == symbol.name.toString)
-                    .find(x => {
-                        val v = x.getParameterTypes
-                                .map(_.descriptorString())
-                        v sameElements symbolParams
-                    })
-                    .get
-        }
 
         def getDefaultReturnValue: String = {
             invokeOnly
@@ -201,14 +221,14 @@ object PuppetDescription {
                     }
         }
 
-        private val numberTypes = Array(name[Float], name[Double], name[Int], name[Byte], name[Long], name[Short])
+        private val numberTypes = Array(fullNameOf[Float], fullNameOf[Double], fullNameOf[Int], fullNameOf[Byte], fullNameOf[Long], fullNameOf[Short])
 
         def getDefaultTypeReturnValue: String = {
             val nme = symbol.returnType.typeSymbol.fullName
 
-            if (nme == name[Boolean]) "false"
-            else if (numberTypes.contains(name)) "-1"
-            else if (nme == name[Char]) "'\\u0000'"
+            if (nme == fullNameOf[Boolean]) "false"
+            else if (numberTypes.contains(fullNameOf)) "-1"
+            else if (nme == fullNameOf[Char]) "'\\u0000'"
             else "nl()" //contracted call to JavaUtils.getNull
         }
 
@@ -226,10 +246,11 @@ object PuppetDescription {
 
     //TODO make synchronization
     case class FieldDescription(fieldGetter: MethodSymbol,
+                                classDesc: PuppetDescription[_],
                                 isSynchronized: Boolean,
                                 isHidden: Boolean) {
 
-        val fieldSetter: u.MethodSymbol = fieldGetter.setter.asMethod
+        val javaField: Field = classDesc.clazz.getDeclaredField(fieldGetter.name.toString)
 
         val fieldID: Int = {
             fieldGetter.hashCode() + fieldGetter.returnType.hashCode()
@@ -238,7 +259,7 @@ object PuppetDescription {
 
     private val DefaultMethodControl: MethodControl = {
         new MethodControl {
-            override def value(): InvocationKind = InvocationKind.LOCAL_AND_REMOTES
+            override def value(): InvocationKind = InvocationKind.ONLY_LOCAL
 
             override def pure(): Boolean = false
 

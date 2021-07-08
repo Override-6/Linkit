@@ -41,7 +41,7 @@ case class ObjectChip[S] private(owner: String,
                         .getFieldDesc(fieldID)
                         .getOrElse(s"(unknown field id '$fieldID')")
                 }' to value '$value'")
-            } { desc => mirror.reflectMethod(desc.fieldSetter)(value) }
+            } { desc => ScalaUtils.setValue(wrapper, desc.javaField, value) }
     }
 
     override def updateAllFields(obj: S): Unit = {

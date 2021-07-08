@@ -90,10 +90,10 @@ object ArrayNode extends NodeFactory[Array[_]] {
             val signLength = serializeNumber(lengths.length, true)
             //println(s"sign length = ${signLength.mkString("Array(", ", ", ")")}")
             val arrayTypeCode = array.getClass.componentType().getName.hashCode
-            println(s"arrayTypeCode = ${arrayTypeCode}")
-            println(s"array.getClass.getComponentType = ${array.getClass.getComponentType}")
-            val arrayType = NumberSerializer.serializeInt(array.getClass.componentType().getName.hashCode)
-            val result = ArrayFlag /\ arrayType ++ signLength ++ sign ++ byteArrays.flatten
+            //println(s"arrayTypeCode = ${arrayTypeCode}")
+            //println(s"array.getClass.getComponentType = ${array.getClass.getComponentType}")
+            //val arrayType = NumberSerializer.serializeInt(array.getClass.componentType().getName.hashCode)
+            val result = ArrayFlag /\ signLength ++ sign ++ byteArrays.flatten
             //println(s"result = ${toPresentableString(result)}")
             result
         }
@@ -109,18 +109,18 @@ object ArrayNode extends NodeFactory[Array[_]] {
             if (bytes(1) == EmptyFlag)
                 return Array.empty
 
-            val classIdentifier = deserializeInt(bytes, 1)
-            val arrayType = ClassMappings.getClass(classIdentifier)
+            //val classIdentifier = deserializeInt(bytes, 1)
+            /*val arrayType = ClassMappings.getClass(classIdentifier)
             if (arrayType == null)
-                throw new ClassNotMappedException(s"Unknown class identifier '$classIdentifier'")
+                throw new ClassNotMappedException(s"Unknown class identifier '$classIdentifier'")*/
 
             //println(s"Deserializing array into bytes ${toPresentableString(bytes)}")
-            val (signItemCount, sizeByteCount: Byte) = deserializeFlaggedNumber[Int](bytes, 5) //starting from 1 because first byte is the array flag.
+            val (signItemCount, sizeByteCount: Byte) = deserializeFlaggedNumber[Int](bytes, 1) //starting from 1 because first byte is the array flag.
             //println(s"signItemCount = ${signItemCount}")
             //println(s"sizeByteCount = ${sizeByteCount}")
-            val sign   = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 5)
+            val sign   = LengthSign.from(signItemCount, bytes, bytes.length, sizeByteCount + 1)
 
-            val result = RArray.newInstance(arrayType, sign.childrenBytes.length).asInstanceOf[Array[_]]
+            val result = new Array[Any](sign.childrenBytes.length)
             var i = 0
             for (childBytes <- sign.childrenBytes) {
                 //println(s"ITEM Deserial $i:")

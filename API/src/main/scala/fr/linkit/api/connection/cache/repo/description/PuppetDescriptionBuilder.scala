@@ -20,10 +20,10 @@ import java.util
 import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.universe._
 
-class PuppetDescriptionBuilder[T](desc: PuppetDescription[T])(implicit tag: TypeTag[T]) {
+class PuppetDescriptionBuilder[T](desc: PuppetDescription[T]) {
 
-    def this(clazz: Class[T])(implicit tag: TypeTag[T]) {
-        this(PuppetDescription(clazz)(tag))
+    def this(clazz: Class[T]) {
+        this(PuppetDescription(clazz))
     }
 
     final def annotate(name: String, params: Class[_]*): MethodModification = {

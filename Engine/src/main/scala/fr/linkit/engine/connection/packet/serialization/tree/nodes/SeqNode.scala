@@ -42,11 +42,11 @@ object SeqNode {
 
     def ofImmutable: NodeFactory[Seq[_]] = new NodeFactory[Seq[_]] {
         override def canHandle(clazz: Class[_]): Boolean = {
-            clazz != classOf[::[_]] && clazz != Nil.getClass && classOf[Seq[_]].isAssignableFrom(clazz)
+            clazz != classOf[::[_]] && clazz != Nil.getClass && classOf[Seq[_]].isAssignableFrom(clazz) && findFactory(clazz).isDefined
         }
 
         override def canHandle(bytes: ByteSeq): Boolean = {
-            bytes.classExists(cl => classOf[mutable.Seq[_]].isAssignableFrom(cl) && findFactory(cl).isDefined)
+            bytes.classExists(canHandle)
         }
 
         override def newNode(finder: SerialContext, profile: ClassProfile[Seq[_]]): SerialNode[Seq[_]] = {

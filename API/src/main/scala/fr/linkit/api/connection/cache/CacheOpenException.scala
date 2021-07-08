@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache
+package fr.linkit.api.connection.cache
 
 import fr.linkit.api.local.system.AppException
 

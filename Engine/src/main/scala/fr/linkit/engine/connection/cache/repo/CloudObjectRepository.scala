@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.repo
 
 import fr.linkit.api.connection.cache.repo._
-import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppetDescriptions, PuppeteerDescription, toTypeTag}
+import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppetDescriptions, PuppeteerDescription}
 import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
@@ -35,7 +35,6 @@ import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
-import scala.reflect.runtime.universe
 
 class CloudObjectRepository[A <: Serializable](handler: SharedCacheManager,
                                                cacheID: Int,

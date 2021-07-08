@@ -25,7 +25,7 @@ object ClassMappings {
         /*if (classes.contains(className.hashCode)) {
             throw new IllegalArgumentException(s"This hash code is already registered ! (found $className, registered ${classes(className.hashCode)}")
         }*/
-        println(s"Class put ! ($className) of hash code ${className.hashCode}")
+        //println(s"Class put ! ($className) of hash code ${className.hashCode}")
         classes.put(className.hashCode, (className, loader))
     }
 
@@ -38,11 +38,12 @@ object ClassMappings {
     def getClassName(hashCode: Int): String = classes(hashCode)._1
 
     def getClassOpt(hashCode: Int): Option[Class[_]] = {
+        //println(s"Getting class from hashcode $hashCode")
         classes.get(hashCode).map(extractClass).orElse(primitives.get(hashCode))
     }
 
     def getClass(hashCode: Int): Class[_] = {
-        println(s"Getting class from hashcode $hashCode")
+        //println(s"Getting class from hashcode $hashCode")
         getClassOpt(hashCode).orNull
     }
 

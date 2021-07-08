@@ -20,6 +20,7 @@ import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractVa
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 
 import java.io.InputStream
+import scala.reflect.runtime.universe.symbolOf
 
 class ScalaWrapperMethodBlueprint(bp: InputStream) extends AbstractClassBlueprint[MethodDescription](bp) {
 
@@ -42,6 +43,21 @@ object ScalaWrapperMethodBlueprint {
         bindValue("ParamsIn" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), true, false)))
         bindValue("ParamsOut" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), false, true)))
         bindValue("ParamsOutArray" ~> (getParameters(_)(_.mkString(", "), _.mkString("Array[Any](", ", ", ")"), false, false)))
+        bindValue("Override" ~> chooseOverride)
+
     }
+
+    private def chooseOverride(desc: MethodDescription): String = {
+        val symbol = desc.symbol
+        val owner = symbol
+                .overrides
+                .lastOption
+                .map(_.owner)
+                .getOrElse(symbol.owner)
+        if (owner == symbolOf[Any] || owner == symbolOf[Object])
+            "override"
+        else ""
+    }
+
 }
 

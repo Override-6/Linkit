@@ -18,20 +18,6 @@ import scala.reflect.runtime.universe._
 
 package object description {
 
-    def toTypeTag[A](tpe: Type, loader: ClassLoader): TypeTag[A] = {
-        TypeTag[A](runtimeMirror(loader), new TypeCreator {
-            override def apply[U <: Universe with Singleton](m: api.Mirror[U]): U#Type = {
-                tpe.asInstanceOf[U#Type]
-            }
-        })
-    }
-
-    def name[T](implicit tag: TypeTag[T]): String = tag.tpe.typeSymbol.fullName
-
-    def toTypeTag[A](clazz: Class[_]): TypeTag[A] = toTypeTag({
-        runtimeMirror(clazz.getClassLoader)
-                .staticClass(clazz.getName)
-                .toType
-    }, clazz.getClassLoader)
+    def fullNameOf[T](implicit tag: TypeTag[T]): String = tag.tpe.typeSymbol.fullName
 
 }

@@ -55,9 +55,9 @@ object LengthSign {
             val fieldValue = fieldValues(i)
             //Try(//println(s"    fieldValue = ${fieldValue} of type ${fieldValue.getClass}"))
             //Try(//println(s"fieldValueBytes = ${new String(NumberSerializer.serializeInt(fieldValue.getClass.getName.hashCode))}"))
-            //println(s"    child = ${child}")
             val bytes = child.serialize(cast(fieldValue), true)
-            //println(s"    child bytes = ${ScalaUtils.toPresentableString(bytes)}")
+           //println(s"    child = ${fieldValue}")
+           //println(s"    child bytes = ${ScalaUtils.toPresentableString(bytes)}")
             //println(s"    raw child bytes = ${bytes.mkString("Array(", ", ", ")")}")
 
             byteArrays(i) = bytes

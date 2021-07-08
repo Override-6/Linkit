@@ -19,11 +19,7 @@ import java.io.{InputStream, OutputStream}
 import java.net.URI
 import java.nio.file._
 
-case class NIOFileAdapter private[nio](path: Path, @transient fsa: NIOFileSystemAdapter) extends FileAdapter {
-
-    def this(other: NIOFileAdapter) = {
-        this(other.path, other.fsa)
-    }
+case class NIOFileAdapter (path: Path, @transient fsa: NIOFileSystemAdapter) extends FileAdapter {
 
     @MethodControl()
     override def getPath: String = path.toString

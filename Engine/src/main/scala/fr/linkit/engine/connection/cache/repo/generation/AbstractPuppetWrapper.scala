@@ -53,11 +53,12 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     protected def handleCall[R](id: Int, defaultReturnValue: R, invokeOnlyResult: R)
                                      (args: Array[Array[Any]])(superCall: => Any = null): R = {
-        val name = description.getMethodDesc(id).get.method.getName
-        val argsString = args.map(_.mkString("(", ", ", ")")).mkString("(", ", ", ")")
+        lazy val name = description.getMethodDesc(id).get.javaMethod.getName
+        lazy val argsString = args.map(_.mkString("(", ", ", ")")).mkString("")
         if (choreographer.isMethodExecutionForcedToLocal) {
             println(s"Skipped method call $name$argsString.")
-            return superCall.asInstanceOf[R]
+            val v = superCall.asInstanceOf[R]
+            return v
         }
         AppLogger.vDebug(s"$name: Performing rmi call for $name$argsString (id: $id)")
         if (!description.isRMIEnabled(id)) {
@@ -69,7 +70,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
         if (description.isInvokeOnly(id)) {
             AppLogger.vDebug("The call is redirected to current object...")
             puppeteer.sendInvoke(id, args)
-            var localResult: Any = defaultReturnValue
+            var localResult: R = defaultReturnValue
             if (description.isLocalInvocationForced(id)) {
                 localResult = performSuperCall(superCall)
             }
@@ -79,7 +80,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
             //#        if the 'InvokeOnlyResult' value of the annotated
             //#        method is set to "localResult" and the invocation
             //#        kind does not force local invocation.
-            return invokeOnlyResult
+            return localResult
         }
         var result: Any = defaultReturnValue
         if (description.isLocalInvocationForced(id)) {

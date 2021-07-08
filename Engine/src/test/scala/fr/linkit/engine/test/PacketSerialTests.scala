@@ -13,21 +13,23 @@
 package fr.linkit.engine.test
 
 import fr.linkit.engine.connection.cache.repo.CloudObjectRepository.PuppetProfile
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.engine.connection.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
 import fr.linkit.engine.connection.packet.serialization.DefaultSerializer
-import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
+import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacket, ResponsePacket}
 import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.mapping.ClassMapEngine
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.ScalaUtils
-import fr.linkit.engine.test.objects.PlayerObject
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Assertions, BeforeAll, Test, TestInstance}
+
+import java.util
+import scala.collection.mutable.ListBuffer
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketSerialTests {
 
-    private val testedPacket                 = RequestPacket(7, Array(ObjectPacket(PuppetProfile(Array(8, 5, 3, 4), PlayerObject(5, "TestServer1", "jimmy", 89, 12), "TestServer1"))))
+    private val testedPacket                 = ResponsePacket(7, Array(AnyRefPacket(Some(Array(PuppetProfile(Array(0, 1, 2), ListBuffer(),"TestServer1"))))))
+
     private var testPacketBytes: Array[Byte] = _
 
     @BeforeAll
@@ -45,7 +47,8 @@ class PacketSerialTests {
 
     @Test
     def deserialize(): Unit = {
-        val packet = Assertions.assertInstanceOf(classOf[RequestPacket], new DefaultSerializer().deserialize(testPacketBytes))
+        val packet = Assertions.assertInstanceOf(testedPacket.getClass, new DefaultSerializer().deserialize(testPacketBytes))
+        println(s"resulting packet = ${packet}")
     }
 
 }
