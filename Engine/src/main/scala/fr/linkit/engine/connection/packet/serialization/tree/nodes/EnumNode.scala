@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
+import fr.linkit.api.connection.packet.serialization.tree.{DeserialNode, NodeFactory, SerialNode}
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree.{ByteSeq, _}
 import fr.linkit.engine.local.utils.NumberSerializer
 import fr.linkit.engine.local.utils.ScalaUtils.toPresentableString
@@ -26,11 +27,11 @@ object EnumNode {
             bytes.classExists(_.isEnum)
         }
 
-        override def newNode(finder: SerialContext, profile: ClassProfile[E]): SerialNode[E] = {
+        override def newNode(finder: DefaultContextHolder, profile: ClassProfile[E]): SerialNode[E] = {
             new EnumSerialNode[E](profile)
         }
 
-        override def newNode(finder: SerialContext, seq: ByteSeq): DeserialNode[E] = {
+        override def newNode(finder: DefaultContextHolder, seq: ByteSeq): DeserialNode[E] = {
             new EnumDeserialNode[E](finder.getClassProfile(seq.getHeaderClass), seq)
         }
     }

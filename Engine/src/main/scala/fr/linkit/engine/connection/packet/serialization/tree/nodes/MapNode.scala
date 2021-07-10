@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
+import fr.linkit.api.connection.packet.serialization.tree.{DeserialNode, NodeFactory}
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.local.mapping.ClassMappings
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
@@ -31,11 +32,11 @@ object MapNode {
             bytes.classExists(cl => classOf[mutable.Map[_, _]].isAssignableFrom(cl) && findFactory[mutable.Map](cl).isDefined)
         }
 
-        override def newNode(finder: SerialContext, profile: ClassProfile[mutable.Map[_, _]]): SerialNode[mutable.Map[_, _]] = {
+        override def newNode(finder: DefaultContextHolder, profile: ClassProfile[mutable.Map[_, _]]): SerialNode[mutable.Map[_, _]] = {
             new MutableMapSerialNode(profile, finder)
         }
 
-        override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[mutable.Map[_, _]] = {
+        override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[mutable.Map[_, _]] = {
             new MutableMapDeserialNode(finder.getClassProfile(bytes.getHeaderClass), bytes, finder)
         }
     }
@@ -49,16 +50,16 @@ object MapNode {
             bytes.classExists(cl => classOf[Map[_, _]].isAssignableFrom(cl) && findFactory[Map](cl).isDefined)
         }
 
-        override def newNode(finder: SerialContext, profile: ClassProfile[Map[_, _]]): SerialNode[Map[_, _]] = {
+        override def newNode(finder: DefaultContextHolder, profile: ClassProfile[Map[_, _]]): SerialNode[Map[_, _]] = {
             new ImmutableMapSerialNode(profile, finder)
         }
 
-        override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[Map[_, _]] = {
+        override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[Map[_, _]] = {
             new ImmutableMapDeserialNode(finder.getClassProfile(bytes.getHeaderClass), bytes, finder)
         }
     }
 
-    class MutableMapSerialNode(profile: ClassProfile[mutable.Map[_, _]], finder: SerialContext) extends SerialNode[mutable.Map[_, _]] {
+    class MutableMapSerialNode(profile: ClassProfile[mutable.Map[_, _]], finder: DefaultContextHolder) extends SerialNode[mutable.Map[_, _]] {
 
         override def serialize(t: mutable.Map[_, _], putTypeHint: Boolean): Array[Byte] = {
             profile.applyAllSerialProcedures(t)
@@ -69,7 +70,7 @@ object MapNode {
         }
     }
 
-    class MutableMapDeserialNode(profile: ClassProfile[mutable.Map[_, _]], bytes: Array[Byte], finder: SerialContext) extends DeserialNode[mutable.Map[_, _]] {
+    class MutableMapDeserialNode(profile: ClassProfile[mutable.Map[_, _]], bytes: Array[Byte], finder: DefaultContextHolder) extends DeserialNode[mutable.Map[_, _]] {
 
         override def deserialize(): mutable.Map[_, _] = {
             val mapType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
@@ -88,7 +89,7 @@ object MapNode {
         }
     }
 
-    class ImmutableMapSerialNode(profile: ClassProfile[Map[_, _]], finder: SerialContext) extends SerialNode[Map[_, _]] {
+    class ImmutableMapSerialNode(profile: ClassProfile[Map[_, _]], finder: DefaultContextHolder) extends SerialNode[Map[_, _]] {
 
         override def serialize(t: Map[_, _], putTypeHint: Boolean): Array[Byte] = {
             profile.applyAllSerialProcedures(t)
@@ -98,7 +99,7 @@ object MapNode {
         }
     }
 
-    class ImmutableMapDeserialNode(profile: ClassProfile[Map[_, _]], bytes: Array[Byte], finder: SerialContext) extends DeserialNode[Map[_, _]] {
+    class ImmutableMapDeserialNode(profile: ClassProfile[Map[_, _]], bytes: Array[Byte], finder: DefaultContextHolder) extends DeserialNode[Map[_, _]] {
 
         override def deserialize(): Map[_, _] = {
             val mapType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))

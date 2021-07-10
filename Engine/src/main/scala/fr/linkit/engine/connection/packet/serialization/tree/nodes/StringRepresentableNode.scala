@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
 import fr.linkit.api.connection.packet.serialization.StringRepresentable
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 
@@ -38,11 +38,11 @@ object StringRepresentableNode {
             })
         }
 
-        override def newNode(finder: SerialContext, profile: ClassProfile[T]): SerialNode[T] = {
+        override def newNode(finder: DefaultContextHolder, profile: ClassProfile[T]): SerialNode[T] = {
             new StringRepresentableSerialNode[T](profile, repr)
         }
 
-        override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[T] = {
+        override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[T] = {
             new StringRepresentableDeserialNode[T](finder.getProfile[T], bytes, repr)
         }
     }

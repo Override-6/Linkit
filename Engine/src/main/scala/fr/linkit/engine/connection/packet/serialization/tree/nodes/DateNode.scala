@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
+import fr.linkit.api.connection.packet.serialization.tree.{DeserialNode, NodeFactory, SerialNode}
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.local.utils.NumberSerializer
 
@@ -24,11 +25,11 @@ object DateNode extends NodeFactory[Date] {
 
     override def canHandle(info: ByteSeq): Boolean = info.classExists(canHandle)
 
-    override def newNode(finder: SerialContext, profile: ClassProfile[Date]): SerialNode[Date] = {
+    override def newNode(finder: DefaultContextHolder, profile: ClassProfile[Date]): SerialNode[Date] = {
         new DateSerialNode(profile)
     }
 
-    override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[Date] = {
+    override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[Date] = {
         new DateDeserialNode(bytes, finder.getProfile[Date])
     }
 

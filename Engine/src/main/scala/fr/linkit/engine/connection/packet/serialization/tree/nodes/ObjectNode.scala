@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.local.mapping.ClassNotMappedException
 import fr.linkit.engine.local.utils.ScalaUtils.{findUnsafe, toPresentableString}
@@ -35,11 +35,11 @@ object ObjectNode {
             bytes.sameFlag(NullObjectFlag) || bytes.isClassDefined
         }
 
-        override def newNode(finder: SerialContext, profile: ClassProfile[Any]): SerialNode[Any] = {
+        override def newNode(finder: DefaultContextHolder, profile: ClassProfile[Any]): SerialNode[Any] = {
             new ObjectSerialNode(profile, finder)
         }
 
-        override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[Any] = {
+        override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[Any] = {
             new ObjectDeserialNode(finder.getClassProfile(bytes.getHeaderClass), bytes, finder)
         }
     }
@@ -48,7 +48,7 @@ object ObjectNode {
 
 
 
-    class ObjectSerialNode(profile: ClassProfile[Any], context: SerialContext) extends SerialNode[Any] {
+    class ObjectSerialNode(profile: ClassProfile[Any], context: DefaultContextHolder) extends SerialNode[Any] {
 
         override def serialize(t: Any, putTypeHint: Boolean): Array[Byte] = {
            //println(s"Serializing Object ${t}")
@@ -76,7 +76,7 @@ object ObjectNode {
         }
     }
 
-    class ObjectDeserialNode(profile: ClassProfile[Any], bytes: ByteSeq, context: SerialContext) extends DeserialNode[Any] {
+    class ObjectDeserialNode(profile: ClassProfile[Any], bytes: ByteSeq, context: DefaultContextHolder) extends DeserialNode[Any] {
 
         override def deserialize(): Any = {
             if (bytes(0) == NullObjectFlag)

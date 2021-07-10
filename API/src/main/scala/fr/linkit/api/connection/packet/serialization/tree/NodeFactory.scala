@@ -10,20 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.serialization.tree
+package fr.linkit.api.connection.packet.serialization.tree
 
-import fr.linkit.engine.connection.packet.serialization.procedure.Procedure
+trait NodeFactory[T] {
 
-import scala.reflect.ClassTag
+    def canHandle(clazz: Class[_]): Boolean
 
-trait ContextHolder {
+    def canHandle(info: ByteSeq): Boolean
 
-    def attachFactory(nodeFactory: NodeFactory[_]): Unit
+    def newNode(finder: DefaultContextHolder, profile: ClassProfile[T]): SerialNode[T]
 
-    def detachFactory(nodeFactory: NodeFactory[_]): Unit
-
-    def attachProcedure[C: ClassTag](procedure: Procedure[C]): Unit
-
-    def detachProcedure[C: ClassTag](procedure: Procedure[C]): Unit
+    def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[T]
 
 }

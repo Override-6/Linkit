@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.{ClassProfile, MegaByte}
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.{ClassProfile, MegaByte}
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 
@@ -41,11 +41,11 @@ object PrimitiveNode {
             TypeFlags.exists(info.sameFlag)
         }
 
-        override def newNode(context: SerialContext, profile: ClassProfile[AnyVal]): SerialNode[AnyVal] = {
+        override def newNode(context: DefaultContextHolder, profile: ClassProfile[AnyVal]): SerialNode[AnyVal] = {
             new PrimitiveSerialNode(profile)
         }
 
-        override def newNode(context: SerialContext, bytes: ByteSeq): DeserialNode[AnyVal] = {
+        override def newNode(context: DefaultContextHolder, bytes: ByteSeq): DeserialNode[AnyVal] = {
             new PrimitiveDeserialNode(bytes, context)
         }
     }
@@ -71,7 +71,7 @@ object PrimitiveNode {
         }
     }
 
-    class PrimitiveDeserialNode(bytes: Array[Byte], context: SerialContext) extends DeserialNode[AnyVal] {
+    class PrimitiveDeserialNode(bytes: Array[Byte], context: DefaultContextHolder) extends DeserialNode[AnyVal] {
 
         override def deserialize(): AnyVal = {
             //println(s"Deserializing primitive number from bytes ${ScalaUtils.toPresentableString(bytes)}")

@@ -17,14 +17,14 @@ import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.packet.serialization.{Serializer, StringRepresentable}
 import fr.linkit.api.local.system.Version
 import fr.linkit.engine.connection.packet.serialization.procedure.PuppetWrapperProcedure
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder
 import fr.linkit.engine.connection.packet.serialization.tree.nodes.StringRepresentableNode
 
 import java.nio.file.Path
 
 class DefaultSerializer() extends Serializer {
 
-    private val serialContext = new SerialContext()
+    private val serialContext = new DefaultContextHolder()
 
     override val signature: Array[Byte] = Array(4)
 
@@ -47,7 +47,7 @@ class DefaultSerializer() extends Serializer {
         node.deserialize()
     }
 
-    def getContext: SerialContext = serialContext
+    def getContext: DefaultContextHolder = serialContext
 
     def initNetwork(network: Network): Unit = {
         if (serialContext.getNetwork != null)

@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree
 
+import fr.linkit.api.connection.packet.serialization.tree.SerialNode
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 
 import scala.util.Try

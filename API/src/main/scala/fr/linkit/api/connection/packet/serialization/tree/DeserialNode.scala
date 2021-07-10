@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.serialization.tree
+package fr.linkit.api.connection.packet.serialization.tree
 
 trait DeserialNode[T] {
 

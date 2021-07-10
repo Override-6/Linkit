@@ -13,44 +13,39 @@
 package fr.linkit.engine.connection.packet.serialization.tree
 
 import fr.linkit.engine.local.mapping.ClassMappings
-import fr.linkit.engine.local.utils.NumberSerializer
-
-import java.sql.Timestamp
+import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 
 case class ByteSeq(array: Array[Byte]) {
 
     lazy val headerClass: Option[Class[_]] = findClassAt(0)
 
     def getHeaderClass[T]: Class[T] = headerClass match {
-        case None        => throw new NoSuchElementException("Header class not found into byte array.")
+        case None        => throw new NoSuchElementException(s"Header class not found into byte array ('${ScalaUtils.toPresentableString(array.drop(4))}').")
         case Some(value) => value match {
             case clazz: Class[T] => clazz
-            case _               => throw new IllegalArgumentException("Header class found into byte array mut mismatches from requested type.")
         }
     }
 
     def isClassDefined: Boolean = headerClass.isDefined
 
-    def findClassAt(index: Int): Option[Class[_]] = {
-        if (array.length - index < 4)
-            None
-        else {
-            val i = NumberSerializer.deserializeInt(array, index)
-           //println(s"index = ${index}")
-           //println(s"i = ${i}")
-            val v = ClassMappings.getClassOpt(i)
-           //println(s"v = ${v}")
-            v
-        }
-    }
-
     def apply(i: Int): Byte = array(i)
 
     def classExists(f: Class[_] => Boolean): Boolean = headerClass exists f
 
-    def classExists(i: Int, f: Class[_] => Boolean): Boolean = findClassAt(i) exists f
-
     def sameFlag(flag: Byte): Boolean = array.nonEmpty && array(0) == flag
+
+    private def findClassAt(index: Int): Option[Class[_]] = {
+        if (array.length - index < 4)
+            None
+        else {
+            val i = NumberSerializer.deserializeInt(array, index)
+            //println(s"index = ${index}")
+            //println(s"i = ${i}")
+            val v = ClassMappings.getClassOpt(i)
+            //println(s"v = ${v}")
+            v
+        }
+    }
 }
 
 object ByteSeq {

@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree._
 
 object StringNode extends NodeFactory[String] {
@@ -23,11 +23,11 @@ object StringNode extends NodeFactory[String] {
 
     override def canHandle(bytes: ByteSeq): Boolean = bytes.sameFlag(StringFlag(0))
 
-    override def newNode(finder: SerialContext, profile: ClassProfile[String]): SerialNode[String] = {
+    override def newNode(finder: DefaultContextHolder, profile: ClassProfile[String]): SerialNode[String] = {
         new StringSerialNode(profile)
     }
 
-    override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[String] = {
+    override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[String] = {
         new StringDeserialNode(finder.getProfile[String], bytes)
     }
 

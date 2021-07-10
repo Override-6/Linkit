@@ -12,8 +12,10 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
+import fr.linkit.api.connection.packet.serialization.tree.{DeserialNode, NodeFactory, SerialNode}
+
 import java.lang.reflect.{Array => RArray}
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.{ClassProfile, MegaByte}
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.{ClassProfile, MegaByte}
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.connection.packet.serialization.tree.nodes.ObjectNode.NullObjectFlag
 import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
@@ -34,15 +36,15 @@ object ArrayNode extends NodeFactory[Array[_]] {
         bytes.sameFlag(ArrayFlag)
     }
 
-    override def newNode(finder: SerialContext, profile: ClassProfile[Array[_]]): SerialNode[Array[_]] = {
+    override def newNode(finder: DefaultContextHolder, profile: ClassProfile[Array[_]]): SerialNode[Array[_]] = {
         new ArraySerialNode(profile, finder)
     }
 
-    override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[Array[_]] = {
+    override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[Array[_]] = {
         new ArrayDeserialNode(finder.getProfile[Array[_]], bytes, finder)
     }
 
-    class ArraySerialNode(profile: ClassProfile[Array[_]], tree: SerialContext) extends SerialNode[Array[_]] {
+    class ArraySerialNode(profile: ClassProfile[Array[_]], tree: DefaultContextHolder) extends SerialNode[Array[_]] {
 
         override def serialize(array: Array[_], putTypeHint: Boolean): Array[Byte] = {
             //println(s"Serializing array ${array.mkString("Array(", ", ", ")")}")
@@ -103,7 +105,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
         }
     }
 
-    class ArrayDeserialNode(profile: ClassProfile[Array[_]], bytes: Array[Byte], context: SerialContext) extends DeserialNode[Array[_]] {
+    class ArrayDeserialNode(profile: ClassProfile[Array[_]], bytes: Array[Byte], context: DefaultContextHolder) extends DeserialNode[Array[_]] {
 
         override def deserialize(): Array[_] = {
             if (bytes(1) == EmptyFlag)
