@@ -12,7 +12,6 @@
 
 package fr.linkit.api.connection.task
 
-import fr.linkit.api.connection.packet.channel.PacketChannel
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet}
 import fr.linkit.api.local.system.Reason
 
@@ -20,11 +19,11 @@ import java.io.Closeable
 
 trait TasksHandler extends Closeable {
 
-    //TODO handle a task which want to complete with an unknown relay identifier
+    //TODO handle a task which want to complete with an unknown connection identifier
     //TODO use systemPacketChannels to
 
     /**
-     * The relay identifier
+     * The connection's identifier
      * */
     val identifier: String
 
@@ -46,7 +45,7 @@ trait TasksHandler extends Closeable {
      * Registers a task
      * @param executor the task to execute
      * @param taskIdentifier the task identifier
-     * @param ownFreeWill true if the task was created by the user, false if the task comes from other Relay
+     * @param ownFreeWill true if the task was created by the user, false if the task comes from another connection
      * */
     def schedule(executor: TaskExecutor, taskIdentifier: Int, targetID: String, ownFreeWill: Boolean): Unit
 

@@ -30,8 +30,6 @@ trait Puppeteer[S] {
 
     def sendInvokeAndWaitResult[R](methodId: Int, args: Array[Array[Any]]): R
 
-    def sendPuppetUpdate(newVersion: S): Unit
-
     def init(wrapper: S with PuppetWrapper[S]): Unit
 
     def sendInvoke(methodId: Int, args: Array[Array[Any]]): Unit

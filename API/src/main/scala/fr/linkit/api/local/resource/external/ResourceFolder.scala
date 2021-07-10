@@ -26,7 +26,7 @@ import scala.reflect.ClassTag
  *
  * @see [[fr.linkit.api.connection.resource.RemoteResourceRepresentation]]
  * */
-trait ResourceFolder extends ExternalResource {
+trait ResourceFolder extends Resource {
 
     /**
      * The resources maintainer that handles this resources folder.
@@ -63,7 +63,7 @@ trait ResourceFolder extends ExternalResource {
      * */
     @throws[ResourceAlreadyPresentException]("If the subPath targets a resource that is already registered.")
     @throws[IllegalResourceException]("If the provided name contains invalid character")
-    def openResource[R <: ExternalResource : ClassTag](name: String, factory: ExternalResourceFactory[R]): R
+    def openResource[R <: Resource : ClassTag](name: String, factory: ResourceFactory[R]): R
 
     /**
      * No matter if a file is registered by the maintainer or not, this method
@@ -81,7 +81,7 @@ trait ResourceFolder extends ExternalResource {
     def isKnown(name: String): Boolean = getMaintainer.isKnown(name)
 
     /**
-     * Retrieves an [[ExternalResource]] of the name and it's representation type [[R]].
+     * Retrieves an [[Resource]] of the name and it's representation type [[R]].
      *
      * @param name the name associated with the requested resource.
      * @tparam R the type of resource expected.
@@ -92,17 +92,17 @@ trait ResourceFolder extends ExternalResource {
     @throws[NoSuchResourceException]("If no resource was found with the provided name")
     @throws[IncompatibleResourceTypeException]("If a resource was found but with another type than R.")
     @NotNull
-    def get[R <: ExternalResource : ClassTag](name: String): R
+    def get[R <: Resource : ClassTag](name: String): R
 
     /**
-     * Retrieves or creates an [[ExternalResource]] of the name and it's representation type [[R]].
+     * Retrieves or creates an [[Resource]] of the name and it's representation type [[R]].
      *
      * @param name the name associated with the requested resource.
      * @tparam R the type of resource expected.
      * @return the expected resource representation.
      * */
     @NotNull
-    def getOrOpen[R <: ExternalResource : ClassTag](name: String)(implicit factory: ExternalResourceFactory[R]): R
+    def getOrOpen[R <: Resource : ClassTag](name: String)(implicit factory: ResourceFactory[R]): R
 
     @NotNull
     def getOrOpenThenRepresent[R <: ResourceRepresentation : ClassTag](actionShortener: OpenActionShortener[R]): R = {
@@ -110,13 +110,13 @@ trait ResourceFolder extends ExternalResource {
     }
 
     /**
-     * Tries to retrieve an [[ExternalResource]] with the same name and kind than the ones provided.
+     * Tries to retrieve an [[Resource]] with the same name and kind than the ones provided.
      *
      * @param name the name associated with the requested resource.
      * @tparam R the kind of resource expected.
      * @return [[Some]] instance if the resource was found AND have the same kind, or [[None]] instead
      * */
-    def find[R <: ExternalResource : ClassTag](name: String): Option[R]
+    def find[R <: Resource : ClassTag](name: String): Option[R]
 
     /**
      * Registers a resource folder.
@@ -127,7 +127,7 @@ trait ResourceFolder extends ExternalResource {
      * @throws IllegalResourceException If the provided name contains invalid character.
      * */
     @throws[IllegalResourceException]("If the provided name contains invalid character")
-    def register[R <: ExternalResource](name: String, factory: ExternalResourceFactory[R]): R
+    def register[R <: Resource](name: String, factory: ResourceFactory[R]): R
 
     /**
      * Unregisters a resource.

@@ -12,18 +12,18 @@
 
 package fr.linkit.engine.local.resource.external
 
-import fr.linkit.api.local.resource.external.{ExternalResource, ExternalResourceFactory, ResourceFile, ResourceFolder}
+import fr.linkit.api.local.resource.external.{Resource, ResourceFactory, ResourceFile, ResourceFolder}
 
 object LocalResourceFactories {
 
-    def adaptive: ExternalResourceFactory[ExternalResource] = (adapter, listener, parent) => {
+    def adaptive: ResourceFactory[Resource] = (adapter, listener, parent) => {
         if (adapter.isDirectory) folder(adapter, listener, parent)
         else file(adapter, listener, parent)
     }
 
-    def folder: ExternalResourceFactory[ResourceFolder] = LocalResourceFolder.apply
+    def folder: ResourceFactory[ResourceFolder] = LocalResourceFolder.apply
 
-    def file: ExternalResourceFactory[ResourceFile] = (adapter, _, parent) => {
+    def file: ResourceFactory[ResourceFile] = (adapter, _, parent) => {
         LocalResourceFile(parent, adapter)
     }
 

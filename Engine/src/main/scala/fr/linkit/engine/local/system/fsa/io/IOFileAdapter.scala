@@ -49,7 +49,7 @@ case class IOFileAdapter private[io](file: File, @transient fsa: IOFileSystemAda
 
     override def toUri: URI = file.toURI
 
-    override def resolveSibling(path: String): FileAdapter = fsa.getAdapter(getPath + File.separatorChar + path) //FIXME WTF
+    override def resolveSibling(path: String): FileAdapter = fsa.getAdapter(getPath + File.separatorChar + path) //FIXME (bad implementation)
 
     override def resolveSiblings(path: FileAdapter): FileAdapter = resolveSibling(path.getPath)
 

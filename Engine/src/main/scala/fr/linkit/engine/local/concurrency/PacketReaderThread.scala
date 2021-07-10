@@ -92,12 +92,12 @@ class PacketReaderThread(reader: PacketReader,
 object PacketReaderThread {
 
     /**
-     * Packet Worker Threads have to be registered in this ThreadGroup in order to throw an exception when a relay worker thread
+     * Packet Worker Threads have to be registered in this ThreadGroup in order to throw an exception when a worker thread
      * is about to be locked by a monitor, that concern packet reception (example: lockers of BlockingQueues in PacketChannels)
      *
      * @see [[IllegalPacketWorkerLockException]]
      * */
-    val packetReaderThreadGroup: ThreadGroup = new ThreadGroup("Relay Packet Reader")
+    val packetReaderThreadGroup: ThreadGroup = new ThreadGroup("Packet Reader")
 
     /**
      * ensures that the current thread is a [[PacketReaderThread]]

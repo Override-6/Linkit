@@ -21,7 +21,7 @@ import fr.linkit.engine.connection.packet.traffic.channel
 /**
  * The class that will execute the Task.
  * When the task is ready to be executed, the method [[execute()]] will be called.
- * If the task was initialised by the local Relay, the getter [[initInfo]] will be used first.
+ * If the task was initialised by the local connection, the getter [[initInfo]] will be used first.
  * The used channels kind are forced to be [[channel.SyncPacketChannel]] because the Tasks are meant to be used concurrently
  *
  * @see [[SimpleTask]]

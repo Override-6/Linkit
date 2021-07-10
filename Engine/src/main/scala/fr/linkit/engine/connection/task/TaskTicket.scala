@@ -29,7 +29,6 @@ class TaskTicket(executor: TaskExecutor,
                  target: String,
                  ownFreeWill: Boolean) {
 
-    //private val errRemote = relay.getConsoleErr(target)
     val channel: SyncPacketChannel = connection.getInjectable(taskId, ChannelScopes.retains(target), SyncPacketChannel)
 
     def abort(): Unit = {

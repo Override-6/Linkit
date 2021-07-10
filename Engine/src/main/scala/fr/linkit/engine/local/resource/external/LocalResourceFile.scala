@@ -21,7 +21,7 @@ import org.jetbrains.annotations.NotNull
 import java.nio.file.FileSystemException
 import java.util.zip.Adler32
 
-class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile with LocalExternalResource {
+class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile with LocalResource {
 
     protected val entry = new DefaultResourceEntry[ResourceFile](this)
 
@@ -44,7 +44,7 @@ class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) e
     override def close(): Unit = entry.close()
 }
 
-object LocalResourceFile extends ExternalResourceFactory[LocalResourceFile] {
+object LocalResourceFile extends ResourceFactory[LocalResourceFile] {
 
     override def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): LocalResourceFile = {
         apply(parent, adapter)

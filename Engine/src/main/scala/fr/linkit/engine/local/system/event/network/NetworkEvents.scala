@@ -90,6 +90,6 @@ object NetworkEvents {
         RemotePrintEvent(entity, print, true)
     }
 
-    private def !![A](any: Any): A = any.asInstanceOf[A] //FIXME REMOVE THIS
+    private def !![A](any: Any): A = any.asInstanceOf[A] //FIXME REMOVE THIS SHIT
 
 }

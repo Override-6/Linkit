@@ -19,7 +19,7 @@ trait PacketTranslator {
 
     def translate(packetInfo: TransferInfo): PacketSerializationResult
 
-    def translate(bytes: Array[Byte]): PacketTransferResult
+    def translate(bytes: Array[Byte]): PacketDeserializationResult
 
     def translateCoords(coords: PacketCoordinates, target: String): Array[Byte]
 

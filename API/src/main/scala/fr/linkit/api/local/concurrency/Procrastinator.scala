@@ -18,8 +18,3 @@ trait Procrastinator {
 
     def runLater(@workerExecution task: => Unit): Unit
 }
-
-object Procrastinator {
-    //TODO use it.
-    val workerThreadGroup: ThreadGroup = new ThreadGroup("Application Workers")
-}

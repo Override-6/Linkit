@@ -34,6 +34,6 @@ public enum CommonCompilerTypes implements CompilerType {
 
     @Override
     public String sourceFileExtension() {
-        return extension; //FIXME Fast patch
+        return extension;
     }
 }

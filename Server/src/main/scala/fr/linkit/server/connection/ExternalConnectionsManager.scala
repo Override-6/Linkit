@@ -12,7 +12,7 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, Serializer}
+import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketTransferResult, Serializer}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}

@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree
 
-import fr.linkit.engine.connection.packet.serialization.Procedure
+import fr.linkit.engine.connection.packet.serialization.procedure.Procedure
 
 import scala.reflect.ClassTag
 

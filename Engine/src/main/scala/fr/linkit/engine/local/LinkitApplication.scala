@@ -16,7 +16,7 @@ import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, workerExecution}
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.plugin.PluginManager
-import fr.linkit.api.local.resource.external.{LocalExternalFolder, ResourceFolder}
+import fr.linkit.api.local.resource.external.{LocalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
@@ -199,7 +199,7 @@ object LinkitApplication {
         )
         recursiveScan(root)
 
-        def recursiveScan(folder: LocalExternalFolder): Unit = {
+        def recursiveScan(folder: LocalFolder): Unit = {
             folder.scanFiles(folder.register(_, LocalResourceFactories.file))
 
             val subPaths = fsa.list(folder.getAdapter)
@@ -207,7 +207,7 @@ object LinkitApplication {
                 val subName = sub.getName
                 if (sub.isDirectory && subPaths.exists(_.getName == ResourceFolderMaintainer.MaintainerFileName)) {
                     if (folder.isKnown(subName))
-                        recursiveScan(folder.get[LocalExternalFolder](subName))
+                        recursiveScan(folder.get[LocalFolder](subName))
                 }
             }
         }

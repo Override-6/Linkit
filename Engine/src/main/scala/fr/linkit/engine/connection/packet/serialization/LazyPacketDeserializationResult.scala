@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.serialization
 
-import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, Serializer}
+import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, Serializer}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
@@ -20,7 +20,7 @@ import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 import scala.reflect.{ClassTag, classTag}
 
 class LazyPacketDeserializationResult(override val bytes: Array[Byte],
-                                      serializer: () => Serializer) extends PacketTransferResult {
+                                      serializer: () => Serializer) extends PacketDeserializationResult {
 
     private lazy  val cache                         = serializer().deserializeAll(bytes)
     override lazy val coords    : PacketCoordinates = extract[PacketCoordinates](null)

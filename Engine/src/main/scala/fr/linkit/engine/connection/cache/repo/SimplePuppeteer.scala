@@ -89,15 +89,6 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
                 .detach()
     }
 
-    override def sendPuppetUpdate(newVersion: S): Unit = {
-        //TODO optimize, directly send the newVersion object to copy paste instead of all its fields.
-        val mirror = runtimeMirror(newVersion.getClass.getClassLoader).reflect(newVersion)(ClassTag(newVersion.getClass))
-        puppetDescription.listFields()
-                .foreach(fieldDesc => if (!fieldDesc.isHidden) {
-                    sendFieldUpdate(fieldDesc.fieldID, mirror.reflectMethod(fieldDesc.fieldGetter)())
-                })
-    }
-
     override def init(wrapper: S with PuppetWrapper[S]): Unit = {
         if (this.puppetWrapper != null) {
             throw new IllegalStateException("This Puppeteer already controls a puppet instance !")
@@ -132,7 +123,11 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
             (wrapper, childPath) =>
                 val id          = childPath.last
                 val description = repo.getDescFromClass(wrapper.getClass)
-                repo.center.getNode(currentPath).get.getGrandChild(childPath.drop(currentPath.length).dropRight(1))
+                repo.center
+                        .getNode(currentPath).get
+                        .getGrandChild(childPath
+                                .drop(currentPath.length)
+                                .dropRight(1))
                         .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${childPath.mkString("$", " -> ", "")}")) {
                             parent =>
                                 val chip      = ObjectChip[Any](ownerID, description, wrapper.asInstanceOf[PuppetWrapper[Any]])

@@ -57,8 +57,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
         lazy val argsString = args.map(_.mkString("(", ", ", ")")).mkString("")
         if (choreographer.isMethodExecutionForcedToLocal) {
             println(s"Skipped method call $name$argsString.")
-            val v = superCall.asInstanceOf[R]
-            return v
+            return superCall.asInstanceOf[R]
         }
         AppLogger.vDebug(s"$name: Performing rmi call for $name$argsString (id: $id)")
         if (!description.isRMIEnabled(id)) {

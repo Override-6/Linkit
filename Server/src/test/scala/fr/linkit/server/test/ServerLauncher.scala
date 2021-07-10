@@ -15,10 +15,10 @@ package fr.linkit.server.test
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugExtension
+import fr.linkit.plugin.debug.DebugPlugin
 import fr.linkit.server.ServerApplication
-import fr.linkit.server.config.schematic.ScalaServerAppSchematic
-import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
+import fr.linkit.server.local.config.schematic.ScalaServerAppSchematic
+import fr.linkit.server.local.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
 import java.io.File
 import java.nio.file.{Files, Path}
@@ -57,7 +57,7 @@ object ServerLauncher {
             val pluginManager = serverAppContext.pluginManager
             pluginManager.loadAllClass(Array(
                 classOf[ControllerExtension]: Class[_ <: Plugin],
-                classOf[DebugExtension]: Class[_ <: Plugin],
+                classOf[DebugPlugin]: Class[_ <: Plugin],
             ))
         }.throwNextThrowable()
         AppLogger.info("Server Application launched.")

@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.Packet
 
 //TODO doc parameters
 /**
- * this type of packet is sent when a relay ask to server to schedule a task between him, the server, and the target
+ * this type of packet is sent when a connection ask to its server to schedule a task between him, the server, and the target
  *
  * @see [[Packet]]
  * */

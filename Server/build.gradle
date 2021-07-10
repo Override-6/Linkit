@@ -55,6 +55,6 @@ dependencies {
 
     api project(':API')
     api project(':Engine')
-    implementation project(':LinkitPlugins:DebugExtension')
+    implementation project(':LinkitPlugins:DebugPlugin')
     implementation project(':LinkitPlugins:CLICommands')
 }

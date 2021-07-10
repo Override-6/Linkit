@@ -95,7 +95,7 @@ class LinkitPluginManager(context: ApplicationContext, fsa: FileSystemAdapter) e
             } catch {
                 case NonFatal(e) =>
                     AppLogger.error(s"Could not load '${pluginName}' : " + e.getMessage)
-                    AppLogger.printStackTrace(e)
+                    throw e
             }
         })
 

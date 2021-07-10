@@ -13,13 +13,13 @@
 package fr.linkit.engine.local.resource.base
 
 import fr.linkit.api.local.resource.ResourcesMaintainer
-import fr.linkit.api.local.resource.external.{ExternalResource, ResourceFolder}
+import fr.linkit.api.local.resource.external.{Resource, ResourceFolder}
 import fr.linkit.api.local.system.Versions
 import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.engine.local.system.{DynamicVersions, StaticVersions}
 import org.jetbrains.annotations.Nullable
 
-abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileAdapter) extends ExternalResource {
+abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileAdapter) extends Resource {
 
     override     val name: String = adapter.getName
     private lazy val lastModified = getMaintainer.getLastModified(name)

@@ -34,7 +34,7 @@ trait PacketInjectable extends JustifiedCloseable with PacketAttributesPresence 
     /**
      * Creates a PacketInjectable that will be handled by this packet channel. <br>
      * The packet channel can send and receive packets from the target.  <br>
-     * In other words, this will create a sub channel that is bound to a specific relay.  <br>
+     * In other words, this will create a sub channel that is bound to a specific engine.  <br>
      * If the sub channel receives a packet, the parent collector will handle the packet as well if the
      * children authorises it
      *

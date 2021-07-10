@@ -42,6 +42,6 @@ dependencies {
 
     implementation project(':Engine')
     implementation project(':API')
-//    implementation project(':LinkitPlugins:DebugExtension')
+//    implementation project(':LinkitPlugins:DebugPlugin')
 //    implementation project(':LinkitPlugins:CLICommands')
 }

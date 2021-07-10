@@ -13,20 +13,20 @@
 package fr.linkit.engine.local.resource.external
 
 import fr.linkit.api.local.resource.exception.{IncompatibleResourceTypeException, NoSuchRepresentationException}
-import fr.linkit.api.local.resource.external.{ExternalResource, ResourceEntry, ResourceFile, ResourceFolder}
+import fr.linkit.api.local.resource.external.{Resource, ResourceEntry, ResourceFile, ResourceFolder}
 import fr.linkit.api.local.resource.representation.{FileRepresentation, FolderRepresentation, ResourceRepresentation, ResourceRepresentationFactory}
 import org.jetbrains.annotations.NotNull
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
-class DefaultResourceEntry[E <: ExternalResource](val resource: E) extends ResourceEntry[E] {
+class DefaultResourceEntry[E <: Resource](val resource: E) extends ResourceEntry[E] {
 
     private val representations  = mutable.Map.empty[Class[_], ResourceRepresentation]
     private val adapter          = resource.getAdapter
     @volatile private var closed = false
 
-    override def getResource: ExternalResource = resource
+    override def getResource: Resource = resource
 
     override def name: String = resource.name
 

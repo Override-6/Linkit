@@ -14,7 +14,7 @@ package fr.linkit.engine.local.resource
 
 import fr.linkit.api.local.resource._
 import fr.linkit.api.local.resource.exception.NoSuchResourceException
-import fr.linkit.api.local.resource.external.{ExternalResource, ResourceFolder}
+import fr.linkit.api.local.resource.external.{Resource, ResourceFolder}
 import fr.linkit.engine.local.resource.ResourceFolderMaintainer.{MaintainerFileName, Resources}
 import fr.linkit.engine.local.resource.external.LocalResourceFactories
 import fr.linkit.engine.local.system.EngineConstants.{UserGson => Gson}
@@ -68,7 +68,7 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
         resources -= name
     }
 
-    private[resource] def registerResource(resource: ExternalResource): Unit = {
+    private[resource] def registerResource(resource: Resource): Unit = {
         if (resource.getParent.ne(maintained))
             throw new IllegalArgumentException("Given resource's parent folder is not handled by this maintainer.")
 
@@ -130,8 +130,8 @@ class ResourceFolderMaintainer(maintained: ResourceFolder,
             updateFile()
         }
 
-        private def runIfKnown(name: String)(callback: (ExternalResource, ResourceItem) => Unit): Unit = {
-            val resource = maintained.find[ExternalResource](name)
+        private def runIfKnown(name: String)(callback: (Resource, ResourceItem) => Unit): Unit = {
+            val resource = maintained.find[Resource](name)
             val item     = resources.get(name)
 
             if (resource.isEmpty && item.isEmpty)

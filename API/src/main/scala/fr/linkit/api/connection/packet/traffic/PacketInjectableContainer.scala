@@ -23,7 +23,7 @@ trait PacketInjectableContainer {
      * retrieves or create (and register) a [[PacketInjectable]] depending on the requested id and scope
      *
      * @param injectableID the injectable identifier
-     * @param scopeFactory the scope factory that determines which relay can receive or send a packet to the injectable
+     * @param scopeFactory the scope factory that determines which engine can receive or send a packet to the injectable
      * @param factory      the factory of the injectable that will create the instance if needed.
      * @return an injectable matching the given identifier and scope
      * @see [[ChannelScope]]

@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
 
 class LocalResourceFolder protected(adapter: FileAdapter,
                                     listener: ResourceListener,
-                                    parent: ResourceFolder) extends BaseResourceFolder(parent, listener, adapter) with LocalExternalFolder {
+                                    parent: ResourceFolder) extends BaseResourceFolder(parent, listener, adapter) with LocalFolder {
 
     //println(s"Creating resource folder $getLocation...")
 
@@ -47,7 +47,7 @@ class LocalResourceFolder protected(adapter: FileAdapter,
 
 }
 
-object LocalResourceFolder extends ExternalResourceFactory[LocalResourceFolder] {
+object LocalResourceFolder extends ResourceFactory[LocalResourceFolder] {
 
     override def apply(adapter: FileAdapter,
                        listener: ResourceListener,
@@ -55,9 +55,9 @@ object LocalResourceFolder extends ExternalResourceFactory[LocalResourceFolder] 
         new LocalResourceFolder(adapter, listener, parent)
     }
 
-    implicit def shortenRepresentation[E <: ExternalResource : ClassTag, R <: ResourceRepresentation : ClassTag](name: String)
-                                                                                                                (implicit resourceFactory: ExternalResourceFactory[E],
-                                                                                                                 representationFactory: ResourceRepresentationFactory[R, E]): OpenActionShortener[R] = {
+    implicit def shortenRepresentation[E <: Resource : ClassTag, R <: ResourceRepresentation : ClassTag](name: String)
+                                                                                                        (implicit resourceFactory: ResourceFactory[E],
+                                                                                                         representationFactory: ResourceRepresentationFactory[R, E]): OpenActionShortener[R] = {
         { folder =>
             val resource = folder.getOrOpen[E](name)
             val entry    = resource.getEntry.asInstanceOf[ResourceEntry[E]]

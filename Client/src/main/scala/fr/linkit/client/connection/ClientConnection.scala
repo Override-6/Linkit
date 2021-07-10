@@ -26,8 +26,9 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.client.ClientApplication
-import fr.linkit.client.config.ClientConnectionConfiguration
-import fr.linkit.client.network.ClientSideNetwork
+import fr.linkit.client.local.config.ClientConnectionConfiguration
+import fr.linkit.client.connection.network.ClientSideNetwork
+import fr.linkit.engine.connection.network.SimpleRemoteConsole
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 import fr.linkit.engine.local.concurrency.PacketReaderThread
@@ -130,6 +131,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         val order  = system.order
         val reason = system.reason.reversedPOV()
         val sender = coords.senderID
+        SimpleRemoteConsole
 
         import fr.linkit.engine.local.system.SystemOrder._
         order match {
@@ -138,10 +140,10 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
             //FIXME weird use of exceptions/remote print
             case SERVER_CLOSE =>
-            //FIXME UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this RelayPoint : Received forbidden order")
+            //FIXME UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this connection : Received forbidden order")
             //        .printStackTrace(getConsoleErr(sender))
 
-            case _ => //FIXME UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this RelayPoint : Unknown order")
+            case _ => //FIXME UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this connection : Unknown order")
             // .printStackTrace(getConsoleErr(sender))
         }
     }

@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.packet.serialization.tree
 
 import fr.linkit.api.connection.network.Network
-import fr.linkit.engine.connection.packet.serialization.Procedure
+import fr.linkit.engine.connection.packet.serialization.procedure.Procedure
 import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree.nodes._
 import fr.linkit.engine.local.utils.ScalaUtils

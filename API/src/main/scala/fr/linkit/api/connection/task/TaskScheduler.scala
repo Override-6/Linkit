@@ -30,7 +30,7 @@ trait TaskScheduler {
     def scheduleTask[R](task: Task[R]): InternalTaskAction[R]
 
     /**
-     * RelayTaskAction is a wraps a [[TaskAction]] object.
+     * InternalTaskAction is a wraps a [[TaskAction]] object.
      * this class avoid the user to specify the task identifier
      * @see [[TaskAction]]
      * */

@@ -18,7 +18,7 @@ import java.io.PrintStream;
 import java.io.PrintWriter;
 
 /**
- * thrown to report an internal incident in the Relays
+ * thrown to report an internal incident in the Application
  */
 public class AppException extends Exception {
 

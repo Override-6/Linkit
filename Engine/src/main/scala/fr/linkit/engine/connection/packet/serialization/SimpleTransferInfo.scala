@@ -14,6 +14,7 @@ package fr.linkit.engine.connection.packet.serialization
 
 import fr.linkit.api.connection.packet.serialization.{Serializer, TransferInfo}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 
@@ -30,7 +31,7 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
             buff += attributes
         if (packet != EmptyPacket)
             buff += packet
-        AppLogger.debug(s"Making simple serialize $buff...")
+        AppLogger.debug(s"$currentTasksId <> Making simple serialize $buff...")
         serializer.serialize(buff.toArray, true)
     }
 }

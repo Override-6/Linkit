@@ -17,7 +17,7 @@ import org.jetbrains.annotations.NotNull
 /**
  * depicts a class that represents a resource file.
  * */
-trait ResourceFile extends ExternalResource {
+trait ResourceFile extends Resource {
 
     /**
      * @return The folder resource where this file is stored.

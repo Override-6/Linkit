@@ -11,7 +11,7 @@ describe class scala.collection.mutable.ListBuffer {
         }
         /*
           on ne souhaite pas synchroniser la valeur de retour, ceci est le comportement par défaut
-          (de toutes façons ListBuffer#append retourne void donc sébon
+          (de toutes façons ListBuffer#append retourne void)
         */
         returnvalue -> disable
     }

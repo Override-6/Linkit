@@ -22,8 +22,8 @@ import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.system.SystemPacketChannel
 import fr.linkit.engine.local.utils.NumberSerializer
-import fr.linkit.server.network.ServerSideNetwork
-import fr.linkit.server.task.ConnectionTasksHandler
+import fr.linkit.server.connection.network.ServerSideNetwork
+import fr.linkit.server.local.task.ConnectionTasksHandler
 
 import java.net.Socket
 

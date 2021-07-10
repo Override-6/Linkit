@@ -13,7 +13,7 @@
 package fr.linkit.server.connection
 
 import fr.linkit.engine.local.concurrency.PacketReaderThread
-import fr.linkit.server.network.ServerSideNetwork
+import fr.linkit.server.connection.network.ServerSideNetwork
 
 case class ExternalConnectionSessionInfo(server: ServerConnection,
                                          manager: ExternalConnectionsManager,

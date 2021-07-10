@@ -24,8 +24,7 @@ class SimplePacketTranslator extends PacketTranslator {
         new LazyPacketSerializationResult(packetInfo, () => serializer)
     }
 
-    //TODO Create trait named "PacketDeserializationResult" even if it is empty.
-    override def translate(bytes: Array[Byte]): PacketTransferResult = {
+    override def translate(bytes: Array[Byte]): PacketDeserializationResult = {
         new LazyPacketDeserializationResult(bytes, () => serializer)
     }
 

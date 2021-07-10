@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.repo.tree
 
 import fr.linkit.api.connection.cache.repo.tree.{PuppetCenter, SyncNode}
-import fr.linkit.engine.connection.cache.repo.CloudObjectRepository.PuppetProfile
+import fr.linkit.engine.connection.cache.repo.CloudObjectCenter.PuppetProfile
 import fr.linkit.engine.connection.cache.repo.{CacheRepoContent, NoSuchPuppetException}
 
 import scala.collection.mutable

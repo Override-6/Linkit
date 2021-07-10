@@ -65,7 +65,7 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
     addDefaultAttribute("family", family)
     addDefaultAttribute("cache", identifier)
 
-    //FIXME optimise (find another way to find the right cache that can accept the bundle)
+    //FIXME optimise (find another way to retrieve the right cache that can accept the bundle)
     channel.addRequestListener(bundle => {
         val attr = bundle.attributes
 

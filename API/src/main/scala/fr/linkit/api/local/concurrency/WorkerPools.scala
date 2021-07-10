@@ -8,8 +8,8 @@ object WorkerPools {
 
     /**
      * This method may execute the given action into the current thread pool.
-     * If the current execution thread is not a relay worker thread, this would mean that
-     * we are not running into a thread that is owned by the Relay concurrency system. Therefore, the action
+     * If the current execution thread is not a worker thread, this would mean that
+     * we are not running into a thread that is owned by the concurrency system. Therefore, the action
      * may be performed in the current thread
      *
      * @param action the action to perform
@@ -74,9 +74,9 @@ object WorkerPools {
     /**
      * Toggles between two actions if the current thread is an instance of [[WorkerThread]]
      *
-     * @param ifCurrent The action to process if the current thread is a relay worker thread.
+     * @param ifCurrent The action to process if the current thread is a worker thread.
      *                  The given entry is the current thread pool
-     * @param orElse    the action to process if the current thread is not a relay worker thread.
+     * @param orElse    the action to process if the current thread is not a worker thread.
      *
      * */
     def ifCurrentWorkerOrElse[A](ifCurrent: WorkerPool => A, orElse: => A): A = {

@@ -30,9 +30,10 @@ import fr.linkit.engine.local.system.Rules
 import fr.linkit.engine.local.system.event.DefaultEventNotifier
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.NumberSerializer.serializeInt
-import fr.linkit.server.config.{AmbiguityStrategy, ServerConnectionConfiguration}
-import fr.linkit.server.network.ServerSideNetwork
-import fr.linkit.server.{ServerApplication, ServerException, ServerPacketTraffic}
+import fr.linkit.server.local.config.{AmbiguityStrategy, ServerConnectionConfiguration}
+import fr.linkit.server.connection.network.ServerSideNetwork
+import fr.linkit.server.connection.packet.ServerPacketTraffic
+import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
 
 import java.net.{ServerSocket, SocketException}
@@ -52,7 +53,6 @@ class ServerConnection(applicationContext: ServerApplication,
     override val eventNotifier     : EventNotifier              = new DefaultEventNotifier
     private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
     override val network           : Network                    = sideNetwork
-    //FIXME private  val systemChannel      : SystemPacketChannel        = new SystemPacketChannel(ChannelScopes.discardCurrent(traffic.newWriter(SystemChannelID)))
 
     @volatile private var alive = false
 

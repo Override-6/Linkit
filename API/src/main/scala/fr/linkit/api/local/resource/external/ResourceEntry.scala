@@ -22,9 +22,9 @@ import scala.reflect.ClassTag
 /**
  * This class is an entry for resources that transforms an actual file/folder into
  * any resource representation.
- * Default representations of type [[ExternalResource]] may be automatically attached.
+ * Default representations of type [[Resource]] may be automatically attached.
  * */
-trait ResourceEntry[+E <: ExternalResource] extends Closeable {
+trait ResourceEntry[+E <: Resource] extends Closeable {
 
     /**
      * This resource name
@@ -34,7 +34,7 @@ trait ResourceEntry[+E <: ExternalResource] extends Closeable {
     /**
      * A representation of the folder that contains this resource.
      * */
-    def getResource: ExternalResource
+    def getResource: Resource
 
     /**
      * Links a resource with a resource class which represent it and make the resource manipulable from the code.

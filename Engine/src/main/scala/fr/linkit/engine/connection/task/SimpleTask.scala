@@ -29,9 +29,9 @@ import java.util.concurrent.atomic.AtomicReference
  *     TasksCompleters, are the tasks which completes the self-executable tasks.
  *
  *      @example
- * in [[CreateFileTask]], the self-executable (the class that directly extends from [[SimpleTask]]) will ask to the targeted Relay
+ * in [[CreateFileTask]], the self-executable (the class that directly extends from [[SimpleTask]]) will ask to the targeted connection
  * if it could creates a file located on the specified path.
- * The targeted Relay will instantiate / execute the Completer of [[CreateFileTask]], in which the file will be created.
+ * The targeted connection will instantiate / execute the Completer of [[CreateFileTask]], in which the file will be created.
  * </p>
  * <p>
  * This class is a member of [[TaskAction]] and [[SimpleTaskExecutor]].
@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference
  * [[SimpleTaskExecutor]] is a Trait used by [[TasksHandler]] which will invoke TaskExecutor#execute nor TaskExecutor#sendTaskInfo if this task instance
  * was created by the program (!TaskCompleters)
  * </p>
- * @param targetID the targeted / concerned Relay identifier
+ * @param targetID the targeted / concerned connection identifier
  * @tparam T the return type of this Task when successfully executed
  * @see [[TasksHandler]]
  * @see [[SimpleCompleterHandler]]

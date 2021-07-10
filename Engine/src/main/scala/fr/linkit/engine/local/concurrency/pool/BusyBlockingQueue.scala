@@ -12,10 +12,9 @@
 
 package fr.linkit.engine.local.concurrency.pool
 
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
-import sun.reflect.generics.reflectiveObjects.NotImplementedException
 
 import java.util
 import java.util.concurrent.{BlockingQueue, TimeUnit}
@@ -29,7 +28,8 @@ import scala.collection.mutable.ListBuffer
  * @param pool the pool that created this blocking queue, at which will be used by the queue to handle busy locks.
  * */
 class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends BlockingQueue[A] {
-    private val content     = new util.LinkedList[A]()
+
+    private val content    = new util.LinkedList[A]()
     private val controller = new SimpleWorkerController()
 
     override def add(e: A): Boolean = {
@@ -51,7 +51,7 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
         content.removeFirst()
     }
 
-    override def poll(): A = content.synchronized  {
+    override def poll(): A = content.synchronized {
         content.pollFirst()
     }
 
@@ -105,9 +105,9 @@ class BusyBlockingQueue[A] private[concurrency](pool: BusyWorkerPool) extends Bl
 
     override def remainingCapacity(): Int = -1 //Provided queue does not have defined capacity
 
-    override def drainTo(c: util.Collection[_ >: A]): Int = throw new NotImplementedException() //TODO
+    override def drainTo(c: util.Collection[_ >: A]): Int = ??? //TODO
 
-    override def drainTo(c: util.Collection[_ >: A], maxElements: Int): Int = throw new NotImplementedException() //TODO
+    override def drainTo(c: util.Collection[_ >: A], maxElements: Int): Int = ??? //TODO
 
     override def isEmpty: Boolean = content.isEmpty
 

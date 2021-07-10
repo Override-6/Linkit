@@ -13,7 +13,7 @@
 package fr.linkit.engine.local.resource.base
 
 import fr.linkit.api.local.resource.exception.{IllegalResourceException, IncompatibleResourceTypeException, NoSuchResourceException, ResourceAlreadyPresentException}
-import fr.linkit.api.local.resource.external.{ExternalResource, ExternalResourceFactory, ResourceEntry, ResourceFolder}
+import fr.linkit.api.local.resource.external.{Resource, ResourceFactory, ResourceEntry, ResourceFolder}
 import fr.linkit.api.local.resource.{ResourceListener, ResourcesMaintainer}
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 import fr.linkit.engine.local.resource.ResourceFolderMaintainer
@@ -28,7 +28,7 @@ import scala.reflect.{ClassTag, classTag}
 
 abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceListener, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFolder {
 
-    protected val resources                                 = new mutable.HashMap[String, ExternalResource]()
+    protected val resources                                 = new mutable.HashMap[String, Resource]()
     protected val fsa       : FileSystemAdapter             = adapter.getFSAdapter
     protected val entry     : ResourceEntry[ResourceFolder] = new DefaultResourceEntry[ResourceFolder](this)
     protected val maintainer: ResourceFolderMaintainer      = this.synchronized {
@@ -54,7 +54,7 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
 
     @throws[ResourceAlreadyPresentException]("If the subPath targets a resource that is already registered or opened.")
     @throws[IllegalResourceException]("If the provided name contains invalid character")
-    override def openResource[R <: ExternalResource : ClassTag](name: String, factory: ExternalResourceFactory[R]): R = {
+    override def openResource[R <: Resource : ClassTag](name: String, factory: ResourceFactory[R]): R = {
         ensureResourceOpenable(name)
 
         register(name, factory)
@@ -65,7 +65,7 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
     @throws[NoSuchResourceException]("If no resource was found with the provided name")
     @throws[IncompatibleResourceTypeException]("If a resource was found but with another type than R.")
     @NotNull
-    override def get[R <: ExternalResource : ClassTag](name: String): R = {
+    override def get[R <: Resource : ClassTag](name: String): R = {
         resources
                 .get(name)
                 .fold(throw NoSuchResourceException(s"Resource $name not registered in resource folder '$getLocation'")) {
@@ -74,7 +74,7 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
                 }
     }
 
-    override def getOrOpen[R <: ExternalResource : ClassTag](name: String)(implicit factory: ExternalResourceFactory[R]): R = {
+    override def getOrOpen[R <: Resource : ClassTag](name: String)(implicit factory: ResourceFactory[R]): R = {
         find[R](name).getOrElse {
             if (isPresentOnDrive(name))
                 register[R](name, factory)
@@ -82,7 +82,7 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
         }
     }
 
-    override def find[R <: ExternalResource : ClassTag](name: String): Option[R] = {
+    override def find[R <: Resource : ClassTag](name: String): Option[R] = {
         resources
                 .get(name)
                 .flatMap {
@@ -99,7 +99,7 @@ abstract class BaseResourceFolder(parent: ResourceFolder, listener: ResourceList
     }
 
     @throws[IllegalResourceException]("If the provided name contains invalid character")
-    override def register[R <: ExternalResource](name: String, factory: ExternalResourceFactory[R]): R = this.synchronized {
+    override def register[R <: Resource](name: String, factory: ResourceFactory[R]): R = this.synchronized {
         checkResourceName(name)
 
         val resourcePath = getAdapter.getAbsolutePath + File.separator + name

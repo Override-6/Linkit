@@ -19,7 +19,7 @@ import fr.linkit.api.local.system
 import fr.linkit.api.local.system._
 import fr.linkit.api.local.system.config.ApplicationInstantiationException
 import fr.linkit.client.ClientApplication.Version
-import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
+import fr.linkit.client.local.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool

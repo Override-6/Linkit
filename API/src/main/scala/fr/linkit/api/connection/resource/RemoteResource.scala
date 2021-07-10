@@ -13,9 +13,9 @@
 package fr.linkit.api.connection.resource
 
 import fr.linkit.api.connection.ConnectionContext
-import fr.linkit.api.local.resource.external.ExternalResource
+import fr.linkit.api.local.resource.external.Resource
 
-trait RemoteResource extends ExternalResource {
+trait RemoteResource extends Resource {
 
     def getConnectionOwner: ConnectionContext
 

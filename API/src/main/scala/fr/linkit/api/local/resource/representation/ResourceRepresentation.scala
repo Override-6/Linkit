@@ -12,11 +12,11 @@
 
 package fr.linkit.api.local.resource.representation
 
-import fr.linkit.api.local.resource.external.ExternalResource
+import fr.linkit.api.local.resource.external.Resource
 
 trait ResourceRepresentation extends AutoCloseable {
 
-    def resource: ExternalResource
+    def resource: Resource
 
     override def close(): Unit = ()
 

@@ -20,7 +20,6 @@ import java.io.PrintStream
 
 //TODO -------------------------------------------------- MAINTAINED --------------------------------------------------
 class SimpleRemoteConsole private(@Nullable channel: AsyncPacketChannel,
-                                  //relay: Relay,
                                   owner: String,
                                   kind: String) extends PrintStream(InactiveOutputStream, true) {
 

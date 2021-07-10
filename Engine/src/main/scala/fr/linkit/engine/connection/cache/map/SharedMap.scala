@@ -48,7 +48,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
         this
     }
 
-    //FIXME remove would not work as we are creating a wrapper for this lambda for add and remove.
+    //FIXME remove will not work as we are creating a wrapper for this lambda in addListener and removeListener.
     def removeListener(action: (MapModification, K, V) => Unit): this.type = {
         //networkListeners -= (triple => action(triple._1, triple._2, triple._3))
         this

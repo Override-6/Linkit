@@ -1,1 +1,1 @@
-# linkit - Relay Point
+# linkit - The Client
