@@ -12,11 +12,9 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.api.connection.packet.serialization.tree.{DeserialNode, NodeFactory, SerialNode}
-import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
-import fr.linkit.engine.connection.packet.serialization.tree.{ByteSeq, _}
+import fr.linkit.api.connection.packet.serialization.tree._
 import fr.linkit.engine.local.utils.NumberSerializer
-import fr.linkit.engine.local.utils.ScalaUtils.toPresentableString
+
 
 object EnumNode {
 
@@ -27,12 +25,12 @@ object EnumNode {
             bytes.classExists(_.isEnum)
         }
 
-        override def newNode(finder: DefaultContextHolder, profile: ClassProfile[E]): SerialNode[E] = {
+        override def newNode(finder: NodeFinder, profile: ClassProfile[E]): SerialNode[E] = {
             new EnumSerialNode[E](profile)
         }
 
-        override def newNode(finder: DefaultContextHolder, seq: ByteSeq): DeserialNode[E] = {
-            new EnumDeserialNode[E](finder.getClassProfile(seq.getHeaderClass), seq)
+        override def newNode(finder: NodeFinder, seq: ByteSeq): DeserialNode[E] = {
+            new EnumDeserialNode[E](finder.getClassProfile(seq.getClassOfSeq), seq)
         }
     }
 
@@ -53,7 +51,7 @@ object EnumNode {
 
         override def deserialize(): E = {
             //println(s"Deserializing enum ${toPresentableString(bytes)}")
-            val enumType = bytes.getHeaderClass
+            val enumType = bytes.getClassOfSeq
             val name     = new String(bytes.array.drop(4))
             //println(s"Name = $name")
             val enum = Enum.valueOf(enumType.asInstanceOf[Class[E]], name)

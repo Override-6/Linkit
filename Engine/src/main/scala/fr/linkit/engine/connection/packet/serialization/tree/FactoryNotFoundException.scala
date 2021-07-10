@@ -10,16 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.serialization.tree
+package fr.linkit.engine.connection.packet.serialization.tree
 
-trait NodeFactory[T] {
+import fr.linkit.api.connection.packet.PacketException
 
-    def canHandle(clazz: Class[_]): Boolean
-
-    def canHandle(info: ByteSeq): Boolean
-
-    def newNode(finder: NodeFinder, profile: ClassProfile[T]): SerialNode[T]
-
-    def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[T]
+class FactoryNotFoundException(msg: String, cause: Throwable = null) extends PacketException(msg, cause) {
 
 }

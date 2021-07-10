@@ -12,18 +12,14 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
+import fr.linkit.api.connection.packet.serialization.tree._
 import fr.linkit.engine.connection.packet.serialization.tree._
-import fr.linkit.engine.local.mapping.ClassNotMappedException
-import fr.linkit.engine.local.utils.ScalaUtils.{findUnsafe, toPresentableString}
-import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
-import sun.misc.Unsafe
-
-import java.util
+import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.local.utils.ScalaUtils.findUnsafe
 
 object ObjectNode {
 
-    val Constraints   : Array[Class[_] => Boolean] = Array(_.isPrimitive, _.isArray, _.isEnum, _ == classOf[String])
+    val Constraints   : Array[Class[_] => Boolean] = Array(_.isPrimitive, _.isArray, _.isEnum, _ eq classOf[String])
     val NullObjectFlag: Byte                       = -76
 
     def apply: NodeFactory[Any] = new NodeFactory[Any] {
@@ -31,16 +27,16 @@ object ObjectNode {
             !Constraints.exists(_ (clazz))
         }
 
-        override def canHandle(bytes: ByteSeq): Boolean = {
-            bytes.sameFlag(NullObjectFlag) || bytes.isClassDefined
+        override def canHandle(bytes: DefaultByteSeq): Boolean = {
+            bytes.sameFlagAt(0, NullObjectFlag) || bytes.isClassDefined
         }
 
-        override def newNode(finder: DefaultContextHolder, profile: ClassProfile[Any]): SerialNode[Any] = {
+        override def newNode(finder: NodeFinder, profile: ClassProfile[Any]): SerialNode[Any] = {
             new ObjectSerialNode(profile, finder)
         }
 
-        override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[Any] = {
-            new ObjectDeserialNode(finder.getClassProfile(bytes.getHeaderClass), bytes, finder)
+        override def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[Any] = {
+            new ObjectDeserialNode(finder.getClassProfile(bytes.getClassOfSeq), bytes, finder)
         }
     }
 
@@ -48,7 +44,7 @@ object ObjectNode {
 
 
 
-    class ObjectSerialNode(profile: ClassProfile[Any], context: DefaultContextHolder) extends SerialNode[Any] {
+    class ObjectSerialNode(profile: ClassProfile[Any], finder: NodeFinder) extends SerialNode[Any] {
 
         override def serialize(t: Any, putTypeHint: Boolean): Array[Byte] = {
            //println(s"Serializing Object ${t}")
@@ -61,7 +57,7 @@ object ObjectNode {
                 return Array(NullObjectFlag)
 
             //println(s"t.getClass = ${t.getClass} (${t.getClass.hashCode()})")
-            val children = context.listNodes[Any](profile, t)
+            val children = finder.listNodes[Any](profile, t)
            //println(s"children = ${children}")
 
             val classType = desc.classSignature
@@ -76,26 +72,26 @@ object ObjectNode {
         }
     }
 
-    class ObjectDeserialNode(profile: ClassProfile[Any], bytes: ByteSeq, context: DefaultContextHolder) extends DeserialNode[Any] {
+    class ObjectDeserialNode(profile: ClassProfile[Any], bytes: ByteSeq, finder: NodeFinder) extends DeserialNode[Any] {
 
         override def deserialize(): Any = {
             if (bytes(0) == NullObjectFlag)
                 return null
 
            //println(s"Deserializing object from bytes ${toPresentableString(bytes)}")
-            val objectType = bytes.getHeaderClass
+            val objectType = bytes.getClassOfSeq
 
            //println(s"objectType = ${objectType}")
             val desc = profile.desc
            //println(s"Object desc = ${desc}")
 
             val sign     = LengthSign.from(desc.signItemCount, bytes, bytes.length, 4)
-            val instance = TheUnsafe.allocateInstance(desc.clazz)
+            val instance = TheUnsafe.allocateInstance(bytes.findClass.get)
 
             val fieldValues = for (childBytes <- sign.childrenBytes) yield {
                //println(s"childBytes (str) = ${toPresentableString(childBytes)}")
                //println(s"childBytes = ${childBytes.mkString("Array(", ", ", ")")}")
-                val node = context.getDeserialNodeFor[Any](childBytes)
+                val node = finder.getDeserialNodeFor[Any](childBytes)
                //println(s"node = ${node}")
                 val result = node.deserialize()
                //println(s"result = $result")

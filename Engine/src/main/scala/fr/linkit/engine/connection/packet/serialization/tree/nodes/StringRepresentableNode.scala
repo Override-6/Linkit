@@ -13,9 +13,9 @@
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
 import fr.linkit.api.connection.packet.serialization.StringRepresentable
-import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
+import fr.linkit.api.connection.packet.serialization.tree._
 import fr.linkit.engine.connection.packet.serialization.tree._
-import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
+import fr.linkit.engine.local.utils.NumberSerializer
 
 import scala.reflect.{ClassTag, classTag}
 
@@ -31,19 +31,19 @@ object StringRepresentableNode {
         override def canHandle(bytes: ByteSeq): Boolean = {
             //println(s"bytes = ${ScalaUtils.toPresentableString(bytes.array)}")
             //println(s"raw bytes = ${bytes.array.mkString("Array(", ", ", ")")}")
-            bytes.sameFlag(SRFlag(0)) && bytes.classExists(1, s => {
+            bytes.sameFlagAt(4, SRFlag(0)) && bytes.classExists(s => {
                 //println(s"clazz = ${clazz}")
                 //println(s"s = ${s}")
                 clazz.isAssignableFrom(s)
             })
         }
 
-        override def newNode(finder: DefaultContextHolder, profile: ClassProfile[T]): SerialNode[T] = {
+        override def newNode(finder: NodeFinder, profile: ClassProfile[T]): SerialNode[T] = {
             new StringRepresentableSerialNode[T](profile, repr)
         }
 
-        override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[T] = {
-            new StringRepresentableDeserialNode[T](finder.getProfile[T], bytes, repr)
+        override def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[T] = {
+            new StringRepresentableDeserialNode[T](finder.getProfile[T], bytes.array, repr)
         }
     }
 
@@ -52,7 +52,7 @@ object StringRepresentableNode {
         override def serialize(t: T, putTypeHint: Boolean): Array[Byte] = {
             val typeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
             //Thread.dumpStack()
-            SRFlag ++ typeBytes ++ repr.getRepresentation(t).getBytes
+            typeBytes ++ SRFlag ++ repr.getRepresentation(t).getBytes
         }
     }
 

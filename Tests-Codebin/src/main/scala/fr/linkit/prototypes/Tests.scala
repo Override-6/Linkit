@@ -41,7 +41,7 @@ object Tests {
 
     def main(args: Array[String]): Unit = {
 
-        ClassMappings.getClassOpt(classOf[Timestamp].getName.hashCode()).get
+        ClassMappings.findClass(classOf[Timestamp].getName.hashCode()).get
 
         val serializer = new DefaultSerializer
         val ref   = Array(coords, attributes, packet)

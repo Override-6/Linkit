@@ -12,17 +12,13 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.api.connection.packet.serialization.tree.{DeserialNode, NodeFactory, SerialNode}
-
-import java.lang.reflect.{Array => RArray}
-import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.{ClassProfile, MegaByte}
+import fr.linkit.api.connection.packet.serialization.tree.{ByteSeq, ClassProfile, DeserialNode, NodeFactory, NodeFinder, SerialNode}
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultSerialContext.ByteHelper
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.connection.packet.serialization.tree.nodes.ObjectNode.NullObjectFlag
-import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
-import fr.linkit.engine.local.utils.NumberSerializer
-import fr.linkit.engine.local.utils.NumberSerializer.{deserializeFlaggedNumber, deserializeInt, serializeNumber}
-import fr.linkit.engine.local.utils.ScalaUtils.toPresentableString
+import fr.linkit.engine.local.utils.NumberSerializer.{deserializeFlaggedNumber, serializeNumber}
 
+//FIXME does not handle primitive arrays
 object ArrayNode extends NodeFactory[Array[_]] {
 
     val ArrayFlag: Byte = -54
@@ -32,19 +28,19 @@ object ArrayNode extends NodeFactory[Array[_]] {
         clazz.isArray
     }
 
-    override def canHandle(bytes: ByteSeq): Boolean = {
-        bytes.sameFlag(ArrayFlag)
+    override def canHandle(bytes: DefaultByteSeq): Boolean = {
+        bytes.sameFlagAt(0, ArrayFlag)
     }
 
-    override def newNode(finder: DefaultContextHolder, profile: ClassProfile[Array[_]]): SerialNode[Array[_]] = {
+    override def newNode(finder: NodeFinder, profile: ClassProfile[Array[_]]): SerialNode[Array[_]] = {
         new ArraySerialNode(profile, finder)
     }
 
-    override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[Array[_]] = {
-        new ArrayDeserialNode(finder.getProfile[Array[_]], bytes, finder)
+    override def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[Array[_]] = {
+        new ArrayDeserialNode(finder.getProfile[Array[_]], bytes.array, finder)
     }
 
-    class ArraySerialNode(profile: ClassProfile[Array[_]], tree: DefaultContextHolder) extends SerialNode[Array[_]] {
+    class ArraySerialNode(profile: ClassProfile[Array[_]], finder: NodeFinder) extends SerialNode[Array[_]] {
 
         override def serialize(array: Array[_], putTypeHint: Boolean): Array[Byte] = {
             //println(s"Serializing array ${array.mkString("Array(", ", ", ")")}")
@@ -74,7 +70,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
                 val itemClass  = item.getClass
                 val typeChange = itemClass != lastClass
                 if (typeChange)
-                    lastNode = tree.getSerialNodeForType(itemClass)
+                    lastNode = finder.getSerialNodeForType(itemClass)
                 //println(s"Serializing array item $item ($i)")
                 val bytes = lastNode.serialize(cast(item), typeChange) //if type have changed, we need to specify the new type.
                 //println(s"array item $item into bytes is now ${bytes.mkString("Array(", ", ", ")")}")
@@ -105,7 +101,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
         }
     }
 
-    class ArrayDeserialNode(profile: ClassProfile[Array[_]], bytes: Array[Byte], context: DefaultContextHolder) extends DeserialNode[Array[_]] {
+    class ArrayDeserialNode(profile: ClassProfile[Array[_]], bytes: Array[Byte], finder: NodeFinder) extends DeserialNode[Array[_]] {
 
         override def deserialize(): Array[_] = {
             if (bytes(1) == EmptyFlag)
@@ -126,7 +122,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
             var i = 0
             for (childBytes <- sign.childrenBytes) {
                 //println(s"ITEM Deserial $i:")
-                val node = context.getDeserialNodeFor(childBytes)
+                val node = finder.getDeserialNodeFor(childBytes)
                 //println(s"node = ${node}")
                 result(i) = node.deserialize()
                 //Try(//println(s"array item deserialize result = ${result(i)}"))

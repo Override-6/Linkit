@@ -12,8 +12,7 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.ClassProfile
-import fr.linkit.engine.connection.packet.serialization.tree._
+import fr.linkit.api.connection.packet.serialization.tree._
 
 object NullNode extends NodeFactory[Null] {
 
@@ -23,11 +22,11 @@ object NullNode extends NodeFactory[Null] {
 
     override def canHandle(bytes: ByteSeq): Boolean = bytes.sameFlag(NullFlag(0))
 
-    override def newNode(finder: DefaultContextHolder, profile: ClassProfile[Null]): SerialNode[Null] = {
+    override def newNode(finder: NodeFinder, profile: ClassProfile[Null]): SerialNode[Null] = {
         new NullSerial()
     }
 
-    override def newNode(finder: DefaultContextHolder, bytes: ByteSeq): DeserialNode[Null] = {
+    override def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[Null] = {
         new NullDeserial()
     }
 

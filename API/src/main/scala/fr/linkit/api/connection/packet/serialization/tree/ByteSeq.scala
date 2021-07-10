@@ -10,14 +10,26 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.serialization.procedure
+package fr.linkit.api.connection.packet.serialization.tree
 
-import fr.linkit.api.connection.network.Network
+trait ByteSeq {
 
-trait Procedure[T] {
+    val array: Array[Byte]
 
-    def beforeSerial(t: T, network: Network): Unit
+    def findClass[T]: Option[Class[_]]
 
-    def afterDeserial(t: T, network: Network): Unit
+    def getClassOfSeq[T]: Class[T]
 
+    def isClassDefined: Boolean
+
+    def apply(i: Int): Byte
+
+    def classExists(f: Class[_] => Boolean): Boolean
+
+    def sameFlagAt(pos: Int, flag: Byte): Boolean
+
+}
+
+object ByteSeq {
+    implicit def extractBytes(seq: ByteSeq): Array[Byte] = seq.array
 }

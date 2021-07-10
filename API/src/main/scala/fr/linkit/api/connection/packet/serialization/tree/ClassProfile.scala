@@ -11,15 +11,20 @@
  */
 
 package fr.linkit.api.connection.packet.serialization.tree
+import fr.linkit.api.connection.packet.serialization.tree.procedure.Procedure
 
-trait NodeFactory[T] {
+trait ClassProfile[T] {
 
-    def canHandle(clazz: Class[_]): Boolean
+    val desc: SerializableClassDescription
 
-    def canHandle(info: ByteSeq): Boolean
+    protected def getProcedures: Seq[Procedure[T]]
 
-    def newNode(finder: NodeFinder, profile: ClassProfile[T]): SerialNode[T]
+    def removeProcedure(procedure: Procedure[T]): Unit
 
-    def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[T]
+    def addProcedure(procedure: Procedure[T]): Unit
+
+    def applyAllSerialProcedures(t: T): Unit
+
+    def applyAllDeserialProcedures(t: T): Unit
 
 }

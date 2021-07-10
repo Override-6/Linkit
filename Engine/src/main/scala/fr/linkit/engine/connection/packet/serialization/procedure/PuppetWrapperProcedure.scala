@@ -15,6 +15,7 @@ package fr.linkit.engine.connection.packet.serialization.procedure
 import fr.linkit.api.connection.cache.CacheOpenBehavior
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.network.Network
+import fr.linkit.api.connection.packet.serialization.tree.procedure.Procedure
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.CloudObjectCenter
 

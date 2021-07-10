@@ -37,14 +37,14 @@ object ClassMappings {
 
     def getClassName(hashCode: Int): String = classes(hashCode)._1
 
-    def getClassOpt(hashCode: Int): Option[Class[_]] = {
+    def findClass(hashCode: Int): Option[Class[_]] = {
         //println(s"Getting class from hashcode $hashCode")
         classes.get(hashCode).map(extractClass).orElse(primitives.get(hashCode))
     }
 
     def getClass(hashCode: Int): Class[_] = {
         //println(s"Getting class from hashcode $hashCode")
-        getClassOpt(hashCode).orNull
+        findClass(hashCode).orNull
     }
 
     def getClassNameOpt(hashCode: Int): Option[String] = classes.get(hashCode).map(_._1)

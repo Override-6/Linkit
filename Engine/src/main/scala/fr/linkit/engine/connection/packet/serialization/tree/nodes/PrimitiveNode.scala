@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.DefaultContextHolder.{ClassProfile, MegaByte}
+import fr.linkit.api.connection.packet.serialization.tree.ClassProfile
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultSerialContext.{ClassProfile, ByteHelper}
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 
@@ -36,16 +37,16 @@ object PrimitiveNode {
             clazz.isPrimitive || (classOf[Number].isAssignableFrom(clazz) && clazz.getPackageName == "java.lang") || OtherWrapperClasses.contains(clazz)
         }
 
-        override def canHandle(info: ByteSeq): Boolean = !info.isClassDefined && info.array.nonEmpty && {
+        override def canHandle(info: DefaultByteSeq): Boolean = !info.isClassDefined && info.array.nonEmpty && {
             //println(s"info.bytes = ${info.array.mkString("Array(", ", ", ")")}")
             TypeFlags.exists(info.sameFlag)
         }
 
-        override def newNode(context: DefaultContextHolder, profile: ClassProfile[AnyVal]): SerialNode[AnyVal] = {
+        override def newNode(context: DefaultSerialContext, profile: ClassProfile[AnyVal]): SerialNode[AnyVal] = {
             new PrimitiveSerialNode(profile)
         }
 
-        override def newNode(context: DefaultContextHolder, bytes: ByteSeq): DeserialNode[AnyVal] = {
+        override def newNode(context: DefaultSerialContext, bytes: DefaultByteSeq): DeserialNode[AnyVal] = {
             new PrimitiveDeserialNode(bytes, context)
         }
     }
@@ -71,7 +72,7 @@ object PrimitiveNode {
         }
     }
 
-    class PrimitiveDeserialNode(bytes: Array[Byte], context: DefaultContextHolder) extends DeserialNode[AnyVal] {
+    class PrimitiveDeserialNode(bytes: Array[Byte], context: DefaultSerialContext) extends DeserialNode[AnyVal] {
 
         override def deserialize(): AnyVal = {
             //println(s"Deserializing primitive number from bytes ${ScalaUtils.toPresentableString(bytes)}")

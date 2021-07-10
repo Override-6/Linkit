@@ -11,15 +11,15 @@
  */
 
 package fr.linkit.api.connection.packet.serialization.tree
+import scala.reflect.ClassTag
 
-trait NodeFactory[T] {
+trait NodeFinder extends ClassProfileHandler {
 
-    def canHandle(clazz: Class[_]): Boolean
+    def getSerialNodeForRef[T: ClassTag](any: T): SerialNode[T]
 
-    def canHandle(info: ByteSeq): Boolean
+    def getSerialNodeForType[T](clazz: Class[_]): SerialNode[T]
 
-    def newNode(finder: NodeFinder, profile: ClassProfile[T]): SerialNode[T]
+    def getDeserialNodeFor[T](bytes: Array[Byte]): DeserialNode[T]
 
-    def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[T]
-
+    def listNodes[T](profile: ClassProfile[T], obj: T): List[SerialNode[_]]
 }

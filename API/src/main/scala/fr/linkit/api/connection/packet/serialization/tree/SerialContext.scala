@@ -10,10 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.serialization.tree
+package fr.linkit.api.connection.packet.serialization.tree
 
-import fr.linkit.api.connection.packet.serialization.tree.ContextHolder
+import fr.linkit.api.connection.packet.serialization.tree.procedure.Procedure
 
-class SerialContext(holder: ContextHolder) {
+import scala.reflect.ClassTag
 
+trait SerialContext extends ClassProfileHandler {
+
+    def attachFactory(nodeFactory: NodeFactory[_]): Unit
+
+    def detachFactory(nodeFactory: NodeFactory[_]): Unit
+
+    def attachProcedure[C: ClassTag](procedure: Procedure[C]): Unit
+
+    def getFinderOf(target: String): NodeFinder
 }

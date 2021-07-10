@@ -12,27 +12,30 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree
 
+import fr.linkit.api.connection.packet.serialization.tree.ByteSeq
 import fr.linkit.engine.local.mapping.ClassMappings
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 
-case class ByteSeq(array: Array[Byte]) {
+case class DefaultByteSeq(override val array: Array[Byte]) extends ByteSeq {
 
-    lazy val headerClass: Option[Class[_]] = findClassAt(0)
+    lazy val clazz: Option[Class[_]] = findClassAt(0)
 
-    def getHeaderClass[T]: Class[T] = headerClass match {
+    override def findClass[T]: Option[Class[_]] = clazz
+
+    override def getClassOfSeq[T]: Class[T] = clazz match {
         case None        => throw new NoSuchElementException(s"Header class not found into byte array ('${ScalaUtils.toPresentableString(array.drop(4))}').")
         case Some(value) => value match {
             case clazz: Class[T] => clazz
         }
     }
 
-    def isClassDefined: Boolean = headerClass.isDefined
+    override def isClassDefined: Boolean = clazz.isDefined
 
-    def apply(i: Int): Byte = array(i)
+    override def apply(i: Int): Byte = array(i)
 
-    def classExists(f: Class[_] => Boolean): Boolean = headerClass exists f
+    override def classExists(f: Class[_] => Boolean): Boolean = clazz exists f
 
-    def sameFlag(flag: Byte): Boolean = array.nonEmpty && array(0) == flag
+    override def sameFlagAt(pos: Int, flag: Byte): Boolean = array.length > pos && array(pos) == flag
 
     private def findClassAt(index: Int): Option[Class[_]] = {
         if (array.length - index < 4)
@@ -41,14 +44,14 @@ case class ByteSeq(array: Array[Byte]) {
             val i = NumberSerializer.deserializeInt(array, index)
             //println(s"index = ${index}")
             //println(s"i = ${i}")
-            val v = ClassMappings.getClassOpt(i)
+            val v = ClassMappings.findClass(i)
             //println(s"v = ${v}")
             v
         }
     }
 }
 
-object ByteSeq {
+object DefaultByteSeq {
 
-    implicit def unwrap(seq: ByteSeq): Array[Byte] = seq.array
+    implicit def unwrap(seq: DefaultByteSeq): Array[Byte] = seq.array
 }

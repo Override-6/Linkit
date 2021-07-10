@@ -12,15 +12,34 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree
 
+import fr.linkit.api.connection.packet.serialization.tree.SerializableClassDescription
 import fr.linkit.engine.local.utils.NumberSerializer
 
 import java.lang.reflect.{Field, Modifier}
 
-class SerializableClassDescription(val clazz: Class[_]) {
+class ClassDescription(val clazz: Class[_]) extends SerializableClassDescription  {
 
     val serializableFields: List[Field] = listSerializableFields(clazz)
     val signItemCount     : Int         = serializableFields.length - 1
     val classSignature    : Array[Byte] = NumberSerializer.serializeInt(clazz.getName.hashCode)
+
+    override def foreachDeserializableFields(action: (Int, Field) => Unit): Unit = {
+        var i = 0
+        serializableFields.foreach(field => {
+            action(i, field)
+
+            var superClass = clazz.getSuperclass
+            while (superClass != null) {
+                val superField = superClass.getDeclaredFields.find(_.getName == field.getName)
+                if (superField.exists(f => f.getType == field.getType && f.isAnnotationPresent(classOf[LinkDescendant])))
+                    action(i, superField.get)
+                superClass = superClass.getSuperclass
+            }
+            i += 1
+        })
+    }
+
+    override def toString: String = s"SerializableClassDescription($clazz, $serializableFields)"
 
     private def listSerializableFields(cl: Class[_], subClassFields: Seq[Field] = List()): List[Field] = {
         if (cl == null)
@@ -38,23 +57,5 @@ class SerializableClassDescription(val clazz: Class[_]) {
 
         initial ++ listSerializableFields(cl.getSuperclass, initial) //++ cl.getInterfaces.flatMap(listSerializableFields(_, initial))
     }
-
-    def foreachDeserializableFields(action: (Int, Field) => Unit): Unit = {
-        var i = 0
-        serializableFields.foreach(field => {
-            action(i, field)
-
-            var superClass = clazz.getSuperclass
-            while (superClass != null) {
-                val superField = superClass.getDeclaredFields.find(_.getName == field.getName)
-                if (superField.exists(f => f.getType == field.getType && f.isAnnotationPresent(classOf[LinkDescendant])))
-                    action(i, superField.get)
-                superClass = superClass.getSuperclass
-            }
-            i += 1
-        })
-    }
-
-    override def toString: String = s"SerializableClassDescription($clazz, $serializableFields)"
 
 }

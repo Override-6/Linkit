@@ -11,15 +11,12 @@
  */
 
 package fr.linkit.api.connection.packet.serialization.tree
+import java.lang.reflect.Field
 
-trait ContextHolder {
+trait SerializableClassDescription {
+    val serializableFields: List[Field]
+    val signItemCount     : Int
+    val classSignature    : Array[Byte]
 
-    def attachFactory(nodeFactory: NodeFactory[_]): Unit
-
-    def detachFactory(nodeFactory: NodeFactory[_]): Unit
-
-    def attachProcedure[C: ClassTag](procedure: Procedure[C]): Unit
-
-    def detachProcedure[C: ClassTag](procedure: Procedure[C]): Unit
-
+    def foreachDeserializableFields(action: (Int, Field) => Unit): Unit
 }

@@ -10,16 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.serialization.tree
+package fr.linkit.api.connection.packet.serialization.tree.procedure
 
-trait NodeFactory[T] {
+import fr.linkit.api.connection.network.Network
 
-    def canHandle(clazz: Class[_]): Boolean
+trait Procedure[T] {
 
-    def canHandle(info: ByteSeq): Boolean
+    def beforeSerial(t: T, network: Network): Unit
 
-    def newNode(finder: NodeFinder, profile: ClassProfile[T]): SerialNode[T]
-
-    def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[T]
+    def afterDeserial(t: T, network: Network): Unit
 
 }
