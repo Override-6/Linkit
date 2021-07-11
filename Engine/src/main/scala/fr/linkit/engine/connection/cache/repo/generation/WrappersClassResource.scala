@@ -17,6 +17,7 @@ import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
 import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.WrapperPrefixName
+import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.io.File
 import java.nio.file.{Files, Path}
@@ -41,7 +42,9 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
                     loader = getClass.getClassLoader //Use the Application's classloader
 
                 val classLoader = new GeneratedClassClassLoader(folderPath, loader)
-                Class.forName(wrapperClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]]
+                val clazz = Class.forName(wrapperClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]]
+                ClassMappings.putClass(clazz)
+                clazz
             }
         }) match {
             case clazz: Class[S with PuppetWrapper[S]] => Some(clazz)

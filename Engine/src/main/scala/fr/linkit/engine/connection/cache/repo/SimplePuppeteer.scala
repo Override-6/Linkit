@@ -29,7 +29,7 @@ import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
 class SimplePuppeteer[S](channel: RequestPacketChannel,
-                         override val repo: ObjectRepository[_],
+                         override val repo: EngineObjectCenter[_],
                          override val puppeteerDescription: PuppeteerDescription,
                          val puppetDescription: PuppetDescription[S]) extends Puppeteer[S] {
 
@@ -122,7 +122,7 @@ class SimplePuppeteer[S](channel: RequestPacketChannel,
         repo.genSynchronizedObject(objPath, obj, ownerID, descriptions) {
             (wrapper, childPath) =>
                 val id          = childPath.last
-                val description = repo.getDescFromClass(wrapper.getClass)
+                val description = repo.getPuppetDescFromClass(wrapper.getClass)
                 repo.center
                         .getNode(currentPath).get
                         .getGrandChild(childPath

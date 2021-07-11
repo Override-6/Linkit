@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.engine.connection.cache.repo.CloudObjectCenter.PuppetProfile
+import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
 import fr.linkit.engine.connection.packet.serialization.DefaultSerializer
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacket, ResponsePacket}
@@ -36,8 +36,6 @@ class PacketSerialTests {
     def init(): Unit = {
         LinkitApplication.mapEnvironment(LocalFileSystemAdapters.Nio, Seq(getClass))
     }
-
-
 
     @Test
     def serialize(): Unit = {

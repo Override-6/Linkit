@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.connection.cache
 
-import fr.linkit.api.connection.cache.{CacheContent, CacheOpenBehavior, InternalSharedCache, SharedCacheManager}
+import fr.linkit.api.connection.cache.{CacheContent, CacheSearchBehavior, InternalSharedCache, SharedCacheManager}
+import fr.linkit.api.connection.network.Engine
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
@@ -37,7 +38,7 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
             return this
 
         //println(s"<$family> UPDATING CACHE $identifier")
-        val content = handler.retrieveCacheContent(identifier, CacheOpenBehavior.GET_OR_CRASH)
+        val content = handler.retrieveCacheContent(identifier, CacheSearchBehavior.GET_OR_CRASH)
         //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
         if (content.isDefined) {
             setContent(content.get)
@@ -61,6 +62,8 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
         drainAllAttributes(request)
         request
     }
+
+    //override def onNewEngineConnected(engine: Engine): Unit = ()
 
     addDefaultAttribute("family", family)
     addDefaultAttribute("cache", identifier)

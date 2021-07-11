@@ -12,12 +12,12 @@
 
 package fr.linkit.engine.connection.packet.serialization.procedure
 
-import fr.linkit.api.connection.cache.CacheOpenBehavior
+import fr.linkit.api.connection.cache.CacheSearchBehavior
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.serialization.tree.procedure.Procedure
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.repo.CloudObjectCenter
+import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter
 
 object PuppetWrapperProcedure extends Procedure[PuppetWrapper[Serializable]] {
 
@@ -28,19 +28,20 @@ object PuppetWrapperProcedure extends Procedure[PuppetWrapper[Serializable]] {
     }
 
     override def afterDeserial(wrapper: PuppetWrapper[Serializable], network: Network): Unit = {
-        val puppeteerDesc = wrapper.getPuppeteer.puppeteerDescription
+
+        val puppeteerDesc = wrapper.getPuppeteerDescription
         val family        = puppeteerDesc.cacheFamily
         val cacheID       = puppeteerDesc.cacheID
-        network.getCacheManager(puppeteerDesc.cacheFamily).fold {
+        network.getCacheManager(family).fold {
             AppLogger.warn(s"${wrapper.getClass.getName}: Received packet containing puppet that belongs to cache family '$family' which is not opened on this machine.")
             AppLogger.warn(s"Therefore, this object will be lost and will not be synchronised as it was probably expected.")
             if (failCount % 10 == 0) {
-                AppLogger.warn(s"Tip: You can open the cache manager '$family' then open a ${classOf[CloudObjectCenter[_]].getSimpleName} with cache identifier '$cacheID")
+                AppLogger.warn(s"Tip: You can open the cache manager '$family' then open a ${classOf[DefaultEngineObjectCenter[_]].getSimpleName} with cache identifier '$cacheID")
                 AppLogger.warn(s"     In order to retrieve this object.")
             }
             failCount += 1
         } { cache =>
-            val repo = cache.getCache(cacheID, CloudObjectCenter[Serializable](), CacheOpenBehavior.GET_OR_CRASH)
+            val repo = cache.getCacheAsync(cacheID, DefaultEngineObjectCenter[Serializable](), CacheSearchBehavior.GET_OR_CRASH)
             repo.initPuppetWrapper(wrapper)
         }
     }

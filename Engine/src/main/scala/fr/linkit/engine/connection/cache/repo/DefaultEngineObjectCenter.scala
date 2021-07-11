@@ -16,14 +16,15 @@ import fr.linkit.api.connection.cache.repo._
 import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppetDescriptions, PuppeteerDescription}
 import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.network.Engine
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
-import fr.linkit.engine.connection.cache.repo.CloudObjectCenter.{FieldRestorer, PuppetProfile}
+import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.{FieldRestorer, PuppetProfile}
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
 import fr.linkit.engine.connection.cache.repo.tree.{DefaultPuppetCenter, MemberSyncNode, PuppetNode}
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.engine.connection.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
 import fr.linkit.engine.local.LinkitApplication
@@ -36,27 +37,25 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
-class CloudObjectCenter[A <: Serializable](handler: SharedCacheManager,
-                                           cacheID: Int,
-                                           channel: RequestPacketChannel,
-                                           generator: PuppetWrapperGenerator,
-                                           override val descriptions: PuppetDescriptions)
-    extends AbstractSharedCache(handler, cacheID, channel) with ObjectRepository[A] {
+class DefaultEngineObjectCenter[A <: Serializable](handler: SharedCacheManager,
+                                                   cacheID: Int,
+                                                   channel: RequestPacketChannel,
+                                                   generator: PuppetWrapperGenerator,
+                                                   override val descriptions: PuppetDescriptions)
+        extends AbstractSharedCache(handler, cacheID, channel) with EngineObjectCenter[A] {
 
-    reflect.runtime.universe.MemberScopeTag
-
-    override val center            = new DefaultPuppetCenter[A]
-    private  val fieldRestorer     = new FieldRestorer
-    private  val supportIdentifier = channel.traffic.supportIdentifier
+    override val center                = new DefaultPuppetCenter[A]
+    private  val fieldRestorer         = new FieldRestorer
+    private  val supportIdentifier     = channel.traffic.supportIdentifier
+    private  val generatedClassesNames = mutable.HashSet.empty[String]
 
     override def getPuppetDescription[B <: A : ClassTag : TypeTag]: PuppetDescription[B] = {
         descriptions.getDescription[B]
     }
 
-    override def getDescFromClass[B](clazz: Class[B]): PuppetDescription[B] = {
+    override def getPuppetDescFromClass[B](clazz: Class[B]): PuppetDescription[B] = {
         descriptions.getDescFromClass(clazz)
     }
-
 
     override def postObject[B <: A : ClassTag : TypeTag](id: Int, snapshot: B): B with PuppetWrapper[B] = {
         ensureNotWrapped(snapshot)
@@ -66,9 +65,9 @@ class CloudObjectCenter[A <: Serializable](handler: SharedCacheManager,
         val path    = Array(id)
         val wrapper = localRegisterRemotePuppet[B](Array(id), supportIdentifier, snapshot)
         channel.makeRequest(ChannelScopes.discardCurrent)
-            .addPacket(ObjectPacket(PuppetProfile(path, snapshot, supportIdentifier)))
-            .putAllAttributes(this)
-            .submit()
+                .addPacket(ObjectPacket(PuppetProfile(path, snapshot, supportIdentifier)))
+                .putAllAttributes(this)
+                .submit()
 
         wrapper
     }
@@ -81,11 +80,12 @@ class CloudObjectCenter[A <: Serializable](handler: SharedCacheManager,
         isRegistered(Array(id))
     }
 
-    override def initPuppetWrapper[B <: A : ClassTag : TypeTag](wrapper: B with PuppetWrapper[B]): Unit = {
+    override def initPuppetWrapper[B <: A](wrapper: B with PuppetWrapper[B]): Unit = {
         if (wrapper.isInitialized)
             return
-        val puppeteerDesc = wrapper.getPuppeteer.puppeteerDescription
-        val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, getPuppetDescription[B])
+        val puppeteerDesc = wrapper.getPuppeteerDescription
+        val wrappedClass = wrapper.getWrappedClass.asInstanceOf[Class[B]]
+        val puppeteer     = new SimplePuppeteer[B](channel, this, puppeteerDesc, getPuppetDescFromClass[B](wrappedClass))
         wrapper.initPuppeteer(puppeteer)
     }
 
@@ -99,8 +99,15 @@ class CloudObjectCenter[A <: Serializable](handler: SharedCacheManager,
     }
 
     private def genPuppetWrapper[B: ClassTag](puppeteer: Puppeteer[B], puppet: B): B with PuppetWrapper[B] = {
-        val puppetClass = generator.getPuppetClass[B](puppet.getClass.asInstanceOf[Class[B]])
-        val instance = WrapperInstantiator.instantiateFromOrigin[B](puppetClass, puppet)
+        val wrapperClass    = generator.getPuppetClass[B](puppet.getClass.asInstanceOf[Class[B]])
+        val puppetClassName = puppet.getClass.getName
+        if (!generatedClassesNames.contains(puppetClassName)) {
+            channel.makeRequest(ChannelScopes.broadcast)
+                    .addPacket(StringPacket(puppetClassName))
+                    .submit()
+            generatedClassesNames += puppetClassName
+        }
+        val instance = WrapperInstantiator.instantiateFromOrigin[B](wrapperClass, puppet)
         instance.initPuppeteer(puppeteer)
         instance
     }
@@ -116,6 +123,8 @@ class CloudObjectCenter[A <: Serializable](handler: SharedCacheManager,
                     fieldRestorer.restoreFields(puppet)
                     localRegisterRemotePuppet(profile.treeViewPath, owner, puppet)(ClassTag(puppet.getClass))
                 }
+            case StringPacket(puppetClassName)           =>
+                generator.getPuppetClass(Class.forName(puppetClassName))
             case ip: InvocationPacket                    =>
                 val path = ip.path
                 val node = center.getNode(path)
@@ -204,12 +213,12 @@ class CloudObjectCenter[A <: Serializable](handler: SharedCacheManager,
                     parent = Some(parentNode)
                 } { parentNode =>
                     parentNode.getGrandChild(childPath.drop(path.length).dropRight(1))
-                        .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${childPath.mkString("$", " -> ", "")}")) {
-                            parent =>
-                                val chip      = ObjectChip[Any](owner, description, wrapper.asInstanceOf[Any with PuppetWrapper[Any]])
-                                val puppeteer = wrapper.getPuppeteer.asInstanceOf[Puppeteer[Any]]
-                                parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, isIntended, id, _))
-                        }
+                            .fold(throw new NoSuchPuppetException(s"Puppet Node not found in path ${childPath.mkString("$", " -> ", "")}")) {
+                                parent =>
+                                    val chip      = ObjectChip[Any](owner, description, wrapper.asInstanceOf[Any with PuppetWrapper[Any]])
+                                    val puppeteer = wrapper.getPuppeteer.asInstanceOf[Puppeteer[Any]]
+                                    parent.addChild(id, new PuppetNode(puppeteer, chip, descriptions, isIntended, id, _))
+                            }
                 }
         }
 
@@ -217,18 +226,18 @@ class CloudObjectCenter[A <: Serializable](handler: SharedCacheManager,
     }
 }
 
-object CloudObjectCenter {
+object DefaultEngineObjectCenter {
 
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
-    def apply[A <: Serializable : ClassTag](descriptions: PuppetDescriptions = PuppetDescriptions.getDefault): SharedCacheFactory[CloudObjectCenter[A] with InternalSharedCache] = {
+    def apply[A <: Serializable : ClassTag](descriptions: PuppetDescriptions = PuppetDescriptions.getDefault): SharedCacheFactory[DefaultEngineObjectCenter[A] with InternalSharedCache] = {
         (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
             val channel   = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             val context   = handler.network.connection.getApp
             val resources = context.getAppResources.getOrOpenThenRepresent[WrappersClassResource](ClassesResourceDirectory)
             val generator = new PuppetWrapperClassGenerator(context.compilerCenter, resources)
 
-            new CloudObjectCenter[A](handler, identifier, channel, generator, descriptions)
+            new DefaultEngineObjectCenter[A](handler, identifier, channel, generator, descriptions)
         }
     }
 

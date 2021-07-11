@@ -13,6 +13,6 @@
 package fr.linkit.engine.connection.cache.repo
 
 import fr.linkit.engine.connection.cache.CacheArrayContent
-import fr.linkit.engine.connection.cache.repo.CloudObjectCenter.PuppetProfile
+import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
 
 class CacheRepoContent[A <: Serializable](content: Array[PuppetProfile[A]]) extends CacheArrayContent[PuppetProfile[A]](content)

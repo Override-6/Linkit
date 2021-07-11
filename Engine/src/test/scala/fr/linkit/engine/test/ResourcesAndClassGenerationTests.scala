@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.test
 
+import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
@@ -19,13 +20,17 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
+import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
 import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
+import fr.linkit.engine.connection.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
+import fr.linkit.engine.connection.packet.serialization.DefaultSerializer
+import fr.linkit.engine.connection.packet.traffic.channel.request.ResponsePacket
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.system.fsa.nio.NIOFileAdapter
+import fr.linkit.engine.local.utils.ScalaUtils
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
 import fr.linkit.engine.test.classes.ScalaClass
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
@@ -33,7 +38,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
 
-import java.util
 import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.universe.TypeTag
 
@@ -69,6 +73,17 @@ class ResourcesAndClassGenerationTests {
         val scalaResult = TypeVariableTranslator.toScalaDeclaration(testMethod.getTypeParameters)
         println(s"Java result = ${javaResult}")
         println(s"Scala result = ${scalaResult}")
+    }
+
+    @Test
+    def packetTest(): Unit = {
+        val wrapper = forObject(ListBuffer.empty[String])
+
+        val packet          = ObjectPacket(wrapper)
+        val testPacketBytes = new DefaultSerializer().serialize(packet, true)
+        println(s"Serialized testedPacket : ${ScalaUtils.toPresentableString(testPacketBytes)}")
+        val rePacket        = Assertions.assertInstanceOf(packet.getClass, new DefaultSerializer().deserialize(testPacketBytes))
+        println(s"resulting packet = ${rePacket.casted[PuppetWrapper[_]].getPuppeteerDescription}")
     }
 
     @Test
@@ -127,7 +142,7 @@ class ResourcesAndClassGenerationTests {
         forObject(LocalFileSystemAdapters.Nio)
     }
 
-    private def forObject[A : TypeTag](obj: A): A = {
+    private def forObject[A: TypeTag](obj: A): A = {
         Assertions.assertNotNull(resources)
         val cl = obj.getClass.asInstanceOf[Class[A]]
 

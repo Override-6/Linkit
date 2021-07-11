@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.network
 
-import fr.linkit.api.connection.cache.{CacheOpenBehavior, SharedCacheManager}
+import fr.linkit.api.connection.cache.{CacheSearchBehavior, SharedCacheManager}
 import fr.linkit.api.connection.network.{Network, Engine}
 import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
@@ -31,7 +31,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     private   val cacheRequestChannel                          = connection.getInjectable(12, ChannelScopes.discardCurrent, RequestPacketChannel)
     private   val caches                                       = mutable.HashMap.empty[String, NetworkSharedCacheManager]
     override  val cache             : SharedCacheManager       = initCaches()
-    protected val sharedIdentifiers : SharedCollection[String] = cache.getCache(3, SharedCollection.set[String], CacheOpenBehavior.GET_OR_WAIT)
+    protected val sharedIdentifiers : SharedCollection[String] = cache.getCache(3, SharedCollection.set[String], CacheSearchBehavior.GET_OR_WAIT)
     protected val entityCommunicator: SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScopes.discardCurrent, SyncAsyncPacketChannel.busy)
     protected val entities: BoundedCollection.Immutable[Engine]
 

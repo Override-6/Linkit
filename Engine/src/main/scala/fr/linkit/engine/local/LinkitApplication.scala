@@ -99,16 +99,20 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
                 adapter.getAbsolutePath //converting to absolute path.
             case None       => null
         }
+
+        import LocalResourceFolder._
+        val resource  = appResources.getOrOpenThenRepresent[WrappersClassResource](getProperty("compilation.working_dir.classes"))
+        val generator = new PuppetWrapperClassGenerator(compilerCenter, resource)
+        generator.preGenerateClasses(
+            Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter])
+        )
+
+
         if (pluginFolder != null) {
             val pluginCount = pluginManager.loadAll(pluginFolder).length
             configuration.fsAdapter.getAdapter(pluginFolder)
             AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
         }
-
-        import LocalResourceFolder._
-        val resource  = appResources.getOrOpenThenRepresent[WrappersClassResource](getProperty("compilation.working_dir.classes"))
-        val generator = new PuppetWrapperClassGenerator(compilerCenter, resource)
-        generator.preGenerateClasses(classOf[LinkitApplication].getClassLoader, Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter]))
     }
 
 }

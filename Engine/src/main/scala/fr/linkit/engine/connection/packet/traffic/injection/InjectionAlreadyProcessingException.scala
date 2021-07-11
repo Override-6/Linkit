@@ -20,7 +20,7 @@ case class InjectionAlreadyProcessingException(injection: PacketInjection, msg: 
     override protected def appendMessage(sb: StringBuilder): Unit = {
         super.appendMessage(sb)
         val coords = injection.coordinates
-        sb.append(s"For injection into injectable id '${coords.injectableID}'\n")
+        sb.append(s"For injection into packet injectable of id '${coords.injectableID}'\n")
                 .append(s"Targeting ${coords.targetID}, sent by ${coords.senderID}\n")
     }
 

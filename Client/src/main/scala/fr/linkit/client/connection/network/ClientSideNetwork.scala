@@ -12,8 +12,8 @@
 
 package fr.linkit.client.connection.network
 
-import fr.linkit.api.connection.cache.CacheOpenBehavior
-import fr.linkit.api.connection.network.{ExternalConnectionState, Engine}
+import fr.linkit.api.connection.cache.CacheSearchBehavior
+import fr.linkit.api.connection.network.{Engine, ExternalConnectionState}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.client.connection.ClientConnection
 import fr.linkit.engine.connection.cache.SharedInstance
@@ -54,7 +54,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
         val identifier   = connection.supportIdentifier
         val sharedCaches = newCachesManager(identifier, identifier)
         sharedCaches
-                .getCache(3, SharedInstance[ExternalConnectionState], CacheOpenBehavior.GET_OR_WAIT)
+                .getCache(3, SharedInstance[ExternalConnectionState], CacheSearchBehavior.GET_OR_WAIT)
                 .set(ExternalConnectionState.CONNECTED) //technically always connected to himself
         new SelfEngine(connection, connection.getState, sharedCaches)
     }

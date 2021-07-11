@@ -17,7 +17,7 @@ package fr.linkit.api.connection.cache;
  *
  * @see SharedCacheManager#getCache
  */
-public enum CacheOpenBehavior {
+public enum CacheSearchBehavior {
     /**
      * Retrieves the cache or wait until it get opened on the targeted engine's {@link SharedCacheManager}
      */

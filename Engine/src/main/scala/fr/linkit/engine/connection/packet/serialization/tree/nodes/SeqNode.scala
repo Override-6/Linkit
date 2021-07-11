@@ -12,8 +12,7 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.api.connection.packet.serialization.tree.ClassProfile
-import fr.linkit.engine.connection.packet.serialization.tree.DefaultSerialContext.ClassProfile
+import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
 import fr.linkit.engine.connection.packet.serialization.tree._
 import fr.linkit.engine.local.mapping.ClassMappings
 import fr.linkit.engine.local.utils.NumberSerializer
@@ -24,20 +23,20 @@ import scala.collection.{Seq, SeqFactory, SeqOps, mutable}
 object SeqNode {
 
     def ofMutable: NodeFactory[mutable.Seq[_]] = new NodeFactory[mutable.Seq[_]] {
-        override def canHandle(clazz: Class[_]): Boolean = {
-            clazz != classOf[::[_]] && clazz != Nil.getClass && classOf[mutable.Seq[_]].isAssignableFrom(clazz)
+        override def canHandle(cl: Class[_]): Boolean = {
+            (cl ne classOf[::[_]]) && (cl ne Nil.getClass) && classOf[mutable.Seq[_]].isAssignableFrom(cl) && findFactory(cl).isDefined
         }
 
-        override def canHandle(bytes: DefaultByteSeq): Boolean = {
-            bytes.classExists(cl => classOf[mutable.Seq[_]].isAssignableFrom(cl) && findFactory(cl).isDefined)
+        override def canHandle(bytes: ByteSeq): Boolean = {
+            bytes.classExists(canHandle)
         }
 
-        override def newNode(finder: DefaultSerialContext, profile: ClassProfile[mutable.Seq[_]]): SerialNode[mutable.Seq[_]] = {
+        override def newNode(finder: SerialContext, profile: ClassProfile[mutable.Seq[_]]): SerialNode[mutable.Seq[_]] = {
             new MutableSeqSerialNode(profile, finder)
         }
 
-        override def newNode(context: DefaultSerialContext, bytes: DefaultByteSeq): DeserialNode[mutable.Seq[_]] = {
-            new MutableSeqDeserialNode(context.getClassProfile(bytes.getClassOfSeq), bytes, context)
+        override def newNode(context: SerialContext, bytes: ByteSeq): DeserialNode[mutable.Seq[_]] = {
+            new MutableSeqDeserialNode(context.getClassProfile(bytes.getHeaderClass), bytes, context)
         }
     }
 
@@ -46,20 +45,20 @@ object SeqNode {
             clazz != classOf[::[_]] && clazz != Nil.getClass && classOf[Seq[_]].isAssignableFrom(clazz) && findFactory(clazz).isDefined
         }
 
-        override def canHandle(bytes: DefaultByteSeq): Boolean = {
+        override def canHandle(bytes: ByteSeq): Boolean = {
             bytes.classExists(canHandle)
         }
 
-        override def newNode(finder: DefaultSerialContext, profile: ClassProfile[Seq[_]]): SerialNode[Seq[_]] = {
+        override def newNode(finder: SerialContext, profile: ClassProfile[Seq[_]]): SerialNode[Seq[_]] = {
             new ImmutableSeqSerialNode(profile, finder)
         }
 
-        override def newNode(context: DefaultSerialContext, bytes: DefaultByteSeq): DeserialNode[Seq[_]] = {
-            new ImmutableSeqDeserialNode(context.getClassProfile(bytes.getClassOfSeq), bytes, context)
+        override def newNode(context: SerialContext, bytes: ByteSeq): DeserialNode[Seq[_]] = {
+            new ImmutableSeqDeserialNode(context.getClassProfile(bytes.getHeaderClass), bytes, context)
         }
     }
 
-    class MutableSeqSerialNode(profile: ClassProfile[mutable.Seq[_]], finder: DefaultSerialContext) extends SerialNode[mutable.Seq[_]] {
+    class MutableSeqSerialNode(profile: ClassProfile[mutable.Seq[_]], finder: SerialContext) extends SerialNode[mutable.Seq[_]] {
 
         override def serialize(t: mutable.Seq[_], putTypeHint: Boolean): Array[Byte] = {
             profile.applyAllSerialProcedures(t)
@@ -71,7 +70,7 @@ object SeqNode {
         }
     }
 
-    class MutableSeqDeserialNode(profile: ClassProfile[mutable.Seq[_]], bytes: Array[Byte], finder: DefaultSerialContext) extends DeserialNode[mutable.Seq[_]] {
+    class MutableSeqDeserialNode(profile: ClassProfile[mutable.Seq[_]], bytes: Array[Byte], finder: SerialContext) extends DeserialNode[mutable.Seq[_]] {
 
         override def deserialize(): mutable.Seq[_] = {
             val seqType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))
@@ -90,7 +89,7 @@ object SeqNode {
         }
     }
 
-    class ImmutableSeqSerialNode(profile: ClassProfile[Seq[_]], finder: DefaultSerialContext) extends SerialNode[Seq[_]] {
+    class ImmutableSeqSerialNode(profile: ClassProfile[Seq[_]], finder: SerialContext) extends SerialNode[Seq[_]] {
 
         override def serialize(t: Seq[_], putTypeHint: Boolean): Array[Byte] = {
             profile.applyAllSerialProcedures(t)
@@ -100,7 +99,7 @@ object SeqNode {
         }
     }
 
-    class ImmutableSeqDeserialNode(profile: ClassProfile[Seq[_]], bytes: Array[Byte], finder: DefaultSerialContext) extends DeserialNode[Seq[_]] {
+    class ImmutableSeqDeserialNode(profile: ClassProfile[Seq[_]], bytes: Array[Byte], finder: SerialContext) extends DeserialNode[Seq[_]] {
 
         override def deserialize(): Seq[_] = {
             val seqType = ClassMappings.getClass(NumberSerializer.deserializeInt(bytes, 0))

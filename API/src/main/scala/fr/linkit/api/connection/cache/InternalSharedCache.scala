@@ -12,8 +12,12 @@
 
 package fr.linkit.api.connection.cache
 
+import fr.linkit.api.connection.network.Engine
+
 trait InternalSharedCache extends SharedCache {
 
     def setContent(cacheContent: CacheContent): Unit
+
+    //def onNewEngineConnected(engine: Engine): Unit
 
 }

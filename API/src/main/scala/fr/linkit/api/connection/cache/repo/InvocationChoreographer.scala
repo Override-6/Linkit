@@ -21,7 +21,7 @@ class InvocationChoreographer {
      * [[forceLocalInvocation()]] method.
      * @see [[forceLocalInvocation()]] for more details
      * */
-    private val markedThreads = new mutable.HashSet[Thread]
+    protected val markedThreads = new mutable.HashSet[Thread]
 
     /**
      * The provided action will be executed, and during its execution,
@@ -47,7 +47,13 @@ class InvocationChoreographer {
      *         @see [[forceLocalInvocation()]]
      * */
     def isMethodExecutionForcedToLocal: Boolean = {
-        markedThreads.contains(Thread.currentThread())
+        markedThreads.contains(Thread.currentThread()) || InvocationChoreographer.isMethodExecutionForcedToLocal
     }
 
+}
+
+object InvocationChoreographer extends InvocationChoreographer {
+    override def isMethodExecutionForcedToLocal: Boolean = {
+        markedThreads.contains(Thread.currentThread())
+    }
 }

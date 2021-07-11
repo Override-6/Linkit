@@ -13,6 +13,7 @@
 package fr.linkit.api.connection.cache.repo;
 
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription;
+import fr.linkit.api.connection.cache.repo.description.PuppeteerDescription;
 
 import java.io.Serializable;
 
@@ -20,11 +21,13 @@ public interface PuppetWrapper<T> extends Serializable {
 
     void initPuppeteer(Puppeteer<T> puppeteer);
 
+    Puppeteer<T> getPuppeteer();
+
     PuppetDescription<T> getPuppetDescription();
 
-    InvocationChoreographer getChoreographer();
+    PuppeteerDescription getPuppeteerDescription();
 
-    Puppeteer<T> getPuppeteer();
+    InvocationChoreographer getChoreographer();
 
     boolean isInitialized();
 

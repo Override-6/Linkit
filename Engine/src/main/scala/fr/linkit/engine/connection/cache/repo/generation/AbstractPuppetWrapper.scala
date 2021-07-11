@@ -17,13 +17,14 @@ import fr.linkit.api.connection.cache.repo.{InvocationChoreographer, PuppetWrapp
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException
 
+import scala.annotation.meta.field
 import scala.collection.mutable.ListBuffer
 
 trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
     @transient protected var puppeteer: Puppeteer[A] = _
     @transient protected var description: PuppetDescription[A] = _
     @transient protected var choreographer: InvocationChoreographer = _
-    @transient protected var puppeteerDescription: PuppeteerDescription = _
+    protected var puppeteerDescription: PuppeteerDescription = _
 
     private def asWrapper: A with PuppetWrapper[A] = this.asInstanceOf[A with PuppetWrapper[A]]
 
@@ -31,7 +32,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
         if (this.description != null)
             throw new PuppetAlreadyInitialisedException("This puppet is already initialized !")
         this.puppeteer = puppeteer
-        this.puppeteerDescription = this.puppeteer.puppeteerDescription
+        this.puppeteerDescription = puppeteer.puppeteerDescription
         this.description = puppeteer.puppetDescription
         this.puppeteer.init(asWrapper)
         this.choreographer = new InvocationChoreographer()
@@ -51,12 +52,14 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     override def getPuppetDescription: PuppetDescription[A] = description
 
+    override def getPuppeteerDescription: PuppeteerDescription = puppeteerDescription
+
     protected def handleCall[R](id: Int, defaultReturnValue: R, invokeOnlyResult: R)
                                      (args: Array[Array[Any]])(superCall: => Any = null): R = {
         lazy val name = description.getMethodDesc(id).get.javaMethod.getName
         lazy val argsString = args.map(_.mkString("(", ", ", ")")).mkString("")
         if (choreographer.isMethodExecutionForcedToLocal) {
-            println(s"Skipped method call $name$argsString.")
+            println(s"forced local method call $name$argsString.")
             return superCall.asInstanceOf[R]
         }
         AppLogger.vDebug(s"$name: Performing rmi call for $name$argsString (id: $id)")

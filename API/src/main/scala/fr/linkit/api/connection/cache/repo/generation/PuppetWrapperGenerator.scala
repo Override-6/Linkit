@@ -17,13 +17,13 @@ trait PuppetWrapperGenerator {
 
     def getClass[S: universe.TypeTag : ClassTag]: Class[S with PuppetWrapper[S]] = getPuppetClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
-    def preGenerateDescs[S](defaultLoader: ClassLoader, descriptions: Seq[PuppetDescription[S]]): Unit
+    def preGenerateDescs[S](descriptions: Seq[PuppetDescription[S]]): Unit
+
+    def preGenerateClasses[S: universe.TypeTag](classes: Seq[Class[_ <: S]]): Unit
 
     def isClassGenerated[T: ClassTag]: Boolean = isWrapperClassGenerated(classTag[T].runtimeClass)
 
     def isWrapperClassGenerated[T](clazz: Class[T]): Boolean
 
     def isClassGenerated[S <: PuppetWrapper[S]](clazz: Class[S]): Boolean
-
-    def preGenerateClasses[S: universe.TypeTag](defaultLoader: ClassLoader, classes: Seq[Class[_ <: S]]): Unit
 }

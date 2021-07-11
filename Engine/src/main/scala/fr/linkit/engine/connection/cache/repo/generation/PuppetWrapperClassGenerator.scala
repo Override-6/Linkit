@@ -40,7 +40,7 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
             .findWrapperClass[S](clazz)
             .getOrElse {
                 val result = center.generate {
-                    AppLogger.debug(s"Compiling Class Wrapper for class ${clazz.getName}...")
+                    AppLogger.debug(s"Compiling Wrapper class for $clazz...")
                     requestFactory.makeRequest(desc)
                 }
                 AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
@@ -52,14 +52,17 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
             }
     }
 
-    override def preGenerateClasses[S : TypeTag](defaultLoader: ClassLoader, classes: Seq[Class[_ <: S]]): Unit = {
-        preGenerateDescs(defaultLoader, classes.map(PuppetDescription[S]))
+    override def preGenerateClasses[S : TypeTag](classes: Seq[Class[_ <: S]]): Unit = {
+        preGenerateDescs(classes.map(PuppetDescription[S]))
     }
 
-    override def preGenerateDescs[S](defaultLoader: ClassLoader, descriptions: Seq[PuppetDescription[S]]): Unit = {
+    override def preGenerateDescs[S](descriptions: Seq[PuppetDescription[S]]): Unit = {
+        val toCompile = descriptions.filter(desc => resources.findWrapperClass(desc.clazz).isEmpty)
+        if (toCompile.isEmpty)
+            return
         val ct = center.generate {
-            AppLogger.debug(s"Compiling Wrapper Classes for ${descriptions.map(_.clazz.getSimpleName).mkString(", ")}...")
-            requestFactory.makeMultiRequest(descriptions)
+            AppLogger.debug(s"Compiling Wrapper Classes for ${toCompile.map(_.clazz.getSimpleName).mkString(", ")}...")
+            requestFactory.makeMultiRequest(toCompile)
         }.getCompileTime
         AppLogger.debug(s"Compilation done in $ct ms.")
     }

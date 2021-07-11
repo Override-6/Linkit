@@ -13,27 +13,104 @@
 package fr.linkit.api.connection.cache
 
 import fr.linkit.api.connection.network.{Network, Updatable}
+import fr.linkit.api.local.concurrency.{IllegalThreadException, workerExecution}
 
 import scala.reflect.ClassTag
 
+/**
+ * This class is the main point of the shared cache feature.
+ * It handles cache content synchronisation and cache registration between the engines of a network.
+ * For example, you can synchronise a list between engine A and engine B, in which each modification will be send to the other engine
+ * in order to have the same list with the same items in the same orders.
+ * */
 trait SharedCacheManager extends Updatable {
 
+    /**
+     * Each Cache manager have a family string, it's in fact the identifier of the cache manager.
+     * For example, in the [[Network]], each [[fr.linkit.api.connection.network.Engine]] have a SharedCacheManager instance
+     * where the family string value is equals to the engine's identifier.
+     * */
     val family : String
+    /**
+     * The [[fr.linkit.api.connection.network.Engine]] identifier that owns this cache.
+     * the value of [[fr.linkit.api.connection.network.Engine.cache]] have the same value for family and ownerID.
+     * */
     val ownerID: String
+    /**
+     * The network that hosts this cache
+     * */
     val network: Network
 
-    def postInstance[A <: Serializable](key: Int, value: A): A
+    /**
+     * A quick way to place instances in a shared cache manager then retrieve it in another engine
+     * with [[findInstance()]].
+     *
+     * @param key the instance key, used to retrieve the value
+     * @param value the value to place in the quick cache map.
+     * @return the value parameter.
+     * */
+    def postInstance[A <: Serializable](key: Int, value: A): value.type
 
-    def getInstance[A <: Serializable](key: Int): Option[A]
+    /**
+     * retrieve an instance bounded to a key in the quick cache map
+     * @param key the key
+     * @return Some(value) if a value bound with the given key has been found on the cache, None instead.
+     * @throws ClassCastException if the value is not an instance of A
+     * */
+    def findInstance[A <: Serializable](key: Int): Option[A]
 
+    /**
+     * Will work as [[findInstance()]] except that the current thread will be paused until a value is placed in the map
+     * with the given key
+     * @param key the key
+     * @return Some(value) if a value bound with the given key has been found on the cache, None instead.
+     * @throws ClassCastException if the value is not an instance of A
+     * */
     def getInstanceOrWait[A <: Serializable](key: Int): A
 
+    /**
+     * Retrieve an instance bounded to a key in the quick cache map
+     * @param key the key
+     * @return the value bound with the given key
+     * @throws ClassCastException if the value is not an instance of A
+     * @throws NoSuchElementException if no value bound with the key was found in the quick cache map
+     * */
     def apply[A <: Serializable](key: Int): A
 
-    def getCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheOpenBehavior = CacheOpenBehavior.GET_OR_OPEN): A
+    /**
+     * Returns an instance of [[SharedCache]], based with the given factory.
+     * This method will create and synchronise the current content of the cache that is placed on the cacheID :
+     * If no cache is opened on the cacheID, it will simply be created and have an empty content.
+     * If the cache was already opened by another engine, the cache instance will be created and its content will be synchronised.
+     * Note: can't be sure that every cache instances with the same cacheID are of the same type.
+     *
+     * @param cacheID the cache identifier
+     * @param factory the factory that will create the cache instance
+     * @param behavior the kind of behavior to adopt when creating a cache
+     * @see [[SharedCache]]
+     * @see [[SharedCacheFactory]]
+     * @see [[CacheSearchBehavior]]
+     * */
+    def getCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
 
-    def getUpdated[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheOpenBehavior = CacheOpenBehavior.GET_OR_OPEN): A
+    /**
+     * Works same as [[getCache]] except that the cache content is retrieved in another worker thread task.
+     * @throws IllegalThreadException if the current thread is not a [[fr.linkit.api.local.concurrency.WorkerThread]]
+     * @see [[fr.linkit.api.local.concurrency.WorkerPool]]
+     * @see [[fr.linkit.api.local.concurrency.WorkerThread]]
+     * */
+    @workerExecution
+    def getCacheAsync[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
 
-    def retrieveCacheContent(cacheID: Int, behavior: CacheOpenBehavior): Option[CacheContent]
+    /**
+     * Retrieves the cache content of a given cache identifier.
+     *
+     * @param cacheID the identifier of a cache content that needs to be retrieved.
+     * @param behavior the kind of behavior to adopt when retrieving a cache content
+     * @return Some(content) if the cache content was retrieved, None if no cache has been found.
+     * @throws CacheOpenException if something went wrong during the cache content retrieval (can be affected by behavior parameter)
+     * @see [[CacheContent]]
+     * */
+    def retrieveCacheContent(cacheID: Int, behavior: CacheSearchBehavior): Option[CacheContent]
 
 }
