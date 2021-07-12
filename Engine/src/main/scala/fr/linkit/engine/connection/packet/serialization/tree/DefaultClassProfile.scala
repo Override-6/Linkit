@@ -20,10 +20,10 @@ import scala.collection.mutable.ListBuffer
 
 class DefaultClassProfile[T](clazz: Class[T], context: DefaultSerialContext) extends ClassProfile[T] {
 
-    override val desc = new ClassDescription(clazz)
-    private val procedures = ListBuffer.empty[Procedure[T]]
+    override val desc       = new ClassDescription(clazz)
+    private  val procedures = ListBuffer.empty[Procedure[T]]
 
-    override protected def getProcedures: Seq[Procedure[T]] = procedures.toSeq
+    override def getProcedures: Seq[Procedure[T]] = procedures.toSeq
 
     override def addProcedure(procedure: Procedure[T]): Unit = procedures += procedure
 
@@ -38,7 +38,7 @@ class DefaultClassProfile[T](clazz: Class[T], context: DefaultSerialContext) ext
     }
 
     private def applyAllProcedures(t: T, action: Procedure[_ >: T] => (T, Network) => Unit): Unit = {
-        val network = context.getNetwork.get
+        val network = context.getNetwork.orNull
         if (t == null || network == null)
             return
         procedures.foreach(action(_)(t, network))

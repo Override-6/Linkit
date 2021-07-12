@@ -20,23 +20,13 @@ object NullNode extends NodeFactory[Null] {
 
     override def canHandle(clazz: Class[_]): Boolean = clazz == null
 
-    override def canHandle(bytes: ByteSeq): Boolean = bytes.sameFlag(NullFlag(0))
+    override def canHandle(bytes: ByteSeq): Boolean = bytes.sameFlagAt(0, NullFlag(0))
 
-    override def newNode(finder: NodeFinder, profile: ClassProfile[Null]): SerialNode[Null] = {
-        new NullSerial()
+    override def newNode(finder: NodeFinder, profile: ClassProfile[Null]): SerialNode[Null] = (n, b) => {
+        NullFlag
     }
 
-    override def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[Null] = {
-        new NullDeserial()
-    }
-
-    class NullSerial() extends SerialNode[Null] {
-
-        override def serialize(t: Null, putTypeHint: Boolean): Array[Byte] = NullFlag
-    }
-
-    class NullDeserial() extends DeserialNode[Null] {
-
-        override def deserialize(): Null = null
+    override def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[Null] = () => {
+        null
     }
 }

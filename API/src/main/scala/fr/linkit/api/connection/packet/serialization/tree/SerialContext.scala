@@ -24,5 +24,5 @@ trait SerialContext extends ClassProfileHandler {
 
     def attachProcedure[C: ClassTag](procedure: Procedure[C]): Unit
 
-    def getFinderOf(target: String): NodeFinder
+    def getFinder: NodeFinder
 }

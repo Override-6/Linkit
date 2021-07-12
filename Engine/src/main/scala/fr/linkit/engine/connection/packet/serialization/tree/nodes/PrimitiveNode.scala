@@ -12,10 +12,9 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.api.connection.packet.serialization.tree.ClassProfile
-import fr.linkit.engine.connection.packet.serialization.tree.DefaultSerialContext.{ClassProfile, ByteHelper}
-import fr.linkit.engine.connection.packet.serialization.tree._
-import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
+import fr.linkit.api.connection.packet.serialization.tree._
+import fr.linkit.engine.connection.packet.serialization.tree.DefaultSerialContext.ByteHelper
+import fr.linkit.engine.local.utils.NumberSerializer
 
 object PrimitiveNode {
 
@@ -37,16 +36,16 @@ object PrimitiveNode {
             clazz.isPrimitive || (classOf[Number].isAssignableFrom(clazz) && clazz.getPackageName == "java.lang") || OtherWrapperClasses.contains(clazz)
         }
 
-        override def canHandle(info: DefaultByteSeq): Boolean = !info.isClassDefined && info.array.nonEmpty && {
+        override def canHandle(info: ByteSeq): Boolean = !info.isClassDefined && info.array.nonEmpty && {
             //println(s"info.bytes = ${info.array.mkString("Array(", ", ", ")")}")
-            TypeFlags.exists(info.sameFlag)
+            TypeFlags.exists(info.sameFlagAt(0, _))
         }
 
-        override def newNode(context: DefaultSerialContext, profile: ClassProfile[AnyVal]): SerialNode[AnyVal] = {
+        override def newNode(context: NodeFinder, profile: ClassProfile[AnyVal]): SerialNode[AnyVal] = {
             new PrimitiveSerialNode(profile)
         }
 
-        override def newNode(context: DefaultSerialContext, bytes: DefaultByteSeq): DeserialNode[AnyVal] = {
+        override def newNode(context: NodeFinder, bytes: ByteSeq): DeserialNode[AnyVal] = {
             new PrimitiveDeserialNode(bytes, context)
         }
     }
@@ -61,7 +60,8 @@ object PrimitiveNode {
                 case b: Byte    => (NumberSerializer.serializeNumber(b, true), ByteFlag)
                 case s: Short   => (NumberSerializer.serializeNumber(s, true), ShortFlag)
                 case l: Long    => (NumberSerializer.serializeNumber(l, true), LongFlag)
-                case d: Double  => (NumberSerializer.serializeNumber(java.lang.Double.doubleToLongBits(d), true), DoubleFlag)
+                case d: Double  =>
+                    (NumberSerializer.serializeNumber(java.lang.Double.doubleToLongBits(d), true), DoubleFlag)
                 case f: Float   => (NumberSerializer.serializeNumber(java.lang.Float.floatToIntBits(f), true), FloatFlag)
                 case b: Boolean => ((1: Byte) /\ (if (b) 1 else 0).toByte, BooleanFlag)
                 case c: Char    => (NumberSerializer.serializeNumber(c.toInt, true), CharFlag)
@@ -72,27 +72,28 @@ object PrimitiveNode {
         }
     }
 
-    class PrimitiveDeserialNode(bytes: Array[Byte], context: DefaultSerialContext) extends DeserialNode[AnyVal] {
+    class PrimitiveDeserialNode(bytes: Array[Byte], finder: NodeFinder) extends DeserialNode[AnyVal] {
 
         override def deserialize(): AnyVal = {
             //println(s"Deserializing primitive number from bytes ${ScalaUtils.toPresentableString(bytes)}")
             //println(s"raw bytes = ${bytes.mkString("Array(", ", ", ")")}")
-            import NumberSerializer.{convertValue, deserializeFlaggedNumber}
-            val value  = deserializeFlaggedNumber[AnyVal](bytes, 1)._1
+            import NumberSerializer.deserializeFlaggedNumber
+            import fr.linkit.engine.local.utils.UnWrapper.unwrap
+            val value  = deserializeFlaggedNumber[Long](bytes, 1)._1
             //println(s"value = ${value}")
             val result = bytes(0) match {
-                case IntFlag     => convertValue(value, _.intValue)
-                case ByteFlag    => convertValue(value, _.byteValue)
-                case ShortFlag   => convertValue(value, _.shortValue)
-                case FloatFlag   => convertValue(value, _.floatValue)
-                case LongFlag    => convertValue(value, _.longValue)
-                case DoubleFlag  => convertValue(value, _.doubleValue)
-                case CharFlag    => convertValue(value, _.charValue)
-                case BooleanFlag => convertValue(value, _.booleanValue)
+                case IntFlag     => unwrap(value, _.intValue)
+                case LongFlag    => unwrap(value, _.longValue)
+                case BooleanFlag => unwrap(value, _.booleanValue)
+                case FloatFlag   => unwrap(value, _ => java.lang.Float.intBitsToFloat(value.toInt))
+                case DoubleFlag  => unwrap(value, _ => java.lang.Double.longBitsToDouble(value))
+                case ByteFlag    => unwrap(value, _.byteValue)
+                case ShortFlag   => unwrap(value, _.shortValue)
+                case CharFlag    => unwrap(value, _.charValue)
             }
             //println(s"result = ${result}")
             //println(s"result.getClass = ${result.getClass}")
-            context.getClassProfile[AnyVal](result.getClass.asInstanceOf[Class[_ <: AnyVal]]).applyAllDeserialProcedures(result)
+            finder.getClassProfile[AnyVal](result.getClass.asInstanceOf[Class[_ <: AnyVal]]).applyAllDeserialProcedures(result)
             result
         }
     }

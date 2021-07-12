@@ -70,7 +70,7 @@ object ScalaUtils {
 
     def setValue(instance: Any, field: Field, value: Any): Unit = {
         val fieldOffset = TheUnsafe.objectFieldOffset(field)
-        import NumberSerializer.convertValue
+        import UnWrapper.unwrap
 
         import java.lang
 
@@ -86,14 +86,14 @@ object ScalaUtils {
                 case c: Character    => TheUnsafe.putChar(_, _, c)
             }
         } else field.getType match {
-            case c if c eq classOf[Integer]      => TheUnsafe.putObject(_, _, convertValue(value, _.intValue))
-            case c if c eq classOf[lang.Byte]    => TheUnsafe.putObject(_, _, convertValue(value, _.byteValue))
-            case c if c eq classOf[lang.Short]   => TheUnsafe.putObject(_, _, convertValue(value, _.shortValue))
-            case c if c eq classOf[lang.Long]    => TheUnsafe.putObject(_, _, convertValue(value, _.longValue))
-            case c if c eq classOf[lang.Double]  => TheUnsafe.putObject(_, _, convertValue(value, _.doubleValue))
-            case c if c eq classOf[lang.Float]   => TheUnsafe.putObject(_, _, convertValue(value, _.floatValue))
-            case c if c eq classOf[lang.Boolean] => TheUnsafe.putObject(_, _, convertValue(value, _.booleanValue))
-            case c if c eq classOf[Character]    => TheUnsafe.putObject(_, _, convertValue(value, _.shortValue))
+            case c if c eq classOf[Integer]      => TheUnsafe.putObject(_, _, unwrap(value, _.intValue))
+            case c if c eq classOf[lang.Byte]    => TheUnsafe.putObject(_, _, unwrap(value, _.byteValue))
+            case c if c eq classOf[lang.Short]   => TheUnsafe.putObject(_, _, unwrap(value, _.shortValue))
+            case c if c eq classOf[lang.Long]    => TheUnsafe.putObject(_, _, unwrap(value, _.longValue))
+            case c if c eq classOf[lang.Double]  => TheUnsafe.putObject(_, _, unwrap(value, _.doubleValue))
+            case c if c eq classOf[lang.Float]   => TheUnsafe.putObject(_, _, unwrap(value, _.floatValue))
+            case c if c eq classOf[lang.Boolean] => TheUnsafe.putObject(_, _, unwrap(value, _.booleanValue))
+            case c if c eq classOf[Character]    => TheUnsafe.putObject(_, _, unwrap(value, _.charValue))
             case _                               => TheUnsafe.putObject(_, _, value)
         }
         action(instance, fieldOffset)

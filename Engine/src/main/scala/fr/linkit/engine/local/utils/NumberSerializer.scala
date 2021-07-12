@@ -12,8 +12,6 @@
 
 package fr.linkit.engine.local.utils
 
-import java.lang
-
 object NumberSerializer {
 
     def serializeLong(value: Long): Array[Byte] = {
@@ -32,14 +30,14 @@ object NumberSerializer {
     def deserializeLong(bytes: Array[Byte], index: Int): Long = {
         //println("Deserializing long in zone " + new String(bytes.slice(index, index + 8)))
         //println("raw bytes = " + bytes.mkString("Array(", ", ", ")"))
-        ((0xff & bytes(index): Long) << 56 |
-                (0xff & bytes(index + 1): Long) << 48 |
-                (0xff & bytes(index + 2): Long) << 40 |
-                (0xff & bytes(index + 3): Long) << 32 |
-                (0xff & bytes(index + 4): Long) << 24 |
-                (0xff & bytes(index + 5): Long) << 16 |
-                (0xff & bytes(index + 6): Long) << 8 |
-                (0xff & bytes(index + 7): Long) << 0)
+        (0xff & bytes(index)) << 56 |
+                (0xff & bytes(index + 1)) << 48 |
+                (0xff & bytes(index + 2)) << 40 |
+                (0xff & bytes(index + 3)) << 32 |
+                (0xff & bytes(index + 4)) << 24 |
+                (0xff & bytes(index + 5)) << 16 |
+                (0xff & bytes(index + 6)) << 8 |
+                (0xff & bytes(index + 7)) << 0
     }
 
     def deserializeInt(bytes: Array[Byte], index: Int): Int = {
@@ -102,28 +100,17 @@ object NumberSerializer {
      * */
     def deserializeFlaggedNumber[@specialized(Byte, Short, Int, Long) T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
         var result: Long = 0
-        //println(s"Number:|: ${bytes.slice(start, start + 8).mkString("Array(", ", ", ")")}")
-        //println(s"Number:|: ${new String(bytes.slice(start, start + 4))}")
         val numberLength = bytes(start)
-        //println(s"Deserializing number in region ${new String(bytes.slice(start, start + numberLength))}")
         if (numberLength == 1)
             return (bytes(start + 1).asInstanceOf[T], 2)
 
         val limit = start + numberLength
 
-        //println(s"from = ${start + 1}")
-        //println(s"limit = $limit")
-
         for (i <- (start + 1) to limit) {
             val b = bytes(i)
-            //println(s"i = ${i}")
-            //println(s"b = ${b} ('${new String(Array(b))}')")
             val place = (limit - i) * 8
-            //println(s"place = ${place}")
-            result |= (0xff & b) << place
-            //println(s"result = ${result}")
+            result |= b << place
         }
-        //println(s"result = ${result}")
 
         (result.asInstanceOf[T], (numberLength + 1).toByte)
     }
@@ -150,66 +137,6 @@ object NumberSerializer {
 
     def convertByteArray(array: Array[Long]): Array[Byte] = {
         array.flatMap(serializeLong)
-    }
-
-    def convertValue[A <: AnyVal](value: Any, converter: PrimitiveWrapper => A): A = {
-        value match {
-            case n: Number       => converter(new NumberWrapper(n))
-            case b: lang.Boolean => converter(new BooleanNumber(b))
-            case c: Character    => converter(new CharacterNumber(c))
-        }
-    }
-
-    sealed trait PrimitiveWrapper extends Number {
-
-        def booleanValue: Boolean
-
-        def charValue: Char
-    }
-
-    class CharacterNumber(c: Character) extends PrimitiveWrapper {
-
-        override def intValue: Int = c.toInt
-
-        override def longValue: Long = c.toLong
-
-        override def floatValue: Float = c.toFloat
-
-        override def doubleValue: Double = c.toDouble
-
-        override def booleanValue: Boolean = intValue == 1
-
-        override def charValue: Char = c
-    }
-
-    class BooleanNumber(b: java.lang.Boolean) extends PrimitiveWrapper {
-
-        override def intValue: Int = if (b) 1 else 0
-
-        override def longValue: Long = intValue
-
-        override def floatValue: Float = intValue
-
-        override def doubleValue: Double = intValue
-
-        override def booleanValue: Boolean = b
-
-        override def charValue: Char = if (b) 'y' else 'n'
-    }
-
-    class NumberWrapper(n: Number) extends PrimitiveWrapper {
-
-        override def booleanValue: Boolean = intValue == 1
-
-        override def charValue: Char = intValue.toChar
-
-        override def intValue: Int = n.intValue
-
-        override def longValue: Long = n.longValue
-
-        override def floatValue: Float = n.floatValue
-
-        override def doubleValue: Double = n.doubleValue
     }
 
 }

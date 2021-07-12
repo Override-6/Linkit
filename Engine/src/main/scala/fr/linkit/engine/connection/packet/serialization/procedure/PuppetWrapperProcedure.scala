@@ -28,7 +28,6 @@ object PuppetWrapperProcedure extends Procedure[PuppetWrapper[Serializable]] {
     }
 
     override def afterDeserial(wrapper: PuppetWrapper[Serializable], network: Network): Unit = {
-
         val puppeteerDesc = wrapper.getPuppeteerDescription
         val family        = puppeteerDesc.cacheFamily
         val cacheID       = puppeteerDesc.cacheID

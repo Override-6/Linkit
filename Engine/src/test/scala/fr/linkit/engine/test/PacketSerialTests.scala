@@ -12,10 +12,8 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
+import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.serialization.DefaultSerializer
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacket, ResponsePacket}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.ScalaUtils
@@ -23,12 +21,11 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Assertions, BeforeAll, Test, TestInstance}
 
 import java.util
-import scala.collection.mutable.ListBuffer
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketSerialTests {
 
-    private val testedPacket                 = ResponsePacket(7, Array(AnyRefPacket(Some(Array(PuppetProfile(Array(0, 1, 2), ListBuffer(),"TestServer1"))))))
+    private val testedPacket = ObjectPacket(Array(1, 2L, 3: Byte, 4: Short, 5.0D, 6.0f, true, 'h'))
 
     private var testPacketBytes: Array[Byte] = _
 

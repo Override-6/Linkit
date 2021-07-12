@@ -22,4 +22,8 @@ trait NodeFinder extends ClassProfileHandler {
     def getDeserialNodeFor[T](bytes: Array[Byte]): DeserialNode[T]
 
     def listNodes[T](profile: ClassProfile[T], obj: T): List[SerialNode[_]]
+
+    def listNodes[T](clazz: Class[T], obj: T): List[SerialNode[_]] = {
+        listNodes(getClassProfile[T](clazz), obj)
+    }
 }

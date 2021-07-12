@@ -14,7 +14,6 @@ package fr.linkit.engine.connection.packet.serialization.tree
 
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.Packet
-import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.serialization.tree._
 import fr.linkit.api.connection.packet.serialization.tree.procedure.Procedure
 import fr.linkit.engine.connection.packet.serialization.tree.DefaultSerialContext.{PacketClassNameRequest, SerialContextChannelID}
@@ -29,10 +28,10 @@ import scala.reflect.{ClassTag, classTag}
 
 class DefaultSerialContext extends SerialContext {
 
-    private[tree] val engineFinders        = new mutable.HashMap[String, NodeFinder]()
     private[tree] val userFactories        = ListBuffer.empty[NodeFactory[_]]
     private[tree] val defaultFactories     = ListBuffer.empty[NodeFactory[_]]
     private       val profiles             = new mutable.HashMap[Class[_], ClassProfile[_]]()
+    private       val finder               = new DefaultNodeFinder(this)
     @Nullable private var network: Network = _
 
     private lazy val channel = network
@@ -63,18 +62,18 @@ class DefaultSerialContext extends SerialContext {
                 .asInstanceOf[ClassProfile[T]]
     }
 
-    override def getFinderOf(target: String): NodeFinder = {
-        engineFinders.getOrElseUpdate(target, new EngineNodeFinder(channel, target, this))
-    }
+    override def getFinder: NodeFinder = finder
 
     def getNetwork: Option[Network] = Option(network)
 
     def updateNetwork(network: Network): Unit = {
+        if (this.network != null)
+            throw new IllegalStateException("Network already initialized !")
         if (network == null)
-            throw new IllegalArgumentException
+            throw new NullPointerException
         this.network = network
         channel.addRequestListener(bundle => {
-            val packet = bundle.packet.nextPacket[PacketClassNameRequest]
+            val packet    = bundle.packet.nextPacket[PacketClassNameRequest]
             val className = ClassMappings.findClass(packet.hash).map(_.getName).orNull
             packet.name = className
             bundle.responseSubmitter
@@ -88,10 +87,10 @@ class DefaultSerialContext extends SerialContext {
 object DefaultSerialContext {
 
     /**
-     * This packet is sent by instance of [[EngineNodeFinder]] when it can't find a [[NodeFactory]] for a [[DeserialNode]].
+     * This packet is sent by instance of [[DefaultNodeFinder]] when it can't find a [[NodeFactory]] for a [[DeserialNode]].
      * When this happens, it will first suppose that the first 4 bytes of the sequence that needs to be deserialized
      * is for an object with an unknown class hashcode according to [[ClassMappings]]. Thus, in order to retrieve the class name
-     * bounded to the received hash code, the [[EngineNodeFinder]] will make a request by using this class.
+     * bounded to the received hash code, the [[DefaultNodeFinder]] will make a request by using this class.
      * It will send a PacketClassNameRequest(hash, null) first, then the [[DefaultSerialContext]]
      * of the sender will process this request and will reply with a PacketClassNameRequest(hash, className).
      * If the className value is null, that's mean that the class was not found on the remote engine,

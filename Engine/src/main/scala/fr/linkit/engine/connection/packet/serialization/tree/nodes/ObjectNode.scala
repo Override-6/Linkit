@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.connection.packet.serialization.tree.nodes
 
-import fr.linkit.engine.connection.packet.serialization.tree.SerialContext.ClassProfile
+import fr.linkit.api.connection.packet.serialization.tree._
 import fr.linkit.engine.connection.packet.serialization.tree._
-import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
-import fr.linkit.engine.local.utils.ScalaUtils.{findUnsafe, toPresentableString}
+import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.local.utils.ScalaUtils.findUnsafe
 
 object ObjectNode {
 
@@ -28,21 +28,21 @@ object ObjectNode {
         }
 
         override def canHandle(bytes: ByteSeq): Boolean = {
-            bytes.sameFlag(NullObjectFlag) || bytes.isClassDefined
+            bytes.sameFlagAt(0, NullObjectFlag) || bytes.isClassDefined
         }
 
-        override def newNode(finder: SerialContext, profile: ClassProfile[Any]): SerialNode[Any] = {
+        override def newNode(finder: NodeFinder, profile: ClassProfile[Any]): SerialNode[Any] = {
             new ObjectSerialNode(profile, finder)
         }
 
-        override def newNode(finder: SerialContext, bytes: ByteSeq): DeserialNode[Any] = {
-            new ObjectDeserialNode(finder.getClassProfile(bytes.getHeaderClass), bytes, finder)
+        override def newNode(finder: NodeFinder, bytes: ByteSeq): DeserialNode[Any] = {
+            new ObjectDeserialNode(finder.getClassProfile(bytes.getClassOfSeq), bytes, finder)
         }
     }
 
     private val TheUnsafe = findUnsafe()
 
-    class ObjectSerialNode(profile: ClassProfile[Any], context: SerialContext) extends SerialNode[Any] {
+    class ObjectSerialNode(profile: ClassProfile[Any], context: NodeFinder) extends SerialNode[Any] {
 
         override def serialize(t: Any, putTypeHint: Boolean): Array[Byte] = {
            //println(s"Serializing Object ${t}")
@@ -70,7 +70,7 @@ object ObjectNode {
         }
     }
 
-    class ObjectDeserialNode(profile: ClassProfile[Any], bytes: ByteSeq, context: SerialContext) extends DeserialNode[Any] {
+    class ObjectDeserialNode(profile: ClassProfile[Any], bytes: ByteSeq, context: NodeFinder) extends DeserialNode[Any] {
 
         override def deserialize(): Any = {
             if (bytes(0) == NullObjectFlag)
@@ -84,7 +84,7 @@ object ObjectNode {
            //println(s"Object desc = ${desc}")
 
             val sign     = LengthSign.from(desc.signItemCount, bytes, bytes.length, 4)
-            val instance = TheUnsafe.allocateInstance(desc.clazz)
+            val instance = TheUnsafe.allocateInstance(bytes.getClassOfSeq)
 
             val fieldValues = for (childBytes <- sign.childrenBytes) yield {
                 //println(s"childBytes (str) = ${toPresentableString(childBytes)}")

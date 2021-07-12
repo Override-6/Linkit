@@ -11,21 +11,9 @@
  */
 
 package fr.linkit.api.connection.packet.serialization.tree
-import fr.linkit.api.connection.packet.serialization.tree.procedure.Procedure
 
-trait ClassProfile[T] {
+import fr.linkit.api.connection.packet.PacketException
 
-    val desc: SerializableClassDescription
-
-    //FIXME make this method protected
-    def getProcedures: Seq[Procedure[T]]
-
-    def removeProcedure(procedure: Procedure[T]): Unit
-
-    def addProcedure(procedure: Procedure[T]): Unit
-
-    def applyAllSerialProcedures(t: T): Unit
-
-    def applyAllDeserialProcedures(t: T): Unit
+class NoSuchNodeFactoryException(msg: String, cause: Throwable = null) extends PacketException(msg, cause) {
 
 }

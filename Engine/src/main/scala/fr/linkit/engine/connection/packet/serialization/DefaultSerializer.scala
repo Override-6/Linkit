@@ -24,12 +24,13 @@ import java.nio.file.Path
 
 class DefaultSerializer() extends Serializer {
 
-    private val serialContext = new DefaultSerialContext()
+    private val context = new DefaultSerialContext
+    private val finder = context.getFinder
 
     override val signature: Array[Byte] = Array(4)
 
     override def serialize(serializable: Serializable, withSignature: Boolean): Array[Byte] = {
-        val node  = serialContext.getSerialNodeForRef(serializable)
+        val node  = finder.getSerialNodeForRef(serializable)
         val bytes = node.serialize(serializable, true)
 
         if (withSignature) signature ++ bytes else bytes
@@ -38,26 +39,24 @@ class DefaultSerializer() extends Serializer {
     override def isSameSignature(bytes: Array[Byte]): Boolean = bytes.startsWith(signature)
 
     override def deserialize(bytes: Array[Byte]): Any = {
-        val node = serialContext.getDeserialNodeFor(bytes.drop(1))
+        val node = finder.getDeserialNodeFor(bytes.drop(1))
         node.deserialize()
     }
 
     override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
-        val node = serialContext.getDeserialNodeFor[Array[Any]](bytes.drop(1))
+        val node = finder.getDeserialNodeFor[Array[Any]](bytes.drop(1))
         node.deserialize()
     }
 
-    def getContext: DefaultSerialContext = serialContext
+    def getContext: DefaultSerialContext = context
 
     def initNetwork(network: Network): Unit = {
-        if (serialContext.getNetwork != null)
-            throw new IllegalStateException("Network already initialized !")
-        serialContext.updateNetwork(network)
+        context.updateNetwork(network)
     }
 
-    serialContext.attachFactory(StringRepresentableNode(Version))
-    serialContext.attachFactory(StringRepresentableNode(PathRepresentable))
-    serialContext.attachProcedure[PuppetWrapper[Serializable]](PuppetWrapperProcedure)
+    context.attachFactory(StringRepresentableNode(Version))
+    context.attachFactory(StringRepresentableNode(PathRepresentable))
+    context.attachProcedure[PuppetWrapper[Serializable]](PuppetWrapperProcedure)
 
     private object PathRepresentable extends StringRepresentable[Path] {
 
