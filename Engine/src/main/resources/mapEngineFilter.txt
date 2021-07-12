@@ -2,5 +2,6 @@ java.lang
 java.io
 java.nio.file
 java.sql.*
+java.util
 
 sun.nio.fs

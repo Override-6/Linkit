@@ -21,11 +21,10 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
-import fr.linkit.engine.connection.cache.CacheArrayContent
 import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
-import fr.linkit.engine.connection.cache.repo.SimplePuppeteer
 import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrapperInstantiator, WrappersClassResource}
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.{AnyRefPacket, ObjectPacket}
+import fr.linkit.engine.connection.cache.repo.{CacheRepoContent, SimplePuppeteer}
+import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.serialization.DefaultSerializer
 import fr.linkit.engine.connection.packet.traffic.channel.request.ResponsePacket
 import fr.linkit.engine.local.LinkitApplication
@@ -80,12 +79,12 @@ class ResourcesAndClassGenerationTests {
 
     @Test
     def packetTest(): Unit = InvocationChoreographer.forceLocalInvocation {
-        val wrapper = forObject(ListBuffer.empty[String])
+        val wrapper = forObject(new util.ArrayList[String]())
 
-        val packet          = Array(DedicatedPacketCoordinates(12, "s1", "TestServer1"), ResponsePacket(7, Array(AnyRefPacket(Some(CacheArrayContent(Array(PuppetProfile(Array[Int](0), wrapper, "TestServer1"))))))))
+        val packet          = ArrayBuffer(DedicatedPacketCoordinates(12, "s1", "TestServer1"), ResponsePacket(7, Array(AnyRefPacket(Some(CacheRepoContent(Array(PuppetProfile(Array(0), wrapper, "TestServer1"))))))))
         val testPacketBytes = new DefaultSerializer().serialize(packet, true)
         println(s"Serialized testedPacket : ${ScalaUtils.toPresentableString(testPacketBytes)}")
-        val rePacket        = Assertions.assertInstanceOf(packet.getClass, new DefaultSerializer().deserialize(testPacketBytes))
+        val rePacket = Assertions.assertInstanceOf(packet.getClass, new DefaultSerializer().deserialize(testPacketBytes))
         println(s"resulting packet = ${rePacket.mkString("Array(", ", ", ")")}")
     }
 
@@ -115,9 +114,14 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = {
-        val obj = forObject(new util.ArrayList[String]())
+        val obj = forObject(ListBuffer.empty[String])
+        import scala.reflect.runtime.universe._
+        val method = obj.getClass.getMethod("addOne", classOf[Object])
+        val other = obj.getClass.getMethod("$plus$eq", classOf[Object])
+        val tpe = obj.getPuppetDescription.tpe
+        val scalaMethod = tpe.members.find(_.name.toString == "addOne").get
         println("Adding...")
-        obj add "LOLn't"
+        obj addOne "LOLn't"
         println("Added !")
         println(s"obj = $obj")
     }
@@ -148,7 +152,7 @@ class ResourcesAndClassGenerationTests {
         forObject(LocalFileSystemAdapters.Nio)
     }
 
-    private def forObject[A: TypeTag](obj: A): A = {
+    private def forObject[A: TypeTag](obj: A): A with PuppetWrapper[A] = {
         Assertions.assertNotNull(resources)
         val cl = obj.getClass.asInstanceOf[Class[A]]
 
@@ -161,7 +165,7 @@ class ResourcesAndClassGenerationTests {
         puppet.initPuppeteer(pup)
         puppet.getChoreographer.forceLocalInvocation {
             println(s"puppet = ${puppet}")
-            println(s"puppet.getClass.getSuperclass = ${puppet.getClass.getSuperclass}")
+            println(s"puppet.getWrappedClass = ${puppet.getWrappedClass}")
         }
         puppet
     }

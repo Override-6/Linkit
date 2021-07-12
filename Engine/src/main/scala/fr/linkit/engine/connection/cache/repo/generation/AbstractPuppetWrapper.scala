@@ -34,7 +34,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
         this.choreographer = new InvocationChoreographer()
     }
 
-    override def isInitialized: Boolean = puppeteer != null
+    @inline override def isInitialized: Boolean = puppeteer != null
 
     override def detachedSnapshot: A = {
         WrapperInstantiator.detachedClone(this)

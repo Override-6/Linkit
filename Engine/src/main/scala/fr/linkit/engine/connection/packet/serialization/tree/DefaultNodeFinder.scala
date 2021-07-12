@@ -14,8 +14,9 @@ package fr.linkit.engine.connection.packet.serialization.tree
 
 import fr.linkit.api.connection.packet.serialization.tree._
 import fr.linkit.engine.connection.packet.serialization.tree.nodes._
-import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 
+import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
 class DefaultNodeFinder(context: DefaultSerialContext) extends NodeFinder {
@@ -69,9 +70,11 @@ class DefaultNodeFinder(context: DefaultSerialContext) extends NodeFinder {
 
     private def getDefaultFactory[T](seq: ByteSeq): NodeFactory[T] = {
         defaultFactories.find(_.canHandle(seq))
-                .getOrElse(throw new NoSuchNodeFactoryException(s"Could not find factory for byte sequence '${ScalaUtils.toPresentableString(seq.array)}' (class of seq = ${seq.findClassOfSeq.orNull})"))
+                .getOrElse(throw new NoSuchNodeFactoryException(s"Could not find factory for byte sequence '${ScalaUtils.toPresentableString(seq.array)}' (class of seq = ${seq.findClassOfSeq.orNull}), theorical seq class hashcode = ${NumberSerializer.deserializeInt(seq, 0)}"))
                 .asInstanceOf[NodeFactory[T]]
     }
+
+    ListBuffer.empty
 
     //The order of registration have an effect.
     defaultFactories += NullNode

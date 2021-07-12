@@ -14,11 +14,13 @@ package fr.linkit.engine.connection.cache.repo.generation.rectifier
 
 import fr.linkit.agent.LinkitAgent
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
+import fr.linkit.api.connection.cache.repo.description.PuppetDescription.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import javassist.bytecode.MethodInfo
 import javassist.{ClassPool, CtClass, CtMethod, LoaderClassPath}
 
 import java.lang.reflect.{Method, Modifier}
+import scala.collection.mutable.ListBuffer
 
 class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classLoader: GeneratedClassClassLoader, superClass: Class[_]) {
 
@@ -47,17 +49,25 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classL
         implicit def extractModifiers(m: Method): Int = m.getModifiers
 
         val methodDescs = desc.listMethods()
-        for (descs <- methodDescs) {
-            val javaMethod   = descs.javaMethod
+        val superDescriptors = ListBuffer.empty[String]
+
+        def fixMethod(desc: MethodDescription): Unit = {
+            val javaMethod   = desc.javaMethod
             val name         = javaMethod.getName
             val superfunName = s"super$$$name"
             val superfunInfo = new MethodInfo(ctClass.getClassFile.getConstPool, superfunName, generateSuperFunDescriptor(javaMethod))
+            if (superDescriptors.contains(superfunName + superfunInfo.getDescriptor))
+                return
             val superfun     = CtMethod.make(superfunInfo, ctClass)
             val anonfun      = getAnonFun(javaMethod)
-
             ctClass.addMethod(superfun)
             superfun.setBody(getSuperFunBody(javaMethod))
             anonfun.setBody(getAnonFunBody(javaMethod, superfun))
+            superDescriptors += superfunName + superfunInfo.getDescriptor
+        }
+
+        for (desc <- methodDescs) {
+            fixMethod(desc)
         }
     }
 

@@ -54,7 +54,7 @@ object ObjectNode {
             if (t == null)
                 return Array(NullObjectFlag)
 
-            //println(s"t.getClass = ${t.getClass} (${t.getClass.hashCode()})")
+            //println(s"t.getClass = ${t.getClass} (${t.getClass.getName.hashCode()})")
             val children = context.listNodes[Any](profile, t)
             //println(s"children = ${children}")
 
@@ -65,7 +65,7 @@ object ObjectNode {
             val sign      = LengthSign.of(t, desc, children).toBytes
             //println(s"sign = ${toPresentableString(sign)}")
             val bytes     = classType ++ sign
-            //println(s"Result of Object ${t} = ${toPresentableString(bytes)}")
+            //println(s"Result of Object ${t} = ${ScalaUtils.toPresentableString(bytes)}")
             bytes
         }
     }
