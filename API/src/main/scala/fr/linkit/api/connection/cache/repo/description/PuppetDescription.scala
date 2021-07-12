@@ -18,7 +18,6 @@ import fr.linkit.api.connection.cache.repo.description.PuppetDescription._
 import fr.linkit.api.local.generation.ClassDescription
 
 import java.lang.reflect.{Field, Method}
-import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
 class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], val loader: ClassLoader) extends ClassDescription {
@@ -76,15 +75,17 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
                     .filter(_.owner.isClass)
                     .filterNot(f => f.isFinal || f.isStatic || f.isConstructor || f.isPrivate || f.isPrivateThis || f.privateWithin != NoSymbol)
                     .filterNot(f => f.owner.fullName.startsWith("scala.Function") || f.owner.fullName.startsWith("scala.PartialFunction"))
+            //.filterNot(f => f.owner == symbolOf[Any])
         }
 
         val methods = getFiltered(tpe)
                 .filterNot(m => BlacklistedSuperClasses.contains(m.owner.fullName))
-                .concat(getFiltered(typeOf[Any])
-                .filter(_.name.toString != "getClass")) //don't know why, but the "getClass" method if scala.Any is not defined as final
+                .concat(if (tpe.typeSymbol.isJava) Seq() else getFiltered(typeOf[Any])
+                        .filter(_.name.toString != "getClass")) //don't know why, but the "getClass" method if scala.Any is not defined as final
+                .filter(_.name.toString != "equals") //FIXME scalac error : "name clash between defined and inherited member"
                 .map(genMethodDescription)
 
-        val filteredMethods = ListBuffer.empty[MethodDescription]
+        /*val filteredMethods = ListBuffer.empty[MethodDescription]
         methods.foreach(desc => {
             filteredMethods.find(_.methodId == desc.methodId)
                     .fold[Unit](filteredMethods += desc) { otherDesc =>
@@ -94,7 +95,8 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
                         }
                     }
         })
-        filteredMethods.toSeq
+        filteredMethods.toSeq*/
+        methods.toSeq
     }
 
     private def collectFields(): Map[Int, FieldDescription] = {
@@ -159,7 +161,7 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
                 )
         clazz
                 .getMethods
-                .filter(_.getName == method.name.toString)
+                .filter(_.getName == method.name.encodedName.toString)
                 .find(x => {
                     val v = x.getParameterTypes
                             .map(t => if (t.isArray) "array" else t.descriptorString())
@@ -173,6 +175,8 @@ class PuppetDescription[+T] private(val tpe: u.Type, val clazz: Class[_ <: T], v
 object PuppetDescription {
 
     import u._
+
+    val JavaEqualsMethodID = 21
 
     def toSyncParamsIndexes(literal: String, method: u.Symbol): Seq[Boolean] = {
         val synchronizedParamNumbers = literal

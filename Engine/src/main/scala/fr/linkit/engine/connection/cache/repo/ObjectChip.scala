@@ -30,7 +30,7 @@ case class ObjectChip[S] private(owner: String,
                                  description: PuppetDescription[S],
                                  wrapper: S with PuppetWrapper[S]) extends Chip[S] {
 
-    private val mirror = runtimeMirror(wrapper.getClass.getClassLoader).reflect(wrapper)
+    private val mirror = runtimeMirror(wrapper.getWrappedClass.getClassLoader).reflect(wrapper)
 
     override def updateField(fieldID: Int, value: Any): Unit = {
         description.getFieldDesc(fieldID)

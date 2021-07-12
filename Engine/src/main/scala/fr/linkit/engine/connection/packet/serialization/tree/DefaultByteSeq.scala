@@ -20,7 +20,7 @@ case class DefaultByteSeq(override val array: Array[Byte]) extends ByteSeq {
 
     lazy val clazz: Option[Class[_]] = findClassAt(0)
 
-    override def findClass[T]: Option[Class[_]] = clazz
+    override def findClassOfSeq[T]: Option[Class[_]] = clazz
 
     override def getClassOfSeq[T]: Class[T] = clazz match {
         case None        => throw new NoSuchElementException(s"Header class not found into byte array ('${ScalaUtils.toPresentableString(array.drop(4))}').")

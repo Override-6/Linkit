@@ -128,7 +128,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
         override def deserialize(): Array[_] = {
             val compType   = bytes.getClassOfSeq
             val arrayDepth = bytes(4) + Byte.MaxValue - 1
-            if (bytes(6) == EmptyFlag)
+            if (bytes(7) == EmptyFlag)
                 return buildArray(compType, arrayDepth, 0)
 
             //val classIdentifier = deserializeInt(bytes, 1)

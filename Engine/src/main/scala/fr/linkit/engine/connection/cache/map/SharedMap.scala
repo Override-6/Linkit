@@ -167,8 +167,6 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
     }
 
     override def setContent(content: CacheContent): Unit = {
-        if (content.toArray.isEmpty)
-            return
         LocalMap.set(content match {
             case content: CacheArrayContent[(K, V)] => ScalaUtils.slowCopy(content.array)
             case _                                  => throw new IllegalArgumentException(s"Received unexpected content $content")

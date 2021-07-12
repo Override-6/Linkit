@@ -14,6 +14,7 @@ package fr.linkit.engine.local.generation.compilation
 
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import fr.linkit.api.local.generation.compilation.CompilationResult
+import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 
 import java.nio.file.Path
@@ -32,7 +33,7 @@ object SourceCodeCompilationRequestFactory extends AbstractCompilationRequestFac
                         Some(contexts
                                 .filter(context => outs.contains(workingDir.resolve(context._1.className)))
                                 .map { context =>
-                                    new GeneratedClassClassLoader(workingDir, context._2).loadClass(context._1.className)
+                                    new GeneratedClassClassLoader(workingDir, context._2, Seq(classOf[LinkitApplication].getClassLoader)).loadClass(context._1.className)
                                 })
                     }
                 }

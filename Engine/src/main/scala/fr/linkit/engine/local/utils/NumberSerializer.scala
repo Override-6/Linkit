@@ -76,17 +76,17 @@ object NumberSerializer {
 
         def flagged(array: Array[Byte]): Array[Byte] = (if (insertFlag) Array(array.length.toByte) else Array()) ++ array
 
-        if (Byte.MinValue < value && value < Byte.MaxValue) {
+        if (Byte.MinValue <= value && value <= Byte.MaxValue) {
             //println("Byte")
             return flagged(Array(value.toByte))
         }
 
-        if (Short.MinValue < value && value < Short.MaxValue) {
+        if (Short.MinValue <= value && value <= Short.MaxValue) {
             //println(s"Short (${value.toShort}) - " + new String(serializeShort(value.toShort)))
             return flagged(serializeShort(value.toShort))
         }
 
-        if (Int.MinValue < value && value < Int.MaxValue) {
+        if (Int.MinValue <= value && value <= Int.MaxValue) {
             //println("Int")
             return flagged(serializeInt(value.toInt))
         }
@@ -109,7 +109,7 @@ object NumberSerializer {
         for (i <- (start + 1) to limit) {
             val b = bytes(i)
             val place = (limit - i) * 8
-            result |= b << place
+            result |= (0xff & b) << place
         }
 
         (result.asInstanceOf[T], (numberLength + 1).toByte)

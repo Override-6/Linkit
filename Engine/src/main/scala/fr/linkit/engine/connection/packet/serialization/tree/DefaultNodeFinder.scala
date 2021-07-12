@@ -69,7 +69,7 @@ class DefaultNodeFinder(context: DefaultSerialContext) extends NodeFinder {
 
     private def getDefaultFactory[T](seq: ByteSeq): NodeFactory[T] = {
         defaultFactories.find(_.canHandle(seq))
-                .getOrElse(throw new NoSuchNodeFactoryException(s"Could not find factory for byte sequence ${ScalaUtils.toPresentableString(seq.array)}"))
+                .getOrElse(throw new NoSuchNodeFactoryException(s"Could not find factory for byte sequence '${ScalaUtils.toPresentableString(seq.array)}' (class of seq = ${seq.findClassOfSeq.orNull})"))
                 .asInstanceOf[NodeFactory[T]]
     }
 

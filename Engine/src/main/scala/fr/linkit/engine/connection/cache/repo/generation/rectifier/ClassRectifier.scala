@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.cache.repo.generation.rectifier
 
+import fr.linkit.agent.LinkitAgent
 import fr.linkit.api.connection.cache.repo.description.PuppetDescription
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassClassLoader
 import javassist.bytecode.MethodInfo
@@ -25,7 +26,7 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classL
     pool.appendClassPath(new LoaderClassPath(classLoader))
     private val ctClass = pool.get(puppetClassName)
 
-    //FIXME removeAllSuperClassFinalFlags()
+    //removeAllSuperClassFinalFlags()
     ctClass.setSuperclass(pool.get(superClass.getName))
     fixAllMethods()
 
@@ -39,7 +40,7 @@ class ClassRectifier(desc: PuppetDescription[_], puppetClassName: String, classL
         val superCtClass = pool.get(superClass.getName)
         superCtClass.setModifiers(PUBLIC)
         superCtClass.getMethods.filterNot(m => isStatic(m) || isNative(m) || isProtected(m)).foreach(_.setModifiers(PUBLIC))
-        superCtClass.toClass(superClass.getClassLoader, superClass.getProtectionDomain)
+        LinkitAgent.redefineClass(superClass, superCtClass.toBytecode)
     }
 
     private def fixAllMethods(): Unit = {

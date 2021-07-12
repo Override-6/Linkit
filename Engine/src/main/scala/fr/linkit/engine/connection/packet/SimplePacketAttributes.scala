@@ -67,7 +67,7 @@ object SimplePacketAttributes {
 
     def apply(attributes: SimplePacketAttributes): SimplePacketAttributes = new SimplePacketAttributes(attributes)
 
-    def from(tuples: (String, Serializable)*): SimplePacketAttributes = {
+    def apply(tuples: (String, Serializable)*): SimplePacketAttributes = {
         val atr = empty
         tuples.foreach(tuple => atr.putAttribute(tuple._1, tuple._2))
         atr

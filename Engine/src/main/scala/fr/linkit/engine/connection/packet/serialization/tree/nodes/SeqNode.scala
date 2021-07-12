@@ -82,7 +82,7 @@ object SeqNode {
             if (content.isEmpty)
                 return awfulCast(seqType.getConstructor().newInstance())
 
-            val result = awfulCast(factory.get.from(ArrayBuffer.from(content)))
+            val result = awfulCast[ArrayBuffer[_]](factory.get.from(ArrayBuffer.from(content)))
             profile.applyAllDeserialProcedures(result)
             result
         }

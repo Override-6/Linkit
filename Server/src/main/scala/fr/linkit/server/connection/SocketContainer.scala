@@ -19,7 +19,7 @@ import java.net.Socket
 
 class SocketContainer(autoReconnect: Boolean) extends DynamicSocket(autoReconnect) {
 
-    var identifier: String = "$NOT SET$"
+    var identifier: String = "$unknown_engine$"
 
     override def boundIdentifier: String = identifier
 

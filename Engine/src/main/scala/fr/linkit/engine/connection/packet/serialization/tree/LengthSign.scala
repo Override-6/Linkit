@@ -17,6 +17,9 @@ import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 
 case class LengthSign(lengths: Array[Int], childrenBytes: Array[Array[Byte]]) {
 
+    if (lengths.exists(_ < 0))
+        throw new IllegalArgumentException("LengthSign contains negative length")
+
     def toBytes: Array[Byte] = {
        //println("toBytes invoked:")
        //println(s"  lengths = ${lengths.mkString("Array(", ", ", ")")}")

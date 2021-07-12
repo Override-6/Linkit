@@ -95,7 +95,7 @@ class DefaultEngineObjectCenter[A <: Serializable](handler: SharedCacheManager,
 
     private def ensureNotWrapped(any: Any): Unit = {
         if (any.isInstanceOf[PuppetWrapper[_]])
-            throw new IllegalPuppetException("This object is already shared.")
+            throw new IllegalPuppetException("This object is already wrapped.")
     }
 
     private def genPuppetWrapper[B: ClassTag](puppeteer: Puppeteer[B], puppet: B): B with PuppetWrapper[B] = {

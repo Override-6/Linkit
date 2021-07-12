@@ -36,7 +36,7 @@ object Tests {
     //private val generatedPuppet = getTestPuppet
 
     private val coords     = DedicatedPacketCoordinates(12, "TestServer1", "s1")
-    private val attributes = SimplePacketAttributes.from("cache" -> 27, "id" -> -192009448, "family" -> "s1")
+    private val attributes = SimplePacketAttributes.apply("cache" -> 27, "id" -> -192009448, "family" -> "s1")
     private val packet     = RequestPacket(9, Array(ObjectPacket(Array(Path.of("C:\\Users\\maxim\\Desktop\\fruits")))))
 
     def main(args: Array[String]): Unit = {

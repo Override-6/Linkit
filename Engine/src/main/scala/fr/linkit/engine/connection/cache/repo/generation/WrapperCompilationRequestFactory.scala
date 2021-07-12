@@ -21,6 +21,7 @@ import fr.linkit.engine.connection.cache.repo.generation.WrapperCompilationReque
 import fr.linkit.engine.connection.cache.repo.generation.WrappersClassResource.WrapperPrefixName
 import fr.linkit.engine.connection.cache.repo.generation.bp.ScalaWrapperClassBlueprint
 import fr.linkit.engine.connection.cache.repo.generation.rectifier.ClassRectifier
+import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.local.generation.compilation.{AbstractCompilationRequestFactory, AbstractCompilationResult, SourceCodeCompilationRequest}
@@ -50,7 +51,7 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                                 .map { desc =>
                                     val clazz                    = desc.clazz
                                     val wrapperClassName         = adaptClassName(clazz.getName, WrapperPrefixName)
-                                    val loader                   = new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader)
+                                    val loader                   = new GeneratedClassClassLoader(req.classDir, clazz.getClassLoader, Seq(classOf[LinkitApplication].getClassLoader))
                                     val (byteCode, wrapperClass) = new ClassRectifier(desc, wrapperClassName, loader, clazz).rectifiedClass
                                     val wrapperClassFile         = req.classDir.resolve(wrapperClassName.replace(".", File.separator) + ".class")
                                     Files.write(wrapperClassFile, byteCode)

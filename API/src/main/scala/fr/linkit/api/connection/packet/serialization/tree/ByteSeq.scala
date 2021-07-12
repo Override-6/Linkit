@@ -16,7 +16,7 @@ trait ByteSeq {
 
     val array: Array[Byte]
 
-    def findClass[T]: Option[Class[_]]
+    def findClassOfSeq[T]: Option[Class[_]]
 
     def getClassOfSeq[T]: Class[T]
 

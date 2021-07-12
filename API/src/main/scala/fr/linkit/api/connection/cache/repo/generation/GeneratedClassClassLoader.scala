@@ -13,13 +13,30 @@
 package fr.linkit.api.connection.cache.repo.generation
 
 import java.net.URLClassLoader
-import java.nio.ByteBuffer
 import java.nio.file.Path
 
-class GeneratedClassClassLoader(val classRootFolder: Path, parent: ClassLoader) extends URLClassLoader(Array(classRootFolder.toUri.toURL), parent) {
+class GeneratedClassClassLoader(val classRootFolder: Path, parent: ClassLoader, mates: Seq[ClassLoader]) extends URLClassLoader(Array(classRootFolder.toUri.toURL), parent) {
 
     override def loadClass(name: String, resolve: Boolean): Class[_] = {
-        super.loadClass(name, resolve)
+        try {
+            super.loadClass(name, resolve)
+        } catch {
+            case e: ClassNotFoundException => {
+                var clazz: Class[_] = null
+                var i               = 0
+                while (clazz == null) {
+                    try {
+                        clazz = mates(i).loadClass(name)
+                        i += 1
+                    } catch {
+                        case e: ClassNotFoundException =>
+                            if (i > mates.length)
+                                throw e
+                    }
+                }
+                clazz
+            }
+        }
     }
 
     def defineClass(name: String, bytes: Array[Byte]): Class[_] = {

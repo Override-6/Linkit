@@ -1,0 +1,30 @@
+plugins {
+    id 'java'
+}
+
+group 'fr.override.linkit'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.7.0'
+    testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.7.0'
+
+    implementation group: 'org.scala-lang', name: 'scala-library', version: '2.13.5'
+    implementation group: 'log4j', name: 'log4j', version: '1.2.17'
+}
+
+jar {
+    manifest {
+        attributes (
+            'Premain-Class': 'fr.linkit.agent.LinkitAgent',
+            'Can-Redefine-Classes': true
+        )
+    }
+}
+
+test {
+    useJUnitPlatform()
+}

@@ -12,12 +12,4 @@
 
 package fr.linkit.api.connection.cache
 
-trait CacheContent {
-
-    def toArray: Array[_ <: Any]
-
-    override def toString: String = {
-        java.util.Arrays.deepToString(toArray.asInstanceOf[Array[AnyRef]])
-    }
-
-}
+trait CacheContent extends Serializable

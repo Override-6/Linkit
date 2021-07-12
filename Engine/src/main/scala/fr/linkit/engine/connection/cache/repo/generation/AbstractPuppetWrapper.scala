@@ -11,14 +11,10 @@
  */
 
 package fr.linkit.engine.connection.cache.repo.generation
-
 import fr.linkit.api.connection.cache.repo.description.{PuppetDescription, PuppeteerDescription}
 import fr.linkit.api.connection.cache.repo.{InvocationChoreographer, PuppetWrapper, Puppeteer}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.PuppetAlreadyInitialisedException
-
-import scala.annotation.meta.field
-import scala.collection.mutable.ListBuffer
 
 trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
     @transient protected var puppeteer: Puppeteer[A] = _

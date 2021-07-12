@@ -19,4 +19,5 @@ include 'LinkitPlugins:DebugPlugin'
 findProject(':LinkitPlugins:DebugPlugin')?.name = 'DebugPlugin'
 include 'LinkitPlugins:CLICommands'
 findProject(':LinkitPlugins:CLICommands')?.name = 'CLICommands'
+include 'LinkitAgent'
 

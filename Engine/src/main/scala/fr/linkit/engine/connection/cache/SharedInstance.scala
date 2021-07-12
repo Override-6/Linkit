@@ -89,9 +89,6 @@ object SharedInstance {
         }
     }
 
-    case class CacheInstanceContent[A](a: A) extends CacheContent {
-
-        override def toArray: Array[_] = Array[Any](a)
-    }
+    case class CacheInstanceContent[A](a: A) extends CacheContent
 
 }

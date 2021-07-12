@@ -14,7 +14,4 @@ package fr.linkit.engine.connection.cache
 
 import fr.linkit.api.connection.cache.CacheContent
 
-case class CacheArrayContent[A <: Any](array: Array[A]) extends CacheContent {
-
-    override def toArray: Array[A] = array
-}
+case class CacheArrayContent[A <: Any](val array: Array[A]) extends CacheContent
