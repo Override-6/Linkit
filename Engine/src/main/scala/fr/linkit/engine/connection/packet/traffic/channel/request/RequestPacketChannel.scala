@@ -77,8 +77,6 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
     }
 
     def makeRequest(scope: ChannelScope): RequestSubmitter = {
-        val pool = WorkerPools.ensureCurrentIsWorker()
-
         val requestID = nextRequestID
         new RequestSubmitter(requestID, scope, pool, this)
     }

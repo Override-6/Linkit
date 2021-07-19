@@ -99,11 +99,6 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     private def genPuppetWrapper[B](puppeteer: Puppeteer[B], puppet: B): B with PuppetWrapper[B] = {
         val wrapperClass = generator.getPuppetClass[B](puppet.getClass.asInstanceOf[Class[B]])
         val instance     = CloneHelper.instantiateFromOrigin[B](wrapperClass, puppet)
-        val field = wrapperClass.getDeclaredField("puppeteer")
-        field.setAccessible(true)
-        println(s"field.get(instance) = ${field.get(instance)}")
-        retrieveAllFields(wrapperClass)
-                .foreach(_.set(instance, null))
         instance.initPuppeteer(puppeteer)
         instance
     }
