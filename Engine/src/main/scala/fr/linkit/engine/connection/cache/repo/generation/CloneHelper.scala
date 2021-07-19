@@ -15,11 +15,17 @@ package fr.linkit.engine.connection.cache.repo.generation
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, pasteAllFields}
 
+import java.lang.reflect.Modifier
+
 object CloneHelper {
 
     def instantiateFromOrigin[A](wrapperClass: Class[A with PuppetWrapper[A]], origin: A): A with PuppetWrapper[A] = {
         val instance  = allocate[A with PuppetWrapper[A]](wrapperClass)
         pasteAllFields(instance, origin)
+        wrapperClass.getDeclaredFields
+                .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isFinal(f.getModifiers))
+                .tapEach(_.setAccessible(true))
+                .foreach(_.set(instance, null))
         instance
     }
 

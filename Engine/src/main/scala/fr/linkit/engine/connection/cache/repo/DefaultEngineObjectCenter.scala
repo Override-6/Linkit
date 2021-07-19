@@ -34,6 +34,7 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.local.utils.ScalaUtils.retrieveAllFields
 
 import java.lang.reflect.Field
 import java.util.concurrent.ThreadLocalRandom
@@ -51,9 +52,9 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
 
     import defaultTreeViewBehavior._
 
-    override val center                = new DefaultPuppetCenter[A]
-    private  val fieldRestorer         = new FieldRestorer
-    private  val currentIdentifier     = channel.traffic.currentIdentifier
+    override val center            = new DefaultPuppetCenter[A]
+    private  val fieldRestorer     = new FieldRestorer
+    private  val currentIdentifier = channel.traffic.currentIdentifier
 
     override def postObject[B <: A : ClassTag : TypeTag](id: Int, obj: B): B with PuppetWrapper[B] = {
         postObject[B](id, obj, defaultTreeViewBehavior.getFromClass(obj.getClass.asInstanceOf[Class[B]]))
@@ -98,6 +99,11 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     private def genPuppetWrapper[B](puppeteer: Puppeteer[B], puppet: B): B with PuppetWrapper[B] = {
         val wrapperClass = generator.getPuppetClass[B](puppet.getClass.asInstanceOf[Class[B]])
         val instance     = CloneHelper.instantiateFromOrigin[B](wrapperClass, puppet)
+        val field = wrapperClass.getDeclaredField("puppeteer")
+        field.setAccessible(true)
+        println(s"field.get(instance) = ${field.get(instance)}")
+        retrieveAllFields(wrapperClass)
+                .foreach(_.set(instance, null))
         instance.initPuppeteer(puppeteer)
         instance
     }

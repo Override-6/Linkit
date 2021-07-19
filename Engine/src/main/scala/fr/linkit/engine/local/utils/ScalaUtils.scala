@@ -74,6 +74,12 @@ object ScalaUtils {
 
         import java.lang
 
+        if (value == null) {
+            if (!Modifier.isFinal(field.getModifiers))
+                field.set(instance, null)
+            return
+        }
+
         val action: (Any, Long) => Unit = if (field.getType.isPrimitive) {
             value match {
                 case i: Integer      => TheUnsafe.putInt(_, _, i)
@@ -123,12 +129,9 @@ object ScalaUtils {
         throw new IllegalStateException("No instance of Unsafe found")
     }
 
-
-
     def pasteAllFields[A](instance: A, data: A): Unit = {
         retrieveAllFields(data.getClass)
                 .foreach(field => {
-                    field.setAccessible(true)
                     ScalaUtils.setValue(instance, field, field.get(data))
                 })
     }
@@ -136,11 +139,12 @@ object ScalaUtils {
     def allocate[A](clazz: Class[_]): A = {
         if (clazz == null)
             throw new NullPointerException
-        TheUnsafe.allocateInstance(clazz).asInstanceOf[A]
+        val instance = TheUnsafe.allocateInstance(clazz).asInstanceOf[A]
+        instance
     }
 
-    def retrieveAllFields(clazz: Class[_]): Seq[Field] = {
-        var superClass = clazz
+    def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Seq[Field] = {
+        var superClass  = clazz
         var superFields = Seq.empty[Field]
         while (superClass != null) {
             superFields ++= superClass.getDeclaredFields
@@ -148,6 +152,7 @@ object ScalaUtils {
         }
         superFields
                 .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isNative(f.getModifiers))
+                .tapEach(_.setAccessible(accessible))
     }
 
 }

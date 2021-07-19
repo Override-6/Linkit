@@ -59,7 +59,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
 
     def createServerEntity(): Engine = {
         val selfCache    = newCacheManager(serverIdentifier, serverConnection)
-        val serverEntity = new SelfEngine(serverConnection, ExternalConnectionState.CONNECTED, selfCache) //Server always connected to himself
+        val serverEntity = new SelfEngine(serverConnection, ExternalConnectionState.CONNECTED, this, selfCache) //Server always connected to himself
         serverEntity
                 .cache
                 .getCache(3, SharedInstance[ExternalConnectionState], CacheSearchBehavior.GET_OR_WAIT)

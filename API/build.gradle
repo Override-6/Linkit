@@ -23,7 +23,7 @@ plugins {
 apply plugin: 'scala'
 
 group 'fr.linkit'
-version '1.0Alpha ' + nowFormat()
+version 'Alpha-1.0'
 
 repositories {
     mavenCentral()

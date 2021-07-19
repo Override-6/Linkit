@@ -56,7 +56,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
         sharedCaches
                 .getCache(3, SharedInstance[ExternalConnectionState], CacheSearchBehavior.GET_OR_WAIT)
                 .set(ExternalConnectionState.CONNECTED) //technically always connected to himself
-        new SelfEngine(connection, connection.getState, sharedCaches)
+        new SelfEngine(connection, connection.getState, this, sharedCaches)
     }
 
     private[client] def handshake(): Unit = {

@@ -131,7 +131,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
                         .getController
                         .runTask(childTask)
             } catch {
-                case NonFatal(e) =>
+                case e: Throwable =>
                     e.printStackTrace()
             }
             if (rootExecution)

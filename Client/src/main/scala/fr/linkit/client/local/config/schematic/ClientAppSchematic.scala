@@ -27,7 +27,7 @@ abstract class ClientAppSchematic extends AppSchematic[ClientApplication] {
 
     @throws[ApplicationInstantiationException]
     override def setup(app: ClientApplication): Unit = {
-        for (configuration <- serverConfigs) app.runLater {
+        for (configuration <- serverConfigs) app.runLaterControl {
             try {
                 app.openConnection(configuration)
             } catch {
@@ -35,7 +35,7 @@ abstract class ClientAppSchematic extends AppSchematic[ClientApplication] {
                     val name: String = configuration.configName
                     throw new ApplicationInstantiationException(s"Failed to load configuration '$name'", e)
             }
-        }
+        }.throwNextThrowable()
     }
 
 }

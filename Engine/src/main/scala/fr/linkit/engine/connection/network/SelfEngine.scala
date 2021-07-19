@@ -22,13 +22,12 @@ import java.sql.Timestamp
 
 class SelfEngine(connection: ConnectionContext,
                  state: => ExternalConnectionState,
+                 override val network: Network,
                  override val cache: SharedCacheManager) extends Engine {
 
     override val identifier: String = connection.currentIdentifier
 
     override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())
-
-    override val network: Network = connection.network
 
     override val versions: Versions = StaticVersions.currentVersions
 
