@@ -13,7 +13,7 @@
 package fr.linkit.api.connection
 
 import fr.linkit.api.connection.network.ExternalConnectionState
-import fr.linkit.api.connection.packet.serialization.PacketTranslator
+import fr.linkit.api.connection.packet.persistence.PacketTranslator
 
 trait ExternalConnection extends ConnectionContext {
 

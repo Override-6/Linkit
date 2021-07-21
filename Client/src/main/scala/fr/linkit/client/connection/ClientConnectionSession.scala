@@ -12,13 +12,13 @@
 
 package fr.linkit.client.connection
 
-import fr.linkit.api.connection.packet.serialization.PacketTranslator
+import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.local.config.ClientConnectionConfiguration
-import fr.linkit.engine.connection.packet.serialization.DefaultPacketTranslator
+import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
 import fr.linkit.engine.connection.packet.traffic.{ChannelScopes, DynamicSocket, SocketPacketTraffic}
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.system.SystemPacketChannel

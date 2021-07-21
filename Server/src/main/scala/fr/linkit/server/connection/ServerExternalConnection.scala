@@ -15,7 +15,7 @@ package fr.linkit.server.connection
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
+import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
@@ -25,7 +25,7 @@ import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.engine.connection.packet.fundamental.TaskInitPacket
-import fr.linkit.engine.connection.packet.serialization.SimpleTransferInfo
+import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull

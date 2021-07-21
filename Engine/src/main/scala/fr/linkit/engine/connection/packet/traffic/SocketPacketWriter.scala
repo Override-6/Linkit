@@ -12,11 +12,11 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.serialization.PacketTranslator
+import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.connection.packet._
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
-import fr.linkit.engine.connection.packet.serialization.SimpleTransferInfo
+import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
 
 class SocketPacketWriter(socket: DynamicSocket,
                          translator: PacketTranslator,

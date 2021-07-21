@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet
 
-import fr.linkit.api.connection.packet.serialization.Serializer
+import fr.linkit.api.connection.packet.persistence.Serializer
 
 case class BroadcastPacketCoordinates(injectableID: Int, senderID: String, discardTargets: Boolean, targetIDs: String*) extends PacketCoordinates {
 

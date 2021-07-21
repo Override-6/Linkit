@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.system.event.packet
 
-import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult, Serializer}
+import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, Serializer}
 import fr.linkit.api.connection.packet.traffic.PacketInjectable
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
 

@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.packet.traffic.channel.request
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.AbstractAttributesPresence
-import fr.linkit.engine.connection.packet.serialization.tree.LinkLine
+import fr.linkit.engine.connection.packet.persistence.tree.LinkLine
 import fr.linkit.engine.local.utils.ScalaUtils.ensurePacketType
 
 import java.util.NoSuchElementException

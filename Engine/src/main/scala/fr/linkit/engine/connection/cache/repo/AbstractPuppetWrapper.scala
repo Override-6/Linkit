@@ -26,7 +26,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
     def wrappedClass: Class[_]
 
     override def initPuppeteer(puppeteer: Puppeteer[A]): Unit = this.synchronized {
-        Thread.dumpStack()
+//        Thread.dumpStack()
         if (this.puppeteer != null)
             throw new PuppetAlreadyInitialisedException(s"This puppet is already initialized ! ($puppeteer)")
         println(s"this.puppeteer = ${this.puppeteer}")

@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet
 
-import fr.linkit.api.connection.packet.serialization.Serializer
+import fr.linkit.api.connection.packet.persistence.Serializer
 
 case class DedicatedPacketCoordinates(injectableID: Int, targetID: String, senderID: String) extends PacketCoordinates {
 

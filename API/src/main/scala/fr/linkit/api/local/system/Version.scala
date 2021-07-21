@@ -12,7 +12,7 @@
 
 package fr.linkit.api.local.system
 
-import fr.linkit.api.connection.packet.serialization.StringRepresentable
+import fr.linkit.api.connection.packet.persistence.StringRepresentable
 
 case class Version(name: String, major: Byte, minor: Byte, patch: Byte, stable: Boolean) extends Serializable {
 

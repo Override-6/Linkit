@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.serialization.PacketTranslator
+import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.PacketWriter
 import fr.linkit.api.local.concurrency.Procrastinator
 import org.jetbrains.annotations.NotNull

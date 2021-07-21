@@ -15,7 +15,7 @@ package fr.linkit.client.connection
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.serialization.{PacketTransferResult, PacketTranslator}
+import fr.linkit.api.connection.packet.persistence.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketException}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
@@ -30,7 +30,7 @@ import fr.linkit.client.local.config.ClientConnectionConfiguration
 import fr.linkit.client.connection.network.ClientSideNetwork
 import fr.linkit.engine.connection.network.SimpleRemoteConsole
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.engine.connection.packet.serialization.DefaultPacketTranslator
+import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
 import fr.linkit.engine.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.system.{Rules, SystemPacket}

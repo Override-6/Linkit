@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.serialization.{PacketDeserializationResult, PacketTranslator}
+import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.system.AppLogger

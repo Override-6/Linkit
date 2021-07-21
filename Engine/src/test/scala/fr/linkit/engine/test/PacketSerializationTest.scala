@@ -12,15 +12,13 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.engine.connection.packet.serialization.FSTSerializer
 import org.junit.jupiter.api.Test
 
 object PacketSerializationTest {
 
     @Test
     def makeSerial(): Unit = {
-        val fst = new FSTSerializer
-        fst
+
     }
 
 }

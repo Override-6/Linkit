@@ -13,7 +13,7 @@
 package fr.linkit.server.connection
 
 import fr.linkit.api.connection.network.{ExternalConnectionState, Engine}
-import fr.linkit.api.connection.packet.serialization.{PacketSerializationResult, PacketTranslator}
+import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.concurrency.workerExecution

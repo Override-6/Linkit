@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.connection.packet.traffic.PacketInjectableFactory
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.local.concurrency.WorkerPools
-import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
+import fr.linkit.api.local.concurrency.WorkerPools.{currentTasksId, ensureCurrentIsWorker}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.AbstractPacketChannel
@@ -78,7 +78,7 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
 
     def makeRequest(scope: ChannelScope): RequestSubmitter = {
         val requestID = nextRequestID
-        new RequestSubmitter(requestID, scope, pool, this)
+        new RequestSubmitter(requestID, scope, ensureCurrentIsWorker(), this)
     }
 
     private def nextRequestID: Int = {

@@ -12,9 +12,9 @@
 
 package fr.linkit.client.local.config
 
-import fr.linkit.api.connection.packet.serialization.PacketTranslator
+import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.local.system.security.BytesHasher
-import fr.linkit.engine.connection.packet.serialization.DefaultPacketTranslator
+import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
 
 import java.net.{InetSocketAddress, Socket}
 

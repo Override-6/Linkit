@@ -13,7 +13,7 @@
 package fr.linkit.api.connection
 
 import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.packet.serialization.PacketTranslator
+import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectableContainer, PacketTraffic}
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}

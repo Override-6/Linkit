@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.serialization.PacketDeserializationResult
+import fr.linkit.api.connection.packet.persistence.PacketDeserializationResult
 import fr.linkit.api.local.concurrency.workerExecution
 
 trait PacketReader {
