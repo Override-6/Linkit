@@ -23,5 +23,5 @@ object HandledClass {
 
     implicit def fromClass(pair: (Class[_], Boolean)): HandledClass = new HandledClass(pair._1.getName, pair._2)
 
-    implicit def apply(clazz: Class[_], extendedClassEnabled: Boolean): HandledClass = new HandledClass(clazz, extendedClassEnabled)
+    implicit def apply(clazz: Class[_], extendedClassEnabled: Boolean): HandledClass = new HandledClass(clazz.getName, extendedClassEnabled)
 }

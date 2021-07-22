@@ -16,9 +16,7 @@ import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{Delega
 
 trait SerialisationProgression {
 
-    def getHeader: Seq[SerializerNode]
-
-    def checkNode(obj: Any, node: => SerializerNode): DelegatingSerializerNode
+    def checkNode(obj: Any)(node: => SerializerNode): DelegatingSerializerNode
 
     def containsInstance(obj: Any): Boolean
 

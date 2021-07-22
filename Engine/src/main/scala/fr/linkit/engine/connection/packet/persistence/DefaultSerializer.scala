@@ -12,41 +12,37 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
-import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.Serializer
-import fr.linkit.engine.connection.packet.persistence.tree.DefaultSerialContext
 import fr.linkit.engine.connection.packet.persistence.v3.DefaultPersistenceContext
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialOutputStream, DefaultSerialisationProgression}
+import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.{DefaultDeserialisationInputStream, DefaultDeserialisationProgression}
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationOutputStream, DefaultSerialisationProgression}
 
 import java.nio.ByteBuffer
 
 class DefaultSerializer() extends Serializer {
 
-    private val context = new DefaultPersistenceContext
+    private  val context                = new DefaultPersistenceContext
     override val signature: Array[Byte] = Array(4)
 
     override def serialize(serializable: Serializable, withSignature: Boolean): Array[Byte] = {
         val progress = new DefaultSerialisationProgression
-        val out = new DefaultSerialOutputStream(ByteBuffer.allocate(50000), context)
-        context.getNode(serializable, out, )
-                .writeBytes()
+        val out1      = new DefaultSerialisationOutputStream(ByteBuffer.allocate(10000), progress, context)
+        val out2      = new DefaultSerialisationOutputStream(ByteBuffer.allocate(10000), progress, context)
+        context.getSerializationNode(serializable, progress).writeBytes(out2)
+        progress.writePool(out1)
+        out1.put(out2.array(), 0, out2.position()).array().take(out1.position())
     }
 
     override def isSameSignature(bytes: Array[Byte]): Boolean = bytes.startsWith(signature)
 
     override def deserialize(bytes: Array[Byte]): Any = {
-        val node = finder.getDeserialNodeFor(bytes.drop(1))
-        node.deserialize()
+        val in       = new DefaultDeserialisationInputStream(ByteBuffer.wrap(bytes), context)
+        context.getDeserializationNode(in, in.progress)
+                .getObject(in)
     }
 
     override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
-        val node = finder.getDeserialNodeFor[Array[Any]](bytes.drop(1))
-        node.deserialize()
+        deserialize(bytes).asInstanceOf[Array[Any]]
     }
 
-    def getContext: DefaultSerialContext = context
-
-    def initNetwork(network: Network): Unit = {
-        context.updateNetwork(network)
-    }
 }

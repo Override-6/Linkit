@@ -13,9 +13,10 @@
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialOutputStream, SerialisationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationProgression.Identity
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{HeadedInstanceNode, RootSerialNode}
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.HeadedInstanceNode
+import fr.linkit.engine.local.utils.{JavaUtils, NumberSerializer}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -26,26 +27,29 @@ class DefaultSerialisationProgression extends SerialisationProgression {
     /**
      * Contains all [[SerializerNode]] for object instances that will be reused in the body
      */
-    private val header              = ListBuffer.empty[SerializerNode]
+    private val pool                = ListBuffer.empty[SerializerNode]
 
-    override def checkNode(obj: Any, node: => SerializerNode): DelegatingSerializerNode = {
+    override def checkNode(obj: Any)(node: => SerializerNode): DelegatingSerializerNode = {
         if (containsInstance(obj)) {
             serializedInstances(obj) match {
                 case DelegatingSerializerNode(h: HeadedInstanceNode) => DelegatingSerializerNode(h)
                 case delegating                                      => delegating.delegated = {
-                    header += node
-                    new HeadedInstanceNode(header.length)
+                    pool += node
+                    new HeadedInstanceNode(pool.length)
                 }
             }
         }
-        DelegatingSerializerNode(node)
+        val wrappedNode = DelegatingSerializerNode(node)
+        serializedInstances.put(obj, wrappedNode)
+        wrappedNode
     }
 
     override def containsInstance(obj: Any): Boolean = serializedInstances.contains(obj)
 
-    override def forEachInstances(action: Any => Unit): Unit = serializedInstances.keys.foreach(id => action(id.obj))
-
-    override def getHeader: Seq[SerializerNode] = header.toSeq
+    def writePool(out: SerialisationOutputStream): Unit = {
+        out.write(NumberSerializer.serializeNumber(pool.size, true))
+        pool.foreach(_.writeBytes(out))
+    }
 
 }
 
@@ -56,7 +60,7 @@ object DefaultSerialisationProgression {
         override def hashCode(): Int = System.identityHashCode(obj)
 
         override def equals(obj: Any): Boolean = obj match {
-            case id: Identity => id.obj eq this.obj
+            case id: Identity => JavaUtils.sameInstance(id.obj, this.obj) //got an error "the result type of an implicit conversion must be more specific than AnyRef" if i put "obj eq this.obj"
             case _            => false
         }
     }

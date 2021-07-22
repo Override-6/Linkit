@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation.node
 
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialOutputStream
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationOutputStream
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 
 import scala.collection.mutable.ListBuffer
@@ -23,5 +23,5 @@ class RootSerialNode() extends SerializerNode {
 
     def addInHeader(node: SerializerNode): Unit = header += node
 
-    override def writeBytes(out: SerialOutputStream): Unit = header.foreach(_.writeBytes(out))
+    override def writeBytes(out: SerialisationOutputStream): Unit = header.foreach(_.writeBytes(out))
 }

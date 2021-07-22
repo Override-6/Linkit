@@ -12,6 +12,8 @@
 
 package fr.linkit.engine.local.utils
 
+import java.nio.ByteBuffer
+
 object NumberSerializer {
 
     def serializeLong(value: Long): Array[Byte] = {
@@ -98,23 +100,21 @@ object NumberSerializer {
     /**
      * @return a pair with the deserialized number at left, and its length in the array at right.
      * */
-    def deserializeFlaggedNumber[@specialized(Byte, Short, Int, Long) T <: AnyVal](bytes: Array[Byte], start: Int): (T, Byte) = {
+    def deserializeFlaggedNumber[@specialized(Byte, Short, Int, Long) T <: AnyVal](buff: ByteBuffer): T = {
         var result: Long = 0
-        val numberLength = bytes(start)
+        val numberLength = buff.get
         if (numberLength < 0)
             throw new IllegalArgumentException("number length < 0")
         if (numberLength == 1)
-            return (bytes(start + 1).asInstanceOf[T], 2)
+            return buff.get.asInstanceOf[T]
 
-        val limit = start + numberLength
-
-        for (i <- (start + 1) to limit) {
-            val b     = bytes(i)
-            val place = (limit - i) * 8
+        for (i <- 1 to numberLength) {
+            val b     = buff.get()
+            val place = i * 8
             result |= (0xff & b) << place
         }
 
-        (result.asInstanceOf[T], (numberLength + 1).toByte)
+        result.asInstanceOf[T]
     }
 
     def convertToShortArray(array: Array[Byte]): Array[Short] = {

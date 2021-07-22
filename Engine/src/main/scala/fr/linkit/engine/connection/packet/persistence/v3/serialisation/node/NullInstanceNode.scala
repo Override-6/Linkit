@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation.node
 
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialOutputStream
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationOutputStream
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode._
 
 class NullInstanceNode(isOption: Boolean) extends SerializerNode {
 
-    override def writeBytes(out: SerialOutputStream): Unit = {
+    override def writeBytes(out: SerialisationOutputStream): Unit = {
         out.put(NullFlag)
         if (isOption)
             out.put(NoneFlag)

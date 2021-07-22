@@ -33,6 +33,8 @@ public class JavaUtils {
         return null;
     }
 
-
+    public static boolean sameInstance(Object a, Object b) {
+        return a == b;
+    }
 
 }

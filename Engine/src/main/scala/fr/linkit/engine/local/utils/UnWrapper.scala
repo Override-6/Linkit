@@ -15,12 +15,18 @@ package fr.linkit.engine.local.utils
 import java.lang
 
 object UnWrapper {
+
     def unwrap[A <: AnyVal](value: Any, converter: PrimitiveWrapper => A): A = {
         value match {
             case n: Number       => converter(new NumberWrapper(n))
             case b: lang.Boolean => converter(new BooleanNumber(b))
             case c: Character    => converter(new CharacterNumber(c))
         }
+    }
+
+    @inline
+    def isPrimitiveWrapper(obj: Any): Boolean = {
+        obj.isInstanceOf[Number] || obj.isInstanceOf[lang.Boolean] || obj.isInstanceOf[Character]
     }
 
     sealed trait PrimitiveWrapper extends Number {

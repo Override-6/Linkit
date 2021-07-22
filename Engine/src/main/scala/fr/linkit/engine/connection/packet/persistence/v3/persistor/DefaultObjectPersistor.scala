@@ -12,23 +12,44 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.persistor
 
-import fr.linkit.api.connection.packet.persistence.tree.SerializableClassDescription
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
-import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext}
-import fr.linkit.engine.connection.packet.persistence.tree.LengthSign
+import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
+import fr.linkit.engine.connection.packet.persistence.v3.LengthSign
+import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.RawObjectNode
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode
+import fr.linkit.engine.local.utils.ScalaUtils
 
-class DefaultObjectPersistor extends ObjectPersistor[AnyRef] {
+class DefaultObjectPersistor extends ObjectPersistor[Any] {
 
     override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[Object], true))
 
-    override def getSerialNode(obj: AnyRef, desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): SerializerNode = {
+    override def getSerialNode(obj: Any, desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): SerializerNode = {
         if (obj == null || obj == None)
             return new NullInstanceNode(obj == None)
 
-        LengthSign.of(obj, desc, context).getNode
+        val fieldValues = desc.serializableFields
+                .map(_.first.get(obj))
+        out => {
+            out.writeClass(obj.getClass)
+            LengthSign.out(fieldValues, progress, context).getNode.writeBytes(out)
+        }
     }
 
-    override def placeDeserialNode(): Unit = ???
+    override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserialisationProgression): DeserializerNode = {
+        in =>
+            val instance = ScalaUtils.allocate[AnyRef](desc.clazz)
+            println(s"Deserializing object ${desc.clazz.getName}...")
+            LengthSign.in(desc.signItemCount, context, progress, in).getNode(nodes => {
+                desc.foreachDeserializableFields((i, field) => {
+                    val node = nodes(i)
+                    ScalaUtils.setValue(instance, field, node.getObject(in))
+                })
+                RawObjectNode(instance)
+            }).getObject(in)
+
+    }
+
 }

@@ -12,10 +12,16 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation.node
 
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationOutputStream
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags.HeadedObjectFlag
+import fr.linkit.engine.local.utils.NumberSerializer
 
 class HeadedInstanceNode(place: Int) extends SerializerNode {
 
-    override def writeBytes: Array[Byte] = ???
+    override def writeBytes(out: SerialisationOutputStream): Unit = {
+        out.put(HeadedObjectFlag)
+                .put(NumberSerializer.serializeNumber(place, true))
+    }
 
 }

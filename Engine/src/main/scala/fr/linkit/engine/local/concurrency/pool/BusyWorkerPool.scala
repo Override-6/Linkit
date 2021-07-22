@@ -28,24 +28,25 @@ import scala.util.control.NonFatal
  * <h2> Problem </h2>
  * <p>
  * Let's say that we have a pool of 3 threads that handle deserialization and packet injections. <br>
- * (see [[fr.linkit.api.connection.packet.traffic.PacketInjectable]] for further details about injection
+ * (see [[fr.linkit.api.connection.packet.traffic.PacketInjectable]] for further details about injection)
  * Then suddenly, for a reason that can often appear, every threads of the pool are waiting to receipt another packet.<br>
  * The waited packet will effectively be downloaded by the [[PacketReaderThread]],
  * but it could not be deserialized and injected because all the thread are currently waiting for an injection.<br>
  * This way, a kind of deadlock will occur because each threads are waiting for their packet to be injected,
- * and there is no free thread that would process the packets in order to notify other threads that their packet has been effectively received.<br>
+ * and there is no free thread in the pool that would process the packet injection<br>
  * </p>
  *
  * <h3> Pseudo code : </h3>
  *
- * Here is an illustration of a normal execution, where a thread is waiting for a packet to be received,
- * and where a second thread is injecting the packet and notifying the first thread that a packet has been received.
+ * Here is an illustration of a normal execution.<br>
+ * Where the first thread is waiting for a packet to be received,
+ * and where a second thread is injecting the packet in the channel.
  *
  * <u>Thread 1 : waiting for a packet to be received</p>
  * {{{
- *      val channel = relay.getInjectable(x, ChannelScope.y, SyncPacketChannel)
+ *      val channel = connection.getInjectable(x, ChannelScope.y, SyncPacketChannel)
  *      val nextPacket = channel.nextPacket()
- *      //println("A new packet has been received !")
+ *      println("A new packet has been received !")
  *      // Process nextPacket....
  * }}}
  *
@@ -60,17 +61,17 @@ import scala.util.control.NonFatal
  * <h2> Solution </h2>
  * <p>
  * In a normal execution, where a second thread is free to notify the first thread,
- * the two prints would be done at same time
+ * the two prints would be done successfully
  * </p>
  * <p>
  * Therefore, if the second thread were not able to handle the injection, because it would be busy to
- * execute another task submitted to thread pool, the first thread could not be
+ * execute another task submitted to the thread pool, the first thread could not be
  * notified, and will wait until a thread is free to process the injection.<br>
  * But we have to rely on the fact that the first thread is doing noting.<br>
  * So, we have a thread that is waiting for a packet to be provided, and will do
  * absolutely nothing until he does not received its wants,
  * where he can take the time he is sleeping for executing other
- * tasks in the pool ? What a lazy thread !
+ * tasks in the pool ? and consequently injecting his own packet to unlock itself ? What a lazy thread !
  * </p>
  * <p>
  * The Busy thread system will save this lost time in order to fluidify task execution,

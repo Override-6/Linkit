@@ -12,10 +12,10 @@
 
 package fr.linkit.api.connection.packet.persistence.v3.serialisation.node
 
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialOutputStream
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationOutputStream
 
 trait SerializerNode {
 
-    def writeBytes(out: SerialOutputStream): Unit
+    def writeBytes(out: SerialisationOutputStream): Unit
 
 }

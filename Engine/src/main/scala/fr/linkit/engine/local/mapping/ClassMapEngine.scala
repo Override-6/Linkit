@@ -87,7 +87,6 @@ object ClassMapEngine {
     private def mapDirectory(fsa: FileSystemAdapter, root: String,
                              directory: FileAdapter, classLoader: ClassLoader,
                              filters: MapEngineFilters): Unit = {
-        //println(s"directory = ${directory}")
         if (isZipFile(directory)) {
             val dirPath  = directory.getAbsolutePath
             val isInJMod = dirPath.endsWith(".jmod")
@@ -99,7 +98,7 @@ object ClassMapEngine {
                         val classPath = if (isInJMod) entryName.drop(JModRelativeClassesDirectory.length) else entryName
                         mapPath(0, classLoader, classPath, filters)
                     })
-            //jarFile.close()
+            jarFile.close()
             return
         }
         fsa.list(directory).foreach(adapter => {
@@ -119,7 +118,7 @@ object ClassMapEngine {
             val className = classPath
                     .replace('\\', '.')
                     .replace('/', '.')
-                    .replace(".class", "")
+                    .dropRight(".class".length)
             if (filters.canMap(className)) {
                 ClassMappings.putClass(className, classLoader)
             }

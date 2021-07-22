@@ -11,9 +11,9 @@
  */
 
 package fr.linkit.api.connection.packet.persistence.v3.serialisation.node
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialOutputStream
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationOutputStream
 
 case class DelegatingSerializerNode(var delegated: SerializerNode) extends SerializerNode {
 
-    override def writeBytes(out: SerialOutputStream): Unit = delegated.writeBytes(out)
+    override def writeBytes(out: SerialisationOutputStream): Unit = delegated.writeBytes(out)
 }
