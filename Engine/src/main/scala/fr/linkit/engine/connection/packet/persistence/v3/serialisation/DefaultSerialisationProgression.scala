@@ -31,12 +31,14 @@ class DefaultSerialisationProgression extends SerialisationProgression {
 
     override def checkNode(obj: Any)(node: => SerializerNode): DelegatingSerializerNode = {
         if (containsInstance(obj)) {
-            serializedInstances(obj) match {
+            return serializedInstances(obj) match {
                 case DelegatingSerializerNode(h: HeadedInstanceNode) => DelegatingSerializerNode(h)
-                case delegating                                      => delegating.delegated = {
-                    pool += node
-                    new HeadedInstanceNode(pool.length)
-                }
+                case delegating                                      =>
+                    delegating.delegated = {
+                        pool += node
+                        new HeadedInstanceNode(pool.length)
+                    }
+                    delegating
             }
         }
         val wrappedNode = DelegatingSerializerNode(node)
@@ -63,5 +65,7 @@ object DefaultSerialisationProgression {
             case id: Identity => JavaUtils.sameInstance(id.obj, this.obj) //got an error "the result type of an implicit conversion must be more specific than AnyRef" if i put "obj eq this.obj"
             case _            => false
         }
+
+        override def toString: String = obj.toString
     }
 }

@@ -12,6 +12,8 @@
 
 package fr.linkit.api.connection.packet.persistence.v3.serialisation
 
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
+
 import java.io.OutputStream
 import java.nio.ByteBuffer
 
@@ -25,15 +27,15 @@ trait SerialisationOutputStream extends OutputStream {
 
     def writeClass(clazz: Class[_]): Unit
 
-    def writeObject(obj: Any): Unit
+    def writeObject(obj: Any): SerializerNode
 
-    def writePrimitive(anyVal: AnyVal): Unit
+    def writePrimitive(anyVal: AnyVal): SerializerNode
 
-    def writeString(str: String): Unit
+    def writeString(str: String): SerializerNode
 
-    def writeArray(array: Array[Any]): Unit
+    def writeArray(array: Array[Any]): SerializerNode
 
-    def writeEnum(enum: Enum[_]): Unit
+    def writeEnum(enum: Enum[_]): SerializerNode
 
 }
 

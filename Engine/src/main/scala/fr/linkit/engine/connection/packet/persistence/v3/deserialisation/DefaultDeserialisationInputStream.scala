@@ -14,6 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
+import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
 import fr.linkit.engine.local.mapping.ClassMappings
@@ -31,12 +32,9 @@ class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
     }
 
     override def readPrimitive(): AnyVal = {
-        //println(s"Deserializing primitive number from bytes ${ScalaUtils.toPresentableString(bytes)}")
-        //println(s"raw bytes = ${bytes.mkString("Array(", ", ", ")")}")
         import NumberSerializer.deserializeFlaggedNumber
         import fr.linkit.engine.local.utils.UnWrapper.unwrap
         lazy val value = deserializeFlaggedNumber[Long](this)
-        //println(s"value = ${value}")
         val result = buff.get match {
             case IntFlag     => unwrap(value, _.intValue)
             case LongFlag    => unwrap(value, _.longValue)
@@ -46,17 +44,22 @@ class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
             case ByteFlag    => unwrap(value, _.byteValue)
             case ShortFlag   => unwrap(value, _.shortValue)
             case CharFlag    => unwrap(value, _.charValue)
+            case _           =>
+                val array = buff.array().slice(buff.position() - 1, buff.limit())
+                throw MalFormedPacketException(array, "Expected any number flag at start of number expression.")
         }
         result
     }
 
     override def readString(limit: Int): String = {
-        val array = new Array[Byte](buff.position() - limit)
+        checkFlag(StringFlag, "String")
+        val array = new Array[Byte](limit - buff.position())
         buff.get(array)
         new String(array)
     }
 
     override def readArray(): Array[Any] = {
+        checkFlag(ArrayFlag, "Array")
         ArrayPersistence.deserialize(this, progress, context).getObject(this).asInstanceOf[Array[Any]]
     }
 
@@ -68,6 +71,13 @@ class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
 
     override def readClass(): Class[_] = {
         ClassMappings.getClass(buff.getInt())
+    }
+
+    private def checkFlag(flag: Byte, flagName: String): Unit = {
+        if (buff.get != flag) {
+            val array = buff.array().slice(buff.position() - 1, buff.limit())
+            throw MalFormedPacketException(array, s"Expected $flagName flag at start of $flagName expression.")
+        }
     }
 
 }

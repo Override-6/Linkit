@@ -33,7 +33,7 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        testPacket(Player(45, "test", "jacky", 78, 52))
+        testPacket(Player(0, "test", "test", 0, 0))
     }
 
     private def testPacket(obj: AnyRef): Unit = {

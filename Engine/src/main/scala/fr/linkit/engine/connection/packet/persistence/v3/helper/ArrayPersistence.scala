@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.helper
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.DelegatingSerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.LengthSign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.RawObjectNode
@@ -74,14 +74,15 @@ object ArrayPersistence {
         RArray.newInstance(finalCompType, arrayLength).asInstanceOf[Array[_]]
     }
 
-    def serialize(array: Array[Any], progress: SerialisationProgression, context: PersistenceContext): DelegatingSerializerNode = {
+    def serialize(array: Array[Any], out: SerialisationOutputStream, progress: SerialisationProgression, context: PersistenceContext): DelegatingSerializerNode = {
         val (compType, depth) = getAbsoluteCompType(array)
         val arrayTypeBytes    = NumberSerializer.serializeInt(compType.getName.hashCode)
         val head              = arrayTypeBytes :+ depth :+ ArrayFlag
         if (array.isEmpty) {
             return DelegatingSerializerNode(out => out.put(head :+ EmptyArrayFlag))
         }
-        DelegatingSerializerNode(LengthSign.out(array, progress, context).getNode)
+        val node = LengthSign.out(array, out, progress, context).getNode
+        DelegatingSerializerNode(node)
     }
 
     /**

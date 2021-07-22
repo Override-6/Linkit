@@ -19,7 +19,6 @@ case class MalFormedPacketException(bytes: Array[Byte], msg: String) extends Pac
     override protected def appendMessage(sb: StringBuilder): Unit = {
         super.appendMessage(sb)
         sb.append(s"For sequence: ${new String(bytes)}")
-
     }
 
 }

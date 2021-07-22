@@ -15,9 +15,10 @@ package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 
-class SizedDeserializerNode(buffLimit: Int, node: DeserializerNode) extends DeserializerNode {
+class SizedDeserializerNode(pos: Int, buffLimit: Int, node: DeserializerNode) extends DeserializerNode {
 
     override def getObject(in: DeserialisationInputStream): Any = {
+        in.position(pos)
         in.limit(buffLimit)
         node.getObject(in)
     }

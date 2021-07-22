@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.packet.persistence.v3
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SizedDeserializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationOutputStream
@@ -41,7 +41,7 @@ object LengthSign {
                     val pos1 = fakeOut.position()
                     lengths += pos1 - pos0
                 })
-                val lengthsBytes = lengths.drop(1).flatMap(l => NumberSerializer.serializeNumber(l, true)).toArray
+                val lengthsBytes = lengths.dropRight(1).flatMap(l => NumberSerializer.serializeNumber(l, true)).toArray
                 out.put(lengthsBytes)
                         .put(fakeOut.array(), 0, fakeOut.position())
             }
@@ -50,22 +50,25 @@ object LengthSign {
 
     case class LengthSignIn(context: PersistenceContext, progress: DeserialisationProgression, lengths: Array[Int]) extends LengthSign {
 
-        def getNode(group: Array[DeserializerNode] => DeserializerNode): DeserializerNode = {
+        def getNode(group: Array[DeserializerNode] => Any): DeserializerNode = {
             in => {
                 val buff  = in.buff
                 val nodes = new Array[DeserializerNode](lengths.length)
+                var nodeStart = buff.position()
                 for (i <- lengths.indices) {
-                    val limit = buff.position() + lengths(i)
-                    val pos   = buff.position() + (if (i == 0) 0 else lengths(i - 1))
-                    buff.position(pos)
-                    nodes(i) = new SizedDeserializerNode(limit, context.getDeserializationNode(in, progress))
+                    buff.position(nodeStart)
+                    val nodeLength = lengths(i)
+                    val limit = nodeStart + nodeLength
+                    val node = context.getDeserializationNode(in, progress)
+                    nodes(i) = new SizedDeserializerNode(buff.position(), limit, node)
+                    nodeStart += nodeLength
                 }
                 group(nodes)
             }
         }
     }
 
-    def out(values: Seq[Any], progress: SerialisationProgression, context: PersistenceContext): LengthSignOut = {
+    def out(values: Seq[Any], out: SerialisationOutputStream, progress: SerialisationProgression, context: PersistenceContext): LengthSignOut = {
         val signItemCount = values.length
         if (signItemCount == 0)
             return LengthSignOut(context, progress, Array())
@@ -74,7 +77,7 @@ object LengthSign {
 
         for (i <- values.indices) {
             val fieldValue = values(i)
-            val node       = context.getSerializationNode(fieldValue, progress)
+            val node       = context.getSerializationNode(fieldValue, out, progress)
             childrenNodes(i) = node
         }
         LengthSignOut(context, progress, childrenNodes)
@@ -90,7 +93,7 @@ object LengthSign {
         for (i <- 0 to signItemCount) {
             if (i != signItemCount)
                 lengths(i) = NumberSerializer.deserializeFlaggedNumber[Int](in)
-            else lengths(i) = in.limit() - (if (i == 0) in.position() else lengths.sum)
+            else lengths(i) = in.limit() - in.position() - (if (i == 0) 0 else lengths.sum)
 
         }
 

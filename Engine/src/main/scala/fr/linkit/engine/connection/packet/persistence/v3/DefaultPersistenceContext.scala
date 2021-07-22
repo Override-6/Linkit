@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
 import fr.linkit.engine.connection.packet.persistence.v3.DefaultPersistenceContext.ObjectHandledClass
@@ -31,17 +31,17 @@ class DefaultPersistenceContext extends PersistenceContext {
     private val persistors   = mutable.HashMap.empty[String, (ObjectPersistor[Any], HandledClass)]
     private val descriptions = mutable.HashMap.empty[String, SerializableClassDescription]
 
-    override def getSerializationNode(obj: Any, progress: SerialisationProgression): DelegatingSerializerNode = {
+    override def getSerializationNode(obj: Any, out: SerialisationOutputStream, progress: SerialisationProgression): DelegatingSerializerNode = {
         val node: SerializerNode = obj match {
             case null | None                          => new NullInstanceNode(obj == None)
-            case i if UnWrapper.isPrimitiveWrapper(i) => _.writePrimitive(i.asInstanceOf[AnyVal])
-            case e: Enum[_]                           => _.writeEnum(e)
-            case str: String                          => _.writeString(str)
-            case array: Array[Any]                    => _.writeArray(array)
+            case i if UnWrapper.isPrimitiveWrapper(i) => out.writePrimitive(i.asInstanceOf[AnyVal])
+            case e: Enum[_]                           => out.writeEnum(e)
+            case str: String                          => out.writeString(str)
+            case array: Array[Any]                    => out.writeArray(array)
             case _                                    =>
                 val clazz = obj.getClass
                 val desc  = getDesc(clazz)
-                progress.checkNode(obj) {
+                return progress.checkNode(obj) {
                     getPersistence(clazz)
                             .getSerialNode(obj, desc, this, progress)
                 }
@@ -51,14 +51,14 @@ class DefaultPersistenceContext extends PersistenceContext {
 
     override def getDeserializationNode(in: DeserialisationInputStream, progress: DeserialisationProgression): DeserializerNode = {
         val buff = in.buff
-        val flag = buff.get()
-        flag match {
+        val pos = buff.position()
+        buff.get(pos) match {
             case b if b >= ByteFlag && b <= BooleanFlag => _.readPrimitive()
             case StringFlag                             => _.readString()
             case ArrayFlag                              => _.readArray()
             case HeadedObjectFlag                       => progress.getHeaderObjectNode(NumberSerializer.deserializeFlaggedNumber(in))
             case _                                      =>
-                buff.position(buff.position() - 1) //for object, no flag is set, the first byte is a member of the object type int code, so we need to make a rollback in order to integrate the first byte.
+                //buff.position(buff.position() - 1) //for object, no flag is set, the first byte is a member of the object type int code, so we need to make a rollback in order to integrate the first byte.
                 val classCode = buff.getInt
                 val objectClass = ClassMappings.getClass(classCode)
                 if (objectClass == null)

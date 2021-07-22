@@ -18,7 +18,6 @@ import fr.linkit.api.connection.packet.persistence.v3.serialisation.Serialisatio
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
 import fr.linkit.engine.connection.packet.persistence.v3.LengthSign
-import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.RawObjectNode
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode
 import fr.linkit.engine.local.utils.ScalaUtils
 
@@ -34,7 +33,7 @@ class DefaultObjectPersistor extends ObjectPersistor[Any] {
                 .map(_.first.get(obj))
         out => {
             out.writeClass(obj.getClass)
-            LengthSign.out(fieldValues, progress, context).getNode.writeBytes(out)
+            LengthSign.out(fieldValues, out, progress, context).getNode.writeBytes(out)
         }
     }
 
@@ -47,7 +46,7 @@ class DefaultObjectPersistor extends ObjectPersistor[Any] {
                     val node = nodes(i)
                     ScalaUtils.setValue(instance, field, node.getObject(in))
                 })
-                RawObjectNode(instance)
+                instance
             }).getObject(in)
 
     }

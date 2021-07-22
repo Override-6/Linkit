@@ -28,7 +28,8 @@ class DefaultSerializer() extends Serializer {
         val progress = new DefaultSerialisationProgression
         val out1      = new DefaultSerialisationOutputStream(ByteBuffer.allocate(10000), progress, context)
         val out2      = new DefaultSerialisationOutputStream(ByteBuffer.allocate(10000), progress, context)
-        context.getSerializationNode(serializable, progress).writeBytes(out2)
+        val rootNode = context.getSerializationNode(serializable, out2, progress)
+        rootNode.writeBytes(out2)
         progress.writePool(out1)
         out1.put(out2.array(), 0, out2.position()).array().take(out1.position())
     }

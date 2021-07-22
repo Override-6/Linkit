@@ -13,6 +13,7 @@
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
@@ -24,13 +25,13 @@ class DefaultSerialisationOutputStream(override val buff: ByteBuffer,
                                        progress: SerialisationProgression,
                                        context: PersistenceContext) extends SerialisationOutputStream {
 
-    override def writeObject(obj: Any): Unit = progress.checkNode(obj) { _ =>
-        context.getSerializationNode(obj, progress).writeBytes(this)
-    }.writeBytes(this)
+    override def writeObject(obj: Any): SerializerNode = progress.checkNode(obj) { out =>
+        context.getSerializationNode(obj, out, progress)
+    }
 
     override def writeClass(clazz: Class[_]): Unit = buff.putInt(clazz.getName.hashCode)
 
-    override def writePrimitive(anyVal: AnyVal): Unit = progress.checkNode(anyVal) { _ => {
+    override def writePrimitive(anyVal: AnyVal): SerializerNode = progress.checkNode(anyVal) { out => {
         val (bytes, flag) = anyVal match {
             case i: Int     => (NumberSerializer.serializeNumber(i, true), IntFlag)
             case b: Byte    => (NumberSerializer.serializeNumber(b, true), ByteFlag)
@@ -41,22 +42,22 @@ class DefaultSerialisationOutputStream(override val buff: ByteBuffer,
             case b: Boolean => (Array[Byte](1) :+ (if (b) 1 else 0).toByte, BooleanFlag)
             case c: Char    => (NumberSerializer.serializeNumber(c.toInt, true), CharFlag)
         }
-        buff.put(flag).put(bytes)
+        out.put(flag).put(bytes)
     }
-    }.writeBytes(this)
+    }
 
-    override def writeString(str: String): Unit = progress.checkNode(str) { _ =>
-        write(StringFlag +: str.getBytes())
-    }.writeBytes(this)
+    override def writeString(str: String): SerializerNode = progress.checkNode(str) { out =>
+        out.write(StringFlag +: str.getBytes())
+    }
 
-    override def writeArray(array: Array[Any]): Unit = progress.checkNode(array) { _ =>
-        ArrayPersistence.serialize(array, progress, context)
-    }.writeBytes(this)
+    override def writeArray(array: Array[Any]): SerializerNode = progress.checkNode(array) { out =>
+        ArrayPersistence.serialize(array, out, progress, context)
+    }
 
-    override def writeEnum(enum: Enum[_]): Unit = progress.checkNode(`enum`) { _ =>
+    override def writeEnum(enum: Enum[_]): SerializerNode = progress.checkNode(`enum`) { out =>
         val name     = enum.name()
         val enumType = NumberSerializer.serializeInt(enum.getClass.getName.hashCode)
-        buff.put(enumType).put(name.getBytes())
-    }.writeBytes(this)
+        out.put(enumType).put(name.getBytes())
+    }
 }
 
