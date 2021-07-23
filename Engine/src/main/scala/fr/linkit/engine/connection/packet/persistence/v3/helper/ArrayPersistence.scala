@@ -30,7 +30,7 @@ object ArrayPersistence {
 
     val EmptyArrayFlag: Byte = -105
 
-    def deserialize(in: DeserialisationInputStream, progression: DeserialisationProgression, context: PersistenceContext): DeserializerNode = {
+    def deserialize(in: DeserialisationInputStream, progression: DeserialisationProgression): DeserializerNode = {
         val buff       = in.buff
         val compType   = in.readClass()
         val arrayDepth = in.get + Byte.MaxValue
@@ -41,7 +41,7 @@ object ArrayPersistence {
 
         val signItemCount = deserializeFlaggedNumber[Int](buff)
 
-        val sign = ArraySign.in(signItemCount, context, progression, in)
+        val sign = ArraySign.in(signItemCount, progression, in)
         sign.getNode(itemNodes => {
             val result = buildArray(compType, arrayDepth, signItemCount + 1)
             var i      = 0

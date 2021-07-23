@@ -14,23 +14,36 @@ package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
+import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.RawObjectNode
 import fr.linkit.engine.local.utils.NumberSerializer
 
 class DefaultDeserialisationProgression(in: DeserialisationInputStream) extends DeserialisationProgression {
 
-    private val poolObject = {
+    private var poolObject     : Array[Any]              = _
+    private var poolObjectNodes: Array[DeserializerNode] = _ //maybe null except during pool initialisation.
+
+    def initPool(): Unit = {
         val length = NumberSerializer.deserializeFlaggedNumber[Int](in)
+        val count  = NumberSerializer.deserializeFlaggedNumber[Int](in)
+        poolObject = new Array[Any](count)
         in.limit(length + in.get(0) + 1)
-        val array = in.readArray()
+        ArraySign.in(count, this, in).getNode(nodes => {
+            poolObjectNodes = nodes
+            for (i <- nodes.indices if poolObject(i) == null) {
+                poolObject(i) = nodes(i).getObject(in)
+            }
+        }).getObject(in) //.getObject required in order to end the ArraySign action but the returned object is ignored as we do not define it in the lambda above.
+        poolObjectNodes = null
         in.limit(in.capacity())
-        array
     }
 
     override def getHeaderObjectNode(place: Int): DeserializerNode = {
         var obj = poolObject(place)
         if (obj == null) {
-            obj = in.readObject()
+            if (poolObjectNodes == null)
+                throw new UnsupportedOperationException("Attempted to deserialize a Header object in the pool when being outside of the pool initialisation.")
+            obj = poolObjectNodes(place).getObject(in)
             poolObject(place) = obj
         }
         RawObjectNode(obj)

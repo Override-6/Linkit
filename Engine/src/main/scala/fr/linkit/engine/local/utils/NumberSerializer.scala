@@ -104,7 +104,7 @@ object NumberSerializer {
         var result: Long = 0
         val numberLength = buff.get
         if (numberLength < 0)
-            throw new IllegalArgumentException("number length < 0")
+            throw new IllegalArgumentException(s"number length $numberLength < 0")
         if (numberLength == 1)
             return buff.get.asInstanceOf[T]
 

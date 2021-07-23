@@ -80,28 +80,26 @@ object ArraySign {
         for (i <- values.indices) {
             val fieldValue = values(i)
             progress.addSerialisationDepth()
-            val node       = context.getSerializationNode(fieldValue, out, progress)
+            val node = context.getSerializationNode(fieldValue, out, progress)
             progress.removeSerialisationDepth()
             childrenNodes(i) = node
         }
         ArraySignOut(context, progress, childrenNodes)
     }
 
-    def in(signItemCount: Int, context: PersistenceContext, progress: DeserialisationProgression, in: DeserialisationInputStream): ArraySignIn = {
-
+    def in(signItemCount: Int, progress: DeserialisationProgression, in: DeserialisationInputStream): ArraySignIn = {
         val totalItemCount = signItemCount + 1
         if (totalItemCount == 0)
-            return ArraySignIn(context, progress, Array())
+            return ArraySignIn(in.context, progress, Array())
 
         val lengths = new Array[Int](totalItemCount)
         for (i <- 0 to signItemCount) {
             if (i != signItemCount)
                 lengths(i) = NumberSerializer.deserializeFlaggedNumber[Int](in)
             else lengths(i) = in.limit() - in.position() - (if (i == 0) 0 else lengths.sum)
-
         }
 
-        ArraySignIn(context, progress, lengths)
+        ArraySignIn(in.context, progress, lengths)
     }
 
 }

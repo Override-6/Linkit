@@ -23,9 +23,10 @@ import fr.linkit.engine.local.utils.NumberSerializer
 import java.nio.ByteBuffer
 
 class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
-                                        context: PersistenceContext) extends DeserialisationInputStream {
+                                        override val context: PersistenceContext) extends DeserialisationInputStream {
 
     val progress = new DefaultDeserialisationProgression(this)
+    progress.initPool()
 
     override def readObject(): Any = {
         context.getDeserializationNode(this, progress).getObject(this)
@@ -60,7 +61,7 @@ class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
 
     override def readArray(): Array[Any] = {
         checkFlag(ArrayFlag, "Array")
-        ArrayPersistence.deserialize(this, progress, context).getObject(this).asInstanceOf[Array[Any]]
+        ArrayPersistence.deserialize(this, progress).getObject(this).asInstanceOf[Array[Any]]
     }
 
     override def readEnum[E <: Enum[E]](limit: Int): E = {

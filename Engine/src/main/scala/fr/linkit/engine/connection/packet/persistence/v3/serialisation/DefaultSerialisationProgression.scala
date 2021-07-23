@@ -15,6 +15,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
+import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationProgression.Identity
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.HeadedInstanceNode
 import fr.linkit.engine.local.utils.{JavaUtils, NumberSerializer, UnWrapper}
@@ -37,8 +38,8 @@ class DefaultSerialisationProgression(context: PersistenceContext) extends Seria
     override def checkNode(obj: Any, out: SerialisationOutputStream)(node: => SerializerNode): DelegatingSerializerNode = {
         if (containsInstance(obj)) {
             if (isWritingPool && depth <= 1) {
-                val node = pool.find(p => JavaUtils.sameInstance(p._2, obj))
-                return DelegatingSerializerNode(node.get._1)
+                val node = serializedInstances(obj).original
+                return DelegatingSerializerNode(node)
             }
             return changeDelegate(obj, out, node)
         }
@@ -79,8 +80,9 @@ class DefaultSerialisationProgression(context: PersistenceContext) extends Seria
     def writePool(out: SerialisationOutputStream, context: PersistenceContext): Unit = {
         isWritingPool = true
         val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(out.capacity()), this, context)
-        out.writeArray(pool.map(_._2).toArray).writeBytes(fakeOut)
+        ArraySign.out(pool.toSeq, fakeOut, this, context).getNode.writeBytes(fakeOut)
         out.write(NumberSerializer.serializeNumber(fakeOut.position(), true))
+        out.write(NumberSerializer.serializeNumber(pool.size, true))
         out.put(fakeOut.buff.flip())
         isWritingPool = false
     }
