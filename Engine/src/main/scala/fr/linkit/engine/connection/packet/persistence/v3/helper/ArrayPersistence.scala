@@ -15,10 +15,9 @@ package fr.linkit.engine.connection.packet.persistence.v3.helper
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.DelegatingSerializerNode
-import fr.linkit.engine.connection.packet.persistence.v3.LengthSign
-import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.RawObjectNode
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
+import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags.ArrayFlag
 import fr.linkit.engine.local.utils.NumberSerializer
 import fr.linkit.engine.local.utils.NumberSerializer.deserializeFlaggedNumber
@@ -32,14 +31,17 @@ object ArrayPersistence {
     val EmptyArrayFlag: Byte = -105
 
     def deserialize(in: DeserialisationInputStream, progression: DeserialisationProgression, context: PersistenceContext): DeserializerNode = {
+        val buff       = in.buff
         val compType   = in.readClass()
-        val arrayDepth = in.get + Byte.MaxValue - 1
-        if (in.get == EmptyArrayFlag)
+        val arrayDepth = in.get + Byte.MaxValue
+        if (buff.get(buff.position()) == EmptyArrayFlag) {
+            buff.position(buff.position() + 1)
             return _ => buildArray(compType, arrayDepth, 0)
+        }
 
-        val signItemCount = deserializeFlaggedNumber[Int](in)
+        val signItemCount = deserializeFlaggedNumber[Int](buff)
 
-        val sign = LengthSign.in(signItemCount, context, progression, in)
+        val sign = ArraySign.in(signItemCount, context, progression, in)
         sign.getNode(itemNodes => {
             val result = buildArray(compType, arrayDepth, signItemCount + 1)
             var i      = 0
@@ -47,7 +49,7 @@ object ArrayPersistence {
                 putInArray(result, i, node.getObject(in))
                 i += 1
             })
-            RawObjectNode(result)
+            result
         })
     }
 
@@ -68,21 +70,24 @@ object ArrayPersistence {
 
     private def buildArray(compType: Class[_], arrayDepth: Int, arrayLength: Int): Array[_] = {
         var finalCompType = compType
-        for (_ <- 0 to arrayDepth) {
+        for (_ <- 0 until arrayDepth) {
             finalCompType = finalCompType.arrayType()
         }
         RArray.newInstance(finalCompType, arrayLength).asInstanceOf[Array[_]]
     }
 
-    def serialize(array: Array[Any], out: SerialisationOutputStream, progress: SerialisationProgression, context: PersistenceContext): DelegatingSerializerNode = {
+    def serialize(array: Array[Any], progress: SerialisationProgression, context: PersistenceContext): SerializerNode = {
         val (compType, depth) = getAbsoluteCompType(array)
         val arrayTypeBytes    = NumberSerializer.serializeInt(compType.getName.hashCode)
-        val head              = arrayTypeBytes :+ depth :+ ArrayFlag
+        val head              = Array(ArrayFlag) ++ arrayTypeBytes :+ depth
         if (array.isEmpty) {
-            return DelegatingSerializerNode(out => out.put(head :+ EmptyArrayFlag))
+            return out => out.put(head :+ EmptyArrayFlag)
         }
-        val node = LengthSign.out(array, out, progress, context).getNode
-        DelegatingSerializerNode(node)
+        out => {
+            out.write(head)
+            out.write(NumberSerializer.serializeNumber(array.length - 1, true))
+            ArraySign.out(array, out, progress, context).getNode.writeBytes(out)
+        }
     }
 
     /**

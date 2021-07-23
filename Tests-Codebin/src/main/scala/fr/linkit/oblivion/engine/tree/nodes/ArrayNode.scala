@@ -16,7 +16,7 @@ import fr.linkit.oblivion.api.tree._
 import fr.linkit.oblivion.engine.tree.DefaultSerialContext.ByteHelper
 import fr.linkit.oblivion.tree._
 import ObjectNode.NullObjectFlag
-import fr.linkit.engine.connection.packet.persistence.v3.LengthSign
+import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.local.utils.UnWrapper.unwrap
 import fr.linkit.engine.local.utils.NumberSerializer
 import fr.linkit.engine.local.utils.NumberSerializer.{deserializeFlaggedNumber, serializeNumber}
@@ -142,7 +142,7 @@ object ArrayNode extends NodeFactory[Array[_]] {
             //println(s"signItemCount = ${signItemCount}")
             //println(s"sizeByteCount = ${sizeByteCount}")
 
-            val sign   = LengthSign.in(signItemCount, bytes, bytes.length, sizeByteCount + 6)
+            val sign   = ArraySign.in(signItemCount, bytes, bytes.length, sizeByteCount + 6)
             val result = buildArray(compType, arrayDepth, sign.childrenBytes.length)
             var i      = 0
             for (childBytes <- sign.childrenBytes) {

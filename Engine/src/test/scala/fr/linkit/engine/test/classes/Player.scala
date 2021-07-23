@@ -23,6 +23,9 @@ case class Player(@(MC@getter)(ONLY_LOCAL) id: Int,
                   @(MC@getter)(ONLY_LOCAL) var x: Long,
                   @(MC@getter)(ONLY_LOCAL) var y: Long) extends Serializable {
 
+    private val own = this
+    private val test = "on m'appelle l'auvni"
+
     def this(other: Player) = {
         this(other.id, other.owner, other.name, other.x, other.y)
     }

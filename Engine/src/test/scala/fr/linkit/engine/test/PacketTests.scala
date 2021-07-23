@@ -21,6 +21,8 @@ import fr.linkit.engine.test.classes.Player
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 
+import scala.collection.mutable.ListBuffer
+
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTests {
 
@@ -33,7 +35,14 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        testPacket(Player(0, "test", "test", 0, 0))
+        val player = Player(0, "test", "test", 0, 0)
+        testPacket(player)
+    }
+
+    @Test
+    def moreComplexPacketTest(): Unit = {
+        val player = Player(0, "test", "test", 0, 0)
+        testPacket(Array("jammy" -> player, (player, player)))
     }
 
     private def testPacket(obj: AnyRef): Unit = {

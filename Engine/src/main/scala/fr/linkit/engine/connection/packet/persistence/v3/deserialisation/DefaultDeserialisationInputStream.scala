@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.Deserialis
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
-import fr.linkit.engine.local.mapping.ClassMappings
+import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
 import fr.linkit.engine.local.utils.NumberSerializer
 
 import java.nio.ByteBuffer
@@ -70,7 +70,10 @@ class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
     }
 
     override def readClass(): Class[_] = {
-        ClassMappings.getClass(buff.getInt())
+        val clazz = ClassMappings.getClass(buff.getInt())
+        if (clazz == null)
+            throw new ClassNotMappedException(s"No class code found at buffer position ${buff.position() - 4}")
+        clazz
     }
 
     private def checkFlag(flag: Byte, flagName: String): Unit = {

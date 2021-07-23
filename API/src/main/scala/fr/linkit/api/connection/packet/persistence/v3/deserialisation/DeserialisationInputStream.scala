@@ -30,11 +30,11 @@ trait DeserialisationInputStream extends InputStream {
 
     def readPrimitive(): AnyVal
 
+    def readArray(): Array[Any]
+
     def readString(limit: Int = buff.limit()): String
 
     def readEnum[E <: Enum[E]](limit: Int = buff.limit()): E
-
-    def readArray(): Array[Any]
 
     def readClass(): Class[_]
 

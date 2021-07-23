@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Deser
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
-import fr.linkit.engine.connection.packet.persistence.v3.LengthSign
+import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode
 import fr.linkit.engine.local.utils.ScalaUtils
 
@@ -33,7 +33,7 @@ class DefaultObjectPersistor extends ObjectPersistor[Any] {
                 .map(_.first.get(obj))
         out => {
             out.writeClass(obj.getClass)
-            LengthSign.out(fieldValues, out, progress, context).getNode.writeBytes(out)
+            ArraySign.out(fieldValues, out, progress, context).getNode.writeBytes(out)
         }
     }
 
@@ -41,10 +41,10 @@ class DefaultObjectPersistor extends ObjectPersistor[Any] {
         in =>
             val instance = ScalaUtils.allocate[AnyRef](desc.clazz)
             println(s"Deserializing object ${desc.clazz.getName}...")
-            LengthSign.in(desc.signItemCount, context, progress, in).getNode(nodes => {
+            ArraySign.in(desc.signItemCount, context, progress, in).getNode(nodes => {
                 desc.foreachDeserializableFields((i, field) => {
-                    val node = nodes(i)
-                    ScalaUtils.setValue(instance, field, node.getObject(in))
+                    val obj = nodes(i).getObject(in)
+                    ScalaUtils.setValue(instance, field, obj)
                 })
                 instance
             }).getObject(in)

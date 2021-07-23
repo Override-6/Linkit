@@ -14,17 +14,19 @@ package fr.linkit.api.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.DelegatingSerializerNode
 
 trait PersistenceContext {
 
-    def getSerializationNode(obj: Any, out: SerialisationOutputStream, progress: SerialisationProgression): DelegatingSerializerNode
+    def getSerializationNode(obj: Any, out: SerialisationOutputStream, progress: SerialisationProgression): SerializerNode
 
     def getDeserializationNode(in: DeserialisationInputStream, progress: DeserialisationProgression): DeserializerNode
 
     def addPersistence(persistence: ObjectPersistor[_], classes: Seq[HandledClass]): Unit
 
     def addSerializer(persistence: ObjectPersistor[_]): Unit = addPersistence(persistence, persistence.handledClasses)
+
+    def getDescription(clazz: Class[_]): SerializableClassDescription
 
 }

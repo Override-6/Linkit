@@ -14,8 +14,8 @@ package fr.linkit.engine.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
 import fr.linkit.engine.connection.packet.persistence.v3.DefaultPersistenceContext.ObjectHandledClass
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.DefaultObjectPersistor
@@ -24,6 +24,8 @@ import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.Null
 import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
 import fr.linkit.engine.local.utils.{NumberSerializer, UnWrapper}
 
+import java.io.NotSerializableException
+import java.lang.reflect.Modifier
 import scala.collection.mutable
 
 class DefaultPersistenceContext extends PersistenceContext {
@@ -31,8 +33,8 @@ class DefaultPersistenceContext extends PersistenceContext {
     private val persistors   = mutable.HashMap.empty[String, (ObjectPersistor[Any], HandledClass)]
     private val descriptions = mutable.HashMap.empty[String, SerializableClassDescription]
 
-    override def getSerializationNode(obj: Any, out: SerialisationOutputStream, progress: SerialisationProgression): DelegatingSerializerNode = {
-        val node: SerializerNode = obj match {
+    override def getSerializationNode(obj: Any, out: SerialisationOutputStream, progress: SerialisationProgression): SerializerNode = {
+        obj match {
             case null | None                          => new NullInstanceNode(obj == None)
             case i if UnWrapper.isPrimitiveWrapper(i) => out.writePrimitive(i.asInstanceOf[AnyVal])
             case e: Enum[_]                           => out.writeEnum(e)
@@ -40,13 +42,14 @@ class DefaultPersistenceContext extends PersistenceContext {
             case array: Array[Any]                    => out.writeArray(array)
             case _                                    =>
                 val clazz = obj.getClass
-                val desc  = getDesc(clazz)
-                return progress.checkNode(obj) {
+                if (clazz.isInterface || Modifier.isAbstract(clazz.getModifiers))
+                    throw new NotSerializableException(s"Could not serialize interface or abstract class ${clazz.getName}.")
+                val desc  = getDescription(clazz)
+                progress.checkNode(obj, out) {
                     getPersistence(clazz)
                             .getSerialNode(obj, desc, this, progress)
                 }
         }
-        DelegatingSerializerNode(node)
     }
 
     override def getDeserializationNode(in: DeserialisationInputStream, progress: DeserialisationProgression): DeserializerNode = {
@@ -56,7 +59,9 @@ class DefaultPersistenceContext extends PersistenceContext {
             case b if b >= ByteFlag && b <= BooleanFlag => _.readPrimitive()
             case StringFlag                             => _.readString()
             case ArrayFlag                              => _.readArray()
-            case HeadedObjectFlag                       => progress.getHeaderObjectNode(NumberSerializer.deserializeFlaggedNumber(in))
+            case HeadedObjectFlag                       =>
+                buff.position(buff.position() + 1)
+                progress.getHeaderObjectNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
             case _                                      =>
                 //buff.position(buff.position() - 1) //for object, no flag is set, the first byte is a member of the object type int code, so we need to make a rollback in order to integrate the first byte.
                 val classCode = buff.getInt
@@ -65,7 +70,7 @@ class DefaultPersistenceContext extends PersistenceContext {
                     throw new ClassNotMappedException(s"classCode $classCode is not mapped.")
                 if (objectClass.isEnum)
                     _.readEnum()
-                else getPersistence(objectClass).getDeserialNode(getDesc(objectClass), this, progress)
+                else getPersistence(objectClass).getDeserialNode(getDescription(objectClass), this, progress)
         }
     }
 
@@ -73,7 +78,7 @@ class DefaultPersistenceContext extends PersistenceContext {
         classes.foreach(cl => persistors.put(cl.className, (persistence.asInstanceOf[ObjectPersistor[Any]], cl)))
     }
 
-    private def getDesc(clazz: Class[_]): SerializableClassDescription = {
+    override def getDescription(clazz: Class[_]): SerializableClassDescription = {
         descriptions.getOrElse(clazz.getName, new ClassDescription(clazz))
     }
 

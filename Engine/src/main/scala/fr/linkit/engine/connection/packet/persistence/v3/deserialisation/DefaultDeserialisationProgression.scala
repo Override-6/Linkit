@@ -19,15 +19,12 @@ import fr.linkit.engine.local.utils.NumberSerializer
 
 class DefaultDeserialisationProgression(in: DeserialisationInputStream) extends DeserialisationProgression {
 
-    //Step 1 : initialize the pool
-    private val poolObject: Array[Any] = {
-        val poolSize = NumberSerializer.deserializeFlaggedNumber[Int](in)
-        new Array[Any](poolSize)
-    }
-
-    //Step 2 : Fill in the pool.
-    for (i <- poolObject.indices if poolObject(i) != null) {
-        poolObject(i) = in.readObject()
+    private val poolObject = {
+        val length = NumberSerializer.deserializeFlaggedNumber[Int](in)
+        in.limit(length + in.get(0) + 1)
+        val array = in.readArray()
+        in.limit(in.capacity())
+        array
     }
 
     override def getHeaderObjectNode(place: Int): DeserializerNode = {

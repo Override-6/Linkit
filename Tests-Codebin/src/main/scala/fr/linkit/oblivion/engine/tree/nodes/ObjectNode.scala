@@ -12,7 +12,7 @@
 
 package fr.linkit.oblivion.engine.tree.nodes
 
-import fr.linkit.engine.connection.packet.persistence.v3.LengthSign
+import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.oblivion.api.tree._
 import fr.linkit.oblivion.tree._
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
@@ -61,7 +61,7 @@ object ObjectNode {
 
             val classType = desc.classCode
            //println(s"NumberSerializer.deserializeInt(classType) = ${NumberSerializer.deserializeInt(classType, 0)}")
-            val sign      = LengthSign.out(t, desc, children).toBytes
+            val sign      = ArraySign.out(t, desc, children).toBytes
             //println(s"sign = ${toPresentableString(sign)}")
             val bytes     = classType ++ sign
             //println(s"Result of Object ${t} = ${ScalaUtils.toPresentableString(bytes)}")
@@ -81,7 +81,7 @@ object ObjectNode {
             val desc = profile.desc
             //println(s"Object desc = ${desc}")
 
-            val sign     = LengthSign.in(desc.signItemCount, bytes, bytes.length, 4)
+            val sign     = ArraySign.in(desc.signItemCount, bytes, bytes.length, 4)
             val instance = TheUnsafe.allocateInstance(bytes.getClassOfSeq)
 
             val fieldValues = for (childBytes <- sign.childrenBytes) yield {
