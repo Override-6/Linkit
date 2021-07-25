@@ -12,10 +12,10 @@
 
 package fr.linkit.api.connection.packet.persistence.v3.deserialisation.node
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 
 trait DeserializerNode {
 
-    def deserialize(in: DeserialisationInputStream): Any
+    def deserialize(in: DeserializationInputStream): Any
 
 }

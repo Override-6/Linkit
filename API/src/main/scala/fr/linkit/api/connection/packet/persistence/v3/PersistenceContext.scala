@@ -16,7 +16,7 @@ trait PersistenceContext {
 
     def addPersistence(persistence: ObjectPersistor[_], classes: Seq[HandledClass]): Unit
 
-    def addSerializer(persistence: ObjectPersistor[_]): Unit = addPersistence(persistence, persistence.handledClasses)
+    def addPersistence(persistence: ObjectPersistor[_]): Unit = addPersistence(persistence, persistence.handledClasses)
 
     def getDescription(clazz: Class[_]): SerializableClassDescription
 

@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.persistor
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
@@ -39,7 +39,7 @@ class DefaultObjectPersistor extends ObjectPersistor[Any] {
         }
     }
 
-    override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserialisationProgression): ObjectDeserializerNode = {
+    override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         val instance = ScalaUtils.allocate[AnyRef](desc.clazz)
         SimpleObjectDeserializerNode(instance) {
             in =>

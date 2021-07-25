@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
@@ -22,13 +22,16 @@ import fr.linkit.engine.local.utils.NumberSerializer
 
 import java.nio.ByteBuffer
 
-class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
-                                        override val context: PersistenceContext) extends DeserialisationInputStream {
+class DefaultDeserializationInputStream(override val buff: ByteBuffer,
+                                        override val context: PersistenceContext) extends DeserializationInputStream {
 
-    override val progression = new DefaultDeserialisationProgression(this, context)
+    override val progression = new DefaultDeserializationProgression(this, context)
+    progression.initPool()
 
-    override def readObject(): Any = {
-        progression.getNextDeserializationNode.deserialize(this)
+    override def readObject[A](): A = {
+        progression.getNextDeserializationNode
+            .deserialize(this)
+            .asInstanceOf[A]
     }
 
     override def readPrimitive(): AnyVal = {
@@ -53,27 +56,36 @@ class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
 
     override def readString(limit: Int): String = {
         checkFlag(StringFlag, "String")
-        val array = new Array[Byte](limit - buff.position())
-        buff.get(array)
-        new String(array)
+        readString0(limit)
     }
 
-    override def readArray(): Array[Any] = {
+    override def readArray[A](): Array[A] = {
         checkFlag(ArrayFlag, "Array")
-        ArrayPersistence.deserialize(this).deserialize(this).asInstanceOf[Array[Any]]
+        ArrayPersistence
+            .deserialize(this)
+            .deserialize(this)
+            .asInstanceOf[Array[A]]
     }
 
-    override def readEnum[E <: Enum[E]](limit: Int): E = {
-        val enumType = readClass()
-        val name     = readString(limit)
-        Enum.valueOf[E](enumType.asInstanceOf[Class[E]], name)
+    override def readEnum(limit: Int, hint: Class[_]): Enum[_] = {
+        val enumType = if (hint == null) readClass() else hint
+        val name     = readString0(limit)
+        def casted[E](any: Any): E = any.asInstanceOf[E]
+        casted(Enum.valueOf(casted(enumType), name))
     }
 
     override def readClass(): Class[_] = {
-        val clazz = ClassMappings.getClass(buff.getInt())
+        val code = buff.getInt()
+        val clazz = ClassMappings.getClass(code)
         if (clazz == null)
-            throw new ClassNotMappedException(s"No class code found at buffer position ${buff.position() - 4}")
+            throw new ClassNotMappedException(s"No class code found at buffer position ${buff.position() - 4} ($code)")
         clazz
+    }
+
+    private def readString0(limit: Int): String = {
+        val array = new Array[Byte](limit - buff.position())
+        buff.get(array)
+        new String(array)
     }
 
     private def checkFlag(flag: Byte, flagName: String): Unit = {

@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.persistence.v3
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
@@ -21,9 +21,9 @@ trait ObjectPersistor[A] {
 
     val handledClasses: Seq[HandledClass]
 
-    def canHandleClass(clazz: Class[_]): Boolean = true
+    def willHandleClass(clazz: Class[_]): Boolean = true
 
     def getSerialNode(obj: A, desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): SerializerNode
 
-    def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserialisationProgression): DeserializerNode
+    def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): DeserializerNode
 }

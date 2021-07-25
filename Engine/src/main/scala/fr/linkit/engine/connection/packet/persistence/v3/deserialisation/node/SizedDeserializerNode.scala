@@ -12,12 +12,12 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 
-class SizedDeserializerNode(pos: Int, buffLimit: Int, private[SizedDeserializerNode] val node: DeserializerNode) extends DeserializerNode {
+class SizedDeserializerNode(pos: Int, buffLimit: Int, val node: DeserializerNode) extends DeserializerNode {
 
-    override def deserialize(in: DeserialisationInputStream): Any = {
+    override def deserialize(in: DeserializationInputStream): Any = {
         in.limit(buffLimit)
         in.position(pos)
         node.deserialize(in)

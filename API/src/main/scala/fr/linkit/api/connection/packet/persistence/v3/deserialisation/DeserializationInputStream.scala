@@ -17,9 +17,9 @@ import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import java.io.InputStream
 import java.nio.ByteBuffer
 
-trait DeserialisationInputStream extends InputStream {
+trait DeserializationInputStream extends InputStream {
 
-    val progression: DeserialisationProgression
+    val progression: DeserializationProgression
     val buff: ByteBuffer
     val context: PersistenceContext
 
@@ -30,21 +30,21 @@ trait DeserialisationInputStream extends InputStream {
         b.length
     }
 
-    def readObject(): Any
+    def readObject[A](): A
 
     def readPrimitive(): AnyVal
 
-    def readArray(): Array[Any]
+    def readArray[A](): Array[A]
 
     def readString(limit: Int = buff.limit()): String
 
-    def readEnum[E <: Enum[E]](limit: Int = buff.limit()): E
+    def readEnum(limit: Int = buff.limit(), hint: Class[_] = null): Enum[_]
 
     def readClass(): Class[_]
 
 
 }
 
-object DeserialisationInputStream {
-    implicit def unwrap(in: DeserialisationInputStream): ByteBuffer = in.buff
+object DeserializationInputStream {
+    implicit def unwrap(in: DeserializationInputStream): ByteBuffer = in.buff
 }

@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{SimpleObjectDeserializerNode, SizedDeserializerNode}
@@ -50,7 +50,7 @@ object ArraySign {
         }
     }
 
-    case class ArraySignIn(progress: DeserialisationProgression, lengths: Array[Int]) extends ArraySign {
+    case class ArraySignIn(progress: DeserializationProgression, lengths: Array[Int]) extends ArraySign {
 
         def deserializeRef(ref: AnyRef)(group: Array[DeserializerNode] => Unit): ObjectDeserializerNode = {
             SimpleObjectDeserializerNode(ref) {
@@ -91,7 +91,7 @@ object ArraySign {
         ArraySignOut(progress, childrenNodes)
     }
 
-    def in(signItemCount: Int, progression: DeserialisationProgression, in: DeserialisationInputStream): ArraySignIn = {
+    def in(signItemCount: Int, progression: DeserializationProgression, in: DeserializationInputStream): ArraySignIn = {
         val totalItemCount = signItemCount + 1
         if (totalItemCount == 0)
             return ArraySignIn(progression, Array())

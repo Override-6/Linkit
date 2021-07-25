@@ -11,13 +11,13 @@
  */
 
 package fr.linkit.api.connection.packet.persistence.v3.deserialisation.node
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 
 trait ObjectDeserializerNode extends DeserializerNode {
     protected var ref: AnyRef
 
     def getRef: AnyRef = ref
 
-    override def deserialize(in: DeserialisationInputStream): Any
+    override def deserialize(in: DeserializationInputStream): Any
 
 }

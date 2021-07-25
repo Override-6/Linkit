@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.helper
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
@@ -30,7 +30,7 @@ object ArrayPersistence {
 
     val EmptyArrayFlag: Byte = -105
 
-    def deserialize(in: DeserialisationInputStream): ObjectDeserializerNode = {
+    def deserialize(in: DeserializationInputStream): ObjectDeserializerNode = {
         val buff       = in.buff
         val compType   = in.readClass()
         val arrayDepth = in.get + Byte.MaxValue

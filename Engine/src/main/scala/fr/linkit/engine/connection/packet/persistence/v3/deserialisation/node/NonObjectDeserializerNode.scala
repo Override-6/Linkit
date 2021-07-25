@@ -12,17 +12,17 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 
-class NonObjectDeserializerNode(deserializeAction: DeserialisationInputStream => Any) extends DeserializerNode {
+class NonObjectDeserializerNode(deserializeAction: DeserializationInputStream => Any) extends DeserializerNode {
 
-    override def deserialize(in: DeserialisationInputStream): Any = deserializeAction(in)
+    override def deserialize(in: DeserializationInputStream): Any = deserializeAction(in)
 
 }
 
 object NonObjectDeserializerNode {
 
-    def apply(action: DeserialisationInputStream => Any): NonObjectDeserializerNode = new NonObjectDeserializerNode(action)
+    def apply(action: DeserializationInputStream => Any): NonObjectDeserializerNode = new NonObjectDeserializerNode(action)
 
 }

@@ -64,7 +64,6 @@ object SeqNode {
 
             val content      = t.toArray
             val seqTypeBytes = NumberSerializer.serializeInt(t.getClass.getName.hashCode)
-            //println(s"content = ${content.mkString("Array(", ", ", ")")}")
             seqTypeBytes ++ finder.getSerialNodeForRef(content).serialize(awfulCast(content), putTypeHint)
         }
     }

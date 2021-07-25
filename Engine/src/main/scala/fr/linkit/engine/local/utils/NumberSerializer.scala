@@ -42,16 +42,6 @@ object NumberSerializer {
                 (0xff & bytes(index + 7)) << 0
     }
 
-    def deserializeInt(bytes: Array[Byte], index: Int): Int = {
-        //println(s"Deserializing int from byte array ${ScalaUtils.toPresentableString(bytes.take(index + 4))}")
-        val result = (0xff & bytes(index)) << 24 |
-                ((0xff & bytes(index + 1)) << 16) |
-                ((0xff & bytes(index + 2)) << 8) |
-                ((0xff & bytes(index + 3)) << 0)
-        //println(s"result = ${result}")
-        result
-    }
-
     def serializeInt(value: Int): Array[Byte] = {
         Array[Byte](
             ((value >> 24) & 0xff).toByte,
@@ -97,6 +87,16 @@ object NumberSerializer {
         flagged(serializeLong(value))
     }
 
+    def deserializeInt(bytes: Array[Byte], index: Int): Int = {
+        //println(s"Deserializing int from byte array ${ScalaUtils.toPresentableString(bytes.take(index + 4))}")
+        val result = (0xff & bytes(index)) << 24 |
+            ((0xff & bytes(index + 1)) << 16) |
+            ((0xff & bytes(index + 2)) << 8) |
+            ((0xff & bytes(index + 3)) << 0)
+        //println(s"result = ${result}")
+        result
+    }
+
     /**
      * @return a pair with the deserialized number at left, and its length in the array at right.
      * */
@@ -108,37 +108,13 @@ object NumberSerializer {
         if (numberLength == 1)
             return buff.get.asInstanceOf[T]
 
-        for (i <- 1 to numberLength) {
+        for (i <- (numberLength - 1) to 0 by -1) {
             val b     = buff.get()
             val place = i * 8
             result |= (0xff & b) << place
         }
 
         result.asInstanceOf[T]
-    }
-
-    def convertToShortArray(array: Array[Byte]): Array[Short] = {
-        array.grouped(2).map(deserializeShort(_, 0)).toArray
-    }
-
-    def convertToIntArray(array: Array[Byte]): Array[Int] = {
-        array.grouped(4).map(deserializeInt(_, 0)).toArray
-    }
-
-    def convertToLongArray(array: Array[Byte]): Array[Long] = {
-        array.grouped(8).map(deserializeLong(_, 0)).toArray
-    }
-
-    def convertByteArray(array: Array[Short]): Array[Byte] = {
-        array.flatMap(serializeShort)
-    }
-
-    def convertByteArray(array: Array[Int]): Array[Byte] = {
-        array.flatMap(serializeInt)
-    }
-
-    def convertByteArray(array: Array[Long]): Array[Byte] = {
-        array.flatMap(serializeLong)
     }
 
 }

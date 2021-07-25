@@ -14,18 +14,18 @@ package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationProgression}
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
-import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{NonObjectDeserializerNode, SizedDeserializerNode}
+import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{NonObjectDeserializerNode, RawObjectNode, SizedDeserializerNode}
+import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode
 import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
 import fr.linkit.engine.local.utils.NumberSerializer
 
-class DefaultDeserialisationProgression(in: DeserialisationInputStream, context: PersistenceContext) extends DeserialisationProgression {
+class DefaultDeserializationProgression(in: DeserializationInputStream, context: PersistenceContext) extends DeserializationProgression {
 
     private var poolObject: Array[Any] = _
-
-    initPool()
 
     override def getNextDeserializationNode: DeserializerNode = {
         val buff = in.buff
@@ -33,37 +33,44 @@ class DefaultDeserialisationProgression(in: DeserialisationInputStream, context:
         buff.get(pos) match {
             case b if b >= ByteFlag && b <= BooleanFlag => NonObjectDeserializerNode(_.readPrimitive())
             case StringFlag                             => NonObjectDeserializerNode(_.readString())
-            case ArrayFlag                              => NonObjectDeserializerNode(_.readArray())
+            case ArrayFlag                              =>
+                buff.position(buff.position() + 1)
+                ArrayPersistence.deserialize(in)
             case HeadedObjectFlag                       =>
                 buff.position(buff.position() + 1)
                 getHeaderObjectNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
+            case NullFlag                               => RawObjectNode(null)
             case _                                      =>
-                //buff.position(buff.position() - 1) //for object, no flag is set, the first byte is a member of the object type int code, so we need to make a rollback in order to integrate the first byte.
                 val classCode   = buff.getInt
                 val objectClass = ClassMappings.getClass(classCode)
                 if (objectClass == null)
                     throw new ClassNotMappedException(s"classCode $classCode is not mapped.")
                 if (objectClass.isEnum)
-                    NonObjectDeserializerNode(_.readEnum())
+                    NonObjectDeserializerNode(_.readEnum(hint = objectClass))
                 else context.getPersistence(objectClass)
-                        .getDeserialNode(context.getDescription(objectClass), context, this)
+                    .getDeserialNode(context.getDescription(objectClass), context, this)
         }
     }
 
     private def fillPool(nodes: Seq[DeserializerNode], postInit: Boolean): Unit = {
-        def carefulDeserial(i: Int, node: ObjectDeserializerNode): Unit = {
-            poolObject(i) = node.getRef
+        def carefulDeserial(i: Int, ref: AnyRef, node: DeserializerNode): Unit = {
+            poolObject(i) = ref
             if (postInit)
                 node.deserialize(in)
         }
 
         for (i <- nodes.indices) {
             nodes(i) match {
-                case node: ObjectDeserializerNode                        =>
-                    carefulDeserial(i, node)
-                case SizedDeserializerNode(node: ObjectDeserializerNode) =>
-                    carefulDeserial(i, node)
-                case node                                                =>
+                case node: ObjectDeserializerNode =>
+                    carefulDeserial(i, node.getRef, node)
+                case e: SizedDeserializerNode     =>
+                    e.node match {
+                        case node: ObjectDeserializerNode => carefulDeserial(i, node.getRef, e)
+                        case _                            =>
+                            if (!postInit)
+                                poolObject(i) = e.deserialize(in)
+                    }
+                case node                         =>
                     if (!postInit)
                         poolObject(i) = node.deserialize(in)
             }
@@ -78,16 +85,23 @@ class DefaultDeserialisationProgression(in: DeserialisationInputStream, context:
         _ => obj
     }
 
-    private def initPool(): Unit = {
-        val length = NumberSerializer.deserializeFlaggedNumber[Int](in)
-        val count  = NumberSerializer.deserializeFlaggedNumber[Int](in)
+    def initPool(): Unit = {
+        if (poolObject != null)
+            throw new IllegalStateException("This object pool is already initialised !")
+        val buff   = in.buff
+        val length = NumberSerializer.deserializeFlaggedNumber[Int](buff)
+        val count  = NumberSerializer.deserializeFlaggedNumber[Int](buff)
         poolObject = new Array[Any](count + 1)
-        in.limit(length + in.position())
+        buff.limit(length + buff.position())
+        var maxPos = 0
         ArraySign.in(count, this, in).deserializeRef(poolObject)(nodes => {
             fillPool(nodes, false)
+            maxPos = buff.position()
             fillPool(nodes, true)
+            maxPos = Math.max(maxPos, buff.position())
         }).deserialize(in)
-        in.limit(in.capacity())
+        buff.limit(buff.capacity())
+        buff.position(maxPos)
     }
 
 }

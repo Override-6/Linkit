@@ -14,10 +14,9 @@ package fr.linkit.oblivion.engine.tree
 
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.Packet
-import fr.linkit.oblivion.api.tree._
-import fr.linkit.oblivion.tree.nodes._
 import fr.linkit.engine.local.mapping.ClassMappings
-import fr.linkit.oblivion.engine.tree.nodes.{ArrayNode, DateNode, EnumNode, MapNode, NullNode, ObjectNode, PrimitiveNode, PuppetWrapperNode, SeqNode, StringNode}
+import fr.linkit.oblivion.api.tree._
+import fr.linkit.oblivion.engine.tree.nodes._
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
@@ -26,21 +25,21 @@ import scala.reflect.{ClassTag, classTag}
 
 class DefaultSerialContext extends SerialContext {
 
-    private[tree] val defaultFactories = ListBuffer.empty[NodeFactory[_]]
-    private       val profiles         = new mutable.HashMap[Class[_], ClassProfile[_]]()
+    private[tree] val defaultFactories     = ListBuffer.empty[NodeFactory[_]]
+    private       val profiles             = new mutable.HashMap[Class[_], ClassProfile[_]]()
     private       val finder               = new DefaultNodeFinder(this)
     @Nullable private var network: Network = _
 
     override def getProfile[T: ClassTag]: ClassProfile[T] = {
         getClassProfile(classTag[T]
-                .runtimeClass
-                .asInstanceOf[Class[T]])
+            .runtimeClass
+            .asInstanceOf[Class[T]])
     }
 
     override def getClassProfile[T](clazz: Class[_ <: T]): ClassProfile[T] = {
         //println(s"clazz = ${clazz}")
         profiles.getOrElseUpdate(clazz, new DefaultClassProfile(clazz, this))
-                .asInstanceOf[ClassProfile[T]]
+            .asInstanceOf[ClassProfile[T]]
     }
 
     override def getFinder: NodeFinder = finder
