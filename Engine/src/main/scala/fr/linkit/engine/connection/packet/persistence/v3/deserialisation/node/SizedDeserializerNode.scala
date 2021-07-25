@@ -15,11 +15,19 @@ package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 
-class SizedDeserializerNode(pos: Int, buffLimit: Int, node: DeserializerNode) extends DeserializerNode {
+class SizedDeserializerNode(pos: Int, buffLimit: Int, private[SizedDeserializerNode] val node: DeserializerNode) extends DeserializerNode {
 
-    override def getObject(in: DeserialisationInputStream): Any = {
+    override def deserialize(in: DeserialisationInputStream): Any = {
         in.limit(buffLimit)
         in.position(pos)
-        node.getObject(in)
+        node.deserialize(in)
+    }
+
+}
+
+object SizedDeserializerNode {
+
+    def unapply(arg: SizedDeserializerNode): Option[DeserializerNode] = {
+        Some(arg.node)
     }
 }

@@ -41,7 +41,7 @@ class PacketTests {
 
     @Test
     def moreComplexPacketTest(): Unit = {
-        val player = Player(0, "test", "test", 0, 0)
+        val player = Player(50, "test", "test", 50, 50)
         testPacket(Array("jammy" -> player, (player, player)))
     }
 

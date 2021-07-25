@@ -19,6 +19,7 @@ import java.nio.ByteBuffer
 
 trait DeserialisationInputStream extends InputStream {
 
+    val progression: DeserialisationProgression
     val buff: ByteBuffer
     val context: PersistenceContext
 

@@ -18,4 +18,5 @@ trait DeserialisationProgression {
 
     def getHeaderObjectNode(place: Int): DeserializerNode
 
+    def getNextDeserializationNode: DeserializerNode
 }

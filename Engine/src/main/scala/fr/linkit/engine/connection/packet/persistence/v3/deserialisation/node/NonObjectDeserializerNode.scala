@@ -10,12 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.v3.deserialisation.node
+package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 
-trait DeserializerNode {
+class NonObjectDeserializerNode(deserializeAction: DeserialisationInputStream => Any) extends DeserializerNode {
 
-    def deserialize(in: DeserialisationInputStream): Any
+    override def deserialize(in: DeserialisationInputStream): Any = deserializeAction(in)
+
+}
+
+object NonObjectDeserializerNode {
+
+    def apply(action: DeserialisationInputStream => Any): NonObjectDeserializerNode = new NonObjectDeserializerNode(action)
 
 }

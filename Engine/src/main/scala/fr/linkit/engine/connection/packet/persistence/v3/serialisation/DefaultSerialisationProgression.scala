@@ -12,82 +12,36 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 
-import java.nio.ByteBuffer
-
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
-import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationProgression.Identity
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.HeadedInstanceNode
-import fr.linkit.engine.local.utils.{JavaUtils, NumberSerializer, UnWrapper}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationObjectPool, SerialisationOutputStream, SerialisationProgression}
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode
+import fr.linkit.engine.local.utils.{JavaUtils, UnWrapper}
 
-import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
+import java.io.NotSerializableException
+import java.lang.reflect.Modifier
 
-class DefaultSerialisationProgression(context: PersistenceContext) extends SerialisationProgression {
+class DefaultSerialisationProgression(override val context: PersistenceContext,
+                                      override val pool: SerialisationObjectPool,
+                                      out: SerialisationOutputStream) extends SerialisationProgression {
 
-    private val serializedInstances = mutable.HashMap.empty[Identity, DelegatingSerializerNode]
-    /**
-     * Contains all [[SerializerNode]] for object instances that will be reused in the body
-     */
-    private val pool                = ListBuffer.empty[(SerializerNode, Any)]
-
-    private var isWritingPool = false
-    private var depth         = 0
-
-    override def checkNode(obj: Any, out: SerialisationOutputStream)(node: => SerializerNode): DelegatingSerializerNode = {
-        if (containsInstance(obj)) {
-            if (isWritingPool && depth <= 1) {
-                val node = serializedInstances(obj).original
-                return DelegatingSerializerNode(node)
-            }
-            return changeDelegate(obj, out, node)
-        }
-        val wrappedNode = DelegatingSerializerNode(node)
-        if (!isWritingPool)
-            serializedInstances.put(obj, wrappedNode)
-        wrappedNode
-    }
-
-    override def containsInstance(obj: Any): Boolean = serializedInstances.contains(Identity(obj))
-
-    override def addSerialisationDepth(): Unit = depth += 1
-
-    override def removeSerialisationDepth(): Unit = {
-        if (depth > 0)
-            depth -= 1
-    }
-
-    private def changeDelegate(obj: Any, out: SerialisationOutputStream, node: => SerializerNode): DelegatingSerializerNode = {
-        serializedInstances(obj) match {
-            case DelegatingSerializerNode(h: HeadedInstanceNode) => DelegatingSerializerNode(h)
-            case delegating                                      =>
-                pool += ((node, obj))
-                delegating.delegated = {
-                    new HeadedInstanceNode(pool.size - 1)
+    override def getSerializationNode(obj: Any): SerializerNode = {
+        obj match {
+            case null | None                          => new NullInstanceNode(obj == None)
+            case i if UnWrapper.isPrimitiveWrapper(i) => out.writePrimitive(i.asInstanceOf[AnyVal])
+            case e: Enum[_]                           => out.writeEnum(e)
+            case str: String                          => out.writeString(str)
+            case array: Array[Any]                    => out.writeArray(array)
+            case _                                    =>
+                val clazz = obj.getClass
+                if (clazz.isInterface || Modifier.isAbstract(clazz.getModifiers))
+                    throw new NotSerializableException(s"Could not serialize interface or abstract class ${clazz.getName}.")
+                val desc = context.getDescription(clazz)
+                pool.checkNode(obj, out) {
+                    context.getPersistence(clazz).getSerialNode(obj, desc, context, this)
                 }
-                if (obj.isInstanceOf[String] || UnWrapper.isPrimitiveWrapper(obj))
-                    return delegating
-                context.getDescription(obj.getClass).serializableFields.foreach(field => {
-                    val fieldValue = field.first.get(obj)
-                    val node       = context.getSerializationNode(fieldValue, out, this)
-                    changeDelegate(fieldValue, out, node)
-                })
-                delegating
         }
     }
-
-    def writePool(out: SerialisationOutputStream, context: PersistenceContext): Unit = {
-        isWritingPool = true
-        val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(out.capacity()), this, context)
-        ArraySign.out(pool.map(_._2).toSeq, fakeOut, this, context).getNode.writeBytes(fakeOut)
-        out.write(NumberSerializer.serializeNumber(fakeOut.position(), true))
-        out.write(NumberSerializer.serializeNumber(pool.size - 1, true))
-        out.put(fakeOut.buff.flip())
-        isWritingPool = false
-    }
-
 }
 
 object DefaultSerialisationProgression {

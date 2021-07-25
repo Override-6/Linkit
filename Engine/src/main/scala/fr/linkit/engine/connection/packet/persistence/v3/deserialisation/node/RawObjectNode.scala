@@ -12,10 +12,6 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
+case class RawObjectNode(obj: AnyRef) extends SimpleObjectDeserializerNode(obj, _ => obj) {
 
-case class RawObjectNode(obj: Any) extends DeserializerNode {
-
-    override def getObject(in: DeserialisationInputStream): Any = obj
 }

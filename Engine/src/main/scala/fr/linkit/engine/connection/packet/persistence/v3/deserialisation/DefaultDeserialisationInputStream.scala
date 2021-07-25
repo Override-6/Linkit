@@ -25,11 +25,10 @@ import java.nio.ByteBuffer
 class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
                                         override val context: PersistenceContext) extends DeserialisationInputStream {
 
-    val progress = new DefaultDeserialisationProgression(this)
-    progress.initPool()
+    override val progression = new DefaultDeserialisationProgression(this, context)
 
     override def readObject(): Any = {
-        context.getDeserializationNode(this, progress).getObject(this)
+        progression.getNextDeserializationNode.deserialize(this)
     }
 
     override def readPrimitive(): AnyVal = {
@@ -61,7 +60,7 @@ class DefaultDeserialisationInputStream(override val buff: ByteBuffer,
 
     override def readArray(): Array[Any] = {
         checkFlag(ArrayFlag, "Array")
-        ArrayPersistence.deserialize(this, progress).getObject(this).asInstanceOf[Array[Any]]
+        ArrayPersistence.deserialize(this).deserialize(this).asInstanceOf[Array[Any]]
     }
 
     override def readEnum[E <: Enum[E]](limit: Int): E = {

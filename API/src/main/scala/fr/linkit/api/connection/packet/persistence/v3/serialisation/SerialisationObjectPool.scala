@@ -10,12 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.v3.deserialisation.node
+package fr.linkit.api.connection.packet.persistence.v3.serialisation
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserialisationInputStream
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 
-trait DeserializerNode {
+trait SerialisationObjectPool {
 
-    def deserialize(in: DeserialisationInputStream): Any
+    def checkNode(obj: Any, out: SerialisationOutputStream)(node: => SerializerNode): DelegatingSerializerNode
+
+    def containsInstance(obj: Any): Boolean
+
+    def addSerialisationDepth(): Unit
+
+    def removeSerialisationDepth(): Unit
 
 }

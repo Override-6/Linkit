@@ -12,16 +12,14 @@
 
 package fr.linkit.api.connection.packet.persistence.v3.serialisation
 
+import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 
 trait SerialisationProgression {
 
-    def checkNode(obj: Any, out: SerialisationOutputStream)(node: => SerializerNode): DelegatingSerializerNode
+    val context: PersistenceContext
+    val pool: SerialisationObjectPool
 
-    def containsInstance(obj: Any): Boolean
-
-    def addSerialisationDepth(): Unit
-
-    def removeSerialisationDepth(): Unit
+    def getSerializationNode(obj: Any): SerializerNode
 
 }

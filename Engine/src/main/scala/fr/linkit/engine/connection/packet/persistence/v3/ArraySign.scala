@@ -12,12 +12,11 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3
 
-import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserialisationInputStream, DeserialisationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
-import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SizedDeserializerNode
+import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{SimpleObjectDeserializerNode, SizedDeserializerNode}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationOutputStream
 import fr.linkit.engine.local.utils.NumberSerializer
 
@@ -28,18 +27,19 @@ sealed trait ArraySign
 
 object ArraySign {
 
-    case class ArraySignOut(context: PersistenceContext, progress: SerialisationProgression, childrenNodes: Array[SerializerNode]) extends ArraySign {
+    case class ArraySignOut(progress: SerialisationProgression, childrenNodes: Array[SerializerNode]) extends ArraySign {
 
         def getNode: SerializerNode = {
             out => {
+                val pool = progress.pool
                 val lengths = ListBuffer.empty[Int]
                 val buff    = out.buff
-                val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(buff.limit() - buff.position()), progress, context)
+                val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(buff.limit() - buff.position()), pool, progress.context)
                 childrenNodes.foreach(node => {
                     val pos0 = fakeOut.position()
-                    progress.addSerialisationDepth()
+                    pool.addSerialisationDepth()
                     node.writeBytes(fakeOut)
-                    progress.removeSerialisationDepth()
+                    pool.removeSerialisationDepth()
                     val pos1 = fakeOut.position()
                     lengths += pos1 - pos0
                 })
@@ -50,47 +50,51 @@ object ArraySign {
         }
     }
 
-    case class ArraySignIn(context: PersistenceContext, progress: DeserialisationProgression, lengths: Array[Int]) extends ArraySign {
+    case class ArraySignIn(progress: DeserialisationProgression, lengths: Array[Int]) extends ArraySign {
 
-        def getNode(group: Array[DeserializerNode] => Any): DeserializerNode = {
-            in => {
-                val buff      = in.buff
-                val nodes     = new Array[DeserializerNode](lengths.length)
-                var nodeStart = buff.position()
-                for (i <- lengths.indices) {
-                    buff.position(nodeStart)
-                    val nodeLength = lengths(i)
-                    val limit      = nodeStart + nodeLength
-                    val node       = context.getDeserializationNode(in, progress)
-                    nodes(i) = new SizedDeserializerNode(buff.position(), limit, node)
-                    nodeStart += nodeLength
+        def deserializeRef(ref: AnyRef)(group: Array[DeserializerNode] => Unit): ObjectDeserializerNode = {
+            SimpleObjectDeserializerNode(ref) {
+                in => {
+                    val buff      = in.buff
+                    val nodes     = new Array[DeserializerNode](lengths.length)
+                    var nodeStart = buff.position()
+                    for (i <- lengths.indices) {
+                        buff.position(nodeStart)
+                        val nodeLength = lengths(i)
+                        val limit      = nodeStart + nodeLength
+                        val node       = progress.getNextDeserializationNode
+                        nodes(i) = new SizedDeserializerNode(buff.position(), limit, node)
+                        nodeStart += nodeLength
+                    }
+                    group(nodes)
+                    ref
                 }
-                group(nodes)
             }
         }
     }
 
-    def out(values: Seq[Any], out: SerialisationOutputStream, progress: SerialisationProgression, context: PersistenceContext): ArraySignOut = {
+    def out(values: Seq[Any], progress: SerialisationProgression): ArraySignOut = {
         val signItemCount = values.length
         if (signItemCount == 0)
-            return ArraySignOut(context, progress, Array())
+            return ArraySignOut(progress, Array())
 
         val childrenNodes = new Array[SerializerNode](signItemCount)
+        val pool = progress.pool
 
         for (i <- values.indices) {
             val fieldValue = values(i)
-            progress.addSerialisationDepth()
-            val node = context.getSerializationNode(fieldValue, out, progress)
-            progress.removeSerialisationDepth()
+            pool.addSerialisationDepth()
+            val node = progress.getSerializationNode(fieldValue)
+            pool.removeSerialisationDepth()
             childrenNodes(i) = node
         }
-        ArraySignOut(context, progress, childrenNodes)
+        ArraySignOut(progress, childrenNodes)
     }
 
-    def in(signItemCount: Int, progress: DeserialisationProgression, in: DeserialisationInputStream): ArraySignIn = {
+    def in(signItemCount: Int, progression: DeserialisationProgression, in: DeserialisationInputStream): ArraySignIn = {
         val totalItemCount = signItemCount + 1
         if (totalItemCount == 0)
-            return ArraySignIn(in.context, progress, Array())
+            return ArraySignIn(progression, Array())
 
         val lengths = new Array[Int](totalItemCount)
         for (i <- 0 to signItemCount) {
@@ -99,7 +103,7 @@ object ArraySign {
             else lengths(i) = in.limit() - in.position() - (if (i == 0) 0 else lengths.sum)
         }
 
-        ArraySignIn(in.context, progress, lengths)
+        ArraySignIn(progression, lengths)
     }
 
 }

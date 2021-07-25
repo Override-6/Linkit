@@ -20,8 +20,8 @@ import fr.linkit.api.connection.cache.repo.description.annotation.{MethodControl
 case class Player(@(MC@getter)(ONLY_LOCAL) id: Int,
                   @(MC@getter)(ONLY_LOCAL) owner: String,
                   @(MC@getter)(ONLY_LOCAL) var name: String,
-                  @(MC@getter)(ONLY_LOCAL) var x: Long,
-                  @(MC@getter)(ONLY_LOCAL) var y: Long) extends Serializable {
+                  @(MC@getter)(ONLY_LOCAL) var x: Int,
+                  @(MC@getter)(ONLY_LOCAL) var y: Int) extends Serializable {
 
     private val own = this
     private val test = "on m'appelle l'auvni"

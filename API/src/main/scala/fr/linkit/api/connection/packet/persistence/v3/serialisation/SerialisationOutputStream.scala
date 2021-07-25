@@ -19,6 +19,8 @@ import java.nio.ByteBuffer
 
 trait SerialisationOutputStream extends OutputStream {
 
+    val progression: SerialisationProgression
+
     val buff: ByteBuffer
 
     override def write(b: Int): Unit = buff.putInt(b)
