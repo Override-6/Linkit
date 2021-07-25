@@ -118,9 +118,7 @@ class ResourcesAndClassGenerationTests {
     }
 
     private def getListBuff(): ListBuffer[String] = {
-        if (ThreadLocalRandom.current().nextBoolean())
-            new ListBufferImpl()
-        else new ListBuffer()
+       ???
     }
 
     @Test
@@ -142,14 +140,7 @@ class ResourcesAndClassGenerationTests {
         println(s"result = ${result}")
     }
 
-    class ListBufferImpl extends ListBuffer[String] {
 
-        override def addOne(elem: String): ListBufferImpl.this.type = {
-            println("LOL")
-            //super.addOne(elem)
-            this
-        }
-    }
 
     @Test
     @Order(3)

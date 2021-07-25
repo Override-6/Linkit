@@ -12,6 +12,8 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression}
@@ -20,7 +22,6 @@ import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSe
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.HeadedInstanceNode
 import fr.linkit.engine.local.utils.{JavaUtils, NumberSerializer, UnWrapper}
 
-import java.nio.ByteBuffer
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
@@ -80,9 +81,9 @@ class DefaultSerialisationProgression(context: PersistenceContext) extends Seria
     def writePool(out: SerialisationOutputStream, context: PersistenceContext): Unit = {
         isWritingPool = true
         val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(out.capacity()), this, context)
-        ArraySign.out(pool.toSeq, fakeOut, this, context).getNode.writeBytes(fakeOut)
+        ArraySign.out(pool.map(_._2).toSeq, fakeOut, this, context).getNode.writeBytes(fakeOut)
         out.write(NumberSerializer.serializeNumber(fakeOut.position(), true))
-        out.write(NumberSerializer.serializeNumber(pool.size, true))
+        out.write(NumberSerializer.serializeNumber(pool.size - 1, true))
         out.put(fakeOut.buff.flip())
         isWritingPool = false
     }

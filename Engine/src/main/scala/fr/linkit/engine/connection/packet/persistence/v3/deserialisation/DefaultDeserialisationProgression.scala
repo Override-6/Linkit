@@ -27,7 +27,7 @@ class DefaultDeserialisationProgression(in: DeserialisationInputStream) extends 
         val length = NumberSerializer.deserializeFlaggedNumber[Int](in)
         val count  = NumberSerializer.deserializeFlaggedNumber[Int](in)
         poolObject = new Array[Any](count)
-        in.limit(length + in.get(0) + 1)
+        in.limit(length + in.position())
         ArraySign.in(count, this, in).getNode(nodes => {
             poolObjectNodes = nodes
             for (i <- nodes.indices if poolObject(i) == null) {
@@ -42,7 +42,7 @@ class DefaultDeserialisationProgression(in: DeserialisationInputStream) extends 
         var obj = poolObject(place)
         if (obj == null) {
             if (poolObjectNodes == null)
-                throw new UnsupportedOperationException("Attempted to deserialize a Header object in the pool when being outside of the pool initialisation.")
+                throw new UnsupportedOperationException("Attempted to deserialize a Header object in the pool when being outside of the pool initialisation phase.")
             obj = poolObjectNodes(place).getObject(in)
             poolObject(place) = obj
         }
