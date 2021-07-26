@@ -42,7 +42,7 @@ class DefaultPacketTranslator extends PacketTranslator {
 
     override def getSerializer: Serializer = serializer
 
-    override def initNetwork(network: Network): Unit = ()//serializer.initNetwork(network)
+    override def initNetwork(network: Network): Unit = serializer.initNetwork(network)
 
     override val signature: Array[Byte] = serializer.signature
 }

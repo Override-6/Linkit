@@ -22,7 +22,7 @@ import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.Si
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode
 import fr.linkit.engine.local.utils.ScalaUtils
 
-class DefaultObjectPersistor extends ObjectPersistor[Any] {
+object DefaultObjectPersistor extends ObjectPersistor[Any] {
 
     override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[Object], true))
 

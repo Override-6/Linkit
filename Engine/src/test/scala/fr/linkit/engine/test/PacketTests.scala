@@ -40,7 +40,7 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        val player = Player(0, "test", "test", 0, 0)
+        val player = Array[Int](1, 3, 48405, 89786999)
         testPacket(player)
     }
 
@@ -53,8 +53,8 @@ class PacketTests {
     @Test
     def complexPacketTest(): Unit = {
         val packet = ArrayBuffer(DedicatedPacketCoordinates(12, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> CacheSearchBehavior.GET_OR_OPEN), RequestPacket(1, Array(IntPacket(3))))
-        val perf1 = new PerformanceMeter
-        val perf2 = new PerformanceMeter
+        val perf1  = new PerformanceMeter
+        val perf2  = new PerformanceMeter
         for (i <- 0 to 100) {
             testPacket(packet)
             perf2.printPerf("Serial and deserial")
@@ -63,12 +63,12 @@ class PacketTests {
     }
 
     private def testPacket(obj: AnyRef): Unit = {
-        val packet = RefPacket(obj)
-        //println(s"Serializing packet $packet...")
-        val bytes = serializer.serialize(packet, true)
-        //println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")
+        val packet  = RefPacket(obj)
+        println(s"Serializing packet $packet...")
+        val bytes   = serializer.serialize(packet, true)
+        println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")
         val packet2 = serializer.deserialize(bytes)
-        //println(s"deserialized packet = ${packet2}")
+        println(s"deserialized packet = ${packet2}")
     }
 
 }

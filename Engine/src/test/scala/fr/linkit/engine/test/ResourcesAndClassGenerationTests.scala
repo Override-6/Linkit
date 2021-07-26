@@ -41,9 +41,11 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
-
 import java.util
 import java.util.concurrent.ThreadLocalRandom
+
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
+
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.reflect.runtime.universe.TypeTag
 
@@ -128,16 +130,25 @@ class ResourcesAndClassGenerationTests {
         test.addOne("TETSFT")
     }
 
+    class FakePuppetWrapperPersistor extends PuppetWrapperPersistor(null) {
+        override protected def initialiseWrapper(detachedWrapper: PuppetWrapperPersistor.DetachedWrapper): PuppetWrapper[_] = {
+            println("Faking wrapper...")
+            forObject(detachedWrapper.detached)
+        }
+    }
+
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = InvocationChoreographer.forceLocalInvocation {
         val obj = forObject(ListBuffer.empty[String])
 
         val serial = new DefaultSerializer()
+        serial.context.addPersistence(new FakePuppetWrapperPersistor)
         val bytes = serial.serialize(obj, true)
         println(s"ScalaUtils.toPresentableString(bytes) = ${ScalaUtils.toPresentableString(bytes)}")
         val result = serial.deserialize(bytes)
         println(s"result = ${result}")
+        result
     }
 
 

@@ -75,7 +75,7 @@ object ArrayPersistence {
         RArray.newInstance(finalCompType, arrayLength).asInstanceOf[Array[_]]
     }
 
-    def serialize(array: Array[Any], progress: SerialisationProgression): SerializerNode = {
+    def serialize(array: Array[_], progress: SerialisationProgression): SerializerNode = {
         val (compType, depth) = getAbsoluteCompType(array)
         val arrayTypeBytes    = NumberSerializer.serializeInt(compType.getName.hashCode)
         val head              = Array(ArrayFlag) ++ arrayTypeBytes :+ depth

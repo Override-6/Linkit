@@ -32,6 +32,7 @@ class DefaultPersistenceContext extends PersistenceContext {
 
     override def getPersistence(clazz: Class[_]): ObjectPersistor[Any] = {
         var superClass = clazz
+
         @inline def makeLoop(): ObjectPersistor[Any] = {
             val interfaces = superClass.getInterfaces
             for (interface <- interfaces) {
@@ -44,13 +45,14 @@ class DefaultPersistenceContext extends PersistenceContext {
                 opt.map(_._1).orNull
             else null
         }
+
         while (superClass != null) {
             val result = makeLoop()
             if (result != null)
                 return result
             superClass = superClass.getSuperclass
         }
-        new DefaultObjectPersistor
+        DefaultObjectPersistor
     }
 
     addPersistence(new SequencePersistor)
@@ -59,5 +61,4 @@ class DefaultPersistenceContext extends PersistenceContext {
 
 object DefaultPersistenceContext {
 
-    private val ObjectHandledClass = new HandledClass(classOf[Object].getName, true)
 }

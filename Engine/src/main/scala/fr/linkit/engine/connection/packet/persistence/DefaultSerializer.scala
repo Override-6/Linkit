@@ -15,14 +15,18 @@ package fr.linkit.engine.connection.packet.persistence
 import fr.linkit.api.connection.packet.persistence.Serializer
 import fr.linkit.engine.connection.packet.persistence.v3.DefaultPersistenceContext
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.DefaultDeserializationInputStream
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationOutputStream, DefaultSerialisationObjectPool}
-
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationObjectPool, DefaultSerialisationOutputStream}
 import java.nio.ByteBuffer
+
+import fr.linkit.api.connection.network.Network
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
 
 class DefaultSerializer() extends Serializer {
 
-    private  val context                = new DefaultPersistenceContext
+    val context                = new DefaultPersistenceContext
     override val signature: Array[Byte] = Array(4)
+
+    private var network: Network = _
 
     override def serialize(serializable: Serializable, withSignature: Boolean): Array[Byte] = {
         val pool     = new DefaultSerialisationObjectPool()
@@ -46,6 +50,13 @@ class DefaultSerializer() extends Serializer {
 
     override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
         deserialize(bytes).asInstanceOf[Array[Any]]
+    }
+
+    def initNetwork(network: Network): Unit = {
+        if (this.network != null)
+            throw new IllegalStateException("Network already initialised.")
+        this.network = network
+        context.addPersistence(new PuppetWrapperPersistor(network))
     }
 
 }

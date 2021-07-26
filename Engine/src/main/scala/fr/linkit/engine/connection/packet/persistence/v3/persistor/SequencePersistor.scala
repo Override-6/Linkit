@@ -1,7 +1,7 @@
 package fr.linkit.engine.connection.packet.persistence.v3.persistor
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
@@ -27,7 +27,7 @@ class SequencePersistor extends ObjectPersistor[collection.Seq[_]] {
         }
     }
 
-    override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): DeserializerNode = {
+    override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         //TODO support sequences even if no factory is not found.
         val builder = findSeqFactoryCompanion(desc.clazz)
             .getOrElse(throw new UnsupportedOperationException(s"factory not found for seq ${desc.clazz.getName}"))

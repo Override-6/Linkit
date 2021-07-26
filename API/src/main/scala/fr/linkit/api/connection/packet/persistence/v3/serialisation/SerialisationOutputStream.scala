@@ -35,7 +35,7 @@ trait SerialisationOutputStream extends OutputStream {
 
     def writeString(str: String): SerializerNode
 
-    def writeArray(array: Array[Any]): SerializerNode
+    def writeArray(array: Array[_]): SerializerNode
 
     def writeEnum(enum: Enum[_]): SerializerNode
 

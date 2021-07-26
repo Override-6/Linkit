@@ -25,12 +25,9 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     def wrappedClass: Class[_]
 
-    override def initPuppeteer(puppeteer: Puppeteer[A]): Unit = this.synchronized {
-//        Thread.dumpStack()
+    override def initPuppeteer(puppeteer: Puppeteer[A]): Unit = {
         if (this.puppeteer != null)
             throw new PuppetAlreadyInitialisedException(s"This puppet is already initialized ! ($puppeteer)")
-        println(s"this.puppeteer = ${this.puppeteer}")
-        println(s"puppeteer = ${puppeteer}")
         this.puppeteer = puppeteer
         this.puppeteerDescription = puppeteer.puppeteerInfo
         this.behavior = puppeteer.wrapperBehavior
@@ -68,18 +65,13 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     protected def handleCall[R](id: Int, defaultReturnValue: R)
                                (args: Array[Any])(superCall: Array[Any] => Any): R = {
-        val methodBehavior = behavior.getMethodBehavior(id).get
-        //val name           = methodBehavior.desc.javaMethod.getName
-        //val argsString     = args.mkString("(", ", ", ")")
+        val methodBehavior   = behavior.getMethodBehavior(id).get
         val synchronizedArgs = synchronizedParams(methodBehavior, args)
-        /*if (name == "toString")
-            Thread.dumpStack()*/
         if (choreographer.isMethodExecutionForcedToLocal) {
-            //println(s"forced local method call $name$argsString.")
             return superCall(synchronizedArgs).asInstanceOf[R]
         }
         methodBehavior.handler
-                .handleRMI[R](this)(id, defaultReturnValue)(synchronizedArgs)(performSuperCall[R](superCall(synchronizedArgs)))
+            .handleRMI[R](this)(id, defaultReturnValue)(synchronizedArgs)(performSuperCall[R](superCall(synchronizedArgs)))
     }
 
     private def asWrapper: A with PuppetWrapper[A] = this.asInstanceOf[A with PuppetWrapper[A]]

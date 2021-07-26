@@ -52,7 +52,7 @@ class DefaultSerialisationOutputStream(override val buff: ByteBuffer,
         out.write(StringFlag +: str.getBytes())
     }
 
-    override def writeArray(array: Array[Any]): SerializerNode = pool.checkNode(array, this) {
+    override def writeArray(array: Array[_]): SerializerNode = pool.checkNode(array, this) {
         ArrayPersistence.serialize(array, progression)
     }
 

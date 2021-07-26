@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 
@@ -25,5 +25,5 @@ trait ObjectPersistor[A] {
 
     def getSerialNode(obj: A, desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): SerializerNode
 
-    def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): DeserializerNode
+    def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode
 }

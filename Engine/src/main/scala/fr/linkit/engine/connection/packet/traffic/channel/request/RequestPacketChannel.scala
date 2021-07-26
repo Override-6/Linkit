@@ -77,6 +77,7 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
     }
 
     def makeRequest(scope: ChannelScope): RequestSubmitter = {
+        val pool = WorkerPools.ensureCurrentIsWorker("Could not create a RequestSubmitter outside of a worker pool")
         val requestID = nextRequestID
         new RequestSubmitter(requestID, scope, ensureCurrentIsWorker(), this)
     }

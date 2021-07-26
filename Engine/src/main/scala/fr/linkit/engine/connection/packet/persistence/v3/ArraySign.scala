@@ -73,7 +73,7 @@ object ArraySign {
         }
     }
 
-    def out(values: Seq[Any], progress: SerialisationProgression): ArraySignOut = {
+    def out(values: Seq[_], progress: SerialisationProgression): ArraySignOut = {
         val signItemCount = values.length
         if (signItemCount == 0)
             return ArraySignOut(progress, Array())

@@ -18,7 +18,6 @@ object PacketSerializationTest {
 
     @Test
     def makeSerial(): Unit = {
-
     }
 
 }
