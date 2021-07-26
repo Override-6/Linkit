@@ -17,7 +17,10 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Deser
 
 class SizedDeserializerNode(pos: Int, buffLimit: Int, val node: DeserializerNode) extends DeserializerNode {
 
+    println(s"SizedDeserializerNode created ! (pos: $pos, buffLimit: $buffLimit)")
+
     override def deserialize(in: DeserializationInputStream): Any = {
+        println(s"Deserializing at pos $pos, and limit $buffLimit.")
         in.limit(buffLimit)
         in.position(pos)
         node.deserialize(in)

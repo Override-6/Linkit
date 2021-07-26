@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.packet.persistence.v3._
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, IterablePersistor}
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, IterablePersistor, MapPersistor}
 
 import scala.collection.mutable
 
@@ -42,35 +42,38 @@ class DefaultPersistenceContext extends PersistenceContext {
     }
 
     private def getPersistence(clazz: Class[_], method: SerialisationMethod): ObjectPersistor[Any] = {
-        var superClass = clazz
-
         //FIXME this is a fast fix for Persistor priority
         if (classOf[PuppetWrapper[_]].isAssignableFrom(clazz))
             return persistors(classOf[PuppetWrapper[_]].getName)._1
 
-        @inline def makeLoop(): ObjectPersistor[Any] = {
-            val interfaces = superClass.getInterfaces
-            for (interface <- interfaces) {
-                val opt = persistors.get(interface.getName)
-                if (opt.exists(p => p._2.extendedClassEnabled && p._2.methods.contains(method) && p._1.willHandleClass(clazz)))
-                    return opt.get._1
-            }
-            val opt = persistors.get(superClass.getName)
-            if (opt.exists(p => (p._2.extendedClassEnabled || (superClass eq clazz)) && p._2.methods.contains(method) && p._1.willHandleClass(clazz)))
+        @inline
+        def findPersistor(cl: Class[_]): ObjectPersistor[Any] = {
+            val opt = persistors.get(cl.getName)
+            if (opt.exists(p => (p._2.extendedClassEnabled || (cl eq clazz)) && p._2.methods.contains(method) && p._1.willHandleClass(clazz)))
                 opt.map(_._1).orNull
             else null
         }
 
-        while (superClass != null) {
-            val result = makeLoop()
-            if (result != null)
-                return result
-            superClass = superClass.getSuperclass
+        def getPersistorRecursively(cl: Class[_]): ObjectPersistor[Any] = {
+            var superClass = cl
+            while (superClass != null) {
+                var result = findPersistor(superClass)
+                if (result != null)
+                    return result
+                for (interface <- superClass.getInterfaces) {
+                    result = getPersistorRecursively(interface)
+                    if (result != DefaultObjectPersistor)
+                        return result
+                }
+                superClass = superClass.getSuperclass
+            }
+            DefaultObjectPersistor
         }
-        DefaultObjectPersistor
+        getPersistorRecursively(clazz)
     }
 
     addPersistence(IterablePersistor)
+    addPersistence(MapPersistor)
 }
 
 object DefaultPersistenceContext {

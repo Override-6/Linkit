@@ -24,12 +24,11 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
     }
 
     override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
-        val ref = DetachedWrapper(null, null)
+        var ref: PuppetWrapper[_] = null
         println(s"Deserialize wrapper...")
         SimpleObjectDeserializerNode(ref)(in => {
             val detached = DefaultObjectPersistor.getDeserialNode(desc, context, progress).deserialize(in)
-            initialiseWrapper(detached.asInstanceOf[DetachedWrapper])
-            ScalaUtils.pasteAllFields(ref, detached)
+            ref = initialiseWrapper(detached.asInstanceOf[DetachedWrapper])
             ref
         })
     }
@@ -45,7 +44,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
             return null
         }
         opt.get
-            .getCacheAsync(info.cacheID, DefaultEngineObjectCenter[Any]())
+            .getCache(info.cacheID, DefaultEngineObjectCenter[Any]())
             .initAsWrapper(wrapped, info)
     }
 

@@ -56,7 +56,7 @@ class PuppetWrapperNode(network: Network) extends NodeFactory[PuppetWrapper[_]] 
             return null
         }
         opt.get
-                .getCacheAsync(info.cacheID, DefaultEngineObjectCenter[Any]())
+                .retrieveCacheAsync(info.cacheID, DefaultEngineObjectCenter[Any]())
                 .initAsWrapper(wrapped, info)
     }
 

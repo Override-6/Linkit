@@ -54,15 +54,23 @@ class NetworkSharedCacheManager(override val family: String,
 
     override def apply[A <: Serializable](key: Int): A = quickCache(key).asInstanceOf[A]
 
-    override def getCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior): A = {
+    override def retrieveCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior): A = {
         getCache0[A](cacheID, factory, behavior) { retrieveCache: (() => Unit) => retrieveCache.apply() }
     }
 
     @workerExecution
-    override def getCacheAsync[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior): A = {
+    override def retrieveCacheAsync[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior): A = {
         getCache0[A](cacheID, factory, behavior)((retrieveCache: () => Unit) =>
             WorkerPools.ensureCurrentIsWorker("Please use getCache instead.").runLater(retrieveCache.apply())
         )
+    }
+
+    override def getCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache]): A = {
+        LocalCacheManager
+                .findCache[A](cacheID)
+                .getOrElse {
+                    throw new NoSuchCacheException("No cache was found in the local cache manager")
+                }
     }
 
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchBehavior): Option[CacheContent] = {
@@ -98,13 +106,13 @@ class NetworkSharedCacheManager(override val family: String,
 
     override def update(): this.type = {
         println("Cache will be updated.")
-        LocalCacheHandler.updateAll()
+        LocalCacheManager.updateAll()
         //quickCache will be updated by LocalCacheHandler.updateAll call
         this
     }
 
     def forget(cacheID: Int): Unit = {
-        LocalCacheHandler.unregister(cacheID)
+        LocalCacheManager.unregister(cacheID)
     }
 
     def handleRequest(requestBundle: RequestBundle): Unit = {
@@ -119,7 +127,7 @@ class NetworkSharedCacheManager(override val family: String,
 
         println(s"RECEIVED CONTENT REQUEST FOR IDENTIFIER $cacheID REQUESTOR : $senderID")
         println(s"Behavior = $behavior")
-        val contentOpt = LocalCacheHandler.getContent(cacheID)
+        val contentOpt = LocalCacheManager.getContent(cacheID)
         if (contentOpt.isDefined) {
             response.addPacket(RefPacket[Option[CacheContent]](contentOpt))
         } else {
@@ -147,11 +155,11 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     private def getCache0[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior)(cacheRetrievalAction: (() => Unit) => Unit): A = {
-        LocalCacheHandler
+        LocalCacheManager
                 .findCache[A](cacheID)
                 .getOrElse {
                     val sharedCache = factory.createNew(this, cacheID, container)
-
+                    LocalCacheManager.register(cacheID, sharedCache)
                     cacheRetrievalAction { () =>
                         println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
                         val baseContent = retrieveCacheContent(cacheID, behavior).orNull
@@ -161,8 +169,6 @@ class NetworkSharedCacheManager(override val family: String,
                             sharedCache.setContent(baseContent)
                         }
                     }
-
-                    LocalCacheHandler.register(cacheID, sharedCache)
                     requestChannel.injectStoredBundles()
                     sharedCache
                 }
@@ -170,7 +176,7 @@ class NetworkSharedCacheManager(override val family: String,
 
     private def init(): SharedMap[Int, Serializable] = {
         /*
-        * Don't touch, scala objects works as a lazy val, and all lazy val are synchronized on the instance that
+        * Don't touch, scala companions instances works as a lazy val, and all lazy val are synchronized on the instance that
         * they are computing. If you remove this line, NetworkSCManager could some times be deadlocked because retrieveCacheContent
         * will wait for its content's request, and thus its request response will be handled by another thread,
         * which will need LocalCacheHandler in order to retrieve the local cache, which is synchronized, so it will
@@ -178,15 +184,15 @@ class NetworkSharedCacheManager(override val family: String,
         * that handles the request is waiting...
         * For simple, if you remove this line, a deadlock will occur.
         * */
-        LocalCacheHandler.loadClass()
+        LocalCacheManager.loadClass()
         val content       = retrieveCacheContent(1, CacheSearchBehavior.GET_OR_WAIT)
         val sharedObjects = SharedMap[Int, Serializable].createNew(this, 1, container)
         if (content.isDefined) {
             sharedObjects.setContent(content.get)
         }
 
-        LocalCacheHandler.register(1, sharedObjects)
-        sharedObjects.foreachKeys(LocalCacheHandler.registerMock) //mock all current caches that are registered on this family
+        LocalCacheManager.register(1, sharedObjects)
+        sharedObjects.foreachKeys(LocalCacheManager.registerMock) //mock all current caches that are registered on this family
         println("Shared objects : " + sharedObjects)
         sharedObjects
     }
@@ -199,7 +205,7 @@ class NetworkSharedCacheManager(override val family: String,
         scope
     }
 
-    protected object LocalCacheHandler {
+    protected object LocalCacheManager {
 
         private val localRegisteredCaches = mutable.Map.empty[Int, InternalSharedCache]
 
@@ -250,6 +256,15 @@ class NetworkSharedCacheManager(override val family: String,
 
         override def toString: String = localRegisteredCaches.toString()
 
+        /*
+        * Don't touch, scala companions instances works as a lazy val, and all lazy val are synchronized on the instance that
+        * they are computing. If you remove this line, NetworkSCManager could some times be deadlocked because retrieveCacheContent
+        * will wait for its content's request, and thus its request response will be handled by another thread,
+        * which will need LocalCacheHandler in order to retrieve the local cache, which is synchronized, so it will
+        * be blocked until the thread that requested the content get it's response, but it's impossible because the thread
+        * that handles the request is waiting...
+        * For simple, if you remove this method, a deadlock will occur.
+        * */
         def loadClass(): Unit = ()
 
     }

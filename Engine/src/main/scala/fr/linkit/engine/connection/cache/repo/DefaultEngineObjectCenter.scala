@@ -34,7 +34,6 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.utils.ScalaUtils
-import fr.linkit.engine.local.utils.ScalaUtils.retrieveAllFields
 
 import java.lang.reflect.Field
 import java.util.concurrent.ThreadLocalRandom

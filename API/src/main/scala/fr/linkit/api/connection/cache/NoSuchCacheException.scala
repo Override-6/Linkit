@@ -10,8 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
+package fr.linkit.api.connection.cache
 
-case class RawObjectNode(obj: Any) extends SimpleObjectDeserializerNode(() => obj, _ => obj) {
+import fr.linkit.api.local.system.AppException
+
+class NoSuchCacheException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

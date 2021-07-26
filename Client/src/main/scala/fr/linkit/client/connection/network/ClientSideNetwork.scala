@@ -54,7 +54,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
         val identifier   = connection.currentIdentifier
         val sharedCaches = newCachesManager(identifier, identifier)
         sharedCaches
-                .getCache(3, SharedInstance[ExternalConnectionState], CacheSearchBehavior.GET_OR_WAIT)
+                .retrieveCache(3, SharedInstance[ExternalConnectionState], CacheSearchBehavior.GET_OR_WAIT)
                 .set(ExternalConnectionState.CONNECTED) //technically always connected to himself
         new SelfEngine(connection, connection.getState, this, sharedCaches)
     }

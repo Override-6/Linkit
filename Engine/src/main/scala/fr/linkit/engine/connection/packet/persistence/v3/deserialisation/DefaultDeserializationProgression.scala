@@ -46,14 +46,16 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
                     throw new ClassNotMappedException(s"classCode $classCode is not mapped.")
                 if (objectClass.isEnum)
                     NonObjectDeserializerNode(_.readEnum(hint = objectClass))
-                else context.getPersistenceForDeserialisation(objectClass)
-                    .getDeserialNode(context.getDescription(objectClass), context, this)
+                else {
+                    context.getPersistenceForDeserialisation(objectClass)
+                            .getDeserialNode(context.getDescription(objectClass), context, this)
+                }
             case flag                                   => throw new MalFormedPacketException(buff, s"Unknown flag '$flag' at start of node expression.")
         }
     }
 
     private def fillPool(nodes: Seq[DeserializerNode], postInit: Boolean): Unit = {
-        def carefulDeserial(i: Int, ref: AnyRef, node: DeserializerNode): Unit = {
+        def carefulDeserial(i: Int, ref: Any, node: DeserializerNode): Unit = {
             poolObject(i) = ref
             if (postInit)
                 node.deserialize(in)
@@ -82,7 +84,7 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
         if (obj == null) {
             throw new NullPointerException("Unexpected null item in poolObject")
         }
-        _ => obj
+        RawObjectNode(obj)
     }
 
     def initPool(): Unit = {

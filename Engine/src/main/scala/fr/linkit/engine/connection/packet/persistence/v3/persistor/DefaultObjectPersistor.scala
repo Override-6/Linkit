@@ -12,11 +12,11 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.persistor
 
+import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
-import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{NullInstanceNode, SimpleObjectSerializerNode}
@@ -31,7 +31,7 @@ object DefaultObjectPersistor extends ObjectPersistor[Any] {
             return new NullInstanceNode(obj == None)
 
         val fieldValues = desc.serializableFields
-            .map(_.first.get(obj))
+                .map(_.first.get(obj))
         val node        = ArraySign.out(fieldValues, progress).getNode
         SimpleObjectSerializerNode(out => {
             out.writeClass(obj.getClass)
@@ -41,14 +41,17 @@ object DefaultObjectPersistor extends ObjectPersistor[Any] {
 
     override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         val instance = ScalaUtils.allocate[AnyRef](desc.clazz)
+        println(s"getDeserialNode in DefaultObjectPersistor for ${desc.clazz}")
         SimpleObjectDeserializerNode(instance) {
             in =>
                 //println(s"Deserializing object ${desc.clazz.getName}...")
                 ArraySign.in(desc.signItemCount, in.progression, in).deserializeRef(instance)(nodes => {
-                    desc.foreachDeserializableFields((i, field) => {
-                        val obj = nodes(i).deserialize(in)
-                        ScalaUtils.setValue(instance, field, obj)
-                    })
+                    desc.foreachDeserializableFields { (i, field) =>
+                        nodes(i).deserialize(in)
+                    } { (field, value) =>
+                        ScalaUtils.setValue(instance, field, value)
+                    }
+                    instance
                 }).deserialize(in)
         }
     }

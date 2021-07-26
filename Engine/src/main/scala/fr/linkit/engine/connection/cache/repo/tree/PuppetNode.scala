@@ -38,9 +38,10 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
      * */
     protected val members         = new mutable.HashMap[Int, SyncNode[_]]
 
-    override def addChild(id: Int, node: this.type => SyncNode[_]): Unit = {
-        val n    = node(this)
-        val last = members.put(id, n)
+    override def addChild(node: SyncNode[_]): Unit = {
+        if (node.parent ne this)
+            throw new UnsupportedOperationException("Attempted to add a child to this node with a different parent of this node.")
+        val last = members.put(id, node)
         if (last.isDefined)
             throw new IllegalStateException(s"Puppet already exists at ${puppeteer.puppeteerInfo.treeViewPath.mkString("$", " -> ", s" -> $id")}")
     }

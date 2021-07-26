@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache
 
-import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.cache.{CacheContent, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.system.AppLogger
@@ -55,6 +55,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
     override def setContent(content: CacheContent): Unit = {
         content match {
             case CacheInstanceContent(obj: A) => instance = Option(obj)
+            case CacheInstanceContent(null)   => instance = null
             case _                            => throw new IllegalArgumentException(s"Received unexpected cache content '$content'")
         }
     }

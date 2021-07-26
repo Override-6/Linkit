@@ -88,12 +88,8 @@ class ResourcesAndClassGenerationTests {
     def packetTest(): Unit = InvocationChoreographer.forceLocalInvocation {
         val wrapper = forObject(new util.ArrayList[String]())
 
-        val packet          = ArrayBuffer(DedicatedPacketCoordinates(12, "s1", "TestServer1"), ResponsePacket(7, Array(AnyRefPacket(Some(CacheRepoContent(Array(PuppetProfile(Array(0), wrapper, "TestServer1"))))))))
-        //val testPacketBytes = new FSTSerializer().serialize(packet, true)
-        //println(s"Serialized testedPacket : ${ScalaUtils.toPresentableString(testPacketBytes)}")
-        //val rePacket = Assertions.assertInstanceOf(packet.getClass, new FSTSerializer().deserialize(testPacketBytes))
-        //println(s"resulting packet = ${rePacket.mkString("Array(", ", ", ")")}")
-
+        val packet          = ArrayBuffer(wrapper)
+        PacketTests.testPacket(packet)
     }
 
     @Test

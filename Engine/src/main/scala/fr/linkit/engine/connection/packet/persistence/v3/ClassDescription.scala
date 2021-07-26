@@ -25,11 +25,12 @@ class ClassDescription(val clazz: Class[_]) extends SerializableClassDescription
     val signItemCount     : Int          = serializableFields.length - 1
     val classCode         : Array[Byte]  = NumberSerializer.serializeInt(clazz.getName.hashCode)
 
-    override def foreachDeserializableFields(action: (Int, Field) => Unit): Unit = {
+    override def foreachDeserializableFields(deserialize: (Int, Field) => Any)(pasteOnField: (Field, Any) => Unit): Unit = {
         var i = 0
         serializableFields.foreach(fields => {
-            action(i, fields.first)
-            fields.linked.foreach(action(i, _))
+            val value = deserialize(i, fields.first)
+            pasteOnField(fields.first, value)
+            fields.linked.foreach(pasteOnField(_, value))
             i += 1
         })
     }

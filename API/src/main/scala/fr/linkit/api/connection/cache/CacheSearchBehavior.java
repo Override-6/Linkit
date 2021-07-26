@@ -13,21 +13,24 @@
 package fr.linkit.api.connection.cache;
 
 /**
- * An enum that will define how a synchronised cache will be opened by a {@link SharedCacheManager}.
+ * An enum that will define how the content of a synchronised cache will be retrieved by a {@link SharedCacheManager}.
  *
  * @see SharedCacheManager#getCache
  */
 public enum CacheSearchBehavior {
     /**
-     * Retrieves the cache or wait until it get opened on the targeted engine's {@link SharedCacheManager}
+     * Retrieves the cache content or wait until the cache get opened
+     * by another machine or from another call of the {@link SharedCacheManager#getCache} with a method that let the cache be created.
+     * {@link SharedCacheManager}
      */
     GET_OR_WAIT,
     /**
-     * Retrieves the cache or open it (as an empty cache) if it is not opened on the targeted engine's {@link SharedCacheManager}
+     * Retrieves the cache content or open it as empty if no cache was found. The cache content returned will be empty.
      * */
     GET_OR_OPEN,
     /**
-     * Retrieves the cache or throw a {@link CacheOpenException} if it is not opened on the targeted engine's {@link SharedCacheManager}
+     * Retrieves the cache or throw a {@link CacheOpenException} if it is not opened on the targeted {@link SharedCacheManager}
      * */
     GET_OR_CRASH
+
 }

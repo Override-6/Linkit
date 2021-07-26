@@ -28,7 +28,7 @@ class SynchronisedObjectTests {
         Assertions.assertNotNull(connection)
         val cache = connection.network.cache
         AppLogger.debug("Opening object repo with identifier '75'")
-        val repo = cache.getCache(75, DefaultEngineObjectCenter[Serializable]())
+        val repo = cache.retrieveCache(75, DefaultEngineObjectCenter[Serializable]())
     }
 
 }

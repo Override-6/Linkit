@@ -16,11 +16,11 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.Deserializ
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.engine.local.utils.JavaUtils
 
-class SimpleObjectDeserializerNode(override protected var ref: AnyRef, deserializeAction: DeserializationInputStream => Any) extends ObjectDeserializerNode {
+class SimpleObjectDeserializerNode(override protected var ref: () => Any, deserializeAction: DeserializationInputStream => Any) extends ObjectDeserializerNode {
 
     override def deserialize(in: DeserializationInputStream): Any = {
         val returned = deserializeAction(in)
-        if (!JavaUtils.sameInstance(returned, ref))
+        if (!JavaUtils.sameInstance(returned, ref()))
             throw new RuntimeException("The returned value reference is not equals to the expected reference stored in SimpleObjectDeserializerNode.ref.")
         returned //or ref, this is the same object.
     }
@@ -29,5 +29,5 @@ class SimpleObjectDeserializerNode(override protected var ref: AnyRef, deseriali
 
 object SimpleObjectDeserializerNode {
 
-    def apply(ref: AnyRef)(deserialize: DeserializationInputStream => Any): SimpleObjectDeserializerNode = new SimpleObjectDeserializerNode(ref, deserialize)
+    def apply(ref: => AnyRef)(deserialize: DeserializationInputStream => Any): SimpleObjectDeserializerNode = new SimpleObjectDeserializerNode(() => ref, deserialize)
 }

@@ -78,29 +78,48 @@ trait SharedCacheManager extends Updatable {
     def apply[A <: Serializable](key: Int): A
 
     /**
-     * Returns an instance of [[SharedCache]], based with the given factory.
-     * This method will create and synchronise the current content of the cache that is placed on the cacheID :
-     * If no cache is opened on the cacheID, it will simply be created and have an empty content.
-     * If the cache was already opened by another engine, the cache instance will be created and its content will be synchronised.
-     * Note: can't be sure that every cache instances with the same cacheID are of the same type.
+     * Retrieves a [[SharedCache]] hosted by this SharedCacheManager. <br>
+     * This method will create and synchronise the current content of the cache that is placed on the cacheID :<br>
+     * If no cache is opened on the cacheID, it will simply be created and have an empty content.<br>
+     * If the cache was already opened by another engine, the cache instance will be created and its content will be synchronised.<br>
+     * The cache will then be stored locally if it was not present in it.<br>
+     * If the cache was already created and registered locally, the factory will not be called and the cached instance will
+     * then be returned.<br>
+     * Note: can't be sure that every cache instances with the same cacheID are of the same type.<br>
      *
      * @param cacheID the cache identifier
      * @param factory the factory that will create the cache instance
      * @param behavior the kind of behavior to adopt when creating a cache
+     * @return the cache instance.
      * @see [[SharedCache]]
      * @see [[SharedCacheFactory]]
      * @see [[CacheSearchBehavior]]
      * */
-    def getCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
+    def retrieveCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
 
     /**
-     * Works same as [[getCache]] except that the cache content is retrieved in another worker thread task.
+     * Works same as [[retrieveCache]] except that the cache content is retrieved in another worker thread task.
      * @throws IllegalThreadException if the current thread is not a [[fr.linkit.api.local.concurrency.WorkerThread]]
+     * @param cacheID the cache identifier
+     * @param factory the factory that will create the cache instance
+     * @param behavior the kind of behavior to adopt when creating a cache
+     * @return the cache instance.
      * @see [[fr.linkit.api.local.concurrency.WorkerPool]]
      * @see [[fr.linkit.api.local.concurrency.WorkerThread]]
      * */
     @workerExecution
-    def getCacheAsync[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
+    def retrieveCacheAsync[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
+
+    /**
+     * Get cache that is already opened and registered in the local cache.
+     * The cache content will not be retrieved, but if no cache is found in the local cache, this cache manager will
+     * not try to retrieve it on the network.
+     * @throws NoSuchCacheException if no cache was found locally.
+     * @param cacheID the cache identifier
+     * @param factory the factory that will create the cache instance
+     * @return the cache instance.
+     */
+    def getCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache]): A
 
     /**
      * Retrieves the cache content of a given cache identifier.

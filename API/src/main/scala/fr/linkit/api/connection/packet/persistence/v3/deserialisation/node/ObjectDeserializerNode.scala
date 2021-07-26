@@ -14,9 +14,9 @@ package fr.linkit.api.connection.packet.persistence.v3.deserialisation.node
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 
 trait ObjectDeserializerNode extends DeserializerNode {
-    protected var ref: AnyRef
+    protected var ref: () => Any
 
-    def getRef: AnyRef = ref
+    def getRef: Any = ref()
 
     override def deserialize(in: DeserializationInputStream): Any
 

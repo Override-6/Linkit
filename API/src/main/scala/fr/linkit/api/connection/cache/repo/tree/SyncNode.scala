@@ -26,7 +26,7 @@ trait SyncNode[A] {
 
     def getChild[B](id: Int): Option[SyncNode[B]]
 
-    def addChild(id: Int, factory: this.type => SyncNode[_]): Unit
+    def addChild(child: SyncNode[_]): Unit
 
     def getGrandChild(relativePath: Array[Int]): Option[SyncNode[_]] = {
         var child: SyncNode[_] = this
