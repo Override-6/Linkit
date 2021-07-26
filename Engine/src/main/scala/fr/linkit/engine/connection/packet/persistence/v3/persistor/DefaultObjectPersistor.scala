@@ -41,7 +41,7 @@ object DefaultObjectPersistor extends ObjectPersistor[Any] {
 
     override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         val instance = ScalaUtils.allocate[AnyRef](desc.clazz)
-        println(s"getDeserialNode in DefaultObjectPersistor for ${desc.clazz}")
+        //prinln(s"getDeserialNode in DefaultObjectPersistor for ${desc.clazz}")
         SimpleObjectDeserializerNode(instance) {
             in =>
                 //println(s"Deserializing object ${desc.clazz.getName}...")

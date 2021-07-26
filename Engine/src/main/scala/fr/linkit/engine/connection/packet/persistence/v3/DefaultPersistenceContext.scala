@@ -32,12 +32,12 @@ class DefaultPersistenceContext extends PersistenceContext {
     }
 
     override def getPersistenceForSerialisation(clazz: Class[_]): ObjectPersistor[Any] = {
-        println(s"Getting node to serialize a ${clazz.getName}. (${clazz.getName.hashCode})")
+        //prinln(s"Getting node to serialize a ${clazz.getName}. (${clazz.getName.hashCode})")
         getPersistence(clazz, SerialisationMethod.Serial)
     }
 
     override def getPersistenceForDeserialisation(clazz: Class[_]): ObjectPersistor[Any] = {
-        println(s"Getting node to deserialize a ${clazz.getName}. (${clazz.getName.hashCode})")
+        //prinln(s"Getting node to deserialize a ${clazz.getName}. (${clazz.getName.hashCode})")
         getPersistence(clazz, SerialisationMethod.Deserial)
     }
 

@@ -53,10 +53,10 @@ object ArraySign {
     case class ArraySignIn(progress: DeserializationProgression, lengths: Array[Int]) extends ArraySign {
 
         def deserializeRef(ref: AnyRef)(group: Array[DeserializerNode] => Unit): ObjectDeserializerNode = {
-            println(s"getting node for array sign ref ${ref.getClass.getName}...")
+            //prinln(s"getting node for array sign ref ${ref.getClass.getName}...")
             SimpleObjectDeserializerNode(ref) {
                 in => {
-                    println(s"Deserializing array sign ${ref.getClass.getName}...")
+                    //prinln(s"Deserializing array sign ${ref.getClass.getName}...")
                     val buff      = in.buff
                     val nodes     = new Array[DeserializerNode](lengths.length)
                     var nodeStart = buff.position()
