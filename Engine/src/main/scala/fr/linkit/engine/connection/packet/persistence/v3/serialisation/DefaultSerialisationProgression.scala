@@ -34,7 +34,7 @@ class DefaultSerialisationProgression(override val context: PersistenceContext,
             case array: Array[Any]                    => out.writeArray(array)
             case _                                    =>
                 val clazz = obj.getClass
-                println(s"Getting node for class '${clazz.getName}...' (class code = ${clazz.getName.hashCode}")
+                //println(s"Getting node for class '${clazz.getName}...' (class code = ${clazz.getName.hashCode}")
                 if (clazz.isInterface || Modifier.isAbstract(clazz.getModifiers))
                     throw new NotSerializableException(s"Could not serialize interface or abstract class ${clazz.getName}.")
                 val desc = context.getDescription(clazz)

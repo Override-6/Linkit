@@ -13,7 +13,6 @@
 package fr.linkit.engine.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
-import fr.linkit.engine.connection.packet.persistence.v3.DefaultPersistenceContext.ObjectHandledClass
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, SequencePersistor}
 
 import scala.collection.mutable
@@ -32,22 +31,26 @@ class DefaultPersistenceContext extends PersistenceContext {
     }
 
     override def getPersistence(clazz: Class[_]): ObjectPersistor[Any] = {
-        def getPersistenceRecursively(superClass: Class[_]): (ObjectPersistor[Any], HandledClass) = {
-            if (superClass == null)
-                return (new DefaultObjectPersistor(), ObjectHandledClass)
+        var superClass = clazz
+        @inline def makeLoop(): ObjectPersistor[Any] = {
             val interfaces = superClass.getInterfaces
             for (interface <- interfaces) {
                 val opt = persistors.get(interface.getName)
                 if (opt.exists(_._1.willHandleClass(clazz)))
-                    return opt.get
+                    return opt.get._1
             }
-            val (persistor, handledClass) = persistors.getOrElse(superClass.getName, getPersistenceRecursively(superClass.getSuperclass))
-            if ((clazz eq superClass) || (handledClass.extendedClassEnabled && persistor.willHandleClass(clazz)))
-                (persistor, handledClass)
-            else getPersistenceRecursively(superClass.getSuperclass)
+            val opt = persistors.get(superClass.getName)
+            if ((clazz eq superClass) || opt.exists(p => p._2.extendedClassEnabled && p._1.willHandleClass(clazz)))
+                opt.map(_._1).orNull
+            else null
         }
-
-        getPersistenceRecursively(clazz)._1
+        while (superClass != null) {
+            val result = makeLoop()
+            if (result != null)
+                return result
+            superClass = superClass.getSuperclass
+        }
+        new DefaultObjectPersistor
     }
 
     addPersistence(new SequencePersistor)

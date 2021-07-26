@@ -21,7 +21,7 @@ import fr.linkit.engine.connection.packet.persistence.DefaultSerializer
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.local.utils.{PerformanceMeter, ScalaUtils}
 import fr.linkit.engine.test.classes.Player
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
@@ -52,16 +52,23 @@ class PacketTests {
 
     @Test
     def complexPacketTest(): Unit = {
-        testPacket(ArrayBuffer(DedicatedPacketCoordinates(12, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> CacheSearchBehavior.GET_OR_OPEN), RequestPacket(1, Array(IntPacket(3)))))
+        val packet = ArrayBuffer(DedicatedPacketCoordinates(12, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> CacheSearchBehavior.GET_OR_OPEN), RequestPacket(1, Array(IntPacket(3))))
+        val perf1 = new PerformanceMeter
+        val perf2 = new PerformanceMeter
+        for (i <- 0 to 100) {
+            testPacket(packet)
+            perf2.printPerf("Serial and deserial")
+        }
+        perf1.printPerf("Total")
     }
 
     private def testPacket(obj: AnyRef): Unit = {
         val packet = RefPacket(obj)
-        println(s"Serializing packet $packet...")
+        //println(s"Serializing packet $packet...")
         val bytes = serializer.serialize(packet, true)
-        println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")
+        //println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")
         val packet2 = serializer.deserialize(bytes)
-        println(s"deserialized packet = ${packet2}")
+        //println(s"deserialized packet = ${packet2}")
     }
 
 }

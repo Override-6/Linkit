@@ -28,6 +28,7 @@ class PerformanceMeter {
         reference = now
     }
 
+    @inline
     private def now: Long = System.currentTimeMillis()
 
 }

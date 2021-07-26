@@ -17,13 +17,13 @@ class SequencePersistor extends ObjectPersistor[collection.Seq[_]] {
     private val companions = mutable.HashMap.empty[Class[_], Option[SeqFactory[CC]]]
 
     override def willHandleClass(clazz: Class[_]): Boolean = {
-            findSeqFactoryCompanion(clazz).isDefined
+        findSeqFactoryCompanion(clazz).isDefined
     }
 
     override def getSerialNode(obj: collection.Seq[_], desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): SerializerNode = {
         out => {
             out.writeClass(obj.getClass)
-            out.writeArray(obj.toArray)
+            out.writeArray(obj.toArray).writeBytes(out)
         }
     }
 
@@ -32,7 +32,7 @@ class SequencePersistor extends ObjectPersistor[collection.Seq[_]] {
         val builder = findSeqFactoryCompanion(desc.clazz)
             .getOrElse(throw new UnsupportedOperationException(s"factory not found for seq ${desc.clazz.getName}"))
             .newBuilder[AnyRef]
-        val ref = builder.result()
+        val ref     = builder.result()
         SimpleObjectDeserializerNode(ref.asInstanceOf[AnyRef]) { in =>
             val content = in.readArray[AnyRef]()
             builder.addAll(content)

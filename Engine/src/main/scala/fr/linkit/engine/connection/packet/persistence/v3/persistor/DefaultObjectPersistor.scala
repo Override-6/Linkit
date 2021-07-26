@@ -43,7 +43,7 @@ class DefaultObjectPersistor extends ObjectPersistor[Any] {
         val instance = ScalaUtils.allocate[AnyRef](desc.clazz)
         SimpleObjectDeserializerNode(instance) {
             in =>
-                println(s"Deserializing object ${desc.clazz.getName}...")
+                //println(s"Deserializing object ${desc.clazz.getName}...")
                 ArraySign.in(desc.signItemCount, in.progression, in).deserializeRef(instance)(nodes => {
                     desc.foreachDeserializableFields((i, field) => {
                         val obj = nodes(i).deserialize(in)
