@@ -12,8 +12,9 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3
 
-import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, SequencePersistor}
+import fr.linkit.api.connection.cache.repo.PuppetWrapper
+import fr.linkit.api.connection.packet.persistence.v3._
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, IterablePersistor}
 
 import scala.collection.mutable
 
@@ -30,18 +31,32 @@ class DefaultPersistenceContext extends PersistenceContext {
         descriptions.getOrElseUpdate(clazz.getName, new ClassDescription(clazz))
     }
 
-    override def getPersistence(clazz: Class[_]): ObjectPersistor[Any] = {
+    override def getPersistenceForSerialisation(clazz: Class[_]): ObjectPersistor[Any] = {
+        println(s"Getting node to serialize a ${clazz.getName}. (${clazz.getName.hashCode})")
+        getPersistence(clazz, SerialisationMethod.Serial)
+    }
+
+    override def getPersistenceForDeserialisation(clazz: Class[_]): ObjectPersistor[Any] = {
+        println(s"Getting node to deserialize a ${clazz.getName}. (${clazz.getName.hashCode})")
+        getPersistence(clazz, SerialisationMethod.Deserial)
+    }
+
+    private def getPersistence(clazz: Class[_], method: SerialisationMethod): ObjectPersistor[Any] = {
         var superClass = clazz
+
+        //FIXME this is a fast fix for Persistor priority
+        if (classOf[PuppetWrapper[_]].isAssignableFrom(clazz))
+            return persistors(classOf[PuppetWrapper[_]].getName)._1
 
         @inline def makeLoop(): ObjectPersistor[Any] = {
             val interfaces = superClass.getInterfaces
             for (interface <- interfaces) {
                 val opt = persistors.get(interface.getName)
-                if (opt.exists(_._1.willHandleClass(clazz)))
+                if (opt.exists(p => p._2.extendedClassEnabled && p._2.methods.contains(method) && p._1.willHandleClass(clazz)))
                     return opt.get._1
             }
             val opt = persistors.get(superClass.getName)
-            if ((clazz eq superClass) || opt.exists(p => p._2.extendedClassEnabled && p._1.willHandleClass(clazz)))
+            if (opt.exists(p => (p._2.extendedClassEnabled || (superClass eq clazz)) && p._2.methods.contains(method) && p._1.willHandleClass(clazz)))
                 opt.map(_._1).orNull
             else null
         }
@@ -55,8 +70,7 @@ class DefaultPersistenceContext extends PersistenceContext {
         DefaultObjectPersistor
     }
 
-    addPersistence(new SequencePersistor)
-
+    addPersistence(IterablePersistor)
 }
 
 object DefaultPersistenceContext {

@@ -12,9 +12,15 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.connection.packet.PacketException
 
 case class MalFormedPacketException(bytes: Array[Byte], msg: String) extends PacketException(msg) {
+
+    def this(buffer: ByteBuffer, msg: String) {
+        this(buffer.array().slice(buffer.position(), buffer.limit()), msg)
+    }
 
     override protected def appendMessage(sb: StringBuilder): Unit = {
         super.appendMessage(sb)

@@ -65,6 +65,8 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     protected def handleCall[R](id: Int, defaultReturnValue: R)
                                (args: Array[Any])(superCall: Array[Any] => Any): R = {
+        //if (!isInitialized) //May be here only during tests
+        //    return superCall(args).asInstanceOf[R]
         val methodBehavior   = behavior.getMethodBehavior(id).get
         val synchronizedArgs = synchronizedParams(methodBehavior, args)
         if (choreographer.isMethodExecutionForcedToLocal) {

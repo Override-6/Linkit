@@ -100,12 +100,12 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
             case None       => null
         }
 
-        import LocalResourceFolder._
+        /*import LocalResourceFolder._
         val resource  = appResources.getOrOpenThenRepresent[WrappersClassResource](getProperty("compilation.working_dir.classes"))
         val generator = new PuppetWrapperClassGenerator(compilerCenter, resource)
         generator.preGenerateClasses(
             Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter])
-        )
+        )*/
 
 
         if (pluginFolder != null) {
@@ -126,6 +126,7 @@ object LinkitApplication {
     @volatile private var instance  : LinkitApplication = _
     @volatile private var isPrepared: Boolean           = false
 
+    //TODO Private this, public for tests purposes
     def setInstance(instance: LinkitApplication): Unit = this.synchronized {
         if (this.instance != null)
             throw new IllegalAccessError("Only one LinkitApplication per JVM process is permitted.")

@@ -21,6 +21,8 @@ import java.nio.ByteBuffer
 import fr.linkit.api.connection.network.Network
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
 
+import scala.collection.mutable.ListBuffer
+
 class DefaultSerializer() extends Serializer {
 
     val context                = new DefaultPersistenceContext

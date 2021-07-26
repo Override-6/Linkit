@@ -15,11 +15,11 @@ package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationProgression}
+import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{NonObjectDeserializerNode, RawObjectNode, SizedDeserializerNode}
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode
 import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
 import fr.linkit.engine.local.utils.NumberSerializer
 
@@ -29,26 +29,26 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
 
     override def getNextDeserializationNode: DeserializerNode = {
         val buff = in.buff
-        val pos  = buff.position()
-        buff.get(pos) match {
-            case b if b >= ByteFlag && b <= BooleanFlag => NonObjectDeserializerNode(_.readPrimitive())
-            case StringFlag                             => NonObjectDeserializerNode(_.readString())
-            case ArrayFlag                              =>
-                buff.position(buff.position() + 1)
-                ArrayPersistence.deserialize(in)
-            case HeadedObjectFlag                       =>
-                buff.position(buff.position() + 1)
-                getHeaderObjectNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
+        buff.get match {
+            case b if b >= ByteFlag && b <= BooleanFlag =>
+                buff.position(buff.position() - 1)
+                NonObjectDeserializerNode(_.readPrimitive())
+            case StringFlag                             =>
+                buff.position(buff.position() - 1)
+                NonObjectDeserializerNode(_.readString())
+            case ArrayFlag                              => ArrayPersistence.deserialize(in)
+            case HeadedObjectFlag                       => getHeaderObjectNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
             case NullFlag                               => RawObjectNode(null)
-            case _                                      =>
+            case ObjectFlag                             =>
                 val classCode   = buff.getInt
                 val objectClass = ClassMappings.getClass(classCode)
                 if (objectClass == null)
                     throw new ClassNotMappedException(s"classCode $classCode is not mapped.")
                 if (objectClass.isEnum)
                     NonObjectDeserializerNode(_.readEnum(hint = objectClass))
-                else context.getPersistence(objectClass)
+                else context.getPersistenceForDeserialisation(objectClass)
                     .getDeserialNode(context.getDescription(objectClass), context, this)
+            case flag                                   => throw new MalFormedPacketException(buff, s"Unknown flag '$flag' at start of node expression.")
         }
     }
 

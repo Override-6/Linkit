@@ -20,5 +20,7 @@ trait PersistenceContext {
 
     def getDescription(clazz: Class[_]): SerializableClassDescription
 
-    def getPersistence(clazz: Class[_]): ObjectPersistor[Any]
+    def getPersistenceForSerialisation(clazz: Class[_]): ObjectPersistor[Any]
+
+    def getPersistenceForDeserialisation(clazz: Class[_]): ObjectPersistor[Any]
 }

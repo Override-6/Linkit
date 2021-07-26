@@ -12,16 +12,16 @@
 
 package fr.linkit.api.connection.packet.persistence.v3
 
-case class HandledClass(className: String, extendedClassEnabled: Boolean) {
+case class HandledClass(className: String, extendedClassEnabled: Boolean, methods: Seq[SerialisationMethod]) {
 
     override def hashCode(): Int = className.hashCode
 
 }
 
 object HandledClass {
-    implicit def fromClassName(pair: (String, Boolean)): HandledClass = new HandledClass(pair._1, pair._2)
+    implicit def fromClassName(pair: (String, (Boolean, Seq[SerialisationMethod]))): HandledClass = new HandledClass(pair._1, pair._2._1, pair._2._2)
 
-    implicit def fromClass(pair: (Class[_], Boolean)): HandledClass = new HandledClass(pair._1.getName, pair._2)
+    implicit def fromClass(pair: (Class[_], (Boolean, Seq[SerialisationMethod]))): HandledClass = new HandledClass(pair._1.getName, pair._2._1, pair._2._2)
 
-    implicit def apply(clazz: Class[_], extendedClassEnabled: Boolean): HandledClass = new HandledClass(clazz.getName, extendedClassEnabled)
+    def apply(clazz: Class[_], extendedClassEnabled: Boolean, methods: Seq[SerialisationMethod]): HandledClass = new HandledClass(clazz.getName, extendedClassEnabled, methods)
 }

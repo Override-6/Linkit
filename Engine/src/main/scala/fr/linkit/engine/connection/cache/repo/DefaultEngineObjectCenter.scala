@@ -153,7 +153,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
         ensureNotWrapped(obj)
 
         if (treeViewPath.isEmpty)
-            throw new IllegalArgumentException("Synchronized object's tree view path must not be empty.")
+            throw new IllegalArgumentException("Synchronized object's tree view path may not be empty.")
 
         if (obj == null)
             throw new NullPointerException

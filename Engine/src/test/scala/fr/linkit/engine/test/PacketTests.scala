@@ -14,8 +14,11 @@ package fr.linkit.engine.test
 
 import fr.linkit.api.connection.cache.CacheSearchBehavior
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
+import fr.linkit.engine.connection.cache.repo.CacheRepoContent
+import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
+import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.persistence.DefaultSerializer
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
@@ -46,8 +49,8 @@ class PacketTests {
 
     @Test
     def moreComplexPacketTest(): Unit = {
-        val player = Player(50, "test", "test", 50, 50)
-        testPacket(Array("jammy" -> player, (player, player)))
+        val obj = Array(AnyRefPacket(Some(CacheRepoContent(Array(PuppetProfile(Array[Int](1, 3, 5), ListBuffer(), "TestServer1"))))))
+        testPacket(obj)
     }
 
     @Test

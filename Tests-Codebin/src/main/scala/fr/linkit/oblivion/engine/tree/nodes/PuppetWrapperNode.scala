@@ -17,7 +17,7 @@ import fr.linkit.api.connection.cache.repo.description.PuppeteerInfo
 import fr.linkit.api.connection.network.Network
 import fr.linkit.oblivion.api.tree._
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.repo.{DefaultEngineObjectCenter, NonSynchronizedObjectWrapper}
+import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter
 import fr.linkit.engine.local.utils.NumberSerializer
 
 class PuppetWrapperNode(network: Network) extends NodeFactory[PuppetWrapper[_]] {

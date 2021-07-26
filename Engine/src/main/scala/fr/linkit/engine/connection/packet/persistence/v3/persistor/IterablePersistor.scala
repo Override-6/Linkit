@@ -1,35 +1,36 @@
 package fr.linkit.engine.connection.packet.persistence.v3.persistor
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
-import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
+import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.SimpleObjectSerializerNode
 import fr.linkit.engine.local.utils.{JavaUtils, ScalaUtils}
 
-import scala.collection.{SeqFactory, SeqOps, mutable}
+import scala.collection.{IterableFactory, IterableOps, SeqFactory, mutable}
 
-class SequencePersistor extends ObjectPersistor[collection.Seq[_]] {
-    override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[Seq[_]], true), HandledClass(classOf[mutable.Seq[_]], true))
+object IterablePersistor extends ObjectPersistor[IterableOnce[_]] {
+    override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[IterableOnce[_]], true, Seq(SerialisationMethod.Serial, SerialisationMethod.Deserial)))
 
-    type CC[A] <: SeqOps[A, Seq, Seq[A]]
-    private val companions = mutable.HashMap.empty[Class[_], Option[SeqFactory[CC]]]
+    type CC[A] <: IterableOps[A, Seq, Seq[A]]
+    private val companions = mutable.HashMap.empty[Class[_], Option[IterableFactory[CC]]]
 
     override def willHandleClass(clazz: Class[_]): Boolean = {
-        findSeqFactoryCompanion(clazz).isDefined
+        findFactoryCompanion(clazz).isDefined
     }
 
-    override def getSerialNode(obj: collection.Seq[_], desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): SerializerNode = {
-        out => {
+    override def getSerialNode(obj: IterableOnce[_], desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+        SimpleObjectSerializerNode(out => {
             out.writeClass(obj.getClass)
-            out.writeArray(obj.toArray).writeBytes(out)
-        }
+            out.writeArray(obj.iterator.toArray).writeBytes(out)
+        })
     }
 
     override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         //TODO support sequences even if no factory is not found.
-        val builder = findSeqFactoryCompanion(desc.clazz)
+        val builder = findFactoryCompanion(desc.clazz)
             .getOrElse(throw new UnsupportedOperationException(s"factory not found for seq ${desc.clazz.getName}"))
             .newBuilder[AnyRef]
         val ref     = builder.result()
@@ -43,17 +44,16 @@ class SequencePersistor extends ObjectPersistor[collection.Seq[_]] {
         }
     }
 
-    private def findSeqFactoryCompanion(clazz: Class[_]): Option[SeqFactory[CC]] = {
+    private def findFactoryCompanion(clazz: Class[_]): Option[IterableFactory[CC]] = {
         companions.getOrElseUpdate(clazz, findFactory(clazz))
     }
 
-    private def findFactory[CC[A] <: SeqOps[A, Seq, Seq[A]]](seqType: Class[_]): Option[SeqFactory[CC]] = {
+    private def findFactory(seqType: Class[_]): Option[IterableFactory[CC]] = {
         try {
             val companionClass = Class.forName(seqType.getName + "$")
             val companion      = companionClass.getField("MODULE$").get(null)
-            //println(s"companion = ${companion}")
             companion match {
-                case e: SeqFactory[CC] => Option(e)
+                case e: IterableFactory[CC] => Option(e)
                 case _                 => None
             }
         } catch {

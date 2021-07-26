@@ -15,28 +15,28 @@ package fr.linkit.engine.connection.packet.persistence.v3.persistor
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
-import fr.linkit.api.connection.packet.persistence.v3.{HandledClass, ObjectPersistor, PersistenceContext, SerializableClassDescription}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
+import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{NullInstanceNode, SimpleObjectSerializerNode}
 import fr.linkit.engine.local.utils.ScalaUtils
 
 object DefaultObjectPersistor extends ObjectPersistor[Any] {
 
-    override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[Object], true))
+    override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[Object], true, Seq(SerialisationMethod.Deserial, SerialisationMethod.Serial)))
 
-    override def getSerialNode(obj: Any, desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): SerializerNode = {
+    override def getSerialNode(obj: Any, desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         if (obj == null || obj == None)
             return new NullInstanceNode(obj == None)
 
         val fieldValues = desc.serializableFields
-                .map(_.first.get(obj))
-        val node = ArraySign.out(fieldValues, progress).getNode
-        out => {
+            .map(_.first.get(obj))
+        val node        = ArraySign.out(fieldValues, progress).getNode
+        SimpleObjectSerializerNode(out => {
             out.writeClass(obj.getClass)
             node.writeBytes(out)
-        }
+        })
     }
 
     override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
