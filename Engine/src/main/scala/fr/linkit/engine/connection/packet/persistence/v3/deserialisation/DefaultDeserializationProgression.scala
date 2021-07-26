@@ -20,6 +20,7 @@ import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{NonObjectDeserializerNode, RawObjectNode, SizedDeserializerNode}
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.NullInstanceNode.NoneFlag
 import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
 import fr.linkit.engine.local.utils.NumberSerializer
 
@@ -38,7 +39,7 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
                 NonObjectDeserializerNode(_.readString())
             case ArrayFlag                              => ArrayPersistence.deserialize(in)
             case HeadedObjectFlag                       => getHeaderObjectNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
-            case NullFlag                               => RawObjectNode(null)
+            case NullFlag                               => RawObjectNode(if (buff.get(buff.position()) == NoneFlag) None else null)
             case ObjectFlag                             =>
                 val classCode   = buff.getInt
                 val objectClass = ClassMappings.getClass(classCode)

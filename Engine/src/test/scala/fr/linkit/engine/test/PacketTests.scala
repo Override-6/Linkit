@@ -42,7 +42,7 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        val obj = Array[Object]("KASS COUILLES", Array("dzqdzdzddzd"))
+        val obj = Array[Object](None)
         testPacket(obj)
     }
 
