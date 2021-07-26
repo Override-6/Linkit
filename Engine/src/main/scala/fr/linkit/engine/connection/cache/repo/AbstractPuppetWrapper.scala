@@ -55,11 +55,13 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
         var i = -1
+        val synchronizedParams = bhv.synchronizedParams
+        val pup = puppeteer
         objects.map(obj => {
             i += 1
-            if (!bhv.synchronizedParams(i) || obj.isInstanceOf[PuppetWrapper[_]])
+            if (!synchronizedParams(i) || obj.isInstanceOf[PuppetWrapper[_]])
                 obj
-            else puppeteer.synchronizedObj(obj)
+            else pup.synchronizedObj(obj)
         })
     }
 
@@ -69,7 +71,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
         //    return superCall(args).asInstanceOf[R]
         val methodBehavior   = behavior.getMethodBehavior(id).get
         val synchronizedArgs = synchronizedParams(methodBehavior, args)
-        if (choreographer.isMethodExecutionForcedToLocal) {
+        if (choreographer.isMethodExecutionForcedToLocal || !methodBehavior.isRMIEnabled) {
             return superCall(synchronizedArgs).asInstanceOf[R]
         }
         methodBehavior.handler

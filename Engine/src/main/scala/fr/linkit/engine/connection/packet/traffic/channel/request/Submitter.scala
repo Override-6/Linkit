@@ -20,6 +20,7 @@ import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
+import java.util.concurrent.BlockingQueue
 import scala.collection.mutable.ListBuffer
 
 sealed abstract class Submitter[P](id: Int, scope: ChannelScope) extends SimplePacketAttributes {
@@ -67,10 +68,10 @@ class ResponseSubmitter(id: Int, scope: ChannelScope) extends Submitter[Unit](id
     }
 }
 
-class RequestSubmitter(id: Int, scope: ChannelScope, pool: WorkerPool, handler: RequestPacketChannel) extends Submitter[RequestHolder](id, scope) {
+class RequestSubmitter(id: Int, scope: ChannelScope, blockingQueue: BlockingQueue[SubmitterPacket], handler: RequestPacketChannel) extends Submitter[RequestHolder](id, scope) {
 
     override protected def makeSubmit(): RequestHolder = {
-        val holder  = RequestHolder(id, pool.newBusyQueue, handler)
+        val holder  = RequestHolder(id, blockingQueue, handler)
         val request = RequestPacket(id, packets.toArray)
 
         handler.addRequestHolder(holder)

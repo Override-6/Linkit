@@ -18,6 +18,7 @@ import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.api.local.generation.cbp.ClassBlueprint
 import fr.linkit.api.local.generation.compilation.CompilationResult
 import fr.linkit.api.local.generation.compilation.access.CompilerType
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.generation.WrapperCompilationRequestFactory.DefaultClassBlueprint
 import fr.linkit.engine.connection.cache.repo.generation.bp.ScalaWrapperClassBlueprint
 import fr.linkit.engine.connection.cache.repo.generation.rectifier.ClassRectifier
@@ -49,9 +50,11 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                     lazy val result: Option[Seq[Class[PuppetWrapper[_]]]] = {
                         Some(contexts
                                 .map { desc =>
+                                    AppLogger.debug("Performing post compilation modifications in the class file...")
                                     val clazz                    = desc.clazz
                                     val wrapperClassName         = adaptClassName(clazz.getName)
                                     val loader                   = new GeneratedClassLoader(req.classDir, clazz.getClassLoader, Seq(classOf[LinkitApplication].getClassLoader))
+                                    AppLogger.debug("Modifications done. The class will be loaded.")
                                     val (byteCode, wrapperClass) = new ClassRectifier(desc, wrapperClassName, loader, clazz).rectifiedClass
                                     val wrapperClassFile         = req.classDir.resolve(wrapperClassName.replace(".", File.separator) + ".class")
                                     Files.write(wrapperClassFile, byteCode)

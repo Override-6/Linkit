@@ -23,11 +23,7 @@ case class MethodDescription(symbol: MethodSymbol,
                              classDesc: PuppetClassDescription[_]) {
 
     val methodId: Int = {
-        val parameters: Array[Type] = symbol
-                .paramLists
-                .flatten
-                .map(_.typeSignature.asSeenFrom(classDesc.classType, symbol.owner))
-                .toArray
+        val parameters: Array[Class[_]] = javaMethod.getParameterTypes
         symbol.name.toString.hashCode + hashCode(parameters)
     }
 
@@ -40,13 +36,13 @@ case class MethodDescription(symbol: MethodSymbol,
         else "nl()" //contracted call to JavaUtils.getNull
     }
 
-    private def hashCode(a: Array[Type]): Int = {
+    private def hashCode(a: Array[Class[_]]): Int = {
         if (a == null) return 0
         var result = 1
-        for (clazz <- a) {
+        for (tpe <- a) {
             result = 31 * result +
-                    (if (clazz == null) 0
-                    else clazz.typeSymbol.name.hashCode)
+                    (if (tpe == null) 0
+                    else tpe.getTypeName.hashCode)
         }
         result
     }

@@ -169,7 +169,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
             val fieldValue    = field.get(obj)
             val childTreePath = treeViewPath ++ Array(id)
             val syncValue     = genSynchronizedObject(childTreePath, fieldValue, ownerID, behaviors)
-            field.set(obj, syncValue)
+            ScalaUtils.setValue(obj, field, syncValue)
         }
         wrapper
     }

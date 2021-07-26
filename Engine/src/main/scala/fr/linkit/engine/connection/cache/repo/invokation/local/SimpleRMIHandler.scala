@@ -25,15 +25,11 @@ object SimpleRMIHandler extends RMIHandler {
         val methodBehavior = wrapper.getBehavior.getMethodBehavior(id).get
         val name           = methodBehavior.desc.javaMethod.getName
         val argsString     = args.mkString("(", ", ", ")")
-        val puppeteer      = wrapper.getPuppeteer
         AppLogger.debug(s"$name: Performing rmi call for $name$argsString (id: $id)")
         AppLogger.debug(s"MethodBehavior = $methodBehavior")
-        if (!methodBehavior.isRMIEnabled) {
-            AppLogger.debug("The call is redirected to current object...")
-            return superCall
-        }
         // From here we are sure that we want to perform a remote
         // method invocation. (A Local invocation (super.xxx()) can be added).
+        val puppeteer      = wrapper.getPuppeteer
         if (methodBehavior.invokeOnly) {
             AppLogger.debug("Invoke Only: Sending invocation request.")
             puppeteer.sendInvoke(id, args)

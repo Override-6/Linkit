@@ -25,6 +25,7 @@ import fr.linkit.engine.local.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
 
 import java.util.NoSuchElementException
+import java.util.concurrent.LinkedBlockingQueue
 import scala.collection.mutable
 
 class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) {
@@ -77,9 +78,10 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
     }
 
     def makeRequest(scope: ChannelScope): RequestSubmitter = {
-        val pool = WorkerPools.ensureCurrentIsWorker("Could not create a RequestSubmitter outside of a worker pool")
         val requestID = nextRequestID
-        new RequestSubmitter(requestID, scope, ensureCurrentIsWorker(), this)
+        //TODO Make an adaptive queue that make non WorkerPool threads wait and worker pools change task when polling.
+        val queue = WorkerPools.currentPool.map(_.newBusyQueue[SubmitterPacket]).getOrElse(new LinkedBlockingQueue[SubmitterPacket]())
+        new RequestSubmitter(requestID, scope, queue, this)
     }
 
     private def nextRequestID: Int = {

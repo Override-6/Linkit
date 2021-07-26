@@ -37,6 +37,7 @@ class InstancePuppeteer[S](channel: RequestPacketChannel,
     private  val ownerScope                            = prepareScope(ChannelScopes.retains(ownerID))
     private var puppetWrapper: S with PuppetWrapper[S] = _
 
+
     override def isCurrentEngineOwner: Boolean = ownerID == channel.traffic.currentIdentifier
 
     override def getPuppetWrapper: S with PuppetWrapper[S] = puppetWrapper

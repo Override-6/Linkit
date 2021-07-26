@@ -38,7 +38,7 @@ object ScalaWrapperMethodBlueprint {
         bindValue("GenericTypesIn" ~> getGenericParamsIn)
         bindValue("GenericTypesOut" ~> getGenericParamsOut)
         bindValue("MethodName" ~> (_.symbol.name.toString))
-        bindValue("MethodID" ~> (_.methodId.toString))
+        bindValue("MethodID" ~> (m => m.methodId.toString))
         bindValue("ParamsIn" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), true, false)))
         bindValue("ParamsOut" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), false, true)))
         bindValue("ParamsOutFlatten" ~> (getParamsOutFlatten(_, false)))

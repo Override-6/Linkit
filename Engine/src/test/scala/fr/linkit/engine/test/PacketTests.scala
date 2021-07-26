@@ -26,10 +26,10 @@ import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.{PerformanceMeter, ScalaUtils}
 import fr.linkit.engine.test.PacketTests.testPacket
-import fr.linkit.engine.test.classes.Player
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 
+import scala.collection.mutable
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -42,7 +42,7 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        val obj = Array[Object](None)
+        val obj = mutable.HashSet("SALUT", "LES", "GENS")
         testPacket(obj)
     }
 
