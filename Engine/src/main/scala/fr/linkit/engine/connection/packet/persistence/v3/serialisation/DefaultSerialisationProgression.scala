@@ -27,15 +27,15 @@ class DefaultSerialisationProgression(override val context: PersistenceContext,
     override def getSerializationNode(obj: Any): SerializerNode = {
         obj match {
             case null | None                          => new NullInstanceNode(obj == None)
-            case i if UnWrapper.isPrimitiveWrapper(i) => out.writePrimitive(i.asInstanceOf[AnyVal])
-            case e: Enum[_]                           => SimpleObjectSerializerNode(out.writeEnum(e))
-            case str: String                          => out.writeString(str)
-            case array: Array[_]                      => out.writeArray(array)
+            case i if UnWrapper.isPrimitiveWrapper(i) => out.primitiveNode(i.asInstanceOf[AnyVal])
+            case e: Enum[_]                           => SimpleObjectSerializerNode(out.enumNode(e))
+            case str: String                          => out.stringNode(str)
+            case array: Array[_]                      => out.arrayNode(array)
             case _                                    =>
                 val clazz = obj.getClass
                 //println(s"Getting node for class '${clazz.getName}...' (class code = ${clazz.getName.hashCode}")
                 if (clazz.isArray) //the above match does not works for primitive arrays
-                    return out.writeArray(obj.asInstanceOf[Array[_]])
+                    return out.arrayNode(obj.asInstanceOf[Array[_]])
                 if (clazz.isInterface || Modifier.isAbstract(clazz.getModifiers))
                     throw new NotSerializableException(s"Could not serialize interface or abstract class ${clazz.getName}.")
                 val desc = context.getDescription(clazz)

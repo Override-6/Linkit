@@ -27,13 +27,13 @@ class DefaultSerialisationOutputStream(override val buff: ByteBuffer,
 
     override val progression = new DefaultSerialisationProgression(context, pool, this)
 
-    override def writeObject(obj: Any): SerializerNode = pool.checkNode(obj, this) { out =>
+    override def objectNode(obj: Any): SerializerNode = pool.checkNode(obj, this) { out =>
         progression.getSerializationNode(obj, out, progression).writeBytes(out)
     }
 
     override def writeClass(clazz: Class[_]): Unit = buff.putInt(clazz.getName.hashCode)
 
-    override def writePrimitive(anyVal: AnyVal): SerializerNode = pool.checkNode(anyVal, this) { out => {
+    override def primitiveNode(anyVal: AnyVal): SerializerNode = pool.checkNode(anyVal, this) { out => {
         val (bytes, flag) = anyVal match {
             case i: Int     => (NumberSerializer.serializeNumber(i, true), IntFlag)
             case b: Byte    => (NumberSerializer.serializeNumber(b, true), ByteFlag)
@@ -48,15 +48,15 @@ class DefaultSerialisationOutputStream(override val buff: ByteBuffer,
     }
     }
 
-    override def writeString(str: String): SerializerNode = pool.checkNode(str, this) { out =>
+    override def stringNode(str: String): SerializerNode = pool.checkNode(str, this) { out =>
         out.write(StringFlag +: str.getBytes())
     }
 
-    override def writeArray(array: Array[_]): SerializerNode = pool.checkNode(array, this) {
+    override def arrayNode(array: Array[_]): SerializerNode = pool.checkNode(array, this) {
         ArrayPersistence.serialize(array, progression)
     }
 
-    override def writeEnum(enum: Enum[_]): SerializerNode = pool.checkNode(`enum`, this) { out =>
+    override def enumNode(enum: Enum[_]): SerializerNode = pool.checkNode(`enum`, this) { out =>
         val name     = enum.name()
         val enumType = NumberSerializer.serializeInt(enum.getClass.getName.hashCode)
         out.put(enumType).put(name.getBytes())

@@ -31,7 +31,7 @@ object ArraySign {
 
         def getNode: SerializerNode = {
             out => {
-                val pool = progress.pool
+                val pool    = progress.pool
                 val lengths = ListBuffer.empty[Int]
                 val buff    = out.buff
                 val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(buff.limit() - buff.position()), pool, progress.context)
@@ -43,7 +43,7 @@ object ArraySign {
                     val pos1 = fakeOut.position()
                     lengths += pos1 - pos0
                 })
-                val lengthsBytes = lengths.dropRight(1).flatMap(l => NumberSerializer.serializeNumber(l, true)).toArray
+                val lengthsBytes = lengths.flatMap(l => NumberSerializer.serializeNumber(l, true)).toArray
                 out.put(lengthsBytes)
                         .put(fakeOut.array(), 0, fakeOut.position())
             }
@@ -65,7 +65,7 @@ object ArraySign {
                         val nodeLength = lengths(i)
                         val limit      = nodeStart + nodeLength
                         buff.limit(limit)
-                        val node       = progress.getNextDeserializationNode
+                        val node = progress.getNextDeserializationNode
                         nodes(i) = new SizedDeserializerNode(buff.position(), limit, node)
                         nodeStart += nodeLength
                     }
@@ -82,7 +82,7 @@ object ArraySign {
             return ArraySignOut(progress, Array())
 
         val childrenNodes = new Array[SerializerNode](signItemCount)
-        val pool = progress.pool
+        val pool          = progress.pool
 
         for (i <- values.indices) {
             val fieldValue = values(i)
@@ -95,15 +95,12 @@ object ArraySign {
     }
 
     def in(signItemCount: Int, progression: DeserializationProgression, in: DeserializationInputStream): ArraySignIn = {
-        val totalItemCount = signItemCount + 1
-        if (totalItemCount == 0)
+        if (signItemCount == 0)
             return ArraySignIn(progression, Array())
 
-        val lengths = new Array[Int](totalItemCount)
-        for (i <- 0 to signItemCount) {
-            if (i != signItemCount)
-                lengths(i) = NumberSerializer.deserializeFlaggedNumber[Int](in)
-            else lengths(i) = in.limit() - in.position() - (if (i == 0) 0 else lengths.sum)
+        val lengths = new Array[Int](signItemCount)
+        for (i <- 0 until signItemCount) {
+            lengths(i) = NumberSerializer.deserializeFlaggedNumber[Int](in)
         }
 
         ArraySignIn(progression, lengths)

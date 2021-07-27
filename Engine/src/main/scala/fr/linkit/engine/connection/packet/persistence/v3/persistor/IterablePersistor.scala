@@ -6,6 +6,7 @@ import fr.linkit.api.connection.packet.persistence.v3.serialisation.Serialisatio
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
 import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
+import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.SimpleObjectSerializerNode
 import fr.linkit.engine.local.utils.{JavaUtils, ScalaUtils}
 
@@ -22,9 +23,10 @@ object IterablePersistor extends ObjectPersistor[IterableOnce[_]] {
     }
 
     override def getSerialNode(obj: IterableOnce[_], desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+        val node = ArrayPersistence.serialize(obj.iterator.toArray, progress)
         SimpleObjectSerializerNode(out => {
             out.writeClass(obj.getClass)
-            out.writeArray(obj.iterator.toArray).writeBytes(out)
+            node.writeBytes(out)
         })
     }
 
@@ -34,7 +36,7 @@ object IterablePersistor extends ObjectPersistor[IterableOnce[_]] {
             .getOrElse(throw new UnsupportedOperationException(s"factory not found for seq ${desc.clazz.getName}"))
             .newBuilder[AnyRef]
         val ref     = builder.result()
-        SimpleObjectDeserializerNode(ref.asInstanceOf[AnyRef]) { in =>
+        SimpleObjectDeserializerNode(ref) { in =>
             val content = in.readArray[AnyRef]()
             builder.addAll(content)
             val result = builder.result()

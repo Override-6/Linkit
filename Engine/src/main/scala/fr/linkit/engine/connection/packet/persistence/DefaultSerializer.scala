@@ -12,16 +12,14 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.Serializer
 import fr.linkit.engine.connection.packet.persistence.v3.DefaultPersistenceContext
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.DefaultDeserializationInputStream
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationObjectPool, DefaultSerialisationOutputStream}
-import java.nio.ByteBuffer
-
-import fr.linkit.api.connection.network.Network
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationObjectPool, DefaultSerialisationOutputStream}
 
-import scala.collection.mutable.ListBuffer
+import java.nio.ByteBuffer
 
 class DefaultSerializer() extends Serializer {
 

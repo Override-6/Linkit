@@ -94,7 +94,7 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
         val buff   = in.buff
         val length = NumberSerializer.deserializeFlaggedNumber[Int](buff)
         val count  = NumberSerializer.deserializeFlaggedNumber[Int](buff)
-        poolObject = new Array[Any](count + 1)
+        poolObject = new Array[Any](count)
         buff.limit(length + buff.position())
         var maxPos = 0
         ArraySign.in(count, this, in).deserializeRef(poolObject)(nodes => {

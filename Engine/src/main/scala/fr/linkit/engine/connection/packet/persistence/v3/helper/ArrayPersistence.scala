@@ -43,7 +43,7 @@ object ArrayPersistence {
         val signItemCount = deserializeFlaggedNumber[Int](buff)
 
         val sign   = ArraySign.in(signItemCount, in.progression, in)
-        val result = buildArray(compType, arrayDepth, signItemCount + 1)
+        val result = buildArray(compType, arrayDepth, signItemCount)
         sign.deserializeRef(result)(itemNodes => {
             var i = 0
             itemNodes.foreach(node => {
@@ -85,7 +85,7 @@ object ArrayPersistence {
         val node = ArraySign.out(array, progress).getNode
         out => {
             out.write(head)
-            out.write(NumberSerializer.serializeNumber(array.length - 1, true))
+            out.write(NumberSerializer.serializeNumber(array.length, true))
             node.writeBytes(out)
         }
     }

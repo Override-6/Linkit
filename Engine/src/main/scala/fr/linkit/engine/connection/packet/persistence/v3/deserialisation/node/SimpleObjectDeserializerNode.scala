@@ -29,5 +29,5 @@ class SimpleObjectDeserializerNode(override protected var ref: () => Any, deseri
 
 object SimpleObjectDeserializerNode {
 
-    def apply(ref: => AnyRef)(deserialize: DeserializationInputStream => Any): SimpleObjectDeserializerNode = new SimpleObjectDeserializerNode(() => ref, deserialize)
+    def apply(ref: => Any)(deserialize: DeserializationInputStream => Any): SimpleObjectDeserializerNode = new SimpleObjectDeserializerNode(() => ref, deserialize)
 }

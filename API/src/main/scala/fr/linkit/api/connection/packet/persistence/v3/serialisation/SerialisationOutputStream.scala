@@ -29,15 +29,15 @@ trait SerialisationOutputStream extends OutputStream {
 
     def writeClass(clazz: Class[_]): Unit
 
-    def writeObject(obj: Any): SerializerNode
+    def objectNode(obj: Any): SerializerNode
 
-    def writePrimitive(anyVal: AnyVal): SerializerNode
+    def primitiveNode(anyVal: AnyVal): SerializerNode
 
-    def writeString(str: String): SerializerNode
+    def stringNode(str: String): SerializerNode
 
-    def writeArray(array: Array[_]): SerializerNode
+    def arrayNode(array: Array[_]): SerializerNode
 
-    def writeEnum(enum: Enum[_]): SerializerNode
+    def enumNode(enum: Enum[_]): SerializerNode
 
 }
 

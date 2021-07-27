@@ -18,12 +18,13 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Objec
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
+import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.SimpleObjectSerializerNode
 import fr.linkit.engine.local.utils.{JavaUtils, ScalaUtils}
 
 import scala.collection.{IterableOps, MapFactory, MapOps, mutable}
 
-object MapPersistor extends ObjectPersistor[collection.Map[_, _]] {
+object ScalaMapPersistor extends ObjectPersistor[collection.Map[_, _]] {
 
     override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[collection.Map[_, _]], true, Seq(SerialisationMethod.Serial, SerialisationMethod.Deserial)))
 
@@ -37,9 +38,10 @@ object MapPersistor extends ObjectPersistor[collection.Map[_, _]] {
     }
 
     override def getSerialNode(obj: collection.Map[_, _], desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+        val node = ArrayPersistence.serialize(obj.iterator.toArray, progress)
         SimpleObjectSerializerNode(out => {
             out.writeClass(obj.getClass)
-            out.writeArray(obj.iterator.toArray).writeBytes(out)
+            node.writeBytes(out)
         })
     }
 

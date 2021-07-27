@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.packet.persistence.v3._
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, IterablePersistor, MapPersistor}
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, IterablePersistor, JavaCollectionPersistor, JavaMapPersistor, ScalaMapPersistor}
 
 import scala.collection.mutable
 
@@ -73,7 +73,9 @@ class DefaultPersistenceContext extends PersistenceContext {
     }
 
     addPersistence(IterablePersistor)
-    addPersistence(MapPersistor)
+    addPersistence(ScalaMapPersistor)
+    addPersistence(JavaCollectionPersistor)
+    addPersistence(JavaMapPersistor)
 }
 
 object DefaultPersistenceContext {
