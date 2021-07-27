@@ -12,8 +12,9 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
+import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationObjectPool, DeserializationProgression}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
@@ -23,9 +24,11 @@ import fr.linkit.engine.local.utils.NumberSerializer
 import java.nio.ByteBuffer
 
 class DefaultDeserializationInputStream(override val buff: ByteBuffer,
-                                        override val context: PacketPersistenceContext) extends DeserializationInputStream {
+                                        override val context: PacketPersistenceContext,
+                                        val coordinates: PacketCoordinates,
+                                        val progressSupplier: DefaultDeserializationInputStream => DeserializationProgression with DeserializationObjectPool) extends DeserializationInputStream {
 
-    override val progression = new DefaultDeserializationProgression(this, context)
+    override val progression: DeserializationProgression with DeserializationObjectPool = progressSupplier(this)
     progression.initPool()
 
     override def readObject[A](): A = {

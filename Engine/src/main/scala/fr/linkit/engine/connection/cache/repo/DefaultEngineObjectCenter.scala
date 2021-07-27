@@ -82,7 +82,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
         isRegistered(Array(id))
     }
 
-    override def initAsWrapper[B <: A](puppet: B, info: PuppeteerInfo): B with PuppetWrapper[B] = {
+    override def injectInTreeView[B <: A](puppet: B, info: PuppeteerInfo): B with PuppetWrapper[B] = {
         genSynchronizedObject[B](info.treeViewPath, puppet, info.owner, defaultTreeViewBehavior)
     }
 

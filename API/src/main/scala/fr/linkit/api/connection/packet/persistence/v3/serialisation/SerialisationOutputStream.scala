@@ -19,7 +19,7 @@ import java.nio.ByteBuffer
 
 trait SerialisationOutputStream extends OutputStream {
 
-    val progression: PacketSerialisationProgression
+    val progression: SerialisationProgression
 
     val buff: ByteBuffer
 

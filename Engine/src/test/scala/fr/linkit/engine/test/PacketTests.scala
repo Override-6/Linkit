@@ -17,7 +17,6 @@ import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.engine.connection.cache.repo.CacheRepoContent
 import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
-import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
@@ -72,7 +71,7 @@ object PacketTests {
     def testPacket(obj: Array[AnyRef]): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")
         val buff = ByteBuffer.allocate(1000)
-        serializer.serialize(obj, buff, true)
+        serializer.serialize(obj, DedicatedPacketCoordinates(78, "SALAM", "SALOM"), buff,  true)
         val bytes = buff.array().take(buff.position())
         buff.position(0)
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")

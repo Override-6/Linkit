@@ -2,7 +2,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.persistor
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.PacketSerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
 import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
@@ -22,7 +22,7 @@ object IterablePersistor extends ObjectPersistor[IterableOnce[_]] {
         findFactoryCompanion(clazz).isDefined
     }
 
-    override def getSerialNode(obj: IterableOnce[_], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: PacketSerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(obj: IterableOnce[_], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         val node = ArrayPersistence.serialize(obj.iterator.toArray, progress)
         SimpleObjectSerializerNode(out => {
             out.writeClass(obj.getClass)

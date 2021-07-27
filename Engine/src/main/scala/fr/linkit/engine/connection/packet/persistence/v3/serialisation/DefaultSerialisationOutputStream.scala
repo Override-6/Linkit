@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 
+import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationObjectPool, SerialisationOutputStream}
@@ -22,10 +23,11 @@ import fr.linkit.engine.local.utils.NumberSerializer
 import java.nio.ByteBuffer
 
 class DefaultSerialisationOutputStream(override val buff: ByteBuffer,
+                                       coordinates: PacketCoordinates,
                                        pool: SerialisationObjectPool,
                                        context: PacketPersistenceContext) extends SerialisationOutputStream {
 
-    override val progression = new DefaultPacketSerialisationProgression(context, pool, this)
+    override val progression = new DefaultSerialisationProgression(context, pool, coordinates, this)
 
     override def objectNode(obj: Any): SerializerNode = pool.checkNode(obj, this) { out =>
         progression.getSerializationNode(obj, out, progression).writeBytes(out)

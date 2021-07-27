@@ -10,13 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet
+package fr.linkit.api.connection.packet.persistence
 
-trait PacketCoordinates extends Serializable {
+import fr.linkit.api.connection.packet.PacketCoordinates
 
-    val injectableID: Int
-    val senderID    : String
+import java.nio.ByteBuffer
 
-    def forallConcernedTargets(action: String => Boolean): Boolean
+trait PacketSerializer extends Serializer {
+
+    def serialize(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer, withSignature: Boolean): Unit
+
+    def deserialize(buff: ByteBuffer, coordinates: PacketCoordinates)(f: Any => Unit): Unit
 
 }

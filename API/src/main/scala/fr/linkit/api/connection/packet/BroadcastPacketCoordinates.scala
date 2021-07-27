@@ -17,9 +17,15 @@ case class BroadcastPacketCoordinates(override val injectableID: Int,
                                       discardTargets: Boolean,
                                       targetIDs: String*) extends PacketCoordinates {
 
-    override def foreachConcernedTargets(action: String => Unit): Unit = {
 
+
+    override def forallConcernedTargets(action: String => Boolean): Boolean = {
+        if (discardTargets)
+            return true
+        targetIDs.forall(action)
     }
+
+    override def toString: String = s"BroadcastPacketCoordinates(injectableID: $injectableID, senderID: $senderID, discardTargets: $discardTargets, targetIDs: $targetIDs)"
 
     def listDiscarded(alreadyConnected: Seq[String]): Seq[String] = {
         if (discardTargets)
@@ -34,7 +40,5 @@ case class BroadcastPacketCoordinates(override val injectableID: Int,
 
         DedicatedPacketCoordinates(injectableID, target, senderID)
     }
-
-    override def toString: String = s"BroadcastPacketCoordinates(injectableID: $injectableID, senderID: $senderID, discardTargets: $discardTargets, targetIDs: $targetIDs)"
 }
 

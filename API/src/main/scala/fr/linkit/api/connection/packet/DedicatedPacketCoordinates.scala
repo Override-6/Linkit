@@ -18,7 +18,9 @@ case class DedicatedPacketCoordinates(override val injectableID: Int,
 
     override def toString: String = s"DedicatedPacketCoordinates(channelId: $injectableID, targetID: $targetID, senderID: $senderID)"
 
-    override def foreachConcernedTargets(action: String => Unit): Unit = action(targetID)
-
     def reversed: DedicatedPacketCoordinates = DedicatedPacketCoordinates(injectableID, senderID, targetID)
+
+    override def forallConcernedTargets(action: String => Boolean): Boolean = {
+        action(targetID)
+    }
 }

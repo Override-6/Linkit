@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.persistor
 import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.PacketSerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
@@ -26,7 +26,7 @@ object DefaultObjectPersistor extends ObjectPersistor[Any] {
 
     override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[Object], true, Seq(SerialisationMethod.Deserial, SerialisationMethod.Serial)))
 
-    override def getSerialNode(obj: Any, desc: SerializableClassDescription, context: PacketPersistenceContext, progress: PacketSerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(obj: Any, desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         if (obj == null || obj == None)
             return new NullInstanceNode(obj == None)
 

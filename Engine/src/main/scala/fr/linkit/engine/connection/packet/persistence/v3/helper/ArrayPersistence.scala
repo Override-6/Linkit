@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.helper
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.PacketSerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.RawObjectNode
@@ -75,7 +75,7 @@ object ArrayPersistence {
         RArray.newInstance(finalCompType, arrayLength).asInstanceOf[Array[_]]
     }
 
-    def serialize(array: Array[_], progress: PacketSerialisationProgression): SerializerNode = {
+    def serialize(array: Array[_], progress: SerialisationProgression): SerializerNode = {
         val (compType, depth) = getAbsoluteCompType(array)
         val arrayTypeBytes    = NumberSerializer.serializeInt(compType.getName.hashCode)
         val head              = Array(ArrayFlag) ++ arrayTypeBytes :+ depth

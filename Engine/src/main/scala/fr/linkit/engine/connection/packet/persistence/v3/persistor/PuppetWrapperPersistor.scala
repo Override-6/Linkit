@@ -6,7 +6,7 @@ import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.PacketSerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter
@@ -18,14 +18,14 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
 
     override val handledClasses: Seq[HandledClass] = Seq(classOf[PuppetWrapper[_]] -> (true, Seq(SerialisationMethod.Serial)), classOf[DetachedWrapper] -> (false, Seq(SerialisationMethod.Deserial)))
 
-    override def getSerialNode(wrapper: PuppetWrapper[_], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: PacketSerialisationProgression): ObjectSerializerNode = {
-        val puppeteerInfo = wrapper.getPuppeteerInfo
-        val cache = getCacheOfPuppeteer(puppeteerInfo, wrapper.getWrappedClass)
-        val center = cache.center
-        val node = center.findNode(puppeteerInfo.treeViewPath).get
-        //val detached = if (node.isPresentOnEngine(pro))
+    override def getSerialNode(wrapper: PuppetWrapper[_], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+        val puppeteerInfo          = wrapper.getPuppeteerInfo
+        val cache                  = getCacheOfPuppeteer(puppeteerInfo, wrapper.getWrappedClass)
+        val center                 = cache.center
+        val node                   = center.findNode(puppeteerInfo.treeViewPath).get
+        val useInstancePointerOnly = !progress.coordinates.forallConcernedTargets(!node.isPresentOnEngine(_))
 
-        val detachedWrapper = DetachedWrapper(wrapper.detachedSnapshot(), puppeteerInfo)
+        val detachedWrapper = DetachedWrapper(if (useInstancePointerOnly) null else wrapper.detachedSnapshot(), puppeteerInfo)
         SimpleObjectSerializerNode(progress.getSerializationNode(detachedWrapper))
     }
 
@@ -43,12 +43,12 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
         //println(s"initializing wrapped ${wrapped}")
         val info    = detachedWrapper.puppeteerInfo
         getCacheOfPuppeteer(info, wrapped.getClass)
-                .initAsWrapper[Any](wrapped, info)
+                .injectInTreeView[Any](wrapped, info)
     }
 
     private def getCacheOfPuppeteer(info: PuppeteerInfo, wrapperClass: Class[_]): EngineObjectCenter[Any] = {
         val family = info.cacheFamily
-        val opt = network.getCacheManager(family)
+        val opt    = network.getCacheManager(family)
         if (opt.isEmpty) {
             AppLogger.error(s"Could not synchronize Wrapper object ${wrapperClass.getName} because no cache of family $family. The object is returned as null.")
             return null

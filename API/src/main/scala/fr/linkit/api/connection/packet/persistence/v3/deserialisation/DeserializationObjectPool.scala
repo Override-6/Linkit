@@ -10,16 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.v3.serialisation
+package fr.linkit.api.connection.packet.persistence.v3.deserialisation
 
-import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 
-trait PacketSerialisationProgression {
+trait DeserializationObjectPool {
 
-    val context: PacketPersistenceContext
-    val pool: SerialisationObjectPool
+    def initPool(): Unit
 
-    def getSerializationNode(obj: Any): SerializerNode
+    def getHeaderValueNode(place: Int): DeserializerNode
 
 }

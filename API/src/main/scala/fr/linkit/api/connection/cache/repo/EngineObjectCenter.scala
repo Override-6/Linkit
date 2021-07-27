@@ -32,7 +32,7 @@ trait EngineObjectCenter[A] extends ObjectSynchronizer with PacketAttributesPres
 
     def findObject[B <: A](id: Int): Option[B with PuppetWrapper[B]]
 
-    def initAsWrapper[B <: A](puppet: B, info: PuppeteerInfo): B with PuppetWrapper[B]
+    def injectInTreeView[B <: A](puppet: B, info: PuppeteerInfo): B with PuppetWrapper[B]
 
     def getOrElse[U >: A](id: Int, orElse: => U): U = findObject(id).getOrElse(orElse)
 

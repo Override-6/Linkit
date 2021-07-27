@@ -15,8 +15,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationObjectPool, SerialisationOutputStream}
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
-import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.RawObjectNode
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultPacketSerialisationProgression.Identity
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationProgression.Identity
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{HeadedInstanceNode, NullInstanceNode}
 import fr.linkit.engine.local.utils.NumberSerializer
 
@@ -71,7 +70,8 @@ class DefaultSerialisationObjectPool() extends SerialisationObjectPool {
 
     def writePool(out: SerialisationOutputStream): Unit = {
         isWritingPool = true
-        val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(out.capacity()), this, out.progression.context)
+        val progression = out.progression
+        val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(out.capacity()), progression.coordinates, this, progression.context)
         val array   = ArraySign.out(pool.toSeq, fakeOut.progression).getNode
         array.writeBytes(fakeOut)
         out.write(NumberSerializer.serializeNumber(fakeOut.position(), true))

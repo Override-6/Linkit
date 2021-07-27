@@ -12,17 +12,20 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 
+import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationObjectPool, SerialisationOutputStream, PacketSerialisationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationObjectPool, SerialisationOutputStream, SerialisationProgression}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{NullInstanceNode, SimpleObjectSerializerNode}
 import fr.linkit.engine.local.utils.{JavaUtils, UnWrapper}
+
 import java.io.NotSerializableException
 import java.lang.reflect.Modifier
 
-class DefaultPacketSerialisationProgression(override val context: PacketPersistenceContext,
-                                            override val pool: SerialisationObjectPool,
-                                            out: SerialisationOutputStream) extends PacketSerialisationProgression {
+class DefaultSerialisationProgression(override val context: PacketPersistenceContext,
+                                      override val pool: SerialisationObjectPool,
+                                      override val coordinates: PacketCoordinates,
+                                      out: SerialisationOutputStream) extends SerialisationProgression {
 
     override def getSerializationNode(obj: Any): SerializerNode = {
         obj match {
@@ -46,7 +49,7 @@ class DefaultPacketSerialisationProgression(override val context: PacketPersiste
     }
 }
 
-object DefaultPacketSerialisationProgression {
+object DefaultSerialisationProgression {
 
     implicit class Identity(val obj: Any) {
 

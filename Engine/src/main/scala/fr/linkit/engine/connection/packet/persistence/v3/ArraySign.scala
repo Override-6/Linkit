@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationProgression}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.PacketSerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{SimpleObjectDeserializerNode, SizedDeserializerNode}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationOutputStream
@@ -27,14 +27,14 @@ sealed trait ArraySign
 
 object ArraySign {
 
-    case class ArraySignOut(progress: PacketSerialisationProgression, childrenNodes: Array[SerializerNode]) extends ArraySign {
+    case class ArraySignOut(progress: SerialisationProgression, childrenNodes: Array[SerializerNode]) extends ArraySign {
 
         def getNode: SerializerNode = {
             out => {
                 val pool    = progress.pool
                 val lengths = ListBuffer.empty[Int]
                 val buff    = out.buff
-                val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(buff.limit() - buff.position()), pool, progress.context)
+                val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(buff.limit() - buff.position()), progress.coordinates, pool, progress.context)
                 childrenNodes.foreach(node => {
                     val pos0 = fakeOut.position()
                     pool.addSerialisationDepth()
@@ -76,7 +76,7 @@ object ArraySign {
         }
     }
 
-    def out(values: Seq[_], progress: PacketSerialisationProgression): ArraySignOut = {
+    def out(values: Seq[_], progress: SerialisationProgression): ArraySignOut = {
         val signItemCount = values.length
 
         val childrenNodes = new Array[SerializerNode](signItemCount)
