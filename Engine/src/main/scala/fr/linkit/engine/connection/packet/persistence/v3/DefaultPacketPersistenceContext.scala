@@ -18,7 +18,7 @@ import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjec
 
 import scala.collection.mutable
 
-class DefaultPersistenceContext extends PersistenceContext {
+class DefaultPacketPersistenceContext extends PacketPersistenceContext {
 
     private val persistors   = mutable.HashMap.empty[String, (ObjectPersistor[Any], HandledClass)]
     private val descriptions = mutable.HashMap.empty[String, SerializableClassDescription]
@@ -78,6 +78,6 @@ class DefaultPersistenceContext extends PersistenceContext {
     addPersistence(JavaMapPersistor)
 }
 
-object DefaultPersistenceContext {
+object DefaultPacketPersistenceContext {
 
 }

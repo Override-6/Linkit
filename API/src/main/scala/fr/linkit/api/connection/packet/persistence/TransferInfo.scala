@@ -14,6 +14,8 @@ package fr.linkit.api.connection.packet.persistence
 
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 
+import java.nio.ByteBuffer
+
 trait TransferInfo {
 
     val coords: PacketCoordinates
@@ -22,6 +24,6 @@ trait TransferInfo {
 
     val packet: Packet
 
-    def makeSerial(serializer: Serializer): Array[Byte]
+    def makeSerial(serializer: Serializer, buff: ByteBuffer): Unit
 
 }

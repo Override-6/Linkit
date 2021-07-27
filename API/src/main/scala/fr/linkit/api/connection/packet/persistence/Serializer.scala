@@ -12,16 +12,16 @@
 
 package fr.linkit.api.connection.packet.persistence
 
+import java.nio.ByteBuffer
+
 trait Serializer {
 
     val signature: Array[Byte]
 
-    def serialize(serializable: Serializable, withSignature: Boolean): Array[Byte]
+    def serialize(objects: Array[AnyRef], buffer: ByteBuffer, withSignature: Boolean): Unit
 
-    def isSameSignature(bytes: Array[Byte]): Boolean
+    def isSameSignature(buffer: ByteBuffer): Boolean
 
-    def deserialize(bytes: Array[Byte]): Any
-
-    def deserializeAll(bytes: Array[Byte]): Array[Any]
+    def deserialize(buffer: ByteBuffer)(f: Any => Unit): Unit
 
 }

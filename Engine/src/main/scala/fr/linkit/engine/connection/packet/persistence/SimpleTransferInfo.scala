@@ -19,22 +19,23 @@ import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 
+import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
 case class SimpleTransferInfo(override val coords: PacketCoordinates,
                               override val attributes: PacketAttributes,
                               override val packet: Packet) extends TransferInfo {
 
-    override def makeSerial(serializer: Serializer): Array[Byte] = {
-        val buff = ArrayBuffer.empty[Serializable]
-        buff += coords
+    override def makeSerial(serializer: Serializer, buff: ByteBuffer): Unit = {
+        val packetBuff = ArrayBuffer.empty[Any]
+        packetBuff += coords
         if (attributes.nonEmpty)
-            buff += attributes
+            packetBuff += attributes
         if (packet != EmptyPacket)
-            buff += packet
+            packetBuff += packet
         InvocationChoreographer.forceLocalInvocation {
             AppLogger.debug(s"$currentTasksId <> Making simple serialize $buff...")
         }
-        serializer.serialize(buff.toArray, true)
+        serializer.serialize(packetBuff.toArray[Any], buff, true)
     }
 }

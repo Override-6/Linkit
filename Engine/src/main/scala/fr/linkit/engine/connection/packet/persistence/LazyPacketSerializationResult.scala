@@ -14,9 +14,12 @@ package fr.linkit.engine.connection.packet.persistence
 
 import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, Serializer, TransferInfo}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.engine.local.utils.NumberSerializer
+
+import java.nio.ByteBuffer
 
 case class LazyPacketSerializationResult(info: TransferInfo,
-                                         private val serializer: () => Serializer) extends PacketSerializationResult {
+                                         private val serializer: Serializer) extends PacketSerializationResult {
 
     override val coords: PacketCoordinates = info.coords
 
@@ -24,25 +27,16 @@ case class LazyPacketSerializationResult(info: TransferInfo,
 
     override val packet: Packet = info.packet
 
-    override lazy val bytes: Array[Byte] = info.makeSerial(serializer.apply())
-
-    override lazy val writableBytes: Array[Byte] = {
-        val length = bytes.length
-        Array[Byte](
-            ((length >> 24) & 0xff).toByte,
-            ((length >> 16) & 0xff).toByte,
-            ((length >> 8) & 0xff).toByte,
-            ((length >> 0) & 0xff).toByte
-        ) ++ bytes
+    override lazy val buff: ByteBuffer = {
+        val buff = ByteBuffer.allocateDirect(10000)
+        buff.position(4)
+        info.makeSerial(serializer, buff)
+        buff.putInt(0, buff.position() - 4) //write the packet's length
+        buff.flip()
     }
-
-    override def getSerializer: Serializer = this.serializer.apply()
 
 }
 
 object LazyPacketSerializationResult {
 
-    implicit def autoUseWritableBytes(result: PacketSerializationResult): Array[Byte] = {
-        result.writableBytes
-    }
 }

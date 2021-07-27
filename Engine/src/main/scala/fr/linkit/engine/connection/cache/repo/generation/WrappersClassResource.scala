@@ -33,7 +33,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
     def findWrapperClass[S](puppetClass: Class[_]): Option[Class[S with PuppetWrapper[S]]] = {
         val puppetClassName  = puppetClass.getName
         val wrapperClassName = adaptClassName(puppetClassName)
-        generatedClasses.getOrElseUpdate(wrapperClassName, {
+        generatedClasses.getOrElse(wrapperClassName, {
             val wrapperClassPath = folderPath.resolve(wrapperClassName.replace('.', File.separatorChar) + ".class")
             if (Files.notExists(wrapperClassPath))
                 null
@@ -44,6 +44,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
 
                 val classLoader = new GeneratedClassLoader(folderPath, loader, Seq(classOf[LinkitApplication].getClassLoader))
                 val clazz = Class.forName(wrapperClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]]
+                generatedClasses.put(wrapperClassName, clazz)
                 CloneHelper.prepareClass(clazz)
                 ClassMappings.putClass(clazz)
                 clazz

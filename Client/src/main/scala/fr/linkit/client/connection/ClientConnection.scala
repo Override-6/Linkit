@@ -21,16 +21,14 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, Pack
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
-import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.client.ClientApplication
-import fr.linkit.client.local.config.ClientConnectionConfiguration
 import fr.linkit.client.connection.network.ClientSideNetwork
+import fr.linkit.client.local.config.ClientConnectionConfiguration
 import fr.linkit.engine.connection.network.SimpleRemoteConsole
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
 import fr.linkit.engine.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.system.{Rules, SystemPacket}
@@ -101,7 +99,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         alive = true
 
         socket.addConnectionStateListener(tryReconnect)
-        readThread.onPacketRead = (result) => {
+        readThread.onPacketRead = result => {
             try {
                 val coordinates: DedicatedPacketCoordinates = result.coords match {
                     case d: DedicatedPacketCoordinates => d
@@ -109,7 +107,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
                 }
                 handlePacket(result.packet, result.attributes, coordinates)
             } catch {
-                case NonFatal(e) => throw new PacketException(s"Could not deserialize '${ScalaUtils.toPresentableString(result.bytes)}'", e)
+                case NonFatal(e) => throw new PacketException(s"Could not deserialize '${ScalaUtils.toPresentableString(result.buff)}'", e)
             }
         }
         readThread.start()
@@ -199,7 +197,7 @@ object ClientConnection {
         //This packet concludes phase 1 of connection's initialization.
         packetReader.nextPacketSync(result => {
             //The contains the server identifier bytes' string
-            val serverIdentifier = new String(result.bytes)
+            val serverIdentifier = ScalaUtils.toPresentableString(result.buff)
             socket.identifier = serverIdentifier
 
             //Constructing connection instance session
@@ -221,15 +219,15 @@ object ClientConnection {
     }
 
     private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(result: PacketTransferResult): Unit = {
-        val bytes  = result.bytes
-        val header = bytes(0)
-        if (bytes.length != 1 || (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused))
-            throw new ConnectionInitialisationException(s"Received unexpected welcome packet verdict format (received: ${new String(bytes)}")
+        val buff   = result.buff
+        val header = buff.get(0)
+        if (buff.capacity() != 1 || (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused))
+            throw new ConnectionInitialisationException(s"Received unexpected welcome packet verdict format (received: ${ScalaUtils.toPresentableString(buff)}")
 
         val isAccepted = header == Rules.ConnectionAccepted
         if (!isAccepted) {
-            reader.nextPacket((result) => {
-                val msg        = new String(result.bytes)
+            reader.nextPacket(result => {
+                val msg        = ScalaUtils.toPresentableString(result.buff)
                 val serverPort = socket.remoteSocketAddress().getPort
                 throw new ConnectionInitialisationException(s"Server (port: $serverPort) refused connection: $msg")
             })

@@ -12,10 +12,10 @@
 
 package fr.linkit.api.connection.packet.persistence
 
+import java.nio.ByteBuffer
+
 trait PacketSerializationResult extends PacketTransferResult {
 
-    def getSerializer: Serializer
-
-    def writableBytes: Array[Byte]
+    def buff: ByteBuffer
 
 }

@@ -12,13 +12,11 @@
 
 package fr.linkit.api.connection.packet
 
-import fr.linkit.api.connection.packet.persistence.Serializer
-
 trait PacketCoordinates extends Serializable {
 
     val injectableID: Int
     val senderID    : String
 
-    def determineSerializer(array: Array[String], raw: Serializer, cached: Serializer): Serializer
+    def foreachConcernedTargets(action: String => Unit): Unit
 
 }

@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.persistence.v3.deserialisation
 
-import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
+import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 
 import java.io.InputStream
 import java.nio.ByteBuffer
@@ -21,7 +21,7 @@ trait DeserializationInputStream extends InputStream {
 
     val progression: DeserializationProgression
     val buff: ByteBuffer
-    val context: PersistenceContext
+    val context: PacketPersistenceContext
 
     override def read(): Int = buff.getInt()
 

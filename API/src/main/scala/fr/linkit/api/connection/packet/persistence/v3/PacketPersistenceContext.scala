@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.persistence.v3
 
-trait PersistenceContext {
+trait PacketPersistenceContext {
 
     def addPersistence(persistence: ObjectPersistor[_], classes: Seq[HandledClass]): Unit
 

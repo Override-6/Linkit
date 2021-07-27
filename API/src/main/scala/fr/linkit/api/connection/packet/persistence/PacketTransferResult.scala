@@ -14,9 +14,11 @@ package fr.linkit.api.connection.packet.persistence
 
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 
+import java.nio.ByteBuffer
+
 trait PacketTransferResult {
 
-    def bytes: Array[Byte]
+    def buff: ByteBuffer
 
     def coords: PacketCoordinates
 

@@ -50,18 +50,18 @@ class SocketPacketWriter(socket: DynamicSocket,
         }
         val transferInfo = SimpleTransferInfo(coords, attributes, packet)
 
-        val writableBytes = translator.translate(transferInfo).writableBytes
-        socket.write(writableBytes)
+        val buff = translator.translate(transferInfo).buff
+        socket.write(buff)
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: String*): Unit = {
         val coords            = BroadcastPacketCoordinates(identifier, currentIdentifier, true, discardedIDs: _*)
         val transferInfo      = SimpleTransferInfo(coords, attributes, packet)
 
-        val writableBytes = translator.translate(transferInfo).writableBytes
+        val buff = translator.translate(transferInfo).buff
         if (!discardedIDs.contains(currentIdentifier))
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(coords.injectableID, currentIdentifier, currentIdentifier))
-        socket.write(writableBytes)
+        socket.write(buff)
     }
 
     override def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit = {

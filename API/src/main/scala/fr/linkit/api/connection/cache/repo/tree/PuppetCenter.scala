@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.CacheContent
 
 trait PuppetCenter {
 
-    def getNode[B](path: Array[Int]): Option[SyncNode[B]]
+    def findNode[B](path: Array[Int]): Option[SyncNode[B]]
 
     def addNode[B](path: Array[Int], obj: (Int, SyncNode[_]) => SyncNode[B]): Unit
 

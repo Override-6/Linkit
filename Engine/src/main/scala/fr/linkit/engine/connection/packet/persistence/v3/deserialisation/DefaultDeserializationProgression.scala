@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
-import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
+import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationProgression}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
@@ -24,7 +24,7 @@ import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.Null
 import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
 import fr.linkit.engine.local.utils.NumberSerializer
 
-class DefaultDeserializationProgression(in: DeserializationInputStream, context: PersistenceContext) extends DeserializationProgression {
+class DefaultDeserializationProgression(in: DeserializationInputStream, context: PacketPersistenceContext) extends DeserializationProgression {
 
     private var poolObject         : Array[Any]                   = _
     private var nonAvailableReferences: Array[ObjectDeserializerNode] = _

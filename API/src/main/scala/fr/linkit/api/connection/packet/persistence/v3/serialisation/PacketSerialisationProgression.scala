@@ -12,12 +12,12 @@
 
 package fr.linkit.api.connection.packet.persistence.v3.serialisation
 
-import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
+import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 
-trait SerialisationProgression {
+trait PacketSerialisationProgression {
 
-    val context: PersistenceContext
+    val context: PacketPersistenceContext
     val pool: SerialisationObjectPool
 
     def getSerializationNode(obj: Any): SerializerNode

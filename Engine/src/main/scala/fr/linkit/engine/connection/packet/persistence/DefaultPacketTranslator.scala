@@ -14,30 +14,19 @@ package fr.linkit.engine.connection.packet.persistence
 
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence._
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
+
+import java.nio.ByteBuffer
 
 class DefaultPacketTranslator extends PacketTranslator {
 
-    private val serializer = new DefaultSerializer()
+    private val serializer = new DefaultPacketSerializer()
 
     override def translate(packetInfo: TransferInfo): PacketSerializationResult = {
-        new LazyPacketSerializationResult(packetInfo, () => serializer)
+        new LazyPacketSerializationResult(packetInfo, serializer)
     }
 
-    override def translate(bytes: Array[Byte]): PacketDeserializationResult = {
-        new LazyPacketDeserializationResult(bytes, () => serializer)
-    }
-
-    override def translateCoords(coords: PacketCoordinates, target: String): Array[Byte] = {
-        serializer.serialize(coords, false)
-    }
-
-    override def translateAttributes(attribute: PacketAttributes, target: String): Array[Byte] = {
-        serializer.serialize(attribute, false)
-    }
-
-    override def translatePacket(packet: Packet, target: String): Array[Byte] = {
-        serializer.serialize(packet, false)
+    override def translate(buff: ByteBuffer): PacketDeserializationResult = {
+        new LazyPacketDeserializationResult(buff, serializer)
     }
 
     override def getSerializer: Serializer = serializer

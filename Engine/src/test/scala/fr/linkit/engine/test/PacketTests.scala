@@ -20,17 +20,17 @@ import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
-import fr.linkit.engine.connection.packet.persistence.DefaultSerializer
+import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.utils.{PerformanceMeter, ScalaUtils}
+import fr.linkit.engine.local.utils.ScalaUtils
 import fr.linkit.engine.test.PacketTests.testPacket
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 
-import java.util
+import java.nio.ByteBuffer
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -43,10 +43,10 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        testPacket(EmptyObject())
+        testPacket(Array(EmptyObject))
     }
 
-    case class EmptyObject() {
+    object EmptyObject {
 
     }
 
@@ -59,23 +59,26 @@ class PacketTests {
     @Test
     def complexPacketTest(): Unit = {
         val packet = ArrayBuffer(DedicatedPacketCoordinates(12, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> CacheSearchBehavior.GET_OR_OPEN), RequestPacket(1, Array(IntPacket(3))))
-        testPacket(packet)
+        testPacket(Array(packet))
     }
 
 }
 
 object PacketTests {
 
-    private val serializer = new DefaultSerializer
+    private val serializer = new DefaultPacketSerializer
     serializer.context.addPersistence(new PuppetWrapperPersistor(null))
 
-    def testPacket(obj: AnyRef): Unit = {
-        val packet = RefPacket(obj)
-        println(s"Serializing packet $packet...")
-        val bytes = serializer.serialize(packet, true)
+    def testPacket(obj: Array[AnyRef]): Unit = {
+        println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")
+        val buff = ByteBuffer.allocate(1000)
+        serializer.serialize(obj, buff, true)
+        val bytes = buff.array().take(buff.position())
+        buff.position(0)
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")
-        val packet2 = serializer.deserialize(bytes)
-        println(s"deserialized packet = ${packet2}")
+        serializer.deserialize(buff)(packet2 => {
+            println(s"deserialized packet = ${packet2}")
+        })
     }
 
 }

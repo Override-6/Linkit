@@ -75,7 +75,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     }
 
     override def findObject[B <: A](id: Int): Option[B with PuppetWrapper[B]] = {
-        center.getNode[B](Array(id)).map(_.puppeteer.getPuppetWrapper)
+        center.findNode[B](Array(id)).map(_.puppeteer.getPuppetWrapper)
     }
 
     override def isRegistered(id: Int): Boolean = {
@@ -87,7 +87,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     }
 
     private def isRegistered(path: Array[Int]): Boolean = {
-        center.getNode(path).isDefined
+        center.findNode(path).isDefined
     }
 
     private def ensureNotWrapped(any: Any): Unit = {
@@ -118,7 +118,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
             //    generator.getPuppetClass(Class.forName(puppetClassName))
             case ip: InvocationPacket =>
                 val path = ip.path
-                val node = center.getNode(path)
+                val node = center.findNode(path)
                 node.fold(AppLogger.error(s"Could not find puppet node at path ${path.mkString("$", " -> ", "")}")) {
                     case node: MemberSyncNode[_] => node.handlePacket(ip, bundle.responseSubmitter)
                     case _                       =>
@@ -185,7 +185,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
             val path   = profile.treeViewPath
             //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
             if (owner == currentIdentifier) {
-                center.getNode[A](path).fold {
+                center.findNode[A](path).fold {
                     throw new IllegalArgumentException(s"Unknown local object of path '${path.mkString("$", " -> ", "")}'")
                 }(_.chip.updateObject(puppet))
             }
@@ -200,7 +200,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     private def localRegisterRemotePuppet[B <: A : ClassTag](path: Array[Int], owner: String, puppet: B, behavior: WrapperBehavior[B]): B with PuppetWrapper[B] = {
         val isIntended = owner == currentIdentifier
 
-        var parent           = center.getNode[B](path)
+        var parent           = center.findNode[B](path)
         val treeViewBehavior = behavior.treeView
         genSynchronizedObject[B](path, puppet, owner, treeViewBehavior)
     }

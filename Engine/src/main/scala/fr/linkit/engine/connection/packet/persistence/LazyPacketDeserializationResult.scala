@@ -17,30 +17,43 @@ import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordina
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 
+import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
 
-class LazyPacketDeserializationResult(override val bytes: Array[Byte],
-                                      serializer: () => Serializer) extends PacketDeserializationResult {
+class LazyPacketDeserializationResult(override val buff: ByteBuffer,
+                                      serializer: Serializer) extends PacketDeserializationResult {
 
-    private lazy  val cache                         = serializer().deserializeAll(bytes)
+    private lazy  val cache     : Array[AnyRef]     = createCache()
     override lazy val coords    : PacketCoordinates = extract[PacketCoordinates](null)
     override lazy val attributes: PacketAttributes  = extract[PacketAttributes](SimplePacketAttributes.empty)
     override lazy val packet    : Packet            = extract[Packet](EmptyPacket).prepare()
 
     private def extract[T <: Serializable : ClassTag](orElse: => T): T = {
         val clazz       = classTag[T].runtimeClass
-        val coordsIndex = cache.indexWhere(o => clazz.isAssignableFrom(o.getClass))
+        val coordsIndex = cache.indexWhere(o => o != null && clazz.isAssignableFrom(o.getClass))
 
         if (coordsIndex < 0) {
             val alternative = orElse
             if (alternative == null)
-                throw MalFormedPacketException(bytes, s"Received unknown packet array (${cache.mkString("Array(", ", ", ")")})")
+                throw new MalFormedPacketException(buff, s"Received unexpected null item into packet array")
             else return alternative
         }
         val result = cache(coordsIndex) match {
             case e: T => e
         }
         result
+    }
+
+    private def createCache(): Array[AnyRef] = {
+        val cache = new Array[AnyRef](3)
+
+        serializer.deserialize(buff) {
+            case coords: PacketCoordinates    => cache(0) = coords
+            case attributes: PacketAttributes => cache(1) = attributes
+            case packet: Packet               => cache(2) = packet
+        }
+
+        cache
     }
 
 }

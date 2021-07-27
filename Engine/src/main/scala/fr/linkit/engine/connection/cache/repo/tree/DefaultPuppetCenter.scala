@@ -34,7 +34,7 @@ class DefaultPuppetCenter[A] extends PuppetCenter {
      */
     private val waitingChildren = mutable.HashMap.empty[Array[Int], ListBuffer[(Int, (Int, SyncNode[_]) => SyncNode[_])]]
 
-    override def getNode[B](path: Array[Int]): Option[SyncNode[B]] = puppets.get(path(0)) match {
+    override def findNode[B](path: Array[Int]): Option[SyncNode[B]] = puppets.get(path(0)) match {
         case None                           => None
         case Some(value) if path.length > 1 => value
                 .getGrandChild(path.drop(1))
@@ -51,7 +51,7 @@ class DefaultPuppetCenter[A] extends PuppetCenter {
         }
 
         val parentPath = path.dropRight(1)
-        getNode[B](parentPath)
+        findNode[B](parentPath)
                 .fold[Unit] {
                     waitingChildren.getOrElseUpdate(parentPath, ListBuffer.empty) += ((path.last, supplier))
                 } {

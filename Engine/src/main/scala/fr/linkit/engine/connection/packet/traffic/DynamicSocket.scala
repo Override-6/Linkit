@@ -14,11 +14,12 @@ package fr.linkit.engine.connection.packet.traffic
 
 import fr.linkit.api.connection.network.ExternalConnectionState
 import fr.linkit.api.local.concurrency.packetWorkerExecution
-import fr.linkit.api.local.system.{AppException, AppLogger, IllegalCloseException, JustifiedCloseable, Reason}
+import fr.linkit.api.local.system._
 import fr.linkit.engine.local.utils.{ConsumerContainer, NumberSerializer}
 
 import java.io.{BufferedOutputStream, IOException, InputStream}
 import java.net.{ConnectException, InetSocketAddress, Socket}
+import java.nio.ByteBuffer
 
 abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedCloseable {
 
@@ -30,6 +31,18 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     private val listeners = ConsumerContainer[ExternalConnectionState]()
 
     def boundIdentifier: String
+
+    def write(buff: ByteBuffer): Unit = {
+        val array = if (buff.hasArray) buff.array().take(buff.limit()) else {
+            val a   = new Array[Byte](buff.limit())
+            val pos = buff.position()
+            buff.position(0)
+            buff.get(a)
+            buff.position(pos)
+            a
+        }
+        write(array)
+    }
 
     def write(buff: Array[Byte]): Unit = {
         //val t0 = System.currentTimeMillis()

@@ -18,6 +18,7 @@ import sun.misc.Unsafe
 
 import java.io.File
 import java.lang.reflect.{Field, Modifier}
+import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
@@ -107,6 +108,12 @@ object ScalaUtils {
 
     implicit def toPresentableString(bytes: Array[Byte]): String = {
         new String(bytes)
+                .replace("\r", "R")
+                .replace("\n", "N")
+    }
+
+    def toPresentableString(buff: ByteBuffer): String = {
+        new String(buff.array().take(buff.limit()))
                 .replace("\r", "R")
                 .replace("\n", "N")
     }

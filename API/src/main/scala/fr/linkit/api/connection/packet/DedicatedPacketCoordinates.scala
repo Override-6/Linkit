@@ -12,15 +12,13 @@
 
 package fr.linkit.api.connection.packet
 
-import fr.linkit.api.connection.packet.persistence.Serializer
-
-case class DedicatedPacketCoordinates(injectableID: Int, targetID: String, senderID: String) extends PacketCoordinates {
+case class DedicatedPacketCoordinates(override val injectableID: Int,
+                                      targetID: String,
+                                      override val senderID: String) extends PacketCoordinates {
 
     override def toString: String = s"DedicatedPacketCoordinates(channelId: $injectableID, targetID: $targetID, senderID: $senderID)"
 
-    override def determineSerializer(cachedWhitelist: Array[String], raw: Serializer, cached: Serializer): Serializer = {
-        if (cachedWhitelist.contains(targetID)) cached else raw
-    }
+    override def foreachConcernedTargets(action: String => Unit): Unit = action(targetID)
 
     def reversed: DedicatedPacketCoordinates = DedicatedPacketCoordinates(injectableID, senderID, targetID)
 }

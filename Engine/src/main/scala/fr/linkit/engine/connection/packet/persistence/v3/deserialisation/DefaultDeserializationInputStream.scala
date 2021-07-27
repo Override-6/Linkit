@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
-import fr.linkit.api.connection.packet.persistence.v3.PersistenceContext
+import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
@@ -23,7 +23,7 @@ import fr.linkit.engine.local.utils.NumberSerializer
 import java.nio.ByteBuffer
 
 class DefaultDeserializationInputStream(override val buff: ByteBuffer,
-                                        override val context: PersistenceContext) extends DeserializationInputStream {
+                                        override val context: PacketPersistenceContext) extends DeserializationInputStream {
 
     override val progression = new DefaultDeserializationProgression(this, context)
     progression.initPool()

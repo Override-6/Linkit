@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.description.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.PuppetClassDescription
-import fr.linkit.engine.connection.cache.repo.generation.rectifier.ClassRectifier.{Access_Synthetic, SuperMethodModifiers}
+import fr.linkit.engine.connection.cache.repo.generation.rectifier.ClassRectifier.SuperMethodModifiers
 import javassist.bytecode.MethodInfo
 import javassist.{ClassPool, CtClass, CtMethod, LoaderClassPath}
 

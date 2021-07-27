@@ -61,7 +61,7 @@ class NetworkSharedCacheManager(override val family: String,
     @workerExecution
     override def retrieveCacheAsync[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior): A = {
         getCache0[A](cacheID, factory, behavior)((retrieveCache: () => Unit) =>
-            WorkerPools.ensureCurrentIsWorker("Please use getCache instead.").runLater(retrieveCache.apply())
+            WorkerPools.ensureCurrentIsWorker("Please use retrieveCache instead.").runLater(retrieveCache.apply())
         )
     }
 
@@ -69,7 +69,7 @@ class NetworkSharedCacheManager(override val family: String,
         LocalCacheManager
                 .findCache[A](cacheID)
                 .getOrElse {
-                    throw new NoSuchCacheException("No cache was found in the local cache manager")
+                    throw new NoSuchCacheException(s"No cache was found in the local cache manager for cache identifier $cacheID.")
                 }
     }
 

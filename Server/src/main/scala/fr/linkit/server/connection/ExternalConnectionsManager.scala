@@ -12,7 +12,7 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketTransferResult, Serializer}
+import fr.linkit.api.connection.packet.persistence.PacketTransferResult
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
@@ -111,23 +111,25 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         val candidates = connections.values
                 .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
 
-        val packetCache = new mutable.HashMap[Serializer, Array[Byte]]()
-        val attributesCache = new mutable.HashMap[Serializer, Array[Byte]]()
+        //val packetCache = new mutable.HashMap[Serializer, Array[Byte]]()
+        //val attributesCache = new mutable.HashMap[Serializer, Array[Byte]]()
 
         candidates.foreach(connection => {
-            val translator = connection.translator
+            val translator   = connection.translator
+            /*
             val connectionID = connection.boundIdentifier
-            val serializer = translator.getSerializer
+            val serializer   = translator.getSerializer
 
             if (!packetCache.contains(serializer))
                 packetCache.put(serializer, translator.translatePacket(packet, connectionID))
 
             if (!attributesCache.contains(serializer))
                 attributesCache.put(serializer, translator.translateAttributes(attributes, connectionID))
+            */
 
-            val coords = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
+            val coords       = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
             val transferInfo = SimpleTransferInfo(coords, attributes, packet)
-            val result      = translator.translate(transferInfo)
+            val result       = translator.translate(transferInfo)
             connection.send(result)
         })
     }
@@ -188,6 +190,6 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         val connection = getConnection(target)
         if (connection == null)
             throw NoSuchConnectionException(s"unknown ID '$target' to deflect packet")
-        connection.send(result.bytes)
+        connection.send(result.buff)
     }
 }

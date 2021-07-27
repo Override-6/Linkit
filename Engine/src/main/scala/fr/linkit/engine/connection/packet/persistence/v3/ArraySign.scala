@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationProgression}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.PacketSerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{SimpleObjectDeserializerNode, SizedDeserializerNode}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationOutputStream
@@ -27,7 +27,7 @@ sealed trait ArraySign
 
 object ArraySign {
 
-    case class ArraySignOut(progress: SerialisationProgression, childrenNodes: Array[SerializerNode]) extends ArraySign {
+    case class ArraySignOut(progress: PacketSerialisationProgression, childrenNodes: Array[SerializerNode]) extends ArraySign {
 
         def getNode: SerializerNode = {
             out => {
@@ -76,7 +76,7 @@ object ArraySign {
         }
     }
 
-    def out(values: Seq[_], progress: SerialisationProgression): ArraySignOut = {
+    def out(values: Seq[_], progress: PacketSerialisationProgression): ArraySignOut = {
         val signItemCount = values.length
 
         val childrenNodes = new Array[SerializerNode](signItemCount)

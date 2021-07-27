@@ -29,7 +29,7 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                     override val chip: Chip[A], //Reflective invocation
                     val descriptions: TreeViewBehavior,
                     val platformIdentifier: String,
-                    id: Int,
+                    override val id: Int,
                     @Nullable override val parent: SyncNode[_]) extends MemberSyncNode[A] {
 
     private   val ownerID: String = puppeteer.ownerID
@@ -37,13 +37,14 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
      * This seq contains all the fields synchronized of the object
      * */
     protected val members         = new mutable.HashMap[Int, SyncNode[_]]
+    private   val presence        = mutable.HashSet.empty[String]
 
     override def addChild(node: SyncNode[_]): Unit = {
         if (node.parent ne this)
             throw new UnsupportedOperationException("Attempted to add a child to this node with a different parent of this node.")
-        val last = members.put(id, node)
+        val last = members.put(node.id, node)
         if (last.isDefined)
-            throw new IllegalStateException(s"Puppet already exists at ${puppeteer.puppeteerInfo.treeViewPath.mkString("$", " -> ", s" -> $id")}")
+            throw new IllegalStateException(s"Puppet already exists at ${puppeteer.puppeteerInfo.treeViewPath.mkString("$", " -> ", s" -> $node.getID")}")
     }
 
     override def getChild[B](id: Int): Option[SyncNode[B]] = members.get(id) match {
@@ -54,7 +55,7 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
         }
     }
 
-    override def getID: Int = id
+    override def isPresentOnEngine(engineID: String): Boolean = presence.contains(engineID)
 
     override def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit = {
         if (!(packet.path sameElements treeViewPath)) {

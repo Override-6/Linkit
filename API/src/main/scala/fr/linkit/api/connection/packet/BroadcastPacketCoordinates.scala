@@ -12,15 +12,13 @@
 
 package fr.linkit.api.connection.packet
 
-import fr.linkit.api.connection.packet.persistence.Serializer
+case class BroadcastPacketCoordinates(override val injectableID: Int,
+                                      override val senderID: String,
+                                      discardTargets: Boolean,
+                                      targetIDs: String*) extends PacketCoordinates {
 
-case class BroadcastPacketCoordinates(injectableID: Int, senderID: String, discardTargets: Boolean, targetIDs: String*) extends PacketCoordinates {
+    override def foreachConcernedTargets(action: String => Unit): Unit = {
 
-    override def determineSerializer(array: Array[String], raw: Serializer, cached: Serializer): Serializer = {
-        //if there is a target that is not whitelisted, use the raw serializer
-        if (targetIDs.forall(array.contains(_)))
-            cached
-        else raw
     }
 
     def listDiscarded(alreadyConnected: Seq[String]): Seq[String] = {
@@ -31,7 +29,7 @@ case class BroadcastPacketCoordinates(injectableID: Int, senderID: String, disca
 
     def getDedicated(target: String): DedicatedPacketCoordinates = {
         if (targetIDs.contains(target) == discardTargets) {
-            throw new IllegalArgumentException("Stored packet coordinates must target at least current connection.")
+            throw new IllegalArgumentException(s"These coordinates does not target $target (discardTargets = $discardTargets).")
         }
 
         DedicatedPacketCoordinates(injectableID, target, senderID)

@@ -13,19 +13,14 @@
 package fr.linkit.api.connection.packet.persistence
 
 import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
+
+import java.nio.ByteBuffer
 
 trait PacketTranslator {
 
     def translate(packetInfo: TransferInfo): PacketSerializationResult
 
-    def translate(bytes: Array[Byte]): PacketDeserializationResult
-
-    def translateCoords(coords: PacketCoordinates, target: String): Array[Byte]
-
-    def translateAttributes(attribute: PacketAttributes, target: String): Array[Byte]
-
-    def translatePacket(packet: Packet, target: String): Array[Byte]
+    def translate(buff: ByteBuffer): PacketDeserializationResult
 
     def initNetwork(network: Network): Unit
 

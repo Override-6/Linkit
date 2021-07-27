@@ -18,6 +18,8 @@ import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.security.BytesHasher
 
+import java.nio.ByteBuffer
+
 class DefaultPacketReader(socket: DynamicSocket,
                           hasher: BytesHasher,
                           procrastinator: Procrastinator,
@@ -40,7 +42,7 @@ class DefaultPacketReader(socket: DynamicSocket,
         val bytes = hasher.deHashBytes(socket.read(nextLength))
         //NETWORK-DEBUG-MARK
         AppLogger.logDownload(socket.boundIdentifier, bytes)
-        val result = translator.translate(bytes)
+        val result = translator.translate(ByteBuffer.wrap(bytes))
         callback(result)
     }
 }

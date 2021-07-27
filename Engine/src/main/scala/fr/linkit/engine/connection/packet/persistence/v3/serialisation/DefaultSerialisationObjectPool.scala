@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{Delega
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationObjectPool, SerialisationOutputStream}
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.RawObjectNode
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationProgression.Identity
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultPacketSerialisationProgression.Identity
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{HeadedInstanceNode, NullInstanceNode}
 import fr.linkit.engine.local.utils.NumberSerializer
 

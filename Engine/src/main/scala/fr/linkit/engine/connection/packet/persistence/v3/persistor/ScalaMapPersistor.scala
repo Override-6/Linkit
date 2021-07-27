@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.persistor
 import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.PacketSerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
@@ -37,7 +37,7 @@ object ScalaMapPersistor extends ObjectPersistor[collection.Map[_, _]] {
         findFactoryCompanion(clazz).isDefined
     }
 
-    override def getSerialNode(obj: collection.Map[_, _], desc: SerializableClassDescription, context: PersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(obj: collection.Map[_, _], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: PacketSerialisationProgression): ObjectSerializerNode = {
         val node = ArrayPersistence.serialize(obj.iterator.toArray, progress)
         SimpleObjectSerializerNode(out => {
             out.writeClass(obj.getClass)
@@ -45,7 +45,7 @@ object ScalaMapPersistor extends ObjectPersistor[collection.Map[_, _]] {
         })
     }
 
-    override def getDeserialNode(desc: SerializableClassDescription, context: PersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
+    override def getDeserialNode(desc: SerializableClassDescription, context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         //TODO support sequences even if no factory is not found.
         val builder = findFactoryCompanion(desc.clazz)
                 .getOrElse(throw new UnsupportedOperationException(s"factory not found for seq ${desc.clazz.getName}"))

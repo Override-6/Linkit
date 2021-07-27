@@ -31,6 +31,7 @@ import fr.linkit.engine.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
+import java.nio.ByteBuffer
 import scala.reflect.ClassTag
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
@@ -112,8 +113,8 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         session.send(result)
     }
 
-    private[connection] def send(bytes: Array[Byte]): Unit = {
-        session.send(bytes)
+    private[connection] def send(buff: ByteBuffer): Unit = {
+        session.send(buff)
     }
 
     @workerExecution

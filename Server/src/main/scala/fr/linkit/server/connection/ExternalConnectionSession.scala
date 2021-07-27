@@ -12,7 +12,7 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.network.{ExternalConnectionState, Engine}
+import fr.linkit.api.connection.network.{Engine, ExternalConnectionState}
 import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
@@ -26,6 +26,7 @@ import fr.linkit.server.connection.network.ServerSideNetwork
 import fr.linkit.server.local.task.ConnectionTasksHandler
 
 import java.net.Socket
+import java.nio.ByteBuffer
 
 case class ExternalConnectionSession private(boundIdentifier: String,
                                              private val socket: SocketContainer,
@@ -50,13 +51,13 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     def getSocketState: ExternalConnectionState = socket.getState
 
     def send(result: PacketSerializationResult): Unit = {
-        socket.write(result.writableBytes)
+        socket.write(result.buff)
         //val event = PacketEvents.packetWritten(result)
         //server.eventNotifier.notifyEvent(server.packetHooks, event)
     }
 
-    def send(bytes: Array[Byte]): Unit = {
-        socket.write(NumberSerializer.serializeInt(bytes.length) ++ bytes)
+    def send(buff: ByteBuffer): Unit = {
+        socket.write(buff)
     }
 
     def updateSocket(socket: Socket): Unit = this.socket.set(socket)

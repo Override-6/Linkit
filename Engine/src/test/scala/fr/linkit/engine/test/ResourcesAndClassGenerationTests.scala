@@ -28,7 +28,7 @@ import fr.linkit.engine.connection.cache.repo.description.{SimplePuppetClassDesc
 import fr.linkit.engine.connection.cache.repo.generation.{CloneHelper, PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.connection.cache.repo.invokation.remote.InstancePuppeteer
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
-import fr.linkit.engine.connection.packet.persistence.DefaultSerializer
+import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
 import fr.linkit.engine.connection.packet.traffic.channel.request.ResponsePacket
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
@@ -36,14 +36,14 @@ import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.ScalaUtils
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
-import fr.linkit.engine.test.classes.ScalaClass
+import fr.linkit.engine.test.classes.{Player, ScalaClass}
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
+
 import java.util
 import java.util.concurrent.ThreadLocalRandom
-
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
@@ -90,7 +90,7 @@ class ResourcesAndClassGenerationTests {
         val wrapper = forObject(new util.ArrayList[String]())
 
         val packet          = ArrayBuffer(wrapper, wrapper)
-        PacketTests.testPacket(packet)
+        PacketTests.testPacket(Array(packet))
     }
 
     @Test
@@ -126,11 +126,8 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = InvocationChoreographer.forceLocalInvocation {
-        val obj = forObject(ListBuffer.empty[String])
-
+        val obj = forObject(Player(7, "Salut", "Hey", 891, 45))
         println(s"result = ${obj}")
-        val content = obj.toArray
-        println(s"content = ${content}")
     }
 
 

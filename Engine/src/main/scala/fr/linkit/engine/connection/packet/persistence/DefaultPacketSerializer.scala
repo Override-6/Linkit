@@ -14,42 +14,47 @@ package fr.linkit.engine.connection.packet.persistence
 
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.Serializer
-import fr.linkit.engine.connection.packet.persistence.v3.DefaultPersistenceContext
+import fr.linkit.engine.connection.packet.persistence.v3.DefaultPacketPersistenceContext
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.DefaultDeserializationInputStream
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationObjectPool, DefaultSerialisationOutputStream}
 
 import java.nio.ByteBuffer
 
-class DefaultSerializer() extends Serializer {
+class DefaultPacketSerializer extends Serializer {
 
-    val context                = new DefaultPersistenceContext
+    val context = new DefaultPacketPersistenceContext()
     override val signature: Array[Byte] = Array(4)
 
     private var network: Network = _
 
-    override def serialize(serializable: Serializable, withSignature: Boolean): Array[Byte] = {
-        val pool     = new DefaultSerialisationObjectPool()
-        val poolStream     = new DefaultSerialisationOutputStream(ByteBuffer.allocate(10000), pool, context)
-        val bodyStream     = new DefaultSerialisationOutputStream(ByteBuffer.allocate(10000), pool, context)
-        val rootNode = bodyStream.progression.getSerializationNode(serializable)
-        rootNode.writeBytes(bodyStream)
+    override def serialize(objects: Array[AnyRef], buff: ByteBuffer, withSignature: Boolean): Unit = {
+        val pool       = new DefaultSerialisationObjectPool()
+        val poolStream = new DefaultSerialisationOutputStream(buff, pool, context)
+        val bodyStream = new DefaultSerialisationOutputStream(ByteBuffer.allocateDirect(buff.capacity() / 2), pool, context)
+        objects
+                .map(obj => bodyStream.progression.getSerializationNode(obj))
+                .foreach(_.writeBytes(bodyStream))
         pool.writePool(poolStream)
-        val v = poolStream.put(bodyStream.array(), 0, bodyStream.position())
-            .array().take(poolStream.position())
-        v
+        bodyStream.flip()
+        poolStream.put(bodyStream)
     }
 
-    override def isSameSignature(bytes: Array[Byte]): Boolean = bytes.startsWith(signature)
-
-    override def deserialize(bytes: Array[Byte]): Any = {
-        val in = new DefaultDeserializationInputStream(ByteBuffer.wrap(bytes), context)
-        in.progression.getNextDeserializationNode
-                .deserialize(in)
+    override def isSameSignature(buff: ByteBuffer): Boolean = {
+        val header = new Array[Byte](signature.length)
+        buff.get(0, header)
+        header sameElements signature
     }
 
-    override def deserializeAll(bytes: Array[Byte]): Array[Any] = {
-        deserialize(bytes).asInstanceOf[Array[Any]]
+    override def deserialize(buff: ByteBuffer)(f: Any => Unit): Unit = {
+        val in = new DefaultDeserializationInputStream(buff, context)
+        val lim = buff.limit()
+        while (lim > buff.position() && buff.get(buff.position()) != 0) {
+            val obj = in.progression.getNextDeserializationNode
+                    .deserialize(in)
+            buff.limit(lim)
+            f(obj)
+        }
     }
 
     def initNetwork(network: Network): Unit = {
