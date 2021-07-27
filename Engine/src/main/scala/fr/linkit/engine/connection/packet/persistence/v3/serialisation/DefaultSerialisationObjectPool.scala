@@ -15,8 +15,9 @@ package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationObjectPool, SerialisationOutputStream}
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
+import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.RawObjectNode
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationProgression.Identity
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.HeadedInstanceNode
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{HeadedInstanceNode, NullInstanceNode}
 import fr.linkit.engine.local.utils.NumberSerializer
 
 import java.nio.ByteBuffer
@@ -34,6 +35,8 @@ class DefaultSerialisationObjectPool() extends SerialisationObjectPool {
     private var depth: Int          = 0
 
     override def checkNode(obj: Any, out: SerialisationOutputStream)(nodeSupplier: => SerializerNode): DelegatingSerializerNode = {
+        if (obj == null || obj == None)
+            return DelegatingSerializerNode(new NullInstanceNode(obj == None))
         if (containsInstance(obj)) {
             if (isWritingPool && depth <= 1) {
                 val node = serializedInstances(obj).deserializer
@@ -85,13 +88,6 @@ class DefaultSerialisationObjectPool() extends SerialisationObjectPool {
                 delegating.delegated = {
                     new HeadedInstanceNode(pool.size - 1)
                 }
-                /*if (obj.isInstanceOf[String] || UnWrapper.isPrimitiveWrapper(obj))
-                    return delegating
-                context.getDescription(obj.getClass).serializableFields.foreach(field => {
-                    val fieldValue = field.first.get(obj)
-                    val node       = context.getSerializationNode(fieldValue, out, this)
-                    changeDelegate(fieldValue, out, node)
-                })*/
                 delegating
         }
     }

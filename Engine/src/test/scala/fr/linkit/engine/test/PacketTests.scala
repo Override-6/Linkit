@@ -21,6 +21,7 @@ import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.persistence.DefaultSerializer
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
@@ -42,18 +43,17 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        val obj = new util.HashMap[Int, String]() {
-            put(0, "GENS")
-            put(-1, "LES")
-            put(-2, "SALUT")
-        }
-        testPacket(obj)
+        testPacket(EmptyObject())
+    }
+
+    case class EmptyObject() {
+
     }
 
     @Test
     def moreComplexPacketTest(): Unit = {
         val obj = Array(AnyRefPacket(Some(CacheRepoContent(Array(PuppetProfile(Array[Int](1, 3, 5), ListBuffer(), "TestServer1"))))))
-        testPacket(obj)
+        testPacket(Array(obj, obj, obj))
     }
 
     @Test
@@ -67,6 +67,7 @@ class PacketTests {
 object PacketTests {
 
     private val serializer = new DefaultSerializer
+    serializer.context.addPersistence(new PuppetWrapperPersistor(null))
 
     def testPacket(obj: AnyRef): Unit = {
         val packet = RefPacket(obj)

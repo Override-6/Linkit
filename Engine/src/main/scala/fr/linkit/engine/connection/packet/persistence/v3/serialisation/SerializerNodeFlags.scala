@@ -26,8 +26,8 @@ object SerializerNodeFlags {
     val StringFlag: Byte = -120
     val ArrayFlag : Byte = -119
 
-    val HeadedObjectFlag: Byte = -118
-    val NullFlag        : Byte = -117
+    val HeadedValueFlag: Byte = -118
+    val NullFlag       : Byte = -117
 
     val ObjectFlag: Byte = -116
 

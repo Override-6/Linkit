@@ -11,12 +11,22 @@
  */
 
 package fr.linkit.api.connection.packet.persistence.v3.deserialisation.node
+
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 
-trait ObjectDeserializerNode extends DeserializerNode {
-    protected var ref: () => Any
+import scala.collection.mutable
 
-    def getRef: Any = ref()
+trait ObjectDeserializerNode extends DeserializerNode {
+
+    protected val listeners: mutable.ListBuffer[Any => Unit] = mutable.ListBuffer.empty
+
+    protected var ref: Any
+
+    def addOnReferenceAvailable(action: Any => Unit): Unit = {
+        if (ref == null)
+            listeners += action
+        else action(ref)
+    }
 
     override def deserialize(in: DeserializationInputStream): Any
 

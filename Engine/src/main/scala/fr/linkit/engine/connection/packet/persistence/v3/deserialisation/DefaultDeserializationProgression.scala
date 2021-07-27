@@ -26,21 +26,27 @@ import fr.linkit.engine.local.utils.NumberSerializer
 
 class DefaultDeserializationProgression(in: DeserializationInputStream, context: PersistenceContext) extends DeserializationProgression {
 
-    private var poolObject: Array[Any] = _
+    private var poolObject         : Array[Any]                   = _
+    private var nonAvailableReferences: Array[ObjectDeserializerNode] = _
 
     override def getNextDeserializationNode: DeserializerNode = {
-        val buff = in.buff
+        val buff     = in.buff
+        val startPos = buff.position()
         buff.get match {
             case b if b >= ByteFlag && b <= BooleanFlag =>
-                buff.position(buff.position() - 1)
+                buff.position(startPos)
                 NonObjectDeserializerNode(_.readPrimitive())
             case StringFlag                             =>
-                buff.position(buff.position() - 1)
+                buff.position(startPos)
                 NonObjectDeserializerNode(_.readString())
             case ArrayFlag                              => ArrayPersistence.deserialize(in)
-            case HeadedObjectFlag                       => getHeaderObjectNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
+            case HeadedValueFlag                        => getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
             case NullFlag                               => RawObjectNode(if (buff.limit() > buff.position() && buff.get(buff.position()) == NoneFlag) None else null)
             case ObjectFlag                             =>
+                if (buff.get(startPos + 1) == HeadedValueFlag) {
+                    in.position(startPos + 2)
+                    return getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
+                }
                 val classCode   = buff.getInt
                 val objectClass = ClassMappings.getClass(classCode)
                 if (objectClass == null)
@@ -56,8 +62,11 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
     }
 
     private def fillPool(nodes: Seq[DeserializerNode], postInit: Boolean): Unit = {
-        def carefulDeserial(i: Int, ref: Any, node: DeserializerNode): Unit = {
-            poolObject(i) = ref
+        def carefulDeserial(i: Int, refSetter: (Any => Unit) => Unit, node: DeserializerNode): Unit = {
+            refSetter { ref =>
+                poolObject(i) = ref
+                nonAvailableReferences(i) = null //The reference became available
+            }
             if (postInit)
                 node.deserialize(in)
         }
@@ -65,13 +74,17 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
         for (i <- nodes.indices) {
             nodes(i) match {
                 case node: ObjectDeserializerNode =>
-                    carefulDeserial(i, node.getRef, node)
+                    carefulDeserial(i, action => node.addOnReferenceAvailable(action), node)
+                    nonAvailableReferences(i) = node
                 case e: SizedDeserializerNode     =>
                     e.node match {
-                        case node: ObjectDeserializerNode => carefulDeserial(i, node.getRef, e)
+                        case node: ObjectDeserializerNode =>
+                            carefulDeserial(i, action => node.addOnReferenceAvailable(action), e)
+                            nonAvailableReferences(i) = node
                         case _                            =>
                             if (!postInit)
                                 poolObject(i) = e.deserialize(in)
+
                     }
                 case node                         =>
                     if (!postInit)
@@ -80,10 +93,12 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
         }
     }
 
-    override def getHeaderObjectNode(place: Int): DeserializerNode = {
+    override def getHeaderValueNode(place: Int): DeserializerNode = {
         val obj = poolObject(place)
         if (obj == null) {
-            throw new NullPointerException("Unexpected null item in poolObject")
+            if (nonAvailableReferences(place) == null)
+                throw new NullPointerException("Unexpected null item in poolObject")
+            else nonAvailableReferences(place)
         }
         RawObjectNode(obj)
     }
@@ -94,17 +109,24 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
         val buff   = in.buff
         val length = NumberSerializer.deserializeFlaggedNumber[Int](buff)
         val count  = NumberSerializer.deserializeFlaggedNumber[Int](buff)
-        poolObject = new Array[Any](count)
+
+        poolObject = new Array(count)
+        nonAvailableReferences = new Array(count)
+
         buff.limit(length + buff.position())
         var maxPos = 0
+
         ArraySign.in(count, this, in).deserializeRef(poolObject)(nodes => {
             fillPool(nodes, false)
             maxPos = buff.position()
             fillPool(nodes, true)
             maxPos = Math.max(maxPos, buff.position())
         }).deserialize(in)
+
         buff.limit(buff.capacity())
         buff.position(maxPos)
+
+        nonAvailableReferences = null
     }
 
 }

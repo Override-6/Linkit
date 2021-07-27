@@ -33,7 +33,7 @@ class DefaultSerialisationProgression(override val context: PersistenceContext,
             case array: Array[_]                      => out.arrayNode(array)
             case _                                    =>
                 val clazz = obj.getClass
-                //println(s"Getting node for class '${clazz.getName}...' (class code = ${clazz.getName.hashCode}")
+                println(s"Getting node for class '${clazz.getName}...' (class code = ${clazz.getName.hashCode}")
                 if (clazz.isArray) //the above match does not works for primitive arrays
                     return out.arrayNode(obj.asInstanceOf[Array[_]])
                 if (clazz.isInterface || Modifier.isAbstract(clazz.getModifiers))

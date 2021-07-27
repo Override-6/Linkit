@@ -56,6 +56,7 @@ class ResourcesAndClassGenerationTests {
     private var resources: ResourceFolder    = _
     private val app      : LinkitApplication = Mockito.mock(classOf[LinkitApplication])
 
+
     @BeforeAll
     def init(): Unit = {
         val config      = new ApplicationConfiguration {
@@ -88,7 +89,7 @@ class ResourcesAndClassGenerationTests {
     def packetTest(): Unit = InvocationChoreographer.forceLocalInvocation {
         val wrapper = forObject(new util.ArrayList[String]())
 
-        val packet          = ArrayBuffer(wrapper)
+        val packet          = ArrayBuffer(wrapper, wrapper)
         PacketTests.testPacket(packet)
     }
 
@@ -113,17 +114,6 @@ class ResourcesAndClassGenerationTests {
         obj.testRMI()
         obj.b = "Le sexe"
         println(s"ojb.b = ${obj.b}")
-    }
-
-    private def getListBuff(): ListBuffer[String] = {
-       ???
-    }
-
-    @Test
-    def wtfIsGoingOn(): Unit = {
-        println("Dumb implementation : ")
-        val test: ListBuffer[String] = getListBuff()
-        test.addOne("TETSFT")
     }
 
     class FakePuppetWrapperPersistor extends PuppetWrapperPersistor(null) {

@@ -78,8 +78,6 @@ object ArraySign {
 
     def out(values: Seq[_], progress: SerialisationProgression): ArraySignOut = {
         val signItemCount = values.length
-        if (signItemCount == 0)
-            return ArraySignOut(progress, Array())
 
         val childrenNodes = new Array[SerializerNode](signItemCount)
         val pool          = progress.pool

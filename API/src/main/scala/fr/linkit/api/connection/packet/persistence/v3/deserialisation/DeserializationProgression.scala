@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Deser
 
 trait DeserializationProgression {
 
-    def getHeaderObjectNode(place: Int): DeserializerNode
+    def getHeaderValueNode(place: Int): DeserializerNode
 
     def getNextDeserializationNode: DeserializerNode
 }

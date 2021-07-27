@@ -12,6 +12,6 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 
-case class RawObjectNode(obj: Any) extends SimpleObjectDeserializerNode(() => obj, _ => obj) {
-
+case class RawObjectNode(obj: Any) extends SimpleObjectDeserializerNode(_ => obj) {
+    setReference(obj)
 }

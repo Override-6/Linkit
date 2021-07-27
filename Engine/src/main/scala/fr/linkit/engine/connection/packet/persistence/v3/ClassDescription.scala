@@ -21,7 +21,7 @@ import java.lang.reflect.{Field, Modifier}
 
 class ClassDescription(val clazz: Class[_]) extends SerializableClassDescription {
 
-    //println(s"New class description created for $clazz")
+    println(s"New class description created for $clazz")
     val serializableFields: List[Fields] = listSerializableFields(clazz)
     val signItemCount     : Int          = serializableFields.length
     val classCode         : Array[Byte]  = NumberSerializer.serializeInt(clazz.getName.hashCode)
