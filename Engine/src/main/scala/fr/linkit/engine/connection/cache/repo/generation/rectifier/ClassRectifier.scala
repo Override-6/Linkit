@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.description.MethodDescription
 import fr.linkit.api.connection.cache.repo.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.PuppetClassDescription
-import fr.linkit.engine.connection.cache.repo.generation.rectifier.ClassRectifier.SuperMethodModifiers
+import fr.linkit.engine.connection.cache.repo.generation.rectifier.ClassRectifier.{Access_Synthetic, SuperMethodModifiers}
 import javassist.bytecode.MethodInfo
 import javassist.{ClassPool, CtClass, CtMethod, LoaderClassPath}
 
@@ -47,11 +47,11 @@ class ClassRectifier(desc: PuppetClassDescription[_], puppetClassName: String, c
         def fixMethod(desc: MethodDescription): Unit = {
             val javaMethod   = desc.javaMethod
             val name         = javaMethod.getName
-            val superfunName = s"super$$$name"
+            val superfunName = s"super$$$name$$"
             val superfunInfo = new MethodInfo(ctClass.getClassFile.getConstPool, superfunName, generateSuperFunDescriptor(javaMethod))
             if (superDescriptors.contains(superfunName + superfunInfo.getDescriptor))
                 return
-            val anonfun  = getAnonFun(javaMethod, methodNames.count(_ == javaMethod.getName))
+            val anonfun  = getAnonFun(desc)
             val superfun = CtMethod.make(superfunInfo, ctClass)
             superfun.setModifiers(SuperMethodModifiers)
 
@@ -63,23 +63,37 @@ class ClassRectifier(desc: PuppetClassDescription[_], puppetClassName: String, c
             superDescriptors += superfunName + superfunInfo.getDescriptor
             methodNames += javaMethod.getName
         }
-
         for (desc <- methodDescs) {
             fixMethod(desc)
         }
     }
 
-    private def getAnonFun(javaMethod: Method, shift: Int): CtMethod = {
-        ctClass.getDeclaredMethod("$anonfun$" + javaMethod.getName + "$" + (shift + 1))
+    private def getAnonFun(desc: MethodDescription): CtMethod = {
+        val javaMethod          = desc.javaMethod
+        val parametersTypeNames = javaMethod.getParameterTypes.map(_.getName)
+        val anonFunPrefix       = s"$$anonfun$$${javaMethod.getName}$$"
+        val filtered            = ctClass.getDeclaredMethods
+                .filter(_.getName.startsWith(anonFunPrefix))
+                .filterNot(_.getName.endsWith("adapted"))
+        val method              = filtered
+                .find { x =>
+                    val params = x.getParameterTypes.drop(1).dropRight(1)
+                    params.map(_.getName) sameElements parametersTypeNames
+                }
+                .get
+        method
     }
 
     private def getAnonFunBody(javaMethod: Method, superFun: CtMethod): String = {
 
         val params = javaMethod.getParameterTypes
-        val str    = s"$$1.${superFun.getName}(${(0 until javaMethod.getParameterCount).map(i => {
-            val clazz = params(i)
-            s"(${clazz.getTypeName}) ${getWrapperFor(clazz, s"$$2[$i]", true)}"
-        }).mkString(",")})"
+        val arrayIndex = params.length + 2
+        val str    = s"$$1.${superFun.getName}(${
+            (0 until javaMethod.getParameterCount).map(i => {
+                val clazz = params(i)
+                s"(${clazz.getTypeName}) ${getWrapperFor(clazz, s"$$$arrayIndex[$i]", true)}"
+            }).mkString(",")
+        })"
 
         if (javaMethod.getReturnType == Void.TYPE)
             s"{$str; return null;}"

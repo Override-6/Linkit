@@ -96,7 +96,7 @@ class DefaultDeserializationProgression(in: DeserializationInputStream, context:
     override def getHeaderValueNode(place: Int): DeserializerNode = {
         val obj = poolObject(place)
         if (obj == null) {
-            if (nonAvailableReferences(place) == null)
+            if (nonAvailableReferences == null || nonAvailableReferences(place) == null)
                 throw new NullPointerException("Unexpected null item in poolObject")
             else nonAvailableReferences(place)
         }

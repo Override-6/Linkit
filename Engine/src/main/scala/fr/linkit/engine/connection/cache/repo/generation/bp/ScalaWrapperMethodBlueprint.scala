@@ -47,10 +47,10 @@ object ScalaWrapperMethodBlueprint {
 
     }
 
-    private def getParamsOutFlatten(desc: MethodDescription, isForLambda: Boolean): String = {
+    private def getParamsOutFlatten(desc: MethodDescription, forLambda: Boolean): String = {
         val result = (1 to desc.javaMethod.getParameterCount)
                 .map(i => s"arg$i").mkString(", ")
-        if (isForLambda)
+        if (forLambda)
             if (result.isEmpty) result else ", " + result
         else result
     }

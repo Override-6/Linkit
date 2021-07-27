@@ -20,7 +20,8 @@ import scala.reflect.runtime.universe._
 
 case class MethodDescription(symbol: MethodSymbol,
                              javaMethod: Method,
-                             classDesc: PuppetClassDescription[_]) {
+                             classDesc: PuppetClassDescription[_],
+                             overloadOrdinal: Int) {
 
     val methodId: Int = {
         val parameters: Array[Class[_]] = javaMethod.getParameterTypes

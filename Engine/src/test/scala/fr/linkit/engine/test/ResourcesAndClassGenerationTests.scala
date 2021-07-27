@@ -128,13 +128,9 @@ class ResourcesAndClassGenerationTests {
     def generateComplexScalaClass(): Unit = InvocationChoreographer.forceLocalInvocation {
         val obj = forObject(ListBuffer.empty[String])
 
-        val serial = new DefaultSerializer()
-        serial.context.addPersistence(new FakePuppetWrapperPersistor)
-        val bytes = serial.serialize(obj, true)
-        println(s"ScalaUtils.toPresentableString(bytes) = ${ScalaUtils.toPresentableString(bytes)}")
-        val result = serial.deserialize(bytes)
-        println(s"result = ${result}")
-        result
+        println(s"result = ${obj}")
+        val content = obj.toArray
+        println(s"content = ${content}")
     }
 
 
@@ -151,10 +147,11 @@ class ResourcesAndClassGenerationTests {
 
         val resource    = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
         val generator   = new PuppetWrapperClassGenerator(new DefaultCompilerCenter, resource)
-        val puppetClass = generator.getPuppetClass[A](cl)
+        val desc = SimplePuppetClassDescription[A](cl)
+        val puppetClass = generator.getPuppetClass[A](desc)
         println(s"puppetClass = ${puppetClass}")
         val factory = AnnotationBasedMemberBehaviorFactory()
-        val pup     = new InstancePuppeteer[A](null, null, PuppeteerInfo("", 8, "", Array(1)), SimpleWrapperBehavior(SimplePuppetClassDescription[A](cl), new TreeViewDefaultBehavior(factory)))
+        val pup     = new InstancePuppeteer[A](null, null, PuppeteerInfo("", 8, "", Array(1)), SimpleWrapperBehavior(desc, new TreeViewDefaultBehavior(factory)))
         val puppet  = CloneHelper.instantiateFromOrigin[A](puppetClass, obj)
 
         puppet.initPuppeteer(pup)
