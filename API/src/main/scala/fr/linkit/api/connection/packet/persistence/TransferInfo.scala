@@ -24,6 +24,6 @@ trait TransferInfo {
 
     val packet: Packet
 
-    def makeSerial(serializer: Serializer, buff: ByteBuffer): Unit
+    def makeSerial(serializer: PacketSerializer, buff: ByteBuffer): Unit
 
 }

@@ -12,14 +12,13 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
-import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, Serializer, TransferInfo}
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
-import fr.linkit.engine.local.utils.NumberSerializer
-
 import java.nio.ByteBuffer
 
+import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketSerializer, TransferInfo}
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
+
 case class LazyPacketSerializationResult(info: TransferInfo,
-                                         private val serializer: Serializer) extends PacketSerializationResult {
+                                         private val serializer: PacketSerializer) extends PacketSerializationResult {
 
     override val coords: PacketCoordinates = info.coords
 

@@ -12,16 +12,17 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
-import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, Serializer}
+import java.nio.ByteBuffer
+
+import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketSerializer}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 
-import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
 
 class LazyPacketDeserializationResult(override val buff: ByteBuffer,
-                                      serializer: Serializer) extends PacketDeserializationResult {
+                                      serializer: PacketSerializer) extends PacketDeserializationResult {
 
     private lazy  val cache     : Array[AnyRef]     = createCache()
     override lazy val coords    : PacketCoordinates = extract[PacketCoordinates](null)
@@ -47,8 +48,9 @@ class LazyPacketDeserializationResult(override val buff: ByteBuffer,
     private def createCache(): Array[AnyRef] = {
         val cache = new Array[AnyRef](3)
 
-        serializer.deserialize(buff) {
-            case coords: PacketCoordinates    => cache(0) = coords
+        serializer.deserializePacket(buff) {
+            coords => cache(0) = coords
+        } {
             case attributes: PacketAttributes => cache(1) = attributes
             case packet: Packet               => cache(2) = packet
         }

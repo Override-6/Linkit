@@ -92,16 +92,20 @@ object ArraySign {
         ArraySignOut(progress, childrenNodes)
     }
 
-    def in(signItemCount: Int, progression: DeserializationProgression, in: DeserializationInputStream): ArraySignIn = {
+    def in(signItemCount: Int, input: DeserializationInputStream): ArraySignIn = {
+        in(signItemCount, input.progression, input)
+    }
+
+    def in(signItemCount: Int, progress: DeserializationProgression, in: DeserializationInputStream): ArraySignIn = {
         if (signItemCount == 0)
-            return ArraySignIn(progression, Array())
+            return ArraySignIn(progress, Array())
 
         val lengths = new Array[Int](signItemCount)
         for (i <- 0 until signItemCount) {
             lengths(i) = NumberSerializer.deserializeFlaggedNumber[Int](in)
         }
 
-        ArraySignIn(progression, lengths)
+        ArraySignIn(progress, lengths)
     }
 
 }

@@ -40,12 +40,12 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
                 buff.position(startPos)
                 NonObjectDeserializerNode(_.readString())
             case ArrayFlag                              => ArrayPersistence.deserialize(in)
-            case HeadedValueFlag                        => getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
+            case HeadedValueFlag                        => pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
             case NullFlag                               => RawObjectNode(if (buff.limit() > buff.position() && buff.get(buff.position()) == NoneFlag) None else null)
             case ObjectFlag                             =>
                 if (buff.get(startPos + 1) == HeadedValueFlag) {
                     in.position(startPos + 2)
-                    return getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
+                    return pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
                 }
                 val classCode   = buff.getInt
                 val objectClass = ClassMappings.getClass(classCode)

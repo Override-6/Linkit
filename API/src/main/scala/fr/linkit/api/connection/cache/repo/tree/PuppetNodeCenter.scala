@@ -10,15 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.repo
+package fr.linkit.api.connection.cache.repo.tree
 
-import fr.linkit.api.connection.cache.repo.PuppetException
+import fr.linkit.api.connection.cache.CacheContent
 
-class NoSuchPuppetException(msg: String) extends PuppetException(msg) {
+trait PuppetNodeCenter {
 
-}
+    def findNode[B](path: Array[Int]): Option[SyncNode[B]]
 
-object NoSuchPuppetException {
+    def addNode[B](path: Array[Int], obj: (Int, SyncNode[_]) => SyncNode[B]): Unit
 
-    def apply(msg: String): NoSuchPuppetException = new NoSuchPuppetException(msg)
+    def snapshotContent: CacheContent
 }

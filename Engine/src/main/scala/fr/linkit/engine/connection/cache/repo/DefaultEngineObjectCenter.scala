@@ -27,7 +27,7 @@ import fr.linkit.engine.connection.cache.repo.description.annotation.AnnotationB
 import fr.linkit.engine.connection.cache.repo.generation.{CloneHelper, PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.connection.cache.repo.invokation.local.{ObjectChip, SimpleRMIHandler}
 import fr.linkit.engine.connection.cache.repo.invokation.remote.{InstancePuppeteer, InvocationPacket}
-import fr.linkit.engine.connection.cache.repo.tree.{DefaultPuppetCenter, MemberSyncNode, PuppetNode}
+import fr.linkit.engine.connection.cache.repo.tree.{DefaultPuppetNodeCenter, MemberSyncNode, PuppetNode}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
@@ -51,8 +51,8 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
 
     import defaultTreeViewBehavior._
 
-    override val center            = new DefaultPuppetCenter[A]
-    private  val fieldRestorer     = new FieldRestorer
+    override val nodeCenter    = new DefaultPuppetNodeCenter[A]
+    private  val fieldRestorer = new FieldRestorer
     private  val currentIdentifier = channel.traffic.currentIdentifier
 
     override def postObject[B <: A : ClassTag : TypeTag](id: Int, obj: B): B with PuppetWrapper[B] = {
@@ -75,7 +75,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     }
 
     override def findObject[B <: A](id: Int): Option[B with PuppetWrapper[B]] = {
-        center.findNode[B](Array(id)).map(_.puppeteer.getPuppetWrapper)
+        nodeCenter.findNode[B](Array(id)).map(_.puppeteer.getPuppetWrapper)
     }
 
     override def isRegistered(id: Int): Boolean = {
@@ -87,7 +87,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     }
 
     private def isRegistered(path: Array[Int]): Boolean = {
-        center.findNode(path).isDefined
+        nodeCenter.findNode(path).isDefined
     }
 
     private def ensureNotWrapped(any: Any): Unit = {
@@ -118,7 +118,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
             //    generator.getPuppetClass(Class.forName(puppetClassName))
             case ip: InvocationPacket =>
                 val path = ip.path
-                val node = center.findNode(path)
+                val node = nodeCenter.findNode(path)
                 node.fold(AppLogger.error(s"Could not find puppet node at path ${path.mkString("$", " -> ", "")}")) {
                     case node: MemberSyncNode[_] => node.handlePacket(ip, bundle.responseSubmitter)
                     case _                       =>
@@ -134,7 +134,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
         }
     }
 
-    override def snapshotContent: CacheRepoContent[A] = center.snapshotContent
+    override def snapshotContent: CacheRepoContent[A] = nodeCenter.snapshotContent
 
     override def genSynchronizedObject[B](treeViewPath: Array[Int],
                                           obj: B,
@@ -146,7 +146,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
 
             val chip      = ObjectChip[Any](ownerID, behavior, wrapper)
             val puppeteer = wrapper.getPuppeteer
-            center.addNode(treeViewPath, (id, parent: SyncNode[_]) => new PuppetNode(puppeteer, chip, behavior.treeView, this.channel.traffic.currentIdentifier, id, parent))
+            nodeCenter.addNode(treeViewPath, (id, parent: SyncNode[_]) => new PuppetNode(puppeteer, chip, behavior.treeView, this.channel.traffic.currentIdentifier, id, parent))
         }
 
         ensureNotWrapped(obj)
@@ -185,7 +185,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
             val path   = profile.treeViewPath
             //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
             if (owner == currentIdentifier) {
-                center.findNode[A](path).fold {
+                nodeCenter.findNode[A](path).fold {
                     throw new IllegalArgumentException(s"Unknown local object of path '${path.mkString("$", " -> ", "")}'")
                 }(_.chip.updateObject(puppet))
             }
@@ -198,9 +198,6 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     }
 
     private def localRegisterRemotePuppet[B <: A : ClassTag](path: Array[Int], owner: String, puppet: B, behavior: WrapperBehavior[B]): B with PuppetWrapper[B] = {
-        val isIntended = owner == currentIdentifier
-
-        var parent           = center.findNode[B](path)
         val treeViewBehavior = behavior.treeView
         genSynchronizedObject[B](path, puppet, owner, treeViewBehavior)
     }

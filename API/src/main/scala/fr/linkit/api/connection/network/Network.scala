@@ -41,6 +41,6 @@ trait Network {
 
     def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager
 
-    def getCacheManager(family: String): Option[SharedCacheManager]
+    def findCacheManager(family: String): Option[SharedCacheManager]
 
 }

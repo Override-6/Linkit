@@ -14,7 +14,7 @@ package fr.linkit.api.connection.cache.repo
 
 import fr.linkit.api.connection.cache.SharedCache
 import fr.linkit.api.connection.cache.repo.description.{PuppeteerInfo, TreeViewBehavior, WrapperBehavior}
-import fr.linkit.api.connection.cache.repo.tree.PuppetCenter
+import fr.linkit.api.connection.cache.repo.tree.PuppetNodeCenter
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 
 import scala.reflect.ClassTag
@@ -22,7 +22,7 @@ import scala.reflect.runtime.universe._
 
 trait EngineObjectCenter[A] extends ObjectSynchronizer with PacketAttributesPresence with SharedCache {
 
-    val center: PuppetCenter
+    val nodeCenter: PuppetNodeCenter
 
     val defaultTreeViewBehavior: TreeViewBehavior
 

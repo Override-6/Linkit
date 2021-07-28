@@ -18,7 +18,7 @@ import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{RawObjectNode, SizedDeserializerNode}
 import fr.linkit.engine.local.utils.NumberSerializer
 
-class DefaultDeserializationObjectPool(in: DeserializationInputStream, progression: DeserializationProgression) extends DeserializationObjectPool {
+class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends DeserializationObjectPool {
     private var poolObject            : Array[Any]                    = _
     private var nonAvailableReferences: Array[ObjectDeserializerNode] = _
 
@@ -64,7 +64,7 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream, progressi
         RawObjectNode(obj)
     }
 
-    override def initPool(): Unit = {
+    override def initPool(progess: DeserializationProgression): Unit = {
         if (poolObject != null)
             throw new IllegalStateException("This object pool is already initialised !")
         val buff   = in.buff
@@ -77,7 +77,7 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream, progressi
         buff.limit(length + buff.position())
         var maxPos = 0
 
-        ArraySign.in(count, progression, in).deserializeRef(poolObject)(nodes => {
+        ArraySign.in(count, progess, in).deserializeRef(poolObject)(nodes => {
             fillPool(nodes, false)
             maxPos = buff.position()
             fillPool(nodes, true)

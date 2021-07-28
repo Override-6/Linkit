@@ -15,15 +15,15 @@ package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationObjectPool, SerialisationOutputStream, SerialisationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerializationObjectPool, SerialisationOutputStream, SerialisationProgression}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{NullInstanceNode, SimpleObjectSerializerNode}
 import fr.linkit.engine.local.utils.{JavaUtils, UnWrapper}
 
 import java.io.NotSerializableException
 import java.lang.reflect.Modifier
 
-class DefaultSerialisationProgression(override val context: PacketPersistenceContext,
-                                      override val pool: SerialisationObjectPool,
+class DefaultSerializationProgression(override val context: PacketPersistenceContext,
+                                      override val pool: SerializationObjectPool,
                                       override val coordinates: PacketCoordinates,
                                       out: SerialisationOutputStream) extends SerialisationProgression {
 
@@ -49,7 +49,7 @@ class DefaultSerialisationProgression(override val context: PacketPersistenceCon
     }
 }
 
-object DefaultSerialisationProgression {
+object DefaultSerializationProgression {
 
     implicit class Identity(val obj: Any) {
 

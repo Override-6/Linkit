@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.repo.tree
 import fr.linkit.api.connection.cache.repo.description.TreeViewBehavior
 import fr.linkit.api.connection.cache.repo.tree.SyncNode
 import fr.linkit.api.connection.cache.repo.{Chip, PuppetWrapper, Puppeteer}
-import fr.linkit.engine.connection.cache.repo.NoSuchPuppetException
+import fr.linkit.engine.connection.cache.repo.NoSuchPuppetNodeException
 import fr.linkit.engine.connection.cache.repo.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
@@ -32,12 +32,19 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                     override val id: Int,
                     @Nullable override val parent: SyncNode[_]) extends MemberSyncNode[A] {
 
+    /**
+     * The identifier of the engine that posted this object.
+     */
     private   val ownerID: String = puppeteer.ownerID
     /**
-     * This seq contains all the fields synchronized of the object
+     * This map contains all the synchronized object of the parent object
+     * including method return values and parameters and class fields
      * */
     protected val members         = new mutable.HashMap[Int, SyncNode[_]]
-    private   val presence        = mutable.HashSet.empty[String]
+    /**
+     * This set stores every engine where this object is synchronized.
+     * */
+    private   val presences        = mutable.HashSet[String](ownerID)
 
     override def addChild(node: SyncNode[_]): Unit = {
         if (node.parent ne this)
@@ -55,7 +62,9 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
         }
     }
 
-    override def isPresentOnEngine(engineID: String): Boolean = presence.contains(engineID)
+    override def isPresentOnEngine(engineID: String): Boolean = presences.contains(engineID)
+
+    override def putPresence(engineID: String): Unit = presences += engineID
 
     override def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit = {
         if (!(packet.path sameElements treeViewPath)) {
@@ -64,7 +73,7 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                 throw UnexpectedPacketException(s"Received invocation packet that does not target this node or this node's children ${packetPath.mkString("$", " -> ", "")}.")
 
             getGrandChild(packetPath.drop(treeViewPath.length))
-                    .fold(throw new NoSuchPuppetException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("$", " -> ", "")})")) {
+                    .fold(throw new NoSuchPuppetNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("$", " -> ", "")})")) {
                         case node: MemberSyncNode[_] => node.handlePacket(packet, response)
                         case _                       =>
                     }

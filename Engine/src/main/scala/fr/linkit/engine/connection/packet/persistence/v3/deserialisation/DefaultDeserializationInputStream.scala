@@ -26,10 +26,11 @@ import java.nio.ByteBuffer
 class DefaultDeserializationInputStream(override val buff: ByteBuffer,
                                         override val context: PacketPersistenceContext,
                                         val coordinates: PacketCoordinates,
-                                        val progressSupplier: DefaultDeserializationInputStream => DeserializationProgression with DeserializationObjectPool) extends DeserializationInputStream {
+                                        val poolSupplier: DefaultDeserializationInputStream => DeserializationObjectPool) extends DeserializationInputStream {
 
-    override val progression: DeserializationProgression with DeserializationObjectPool = progressSupplier(this)
-    progression.initPool()
+    private val pool: DeserializationObjectPool = poolSupplier(this)
+    override val progression: DeserializationProgression = new DefaultDeserializationProgression(this, pool, context, coordinates)
+    pool.initPool(progression)
 
     override def readObject[A](): A = {
         progression.getNextDeserializationNode

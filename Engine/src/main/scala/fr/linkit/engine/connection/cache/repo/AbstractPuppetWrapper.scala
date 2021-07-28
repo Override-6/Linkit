@@ -16,8 +16,6 @@ import fr.linkit.api.connection.cache.repo.description.{MethodBehavior, Puppetee
 import fr.linkit.api.connection.cache.repo.{InvocationChoreographer, PuppetWrapper, Puppeteer}
 import fr.linkit.engine.connection.cache.repo.generation.CloneHelper
 
-import scala.collection.mutable.ListBuffer
-
 trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     @transient protected var puppeteer           : Puppeteer[A]            = _

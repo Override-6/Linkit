@@ -19,7 +19,7 @@ import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.Seriali
 trait SerialisationProgression {
 
     val context: PacketPersistenceContext
-    val pool   : SerialisationObjectPool
+    val pool   : SerializationObjectPool
 
     val coordinates: PacketCoordinates
 

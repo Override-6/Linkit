@@ -12,14 +12,14 @@
 
 package fr.linkit.engine.connection.cache.repo.tree
 
-import fr.linkit.api.connection.cache.repo.tree.{PuppetCenter, SyncNode}
+import fr.linkit.api.connection.cache.repo.tree.{PuppetNodeCenter, SyncNode}
 import fr.linkit.engine.connection.cache.repo.CacheRepoContent
 import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class DefaultPuppetCenter[A] extends PuppetCenter {
+class DefaultPuppetNodeCenter[A] extends PuppetNodeCenter {
 
     private val puppets = new mutable.HashMap[Int, SyncNode[A]]
 

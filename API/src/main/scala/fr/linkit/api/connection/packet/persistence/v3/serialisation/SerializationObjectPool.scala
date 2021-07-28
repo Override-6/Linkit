@@ -10,15 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo.tree
+package fr.linkit.api.connection.packet.persistence.v3.serialisation
 
-import fr.linkit.api.connection.cache.CacheContent
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
 
-trait PuppetCenter {
+trait SerializationObjectPool {
 
-    def findNode[B](path: Array[Int]): Option[SyncNode[B]]
+    def checkNode(obj: Any, out: SerialisationOutputStream)(node: => SerializerNode): DelegatingSerializerNode
 
-    def addNode[B](path: Array[Int], obj: (Int, SyncNode[_]) => SyncNode[B]): Unit
+    def containsInstance(obj: Any): Boolean
 
-    def snapshotContent: CacheContent
+    def addSerialisationDepth(): Unit
+
+    def removeSerialisationDepth(): Unit
+
 }

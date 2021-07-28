@@ -13,9 +13,9 @@
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationObjectPool, SerialisationOutputStream}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerializationObjectPool, SerialisationOutputStream}
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerialisationProgression.Identity
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerializationProgression.Identity
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{HeadedInstanceNode, NullInstanceNode}
 import fr.linkit.engine.local.utils.NumberSerializer
 
@@ -23,7 +23,7 @@ import java.nio.ByteBuffer
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class DefaultSerialisationObjectPool() extends SerialisationObjectPool {
+class DefaultSerializationObjectPool() extends SerializationObjectPool {
 
     private val serializedInstances = mutable.HashMap.empty[Identity, DelegatingSerializerNode]
     /**

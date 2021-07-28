@@ -12,16 +12,16 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.PacketSerializer
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer.{AnyPacketCoordinatesFlag, NoPacketCoordinates, NoPacketCoordinatesFlag}
-import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.{DefaultDeserializationInputStream, DefaultDeserializationProgression}
+import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.{DefaultDeserializationInputStream, DefaultDeserializationObjectPool, EmptyDeserializationObjectPool}
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, PuppetWrapperPersistor}
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationObjectPool, DefaultSerialisationOutputStream}
+import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationOutputStream, DefaultSerializationProgression, DefaultSerializationObjectPool, FakeSerializationObjectPool}
 import fr.linkit.engine.connection.packet.persistence.v3.{ClassDescription, DefaultPacketPersistenceContext}
-
-import java.nio.ByteBuffer
 
 class DefaultPacketSerializer extends PacketSerializer {
 
@@ -31,60 +31,70 @@ class DefaultPacketSerializer extends PacketSerializer {
     private var network: Network = _
 
     override def serialize(objects: Array[AnyRef], buff: ByteBuffer, withSignature: Boolean): Unit = {
-        serialize(objects, NoPacketCoordinates, buff, withSignature)
+        serializePacket(objects, NoPacketCoordinates, buff, withSignature)
     }
 
-    override def serialize(objects: Array[AnyRef], coordinates: PacketCoordinates, buff: ByteBuffer, withSignature: Boolean): Unit = {
-        val pool       = new DefaultSerialisationObjectPool()
+    override def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buff: ByteBuffer, withSignature: Boolean): Unit = {
+        val pool       = new DefaultSerializationObjectPool()
         val poolStream = new DefaultSerialisationOutputStream(buff, coordinates, pool, context)
         val bodyStream = new DefaultSerialisationOutputStream(ByteBuffer.allocateDirect(buff.capacity() / 2), coordinates, pool, context)
-        objects
-                .map(obj => bodyStream.progression.getSerializationNode(obj))
-                .foreach(_.writeBytes(bodyStream))
         coordinates match {
             case NoPacketCoordinates =>
                 poolStream.put(NoPacketCoordinatesFlag)
             case other               =>
                 poolStream.put(AnyPacketCoordinatesFlag)
+                val fakeOut = new DefaultSerialisationOutputStream(buff, coordinates, FakeSerializationObjectPool, context)
+                val fakeProgess = new DefaultSerializationProgression(context, FakeSerializationObjectPool, NoPacketCoordinates, fakeOut)
                 DefaultObjectPersistor
-                        .getSerialNode(other, new ClassDescription(other.getClass), context, poolStream.progression)
-                        .writeBytes(poolStream)
+                    .getSerialNode(other, new ClassDescription(other.getClass), context, fakeProgess)
+                    .writeBytes(fakeOut)
         }
+        objects
+            .map(obj => bodyStream.progression.getSerializationNode(obj))
+            .foreach(_.writeBytes(bodyStream))
         pool.writePool(poolStream)
         bodyStream.flip()
         poolStream.put(bodyStream)
     }
 
-    override def deserialize(buff: ByteBuffer, coordinates: PacketCoordinates)(f: Any => Unit): Unit = {
-        val in  = new DefaultDeserializationInputStream(buff, context, coordinates, new DefaultDeserializationProgression(_, context, coordinates))
+    override def deserializePacket(buff: ByteBuffer)(g: PacketCoordinates => Unit)(f: Any => Unit): Unit = {
         val lim = buff.limit()
-        while (lim > buff.position() && buff.get(buff.position()) != 0) {
-            val obj = in.progression.getNextDeserializationNode
-                    .deserialize(in)
-            buff.limit(lim)
-            f(obj)
-        }
-    }
-
-    override def deserialize(buff: ByteBuffer)(f: Any => Unit): Unit = {
         val coordinates = {
             buff.get match {
                 case NoPacketCoordinatesFlag  => NoPacketCoordinates
                 case AnyPacketCoordinatesFlag =>
-                    val in = new DefaultDeserializationInputStream(buff, context, NoPacketCoordinates, new DefaultDeserializationProgression(_, context, NoPacketCoordinates))
+                    buff.position(buff.position() + 1)
+                    val in = new DefaultDeserializationInputStream(buff, context, NoPacketCoordinates, _ => EmptyDeserializationObjectPool)
                     DefaultObjectPersistor
-                            .getDeserialNode(new ClassDescription(in.readClass()), context, in.progression)
-                            .deserialize(in)
-                            .asInstanceOf[PacketCoordinates]
+                        .getDeserialNode(new ClassDescription(in.readClass()), context, in.progression)
+                        .deserialize(in)
+                        .asInstanceOf[PacketCoordinates]
             }
         }
+        buff.limit(lim)
+        g(coordinates)
         deserialize(buff, coordinates)(f)
+    }
+
+    override def deserialize(buff: ByteBuffer)(f: Any => Unit): Unit = {
+        deserializePacket(buff)((_: PacketCoordinates) => _)(f)
     }
 
     override def isSameSignature(buff: ByteBuffer): Boolean = {
         val header = new Array[Byte](signature.length)
         buff.get(0, header)
         header sameElements signature
+    }
+
+    private def deserialize(buff: ByteBuffer, coordinates: PacketCoordinates)(f: Any => Unit): Unit = {
+        val in  = new DefaultDeserializationInputStream(buff, context, coordinates, in => new DefaultDeserializationObjectPool(in))
+        val lim = buff.limit()
+        while (lim > buff.position() && buff.get(buff.position()) != 0) {
+            val obj = in.progression.getNextDeserializationNode
+                .deserialize(in)
+            buff.limit(lim)
+            f(obj)
+        }
     }
 
     def initNetwork(network: Network): Unit = {
@@ -108,4 +118,5 @@ object DefaultPacketSerializer {
 
         override def forallConcernedTargets(action: String => Boolean): Boolean = true
     }
+
 }

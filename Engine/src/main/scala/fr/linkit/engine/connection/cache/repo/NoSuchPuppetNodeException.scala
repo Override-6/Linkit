@@ -10,18 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.v3.serialisation
+package fr.linkit.engine.connection.cache.repo
 
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
+import fr.linkit.api.connection.cache.repo.PuppetException
 
-trait SerialisationObjectPool {
+class NoSuchPuppetNodeException(msg: String) extends PuppetException(msg) {
 
-    def checkNode(obj: Any, out: SerialisationOutputStream)(node: => SerializerNode): DelegatingSerializerNode
+}
 
-    def containsInstance(obj: Any): Boolean
+object NoSuchPuppetNodeException {
 
-    def addSerialisationDepth(): Unit
-
-    def removeSerialisationDepth(): Unit
-
+    def apply(msg: String): NoSuchPuppetNodeException = new NoSuchPuppetNodeException(msg)
 }

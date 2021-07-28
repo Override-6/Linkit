@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Deser
 
 trait DeserializationObjectPool {
 
-    def initPool(): Unit
+    def initPool(progression: DeserializationProgression): Unit
 
     def getHeaderValueNode(place: Int): DeserializerNode
 

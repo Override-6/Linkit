@@ -26,6 +26,8 @@ trait SyncNode[A] {
 
     def isPresentOnEngine(engineID: String): Boolean
 
+    def putPresence(engineID: String): Unit
+
     def getChild[B](id: Int): Option[SyncNode[B]]
 
     def addChild(child: SyncNode[_]): Unit

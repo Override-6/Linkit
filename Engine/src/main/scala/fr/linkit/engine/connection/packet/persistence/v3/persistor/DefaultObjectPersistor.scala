@@ -45,7 +45,7 @@ object DefaultObjectPersistor extends ObjectPersistor[Any] {
         SimpleObjectDeserializerNode(instance) {
             in =>
                 println(s"Deserializing object ${desc.clazz.getName}...")
-                ArraySign.in(desc.signItemCount, in.progression, in).deserializeRef(instance)(nodes => {
+                ArraySign.in(desc.signItemCount, in).deserializeRef(instance)(nodes => {
                     desc.foreachDeserializableFields { (i, field) =>
                         nodes(i).deserialize(in)
                     } { (field, value) =>

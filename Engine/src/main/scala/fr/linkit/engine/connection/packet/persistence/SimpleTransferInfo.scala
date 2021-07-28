@@ -13,29 +13,28 @@
 package fr.linkit.engine.connection.packet.persistence
 
 import fr.linkit.api.connection.cache.repo.InvocationChoreographer
-import fr.linkit.api.connection.packet.persistence.{Serializer, TransferInfo}
+import fr.linkit.api.connection.packet.persistence.{PacketSerializer, Serializer, TransferInfo}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
-
 import java.nio.ByteBuffer
+
 import scala.collection.mutable.ArrayBuffer
 
 case class SimpleTransferInfo(override val coords: PacketCoordinates,
                               override val attributes: PacketAttributes,
                               override val packet: Packet) extends TransferInfo {
 
-    override def makeSerial(serializer: Serializer, buff: ByteBuffer): Unit = {
-        val packetBuff = ArrayBuffer.empty[Any]
-        packetBuff += coords
+    override def makeSerial(serializer: PacketSerializer, buff: ByteBuffer): Unit = {
+        val packetBuff = ArrayBuffer.empty[AnyRef]
         if (attributes.nonEmpty)
             packetBuff += attributes
         if (packet != EmptyPacket)
             packetBuff += packet
         InvocationChoreographer.forceLocalInvocation {
-            AppLogger.debug(s"$currentTasksId <> Making simple serialize $buff...")
+            AppLogger.debug(s"$currentTasksId <> Making simple serialize $coords, $packetBuff...")
         }
-        serializer.serialize(packetBuff.toArray[Any], buff, true)
+        serializer.serializePacket(packetBuff.toArray[AnyRef], coords, buff, true)
     }
 }

@@ -75,7 +75,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                 })
     }
 
-    override def getCacheManager(family: String): Option[SharedCacheManager] = {
+    override def findCacheManager(family: String): Option[SharedCacheManager] = {
         caches.get(family)
     }
 
