@@ -10,7 +10,7 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.Deserializ
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
-import fr.linkit.engine.connection.cache.repo.{DefaultEngineObjectCenter, NoSuchPuppetNodeException}
+import fr.linkit.engine.connection.cache.`object`.{DefaultEngineObjectCenter, NoSuchPuppetNodeException}
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor.DetachedWrapper
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.SimpleObjectSerializerNode

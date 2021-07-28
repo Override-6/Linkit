@@ -21,12 +21,12 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
-import fr.linkit.engine.connection.cache.repo.CacheRepoContent
-import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
-import fr.linkit.engine.connection.cache.repo.description.annotation.AnnotationBasedMemberBehaviorFactory
-import fr.linkit.engine.connection.cache.repo.description.{SimplePuppetClassDescription, SimpleWrapperBehavior, TreeViewDefaultBehavior}
-import fr.linkit.engine.connection.cache.repo.generation.{CloneHelper, PuppetWrapperClassGenerator, WrappersClassResource}
-import fr.linkit.engine.connection.cache.repo.invokation.remote.InstancePuppeteer
+import fr.linkit.engine.connection.cache.`object`.CacheRepoContent
+import fr.linkit.engine.connection.cache.`object`.DefaultEngineObjectCenter.PuppetProfile
+import fr.linkit.engine.connection.cache.`object`.description.annotation.AnnotationBasedMemberBehaviorFactory
+import fr.linkit.engine.connection.cache.`object`.description.{SimplePuppetClassDescription, SimpleWrapperBehavior, TreeViewDefaultBehavior}
+import fr.linkit.engine.connection.cache.`object`.generation.{CloneHelper, PuppetWrapperClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.`object`.invokation.remote.InstancePuppeteer
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
 import fr.linkit.engine.connection.packet.traffic.channel.request.ResponsePacket

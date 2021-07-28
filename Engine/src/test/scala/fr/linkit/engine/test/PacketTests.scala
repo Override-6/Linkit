@@ -14,8 +14,8 @@ package fr.linkit.engine.test
 
 import fr.linkit.api.connection.cache.CacheSearchBehavior
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.engine.connection.cache.repo.CacheRepoContent
-import fr.linkit.engine.connection.cache.repo.DefaultEngineObjectCenter.PuppetProfile
+import fr.linkit.engine.connection.cache.`object`.CacheRepoContent
+import fr.linkit.engine.connection.cache.`object`.DefaultEngineObjectCenter.PuppetProfile
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket

@@ -116,10 +116,9 @@ trait SharedCacheManager extends Updatable {
      * not try to retrieve it on the network.
      * @throws NoSuchCacheException if no cache was found locally.
      * @param cacheID the cache identifier
-     * @param factory the factory that will create the cache instance
      * @return the cache instance.
      */
-    def getCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache]): A
+    def getCache[A <: SharedCache : ClassTag](cacheID: Int): A
 
     /**
      * Retrieves the cache content of a given cache identifier.

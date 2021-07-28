@@ -65,7 +65,7 @@ class NetworkSharedCacheManager(override val family: String,
         )
     }
 
-    override def getCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache]): A = {
+    override def getCache[A <: SharedCache : ClassTag](cacheID: Int): A = {
         LocalCacheManager
                 .findCache[A](cacheID)
                 .getOrElse {

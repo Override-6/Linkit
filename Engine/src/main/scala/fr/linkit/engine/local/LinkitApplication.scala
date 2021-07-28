@@ -20,7 +20,7 @@ import fr.linkit.api.local.resource.external.{LocalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
-import fr.linkit.engine.connection.cache.repo.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.`object`.generation.{PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.local.LinkitApplication.{getProperty, setInstance}
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
