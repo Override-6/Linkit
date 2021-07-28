@@ -111,7 +111,8 @@ abstract class DynamicSocket(autoReconnect: Boolean = true) extends JustifiedClo
     }
 
     def readInt(): Int = {
-        NumberSerializer.deserializeInt(read(4), 0)
+        val int = read(4)
+        NumberSerializer.deserializeInt(int, 0)
     }
 
     def read(buff: Array[Byte], pos: Int): Int = {

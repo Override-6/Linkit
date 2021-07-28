@@ -17,6 +17,7 @@ import fr.linkit.api.connection.packet.traffic.PacketReader
 import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.security.BytesHasher
+import fr.linkit.engine.local.utils.NumberSerializer
 
 import java.nio.ByteBuffer
 
@@ -42,7 +43,11 @@ class DefaultPacketReader(socket: DynamicSocket,
         val bytes = hasher.deHashBytes(socket.read(nextLength))
         //NETWORK-DEBUG-MARK
         AppLogger.logDownload(socket.boundIdentifier, bytes)
-        val result = translator.translate(ByteBuffer.wrap(bytes))
+        val buff = ByteBuffer.allocate(bytes.length + 4)
+        buff.put(NumberSerializer.serializeInt(nextLength))
+        buff.put(bytes)
+        buff.position(4)
+        val result = translator.translate(buff)
         callback(result)
     }
 }

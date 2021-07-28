@@ -13,7 +13,7 @@
 package fr.linkit.engine.test
 
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.`object`.DefaultEngineObjectCenter
+import fr.linkit.engine.connection.cache.obj.DefaultEngineObjectCenter
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Assertions, Test, TestInstance}
 

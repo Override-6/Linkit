@@ -113,7 +113,7 @@ object ScalaUtils {
     }
 
     def toPresentableString(buff: ByteBuffer): String = {
-        new String(buff.array().take(buff.limit()))
+        new String(buff.array(), 0, buff.limit())
                 .replace("\r", "R")
                 .replace("\n", "N")
     }

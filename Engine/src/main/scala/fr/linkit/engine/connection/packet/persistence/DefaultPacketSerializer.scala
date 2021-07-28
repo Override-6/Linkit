@@ -46,7 +46,7 @@ class DefaultPacketSerializer extends PacketSerializer {
                 val fakeOut = new DefaultSerialisationOutputStream(buff, coordinates, FakeSerializationObjectPool, context)
                 val fakeProgess = new DefaultSerializationProgression(context, FakeSerializationObjectPool, NoPacketCoordinates, fakeOut)
                 DefaultObjectPersistor
-                    .getSerialNode(other, new ClassDescription(other.getClass), context, fakeProgess)
+                    .getSerialNode(other, context.getDescription(other.getClass), context, fakeProgess)
                     .writeBytes(fakeOut)
         }
         objects
@@ -66,7 +66,7 @@ class DefaultPacketSerializer extends PacketSerializer {
                     buff.position(buff.position() + 1)
                     val in = new DefaultDeserializationInputStream(buff, context, NoPacketCoordinates, _ => EmptyDeserializationObjectPool)
                     DefaultObjectPersistor
-                        .getDeserialNode(new ClassDescription(in.readClass()), context, in.progression)
+                        .getDeserialNode(context.getDescription(in.readClass()), context, in.progression)
                         .deserialize(in)
                         .asInstanceOf[PacketCoordinates]
             }

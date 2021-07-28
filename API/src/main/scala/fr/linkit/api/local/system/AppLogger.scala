@@ -76,7 +76,7 @@ object AppLogger {
     def logUpload(target: String, bytes: Array[Byte]): Unit = /*verbose*/ {
         if (logger.isDebugEnabled) {
             val preview = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
-            debug(s"${Console.MAGENTA}Written : ↑ $target ↑ $preview (l: ${bytes.length})")
+            debug(s"${Console.MAGENTA}Written : ↑ $target ↑ $preview (l: ${bytes.length}) (${bytes.mkString(", ")})")
         }
     }
 
@@ -84,7 +84,7 @@ object AppLogger {
         if (logger.isDebugEnabled) {
             val preview     = new String(bytes.take(networkPreviewLength)).replace('\n', ' ').replace('\r', ' ')
             val finalTarget = if (target == null) "" else target
-            debug(s"${Console.CYAN}Received: ↓ $finalTarget ↓ $preview (l: ${bytes.length})")
+            debug(s"${Console.CYAN}Received: ↓ $finalTarget ↓ $preview (l: ${bytes.length + 4})")
         }
     }
 

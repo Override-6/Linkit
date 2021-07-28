@@ -52,8 +52,6 @@ case class ExternalConnectionSession private(boundIdentifier: String,
 
     def send(result: PacketSerializationResult): Unit = {
         socket.write(result.buff)
-        //val event = PacketEvents.packetWritten(result)
-        //server.eventNotifier.notifyEvent(server.packetHooks, event)
     }
 
     def send(buff: ByteBuffer): Unit = {

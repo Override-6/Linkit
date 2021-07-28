@@ -5,12 +5,13 @@ import fr.linkit.api.connection.cache.repo.description.PuppeteerInfo
 import fr.linkit.api.connection.cache.repo.tree.SyncNode
 import fr.linkit.api.connection.cache.repo.{EngineObjectCenter, PuppetWrapper}
 import fr.linkit.api.connection.network.Network
+import fr.linkit.api.connection.packet.BroadcastPacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationProgression
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
-import fr.linkit.engine.connection.cache.`object`.{DefaultEngineObjectCenter, NoSuchPuppetNodeException}
+import fr.linkit.engine.connection.cache.obj.NoSuchPuppetNodeException
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor.DetachedWrapper
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.SimpleObjectSerializerNode
@@ -20,17 +21,30 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
     override val handledClasses: Seq[HandledClass] = Seq(classOf[PuppetWrapper[_]] -> (true, Seq(SerialisationMethod.Serial)), classOf[DetachedWrapper] -> (false, Seq(SerialisationMethod.Deserial)))
 
     override def getSerialNode(wrapper: PuppetWrapper[_], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
-        val puppeteerInfo          = wrapper.getPuppeteerInfo
-        val cache                  = findCacheOfPuppeteer(puppeteerInfo).getOrElse(throwError(puppeteerInfo, Option(wrapper.getWrappedClass)))
-        val center                 = cache.nodeCenter
-        val node                   = center.findNode(puppeteerInfo.treeViewPath).get
-        val useInstancePointerOnly = !progress.coordinates.forallConcernedTargets(engineID => {
+        val puppeteerInfo = wrapper.getPuppeteerInfo
+        val cache         = findCacheOfPuppeteer(puppeteerInfo).getOrElse(throwNoSuchCacheException(puppeteerInfo, Option(wrapper.getWrappedClass)))
+        val center        = cache.nodeCenter
+        val path          = puppeteerInfo.treeViewPath
+        val node          = center.findNode(path).get
+        //root objects are present on all clients.
+
+        val check: String => Boolean = { engineID => {
             val isPresent = node.isPresentOnEngine(engineID)
             //As this wrapper is not present on the targeted engine, the object value will be send.
             if (!isPresent)
                 node.putPresence(engineID)
             !isPresent
-        })
+        }
+        }
+        val useInstancePointerOnly   = !(path.length > 1 && (progress.coordinates match {
+            case BroadcastPacketCoordinates(_, _, discardTargets, targetIDs) if discardTargets =>
+                network.listEngines
+                        .map(_.identifier)
+                        .filterNot(targetIDs.contains)
+                        .forall(check)
+
+            case other => other.forallConcernedTargets(check)
+        }))
 
         val detachedWrapper = DetachedWrapper(if (useInstancePointerOnly) null else wrapper.detachedSnapshot(), puppeteerInfo)
         SimpleObjectSerializerNode(progress.getSerializationNode(detachedWrapper))
@@ -45,35 +59,36 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
         })
     }
 
-    protected def initialiseWrapper(detachedWrapper: DetachedWrapper): PuppetWrapper[_] = {
+    protected def initialiseWrapper(detachedWrapper: DetachedWrapper, progression: DeserializationProgression): PuppetWrapper[_] = {
         val wrapped = detachedWrapper.detached
         val info    = detachedWrapper.puppeteerInfo
 
         val center = findCacheOfPuppeteer(info)
-            .getOrElse {
-                throwError(info, if (wrapped == null) None else Option(wrapped.getClass))
-            }
+                .getOrElse {
+                    throwNoSuchCacheException(info, if (wrapped == null) None else Option(wrapped.getClass))
+                }
         if (wrapped == null) {
             val node: SyncNode[Any] = center.nodeCenter
-                .findNode[Any](info.treeViewPath)
-                .getOrElse {
-                    //Replace this by a request to the sender in order to get the wrapped value.
-                    throw new NoSuchPuppetNodeException(s"No puppet node found at ${info.treeViewPath.mkString("$", " -> ", "")}")
-                }
+                    .findNode[Any](info.treeViewPath)
+                    .getOrElse {
+                        //Replace this by a request to the sender in order to get the wrapped value.
+                        throw new NoSuchPuppetNodeException(s"No puppet node found at ${info.treeViewPath.mkString("$", " -> ", "")}")
+                    }
             node.puppeteer.getPuppetWrapper
         } else {
             center.injectInTreeView[Any](wrapped, info)
         }
     }
 
-    def throwError(info: PuppeteerInfo, wrappedClass: Option[Class[_]]): Nothing = {
+    def throwNoSuchCacheException(info: PuppeteerInfo, wrappedClass: Option[Class[_]]): Nothing = {
         throw new NoSuchCacheException(s"Could not find object center cache of id ${info.cacheID} in cache manager ${info.cacheFamily} " +
-            s"in order to synchronize Wrapper object \"${wrappedClass.map(_.getName).getOrElse("Unknown Wrapped class")}\".")
+                s"in order to synchronize Wrapper object \"${wrappedClass.map(_.getName).getOrElse("Unknown Wrapped class")}\".")
     }
+
     private def findCacheOfPuppeteer(info: PuppeteerInfo): Option[EngineObjectCenter[Any]] = {
         val family = info.cacheFamily
         network.findCacheManager(family)
-            .map(_.getCache(info.cacheID, DefaultEngineObjectCenter[Any]()))
+                .map(_.getCache[EngineObjectCenter[Any]](info.cacheID))
     }
 
 }

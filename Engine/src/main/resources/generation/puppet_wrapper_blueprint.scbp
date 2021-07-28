@@ -18,8 +18,8 @@ import fr.linkit.api.connection.cache.repo.description.PuppeteerInfo
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.Puppeteer
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.`object`.{AbstractPuppetWrapper, PuppetAlreadyInitialisedException}
-import fr.linkit.engine.connection.cache.`object`.generation.CloneHelper
+import fr.linkit.engine.connection.cache.obj.{AbstractPuppetWrapper, PuppetAlreadyInitialisedException}
+import fr.linkit.engine.connection.cache.obj.generation.CloneHelper
 import fr.linkit.engine.local.utils.JavaUtils.nl
 import fr.linkit.engine.local.utils.ScalaUtils
 

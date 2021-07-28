@@ -12,10 +12,11 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
-import java.nio.ByteBuffer
-
 import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketSerializer, TransferInfo}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.engine.local.utils.NumberSerializer
+
+import java.nio.ByteBuffer
 
 case class LazyPacketSerializationResult(info: TransferInfo,
                                          private val serializer: PacketSerializer) extends PacketSerializationResult {
@@ -30,7 +31,8 @@ case class LazyPacketSerializationResult(info: TransferInfo,
         val buff = ByteBuffer.allocateDirect(10000)
         buff.position(4)
         info.makeSerial(serializer, buff)
-        buff.putInt(0, buff.position() - 4) //write the packet's length
+        val length = NumberSerializer.serializeInt(buff.position() - 4)
+        buff.put(0, length) //write the packet's length
         buff.flip()
     }
 

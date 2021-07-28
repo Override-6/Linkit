@@ -187,7 +187,7 @@ object ClientConnection {
         val welcomePacket = NumberSerializer.serializeInt(bytes.length) ++ bytes
         socket.write(welcomePacket)
 
-        //Ensuring that the server has accepted this connection's signatures based on the previously sent welcome packet.
+        //Ensuring that the server has accepted this connection based on the previously sent welcome packet.
         packetReader.nextPacket(assertAccepted(socket, packetReader))
 
         //Instantiating connection instances...
@@ -197,7 +197,8 @@ object ClientConnection {
         //This packet concludes phase 1 of connection's initialization.
         packetReader.nextPacketSync(result => {
             //The contains the server identifier bytes' string
-            val serverIdentifier = ScalaUtils.toPresentableString(result.buff)
+            val buff = result.buff
+            val serverIdentifier = new String(buff.array().drop(4))
             socket.identifier = serverIdentifier
 
             //Constructing connection instance session
@@ -218,10 +219,13 @@ object ClientConnection {
         connection
     }
 
+    /*
+    * Reading Welcome Packet
+    * */
     private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(result: PacketTransferResult): Unit = {
         val buff   = result.buff
-        val header = buff.get(0)
-        if (buff.capacity() != 1 || (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused))
+        val header = buff.get
+        if (buff.capacity() != 5 || (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused))
             throw new ConnectionInitialisationException(s"Received unexpected welcome packet verdict format (received: ${ScalaUtils.toPresentableString(buff)}")
 
         val isAccepted = header == Rules.ConnectionAccepted
