@@ -12,8 +12,8 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.packet.persistence.PacketTransferResult
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
+import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketTransferResult}
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
@@ -106,7 +106,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     /**
      * Broadcast bytes sequence to every connected clients
      * */
-    def broadcastPacket(packet: Packet, attributes: PacketAttributes, injectableID: Int, senderID: String, discardedIDs: String*): Unit = {
+    def broadcastPacket(result: PacketTransferResult, discardedIDs: String*): Unit = {
         PacketReaderThread.checkNotCurrent()
         val candidates = connections.values
                 .filter(con => !discardedIDs.contains(con.boundIdentifier) && con.isConnected)
@@ -115,7 +115,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
         //val attributesCache = new mutable.HashMap[Serializer, Array[Byte]]()
 
         candidates.foreach(connection => {
-            val translator   = connection.translator
+            //val translator = connection.translator
             /*
             val connectionID = connection.boundIdentifier
             val serializer   = translator.getSerializer
@@ -126,11 +126,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
             if (!attributesCache.contains(serializer))
                 attributesCache.put(serializer, translator.translateAttributes(attributes, connectionID))
             */
-
-            val coords       = DedicatedPacketCoordinates(injectableID, connection.boundIdentifier, senderID)
-            val transferInfo = SimpleTransferInfo(coords, attributes, packet)
-            val result       = translator.translate(transferInfo)
-            connection.send(result)
+            connection.send(result.buff)
         })
     }
 

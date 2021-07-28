@@ -59,7 +59,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
         })
     }
 
-    protected def initialiseWrapper(detachedWrapper: DetachedWrapper, progression: DeserializationProgression): PuppetWrapper[_] = {
+    protected def initialiseWrapper(detachedWrapper: DetachedWrapper): PuppetWrapper[_] = {
         val wrapped = detachedWrapper.detached
         val info    = detachedWrapper.puppeteerInfo
 

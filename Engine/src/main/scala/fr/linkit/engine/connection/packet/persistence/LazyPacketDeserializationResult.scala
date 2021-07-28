@@ -12,20 +12,20 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
-import java.nio.ByteBuffer
-
 import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketSerializer}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 
+import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
 
 class LazyPacketDeserializationResult(override val buff: ByteBuffer,
                                       serializer: PacketSerializer) extends PacketDeserializationResult {
 
+    private lazy  val deserial                      = serializer.deserializePacket(buff)
     private lazy  val cache     : Array[AnyRef]     = createCache()
-    override lazy val coords    : PacketCoordinates = extract[PacketCoordinates](null)
+    override lazy val coords    : PacketCoordinates = deserial.getCoordinates
     override lazy val attributes: PacketAttributes  = extract[PacketAttributes](SimplePacketAttributes.empty)
     override lazy val packet    : Packet            = extract[Packet](EmptyPacket).prepare()
 
@@ -46,15 +46,11 @@ class LazyPacketDeserializationResult(override val buff: ByteBuffer,
     }
 
     private def createCache(): Array[AnyRef] = {
-        val cache = new Array[AnyRef](3)
-
-        serializer.deserializePacket(buff) {
-            coords => cache(0) = coords
-        } {
-            case attributes: PacketAttributes => cache(1) = attributes
-            case packet: Packet               => cache(2) = packet
+        val cache = new Array[AnyRef](2)
+        deserial.forEachObjects {
+            case attributes: PacketAttributes => cache(0) = attributes
+            case packet: Packet               => cache(1) = packet
         }
-
         cache
     }
 

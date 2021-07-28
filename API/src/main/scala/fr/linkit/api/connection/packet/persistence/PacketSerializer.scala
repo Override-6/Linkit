@@ -13,12 +13,24 @@
 package fr.linkit.api.connection.packet.persistence
 
 import fr.linkit.api.connection.packet.PacketCoordinates
+import fr.linkit.api.connection.packet.persistence.PacketSerializer.PacketDeserial
+
 import java.nio.ByteBuffer
 
 trait PacketSerializer extends Serializer {
 
     def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer, withSignature: Boolean): Unit
 
-    def deserializePacket(buff: ByteBuffer)(g: PacketCoordinates => Unit)(f: Any => Unit): Unit
+    def deserializePacket(buff: ByteBuffer): PacketDeserial
 
+}
+
+object PacketSerializer {
+
+    trait PacketDeserial {
+
+        def getCoordinates: PacketCoordinates
+
+        def forEachObjects(f: Any => Unit): Unit
+    }
 }

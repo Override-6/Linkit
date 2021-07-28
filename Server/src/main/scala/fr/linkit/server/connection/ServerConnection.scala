@@ -18,22 +18,20 @@ import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
+import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
 import fr.linkit.engine.connection.packet.traffic.DynamicSocket
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.system.Rules
 import fr.linkit.engine.local.system.event.DefaultEventNotifier
-import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.NumberSerializer.serializeInt
-import fr.linkit.server.local.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.connection.network.ServerSideNetwork
 import fr.linkit.server.connection.packet.ServerPacketTraffic
+import fr.linkit.server.local.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
 
@@ -111,7 +109,9 @@ class ServerConnection(applicationContext: ServerApplication,
             // There is nowhere to send this packet.
             return
         }
-        connectionsManager.broadcastPacket(packet, attributes, injectableID, sender, discarded: _*)
+        val broadcast = BroadcastPacketCoordinates(injectableID, sender, true, discarded: _*)
+        val result    = translator.translate(SimpleTransferInfo(broadcast, attributes, packet))
+        connectionsManager.broadcastPacket(result, discarded: _*)
         if (!discarded.contains(currentIdentifier)) {
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(injectableID, currentIdentifier, sender))
         }
@@ -129,7 +129,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     private def listenSocketConnection(): Unit = {
         val socketContainer = new SocketContainer(true)
-        val port = configuration.port
+        val port            = configuration.port
         AppLogger.debug(s"Ready to accept next connection on port $port")
 
         try {

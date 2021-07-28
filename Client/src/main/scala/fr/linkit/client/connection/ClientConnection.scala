@@ -13,11 +13,11 @@
 package fr.linkit.client.connection
 
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
+import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.persistence.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketException}
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
@@ -102,8 +102,10 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         readThread.onPacketRead = result => {
             try {
                 val coordinates: DedicatedPacketCoordinates = result.coords match {
-                    case d: DedicatedPacketCoordinates => d
-                    case _                             => throw new IllegalArgumentException("Packet must be dedicated to this connection.")
+                    case d: DedicatedPacketCoordinates         => d
+                    case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(currentIdentifier)
+                    case null                                  => throw new PacketException("Received null packet coordinates.")
+                    case other                                 => throw new PacketException(s"Unknown packet coordinates of type ${other.getClass.getName}. Only Dedicated and Broadcast packet coordinates are allowed on this client.")
                 }
                 handlePacket(result.packet, result.attributes, coordinates)
             } catch {
@@ -197,7 +199,7 @@ object ClientConnection {
         //This packet concludes phase 1 of connection's initialization.
         packetReader.nextPacketSync(result => {
             //The contains the server identifier bytes' string
-            val buff = result.buff
+            val buff             = result.buff
             val serverIdentifier = new String(buff.array().drop(4))
             socket.identifier = serverIdentifier
 
