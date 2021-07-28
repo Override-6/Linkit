@@ -13,8 +13,8 @@
 package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
-import fr.linkit.engine.local.utils.ScalaUtils.{allocate, pasteAllFields, retrieveAllFields}
-import fr.linkit.engine.local.utils.{JavaUtils, ScalaUtils}
+import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllFields}
+import fr.linkit.engine.local.utils.{JavaUtils, ScalaUtils, UnWrapper}
 
 import java.lang.reflect.Modifier
 import scala.collection.mutable
@@ -23,6 +23,10 @@ import scala.collection.mutable
 object CloneHelper {
 
     def instantiateFromOrigin[A](wrapperClass: Class[A with PuppetWrapper[A]], origin: A): A with PuppetWrapper[A] = {
+        instantiateFromOrigin0(wrapperClass, deepClone(origin))
+    }
+
+    private def instantiateFromOrigin0[A](wrapperClass: Class[A with PuppetWrapper[A]], origin: A): A with PuppetWrapper[A] = {
         val instance      = allocate[A with PuppetWrapper[A]](wrapperClass)
         val checkedFields = mutable.HashSet.empty[AnyRef]
 
@@ -53,7 +57,7 @@ object CloneHelper {
             for (i <- array.indices) {
                 array(i) match {
                     case x if JavaUtils.sameInstance(x, origin) => array(i) = instance
-                    case obj => scanObject(obj, obj, false)
+                    case obj                                    => scanObject(obj, obj, false)
                 }
             }
         }
@@ -67,10 +71,40 @@ object CloneHelper {
         instance
     }
 
-    def clone[A](origin: A): A = {
-        val instance = allocate[A](origin.getClass)
-        pasteAllFields(instance, origin)
-        instance
+    def deepClone[A](origin: A): A = {
+        val checkedItems = mutable.HashMap.empty[Any, Any]
+
+        def getClonedInstance(data: Any): Any = {
+            data match {
+                case null                                 => null
+                case array: Array[AnyRef]                 => java.util.Arrays.copyOf(array, array.length).map(getClonedInstance)
+                case str: String                          => str
+                case o if UnWrapper.isPrimitiveWrapper(o) => o
+                case _                                    =>
+
+                    val opt = checkedItems.get(data)
+                    opt.getOrElse {
+                        val clazz = data.getClass
+
+                        if (!clazz.isArray) {
+                            val instance = allocate[Any](clazz)
+                            checkedItems.put(data, instance)
+                            retrieveAllFields(clazz).foreach(field => {
+                                val copied = getClonedInstance(field.get(data))
+                                ScalaUtils.setValue(instance, field, copied)
+                            })
+                            instance
+                        } else {
+                            //will be a primitive array
+                            //TODO clone primitive arrays
+                            data
+                        }
+                    }
+            }
+        }
+
+        val clone = getClonedInstance(origin).asInstanceOf[A]
+        clone
     }
 
     def detachedWrapperClone[A](origin: PuppetWrapper[A]): A = {
@@ -99,7 +133,7 @@ object CloneHelper {
                         checkedFields.put(originValue, originValue)
                         originValue match {
                             case array: Array[AnyRef] => scanArray(array)
-                            case _ => scanObject(field.get(instanceField), originValue, false)
+                            case _                    => scanObject(field.get(instanceField), originValue, false)
                         }
                     }
                 }
@@ -110,7 +144,7 @@ object CloneHelper {
             for (i <- array.indices) {
                 array(i) match {
                     case x if JavaUtils.sameInstance(x, origin) => array(i) = instance
-                    case obj => scanObject(obj, obj, false)
+                    case obj                                    => scanObject(obj, obj, false)
                 }
             }
         }
