@@ -15,6 +15,7 @@ package fr.linkit.engine.connection.cache.obj.invokation.local
 import fr.linkit.api.connection.cache.repo._
 import fr.linkit.api.connection.cache.repo.description.WrapperBehavior
 import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
@@ -32,14 +33,17 @@ case class ObjectChip[S] private(owner: String,
     }
 
     override def callMethod(methodID: Int, params: Array[Any]): Any = {
-        val methodDesc = behavior.getMethodBehavior(methodID)
-        if (methodDesc.forall(_.isHidden)) {
-            throw new PuppetException(s"Attempted to invoke ${methodDesc.fold("unknown")(_ => "hidden")} method '${
-                methodDesc.map(_.desc.symbol.name.toString).getOrElse(s"(unknown method id '$methodID')")
-            }(${params.mkString(", ")}) in class ${methodDesc.get.desc.symbol}'")
+        val methodBehaviorOpt = behavior.getMethodBehavior(methodID)
+        if (methodBehaviorOpt.forall(_.isHidden)) {
+            throw new PuppetException(s"Attempted to invoke ${methodBehaviorOpt.fold("unknown")(_ => "hidden")} method '${
+                methodBehaviorOpt.map(_.desc.symbol.name.toString).getOrElse(s"(unknown method id '$methodID')")
+            }(${params.mkString(", ")}) in class ${methodBehaviorOpt.get.desc.symbol}'")
         }
+        val methodBehavior = methodBehaviorOpt.get
+        val name = methodBehavior.desc.javaMethod.getName
         wrapper.getChoreographer.forceLocalInvocation {
-            methodDesc.get
+            AppLogger.debug(s"RMI - Calling method $methodID $name(${params.mkString(", ")})")
+            methodBehaviorOpt.get
                     .desc
                     .javaMethod
                     .invoke(wrapper, params: _*)

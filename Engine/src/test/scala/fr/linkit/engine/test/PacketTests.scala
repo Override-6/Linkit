@@ -13,10 +13,7 @@
 package fr.linkit.engine.test
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.engine.connection.cache.obj.CacheRepoContent
-import fr.linkit.engine.connection.cache.obj.DefaultEngineObjectCenter.PuppetProfile
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
@@ -29,8 +26,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 
 import java.nio.ByteBuffer
-import java.util
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ArrayBuffer
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketTests {
@@ -51,8 +47,7 @@ class PacketTests {
 
     @Test
     def moreComplexPacketTest(): Unit = {
-        val obj = Array(AnyRefPacket(Some(CacheRepoContent(Array(PuppetProfile(Array[Int](1, 3, 5), ListBuffer(), "TestServer1"))))))
-        testPacket(Array(obj, obj, obj))
+        testPacket(Array[AnyRef](Array(1, 2f, 3d, 4.0f, 3.0d, 100.004321f, 156321d, 456.786541d)))
     }
 
     @Test

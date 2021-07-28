@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerializationObjectPool, SerialisationOutputStream}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerializationObjectPool}
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
 import fr.linkit.engine.local.utils.NumberSerializer
@@ -36,17 +36,16 @@ class DefaultSerialisationOutputStream(override val buff: ByteBuffer,
     override def writeClass(clazz: Class[_]): Unit = buff.putInt(clazz.getName.hashCode)
 
     override def primitiveNode(anyVal: AnyVal): SerializerNode = pool.checkNode(anyVal, this) { out => {
-        val (bytes, flag) = anyVal match {
-            case i: Int     => (NumberSerializer.serializeNumber(i, true), IntFlag)
-            case b: Byte    => (NumberSerializer.serializeNumber(b, true), ByteFlag)
-            case s: Short   => (NumberSerializer.serializeNumber(s, true), ShortFlag)
-            case l: Long    => (NumberSerializer.serializeNumber(l, true), LongFlag)
-            case d: Double  => (NumberSerializer.serializeNumber(java.lang.Double.doubleToLongBits(d), true), DoubleFlag)
-            case f: Float   => (NumberSerializer.serializeNumber(java.lang.Float.floatToIntBits(f), true), FloatFlag)
-            case b: Boolean => (Array[Byte](1) :+ (if (b) 1 else 0).toByte, BooleanFlag)
-            case c: Char    => (NumberSerializer.serializeNumber(c.toInt, true), CharFlag)
+        anyVal match {
+            case i: Int     => out.put(IntFlag)     .put(NumberSerializer.serializeNumber(i, true))
+            case b: Byte    => out.put(ByteFlag)    .put(NumberSerializer.serializeNumber(b, true))
+            case s: Short   => out.put(ShortFlag)   .put(NumberSerializer.serializeNumber(s, true))
+            case l: Long    => out.put(LongFlag)    .put(NumberSerializer.serializeNumber(l, true))
+            case b: Boolean => out.put(BooleanFlag) .put(Array[Byte](1) :+ (if (b) 1 else 0).toByte)
+            case c: Char    => out.put(CharFlag)    .put(NumberSerializer.serializeNumber(c.toInt, true))
+            case d: Double  => out.put(DoubleFlag)  .putDouble(d)
+            case f: Float   => out.put(FloatFlag)   .putFloat(f)
         }
-        out.put(flag).put(bytes)
     }
     }
 

@@ -15,9 +15,9 @@ package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerializationObjectPool, SerialisationOutputStream, SerialisationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerialisationProgression, SerializationObjectPool}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{NullInstanceNode, SimpleObjectSerializerNode}
-import fr.linkit.engine.local.utils.{JavaUtils, UnWrapper}
+import fr.linkit.engine.local.utils.UnWrapper
 
 import java.io.NotSerializableException
 import java.lang.reflect.Modifier
@@ -36,7 +36,7 @@ class DefaultSerializationProgression(override val context: PacketPersistenceCon
             case array: Array[_]                      => out.arrayNode(array)
             case _                                    =>
                 val clazz = obj.getClass
-                println(s"Getting Serialisation node for class '${clazz.getName}...' (class code = ${clazz.getName.hashCode}")
+                //println(s"Getting Serialisation node for class '${clazz.getName}...' (class code = ${clazz.getName.hashCode}")
                 if (clazz.isArray) //the above match does not works for primitive arrays
                     return out.arrayNode(obj.asInstanceOf[Array[_]])
                 if (clazz.isInterface || Modifier.isAbstract(clazz.getModifiers))
@@ -50,18 +50,3 @@ class DefaultSerializationProgression(override val context: PacketPersistenceCon
     }
 }
 
-object DefaultSerializationProgression {
-
-    implicit class Identity(val obj: Any) {
-
-        override def hashCode(): Int = System.identityHashCode(obj)
-
-        override def equals(obj: Any): Boolean = obj match {
-            case id: Identity => JavaUtils.sameInstance(id.obj, this.obj) //got an error "the result type of an implicit conversion must be more specific than AnyRef" if i put "obj eq this.obj"
-            case _            => false
-        }
-
-        override def toString: String = obj.toString
-    }
-
-}

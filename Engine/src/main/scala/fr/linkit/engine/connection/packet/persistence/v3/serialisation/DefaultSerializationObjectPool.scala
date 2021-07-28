@@ -13,11 +13,10 @@
 package fr.linkit.engine.connection.packet.persistence.v3.serialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.{DelegatingSerializerNode, SerializerNode}
-import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerializationObjectPool, SerialisationOutputStream}
+import fr.linkit.api.connection.packet.persistence.v3.serialisation.{SerialisationOutputStream, SerializationObjectPool}
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
-import fr.linkit.engine.connection.packet.persistence.v3.serialisation.DefaultSerializationProgression.Identity
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{HeadedInstanceNode, NullInstanceNode}
-import fr.linkit.engine.local.utils.NumberSerializer
+import fr.linkit.engine.local.utils.{Identity, NumberSerializer}
 
 import java.nio.ByteBuffer
 import scala.collection.mutable
@@ -25,7 +24,7 @@ import scala.collection.mutable.ListBuffer
 
 class DefaultSerializationObjectPool() extends SerializationObjectPool {
 
-    private val serializedInstances = mutable.HashMap.empty[Identity, DelegatingSerializerNode]
+    private val serializedInstances = mutable.HashMap.empty[Identity[Any], DelegatingSerializerNode]
     /**
      * Contains all [[SerializerNode]] for object instances that will be reused in the body
      */
@@ -38,7 +37,7 @@ class DefaultSerializationObjectPool() extends SerializationObjectPool {
             return DelegatingSerializerNode(new NullInstanceNode(obj == None))
         if (containsInstance(obj)) {
             if (isWritingPool && depth <= 1) {
-                val node = serializedInstances(obj).deserializer
+                val node = serializedInstances(Identity(obj)).deserializer
                 if (node == null)
                     throw new NullPointerException("Unexpected null node deserializer")
                 return DelegatingSerializerNode(node)
@@ -46,11 +45,11 @@ class DefaultSerializationObjectPool() extends SerializationObjectPool {
             return changeDelegate(obj)
         }
         val a = DelegatingSerializerNode(null)
-        serializedInstances.put(obj, a)
+        serializedInstances.put(Identity(obj), a)
         val node = nodeSupplier
         val b    = DelegatingSerializerNode(node)
         if (a.delegated == null) {
-            serializedInstances.put(obj, b)
+            serializedInstances.put(Identity(obj), b)
             b.deserializer = node
             b
         } else {

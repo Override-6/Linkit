@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllFields}
-import fr.linkit.engine.local.utils.{JavaUtils, ScalaUtils, UnWrapper}
+import fr.linkit.engine.local.utils.{Identity, JavaUtils, ScalaUtils, UnWrapper}
 
 import java.lang.reflect.Modifier
 import scala.collection.mutable
@@ -72,7 +72,7 @@ object CloneHelper {
     }
 
     def deepClone[A](origin: A): A = {
-        val checkedItems = mutable.HashMap.empty[Any, Any]
+        val checkedItems = mutable.HashMap.empty[Identity[Any], Any]
 
         def getClonedInstance(data: Any): Any = {
             data match {
@@ -82,13 +82,13 @@ object CloneHelper {
                 case o if UnWrapper.isPrimitiveWrapper(o) => o
                 case _                                    =>
 
-                    val opt = checkedItems.get(data)
+                    val opt = checkedItems.get(Identity(data))
                     opt.getOrElse {
                         val clazz = data.getClass
 
                         if (!clazz.isArray) {
                             val instance = allocate[Any](clazz)
-                            checkedItems.put(data, instance)
+                            checkedItems.put(Identity(data), instance)
                             retrieveAllFields(clazz).foreach(field => {
                                 val copied = getClonedInstance(field.get(data))
                                 ScalaUtils.setValue(instance, field, copied)
