@@ -12,7 +12,6 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.CacheSearchBehavior
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.engine.connection.cache.obj.CacheRepoContent
 import fr.linkit.engine.connection.cache.obj.DefaultEngineObjectCenter.PuppetProfile
@@ -30,6 +29,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 
 import java.nio.ByteBuffer
+import java.util
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -42,7 +42,7 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        testPacket(Array(EmptyObject))
+        testPacket(Array(new java.util.HashSet[Object]()))
     }
 
     object EmptyObject {
@@ -57,7 +57,7 @@ class PacketTests {
 
     @Test
     def complexPacketTest(): Unit = {
-        val packet = ArrayBuffer(DedicatedPacketCoordinates(12, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> CacheSearchBehavior.GET_OR_OPEN), RequestPacket(1, Array(IntPacket(3))))
+        val packet = ArrayBuffer(DedicatedPacketCoordinates(12, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> "GET_OR_OPEN"), RequestPacket(1, Array(IntPacket(3))))
         testPacket(Array(packet))
     }
 

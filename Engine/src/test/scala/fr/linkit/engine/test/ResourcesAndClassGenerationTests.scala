@@ -14,39 +14,30 @@ package fr.linkit.engine.test
 
 import fr.linkit.api.connection.cache.repo.description.PuppeteerInfo
 import fr.linkit.api.connection.cache.repo.{InvocationChoreographer, PuppetWrapper}
-import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
-import fr.linkit.engine.connection.cache.obj.CacheRepoContent
-import fr.linkit.engine.connection.cache.obj.DefaultEngineObjectCenter.PuppetProfile
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
 import fr.linkit.engine.connection.cache.obj.description.{SimplePuppetClassDescription, SimpleWrapperBehavior, TreeViewDefaultBehavior}
 import fr.linkit.engine.connection.cache.obj.generation.{CloneHelper, PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
-import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
-import fr.linkit.engine.connection.packet.traffic.channel.request.ResponsePacket
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.utils.ScalaUtils
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
-import fr.linkit.engine.test.classes.{Player, ScalaClass}
+import fr.linkit.engine.test.classes.Player
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
 
 import java.util
-import java.util.concurrent.ThreadLocalRandom
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
-
-import scala.collection.mutable.{ArrayBuffer, ListBuffer}
+import scala.collection.mutable.ArrayBuffer
 import scala.reflect.runtime.universe.TypeTag
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -55,7 +46,6 @@ class ResourcesAndClassGenerationTests {
 
     private var resources: ResourceFolder    = _
     private val app      : LinkitApplication = Mockito.mock(classOf[LinkitApplication])
-
 
     @BeforeAll
     def init(): Unit = {
@@ -108,12 +98,9 @@ class ResourcesAndClassGenerationTests {
 
     @Test
     @Order(2)
-    def generateSimpleClass(): Unit = {
-        val obj = forObject(new ScalaClass)
+    def generateSimpleClass(): Unit = InvocationChoreographer.forceLocalInvocation {
+        val obj = forObject(Player(789, "salut", "wow", 8, 2))
         println(s"obj = ${obj}")
-        obj.testRMI()
-        obj.b = "Le sexe"
-        println(s"ojb.b = ${obj.b}")
     }
 
     class FakePuppetWrapperPersistor extends PuppetWrapperPersistor(null) {
@@ -129,8 +116,6 @@ class ResourcesAndClassGenerationTests {
         val obj = forObject(Player(7, "Salut", "Hey", 891, 45))
         println(s"result = ${obj}")
     }
-
-
 
     @Test
     @Order(3)
@@ -148,15 +133,15 @@ class ResourcesAndClassGenerationTests {
         val puppetClass = generator.getPuppetClass[A](desc)
         println(s"puppetClass = ${puppetClass}")
         val factory = AnnotationBasedMemberBehaviorFactory()
-        val pup     = new InstancePuppeteer[A](null, null, PuppeteerInfo("", 8, "", Array(1)), SimpleWrapperBehavior(desc, new TreeViewDefaultBehavior(factory)))
-        val puppet  = CloneHelper.instantiateFromOrigin[A](puppetClass, obj)
+        val pup     = new InstancePuppeteer[A](null, app, null, PuppeteerInfo("", 8, "", Array(1)), SimpleWrapperBehavior(desc, new TreeViewDefaultBehavior(factory)))
+        val wrapper  = CloneHelper.instantiateFromOrigin[A](puppetClass, obj)
 
-        puppet.initPuppeteer(pup)
-        puppet.getChoreographer.forceLocalInvocation {
-            println(s"puppet = ${puppet}")
-            println(s"puppet.getWrappedClass = ${puppet.getWrappedClass}")
+        wrapper.initPuppeteer(pup)
+        wrapper.getChoreographer.forceLocalInvocation {
+            println(s"wrapper = ${wrapper}")
+            println(s"wrapper.getWrappedClass = ${wrapper.getWrappedClass}")
         }
-        puppet
+        wrapper
     }
 
 }

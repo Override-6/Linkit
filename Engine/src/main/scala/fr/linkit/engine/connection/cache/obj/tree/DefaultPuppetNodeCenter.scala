@@ -39,7 +39,7 @@ class DefaultPuppetNodeCenter[A] extends PuppetNodeCenter {
         case Some(value) if path.length > 1 => value
                 .getGrandChild(path.drop(1))
                 .map(_.asInstanceOf[SyncNode[B]])
-        case s                              => s.asInstanceOf[Option[SyncNode[B]]]
+        case s: Option[SyncNode[B]]                              => s
     }
 
     override def addNode[B](path: Array[Int], supplier: (Int, SyncNode[_]) => SyncNode[B]): Unit = {

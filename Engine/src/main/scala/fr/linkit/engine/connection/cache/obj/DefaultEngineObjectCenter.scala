@@ -19,6 +19,7 @@ import fr.linkit.api.connection.cache.repo.tree.SyncNode
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
+import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultEngineObjectCenter.{FieldRestorer, PuppetProfile}
@@ -49,6 +50,8 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
                                    generator: PuppetWrapperGenerator,
                                    override val defaultTreeViewBehavior: TreeViewBehavior)
         extends AbstractSharedCache(handler, cacheID, channel) with EngineObjectCenter[A] {
+
+    private val procrastinator: Procrastinator = handler.network.connection
 
     import defaultTreeViewBehavior._
 
@@ -159,7 +162,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
 
         val wrapperBehavior = behaviors.getFromClass[B](obj.getClass.asInstanceOf[Class[B]])
         val puppeteerDesc   = PuppeteerInfo(family, cacheID, ownerID, treeViewPath)
-        val puppeteer       = new InstancePuppeteer[B](channel, this, puppeteerDesc, wrapperBehavior)
+        val puppeteer       = new InstancePuppeteer[B](channel, procrastinator, this, puppeteerDesc, wrapperBehavior)
         val wrapper         = genPuppetWrapper[B](puppeteer, obj)
         registerObject(wrapper.asInstanceOf[PuppetWrapper[Any]])
         for (bhv <- wrapperBehavior.listField() if bhv.isSynchronized) {

@@ -18,6 +18,12 @@ class ScalaClass() {
 
     def testRMI(): this.type = {
         println(s"RMI Done ! (${b})")
+        val consumer: String => Unit = {
+            str => println(s"srt = ${str}")
+        }
+        consumer("WOW")
+        consumer("WAW")
+        consumer("WUW")
         this
     }
 

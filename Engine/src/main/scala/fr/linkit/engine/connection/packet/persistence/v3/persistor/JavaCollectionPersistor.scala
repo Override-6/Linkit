@@ -50,7 +50,8 @@ object JavaCollectionPersistor extends ObjectPersistor[util.Collection[_]] {
         SimpleObjectDeserializerNode(ref) { in =>
             val content = in.readArray[AnyRef]()
             //TODO handle immutable collections
-            ref.addAll(util.Arrays.asList(content))
+            if (!content.isEmpty)
+                ref.addAll(util.Arrays.asList(content))
             ref
         }
     }

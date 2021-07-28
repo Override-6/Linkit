@@ -17,6 +17,7 @@ import fr.linkit.api.connection.cache.repo.description.annotation.InvocationKind
 import fr.linkit.api.connection.cache.repo.description.{MethodBehavior, PuppeteerInfo, WrapperBehavior}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.tree.PuppetNode
@@ -28,11 +29,13 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketC
 import java.util.concurrent.ThreadLocalRandom
 
 class InstancePuppeteer[S](channel: RequestPacketChannel,
+                           procrastinator: Procrastinator,
                            override val repo: EngineObjectCenter[_],
                            override val puppeteerInfo: PuppeteerInfo,
                            val wrapperBehavior: WrapperBehavior[S]) extends Puppeteer[S] {
 
-    private  val currentIdentifier                     = channel.traffic.currentIdentifier
+    //FIXME lazy val only during tests
+    private  lazy val currentIdentifier                     = channel.traffic.currentIdentifier
     override val ownerID     : String                  = puppeteerInfo.owner
     private  val bcScope                               = prepareScope(ChannelScopes.discardCurrent)
     private  val ownerScope                            = prepareScope(ChannelScopes.retains(ownerID))
@@ -66,11 +69,13 @@ class InstancePuppeteer[S](channel: RequestPacketChannel,
         val bhv = wrapperBehavior.getMethodBehavior(methodId).getOrElse {
             throw new NoSuchMethodException(s"Remote method not found for id '$methodId'")
         }
-        AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}(${args.mkString(",")})")
-        channel.makeRequest(chooseScope(bhv.invocationKind))
-            .addPacket(InvocationPacket(puppeteerInfo.treeViewPath, methodId, args, null)) //TODO
-            .submit()
-            .detach()
+        //procrastinator.runLater {
+            AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}(${args.mkString(",")})")
+            channel.makeRequest(chooseScope(bhv.invocationKind))
+                    .addPacket(InvocationPacket(puppeteerInfo.treeViewPath, methodId, args, null)) //TODO
+                    .submit()
+                    .detach()
+        //}
     }
 
     override def init(wrapper: S with PuppetWrapper[S]): Unit = {
