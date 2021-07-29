@@ -41,7 +41,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
     override def startUpDate: Timestamp = cache(2)
 
     override def createEngine(identifier: String, communicator: SyncAsyncPacketChannel): Engine = {
-        val entityCache = newCachesManager(identifier, identifier)
+        val entityCache = getCachesManager(identifier, identifier)
         new ConnectionEngine(connection, identifier, entityCache)
     }
 
@@ -52,7 +52,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
 
     def initSelfEntity: SelfEngine = {
         val identifier   = connection.currentIdentifier
-        val sharedCaches = newCachesManager(identifier, identifier)
+        val sharedCaches = getCachesManager(identifier, identifier)
         sharedCaches
                 .retrieveCache(3, SharedInstance[ExternalConnectionState], CacheSearchBehavior.GET_OR_WAIT)
                 .set(ExternalConnectionState.CONNECTED) //technically always connected to himself

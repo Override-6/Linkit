@@ -101,8 +101,9 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         socket.addConnectionStateListener(tryReconnect)
         readThread.onPacketRead = result => {
             try {
+                AppLogger.debug("Handling deserialisation...")
                 val coordinates: DedicatedPacketCoordinates = result.coords match {
-                    case d: DedicatedPacketCoordinates         => d
+                    case dedicated: DedicatedPacketCoordinates => dedicated
                     case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(currentIdentifier)
                     case null                                  => throw new PacketException("Received null packet coordinates.")
                     case other                                 => throw new PacketException(s"Unknown packet coordinates of type ${other.getClass.getName}. Only Dedicated and Broadcast packet coordinates are allowed on this client.")

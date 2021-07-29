@@ -14,6 +14,7 @@ package fr.linkit.engine.test
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
+import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
@@ -38,7 +39,7 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        testPacket(Array(new java.util.HashSet[Object]()))
+        testPacket(Array(AnyRefPacket(None)))
     }
 
     object EmptyObject {

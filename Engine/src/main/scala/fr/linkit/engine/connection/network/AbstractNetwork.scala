@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.network
 
 import fr.linkit.api.connection.cache.{CacheSearchBehavior, SharedCacheManager}
-import fr.linkit.api.connection.network.{Network, Engine}
+import fr.linkit.api.connection.network.{Engine, Network}
 import fr.linkit.api.connection.packet.Bundle
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
@@ -23,6 +23,7 @@ import fr.linkit.engine.connection.cache.collection.{BoundedCollection, SharedCo
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
+import sun.misc.Unsafe
 
 import scala.collection.mutable
 
@@ -47,32 +48,27 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         else None
     }
 
-    override def newCacheManager(family: String, owner: ConnectionContext): SharedCacheManager = {
-        newCachesManager(family, owner.currentIdentifier)
+    override def getCacheManager(family: String, owner: ConnectionContext): SharedCacheManager = {
+        getCachesManager(family, owner.currentIdentifier)
     }
 
-    protected def newCachesManager(family: String, owner: String): SharedCacheManager = {
+    protected def getCachesManager(family: String, owner: String): SharedCacheManager = {
         if (family == null || owner == null)
             throw new NullPointerException("Family or owner is null.")
 
-        caches.get(family)
-                .fold {
-                    AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
-                    val cache = new NetworkSharedCacheManager(family, owner, this, connection, cacheRequestChannel)
+        caches.getOrElse(family, {
+            AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
+            val cache = new NetworkSharedCacheManager(family, owner, this, connection, cacheRequestChannel)
 
-                    //Will inject all packet that the new cache have possibly missed.
-                    caches.synchronized {
-                        AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: PUTTING CACHE <$family, $owner> INTO CACHES")
-                        caches.put(family, cache)
-                        AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
-                    }
-                    cacheRequestChannel.injectStoredBundles()
-                    cache: SharedCacheManager
-                }(cache => {
-                    AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: <$family, $owner> UpDaTiNg CaChE")
-                    cache.update()
-                    cache
-                })
+            //Will inject all packet that the new cache have possibly missed.
+            caches.synchronized {
+                AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: PUTTING CACHE <$family, $owner> INTO CACHES")
+                caches.put(family, cache)
+                AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
+            }
+            cacheRequestChannel.injectStoredBundles()
+            cache: SharedCacheManager
+        })
     }
 
     override def findCacheManager(family: String): Option[SharedCacheManager] = {
@@ -80,7 +76,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     override def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager = {
-        newCachesManager(family, owner.boundIdentifier)
+        getCachesManager(family, owner.boundIdentifier)
     }
 
     protected def createEngine(identifier: String, communicationChannel: SyncAsyncPacketChannel): Engine
@@ -124,7 +120,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             }
         })
 
-        newCachesManager(s"Global Cache", serverIdentifier)
+        getCachesManager(s"Global Cache", serverIdentifier)
     }
 
 }

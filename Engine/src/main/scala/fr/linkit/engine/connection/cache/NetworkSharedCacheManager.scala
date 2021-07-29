@@ -105,9 +105,8 @@ class NetworkSharedCacheManager(override val family: String,
     }
 
     override def update(): this.type = {
-        println("Cache will be updated.")
+        println(s"all Cache of family '$family' will be updated.")
         LocalCacheManager.updateAll()
-        //quickCache will be updated by LocalCacheHandler.updateAll call
         this
     }
 

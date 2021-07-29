@@ -25,12 +25,12 @@ import org.jetbrains.annotations.Nullable
 import java.util.concurrent.ThreadLocalRandom
 import scala.collection.mutable
 
-class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
-                    override val chip: Chip[A], //Reflective invocation
-                    val descriptions: TreeViewBehavior,
-                    val platformIdentifier: String,
-                    override val id: Int,
-                    @Nullable override val parent: SyncNode[_]) extends MemberSyncNode[A] {
+class WrapperNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
+                     override val chip: Chip[A], //Reflective invocation
+                     val descriptions: TreeViewBehavior,
+                     val platformIdentifier: String,
+                     override val id: Int,
+                     @Nullable override val parent: SyncNode[_]) extends MemberSyncNode[A] {
 
     /**
      * The identifier of the engine that posted this object.
@@ -44,7 +44,7 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
     /**
      * This set stores every engine where this object is synchronized.
      * */
-    private   val presences        = mutable.HashSet[String](ownerID)
+    private   val presences        = mutable.HashSet[String](ownerID, platformIdentifier)
 
     override def addChild(node: SyncNode[_]): Unit = {
         if (node.parent ne this)
@@ -57,8 +57,8 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
     override def getChild[B](id: Int): Option[SyncNode[B]] = members.get(id) match {
         case None        => None
         case Some(value) => value match {
-            case node: PuppetNode[B] => Some(node)
-            case _                   => None
+            case node: WrapperNode[B] => Some(node)
+            case _                    => None
         }
     }
 
@@ -93,7 +93,7 @@ class PuppetNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                 val synchronizer   = puppeteer.repo
                 val resultNodePath = treeViewPath ++ Array(id)
 
-                result = synchronizer.genSynchronizedObject(resultNodePath, result, ownerID, descriptions)
+                result = synchronizer.genSynchronizedObject(resultNodePath, result, ownerID, descriptions).puppetWrapper
             }
             response
                     .addPacket(RefPacket[Any](result))

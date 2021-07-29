@@ -82,6 +82,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         }
         alive = true
         readThread.onPacketRead = result => {
+            AppLogger.debug("Handling deserialisation...")
             val coordinates: DedicatedPacketCoordinates = result.coords match {
                 case d: DedicatedPacketCoordinates => d
                 case _                             => throw new IllegalArgumentException("Packet must be dedicated to this connection.")

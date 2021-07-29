@@ -15,9 +15,10 @@ package fr.linkit.engine.connection.cache.obj.description
 import fr.linkit.api.connection.cache.repo.PuppetWrapper
 import fr.linkit.api.connection.cache.repo.description.{FieldDescription, MethodDescription, fullNameOf}
 import fr.linkit.api.local.generation.PuppetClassDescription
-import fr.linkit.engine.connection.cache.obj.description.SimplePuppetClassDescription.SyntheticMod
+import fr.linkit.engine.connection.cache.obj.description.SimplePuppetClassDescription.{PrimitivesNameMap, SyntheticMod}
 
 import java.lang.reflect.{Method, Modifier}
+import scala.collection.mutable
 import scala.reflect.runtime.{universe => u}
 
 class SimplePuppetClassDescription[A] private(override val classType: u.Type,
@@ -30,13 +31,11 @@ class SimplePuppetClassDescription[A] private(override val classType: u.Type,
      * */
     private val BlacklistedSuperClasses: Array[String] = Array(fullNameOf[Any], fullNameOf[Object], fullNameOf[Product])
 
-    private val mirror = u.runtimeMirror(loader)
-
     //cache for optimisation in collectMethods()
     private val filteredMethodsOfClassAny = getFiltered(typeOf[Any]).filter(_.name.toString != "getClass")
     private val filteredJavaMethods       = {
         clazz.getMethods
-                .filterNot(m => Modifier.isFinal(m.getModifiers) || Modifier.isStatic(m.getModifiers) || (m.getModifiers & SyntheticMod) == SyntheticMod)
+                .filterNot(m => Modifier.isFinal(m.getModifiers) || Modifier.isStatic(m.getModifiers))
                 .filterNot(f => f.getDeclaringClass.getName.startsWith("scala.Function") || f.getDeclaringClass.getName.startsWith("scala.PartialFunction"))
     }
 
@@ -86,12 +85,9 @@ class SimplePuppetClassDescription[A] private(override val classType: u.Type,
         val symbolParams = method.paramLists
                 .flatten
                 .map(t => {
-                    val argClass = t.typeSignature.erasure.typeSymbol.asClass
-                    if (argClass.fullName == "scala.Array")
-                        "array"
-                    else mirror
-                            .runtimeClass(argClass)
-                            .descriptorString()
+                    val argClass = t.typeSignature.erasure.typeSymbol
+                    val name = argClass.fullName
+                    PrimitivesNameMap.getOrElse(name, name)
                 }
                 )
         var ordinal      = 0
@@ -99,7 +95,7 @@ class SimplePuppetClassDescription[A] private(override val classType: u.Type,
         val javaMethod   = filtered
                 .find(x => {
                     val v = x.getParameterTypes
-                            .map(t => if (t.isArray) "array" else t.descriptorString())
+                            .map(t => if (t.isArray) "array" else t.getTypeName)
                     ordinal += 1
                     v sameElements symbolParams
                 })
@@ -126,12 +122,19 @@ object SimplePuppetClassDescription {
 
     private val SyntheticMod = 0x00001000
 
-    def apply[A](clazz: Class[A]): SimplePuppetClassDescription[A] = {
+    private val PrimitivesNameMap = Map(
+        "scala.Int" -> "int", "scala.Char" -> "char", "scala.Long" -> "long",
+        "scala.Boolean" -> "boolean", "scala.Float" -> "float", "scala.Double" -> "double",
+        "scala.Byte" -> "byte", "scala.Short" -> "short", "scala.Array" -> "array")
+
+    private val cache = mutable.HashMap.empty[Class[_], SimplePuppetClassDescription[_]]
+
+    def apply[A](clazz: Class[A]): SimplePuppetClassDescription[A] = cache.getOrElse(clazz, {
         if (classOf[PuppetWrapper[_]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from PuppetWrapper")
 
         val tpe = runtimeMirror(clazz.getClassLoader).classSymbol(clazz).selfType
         new SimplePuppetClassDescription(tpe, clazz, clazz.getClassLoader)
-    }
+    }).asInstanceOf[SimplePuppetClassDescription[A]]
 
 }

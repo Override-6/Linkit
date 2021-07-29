@@ -43,7 +43,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
     override def serverEngine: Engine = connectionEngine
 
     override def createEngine(identifier: String, communicator: SyncAsyncPacketChannel): Engine = {
-        val entityCache = newCachesManager(identifier, identifier)
+        val entityCache = getCachesManager(identifier, identifier)
         val v           = new ExternalConnectionEngine(serverConnection, identifier, entityCache)
         v
     }
@@ -58,7 +58,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
     }
 
     def createServerEntity(): Engine = {
-        val selfCache    = newCacheManager(serverIdentifier, serverConnection)
+        val selfCache    = getCacheManager(serverIdentifier, serverConnection)
         val serverEntity = new SelfEngine(serverConnection, ExternalConnectionState.CONNECTED, this, selfCache) //Server always connected to himself
         serverEntity
                 .cache

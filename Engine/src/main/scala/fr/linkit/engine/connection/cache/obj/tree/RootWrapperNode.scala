@@ -10,15 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.repo
+package fr.linkit.engine.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.repo.description.TreeViewBehavior
-import fr.linkit.api.connection.cache.repo.tree.SyncNode
+import fr.linkit.api.connection.cache.repo.{Chip, Puppeteer}
 
-trait ObjectSynchronizer {
+class RootWrapperNode[A](puppeteer: Puppeteer[A], chip: Chip[A], desc: TreeViewBehavior, platformIdentifier: String, id: Int)
+        extends WrapperNode[A](puppeteer, chip, desc, platformIdentifier, id, null) {
 
-    def genSynchronizedObject[B](treeViewPath: Array[Int],
-                                 obj: B,
-                                 owner: String,
-                                 descriptions: TreeViewBehavior): SyncNode[B]
+    override def isPresentOnEngine(engineID: String): Boolean = true //Root nodes are always synchronised between engines
+
+
 }

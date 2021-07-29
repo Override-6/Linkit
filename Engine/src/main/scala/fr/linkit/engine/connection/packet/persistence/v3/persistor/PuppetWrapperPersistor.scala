@@ -36,7 +36,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
             !isPresent
         }
         }
-        val useInstancePointerOnly   = !(path.length > 1 && (progress.coordinates match {
+        val useInstancePointerOnly   = !(progress.coordinates match {
             case BroadcastPacketCoordinates(_, _, discardTargets, targetIDs) if discardTargets =>
                 network.listEngines
                         .map(_.identifier)
@@ -44,7 +44,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
                         .forall(check)
 
             case other => other.forallConcernedTargets(check)
-        }))
+        })
 
         val detachedWrapper = DetachedWrapper(if (useInstancePointerOnly) null else wrapper.detachedSnapshot(), puppeteerInfo)
         SimpleObjectSerializerNode(progress.getSerializationNode(detachedWrapper))

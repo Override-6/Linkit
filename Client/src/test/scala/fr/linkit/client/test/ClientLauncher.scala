@@ -36,11 +36,11 @@ object ClientLauncher {
         AppLogger.info(s"Running client with arguments '${args.mkString(" ")}'")
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")
 
-        println("Say 'y' to connect to localhost")
-        print("> ")
         val scanner     = new Scanner(System.in)
-        val isLocalhost = scanner.nextLine().startsWith("y")
-        val address     = if (isLocalhost) Localhost else ServerAddress
+        /*println("Say 'y' to connect to localhost")
+        print("> ")
+        val isLocalhost = scanner.nextLine().startsWith("y")*/
+        val address     = Localhost
 
         println("Choose an identifier")
         print("> ")

@@ -42,6 +42,7 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
             case ArrayFlag                              => ArrayPersistence.deserialize(in)
             case HeadedValueFlag                        => pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
             case NullFlag                               => RawObjectNode(if (buff.limit() > buff.position() && buff.get(buff.position()) == NoneFlag) None else null)
+            case NoneFlag                               => RawObjectNode(None)
             case ObjectFlag                             =>
                 if (buff.get(startPos + 1) == HeadedValueFlag) {
                     in.position(startPos + 2)

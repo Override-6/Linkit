@@ -28,7 +28,7 @@ import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBa
 import fr.linkit.engine.connection.cache.obj.generation.{CloneHelper, PuppetWrapperClassGenerator, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.local.{ObjectChip, SimpleRMIHandler}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
-import fr.linkit.engine.connection.cache.obj.tree.{DefaultPuppetNodeCenter, MemberSyncNode, PuppetNode}
+import fr.linkit.engine.connection.cache.obj.tree.{DefaultPuppetNodeCenter, MemberSyncNode, RootWrapperNode, WrapperNode}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
@@ -55,8 +55,8 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
 
     import defaultTreeViewBehavior._
 
-    override val nodeCenter    = new DefaultPuppetNodeCenter[A]
-    private  val fieldRestorer = new FieldRestorer
+    override val nodeCenter        = new DefaultPuppetNodeCenter[A]
+    private  val fieldRestorer     = new FieldRestorer
     private  val currentIdentifier = channel.traffic.currentIdentifier
 
     override def postObject[B <: A : ClassTag : TypeTag](id: Int, obj: B): B with PuppetWrapper[B] = {
@@ -88,7 +88,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     }
 
     override def injectInTreeView[B <: A](puppet: B, info: PuppeteerInfo): B with PuppetWrapper[B] = {
-        genSynchronizedObject[B](info.treeViewPath, puppet, info.owner, defaultTreeViewBehavior)
+        genSynchronizedObject[B](info.treeViewPath, puppet, info.owner, defaultTreeViewBehavior).puppetWrapper
     }
 
     private def isRegistered(path: Array[Int]): Boolean = {
@@ -112,7 +112,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
         val response = bundle.packet
         val owner    = bundle.coords.senderID
         response.nextPacket[Packet] match {
-            case ip: InvocationPacket =>
+            case ip: InvocationPacket                    =>
                 val path = ip.path
                 val node = nodeCenter.findNode(path)
                 node.fold(AppLogger.error(s"Could not find puppet node at path ${path.mkString("$", " -> ", "")}")) {
@@ -142,14 +142,23 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     override def genSynchronizedObject[B](treeViewPath: Array[Int],
                                           obj: B,
                                           ownerID: String,
-                                          behaviors: TreeViewBehavior): B with PuppetWrapper[B] = {
+                                          behaviors: TreeViewBehavior): SyncNode[B] = {
 
-        def registerObject(wrapper: PuppetWrapper[Any]): Unit = {
+        def registerObject(wrapper: PuppetWrapper[Any]): SyncNode[Any] = {
             val behavior = getFromClass[Any](wrapper.getWrappedClass)
 
-            val chip      = ObjectChip[Any](ownerID, behavior, wrapper)
-            val puppeteer = wrapper.getPuppeteer
-            nodeCenter.addNode(treeViewPath, (id, parent: SyncNode[_]) => new PuppetNode(puppeteer, chip, behavior.treeView, this.channel.traffic.currentIdentifier, id, parent))
+            val chip                = ObjectChip[Any](ownerID, behavior, wrapper)
+            val puppeteer           = wrapper.getPuppeteer
+            var node: SyncNode[Any] = null
+            val isRootObject        = treeViewPath.length == 1
+
+            val factory: (Int, SyncNode[_]) => SyncNode[Any] = (id, parent: SyncNode[_]) => {
+                node = if (isRootObject) new RootWrapperNode[Any](puppeteer, chip, behavior.treeView, currentIdentifier, id)
+                else                     new WrapperNode(puppeteer, chip, behavior.treeView, currentIdentifier, id, parent)
+                node
+            }
+            nodeCenter.addNode(treeViewPath, factory)
+            node
         }
 
         ensureNotWrapped(obj)
@@ -164,17 +173,17 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
         val puppeteerDesc   = PuppeteerInfo(family, cacheID, ownerID, treeViewPath)
         val puppeteer       = new InstancePuppeteer[B](channel, procrastinator, this, puppeteerDesc, wrapperBehavior)
         val wrapper         = genPuppetWrapper[B](puppeteer, obj)
-        registerObject(wrapper.asInstanceOf[PuppetWrapper[Any]])
+        val node            = registerObject(wrapper.asInstanceOf[PuppetWrapper[Any]])
         for (bhv <- wrapperBehavior.listField() if bhv.isSynchronized) {
 
             val id            = ThreadLocalRandom.current().nextInt()
             val field         = bhv.desc.javaField
             val fieldValue    = field.get(obj)
             val childTreePath = treeViewPath ++ Array(id)
-            val syncValue     = genSynchronizedObject(childTreePath, fieldValue, ownerID, behaviors)
+            val syncValue     = genSynchronizedObject(childTreePath, fieldValue, ownerID, behaviors).puppetWrapper
             ScalaUtils.setValue(obj, field, syncValue)
         }
-        wrapper
+        node.asInstanceOf[SyncNode[B]]
     }
 
     private def setRepoContent(content: CacheRepoContent[A]): Unit = {
@@ -202,7 +211,9 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
 
     private def localRegisterRemotePuppet[B <: A](path: Array[Int], owner: String, puppet: B, behavior: WrapperBehavior[B]): B with PuppetWrapper[B] = {
         val treeViewBehavior = behavior.treeView
-        genSynchronizedObject[B](path, puppet, owner, treeViewBehavior)
+        val node             = genSynchronizedObject[B](path, puppet, owner, treeViewBehavior)
+        node.putPresence(owner)
+        node.puppetWrapper
     }
 }
 

@@ -17,7 +17,7 @@ import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import sun.misc.Unsafe
 
 import java.io.File
-import java.lang.reflect.{Field, Modifier}
+import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
 import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
@@ -137,7 +137,7 @@ object ScalaUtils {
     }
 
     def pasteAllFields[A](instance: A, data: A): Unit = {
-        retrieveAllFields(data.getClass)
+        retrieveAllAccessibleFields(data.getClass)
                 .foreach(field => {
                     ScalaUtils.setValue(instance, field, field.get(data))
                 })
@@ -150,16 +150,29 @@ object ScalaUtils {
         instance
     }
 
-    def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Seq[Field] = {
+    def retrieveAllAccessibleFields(clazz: Class[_], ref: Any = null, accessible: Boolean = true): Seq[Field] = {
         var superClass  = clazz
         var superFields = Seq.empty[Field]
         while (superClass != null) {
             superFields ++= superClass.getDeclaredFields
             superClass = superClass.getSuperclass
         }
-        superFields
+        val v = superFields
                 .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isNative(f.getModifiers))
-                .tapEach(_.setAccessible(accessible))
+        if (accessible)
+            v.filter(setAccessible(_, ref))
+        v
+    }
+
+    private def setAccessible(field: Field, ref: Any): Boolean = {
+        try {
+            field.setAccessible(true)
+            //if (ref != null) field.canAccess(ref) else
+            true
+        } catch {
+            case _: InaccessibleObjectException =>
+                false
+        }
     }
 
 }

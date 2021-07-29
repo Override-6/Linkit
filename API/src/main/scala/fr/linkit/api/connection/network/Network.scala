@@ -37,7 +37,7 @@ trait Network {
 
     def startUpDate: Timestamp
 
-    def newCacheManager(family: String, owner: ConnectionContext): SharedCacheManager
+    def getCacheManager(family: String, owner: ConnectionContext): SharedCacheManager
 
     def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager
 
