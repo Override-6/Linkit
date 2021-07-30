@@ -14,10 +14,11 @@ package fr.linkit.engine.connection.packet.persistence
 
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence._
+import fr.linkit.api.local.concurrency.Procrastinator
 
 import java.nio.ByteBuffer
 
-class DefaultPacketTranslator extends PacketTranslator {
+class DefaultPacketTranslator(procrastinator: Procrastinator) extends PacketTranslator {
 
     private val serializer = new DefaultPacketSerializer()
 

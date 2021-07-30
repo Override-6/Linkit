@@ -18,9 +18,9 @@ import java.nio.ByteBuffer
 
 trait PacketTranslator {
 
-    def translate(packetInfo: TransferInfo): PacketSerializationResult
+    def translate(packetInfo: TransferInfo)(onResultAvailable: PacketSerializationResult => Unit): Unit
 
-    def translate(buff: ByteBuffer): PacketDeserializationResult
+    def translate(buff: ByteBuffer)(onResultAvailable: PacketDeserializationResult => Unit): Unit
 
     def initNetwork(network: Network): Unit
 
