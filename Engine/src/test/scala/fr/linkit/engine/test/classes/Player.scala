@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.test.classes
 
-import fr.linkit.api.connection.cache.repo.description.annotation.InvocationKind.ONLY_LOCAL
+import fr.linkit.api.connection.cache.obj.description.annotation.InvocationKind.ONLY_LOCAL
 
 import scala.annotation.meta.getter
-import fr.linkit.api.connection.cache.repo.description.annotation.{MethodControl => MC}
+import fr.linkit.api.connection.cache.obj.description.annotation.{MethodControl => MC}
 
 case class Player(@(MC@getter)(ONLY_LOCAL) id: Int,
                   @(MC@getter)(ONLY_LOCAL) owner: String,

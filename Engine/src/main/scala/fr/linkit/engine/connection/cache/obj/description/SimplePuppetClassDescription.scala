@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.description
 
-import fr.linkit.api.connection.cache.repo.PuppetWrapper
-import fr.linkit.api.connection.cache.repo.description.{FieldDescription, MethodDescription, fullNameOf}
+import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, fullNameOf}
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.engine.connection.cache.obj.description.SimplePuppetClassDescription.{PrimitivesNameMap, SyntheticMod}
 

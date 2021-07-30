@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.repo.description.PuppeteerInfo
-import fr.linkit.api.connection.cache.repo.{InvocationChoreographer, PuppetWrapper}
+import fr.linkit.api.connection.cache.obj.description.PuppeteerInfo
+import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper}
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.config.ApplicationConfiguration

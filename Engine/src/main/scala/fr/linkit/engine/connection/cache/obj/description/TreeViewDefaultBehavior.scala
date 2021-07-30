@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.description
 
-import fr.linkit.api.connection.cache.repo.description.{MemberBehaviorFactory, TreeViewBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.{MemberBehaviorFactory, TreeViewBehavior, WrapperBehavior}
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
 
 import scala.collection.mutable

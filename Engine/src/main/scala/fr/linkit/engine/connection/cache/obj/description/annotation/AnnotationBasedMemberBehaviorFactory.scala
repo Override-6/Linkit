@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.description.annotation
 
-import fr.linkit.api.connection.cache.repo.description._
-import fr.linkit.api.connection.cache.repo.description.annotation._
+import fr.linkit.api.connection.cache.obj.description._
+import fr.linkit.api.connection.cache.obj.description.annotation._
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory.DefaultMethodControl
 import fr.linkit.engine.connection.cache.obj.invokation.local.SimpleRMIHandler
 

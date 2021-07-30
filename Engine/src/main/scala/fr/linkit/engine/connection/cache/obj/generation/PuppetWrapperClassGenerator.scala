@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
-import fr.linkit.api.connection.cache.repo.{InvalidPuppetDefException, PuppetWrapper}
+import fr.linkit.api.connection.cache.obj.generation.PuppetWrapperGenerator
+import fr.linkit.api.connection.cache.obj.{InvalidPuppetDefException, PuppetWrapper}
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.system.AppLogger

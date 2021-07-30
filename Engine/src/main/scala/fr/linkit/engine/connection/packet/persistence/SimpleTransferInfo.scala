@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
-import fr.linkit.api.connection.cache.repo.InvocationChoreographer
+import fr.linkit.api.connection.cache.obj.InvocationChoreographer
 import fr.linkit.api.connection.packet.persistence.{PacketSerializer, Serializer, TransferInfo}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId

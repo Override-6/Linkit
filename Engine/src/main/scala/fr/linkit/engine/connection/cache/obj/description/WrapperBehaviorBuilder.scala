@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.description
 
-import fr.linkit.api.connection.cache.repo.description.annotation.InvocationKind
-import fr.linkit.api.connection.cache.repo.description.{MemberBehaviorFactory, MethodBehavior, TreeViewBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.annotation.InvocationKind
+import fr.linkit.api.connection.cache.obj.description.{MemberBehaviorFactory, MethodBehavior, TreeViewBehavior, WrapperBehavior}
 import fr.linkit.engine.connection.cache.obj.description.WrapperBehaviorBuilder.MethodControl
 
 import java.util

@@ -13,10 +13,10 @@
 package gen.$WrappedClassPackage$
 
 import $WrappedClassName$
-import fr.linkit.api.connection.cache.repo.InvocationChoreographer
-import fr.linkit.api.connection.cache.repo.description.PuppeteerInfo
-import fr.linkit.api.connection.cache.repo.PuppetWrapper
-import fr.linkit.api.connection.cache.repo.Puppeteer
+import fr.linkit.api.connection.cache.obj.InvocationChoreographer
+import fr.linkit.api.connection.cache.obj.description.PuppeteerInfo
+import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.Puppeteer
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.{AbstractPuppetWrapper, PuppetAlreadyInitialisedException}
 import fr.linkit.engine.connection.cache.obj.generation.CloneHelper

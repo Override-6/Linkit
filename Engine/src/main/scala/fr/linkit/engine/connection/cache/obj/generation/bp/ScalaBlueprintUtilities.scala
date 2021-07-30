@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation.bp
 
-import fr.linkit.api.connection.cache.repo.description.MethodDescription
+import fr.linkit.api.connection.cache.obj.description.MethodDescription
 import fr.linkit.api.local.generation.PuppetClassDescription
 
 import scala.reflect.runtime.universe._

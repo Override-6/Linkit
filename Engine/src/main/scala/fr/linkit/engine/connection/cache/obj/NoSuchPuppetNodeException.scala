@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj
 
-import fr.linkit.api.connection.cache.repo.PuppetException
+import fr.linkit.api.connection.cache.obj.PuppetException
 
 class NoSuchPuppetNodeException(msg: String) extends PuppetException(msg) {
 

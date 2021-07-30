@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
-import fr.linkit.api.connection.cache.repo.PuppetWrapper
-import fr.linkit.api.connection.cache.repo.description.RMIHandler
+import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.description.RMIHandler
 import fr.linkit.api.local.system.AppLogger
 
 object SimpleRMIHandler extends RMIHandler {

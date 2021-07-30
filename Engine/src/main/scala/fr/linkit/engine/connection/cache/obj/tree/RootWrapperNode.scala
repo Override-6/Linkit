@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.repo.description.TreeViewBehavior
-import fr.linkit.api.connection.cache.repo.{Chip, Puppeteer}
+import fr.linkit.api.connection.cache.obj.description.TreeViewBehavior
+import fr.linkit.api.connection.cache.obj.{Chip, Puppeteer}
 
 class RootWrapperNode[A](puppeteer: Puppeteer[A], chip: Chip[A], desc: TreeViewBehavior, platformIdentifier: String, id: Int)
         extends WrapperNode[A](puppeteer, chip, desc, platformIdentifier, id, null) {

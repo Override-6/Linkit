@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.repo.tree.SyncNode
+import fr.linkit.api.connection.cache.obj.tree.SyncNode
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 

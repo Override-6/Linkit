@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.connection.cache.obj
 
-import fr.linkit.api.connection.cache.repo._
-import fr.linkit.api.connection.cache.repo.description.{PuppeteerInfo, TreeViewBehavior, WrapperBehavior}
-import fr.linkit.api.connection.cache.repo.generation.PuppetWrapperGenerator
-import fr.linkit.api.connection.cache.repo.tree.SyncNode
+import fr.linkit.api.connection.cache.obj._
+import fr.linkit.api.connection.cache.obj.description.{PuppeteerInfo, TreeViewBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.generation.PuppetWrapperGenerator
+import fr.linkit.api.connection.cache.obj.tree.SyncNode
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer

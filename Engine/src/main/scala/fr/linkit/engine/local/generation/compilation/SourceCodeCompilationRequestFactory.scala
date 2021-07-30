@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.generation.compilation
 
-import fr.linkit.api.connection.cache.repo.generation.GeneratedClassLoader
+import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.compilation.CompilationResult
 import fr.linkit.engine.connection.cache.obj.generation.CloneHelper
 import fr.linkit.engine.local.LinkitApplication

@@ -12,9 +12,9 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.remote
 
-import fr.linkit.api.connection.cache.repo._
-import fr.linkit.api.connection.cache.repo.description.annotation.InvocationKind
-import fr.linkit.api.connection.cache.repo.description.{PuppeteerInfo, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj._
+import fr.linkit.api.connection.cache.obj.description.annotation.InvocationKind
+import fr.linkit.api.connection.cache.obj.description.{PuppeteerInfo, WrapperBehavior}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.local.concurrency.Procrastinator

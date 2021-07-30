@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.repo.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.PuppetWrapper
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllAccessibleFields}
 import fr.linkit.engine.local.utils.{Identity, JavaUtils, ScalaUtils, UnWrapper}
 

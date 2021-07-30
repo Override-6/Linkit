@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.repo.tree.{PuppetNodeCenter, SyncNode}
+import fr.linkit.api.connection.cache.obj.tree.{PuppetNodeCenter, SyncNode}
 import fr.linkit.engine.connection.cache.obj.CacheRepoContent
 import fr.linkit.engine.connection.cache.obj.DefaultEngineObjectCenter.PuppetProfile
 

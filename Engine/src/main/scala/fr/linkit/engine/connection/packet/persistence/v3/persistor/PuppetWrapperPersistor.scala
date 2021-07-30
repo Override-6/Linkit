@@ -1,9 +1,9 @@
 package fr.linkit.engine.connection.packet.persistence.v3.persistor
 
 import fr.linkit.api.connection.cache.NoSuchCacheException
-import fr.linkit.api.connection.cache.repo.description.PuppeteerInfo
-import fr.linkit.api.connection.cache.repo.tree.SyncNode
-import fr.linkit.api.connection.cache.repo.{EngineObjectCenter, PuppetWrapper}
+import fr.linkit.api.connection.cache.obj.description.PuppeteerInfo
+import fr.linkit.api.connection.cache.obj.tree.SyncNode
+import fr.linkit.api.connection.cache.obj.{EngineObjectCenter, PuppetWrapper}
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.BroadcastPacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3._

@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj
 
-import fr.linkit.api.connection.cache.repo.description.{MethodBehavior, PuppeteerInfo, WrapperBehavior}
-import fr.linkit.api.connection.cache.repo.{InvocationChoreographer, PuppetWrapper, Puppeteer}
+import fr.linkit.api.connection.cache.obj.description.{MethodBehavior, PuppeteerInfo, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper, Puppeteer}
 import fr.linkit.engine.connection.cache.obj.generation.CloneHelper
 
 trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {

@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.repo.PuppetWrapper
-import fr.linkit.api.connection.cache.repo.generation.GeneratedClassLoader
+import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.api.local.generation.cbp.ClassBlueprint
 import fr.linkit.api.local.generation.compilation.CompilationResult

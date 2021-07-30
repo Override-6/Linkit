@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation.bp
 
-import fr.linkit.api.connection.cache.repo.description.MethodDescription
+import fr.linkit.api.connection.cache.obj.description.MethodDescription
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaBlueprintUtilities._
 import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaWrapperMethodBlueprint.ValueScope

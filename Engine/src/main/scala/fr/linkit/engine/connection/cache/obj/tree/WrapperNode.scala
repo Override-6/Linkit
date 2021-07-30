@@ -12,9 +12,9 @@
 
 package fr.linkit.engine.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.repo.description.TreeViewBehavior
-import fr.linkit.api.connection.cache.repo.tree.SyncNode
-import fr.linkit.api.connection.cache.repo.{Chip, PuppetWrapper, Puppeteer}
+import fr.linkit.api.connection.cache.obj.description.TreeViewBehavior
+import fr.linkit.api.connection.cache.obj.tree.SyncNode
+import fr.linkit.api.connection.cache.obj.{Chip, PuppetWrapper, Puppeteer}
 import fr.linkit.engine.connection.cache.obj.NoSuchPuppetNodeException
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.UnexpectedPacketException

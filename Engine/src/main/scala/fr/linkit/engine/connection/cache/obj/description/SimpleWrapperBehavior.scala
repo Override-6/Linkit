@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.description
 
-import fr.linkit.api.connection.cache.repo.description._
+import fr.linkit.api.connection.cache.obj.description._
 import fr.linkit.api.local.generation.PuppetClassDescription
 
 class SimpleWrapperBehavior[A] private(override val classDesc: PuppetClassDescription[A],

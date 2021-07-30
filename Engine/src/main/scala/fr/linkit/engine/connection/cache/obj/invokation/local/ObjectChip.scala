@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
-import fr.linkit.api.connection.cache.repo._
-import fr.linkit.api.connection.cache.repo.description.WrapperBehavior
+import fr.linkit.api.connection.cache.obj._
+import fr.linkit.api.connection.cache.obj.description.WrapperBehavior
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.fundamental.RefPacket

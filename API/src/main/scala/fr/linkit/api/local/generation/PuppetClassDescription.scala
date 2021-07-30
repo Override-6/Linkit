@@ -12,7 +12,7 @@
 
 package fr.linkit.api.local.generation
 
-import fr.linkit.api.connection.cache.repo.description.{FieldDescription, MethodDescription}
+import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription}
 
 import scala.reflect.runtime.universe.Type
 

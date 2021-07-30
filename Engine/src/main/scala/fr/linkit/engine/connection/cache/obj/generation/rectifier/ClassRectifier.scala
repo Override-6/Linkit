@@ -12,9 +12,9 @@
 
 package fr.linkit.engine.connection.cache.obj.generation.rectifier
 
-import fr.linkit.api.connection.cache.repo.PuppetWrapper
-import fr.linkit.api.connection.cache.repo.description.MethodDescription
-import fr.linkit.api.connection.cache.repo.generation.GeneratedClassLoader
+import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.description.MethodDescription
+import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.engine.connection.cache.obj.generation.rectifier.ClassRectifier.SuperMethodModifiers
 import javassist.bytecode.MethodInfo
