@@ -20,5 +20,5 @@ trait ObjectSynchronizer {
     def genSynchronizedObject[B](treeViewPath: Array[Int],
                                  obj: B,
                                  owner: String,
-                                 descriptions: TreeViewBehavior): SyncNode[B]
+                                 descriptions: TreeViewBehavior): (PuppetWrapper[B], SyncNode[B])
 }

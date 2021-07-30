@@ -15,42 +15,45 @@ package fr.linkit.engine.connection.cache.obj.generation
 import fr.linkit.api.connection.cache.obj.PuppetWrapper
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllAccessibleFields}
 import fr.linkit.engine.local.utils.{Identity, JavaUtils, ScalaUtils, UnWrapper}
+import sun.misc.Unsafe
 
+import java.lang.ref.Cleaner
 import java.lang.reflect.{Field, Modifier}
+import java.nio.Buffer
+import java.nio.file.WatchKey
 import scala.collection.mutable
 
 //TODO Factorise this class and optimize it.
 object CloneHelper {
 
-    val MaxScanDepth: Int = 25
+    val MaxScanDepth: Int = 7
 
     def instantiateFromOrigin[A](wrapperClass: Class[A with PuppetWrapper[A]], origin: A): A with PuppetWrapper[A] = {
-        instantiateFromOrigin0(wrapperClass, origin)
+        instantiateFromOrigin0(wrapperClass, deepClone(origin))
     }
 
     private def instantiateFromOrigin0[A](wrapperClass: Class[A with PuppetWrapper[A]], origin: A): A with PuppetWrapper[A] = {
         val instance      = allocate[A with PuppetWrapper[A]](wrapperClass)
         val checkedFields = mutable.HashSet.empty[Identity[Any]]
-        var depth: Int = 0
+        var depth: Int    = 0
 
         def scanObject(instanceField: Any, originField: Any, root: Boolean): Unit = {
             if (depth >= MaxScanDepth ||
                     originField == null ||
-                    checkedFields.contains(Identity(originField)) ||
                     UnWrapper.isPrimitiveWrapper(instanceField))
                 return
             val fields = retrieveAllAccessibleFields(originField.getClass, originField)
+            depth += 1
             fields.foreach(field => {
                 try {
                     val originValue = field.get(originField)
-                    depth += 1
                     scanField(field, instanceField, originValue, root)
-                    depth -= 1
                 } catch {
                     case _: IllegalAccessException =>
                     //simply do not scan
                 }
             })
+            depth -= 1
         }
 
         def scanField(field: Field, instanceField: Any, originValue: AnyRef, root: Boolean): Unit = {
@@ -60,8 +63,11 @@ object CloneHelper {
                 if (root) {
                     ScalaUtils.setValue(instanceField, field, originValue)
                 }
+                if (checkedFields.contains(Identity(originValue)))
+                    return
                 checkedFields += Identity(originValue)
                 originValue match {
+                    case _: PuppetWrapper[_]  => //do not scan wrappers
                     case array: Array[AnyRef] => scanArray(array)
                     case _                    => scanObject(field.get(instanceField), originValue, false)
                 }
@@ -86,10 +92,13 @@ object CloneHelper {
         instance
     }
 
-    /*def deepClone[A](origin: A): A = {
+    def deepClone[A](origin: A): A = {
         val checkedItems = mutable.HashMap.empty[Identity[Any], Any]
+        var depth: Int = 0
 
         def getClonedInstance(data: Any): Any = {
+            if (depth > MaxScanDepth)
+                return data
             data match {
                 case null                                 => null
                 case None | Nil                           => data //TODO Remove the deepClone method because it was made for instantiateFromOrigin and only duplicate fields that hosts a the wrapper
@@ -99,13 +108,13 @@ object CloneHelper {
                 case hidden if hidden.getClass.isHidden   => data
                 case enum if enum.getClass.isEnum         => enum
 
-                    //The method will be removed, made this awful match list in order to complete a project test
-                case _: Class[_]                          => data
-                case _: Unsafe                            => data
-                case _: Cleaner                           => data
-                case _: WatchKey                          => data
-                case _: ClassLoader                          => data
-                case _: Buffer                            => data
+                //The method will be removed, made this awful match list in order to complete a project test
+                case _: Class[_]    => data
+                case _: Unsafe      => data
+                case _: Cleaner     => data
+                case _: WatchKey    => data
+                case _: ClassLoader => data
+                case _: Buffer      => data
 
                 case _ =>
 
@@ -116,10 +125,17 @@ object CloneHelper {
                         if (!clazz.isArray) {
                             val instance = allocate[Any](clazz)
                             checkedItems.put(Identity(data), instance)
-                            retrieveAllFields(clazz).foreach(field => {
-                                val copied = getClonedInstance(field.get(data))
-                                ScalaUtils.setValue(instance, field, copied)
+                            depth += 1
+                            retrieveAllAccessibleFields(clazz).foreach(field => {
+                                try {
+                                    val copied = getClonedInstance(field.get(data))
+                                    ScalaUtils.setValue(instance, field, copied)
+                                } catch {
+                                    case e: IllegalAccessException =>
+                                    //Simply do not scan
+                                }
                             })
+                            depth -= 1
                             instance
                         } else {
                             //will be a primitive array
@@ -132,13 +148,18 @@ object CloneHelper {
 
         val clone = getClonedInstance(origin).asInstanceOf[A]
         clone
-    }*/
+    }
 
     def detachedWrapperClone[A](origin: PuppetWrapper[A]): A = {
+        detachedWrapperClone0(deepClone(origin))
+    }
+
+    private def detachedWrapperClone0[A](origin: PuppetWrapper[A]): A = {
         val instance      = allocate[AnyRef](origin.getWrappedClass)
         val checkedFields = mutable.HashMap.empty[Identity[AnyRef], AnyRef]
 
         var depth: Int = 0
+
         def scanObject(instanceField: Any, originField: Any, root: Boolean): Unit = {
             if (originField == null || depth > MaxScanDepth)
                 return

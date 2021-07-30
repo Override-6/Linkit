@@ -14,6 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationObjectPool, DeserializationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
+import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{RawObjectNode, SizedDeserializerNode}
 import fr.linkit.engine.local.utils.NumberSerializer
@@ -51,6 +52,8 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends D
                     if (!postInit)
                         poolObject(i) = node.deserialize(in)
             }
+            if (nodes(i) == null && postInit)
+                throw new MalFormedPacketException(null, "Packet pool contains null elements")
         }
     }
 

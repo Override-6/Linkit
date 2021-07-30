@@ -16,9 +16,13 @@ import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.Si
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor.DetachedWrapper
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.SimpleObjectSerializerNode
 
+import scala.collection.mutable
+
 class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWrapper[_]] {
 
     override val handledClasses: Seq[HandledClass] = Seq(classOf[PuppetWrapper[_]] -> (true, Seq(SerialisationMethod.Serial)), classOf[DetachedWrapper] -> (false, Seq(SerialisationMethod.Deserial)))
+
+    private val awfulMap = mutable.HashMap.empty[Array[Int], Any]
 
     override def getSerialNode(wrapper: PuppetWrapper[_], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         val puppeteerInfo = wrapper.getPuppeteerInfo
@@ -33,10 +37,10 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
             //As this wrapper is not present on the targeted engine, the object value will be send.
             if (!isPresent)
                 node.putPresence(engineID)
-            !isPresent
+            isPresent
         }
         }
-        val useInstancePointerOnly   = !(progress.coordinates match {
+        val useInstancePointerOnly   = progress.coordinates match {
             case BroadcastPacketCoordinates(_, _, discardTargets, targetIDs) if discardTargets =>
                 network.listEngines
                         .map(_.identifier)
@@ -44,9 +48,9 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
                         .forall(check)
 
             case other => other.forallConcernedTargets(check)
-        })
+        }
 
-        val detachedWrapper = DetachedWrapper(if (useInstancePointerOnly) null else wrapper.detachedSnapshot(), puppeteerInfo)
+        val detachedWrapper = DetachedWrapper(if (useInstancePointerOnly) null else awfulMap.getOrElseUpdate(path, wrapper.detachedSnapshot()), puppeteerInfo)
         SimpleObjectSerializerNode(progress.getSerializationNode(detachedWrapper))
     }
 
@@ -54,6 +58,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
         val node = DefaultObjectPersistor.getDeserialNode(desc, context, progress)
         //println(s"Deserialize wrapper...")
         new SimpleObjectDeserializerNode(in => {
+            val pos = in.position()
             val detached = node.deserialize(in)
             initialiseWrapper(detached.asInstanceOf[DetachedWrapper])
         })
@@ -65,7 +70,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
 
         val center = findCacheOfPuppeteer(info)
                 .getOrElse {
-                    throwNoSuchCacheException(info, if (wrapped == null) None else Option(wrapped.getClass))
+                    throwNoSuchCacheException(info, if (wrapped == null) None else Some(wrapped.getClass))
                 }
         if (wrapped == null) {
             val node: SyncNode[Any] = center.nodeCenter

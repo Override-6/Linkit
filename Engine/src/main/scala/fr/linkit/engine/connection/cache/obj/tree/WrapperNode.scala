@@ -93,7 +93,7 @@ class WrapperNode[A](override val puppeteer: Puppeteer[A], //Remote invocation
                 val synchronizer   = puppeteer.repo
                 val resultNodePath = treeViewPath ++ Array(id)
 
-                result = synchronizer.genSynchronizedObject(resultNodePath, result, ownerID, descriptions).puppetWrapper
+                result = synchronizer.genSynchronizedObject(resultNodePath, result, ownerID, descriptions)._1
             }
             response
                     .addPacket(RefPacket[Any](result))

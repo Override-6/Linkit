@@ -84,7 +84,7 @@ class InstancePuppeteer[S](channel: RequestPacketChannel,
         val currentPath = puppeteerInfo.treeViewPath
         val objPath     = currentPath ++ Array(id)
         val defaults    = repo.defaultTreeViewBehavior
-        repo.genSynchronizedObject(objPath, obj, currentIdentifier, defaults).puppetWrapper
+        repo.genSynchronizedObject(objPath, obj, currentIdentifier, defaults)._1
     }
 
     private def chooseScope(kind: InvocationKind): ChannelScope = {

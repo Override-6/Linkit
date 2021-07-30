@@ -69,13 +69,15 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
 
         val path    = Array(id)
-        val wrapper = localRegisterRemotePuppet[B](Array(id), currentIdentifier, obj, behavior)
+        val wrapper = localRegisterRemotePuppet[B](path, currentIdentifier, obj, behavior)
         //Indicate that a new object has been posted.
         channel.makeRequest(ChannelScopes.discardCurrent)
                 .addPacket(ObjectPacket(PuppetProfile(path, obj, currentIdentifier)))
                 .putAllAttributes(this)
                 .submit()
-
+        //TODO redesign tree system
+        val wrapperNode = nodeCenter.findNode(path).get.asInstanceOf[RootWrapperNode[_]]
+        wrapperNode.setPresentOnNetwork()
         wrapper
     }
 
@@ -88,7 +90,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     }
 
     override def injectInTreeView[B <: A](puppet: B, info: PuppeteerInfo): B with PuppetWrapper[B] = {
-        genSynchronizedObject[B](info.treeViewPath, puppet, info.owner, defaultTreeViewBehavior).puppetWrapper
+        genSynchronizedObject[B](info.treeViewPath, puppet, info.owner, defaultTreeViewBehavior)._1
     }
 
     private def isRegistered(path: Array[Int]): Boolean = {
@@ -142,7 +144,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
     override def genSynchronizedObject[B](treeViewPath: Array[Int],
                                           obj: B,
                                           ownerID: String,
-                                          behaviors: TreeViewBehavior): SyncNode[B] = {
+                                          behaviors: TreeViewBehavior): (B with PuppetWrapper[B], SyncNode[B]) = {
 
         def registerObject(wrapper: PuppetWrapper[Any]): SyncNode[Any] = {
             val behavior = getFromClass[Any](wrapper.getWrappedClass)
@@ -180,10 +182,10 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
             val field         = bhv.desc.javaField
             val fieldValue    = field.get(obj)
             val childTreePath = treeViewPath ++ Array(id)
-            val syncValue     = genSynchronizedObject(childTreePath, fieldValue, ownerID, behaviors).puppetWrapper
+            val syncValue     = genSynchronizedObject(childTreePath, fieldValue, ownerID, behaviors)._1
             ScalaUtils.setValue(obj, field, syncValue)
         }
-        node.asInstanceOf[SyncNode[B]]
+        (wrapper, node.asInstanceOf[SyncNode[B]])
     }
 
     private def setRepoContent(content: CacheRepoContent[A]): Unit = {
@@ -211,9 +213,7 @@ class DefaultEngineObjectCenter[A](handler: SharedCacheManager,
 
     private def localRegisterRemotePuppet[B <: A](path: Array[Int], owner: String, puppet: B, behavior: WrapperBehavior[B]): B with PuppetWrapper[B] = {
         val treeViewBehavior = behavior.treeView
-        val node             = genSynchronizedObject[B](path, puppet, owner, treeViewBehavior)
-        node.putPresence(owner)
-        node.puppetWrapper
+        genSynchronizedObject[B](path, puppet, owner, treeViewBehavior)._1
     }
 }
 
