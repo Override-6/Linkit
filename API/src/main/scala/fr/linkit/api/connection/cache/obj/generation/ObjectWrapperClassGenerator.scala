@@ -9,15 +9,15 @@ import scala.reflect.{ClassTag, classTag}
 /**
  * This class generates a class that extends
  * */
-trait PuppetWrapperGenerator {
+trait ObjectWrapperClassGenerator {
 
-    def getPuppetClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]]
+    def getWrapperClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]]
 
-    def getPuppetClass[S](desc: PuppetClassDescription[S]): Class[S with PuppetWrapper[S]]
+    def getWrapperClass[S](desc: PuppetClassDescription[S]): Class[S with PuppetWrapper[S]]
 
-    def getClass[S: universe.TypeTag : ClassTag]: Class[S with PuppetWrapper[S]] = getPuppetClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
+    def getClass[S: universe.TypeTag : ClassTag]: Class[S with PuppetWrapper[S]] = getWrapperClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
-    def preGenerateDescs(descriptions: Seq[PuppetClassDescription[_]]): Unit
+    def preGenerateClasses(descriptions: List[PuppetClassDescription[_]]): Unit
 
     def preGenerateClasses(classes: Seq[Class[_]]): Unit
 

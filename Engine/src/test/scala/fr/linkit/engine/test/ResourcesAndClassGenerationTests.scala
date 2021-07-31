@@ -21,8 +21,8 @@ import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
-import fr.linkit.engine.connection.cache.obj.description.{SimplePuppetClassDescription, SimpleWrapperBehavior, TreeViewDefaultBehavior}
-import fr.linkit.engine.connection.cache.obj.generation.{CloneHelper, PuppetWrapperClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.obj.description.{SimplePuppetClassDescription, SimpleWrapperBehavior, ObjectTreeDefaultBehavior}
+import fr.linkit.engine.connection.cache.obj.generation.{CloneHelper, ObjectWrapperClassClassGenerator, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
 import fr.linkit.engine.local.LinkitApplication
@@ -128,12 +128,12 @@ class ResourcesAndClassGenerationTests {
         val cl = obj.getClass.asInstanceOf[Class[A]]
 
         val resource    = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
-        val generator   = new PuppetWrapperClassGenerator(new DefaultCompilerCenter, resource)
+        val generator   = new ObjectWrapperClassClassGenerator(new DefaultCompilerCenter, resource)
         val desc = SimplePuppetClassDescription[A](cl)
-        val puppetClass = generator.getPuppetClass[A](desc)
+        val puppetClass = generator.getWrapperClass[A](desc)
         println(s"puppetClass = ${puppetClass}")
         val factory = AnnotationBasedMemberBehaviorFactory()
-        val pup     = new InstancePuppeteer[A](null, app, null, PuppeteerInfo("", 8, "", Array(1)), SimpleWrapperBehavior(desc, new TreeViewDefaultBehavior(factory)))
+        val pup     = new InstancePuppeteer[A](null, app, null, PuppeteerInfo("", 8, "", Array(1)), SimpleWrapperBehavior(desc, new ObjectTreeDefaultBehavior(factory)))
         val wrapper  = CloneHelper.instantiateFromOrigin[A](puppetClass, obj)
 
         wrapper.initPuppeteer(pup)

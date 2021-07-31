@@ -12,14 +12,13 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.persistence.PacketTranslator
-import fr.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.api.connection.packet._
+import fr.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
-import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
+import fr.linkit.engine.connection.packet.persistence.{PacketSerializationChoreographer, SimpleTransferInfo}
 
 class SocketPacketWriter(socket: DynamicSocket,
-                         translator: PacketTranslator,
+                         choreographer: PacketSerializationChoreographer,
                          writerInfo: WriterInfo) extends PacketWriter {
 
     override val traffic          : PacketTraffic = writerInfo.traffic
@@ -50,7 +49,7 @@ class SocketPacketWriter(socket: DynamicSocket,
         }
         val transferInfo = SimpleTransferInfo(coords, attributes, packet)
 
-        translator.translate(transferInfo).onBufferAvailable(socket.write)
+        choreographer.add(transferInfo)(result => socket.write(result.buff))
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: String*): Unit = {
@@ -59,7 +58,7 @@ class SocketPacketWriter(socket: DynamicSocket,
 
         if (!discardedIDs.contains(currentIdentifier))
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(coords.injectableID, currentIdentifier, currentIdentifier))
-        translator.translate(transferInfo).onBufferAvailable(socket.write)
+        choreographer.add(transferInfo)(result => socket.write(result.buff))
     }
 
     override def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit = {

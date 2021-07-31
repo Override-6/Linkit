@@ -10,16 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description
+package fr.linkit.engine.connection.cache.obj.tree
 
-import scala.reflect.ClassTag
-import scala.reflect.runtime.universe._
+import fr.linkit.api.connection.cache.obj.tree.SyncNode
+import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
+import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 
-trait TreeViewBehavior {
-    val factory: MemberBehaviorFactory
-    def get[B: TypeTag : ClassTag]: WrapperBehavior[B]
+trait TrafficInterestedSyncNode[A] extends SyncNode[A] {
 
-    def getFromClass[B](clazz: Class[B]): WrapperBehavior[B]
+    def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit
 
-    def put[B](clazz: Class[B], bhv: WrapperBehavior[B])
 }

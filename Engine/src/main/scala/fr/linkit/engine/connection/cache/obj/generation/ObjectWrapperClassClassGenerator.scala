@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.obj.generation.PuppetWrapperGenerator
+import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassGenerator
 import fr.linkit.api.connection.cache.obj.{InvalidPuppetDefException, PuppetWrapper}
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.api.local.generation.compilation.CompilerCenter
@@ -22,16 +22,16 @@ import fr.linkit.engine.local.mapping.ClassMappings
 
 import scala.reflect.runtime.universe.TypeTag
 
-class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersClassResource) extends PuppetWrapperGenerator {
+class ObjectWrapperClassClassGenerator(center: CompilerCenter, resources: WrappersClassResource) extends ObjectWrapperClassGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val requestFactory                  = new WrapperCompilationRequestFactory
 
-    override def getPuppetClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
-        getPuppetClass[S](SimplePuppetClassDescription[S](clazz))
+    override def getWrapperClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
+        getWrapperClass[S](SimplePuppetClassDescription[S](clazz))
     }
 
-    override def getPuppetClass[S](desc: PuppetClassDescription[S]): Class[S with PuppetWrapper[S]] = {
+    override def getWrapperClass[S](desc: PuppetClassDescription[S]): Class[S with PuppetWrapper[S]] = {
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is abstract.")
@@ -54,10 +54,10 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
     }
 
     override def preGenerateClasses(classes: Seq[Class[_]]): Unit = {
-        preGenerateDescs(classes.map(SimplePuppetClassDescription(_)))
+        preGenerateClasses(classes.map(SimplePuppetClassDescription(_)).toList)
     }
 
-    override def preGenerateDescs(descriptions: Seq[PuppetClassDescription[_]]): Unit = {
+    override def preGenerateClasses(descriptions: List[PuppetClassDescription[_]]): Unit = {
         val toCompile = descriptions.filter(desc => resources.findWrapperClass(desc.clazz).isEmpty)
         if (toCompile.isEmpty)
             return
@@ -77,6 +77,6 @@ class PuppetWrapperClassGenerator(center: CompilerCenter, resources: WrappersCla
     }
 }
 
-object PuppetWrapperClassGenerator {
+object ObjectWrapperClassClassGenerator {
 
 }

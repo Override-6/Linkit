@@ -53,7 +53,7 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends D
                         poolObject(i) = node.deserialize(in)
             }
             if (nodes(i) == null && postInit)
-                throw new MalFormedPacketException(null, "Packet pool contains null elements")
+                throw new MalFormedPacketException("Packet pool contains null elements")
         }
     }
 

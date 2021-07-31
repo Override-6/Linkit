@@ -22,6 +22,10 @@ case class MalFormedPacketException(bytes: Array[Byte], msg: String) extends Pac
         this(if (buffer == null) null else buffer.array().slice(buffer.position(), buffer.limit()), msg)
     }
 
+    def this(msg: String) {
+        this(null: Array[Byte], msg)
+    }
+
     override protected def appendMessage(sb: StringBuilder): Unit = {
         super.appendMessage(sb)
         if (bytes != null)

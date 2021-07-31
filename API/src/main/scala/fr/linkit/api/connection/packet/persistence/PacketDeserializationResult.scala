@@ -12,8 +12,5 @@
 
 package fr.linkit.api.connection.packet.persistence
 
-import java.nio.ByteBuffer
-
 trait PacketDeserializationResult extends PacketTransferResult {
-    def getBuffer: ByteBuffer
 }

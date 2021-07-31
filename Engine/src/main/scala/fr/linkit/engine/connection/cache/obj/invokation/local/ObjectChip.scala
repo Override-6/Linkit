@@ -12,21 +12,16 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
+import java.lang.reflect.Modifier
+
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.description.WrapperBehavior
-import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.packet.fundamental.RefPacket
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 import fr.linkit.engine.local.utils.ScalaUtils
 
-import java.lang.reflect.Modifier
-import scala.util.control.NonFatal
-
-case class ObjectChip[S] private(owner: String,
-                                 behavior: WrapperBehavior[S],
-                                 wrapper: S with PuppetWrapper[S]) extends Chip[S] {
+class ObjectChip[S] private(owner: String,
+                            behavior: WrapperBehavior[S],
+                            wrapper: PuppetWrapper[S]) extends Chip[S] {
 
     override def updateObject(obj: S): Unit = {
         ScalaUtils.pasteAllFields(wrapper, obj)
@@ -37,16 +32,16 @@ case class ObjectChip[S] private(owner: String,
         if (methodBehaviorOpt.forall(_.isHidden)) {
             throw new PuppetException(s"Attempted to invoke ${methodBehaviorOpt.fold("unknown")(_ => "hidden")} method '${
                 methodBehaviorOpt.map(_.desc.symbol.name.toString).getOrElse(s"(unknown method id '$methodID')")
-            }(${params.mkString(", ")}) in class ${methodBehaviorOpt.get.desc.symbol}'")
+            }(${params.mkString(", ")}) in class ${methodBehaviorOpt.map(_.desc.symbol).getOrElse("Unknown")}'")
         }
         val methodBehavior = methodBehaviorOpt.get
-        val name = methodBehavior.desc.javaMethod.getName
+        val name           = methodBehavior.desc.javaMethod.getName
         wrapper.getChoreographer.forceLocalInvocation {
             AppLogger.debug(s"RMI - Calling method $methodID $name(${params.mkString(", ")})")
             methodBehaviorOpt.get
-                    .desc
-                    .javaMethod
-                    .invoke(wrapper, params: _*)
+                .desc
+                .javaMethod
+                .invoke(wrapper, params: _*)
         }
     }
 
@@ -54,15 +49,15 @@ case class ObjectChip[S] private(owner: String,
 
 object ObjectChip {
 
-    def apply[S](owner: String, behavior: WrapperBehavior[S], puppet: S with PuppetWrapper[S]): ObjectChip[S] = {
-        if (puppet == null)
+    def apply[S](owner: String, behavior: WrapperBehavior[S], wrapper: PuppetWrapper[S]): ObjectChip[S] = {
+        if (wrapper == null)
             throw new NullPointerException("puppet is null !")
-        val clazz = puppet.getClass
+        val clazz = wrapper.getClass
 
         if (Modifier.isFinal(clazz.getModifiers))
-            throw new IllegalPuppetException("Puppet can't be final.")
+            throw new IllegalObjectWrapperException("Puppet can't be final.")
 
-        new ObjectChip[S](owner, behavior, puppet)
+        new ObjectChip[S](owner, behavior, wrapper)
     }
 
 }

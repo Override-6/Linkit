@@ -13,14 +13,15 @@
 package fr.linkit.api.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj.description.{PuppeteerInfo, WrapperBehavior}
-
 import java.util.concurrent.ThreadLocalRandom
+
+import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SynchronizedObjectTree}
 
 trait Puppeteer[S] {
 
     val ownerID: String
 
-    val repo: EngineObjectCenter[_]
+    val center: SynchronizedObjectCenter[_]
 
     val puppeteerInfo: PuppeteerInfo
 

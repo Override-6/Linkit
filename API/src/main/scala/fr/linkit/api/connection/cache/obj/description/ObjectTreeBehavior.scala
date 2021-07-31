@@ -10,8 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj
+package fr.linkit.api.connection.cache.obj.description
 
-class IllegalPuppetException(msg: String) extends PuppetException(msg) {
+import scala.reflect.ClassTag
+import scala.reflect.runtime.universe._
 
+trait ObjectTreeBehavior {
+    val factory: MemberBehaviorFactory
+    def get[B: TypeTag : ClassTag]: WrapperBehavior[B]
+
+    def getFromClass[B](clazz: Class[_]): WrapperBehavior[B]
+
+    def put[B](clazz: Class[B], bhv: WrapperBehavior[B])
 }

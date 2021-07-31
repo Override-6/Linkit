@@ -52,7 +52,7 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
         }
     }
 
-    override def isProcessing: Boolean = this.synchronized {
+    override def isProcessing: Boolean = {
         processing
     }
 
@@ -66,14 +66,20 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
         tookEffect
     }
 
-    override def process(action: => Unit): Unit = {
-
+    override def processOrElse(processAction: => Unit)(orElse: => Unit): Unit = {
+        var callOrElse: Boolean = false
         this.synchronized {
-            if (processing)
-                throw InjectionAlreadyProcessingException(this, "Attempted to call PacketInjectionController#process while another process is handled.")
+            if (processing) {
+            //throw InjectionAlreadyProcessingException(this, "Attempted to call PacketInjectionController#process while another process is handled.")
+                callOrElse = true
+            }
             processing = true
         }
-        action
+        if (callOrElse) {
+            orElse
+            return
+        }
+        processAction
         processing = false
     }
 

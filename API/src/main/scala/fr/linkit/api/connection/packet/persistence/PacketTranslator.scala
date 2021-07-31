@@ -18,13 +18,13 @@ import java.nio.ByteBuffer
 
 trait PacketTranslator {
 
-    def translate(packetInfo: TransferInfo)(onResultAvailable: PacketSerializationResult => Unit): Unit
+    def translate(packetInfo: TransferInfo): PacketSerializationResult
 
-    def translate(buff: ByteBuffer)(onResultAvailable: PacketDeserializationResult => Unit): Unit
+    def translate(buff: ByteBuffer): PacketDeserializationResult
 
     def initNetwork(network: Network): Unit
 
-    def getSerializer: Serializer
+    def getSerializer: PacketSerializer
 
     val signature: Array[Byte]
 

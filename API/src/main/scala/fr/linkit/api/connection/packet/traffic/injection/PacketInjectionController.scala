@@ -18,7 +18,7 @@ import fr.linkit.api.local.concurrency.workerExecution
 trait PacketInjectionController extends PacketInjection {
 
     @workerExecution
-    def process(action: => Unit): Unit
+    def processOrElse(processAction: => Unit)(orElse: => Unit): Unit
 
     /**
      * This method takes effect only once, and thus perform injection

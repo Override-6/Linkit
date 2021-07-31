@@ -278,6 +278,8 @@ object NetworkSharedCacheManager {
 
     object MockCache extends InternalSharedCache {
 
+        override val cacheID: Int = -1
+
         override val family: String = ""
 
         override def snapshotContent: CacheContent = CacheArrayContent(Array())

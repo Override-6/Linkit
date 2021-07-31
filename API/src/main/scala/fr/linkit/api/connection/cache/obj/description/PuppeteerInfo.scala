@@ -15,6 +15,6 @@ package fr.linkit.api.connection.cache.obj.description
 case class PuppeteerInfo(cacheFamily: String,
                          cacheID: Int,
                          owner: String,
-                         treeViewPath: Array[Int]) {
+                         nodePath: Array[Int]) {
 
 }

@@ -10,15 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj
+package fr.linkit.api.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.PuppetException
+import fr.linkit.api.connection.cache.CacheContent
 
-class NoSuchPuppetNodeException(msg: String) extends PuppetException(msg) {
+trait ObjectTreeCenter[A] {
 
-}
+    def findTree(id: Int): Option[SynchronizedObjectTree[A]]
 
-object NoSuchPuppetNodeException {
-
-    def apply(msg: String): NoSuchPuppetNodeException = new NoSuchPuppetNodeException(msg)
+    def snapshotContent: CacheContent
 }

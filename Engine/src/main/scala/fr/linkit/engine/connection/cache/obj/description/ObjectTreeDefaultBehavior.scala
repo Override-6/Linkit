@@ -12,14 +12,14 @@
 
 package fr.linkit.engine.connection.cache.obj.description
 
-import fr.linkit.api.connection.cache.obj.description.{MemberBehaviorFactory, TreeViewBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.{MemberBehaviorFactory, ObjectTreeBehavior, WrapperBehavior}
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
 
 import scala.collection.mutable
 import scala.reflect.runtime.universe
 import scala.reflect.{ClassTag, classTag}
 
-class TreeViewDefaultBehavior(override val factory: MemberBehaviorFactory) extends TreeViewBehavior {
+class ObjectTreeDefaultBehavior(override val factory: MemberBehaviorFactory) extends ObjectTreeBehavior {
 
     private val behaviors = mutable.HashMap.empty[Class[_], WrapperBehavior[_]]
 
@@ -27,7 +27,7 @@ class TreeViewDefaultBehavior(override val factory: MemberBehaviorFactory) exten
         getFromAnyClass(classTag[B].runtimeClass)
     }
 
-    override def getFromClass[B](clazz: Class[B]): WrapperBehavior[B] = {
+    override def getFromClass[B](clazz: Class[_]): WrapperBehavior[B] = {
         getFromAnyClass[B](clazz)
     }
 

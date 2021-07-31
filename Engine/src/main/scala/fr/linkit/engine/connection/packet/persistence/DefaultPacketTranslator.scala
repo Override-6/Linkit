@@ -18,7 +18,7 @@ import fr.linkit.api.local.concurrency.Procrastinator
 
 import java.nio.ByteBuffer
 
-class DefaultPacketTranslator(procrastinator: Procrastinator) extends PacketTranslator {
+class DefaultPacketTranslator() extends PacketTranslator {
 
     private val serializer = new DefaultPacketSerializer()
 
@@ -30,7 +30,7 @@ class DefaultPacketTranslator(procrastinator: Procrastinator) extends PacketTran
         new LazyPacketDeserializationResult(buff, serializer)
     }
 
-    override def getSerializer: Serializer = serializer
+    override def getSerializer: PacketSerializer = serializer
 
     override def initNetwork(network: Network): Unit = serializer.initNetwork(network)
 

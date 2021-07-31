@@ -15,6 +15,7 @@ package fr.linkit.engine.connection.packet.traffic
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.PacketWriter
 import fr.linkit.api.local.concurrency.Procrastinator
+import fr.linkit.engine.connection.packet.persistence.PacketSerializationChoreographer
 import org.jetbrains.annotations.NotNull
 
 class SocketPacketTraffic(@NotNull socket: DynamicSocket,
@@ -23,8 +24,10 @@ class SocketPacketTraffic(@NotNull socket: DynamicSocket,
                           @NotNull override val currentIdentifier: String,
                           @NotNull override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, procrastinator) {
 
+    private val choreographer = new PacketSerializationChoreographer(translator)
+
     override def newWriter(identifier: Int): PacketWriter = {
-        new SocketPacketWriter(socket, translator, WriterInfo(this, identifier))
+        new SocketPacketWriter(socket, choreographer, WriterInfo(this, identifier))
     }
 
 }

@@ -10,15 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj
+package fr.linkit.api.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.description.TreeViewBehavior
-import fr.linkit.api.connection.cache.obj.tree.SyncNode
+import fr.linkit.api.connection.cache.obj.PuppetException
 
-trait ObjectSynchronizer {
+class NoSuchWrapperNodeException(msg: String) extends PuppetException(msg) {
 
-    def genSynchronizedObject[B](treeViewPath: Array[Int],
-                                 obj: B,
-                                 owner: String,
-                                 descriptions: TreeViewBehavior): (PuppetWrapper[B], SyncNode[B])
+}
+
+object NoSuchWrapperNodeException {
+
+    def apply(msg: String): NoSuchWrapperNodeException = new NoSuchWrapperNodeException(msg)
 }

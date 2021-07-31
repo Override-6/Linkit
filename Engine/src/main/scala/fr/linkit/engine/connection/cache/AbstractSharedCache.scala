@@ -24,7 +24,7 @@ import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePac
 import org.jetbrains.annotations.Nullable
 
 abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
-                                   identifier: Int,
+                                   override val cacheID: Int,
                                    channel: RequestPacketChannel) extends AbstractAttributesPresence with InternalSharedCache with JustifiedCloseable {
 
     override val family: String = if (handler == null) "" else handler.family
@@ -38,7 +38,7 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
             return this
 
         //println(s"<$family> UPDATING CACHE $identifier")
-        val content = handler.retrieveCacheContent(identifier, CacheSearchBehavior.GET_OR_CRASH)
+        val content = handler.retrieveCacheContent(cacheID, CacheSearchBehavior.GET_OR_CRASH)
         //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
         if (content.isDefined) {
             setContent(content.get)
@@ -66,7 +66,7 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
     //override def onNewEngineConnected(engine: Engine): Unit = ()
 
     addDefaultAttribute("family", family)
-    addDefaultAttribute("cache", identifier)
+    addDefaultAttribute("cache", cacheID)
 
     //FIXME optimise (find another way to retrieve the right cache that can accept the bundle)
     channel.addRequestListener(bundle => {
@@ -74,7 +74,7 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
 
         def isPresent(name: String, expected: Any): Boolean = attr.getAttribute(name).contains(expected)
 
-        if (isPresent("cache", identifier) && isPresent("family", family))
+        if (isPresent("cache", cacheID) && isPresent("family", family))
             handleBundle(bundle)
     })
 

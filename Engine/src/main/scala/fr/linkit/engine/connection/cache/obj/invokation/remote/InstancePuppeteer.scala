@@ -26,12 +26,13 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketC
 
 class InstancePuppeteer[S](channel: RequestPacketChannel,
                            procrastinator: Procrastinator,
-                           override val repo: EngineObjectCenter[_],
+                           override val center: SynchronizedObjectCenter[_],
                            override val puppeteerInfo: PuppeteerInfo,
                            val wrapperBehavior: WrapperBehavior[S]) extends Puppeteer[S] {
 
-    //FIXME lazy val only during tests
+    //FIXME lazy val currentIdentifier only during tests
     private lazy val currentIdentifier                 = channel.traffic.currentIdentifier
+    private lazy val tree                              = center.treeCenter.findTree(puppeteerInfo.nodePath.head).get
     override     val ownerID : String                  = puppeteerInfo.owner
     private      val bcScope                           = prepareScope(ChannelScopes.discardCurrent)
     private      val ownerScope                        = prepareScope(ChannelScopes.retains(ownerID))
@@ -47,12 +48,12 @@ class InstancePuppeteer[S](channel: RequestPacketChannel,
         }
 
         AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}")
-        val treeViewPath = puppeteerInfo.treeViewPath
+        val treeViewPath = puppeteerInfo.nodePath
         val result       = channel.makeRequest(chooseScope(bhv.invocationKind))
-                .addPacket(InvocationPacket(treeViewPath, methodId, args, null)) //TODO
-                .submit()
-                .nextResponse
-                .nextPacket[RefPacket[R]].value
+            .addPacket(InvocationPacket(treeViewPath, methodId, args, null)) //TODO
+            .submit()
+            .nextResponse
+            .nextPacket[RefPacket[R]].value
         result match {
             //FIXME ambiguity with broadcast method invocation.
             case ThrowableWrapper(e) => throw new RemoteInvocationFailedException(s"Invocation of method $methodId with arguments '${args.mkString(", ")}' failed.", e)
@@ -67,9 +68,9 @@ class InstancePuppeteer[S](channel: RequestPacketChannel,
         procrastinator.runLater {
             AppLogger.debug(s"Remotely invoking method asynchronously ${bhv.desc.symbol.name}(${args.mkString(",")})")
             channel.makeRequest(chooseScope(bhv.invocationKind))
-                    .addPacket(InvocationPacket(puppeteerInfo.treeViewPath, methodId, args, null)) //TODO
-                    .submit()
-                    .detach()
+                .addPacket(InvocationPacket(puppeteerInfo.nodePath, methodId, args, null)) //TODO
+                .submit()
+                .detach()
         }
     }
 
@@ -80,11 +81,9 @@ class InstancePuppeteer[S](channel: RequestPacketChannel,
         this.puppetWrapper = wrapper
     }
 
-    override def synchronizedObj(obj: Any, id: Int): Any = {
-        val currentPath = puppeteerInfo.treeViewPath
-        val objPath     = currentPath ++ Array(id)
-        val defaults    = repo.defaultTreeViewBehavior
-        repo.genSynchronizedObject(objPath, obj, currentIdentifier, defaults)._1
+    override def synchronizedObj(obj: Any, id: Int): Any with PuppetWrapper[Any] = {
+        val currentPath = puppeteerInfo.nodePath
+        tree.insertObject(currentPath, id, obj, ownerID).synchronizedObject
     }
 
     private def chooseScope(kind: InvocationKind): ChannelScope = {
@@ -102,7 +101,7 @@ class InstancePuppeteer[S](channel: RequestPacketChannel,
             return null
         val writer = channel.traffic.newWriter(channel.identifier)
         val scope  = factory.apply(writer)
-        repo.drainAllDefaultAttributes(scope)
+        center.drainAllDefaultAttributes(scope)
         scope
     }
 

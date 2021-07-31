@@ -10,15 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.tree
+package fr.linkit.api.connection.cache.obj
 
-import fr.linkit.api.connection.cache.obj.tree.SyncNode
-import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
-import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
-
-trait MemberSyncNode[A] extends SyncNode[A]{
-
-
-    def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit
+class IllegalObjectWrapperException(msg: String) extends PuppetException(msg) {
 
 }

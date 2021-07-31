@@ -115,11 +115,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
     }
 
     override def processInjection(injection: PacketInjectionController): Unit = procrastinator.runLater {
-        if (injection.isProcessing) {
-            AppLogger.vError(s"$currentTasksId <> Current thread has been discarded from injection because this injection is already processed.")
-            injection.processRemainingPins()
-        }
-        else injection.process {
+        injection.processOrElse {
 
             AppLogger.vError(s"$currentTasksId <> PROCESSING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
             val coordinates = injection.coordinates
@@ -135,6 +131,9 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
             } else {
                 performInjection(injection, injectables)
             }
+        } {
+            AppLogger.vError(s"$currentTasksId <> Current thread has been discarded from injection because this injection is already processed.")
+            injection.processRemainingPins()
         }
     }
 

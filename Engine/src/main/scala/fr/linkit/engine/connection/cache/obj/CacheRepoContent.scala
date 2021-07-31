@@ -13,11 +13,10 @@
 package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.engine.connection.cache.CacheArrayContent
-import fr.linkit.engine.connection.cache.obj.DefaultEngineObjectCenter.PuppetProfile
+import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 
-class CacheRepoContent[A](content: Array[PuppetProfile[A]]) extends CacheArrayContent[PuppetProfile[A]](content)
+class CacheRepoContent[A](content: Array[ObjectTreeProfile[A]]) extends CacheArrayContent[ObjectTreeProfile[A]](content)
 
 object CacheRepoContent {
-
-    def apply[A](content: Array[PuppetProfile[A]]): CacheRepoContent[A] = new CacheRepoContent(content)
+    def apply[A](content: Array[ObjectTreeProfile[A]]): CacheRepoContent[A] = new CacheRepoContent(content)
 }

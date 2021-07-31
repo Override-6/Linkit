@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.description
 
 import fr.linkit.api.connection.cache.obj.description.annotation.InvocationKind
-import fr.linkit.api.connection.cache.obj.description.{MemberBehaviorFactory, MethodBehavior, TreeViewBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.{MemberBehaviorFactory, MethodBehavior, ObjectTreeBehavior, WrapperBehavior}
 import fr.linkit.engine.connection.cache.obj.description.WrapperBehaviorBuilder.MethodControl
 
 import java.util
@@ -22,14 +22,14 @@ import scala.reflect.ClassTag
 class WrapperBehaviorBuilder[T] private(desc: WrapperBehavior[T]) {
 
     def this(clazz: Class[T], memberBehaviorFactory: MemberBehaviorFactory) {
-        this(SimpleWrapperBehavior(SimplePuppetClassDescription(clazz), new TreeViewDefaultBehavior(memberBehaviorFactory)))
+        this(SimpleWrapperBehavior(SimplePuppetClassDescription(clazz), new ObjectTreeDefaultBehavior(memberBehaviorFactory)))
     }
 
     def this(memberBehaviorFactory: MemberBehaviorFactory)(implicit classTag: ClassTag[T]) = {
         this(classTag.runtimeClass.asInstanceOf[Class[T]], memberBehaviorFactory)
     }
 
-    def this(treeView: TreeViewBehavior)(implicit classTag: ClassTag[T]) {
+    def this(treeView: ObjectTreeBehavior)(implicit classTag: ClassTag[T]) {
         this(SimpleWrapperBehavior(SimplePuppetClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]), treeView))
     }
 
