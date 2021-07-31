@@ -13,9 +13,9 @@
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
 import fr.linkit.api.connection.packet.PacketCoordinates
-import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationObjectPool, DeserializationProgression}
+import fr.linkit.api.connection.packet.persistence.v3.{ObjectPersistor, PacketPersistenceContext}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{NonObjectDeserializerNode, RawObjectNode}
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
@@ -24,10 +24,22 @@ import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.Null
 import fr.linkit.engine.local.mapping.{ClassMappings, ClassNotMappedException}
 import fr.linkit.engine.local.utils.NumberSerializer
 
+import java.nio.ByteBuffer
+import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
+
 class DefaultDeserializationProgression(in: DeserializationInputStream,
                                         override val pool: DeserializationObjectPool,
                                         context: PacketPersistenceContext,
                                         override val coordinates: PacketCoordinates) extends DeserializationProgression {
+
+    private val registeredObjects = mutable.HashMap.empty[ObjectPersistor[_], ListBuffer[Any]]
+
+    def concludeDeserialization(): Unit = {
+        registeredObjects.foreachEntry((persistor, deserializedObjects) => {
+            persistor.sortedDeserializedObjects(deserializedObjects.toArray.reverse)
+        })
+    }
 
     override def getNextDeserializationNode: DeserializerNode = {
         val buff     = in.buff
@@ -43,23 +55,37 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
             case HeadedValueFlag                        => pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
             case NullFlag                               => RawObjectNode(if (buff.limit() > buff.position() && buff.get(buff.position()) == NoneFlag) None else null)
             case NoneFlag                               => RawObjectNode(None)
-            case ObjectFlag                             =>
-                if (buff.get(startPos + 1) == HeadedValueFlag) {
-                    in.position(startPos + 2)
-                    return pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
-                }
-                val classCode   = buff.getInt
-                val objectClass = ClassMappings.getClass(classCode)
-                if (objectClass == null)
-                    throw new ClassNotMappedException(s"classCode $classCode is not mapped.")
-                if (objectClass.isEnum)
-                    NonObjectDeserializerNode(_.readEnum(hint = objectClass))
-                else {
-                    context.getPersistenceForDeserialisation(objectClass)
-                            .getDeserialNode(context.getDescription(objectClass), context, this)
-                }
+            case ObjectFlag                             => handleObjectFlag(buff, startPos)
             case flag                                   => throw new MalFormedPacketException(buff, s"Unknown flag '$flag' at start of node expression.")
         }
+    }
+
+    private def handleObjectFlag(buff: ByteBuffer, startPos: Int): DeserializerNode = {
+        if (buff.get(startPos + 1) == HeadedValueFlag) {
+            in.position(startPos + 2)
+            return pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
+        }
+        val classCode   = buff.getInt
+        val objectClass = ClassMappings.getClass(classCode)
+        if (objectClass == null)
+            throw new ClassNotMappedException(s"classCode $classCode is not mapped.")
+        if (objectClass.isEnum)
+            NonObjectDeserializerNode(_.readEnum(hint = objectClass))
+        else {
+            handlePersistor(objectClass)
+        }
+    }
+
+    private def handlePersistor(clazz: Class[_]): DeserializerNode = {
+        val persistor = context.getPersistenceForDeserialisation(clazz)
+        val node      = persistor.getDeserialNode(context.getDescription(clazz), context, this)
+        if (!persistor.useSortedDeserializedObjects)
+            return node
+
+        node.addOnReferenceAvailable { ref =>
+            registeredObjects.getOrElseUpdate(persistor, ListBuffer.empty) += ref
+        }
+        node
     }
 
 }

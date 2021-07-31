@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.obj.description.PuppeteerInfo
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper}
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
@@ -21,10 +21,9 @@ import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
-import fr.linkit.engine.connection.cache.obj.description.{SimplePuppetClassDescription, SimpleWrapperBehavior, ObjectTreeDefaultBehavior}
+import fr.linkit.engine.connection.cache.obj.description.{ObjectTreeDefaultBehavior, SimplePuppetClassDescription, SimpleWrapperBehavior}
 import fr.linkit.engine.connection.cache.obj.generation.{CloneHelper, ObjectWrapperClassClassGenerator, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
@@ -103,12 +102,12 @@ class ResourcesAndClassGenerationTests {
         println(s"obj = ${obj}")
     }
 
-    class FakePuppetWrapperPersistor extends PuppetWrapperPersistor(null) {
+    /*class FakePuppetWrapperPersistor extends PuppetWrapperPersistor(null) {
         override protected def initialiseWrapper(detachedWrapper: PuppetWrapperPersistor.DetachedWrapper): PuppetWrapper[_] = {
             println("Faking wrapper...")
             forObject(detachedWrapper.detached)
         }
-    }
+    }*/
 
     @Test
     @Order(3)
@@ -133,7 +132,7 @@ class ResourcesAndClassGenerationTests {
         val puppetClass = generator.getWrapperClass[A](desc)
         println(s"puppetClass = ${puppetClass}")
         val factory = AnnotationBasedMemberBehaviorFactory()
-        val pup     = new InstancePuppeteer[A](null, app, null, PuppeteerInfo("", 8, "", Array(1)), SimpleWrapperBehavior(desc, new ObjectTreeDefaultBehavior(factory)))
+        val pup     = new InstancePuppeteer[A](null, app, null, WrapperNodeInfo("", 8, "", Array(1)), SimpleWrapperBehavior(desc, new ObjectTreeDefaultBehavior(factory)))
         val wrapper  = CloneHelper.instantiateFromOrigin[A](puppetClass, obj)
 
         wrapper.initPuppeteer(pup)

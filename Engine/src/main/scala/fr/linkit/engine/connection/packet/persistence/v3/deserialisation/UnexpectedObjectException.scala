@@ -10,11 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description
+package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
-case class PuppeteerInfo(cacheFamily: String,
-                         cacheID: Int,
-                         owner: String,
-                         nodePath: Array[Int]) {
+import fr.linkit.engine.connection.packet.persistence.PersistenceException
+
+class UnexpectedObjectException(msg: String, cause: Throwable = null) extends PersistenceException(msg, cause) {
 
 }

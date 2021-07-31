@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj
 
-import fr.linkit.api.connection.cache.obj.description.{MethodBehavior, PuppeteerInfo, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.{MethodBehavior, WrapperNodeInfo, WrapperBehavior}
 import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper, Puppeteer}
 import fr.linkit.engine.connection.cache.obj.generation.CloneHelper
 
@@ -21,7 +21,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
     @transient protected var puppeteer           : Puppeteer[A]            = _
     @transient protected var behavior            : WrapperBehavior[A]      = _
     @transient protected var choreographer       : InvocationChoreographer = _
-    protected            var puppeteerDescription: PuppeteerInfo           = _
+    protected            var puppeteerDescription: WrapperNodeInfo         = _
 
     def wrappedClass: Class[_]
 
@@ -37,8 +37,8 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     @inline override def isInitialized: Boolean = puppeteer != null
 
-    override def detachedSnapshot: A = {
-        CloneHelper.detachedWrapperClone(this)
+    override def detachedClone: A = {
+        CloneHelper.detachedWrapperClone(this, true)
     }
 
     override def getWrappedClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
@@ -51,7 +51,7 @@ trait AbstractPuppetWrapper[A] extends PuppetWrapper[A] {
 
     override def getBehavior: WrapperBehavior[A] = behavior
 
-    override def getPuppeteerInfo: PuppeteerInfo = puppeteerDescription
+    override def getWrapperNodeInfo: WrapperNodeInfo = puppeteerDescription
 
     private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
         var i = -1

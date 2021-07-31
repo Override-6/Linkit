@@ -10,10 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence
+package fr.linkit.api.connection.cache.obj.description
 
-import fr.linkit.api.local.system.AppException
-
-class UnexpectedSerializationException(msg: String, cause: Throwable = null) extends AppException(msg, cause){
+case class WrapperNodeInfo(cacheFamily: String,
+                           cacheID: Int,
+                           owner: String,
+                           nodePath: Array[Int]) {
 
 }

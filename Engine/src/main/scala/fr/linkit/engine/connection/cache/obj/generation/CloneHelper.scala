@@ -94,7 +94,7 @@ object CloneHelper {
 
     def deepClone[A](origin: A): A = {
         val checkedItems = mutable.HashMap.empty[Identity[Any], Any]
-        var depth: Int = 0
+        var depth: Int   = 0
 
         def getClonedInstance(data: Any): Any = {
             if (depth > MaxScanDepth)
@@ -150,15 +150,15 @@ object CloneHelper {
         clone
     }
 
-    def detachedWrapperClone[A](origin: PuppetWrapper[A]): A = {
-        detachedWrapperClone0(deepClone(origin))
+    def detachedWrapperClone[A](origin: PuppetWrapper[A], detachOtherWrappers: Boolean): A = {
+        detachedWrapperClone0(deepClone(origin), 0, detachOtherWrappers)
     }
 
-    private def detachedWrapperClone0[A](origin: PuppetWrapper[A]): A = {
+    private def detachedWrapperClone0[A](origin: PuppetWrapper[A], d: Int, detachOtherWrappers: Boolean): A = {
         val instance      = allocate[AnyRef](origin.getWrappedClass)
         val checkedFields = mutable.HashMap.empty[Identity[AnyRef], AnyRef]
 
-        var depth: Int = 0
+        var depth: Int = d
 
         def scanObject(instanceField: Any, originField: Any, root: Boolean): Unit = {
             if (originField == null || depth > MaxScanDepth)
@@ -189,6 +189,7 @@ object CloneHelper {
                     checkedFields.put(Identity(originValue), originValue)
                     originValue match {
                         case array: Array[AnyRef]                             => scanArray(array)
+                        case wrapper: PuppetWrapper[_] if detachOtherWrappers => ScalaUtils.setValue(instanceField, field, detachedWrapperClone0(wrapper, depth, true))
                         case wrapper if UnWrapper.isPrimitiveWrapper(wrapper) => //just do not scan
                         case _                                                => scanObject(field.get(instanceField), originValue, false)
                     }

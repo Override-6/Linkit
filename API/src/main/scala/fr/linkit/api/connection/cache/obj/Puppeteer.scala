@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.cache.obj
 
-import fr.linkit.api.connection.cache.obj.description.{PuppeteerInfo, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.{WrapperNodeInfo, WrapperBehavior}
 import java.util.concurrent.ThreadLocalRandom
 
 import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SynchronizedObjectTree}
@@ -23,7 +23,7 @@ trait Puppeteer[S] {
 
     val center: SynchronizedObjectCenter[_]
 
-    val puppeteerInfo: PuppeteerInfo
+    val puppeteerInfo: WrapperNodeInfo
 
     val wrapperBehavior: WrapperBehavior[S]
 

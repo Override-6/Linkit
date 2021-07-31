@@ -14,7 +14,7 @@ package gen.$WrappedClassPackage$
 
 import $WrappedClassName$
 import fr.linkit.api.connection.cache.obj.InvocationChoreographer
-import fr.linkit.api.connection.cache.obj.description.PuppeteerInfo
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.PuppetWrapper
 import fr.linkit.api.connection.cache.obj.Puppeteer
 import fr.linkit.api.local.system.AppLogger

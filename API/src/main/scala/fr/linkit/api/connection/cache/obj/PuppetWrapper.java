@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.cache.obj;
 
-import fr.linkit.api.connection.cache.obj.description.PuppeteerInfo;
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo;
 import fr.linkit.api.connection.cache.obj.description.WrapperBehavior;
 
 import java.io.Serializable;
@@ -25,7 +25,7 @@ public interface PuppetWrapper<T> extends Serializable {
 
     WrapperBehavior<T> getBehavior();
 
-    PuppeteerInfo getPuppeteerInfo();
+    WrapperNodeInfo getWrapperNodeInfo();
 
     InvocationChoreographer getChoreographer();
 
@@ -33,7 +33,7 @@ public interface PuppetWrapper<T> extends Serializable {
 
     T asWrapped();
 
-    T detachedSnapshot();
+    T detachedClone();
 
     Class<T> getWrappedClass();
 

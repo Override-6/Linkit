@@ -1,6 +1,6 @@
 package fr.linkit.api.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObjectCenter
+import fr.linkit.api.connection.cache.obj.{PuppetWrapper, SynchronizedObjectCenter}
 import fr.linkit.api.connection.cache.obj.description.ObjectTreeBehavior
 
 trait SynchronizedObjectTree[A] {
@@ -19,4 +19,5 @@ trait SynchronizedObjectTree[A] {
     def insertObject[B](parent: SyncNode[_], id: Int, obj: B, ownerID: String): SyncNode[B]
 
     def insertObject[B](parentPath: Array[Int], id: Int, obj: B, ownerID: String): SyncNode[B]
+
 }

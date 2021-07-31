@@ -59,17 +59,19 @@ class DefaultPacketSerializer extends PacketSerializer {
     }
 
     override def deserializePacket(buff: ByteBuffer): PacketDeserial = {
-        val lim = buff.limit()
-        val coordinates  = {
+        val lim                            = buff.limit()
+        val coordinates = {
             buff.get match {
                 case NoPacketCoordinatesFlag  => NoPacketCoordinates
                 case AnyPacketCoordinatesFlag =>
                     buff.position(buff.position() + 1)
                     val in = new DefaultDeserializationInputStream(buff, context, NoPacketCoordinates, _ => EmptyDeserializationObjectPool)
-                    DefaultObjectPersistor
+                    val coords = DefaultObjectPersistor
                             .getDeserialNode(context.getDescription(in.readClass()), context, in.progression)
                             .deserialize(in)
                             .asInstanceOf[PacketCoordinates]
+                    in.progression.concludeDeserialization()
+                    coords
             }
         }
         buff.limit(lim)
@@ -90,15 +92,21 @@ class DefaultPacketSerializer extends PacketSerializer {
         val in  = new DefaultDeserializationInputStream(buff, context, coordinates, in => new DefaultDeserializationObjectPool(in))
         val lim = buff.limit()
         new PacketDeserial {
+            var concluded = false
+
             override def getCoordinates: PacketCoordinates = coordinates
 
             override def forEachObjects(f: Any => Unit): Unit = {
+                if (concluded)
+                    throw new IllegalStateException("Objects have already been deserialized.")
                 while (lim > buff.position() && buff.get(buff.position()) != 0) {
                     val obj = in.progression.getNextDeserializationNode
                             .deserialize(in)
                     buff.limit(lim)
                     f(obj)
                 }
+                concluded = true
+                in.progression.concludeDeserialization()
             }
         }
     }

@@ -13,9 +13,9 @@
 package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, PuppeteerInfo}
+import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperNodeInfo}
 import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassGenerator, ObjectWrapperInstantiator}
-import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode, SynchronizedObjectTree}
+import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
@@ -38,17 +38,17 @@ import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import scala.reflect.ClassTag
 
 //TODO Redesign the NetworkSharedCacheManager and its way to handle caches
-class DefaultSynchronizedObjectCenter[A](handler: SharedCacheManager,
-                                         cacheID: Int,
-                                         channel: RequestPacketChannel,
-                                         generator: ObjectWrapperClassGenerator,
-                                         override val defaultTreeViewBehavior: ObjectTreeBehavior)
-    extends AbstractSharedCache(handler, cacheID, channel) with SynchronizedObjectCenter[A] {
+final class DefaultSynchronizedObjectCenter[A] private(handler: SharedCacheManager,
+                                                       cacheID: Int,
+                                                       channel: RequestPacketChannel,
+                                                       generator: ObjectWrapperClassGenerator,
+                                                       override val defaultTreeViewBehavior: ObjectTreeBehavior)
+        extends AbstractSharedCache(handler, cacheID, channel) with SynchronizedObjectCenter[A] {
 
     private val procrastinator: Procrastinator = handler.network.connection
 
-    override val treeCenter        = new DefaultObjectTreeCenter[A](this)
-    private  val currentIdentifier = channel.traffic.currentIdentifier
+    override val treeCenter: DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this)
+    private  val currentIdentifier                      = channel.traffic.currentIdentifier
 
     override def postObject(id: Int, obj: A): A with PuppetWrapper[A] = {
         postObject(id, obj, defaultTreeViewBehavior)
@@ -62,11 +62,11 @@ class DefaultSynchronizedObjectCenter[A](handler: SharedCacheManager,
         val tree = createNewTree(id, currentIdentifier, obj, behavior)
         //Indicate that a new object has been posted.
         channel.makeRequest(ChannelScopes.discardCurrent)
-            .addPacket(ObjectPacket(ObjectTreeProfile(id, obj, currentIdentifier)))
-            .putAllAttributes(this)
-            .submit()
+                .addPacket(ObjectPacket(ObjectTreeProfile(id, obj, currentIdentifier)))
+                .putAllAttributes(this)
+                .submit()
         val wrapperNode = tree.getRoot
-        wrapperNode.setPresentOnNetwork()
+        //wrapperNode.setPresentOnNetwork()
         wrapperNode.synchronizedObject
     }
 
@@ -78,20 +78,9 @@ class DefaultSynchronizedObjectCenter[A](handler: SharedCacheManager,
         treeCenter.findTree(id).isDefined
     }
 
-
-    private def isRegistered(path: Array[Int]): Boolean = {
-        treeCenter.findTree(path.head).exists(_.findNode(path.drop(1)).isDefined)
-    }
-
-    private def ensureNotWrapped(any: Any): Unit = {
-        if (any.isInstanceOf[PuppetWrapper[_]])
-            throw new IllegalObjectWrapperException("This object is already wrapped.")
-    }
-
     override protected def handleBundle(bundle: RequestBundle): Unit = {
         AppLogger.vDebug(s"Processing bundle : ${bundle}")
         val response = bundle.packet
-        val owner    = bundle.coords.senderID
         response.nextPacket[Packet] match {
             case ip: InvocationPacket                                          =>
                 val path = ip.path
@@ -117,6 +106,10 @@ class DefaultSynchronizedObjectCenter[A](handler: SharedCacheManager,
 
     override def snapshotContent: CacheRepoContent[A] = treeCenter.snapshotContent
 
+    private def ensureNotWrapped(any: Any): Unit = {
+        if (any.isInstanceOf[PuppetWrapper[_]])
+            throw new IllegalObjectWrapperException("This object is already wrapped.")
+    }
 
     private def setRepoContent(content: CacheRepoContent[A]): Unit = {
         if (content.array.isEmpty)
@@ -143,27 +136,27 @@ class DefaultSynchronizedObjectCenter[A](handler: SharedCacheManager,
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
         treeCenter
-            .findTree(path.head)
-            .flatMap(tree => {
-                if (path.length == 1)
-                    Some(tree.rootNode)
-                else
-                    tree.findNode[A](path.drop(1))
-            })
+                .findTree(path.head)
+                .flatMap(tree => {
+                    if (path.length == 1)
+                        Some(tree.rootNode)
+                    else
+                        tree.findNode[A](path)
+                })
     }
-/*
-    private def registerWrapper[B](path: Array[Int], ownerID: String, puppet: B, behaviorTree: ObjectTreeBehavior): B with PuppetWrapper[B] = {
-        if (path.isEmpty)
-            throw new InvalidNodePathException("Path is empty.")
-        val treeID                          = path.head
-        val tree: SynchronizedObjectTree[A] = treeCenter.findTree(treeID).getOrElse {
-            throw new NoSuchWrapperNodeException(s"Could not find object tree of id $treeID.")
-        }
-        tree.insertObject(path.dropRight(1), path.last, puppet, ownerID).synchronizedObject
-    }*/
+    /*
+        private def registerWrapper[B](path: Array[Int], ownerID: String, puppet: B, behaviorTree: ObjectTreeBehavior): B with PuppetWrapper[B] = {
+            if (path.isEmpty)
+                throw new InvalidNodePathException("Path is empty.")
+            val treeID                          = path.head
+            val tree: SynchronizedObjectTree[A] = treeCenter.findTree(treeID).getOrElse {
+                throw new NoSuchWrapperNodeException(s"Could not find object tree of id $treeID.")
+            }
+            tree.insertObject(path.dropRight(1), path.last, puppet, ownerID).synchronizedObject
+        }*/
 
-    private def createNewTree(id: Int, rootObjectOwner: String, rootObject: A, behaviorTree: ObjectTreeBehavior): DefaultSynchronizedObjectTree[A] = {
-        val puppeteerInfo = PuppeteerInfo(family, cacheID, rootObjectOwner, Array(id))
+    def createNewTree(id: Int, rootObjectOwner: String, rootObject: A, behaviorTree: ObjectTreeBehavior = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
+        val puppeteerInfo = WrapperNodeInfo(family, cacheID, rootObjectOwner, Array(id))
         val rootBehavior  = behaviorTree.getFromClass[A](rootObject.getClass)
         val wrapper       = WrapperInstantiator.newWrapper[A](rootObject, behaviorTree, puppeteerInfo)
         val chip          = ObjectChip[A](rootObjectOwner, rootBehavior, wrapper)
@@ -174,7 +167,8 @@ class DefaultSynchronizedObjectCenter[A](handler: SharedCacheManager,
     }
 
     private object WrapperInstantiator extends ObjectWrapperInstantiator {
-        override def newWrapper[B](obj: B, behaviorTree: ObjectTreeBehavior, puppeteerInfo: PuppeteerInfo): B with PuppetWrapper[B] = {
+
+        override def newWrapper[B](obj: B, behaviorTree: ObjectTreeBehavior, puppeteerInfo: WrapperNodeInfo): B with PuppetWrapper[B] = {
             val behavior     = behaviorTree.getFromClass[B](obj.getClass)
             val puppeteer    = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, puppeteerInfo, behavior)
             val wrapperClass = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
