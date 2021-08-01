@@ -20,9 +20,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.description.SimplePuppetClassDescription
 import fr.linkit.engine.local.mapping.ClassMappings
 
-import scala.reflect.runtime.universe.TypeTag
-
-class ObjectWrapperClassClassGenerator(center: CompilerCenter, resources: WrappersClassResource) extends ObjectWrapperClassGenerator {
+class DefaultObjectWrapperClassGenerator(center: CompilerCenter, resources: WrappersClassResource) extends ObjectWrapperClassGenerator {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val requestFactory                  = new WrapperCompilationRequestFactory
@@ -77,6 +75,6 @@ class ObjectWrapperClassClassGenerator(center: CompilerCenter, resources: Wrappe
     }
 }
 
-object ObjectWrapperClassClassGenerator {
+object DefaultObjectWrapperClassGenerator {
 
 }

@@ -137,7 +137,7 @@ object ScalaUtils {
     }
 
     def pasteAllFields[A](instance: A, data: A): Unit = {
-        retrieveAllAccessibleFields(data.getClass)
+        retrieveAllFields(data.getClass)
                 .foreach(field => {
                     ScalaUtils.setValue(instance, field, field.get(data))
                 })
@@ -150,7 +150,8 @@ object ScalaUtils {
         instance
     }
 
-    def retrieveAllAccessibleFields(clazz: Class[_], ref: Any = null, accessible: Boolean = true): Seq[Field] = {
+
+    def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Seq[Field] = {
         var superClass  = clazz
         var superFields = Seq.empty[Field]
         while (superClass != null) {
@@ -160,11 +161,11 @@ object ScalaUtils {
         val v = superFields
                 .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isNative(f.getModifiers))
         if (accessible)
-            v.filter(setAccessible(_, ref))
+            v.filter(setAccessible)
         v
     }
 
-    private def setAccessible(field: Field, ref: Any): Boolean = {
+    private def setAccessible(field: Field): Boolean = {
         try {
             field.setAccessible(true)
             //if (ref != null) field.canAccess(ref) else

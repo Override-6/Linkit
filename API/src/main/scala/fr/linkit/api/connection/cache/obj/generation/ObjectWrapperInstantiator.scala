@@ -5,6 +5,6 @@ import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, Wrapp
 
 trait ObjectWrapperInstantiator {
 
-    def newWrapper[A](obj: A, behaviorTree: ObjectTreeBehavior, puppeteerInfo: WrapperNodeInfo): A with PuppetWrapper[A]
+    def newWrapper[A <: AnyRef](obj: A, behaviorTree: ObjectTreeBehavior, puppeteerInfo: WrapperNodeInfo, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]])
 
 }

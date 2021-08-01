@@ -17,7 +17,7 @@ import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, Wrapp
 import fr.linkit.api.connection.cache.obj.tree.ObjectTreeCenter
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 
-trait SynchronizedObjectCenter[A] extends PacketAttributesPresence with SharedCache {
+trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence with SharedCache {
 
     val treeCenter: ObjectTreeCenter[A]
 

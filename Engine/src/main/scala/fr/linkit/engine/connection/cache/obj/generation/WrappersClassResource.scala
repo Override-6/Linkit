@@ -45,7 +45,7 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
                 val classLoader = new GeneratedClassLoader(folderPath, loader, Seq(classOf[LinkitApplication].getClassLoader))
                 val clazz = Class.forName(wrapperClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]]
                 generatedClasses.put(wrapperClassName, clazz)
-                CloneHelper.prepareClass(clazz)
+                WrapperInstantiationHelper.prepareClass(clazz)
                 ClassMappings.putClass(clazz)
                 clazz
             }

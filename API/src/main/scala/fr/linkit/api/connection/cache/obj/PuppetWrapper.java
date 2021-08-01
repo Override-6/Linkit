@@ -25,7 +25,7 @@ public interface PuppetWrapper<T> extends Serializable {
 
     WrapperBehavior<T> getBehavior();
 
-    WrapperNodeInfo getWrapperNodeInfo();
+    WrapperNodeInfo getNodeInfo();
 
     InvocationChoreographer getChoreographer();
 

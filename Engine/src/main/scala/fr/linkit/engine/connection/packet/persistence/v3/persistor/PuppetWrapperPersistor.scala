@@ -12,22 +12,17 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Objec
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
-import fr.linkit.engine.connection.cache.obj.generation.CloneHelper
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.UnexpectedObjectException
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor.DetachedWrapper
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor.WrapperPointer
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.SimpleObjectSerializerNode
-
-import scala.collection.mutable
 
 class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWrapper[_]] {
 
-    override val handledClasses: Seq[HandledClass] = Seq(classOf[PuppetWrapper[_]] -> (true, Seq(SerialisationMethod.Serial)), classOf[DetachedWrapper] -> (false, Seq(SerialisationMethod.Deserial)))
-
-    private val awfulMap = mutable.HashMap.empty[Array[Int], Any]
+    override val handledClasses: Seq[HandledClass] = Seq(classOf[PuppetWrapper[_]] -> (true, Seq(SerialisationMethod.Serial)), classOf[WrapperPointer] -> (false, Seq(SerialisationMethod.Deserial)))
 
     override def getSerialNode(wrapper: PuppetWrapper[_], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
-        val puppeteerInfo = wrapper.getWrapperNodeInfo
+        val puppeteerInfo = wrapper.getNodeInfo
         val cache         = findCache(puppeteerInfo).getOrElse(throwNoSuchCacheException(puppeteerInfo, Option(wrapper.getWrappedClass)))
         val tree          = cache.treeCenter.findTree(puppeteerInfo.nodePath.head).get //TODO orElseThrow
         val path          = puppeteerInfo.nodePath
@@ -52,7 +47,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
             case other => other.forallConcernedTargets(check)
         }
 
-        val detachedWrapper = DetachedWrapper(if (useInstancePointerOnly) null else CloneHelper.detachedWrapperClone(wrapper, false), puppeteerInfo)
+        val detachedWrapper = WrapperPointer(if (useInstancePointerOnly) null else wrapper.detachedClone(), puppeteerInfo)
         SimpleObjectSerializerNode(progress.getSerializationNode(detachedWrapper))
     }
 
@@ -61,7 +56,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
         //println(s"Deserialize wrapper...")
         new SimpleObjectDeserializerNode(in => {
             val detached = node.deserialize(in)
-            extractWrapper(detached.asInstanceOf[DetachedWrapper])
+            extractWrapper(detached.asInstanceOf[WrapperPointer])
         })
     }
 
@@ -73,7 +68,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
         case other                       => throw new UnexpectedObjectException(s"Unexpected object of type '${other.getClass}', only PuppetWrapper can be handled by this PuppetWrapperPersistor.")
     }
 
-    private def extractWrapper(detachedWrapper: DetachedWrapper): PuppetWrapper[_] = {
+    private def extractWrapper(detachedWrapper: WrapperPointer): PuppetWrapper[_] = {
         val wrapped = detachedWrapper.detached
         val info    = detachedWrapper.puppeteerInfo
         val path    = info.nodePath
@@ -91,21 +86,15 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
                     }
             node.synchronizedObject
         } else {
-            val isNotRoot = path.length != 1
-            val tree      = center.treeCenter.findTreeInternal(treeID).getOrElse {
-                if (isNotRoot)
-                    throw new NoSuchWrapperNodeException(s"Could not find Object tree '$treeID'")
-                center.createNewTree(treeID, info.owner, wrapped)
+            val tree = center.treeCenter.findTreeInternal(treeID).getOrElse {
+                throw new NoSuchWrapperNodeException(s"Could not find Object tree '$treeID'")
             }
-            if (isNotRoot)
-                tree.instantiator.newWrapper(wrapped, tree.behaviorTree, info)
-            else
-                tree.rootNode.synchronizedObject
+            tree.instantiator.newWrapper(wrapped, tree.behaviorTree, info, Map())._1
         }
     }
 
     private def registerWrapper(wrapper: PuppetWrapper[Any]): Unit = {
-        val info = wrapper.getWrapperNodeInfo
+        val info = wrapper.getNodeInfo
         val path = info.nodePath
 
         if (path.length == 1)
@@ -127,16 +116,16 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
                 s": could not properly deserialize and synchronize Wrapper object of class \"${wrappedClass.map(_.getName).getOrElse("(Unknown Wrapped class)")}\".")
     }
 
-    private def findCache(info: WrapperNodeInfo): Option[DefaultSynchronizedObjectCenter[Any]] = {
+    private def findCache(info: WrapperNodeInfo): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
         val family = info.cacheFamily
         network.findCacheManager(family)
-                .map(_.getCache[DefaultSynchronizedObjectCenter[Any]](info.cacheID))
+                .map(_.getCache[DefaultSynchronizedObjectCenter[AnyRef]](info.cacheID))
     }
 
 }
 
 object PuppetWrapperPersistor {
 
-    final case class DetachedWrapper(detached: Any, puppeteerInfo: WrapperNodeInfo)
+    final case class WrapperPointer(detached: Any, puppeteerInfo: WrapperNodeInfo)
 
 }

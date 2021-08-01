@@ -16,10 +16,11 @@ import fr.linkit.api.connection.cache.obj.SynchronizedObjectCenter
 import fr.linkit.api.connection.cache.obj.tree.{ObjectTreeCenter, SyncNode, SynchronizedObjectTree}
 import fr.linkit.engine.connection.cache.obj.{CacheRepoContent, DefaultSynchronizedObjectCenter}
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
+import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper
 
 import scala.collection.mutable
 
-class DefaultObjectTreeCenter[A](center: SynchronizedObjectCenter[A]) extends ObjectTreeCenter[A] {
+class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCenter[A]) extends ObjectTreeCenter[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 
@@ -42,7 +43,10 @@ class DefaultObjectTreeCenter[A](center: SynchronizedObjectCenter[A]) extends Ob
     override def snapshotContent: CacheRepoContent[A] = {
         def toProfile(tree: SynchronizedObjectTree[_ <: A]): ObjectTreeProfile[A] = {
             val node = tree.rootNode
-            ObjectTreeProfile[A](tree.id, node.synchronizedObject, node.ownerID)
+            val syncObject = node.synchronizedObject
+            val (detached, subWrappers) = WrapperInstantiationHelper.detachedWrapperClone(syncObject)
+            val subWrappersInfo = subWrappers.map(pair => (pair._1, pair._2.getNodeInfo))
+            ObjectTreeProfile[A](tree.id, detached, node.ownerID, subWrappersInfo)
         }
 
         val array = trees.values.map(toProfile).toArray

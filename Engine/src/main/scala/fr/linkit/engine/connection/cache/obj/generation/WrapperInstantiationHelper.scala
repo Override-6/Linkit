@@ -13,7 +13,10 @@
 package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.PuppetWrapper
-import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllAccessibleFields}
+import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperNodeInfo}
+import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
+import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper.{MaxScanDepth, deepClone}
+import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllFields}
 import fr.linkit.engine.local.utils.{Identity, JavaUtils, ScalaUtils, UnWrapper}
 import sun.misc.Unsafe
 
@@ -24,30 +27,60 @@ import java.nio.file.WatchKey
 import scala.collection.mutable
 
 //TODO Factorise this class and optimize it.
-object CloneHelper {
+class WrapperInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: ObjectTreeBehavior) {
 
-    val MaxScanDepth: Int = 7
-
-    def instantiateFromOrigin[A](wrapperClass: Class[A with PuppetWrapper[A]], origin: A): A with PuppetWrapper[A] = {
-        instantiateFromOrigin0(wrapperClass, deepClone(origin))
+    def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with PuppetWrapper[A]], origin: A, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+        instantiateFromOrigin0(wrapperClass, deepClone(origin), subWrappers)
     }
 
-    private def instantiateFromOrigin0[A](wrapperClass: Class[A with PuppetWrapper[A]], origin: A): A with PuppetWrapper[A] = {
-        val instance      = allocate[A with PuppetWrapper[A]](wrapperClass)
-        val checkedFields = mutable.HashSet.empty[Identity[Any]]
-        var depth: Int    = 0
+    private def instantiateFromOrigin0[A <: AnyRef](wrapperClass: Class[A with PuppetWrapper[A]],
+                                                    origin: A, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+        val instance                = allocate[A with PuppetWrapper[A]](wrapperClass)
+        val checkedFields           = mutable.HashSet.empty[Identity[Any]]
+        val subWrappersInstantiated = mutable.HashMap.empty[AnyRef, PuppetWrapper[AnyRef]]
+        var depth: Int              = 0
 
-        def scanObject(instanceField: Any, originField: Any, root: Boolean): Unit = {
+        def scanObject(instanceField: AnyRef, originField: AnyRef, root: Boolean): Unit = {
             if (depth >= MaxScanDepth ||
                     originField == null ||
                     UnWrapper.isPrimitiveWrapper(instanceField))
                 return
-            val fields = retrieveAllAccessibleFields(originField.getClass, originField)
+            scanAllFields(instanceField, originField, root)
+        }
+
+        def scanField(field: Field, instanceField: Any, originValue: AnyRef, setField: Boolean, mayReturn: Boolean): Unit = {
+            if (JavaUtils.sameInstance(originValue, origin))
+                ScalaUtils.setValue(instanceField, field, instance)
+            else {
+                if (setField) {
+                    ScalaUtils.setValue(instanceField, field, originValue)
+                    if (mayReturn)
+                        return
+                }
+                if (checkedFields.contains(Identity(originValue)))
+                    return
+                checkedFields += Identity(originValue)
+                originValue match {
+                    case array: Array[AnyRef] => scanArray(array)
+                    case _: String          =>
+                    case _                    =>
+                        scanObject(field.get(instanceField), originValue, false)
+                }
+            }
+        }
+
+        def scanAllFields(instance: Any, origin: Any, root: Boolean): Unit = {
             depth += 1
-            fields.foreach(field => {
+            val classUsed = if (instance.isInstanceOf[PuppetWrapper[_]]) origin.getClass else instance.getClass
+            retrieveAllFields(classUsed).foreach(field => {
                 try {
-                    val originValue = field.get(originField)
-                    scanField(field, instanceField, originValue, root)
+                    var isWrapper = false
+                    var originValue = field.get(origin)
+                    if (subWrappers.contains(originValue)) {
+                        originValue = asWrapper(originValue)
+                        isWrapper = true
+                    }
+                    scanField(field, instance, originValue, root || isWrapper, isWrapper)
                 } catch {
                     case _: IllegalAccessException =>
                     //simply do not scan
@@ -56,31 +89,22 @@ object CloneHelper {
             depth -= 1
         }
 
-        def scanField(field: Field, instanceField: Any, originValue: AnyRef, root: Boolean): Unit = {
-            if (JavaUtils.sameInstance(originValue, origin))
-                ScalaUtils.setValue(instanceField, field, instance)
-            else {
-                if (root) {
-                    ScalaUtils.setValue(instanceField, field, originValue)
-                }
-                if (checkedFields.contains(Identity(originValue)))
-                    return
-                checkedFields += Identity(originValue)
-                originValue match {
-                    case _: PuppetWrapper[_]  => //do not scan wrappers
-                    case array: Array[AnyRef] => scanArray(array)
-                    case _                    => scanObject(field.get(instanceField), originValue, false)
-                }
-            }
-        }
-
         def scanArray(array: Array[AnyRef]): Unit = {
             for (i <- array.indices) {
                 array(i) match {
                     case x if JavaUtils.sameInstance(x, origin) => array(i) = instance
+                    case e if subWrappers.contains(e)           => array(i) = asWrapper(e)
                     case obj                                    => scanObject(obj, obj, false)
                 }
             }
+        }
+
+        def asWrapper(obj: AnyRef): AnyRef = {
+            subWrappersInstantiated.getOrElseUpdate(obj, {
+                val (subWrapper, subSubWrappersInfo) = wrapperFactory.newWrapper(obj, behaviorTree, subWrappers(obj), subWrappers - obj)
+                subWrappersInstantiated ++= subSubWrappersInfo
+                subWrapper
+            })
         }
 
         scanObject(instance, origin, true)
@@ -89,8 +113,14 @@ object CloneHelper {
                 .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isFinal(f.getModifiers))
                 .tapEach(_.setAccessible(true))
                 .foreach(_.set(instance, null))
-        instance
+        (instance, subWrappersInstantiated.toMap)
     }
+
+}
+
+object WrapperInstantiationHelper {
+
+    val MaxScanDepth: Int = 7
 
     def deepClone[A](origin: A): A = {
         val checkedItems = mutable.HashMap.empty[Identity[Any], Any]
@@ -126,7 +156,7 @@ object CloneHelper {
                             val instance = allocate[Any](clazz)
                             checkedItems.put(Identity(data), instance)
                             depth += 1
-                            retrieveAllAccessibleFields(clazz).foreach(field => {
+                            retrieveAllFields(clazz).foreach(field => {
                                 try {
                                     val copied = getClonedInstance(field.get(data))
                                     ScalaUtils.setValue(instance, field, copied)
@@ -150,20 +180,20 @@ object CloneHelper {
         clone
     }
 
-    def detachedWrapperClone[A](origin: PuppetWrapper[A], detachOtherWrappers: Boolean): A = {
-        detachedWrapperClone0(deepClone(origin), 0, detachOtherWrappers)
+    def detachedWrapperClone[A <: AnyRef](origin: PuppetWrapper[A]): (A, Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+        detachedWrapperClone0(deepClone(origin), 0)
     }
 
-    private def detachedWrapperClone0[A](origin: PuppetWrapper[A], d: Int, detachOtherWrappers: Boolean): A = {
-        val instance      = allocate[AnyRef](origin.getWrappedClass)
+    private def detachedWrapperClone0[A <: AnyRef](origin: PuppetWrapper[A], d: Int): (A, Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+        val instance      = allocate[A](origin.getWrappedClass)
         val checkedFields = mutable.HashMap.empty[Identity[AnyRef], AnyRef]
-
-        var depth: Int = d
+        val subWrappers   = mutable.HashMap.empty[AnyRef, PuppetWrapper[AnyRef]]
+        var depth: Int    = d
 
         def scanObject(instanceField: Any, originField: Any, root: Boolean): Unit = {
             if (originField == null || depth > MaxScanDepth)
                 return
-            val fields = retrieveAllAccessibleFields(instanceField.getClass)
+            val fields = retrieveAllFields(instanceField.getClass)
             fields.foreach(field => {
                 try {
                     val originValue = field.get(originField)
@@ -189,7 +219,11 @@ object CloneHelper {
                     checkedFields.put(Identity(originValue), originValue)
                     originValue match {
                         case array: Array[AnyRef]                             => scanArray(array)
-                        case wrapper: PuppetWrapper[_] if detachOtherWrappers => ScalaUtils.setValue(instanceField, field, detachedWrapperClone0(wrapper, depth, true))
+                        case wrapper: PuppetWrapper[AnyRef]                   =>
+                            val (detached, subSubWrappers) = detachedWrapperClone0[AnyRef](wrapper, depth)
+                            ScalaUtils.setValue(instanceField, field, detached)
+                            subWrappers.put(detached, wrapper)
+                            subWrappers ++= subSubWrappers
                         case wrapper if UnWrapper.isPrimitiveWrapper(wrapper) => //just do not scan
                         case _                                                => scanObject(field.get(instanceField), originValue, false)
                     }
@@ -208,7 +242,44 @@ object CloneHelper {
 
         scanObject(instance, origin, true)
 
-        instance.asInstanceOf[A]
+        (instance, subWrappers.toMap)
+    }
+
+    def scanSubWrappers(any: AnyRef): Set[PuppetWrapper[AnyRef]] = {
+        val scannedWrappers  = mutable.HashSet.empty[PuppetWrapper[AnyRef]]
+        val checkedInstances = mutable.HashSet.empty[Identity[AnyRef]]
+        var depth            = 0
+
+        def scanObject(obj: AnyRef): Unit = {
+            if (obj == null || depth > MaxScanDepth || checkedInstances.contains(Identity(obj)) || UnWrapper.isPrimitiveWrapper(obj))
+                return
+            val clazz = obj.getClass
+            checkedInstances += Identity(obj)
+            obj match {
+                case array: Array[AnyRef]                                    => array.foreach(scanObject)
+                case wrapper: PuppetWrapper[AnyRef]                          => scannedWrappers += wrapper
+                case _ if clazz.isArray && clazz.componentType().isPrimitive => //Simply do not scan
+                case _: AnyRef                                               => scanAllFields(obj)
+
+            }
+        }
+
+        def scanAllFields(obj: AnyRef): Unit = {
+            retrieveAllFields(obj.getClass).foreach(field => {
+                try {
+                    depth += 1
+                    scanObject(field.get(obj))
+                    depth -= 1
+                } catch {
+                    case _: IllegalAccessException =>
+                    //Simply do not scan
+                }
+            })
+        }
+
+        scanAllFields(any)
+
+        scannedWrappers.toSet
     }
 
     def prepareClass(clazz: Class[_]): Unit = {
@@ -223,5 +294,4 @@ object CloneHelper {
         clazz.getConstructors
         clazz.getDeclaredConstructors
     }
-
 }

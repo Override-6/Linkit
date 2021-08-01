@@ -25,7 +25,7 @@ import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.description.ObjectTreeDefaultBehavior
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
-import fr.linkit.engine.connection.cache.obj.generation.{CloneHelper, ObjectWrapperClassClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassGenerator, WrapperInstantiationHelper, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.local.{ObjectChip, SimpleRMIHandler}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
 import fr.linkit.engine.connection.cache.obj.tree._
@@ -38,11 +38,11 @@ import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import scala.reflect.ClassTag
 
 //TODO Redesign the NetworkSharedCacheManager and its way to handle caches
-final class DefaultSynchronizedObjectCenter[A] private(handler: SharedCacheManager,
-                                                       cacheID: Int,
-                                                       channel: RequestPacketChannel,
-                                                       generator: ObjectWrapperClassGenerator,
-                                                       override val defaultTreeViewBehavior: ObjectTreeBehavior)
+final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: SharedCacheManager,
+                                                                 cacheID: Int,
+                                                                 channel: RequestPacketChannel,
+                                                                 generator: ObjectWrapperClassGenerator,
+                                                                 override val defaultTreeViewBehavior: ObjectTreeBehavior)
         extends AbstractSharedCache(handler, cacheID, channel) with SynchronizedObjectCenter[A] {
 
     private val procrastinator: Procrastinator = handler.network.connection
@@ -59,10 +59,10 @@ final class DefaultSynchronizedObjectCenter[A] private(handler: SharedCacheManag
         if (isRegistered(id))
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
 
-        val tree = createNewTree(id, currentIdentifier, obj, behavior)
+        val tree = createNewTree(id, currentIdentifier, obj, Map(), behavior)
         //Indicate that a new object has been posted.
         channel.makeRequest(ChannelScopes.discardCurrent)
-                .addPacket(ObjectPacket(ObjectTreeProfile(id, obj, currentIdentifier)))
+                .addPacket(ObjectPacket(ObjectTreeProfile(id, obj, currentIdentifier, Map())))
                 .putAllAttributes(this)
                 .submit()
         val wrapperNode = tree.getRoot
@@ -82,7 +82,7 @@ final class DefaultSynchronizedObjectCenter[A] private(handler: SharedCacheManag
         AppLogger.vDebug(s"Processing bundle : ${bundle}")
         val response = bundle.packet
         response.nextPacket[Packet] match {
-            case ip: InvocationPacket                                          =>
+            case ip: InvocationPacket                                                       =>
                 val path = ip.path
                 val node = findNode(path)
                 node.fold(AppLogger.error(s"Could not find puppet node at path ${path.mkString("$", " -> ", "")}")) {
@@ -90,9 +90,9 @@ final class DefaultSynchronizedObjectCenter[A] private(handler: SharedCacheManag
                     case _                                  =>
                         throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedSyncNode[_]].getSimpleName} in order to handle a member rmi request.")
                 }
-            case ObjectPacket(ObjectTreeProfile(treeID, rootObject: A, owner)) =>
+            case ObjectPacket(ObjectTreeProfile(treeID, rootObject: A, owner, subWrappers)) =>
                 if (!isRegistered(treeID)) {
-                    createNewTree(treeID, owner, rootObject, defaultTreeViewBehavior)
+                    createNewTree(treeID, owner, rootObject, subWrappers, defaultTreeViewBehavior)
                 }
         }
     }
@@ -117,19 +117,20 @@ final class DefaultSynchronizedObjectCenter[A] private(handler: SharedCacheManag
         val array = content.array
 
         array.foreach(profile => {
-            val puppet = profile.puppet
-            val owner  = profile.owner
-            val treeID = profile.treeID
-            val path   = Array(treeID)
+            val puppet      = profile.rootObject
+            val owner       = profile.treeOwner
+            val treeID      = profile.treeID
+            val subWrappers = profile.subWrappers
+            val path        = Array(treeID)
             //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
-            if (owner == currentIdentifier) {
+            if (isRegistered(treeID)) {
                 findNode(path).fold {
                     throw new NoSuchWrapperNodeException(s"Unknown local object of path '${path.mkString("$", " -> ", "")}'")
                 }((n: SyncNode[A]) => n.chip.updateObject(puppet))
             }
             //it's an object that must be remotely controlled because it is chipped by another objects cache.
-            else if (!isRegistered(treeID)) {
-                createNewTree(treeID, owner, puppet, defaultTreeViewBehavior)
+            else {
+                createNewTree(treeID, owner, puppet, subWrappers, defaultTreeViewBehavior)
             }
         })
     }
@@ -144,37 +145,38 @@ final class DefaultSynchronizedObjectCenter[A] private(handler: SharedCacheManag
                         tree.findNode[A](path)
                 })
     }
-    /*
-        private def registerWrapper[B](path: Array[Int], ownerID: String, puppet: B, behaviorTree: ObjectTreeBehavior): B with PuppetWrapper[B] = {
-            if (path.isEmpty)
-                throw new InvalidNodePathException("Path is empty.")
-            val treeID                          = path.head
-            val tree: SynchronizedObjectTree[A] = treeCenter.findTree(treeID).getOrElse {
-                throw new NoSuchWrapperNodeException(s"Could not find object tree of id $treeID.")
-            }
-            tree.insertObject(path.dropRight(1), path.last, puppet, ownerID).synchronizedObject
-        }*/
 
-    def createNewTree(id: Int, rootObjectOwner: String, rootObject: A, behaviorTree: ObjectTreeBehavior = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
-        val puppeteerInfo = WrapperNodeInfo(family, cacheID, rootObjectOwner, Array(id))
-        val rootBehavior  = behaviorTree.getFromClass[A](rootObject.getClass)
-        val wrapper       = WrapperInstantiator.newWrapper[A](rootObject, behaviorTree, puppeteerInfo)
-        val chip          = ObjectChip[A](rootObjectOwner, rootBehavior, wrapper)
-        val rootNode      = new RootWrapperNode[A](wrapper.getPuppeteer, chip, _, currentIdentifier, id)
-        val tree          = new DefaultSynchronizedObjectTree[A](currentIdentifier, id, WrapperInstantiator, this, behaviorTree)(rootNode)
+    private def createNewTree(id: Int, rootObjectOwner: String, rootObject: A, subWrappersInfo: Map[AnyRef, WrapperNodeInfo], behaviorTree: ObjectTreeBehavior = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
+        val puppeteerInfo       = WrapperNodeInfo(family, cacheID, rootObjectOwner, Array(id))
+        val rootBehavior        = behaviorTree.getFromClass[A](rootObject.getClass)
+        val (root, subWrappers) = WrapperInstantiator.newWrapper[A](rootObject, behaviorTree, puppeteerInfo, subWrappersInfo)
+        val chip                = ObjectChip[A](rootObjectOwner, rootBehavior, root)
+        val rootNode            = new RootWrapperNode[A](root.getPuppeteer, chip, _, currentIdentifier, id)
+        val tree                = new DefaultSynchronizedObjectTree[A](currentIdentifier, id, WrapperInstantiator, this, behaviorTree)(rootNode)
         treeCenter.addTree(id, tree)
+
+        subWrappers.values.foreach(wrapper => {
+            val info = wrapper.getNodeInfo
+            val path = info.nodePath
+            val parentPath = path.dropRight(1)
+            val id = path.last
+            tree.registerSynchronizedObject(parentPath, id, wrapper, info.owner)
+        })
+
         tree
     }
 
     private object WrapperInstantiator extends ObjectWrapperInstantiator {
 
-        override def newWrapper[B](obj: B, behaviorTree: ObjectTreeBehavior, puppeteerInfo: WrapperNodeInfo): B with PuppetWrapper[B] = {
-            val behavior     = behaviorTree.getFromClass[B](obj.getClass)
-            val puppeteer    = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, puppeteerInfo, behavior)
-            val wrapperClass = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
-            val instance     = CloneHelper.instantiateFromOrigin[B](wrapperClass, obj)
+        override def newWrapper[B <: AnyRef](obj: B, behaviorTree: ObjectTreeBehavior,
+                                   puppeteerInfo: WrapperNodeInfo, subWrappersInfo: Map[AnyRef, WrapperNodeInfo]): (B with PuppetWrapper[B], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+            val behavior                = behaviorTree.getFromClass[B](obj.getClass)
+            val puppeteer               = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, puppeteerInfo, behavior)
+            val wrapperClass            = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
+            val helper                  = new WrapperInstantiationHelper(this, behaviorTree)
+            val (instance, subWrappers) = helper.instantiateFromOrigin[B](wrapperClass, obj, subWrappersInfo)
             instance.initPuppeteer(puppeteer)
-            instance
+            (instance, subWrappers)
         }
     }
 
@@ -184,22 +186,22 @@ object DefaultSynchronizedObjectCenter {
 
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
-    def apply[A: ClassTag](): SharedCacheFactory[SynchronizedObjectCenter[A] with InternalSharedCache] = {
+    def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCenter[A] with InternalSharedCache] = {
         val treeView = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory(SimpleRMIHandler))
         apply[A](treeView)
     }
 
-    def apply[A: ClassTag](behaviors: ObjectTreeBehavior): SharedCacheFactory[SynchronizedObjectCenter[A] with InternalSharedCache] = {
+    def apply[A <: AnyRef : ClassTag](behaviors: ObjectTreeBehavior): SharedCacheFactory[SynchronizedObjectCenter[A] with InternalSharedCache] = {
         (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
             val channel   = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             val context   = handler.network.connection.getApp
             val resources = context.getAppResources.getOrOpenThenRepresent[WrappersClassResource](ClassesResourceDirectory)
-            val generator = new ObjectWrapperClassClassGenerator(context.compilerCenter, resources)
+            val generator = new DefaultObjectWrapperClassGenerator(context.compilerCenter, resources)
 
             new DefaultSynchronizedObjectCenter[A](handler, identifier, channel, generator, behaviors)
         }
     }
 
-    case class ObjectTreeProfile[A](treeID: Int, puppet: A, owner: String) extends Serializable
+    case class ObjectTreeProfile[A](treeID: Int, rootObject: A, treeOwner: String, subWrappers: Map[AnyRef, WrapperNodeInfo]) extends Serializable
 
 }

@@ -58,7 +58,7 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                                     val (byteCode, wrapperClass) = new ClassRectifier(desc, wrapperClassName, loader, clazz).rectifiedClass
                                     val wrapperClassFile         = req.classDir.resolve(wrapperClassName.replace(".", File.separator) + ".class")
                                     Files.write(wrapperClassFile, byteCode)
-                                    CloneHelper.prepareClass(wrapperClass)
+                                    WrapperInstantiationHelper.prepareClass(wrapperClass)
                                     ClassMappings.putClass(wrapperClass)
                                     wrapperClass
                                 })

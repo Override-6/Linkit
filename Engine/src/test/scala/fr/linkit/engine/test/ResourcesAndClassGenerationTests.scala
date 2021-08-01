@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
+import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperNodeInfo}
+import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper}
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
@@ -21,8 +22,8 @@ import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
-import fr.linkit.engine.connection.cache.obj.description.{ObjectTreeDefaultBehavior, SimplePuppetClassDescription, SimpleWrapperBehavior}
-import fr.linkit.engine.connection.cache.obj.generation.{CloneHelper, ObjectWrapperClassClassGenerator, WrappersClassResource}
+import fr.linkit.engine.connection.cache.obj.description.{ObjectTreeDefaultBehavior, SimplePuppetClassDescription}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassGenerator, WrapperInstantiationHelper, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
@@ -36,7 +37,7 @@ import org.junit.jupiter.api._
 import org.mockito.Mockito
 
 import java.util
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.reflect.runtime.universe.TypeTag
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -78,7 +79,7 @@ class ResourcesAndClassGenerationTests {
     def packetTest(): Unit = InvocationChoreographer.forceLocalInvocation {
         val wrapper = forObject(new util.ArrayList[String]())
 
-        val packet          = ArrayBuffer(wrapper, wrapper)
+        val packet = ArrayBuffer(wrapper, wrapper)
         PacketTests.testPacket(Array(packet))
     }
 
@@ -112,8 +113,11 @@ class ResourcesAndClassGenerationTests {
     @Test
     @Order(3)
     def generateComplexScalaClass(): Unit = InvocationChoreographer.forceLocalInvocation {
-        val obj = forObject(Player(7, "Salut", "Hey", 891, 45))
-        println(s"result = ${obj}")
+        val list = forObject(ListBuffer.empty[Player])
+        val player = forObject(Player(7, "Salut", "Hey", 891, 45))
+        list += player
+        val detached = list.detachedClone()
+        println(s"detached = ${detached}")
     }
 
     @Test
@@ -122,25 +126,34 @@ class ResourcesAndClassGenerationTests {
         forObject(LocalFileSystemAdapters.Nio)
     }
 
-    def forObject[A: TypeTag](obj: A): A with PuppetWrapper[A] = {
+    def forObject[A <: AnyRef: TypeTag](obj: A): A with PuppetWrapper[A] = {
         Assertions.assertNotNull(resources)
-        val cl = obj.getClass.asInstanceOf[Class[A]]
 
-        val resource    = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
-        val generator   = new ObjectWrapperClassClassGenerator(new DefaultCompilerCenter, resource)
-        val desc = SimplePuppetClassDescription[A](cl)
-        val puppetClass = generator.getWrapperClass[A](desc)
-        println(s"puppetClass = ${puppetClass}")
-        val factory = AnnotationBasedMemberBehaviorFactory()
-        val pup     = new InstancePuppeteer[A](null, app, null, WrapperNodeInfo("", 8, "", Array(1)), SimpleWrapperBehavior(desc, new ObjectTreeDefaultBehavior(factory)))
-        val wrapper  = CloneHelper.instantiateFromOrigin[A](puppetClass, obj)
-
-        wrapper.initPuppeteer(pup)
+        val tree    = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory())
+        val info    = WrapperNodeInfo("", 8, "", Array(1))
+        val (wrapper, _) = TestWrapperInstantiator.newWrapper[A](obj, tree, info, Map())
         wrapper.getChoreographer.forceLocalInvocation {
             println(s"wrapper = ${wrapper}")
             println(s"wrapper.getWrappedClass = ${wrapper.getWrappedClass}")
         }
         wrapper
+    }
+
+    private object TestWrapperInstantiator extends ObjectWrapperInstantiator {
+
+        private val resource  = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
+        private val generator = new DefaultObjectWrapperClassGenerator(new DefaultCompilerCenter, resource)
+
+        override def newWrapper[A <: AnyRef](obj: A, behaviorTree: ObjectTreeBehavior, puppeteerInfo: WrapperNodeInfo, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+            val cl                     = obj.getClass.asInstanceOf[Class[A]]
+            val behaviorDesc           = behaviorTree.getFromClass[A](cl)
+            val puppetClass            = generator.getWrapperClass[A](SimplePuppetClassDescription(cl))
+            val pup                    = new InstancePuppeteer[A](null, app, null, puppeteerInfo, behaviorDesc)
+            val helper                 = new WrapperInstantiationHelper(this, behaviorTree)
+            val (wrapper, subWrappers) = helper.instantiateFromOrigin[A](puppetClass, obj, Map())
+            wrapper.initPuppeteer(pup)
+            (wrapper, subWrappers)
+        }
     }
 
 }

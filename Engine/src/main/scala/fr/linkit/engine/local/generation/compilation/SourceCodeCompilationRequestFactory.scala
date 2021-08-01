@@ -14,7 +14,7 @@ package fr.linkit.engine.local.generation.compilation
 
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.compilation.CompilationResult
-import fr.linkit.engine.connection.cache.obj.generation.CloneHelper
+import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 
@@ -36,7 +36,7 @@ object SourceCodeCompilationRequestFactory extends AbstractCompilationRequestFac
                                 .map { context =>
                                     val loader = new GeneratedClassLoader(workingDir, context._2, Seq(classOf[LinkitApplication].getClassLoader))
                                     val clazz = Class.forName(context._1.className, true, loader)
-                                    CloneHelper.prepareClass(clazz)
+                                    WrapperInstantiationHelper.prepareClass(clazz)
                                     clazz
                                 })
                     }
