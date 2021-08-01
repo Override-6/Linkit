@@ -25,11 +25,14 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends D
 
     private def fillPool(nodes: Seq[DeserializerNode], postInit: Boolean): Unit = {
         def carefulDeserial(i: Int, refSetter: (Any => Unit) => Unit, node: DeserializerNode): Unit = {
+            var deserialize = postInit
             refSetter { ref =>
                 poolObject(i) = ref
+                val refClass = ref.getClass
+                deserialize = postInit || (refClass.isArray && refClass.componentType().isPrimitive)
                 nonAvailableReferences(i) = null //The reference became available
             }
-            if (postInit)
+            if (deserialize)
                 node.deserialize(in)
         }
 
@@ -67,7 +70,7 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends D
         RawObjectNode(obj)
     }
 
-    override def initPool(progess: DeserializationProgression): Unit = {
+    override def initPool(progress: DeserializationProgression): Unit = {
         if (poolObject != null)
             throw new IllegalStateException("This object pool is already initialised !")
         val buff   = in.buff
@@ -80,7 +83,7 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends D
         buff.limit(length + buff.position())
         var maxPos = 0
 
-        ArraySign.in(count, progess, in).deserializeRef(poolObject)(nodes => {
+        ArraySign.in(count, progress, in).deserializeRef(poolObject)(nodes => {
             fillPool(nodes, false)
             maxPos = buff.position()
             fillPool(nodes, true)

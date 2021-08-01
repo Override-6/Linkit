@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable.ListBuffer
 
-trait SyncNode[A] {
+trait SyncNode[A <: AnyRef] {
 
     lazy val treePath: Array[Int] = {
         var parent: SyncNode[_] = this

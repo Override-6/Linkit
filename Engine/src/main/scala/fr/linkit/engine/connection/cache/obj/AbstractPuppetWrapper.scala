@@ -61,7 +61,10 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] {
             i += 1
             if (!synchronizedParams(i) || obj.isInstanceOf[PuppetWrapper[_]])
                 obj
-            else pup.synchronizedObj(obj)
+            else obj match {
+                case anyRef: AnyRef => pup.synchronizedObj(anyRef)
+                case _ =>
+            }
         })
     }
 

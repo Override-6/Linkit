@@ -30,7 +30,8 @@ class DefaultDeserializationInputStream(override val buff: ByteBuffer,
 
     private val pool: DeserializationObjectPool = poolSupplier(this)
     override val progression: DefaultDeserializationProgression = new DefaultDeserializationProgression(this, pool, context, coordinates)
-    pool.initPool(progression)
+
+    def initPool(): Unit = pool.initPool(progression)
 
     override def readObject[A](): A = {
         progression.getNextDeserializationNode

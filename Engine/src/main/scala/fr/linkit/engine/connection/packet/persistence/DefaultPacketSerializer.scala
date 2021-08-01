@@ -99,6 +99,7 @@ class DefaultPacketSerializer extends PacketSerializer {
             override def forEachObjects(f: Any => Unit): Unit = {
                 if (concluded)
                     throw new IllegalStateException("Objects have already been deserialized.")
+                in.initPool()
                 while (lim > buff.position() && buff.get(buff.position()) != 0) {
                     val obj = in.progression.getNextDeserializationNode
                             .deserialize(in)

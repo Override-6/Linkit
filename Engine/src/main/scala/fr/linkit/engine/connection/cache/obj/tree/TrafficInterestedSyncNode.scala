@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj.tree.SyncNode
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 
-trait TrafficInterestedSyncNode[A] extends SyncNode[A] {
+trait TrafficInterestedSyncNode[A <: AnyRef] extends SyncNode[A] {
 
     def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit
 

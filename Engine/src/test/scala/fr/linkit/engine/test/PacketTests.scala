@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.test
 
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
@@ -39,7 +40,7 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        testPacket(Array(AnyRefPacket(None)))
+        testPacket(Array(WrapperNodeInfo("GameServer", 0, "test", Array(0))))
     }
 
     object EmptyObject {
@@ -48,7 +49,7 @@ class PacketTests {
 
     @Test
     def moreComplexPacketTest(): Unit = {
-        testPacket(Array[AnyRef](Array(1, 2f, 3d, 4.0f, 3.0d, 100.004321f, 156321d, 456.786541d)))
+        testPacket(Array[AnyRef](Array[Int](0, -1598464148)))
     }
 
     @Test

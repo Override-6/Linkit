@@ -14,7 +14,7 @@ package fr.linkit.api.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.CacheContent
 
-trait ObjectTreeCenter[A] {
+trait ObjectTreeCenter[A <: AnyRef] {
 
     def findTree(id: Int): Option[SynchronizedObjectTree[A]]
 

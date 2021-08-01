@@ -24,7 +24,7 @@ import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
 
-class InstancePuppeteer[S](channel: RequestPacketChannel,
+class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                            procrastinator: Procrastinator,
                            override val center: SynchronizedObjectCenter[_],
                            override val puppeteerInfo: WrapperNodeInfo,
@@ -81,7 +81,7 @@ class InstancePuppeteer[S](channel: RequestPacketChannel,
         this.puppetWrapper = wrapper
     }
 
-    override def synchronizedObj(obj: Any, id: Int): Any with PuppetWrapper[Any] = {
+    override def synchronizedObj(obj: AnyRef, id: Int): AnyRef with PuppetWrapper[AnyRef] = {
         val currentPath = puppeteerInfo.nodePath
         tree.insertObject(currentPath, id, obj, currentIdentifier).synchronizedObject
     }

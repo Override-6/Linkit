@@ -85,7 +85,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
             case ip: InvocationPacket                                                       =>
                 val path = ip.path
                 val node = findNode(path)
-                node.fold(AppLogger.error(s"Could not find puppet node at path ${path.mkString("$", " -> ", "")}")) {
+                node.fold(AppLogger.error(s"Could not find puppet node at path ${path.mkString("/")}")) {
                     case node: TrafficInterestedSyncNode[_] => node.handlePacket(ip, bundle.responseSubmitter)
                     case _                                  =>
                         throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedSyncNode[_]].getSimpleName} in order to handle a member rmi request.")
@@ -125,7 +125,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
             //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
             if (isRegistered(treeID)) {
                 findNode(path).fold {
-                    throw new NoSuchWrapperNodeException(s"Unknown local object of path '${path.mkString("$", " -> ", "")}'")
+                    throw new NoSuchWrapperNodeException(s"Unknown local object of path '${path.mkString("/")}'")
                 }((n: SyncNode[A]) => n.chip.updateObject(puppet))
             }
             //it's an object that must be remotely controlled because it is chipped by another objects cache.

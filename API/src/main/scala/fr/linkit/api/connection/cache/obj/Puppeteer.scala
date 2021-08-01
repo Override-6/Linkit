@@ -17,7 +17,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SynchronizedObjectTree}
 
-trait Puppeteer[S] {
+trait Puppeteer[S <: AnyRef] {
 
     val ownerID: String
 
@@ -37,5 +37,6 @@ trait Puppeteer[S] {
 
     def sendInvoke(methodId: Int, args: Array[Any]): Unit
 
-    def synchronizedObj(obj: Any, id: Int = ThreadLocalRandom.current().nextInt()): Any
+    //TODO make this for internal use only
+    def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef
 }

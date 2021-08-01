@@ -33,39 +33,39 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
 
     override def rootNode: SyncNode[A] = root
 
-    override def findNode[B](path: Array[Int]): Option[SyncNode[B]] = {
+    override def findNode[B <: AnyRef](path: Array[Int]): Option[SyncNode[B]] = {
         checkPath(path)
         findGrandChild[B](path)
     }
 
-    override def insertObject[B](parent: SyncNode[_], id: Int, obj: B, ownerID: String): SyncNode[B] = {
+    override def insertObject[B <: AnyRef](parent: SyncNode[_], id: Int, obj: B, ownerID: String): SyncNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not owner by this tree's center.")
         insertObject[B](parent.treePath, id, obj, ownerID)
     }
 
-    override def insertObject[B](parentPath: Array[Int], id: Int, obj: B, ownerID: String): SyncNode[B] = {
+    override def insertObject[B <: AnyRef](parentPath: Array[Int], id: Int, obj: B, ownerID: String): SyncNode[B] = {
         val wrapperNode = findGrandChild[B](parentPath).getOrElse {
-            throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("$", " -> ", "")}) (tree id == ${this.id}).")
+            throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
         genSynchronizedObject[B](wrapperNode, id, obj, ownerID)
     }
 
-    def registerSynchronizedObject[B](parent: SyncNode[_], id: Int, wrapper: B with PuppetWrapper[B], ownerID: String): SyncNode[B] = {
+    def registerSynchronizedObject[B <: AnyRef](parent: SyncNode[AnyRef], id: Int, wrapper: B with PuppetWrapper[B], ownerID: String): SyncNode[B] = {
         registerSynchronizedObject(parent.treePath, id, wrapper, ownerID)
     }
 
-    def registerSynchronizedObject[B](parentPath: Array[Int], id: Int, wrapper: B with PuppetWrapper[B], ownerID: String): SyncNode[B] = {
+    def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int, wrapper: B with PuppetWrapper[B], ownerID: String): SyncNode[B] = {
         val wrapperNode = findGrandChild[B](parentPath).getOrElse {
-            throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("$", " -> ", "")}) (tree id == ${this.id}).")
+            throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
         registerSynchronizedObject[B](wrapperNode, id, wrapper, ownerID)
     }
 
-    private def registerSynchronizedObject[B](parent: WrapperNode[_], id: Int, wrapper: B with PuppetWrapper[B], ownerID: String): WrapperNode[B] = {
+    private def registerSynchronizedObject[B <: AnyRef](parent: WrapperNode[_], id: Int, wrapper: B with PuppetWrapper[B], ownerID: String): WrapperNode[B] = {
         val path = parent.treePath :+ id
         if (!(wrapper.getNodeInfo.nodePath sameElements path))
-            throw new IllegalWrapperRegistration(s"Could not register wrapper '${wrapper.getClass.getName}' : Wrapper node's information path mismatches from given one: ${path.mkString("$", " -> ", "")}")
+            throw new IllegalWrapperRegistration(s"Could not register wrapper '${wrapper.getClass.getName}' : Wrapper node's information path mismatches from given one: ${path.mkString("/")}")
 
         val behavior = behaviorTree.getFromClass[B](wrapper.getWrappedClass)
 
@@ -76,7 +76,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
         node
     }
 
-    private def genSynchronizedObject[B](parent: WrapperNode[_], id: Int, obj: B, ownerID: String): SyncNode[B] = {
+    private def genSynchronizedObject[B <: AnyRef](parent: WrapperNode[_], id: Int, obj: B, ownerID: String): SyncNode[B] = {
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not present in this tree.")
 
@@ -87,23 +87,23 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
 
         val wrapperBehavior = behaviorTree.getFromClass[B](obj.getClass.asInstanceOf[Class[B]])
         val puppeteerInfo   = WrapperNodeInfo(center.family, center.cacheID, ownerID, parentPath :+ id)
-        val (wrapper, _)    = instantiator.newWrapper(obj, behaviorTree, puppeteerInfo, Map())
-        val node            = registerSynchronizedObject(parent, id, wrapper, ownerID)
+        val (wrapper, _)    = instantiator.newWrapper[B](obj, behaviorTree, puppeteerInfo, Map())
+        val node            = registerSynchronizedObject[B](parent, id, wrapper, ownerID)
 
         for (bhv <- wrapperBehavior.listField() if bhv.isSynchronized) {
             val id         = ThreadLocalRandom.current().nextInt()
             val field      = bhv.desc.javaField
             val fieldValue = field.get(obj)
-            val syncValue  = genSynchronizedObject[Any](node, id, fieldValue, ownerID).synchronizedObject
+            val syncValue  = genSynchronizedObject[AnyRef](node, id, fieldValue, ownerID).synchronizedObject
             ScalaUtils.setValue(wrapper, field, syncValue)
         }
         node
     }
 
-    private def findGrandChild[B](path: Array[Int]): Option[WrapperNode[B]] = {
+    private def findGrandChild[B <: AnyRef](path: Array[Int]): Option[WrapperNode[B]] = {
         if (!path.headOption.contains(root.id))
             return None
-        var ch: WrapperNode[_] = root
+        var ch: WrapperNode[_ <: AnyRef] = root
         for (childID <- path.drop(1)) {
             val opt = ch.getChild(childID)
             if (opt.isEmpty)

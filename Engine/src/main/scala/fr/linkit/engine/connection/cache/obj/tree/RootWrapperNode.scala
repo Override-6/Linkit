@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj.tree
 import fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree
 import fr.linkit.api.connection.cache.obj.{Chip, Puppeteer}
 
-class RootWrapperNode[A](puppeteer: Puppeteer[A], chip: Chip[A], tree: SynchronizedObjectTree[_], platformIdentifier: String, id: Int)
+class RootWrapperNode[A <: AnyRef](puppeteer: Puppeteer[A], chip: Chip[A], tree: SynchronizedObjectTree[_], platformIdentifier: String, id: Int)
         extends WrapperNode[A](puppeteer, chip, tree, platformIdentifier, id, null) {
 /*
     private var isPresentOnNetwork = false
