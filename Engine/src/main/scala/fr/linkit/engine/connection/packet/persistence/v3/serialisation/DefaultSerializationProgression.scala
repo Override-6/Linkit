@@ -21,11 +21,13 @@ import fr.linkit.engine.local.utils.UnWrapper
 
 import java.io.NotSerializableException
 import java.lang.reflect.Modifier
+import scala.collection.mutable
 
 class DefaultSerializationProgression(override val context: PacketPersistenceContext,
                                       override val pool: SerializationObjectPool,
                                       override val coordinates: PacketCoordinates,
                                       out: SerialisationOutputStream) extends SerialisationProgression {
+    private val mappedObjects = mutable.HashMap.empty[AnyRef, AnyRef] //TODO Enhance that shit
 
     override def getSerializationNode(obj: Any): SerializerNode = {
         obj match {
@@ -48,5 +50,10 @@ class DefaultSerializationProgression(override val context: PacketPersistenceCon
                 }
         }
     }
+    override def putObject(key: AnyRef, value: AnyRef): Unit = mappedObjects.put(key, value)
+
+    override def getObject[A <: AnyRef](key: AnyRef): Option[A] = mappedObjects.get(key).asInstanceOf[Option[A]]
+
+    override def getOrElseUpdate[A <: AnyRef](key: AnyRef, orElse: => A): A = mappedObjects.getOrElseUpdate(key, orElse).asInstanceOf[A]
 }
 

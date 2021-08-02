@@ -28,7 +28,7 @@ class DefaultPacketPersistenceContext extends PacketPersistenceContext {
     }
 
     override def getDescription(clazz: Class[_]): SerializableClassDescription = {
-        descriptions.getOrElseUpdate(clazz.getName, new ClassDescription(clazz))
+        descriptions.getOrElseUpdate(clazz.getName, ClassDescription(clazz))
     }
 
     override def getPersistenceForSerialisation(clazz: Class[_]): ObjectPersistor[Any] = {

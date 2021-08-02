@@ -18,8 +18,9 @@ import fr.linkit.engine.connection.packet.persistence.v3.ClassDescription.Synthe
 import fr.linkit.engine.local.utils.NumberSerializer
 
 import java.lang.reflect.{Field, Modifier}
+import scala.collection.mutable
 
-class ClassDescription(val clazz: Class[_]) extends SerializableClassDescription {
+class ClassDescription private(val clazz: Class[_]) extends SerializableClassDescription {
 
     //println(s"New class description created for $clazz")
     val serializableFields: List[Fields] = listSerializableFields(clazz)
@@ -64,6 +65,10 @@ class ClassDescription(val clazz: Class[_]) extends SerializableClassDescription
 }
 
 object ClassDescription {
+
+    private val cache = mutable.HashMap.empty[Class[_], ClassDescription]
+
+    def apply(clazz: Class[_]): ClassDescription = cache.getOrElseUpdate(clazz, new ClassDescription(clazz))
 
     private val Synthetic = 0x00001000
 }

@@ -35,6 +35,7 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
 
     private val registeredObjects = mutable.HashMap.empty[ObjectPersistor[_], ListBuffer[Any]]
 
+
     def concludeDeserialization(): Unit = {
         registeredObjects.foreachEntry((persistor, deserializedObjects) => {
             persistor.sortedDeserializedObjects(deserializedObjects.toArray.reverse)
@@ -87,5 +88,8 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
         }
         node
     }
+
+
+
 
 }

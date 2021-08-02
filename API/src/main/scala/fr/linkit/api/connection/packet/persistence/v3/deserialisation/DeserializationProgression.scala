@@ -18,7 +18,8 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Deser
 trait DeserializationProgression {
 
     val coordinates: PacketCoordinates
-    val pool: DeserializationObjectPool
+    val pool       : DeserializationObjectPool
 
     def getNextDeserializationNode: DeserializerNode
+
 }

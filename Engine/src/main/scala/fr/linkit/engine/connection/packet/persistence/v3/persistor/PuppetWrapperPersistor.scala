@@ -47,7 +47,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
             case other => other.forallConcernedTargets(check)
         }
 
-        val detachedWrapper = WrapperPointer(if (useInstancePointerOnly) null else wrapper.detachedClone(), puppeteerInfo)
+        val detachedWrapper = WrapperPointer(if (useInstancePointerOnly) null else progress.getOrElseUpdate(path, wrapper.detachedClone), puppeteerInfo)
         SimpleObjectSerializerNode(progress.getSerializationNode(detachedWrapper))
     }
 
