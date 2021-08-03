@@ -37,12 +37,12 @@ class DefaultSerialisationOutputStream(override val buff: ByteBuffer,
 
     override def primitiveNode(anyVal: AnyVal): SerializerNode = pool.checkNode(anyVal, this) { out => {
         anyVal match {
-            case i: Int     => out.put(IntFlag)     .put(NumberSerializer.serializeNumber(i, true))
-            case b: Byte    => out.put(ByteFlag)    .put(NumberSerializer.serializeNumber(b, true))
-            case s: Short   => out.put(ShortFlag)   .put(NumberSerializer.serializeNumber(s, true))
-            case l: Long    => out.put(LongFlag)    .put(NumberSerializer.serializeNumber(l, true))
+            case i: Int     => out.put(IntFlag)     .put(NumberSerializer.serializeNumber(i))
+            case b: Byte    => out.put(ByteFlag)    .put(NumberSerializer.serializeNumber(b))
+            case s: Short   => out.put(ShortFlag)   .put(NumberSerializer.serializeNumber(s))
+            case l: Long    => out.put(LongFlag)    .put(NumberSerializer.serializeNumber(l))
             case b: Boolean => out.put(BooleanFlag) .put(Array[Byte](1) :+ (if (b) 1 else 0).toByte)
-            case c: Char    => out.put(CharFlag)    .put(NumberSerializer.serializeNumber(c.toInt, true))
+            case c: Char    => out.put(CharFlag)    .put(NumberSerializer.serializeNumber(c.toInt))
             case d: Double  => out.put(DoubleFlag)  .putDouble(d)
             case f: Float   => out.put(FloatFlag)   .putFloat(f)
         }

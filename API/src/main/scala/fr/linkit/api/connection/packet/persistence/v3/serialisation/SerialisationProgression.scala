@@ -26,5 +26,4 @@ trait SerialisationProgression {
     def getSerializationNode(obj: Any): SerializerNode
 
 
-
 }

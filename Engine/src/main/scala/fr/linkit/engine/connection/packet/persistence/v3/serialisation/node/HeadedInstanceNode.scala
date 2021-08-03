@@ -21,7 +21,7 @@ class HeadedInstanceNode(place: Int) extends SerializerNode {
 
     override def writeBytes(out: SerialisationOutputStream): Unit = {
         out.put(HeadedValueFlag)
-                .put(NumberSerializer.serializeNumber(place, true))
+                .put(NumberSerializer.serializeNumber(place))
     }
 
 }

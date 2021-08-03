@@ -11,4 +11,6 @@ object FakeSerializationObjectPool extends SerializationObjectPool {
     override def addSerialisationDepth(): Unit = ()
 
     override def removeSerialisationDepth(): Unit = ()
+
+    override def addWrappedClassHeader(wrappedClass: Class[_]): Unit = ()
 }

@@ -45,8 +45,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     initPacketReader()
 
     override val currentIdentifier: String            = configuration.identifier
-    override val translator       : PacketTranslator  = configuration.translator
     override val port             : Int               = configuration.remoteAddress.getPort
+    override val translator       : PacketTranslator  = session.translator
     override val eventNotifier    : EventNotifier     = session.eventNotifier
     override val traffic          : PacketTraffic     = session.traffic
     override val boundIdentifier  : String            = serverIdentifier
@@ -173,7 +173,7 @@ object ClientConnection {
              configuration: ClientConnectionConfiguration): ClientConnection = {
 
         //Initializing values that will be used for packet transactions during the initialization.
-        val translator   = configuration.translator
+        val translator   = configuration.translatorFactory(context)
         val packetReader = new DefaultPacketReader(socket, BytesHasher.inactive, context, translator)
 
         //WelcomePacket informational fields

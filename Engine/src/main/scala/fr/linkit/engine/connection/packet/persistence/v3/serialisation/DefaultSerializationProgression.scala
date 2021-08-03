@@ -22,7 +22,6 @@ import fr.linkit.engine.local.utils.UnWrapper
 
 import java.io.NotSerializableException
 import java.lang.reflect.Modifier
-import scala.collection.mutable
 
 class DefaultSerializationProgression(override val context: PacketPersistenceContext,
                                       override val pool: SerializationObjectPool,

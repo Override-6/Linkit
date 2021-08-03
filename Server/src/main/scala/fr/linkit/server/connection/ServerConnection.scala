@@ -43,7 +43,7 @@ class ServerConnection(applicationContext: ServerApplication,
                        val configuration: ServerConnectionConfiguration) extends CentralConnection {
 
     override val currentIdentifier : String                     = configuration.identifier
-    override val translator        : PacketTranslator           = configuration.translator
+    override val translator        : PacketTranslator           = configuration.translatorFactory(applicationContext)
     override val port              : Int                        = configuration.port
     private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
     private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)

@@ -24,4 +24,6 @@ trait SerializationObjectPool {
 
     def removeSerialisationDepth(): Unit
 
+    def addWrappedClassHeader(wrappedClass: Class[_]): Unit
+
 }

@@ -14,12 +14,13 @@ package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationObjectPool, DeserializationProgression}
+import fr.linkit.engine.connection.cache.obj.generation.DefaultObjectWrapperClassCenter
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{RawObjectNode, SizedDeserializerNode}
 import fr.linkit.engine.local.utils.NumberSerializer
 
-class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends DeserializationObjectPool {
+class DefaultDeserializationObjectPool(in: DeserializationInputStream, center: DefaultObjectWrapperClassCenter) extends DeserializationObjectPool {
 
     private var poolObject            : Array[Any]                    = _
     private var nonAvailableReferences: Array[ObjectDeserializerNode] = _
@@ -74,26 +75,44 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends D
     override def initPool(progress: DeserializationProgression): Unit = {
         if (poolObject != null)
             throw new IllegalStateException("This object pool is already initialised !")
-        val buff   = in.buff
-        val length = NumberSerializer.deserializeFlaggedNumber[Int](buff)
-        val count  = NumberSerializer.deserializeFlaggedNumber[Int](buff)
+        val buff                = in.buff
+        val length              = NumberSerializer.deserializeFlaggedNumber[Int](buff)
+        val wrappedClassesCount = NumberSerializer.deserializeFlaggedNumber[Int](buff)
+        val poolCount           = NumberSerializer.deserializeFlaggedNumber[Int](buff)
 
-        poolObject = new Array(count)
-        nonAvailableReferences = new Array(count)
+        poolObject = new Array(poolCount)
+        nonAvailableReferences = new Array(poolCount)
 
         buff.limit(length + buff.position())
-        var maxPos = 0
 
-        ArraySign.in(count, progress, in).deserializeRef(poolObject)(nodes => {
-            fillPool(nodes, false)
-            maxPos = buff.position()
-            fillPool(nodes, true)
-            maxPos = Math.max(maxPos, buff.position())
-        }).deserialize(in)
+        generatedClasses(wrappedClassesCount, progress)
+        val maxPos = readPool(poolCount, progress)
 
         buff.limit(buff.capacity())
         buff.position(maxPos)
 
         nonAvailableReferences = null
+    }
+
+    private def readPool(poolCount: Int, progress: DeserializationProgression): Int = {
+        var maxPos = 0
+        val buff   = in.buff
+        ArraySign.in(poolCount, progress, in).deserializeRef(poolObject)(nodes => {
+            fillPool(nodes, false)
+            maxPos = buff.position()
+            fillPool(nodes, true)
+            maxPos = Math.max(maxPos, buff.position())
+        }).deserialize(in)
+        maxPos
+    }
+
+    private def generatedClasses(classesCount: Int, progress: DeserializationProgression): Unit = {
+        ArraySign.in(classesCount, progress, in).deserializeRef(null) { nodes => {
+            for (i <- nodes.indices) {
+                val clazz = nodes(i).deserialize(in).asInstanceOf[Class[_]]
+                center.getWrapperClass(clazz) //Just need to load the class (will have no effect if the class is not loaded)
+            }
+        }
+        }
     }
 }

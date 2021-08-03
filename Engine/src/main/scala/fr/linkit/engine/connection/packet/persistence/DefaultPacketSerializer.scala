@@ -16,17 +16,16 @@ import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.PacketSerializer
 import fr.linkit.api.connection.packet.persistence.PacketSerializer.PacketDeserial
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrappersClassResource}
-import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer.{AnyPacketCoordinatesFlag, ClassesResourceDirectory, NoPacketCoordinates, NoPacketCoordinatesFlag}
+import fr.linkit.engine.connection.cache.obj.generation.DefaultObjectWrapperClassCenter
+import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer.{AnyPacketCoordinatesFlag, NoPacketCoordinates, NoPacketCoordinatesFlag}
 import fr.linkit.engine.connection.packet.persistence.v3.DefaultPacketPersistenceContext
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.{DefaultDeserializationInputStream, DefaultDeserializationObjectPool, EmptyDeserializationObjectPool}
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, PuppetWrapperPersistor}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationOutputStream, DefaultSerializationObjectPool, DefaultSerializationProgression, FakeSerializationObjectPool}
-import fr.linkit.engine.local.LinkitApplication
 
 import java.nio.ByteBuffer
 
-class DefaultPacketSerializer extends PacketSerializer {
+class DefaultPacketSerializer(center: DefaultObjectWrapperClassCenter) extends PacketSerializer {
 
     val context = new DefaultPacketPersistenceContext()
     override val signature: Array[Byte] = Array(4)
@@ -91,7 +90,7 @@ class DefaultPacketSerializer extends PacketSerializer {
     }
 
     private def deserialize(buff: ByteBuffer, coordinates: PacketCoordinates): PacketDeserial = {
-        val in  = new DefaultDeserializationInputStream(buff, context, coordinates, in => new DefaultDeserializationObjectPool(in))
+        val in  = new DefaultDeserializationInputStream(buff, context, coordinates, in => new DefaultDeserializationObjectPool(in, center))
         val lim = buff.limit()
         new PacketDeserial {
             var concluded = false
@@ -118,12 +117,7 @@ class DefaultPacketSerializer extends PacketSerializer {
         if (this.network != null)
             throw new IllegalStateException("Network already initialised.")
         this.network = network
-        val app = network.connection.getApp
-        import fr.linkit.engine.local.resource.external.LocalResourceFolder._
-        val resources = app.getAppResources.getOrOpenThenRepresent[WrappersClassResource](ClassesResourceDirectory)
-        val compilerCenter = app.compilerCenter
-        val center = new DefaultObjectWrapperClassCenter(compilerCenter, resources)
-        context.addPersistence(new PuppetWrapperPersistor(network, center))
+        context.addPersistence(new PuppetWrapperPersistor(network))
     }
 
 }
@@ -132,7 +126,6 @@ object DefaultPacketSerializer {
 
     private val NoPacketCoordinatesFlag : Byte = -111
     private val AnyPacketCoordinatesFlag: Byte = -112
-    private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
 
     object NoPacketCoordinates extends PacketCoordinates {

@@ -14,13 +14,22 @@ package fr.linkit.engine.connection.packet.persistence
 
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence._
-import fr.linkit.api.local.concurrency.Procrastinator
+import fr.linkit.api.local.ApplicationContext
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrappersClassResource}
+import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator.ClassesResourceDirectory
+import fr.linkit.engine.local.LinkitApplication
 
 import java.nio.ByteBuffer
 
-class DefaultPacketTranslator() extends PacketTranslator {
+class DefaultPacketTranslator(app: ApplicationContext) extends PacketTranslator {
 
-    private val serializer = new DefaultPacketSerializer()
+    private val serializer = {
+        import fr.linkit.engine.local.resource.external.LocalResourceFolder._
+        val resources = app.getAppResources.getOrOpenThenRepresent[WrappersClassResource](ClassesResourceDirectory)
+        val compilerCenter = app.compilerCenter
+        val center = new DefaultObjectWrapperClassCenter(compilerCenter, resources)
+        new DefaultPacketSerializer(center)
+    }
 
     override def translate(packetInfo: TransferInfo): PacketSerializationResult = {
         new LazyPacketSerializationResult(packetInfo, serializer)
@@ -35,4 +44,9 @@ class DefaultPacketTranslator() extends PacketTranslator {
     override def initNetwork(network: Network): Unit = serializer.initNetwork(network)
 
     override val signature: Array[Byte] = serializer.signature
+
+}
+
+object DefaultPacketTranslator {
+    private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 }

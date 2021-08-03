@@ -63,10 +63,10 @@ object NumberSerializer {
                 ((0xff & bytes(index + 1)) << 0)).toShort
     }
 
-    def serializeNumber(value: Long, insertFlag: Boolean = false): Array[Byte] = {
+    def serializeNumber(value: Long): Array[Byte] = {
         //println(s"Serializing number $value, insertFlag: $insertFlag")
 
-        def flagged(array: Array[Byte]): Array[Byte] = (if (insertFlag) Array(array.length.toByte) else Array()) ++ array
+        def flagged(array: Array[Byte]): Array[Byte] = Array(array.length.toByte) ++ array
 
         if (Byte.MinValue <= value && value <= Byte.MaxValue) {
             //println("Byte")

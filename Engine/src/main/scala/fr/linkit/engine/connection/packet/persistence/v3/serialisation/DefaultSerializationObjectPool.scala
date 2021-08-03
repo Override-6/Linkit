@@ -32,6 +32,8 @@ class DefaultSerializationObjectPool() extends SerializationObjectPool {
     private var isWritingPool       = false
     private var depth: Int          = 0
 
+    private val wrappedClasses = mutable.HashSet.empty[Class[_]]
+
     override def checkNode(obj: Any, out: SerialisationOutputStream)(nodeSupplier: => SerializerNode): DelegatingSerializerNode = {
         if (obj == null || obj == None)
             return DelegatingSerializerNode(new NullInstanceNode(obj == None))
@@ -69,12 +71,15 @@ class DefaultSerializationObjectPool() extends SerializationObjectPool {
 
     def writePool(out: SerialisationOutputStream): Unit = {
         isWritingPool = true
-        val progression = out.progression
-        val fakeOut = new DefaultSerialisationOutputStream(ByteBuffer.allocate(out.capacity()), progression.coordinates, this, progression.context)
-        val array   = ArraySign.out(pool.toSeq, fakeOut.progression).getNode
+        val progression         = out.progression
+        val fakeOut             = new DefaultSerialisationOutputStream(ByteBuffer.allocate(out.capacity()), progression.coordinates, this, progression.context)
+        val wrappedClassesArray = ArraySign.out(wrappedClasses.toSeq, fakeOut.progression).getNode
+        val array               = ArraySign.out(pool.toSeq, fakeOut.progression).getNode
+        wrappedClassesArray.writeBytes(fakeOut)
         array.writeBytes(fakeOut)
-        out.write(NumberSerializer.serializeNumber(fakeOut.position(), true))
-        out.write(NumberSerializer.serializeNumber(pool.size, true))
+        out.write(NumberSerializer.serializeNumber(fakeOut.position()))
+        out.write(NumberSerializer.serializeNumber(wrappedClasses.size))
+        out.write(NumberSerializer.serializeNumber(pool.size))
         out.put(fakeOut.buff.flip())
         isWritingPool = false
     }
@@ -90,4 +95,6 @@ class DefaultSerializationObjectPool() extends SerializationObjectPool {
                 delegating
         }
     }
+
+    override def addWrappedClassHeader(wrappedClass: Class[_]): Unit = wrappedClasses += wrappedClass
 }

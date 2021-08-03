@@ -22,4 +22,5 @@ trait DeserializationProgression {
 
     def getNextDeserializationNode: DeserializerNode
 
+
 }

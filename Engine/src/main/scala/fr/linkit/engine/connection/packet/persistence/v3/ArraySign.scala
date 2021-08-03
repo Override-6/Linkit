@@ -43,7 +43,7 @@ object ArraySign {
                     val pos1 = fakeOut.position()
                     lengths += pos1 - pos0
                 })
-                val lengthsBytes = lengths.flatMap(l => NumberSerializer.serializeNumber(l, true)).toArray
+                val lengthsBytes = lengths.flatMap(l => NumberSerializer.serializeNumber(l)).toArray
                 out.put(lengthsBytes)
                         .put(fakeOut.array(), 0, fakeOut.position())
             }

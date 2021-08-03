@@ -85,7 +85,7 @@ object ArrayPersistence {
         val node = ArraySign.out(array, progress).getNode
         out => {
             out.write(head)
-            out.write(NumberSerializer.serializeNumber(array.length, true))
+            out.write(NumberSerializer.serializeNumber(array.length))
             node.writeBytes(out)
         }
     }
