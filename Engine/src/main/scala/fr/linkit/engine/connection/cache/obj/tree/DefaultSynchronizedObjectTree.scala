@@ -5,6 +5,7 @@ import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{IllegalObjectWrapperException, PuppetWrapper, SynchronizedObjectCenter}
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
+import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
 import fr.linkit.engine.local.utils.ScalaUtils
 
 import java.util.concurrent.ThreadLocalRandom
@@ -68,6 +69,9 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
             throw new IllegalWrapperRegistration(s"Could not register wrapper '${wrapper.getClass.getName}' : Wrapper node's information path mismatches from given one: ${path.mkString("/")}")
 
         val behavior = behaviorTree.getFromClass[B](wrapper.getWrappedClass)
+        if (!wrapper.isInitialized) {
+            instantiator.initializeWrapper(wrapper, WrapperNodeInfo(center.family, center.cacheID, ownerID, path), behavior)
+        }
 
         val chip                 = ObjectChip[B](ownerID, behavior, wrapper)
         val puppeteer            = wrapper.getPuppeteer

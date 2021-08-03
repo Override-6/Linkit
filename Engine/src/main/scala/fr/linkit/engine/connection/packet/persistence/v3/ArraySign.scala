@@ -52,7 +52,7 @@ object ArraySign {
 
     case class ArraySignIn(progress: DeserializationProgression, lengths: Array[Int]) extends ArraySign {
 
-        def deserializeRef(ref: AnyRef)(group: Array[DeserializerNode] => Unit): ObjectDeserializerNode = {
+        def deserializeRef(ref: Any)(group: Array[DeserializerNode] => Unit): ObjectDeserializerNode = {
             //prinln(s"getting node for array sign ref ${ref.getClass.getName}...")
             SimpleObjectDeserializerNode(ref) {
                 in => {

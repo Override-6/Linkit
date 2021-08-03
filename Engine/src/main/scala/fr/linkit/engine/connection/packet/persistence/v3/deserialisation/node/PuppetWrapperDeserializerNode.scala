@@ -11,10 +11,19 @@
  */
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
+import fr.linkit.api.connection.cache.obj.PuppetWrapper
+
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 
-case class RawObjectNode(obj: Any) extends SimpleObjectDeserializerNode() {
-    setReference(obj)
+abstract class PuppetWrapperDeserializerNode extends SimpleObjectDeserializerNode {
 
-    override def deserializeAction(in: DeserializationInputStream): Any = obj
+    def deserializeWrapper(ref: AnyRef, in: DeserializationInputStream): PuppetWrapper[_]
+
+    def retrieveAndSetWrapperRef(in: DeserializationInputStream): Unit
+
+    override def deserializeAction(in: DeserializationInputStream): Any = {
+        retrieveAndSetWrapperRef(in)
+        ref
+    }
+
 }

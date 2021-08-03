@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.Deserializ
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
-import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
+import fr.linkit.engine.connection.packet.persistence.v3.{ArraySign, ClassDescription}
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{NullInstanceNode, SimpleObjectSerializerNode}
 import fr.linkit.engine.local.utils.ScalaUtils
@@ -41,7 +41,11 @@ object DefaultObjectPersistor extends ObjectPersistor[Any] {
 
     override def getDeserialNode(desc: SerializableClassDescription, context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         val instance = ScalaUtils.allocate[AnyRef](desc.clazz)
-        //prinln(s"getDeserialNode in DefaultObjectPersistor for ${desc.clazz}")
+        getCustomDeserialNode(instance)
+    }
+
+    def getCustomDeserialNode(instance: Any): ObjectDeserializerNode = {
+        val desc = ClassDescription(instance.getClass)
         SimpleObjectDeserializerNode(instance) {
             in =>
                 //println(s"Deserializing object ${desc.clazz.getName}...")

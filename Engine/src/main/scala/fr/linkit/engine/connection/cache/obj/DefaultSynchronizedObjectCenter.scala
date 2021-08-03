@@ -13,8 +13,8 @@
 package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperNodeInfo}
-import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassGenerator, ObjectWrapperInstantiator}
+import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperBehavior, WrapperNodeInfo}
+import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassCenter, ObjectWrapperInstantiator}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
@@ -25,7 +25,7 @@ import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.description.ObjectTreeDefaultBehavior
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassGenerator, WrapperInstantiationHelper, WrappersClassResource}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrapperInstantiationHelper, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.local.{ObjectChip, SimpleRMIHandler}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
 import fr.linkit.engine.connection.cache.obj.tree._
@@ -41,7 +41,7 @@ import scala.reflect.ClassTag
 final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: SharedCacheManager,
                                                                  cacheID: Int,
                                                                  channel: RequestPacketChannel,
-                                                                 generator: ObjectWrapperClassGenerator,
+                                                                 generator: ObjectWrapperClassCenter,
                                                                  override val defaultTreeViewBehavior: ObjectTreeBehavior)
         extends AbstractSharedCache(handler, cacheID, channel) with SynchronizedObjectCenter[A] {
 
@@ -169,15 +169,20 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
     private object WrapperInstantiator extends ObjectWrapperInstantiator {
 
         override def newWrapper[B <: AnyRef](obj: B, behaviorTree: ObjectTreeBehavior,
-                                   puppeteerInfo: WrapperNodeInfo, subWrappersInfo: Map[AnyRef, WrapperNodeInfo]): (B with PuppetWrapper[B], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
-            val behavior                = behaviorTree.getFromClass[B](obj.getClass)
-            val puppeteer               = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, puppeteerInfo, behavior)
+                                             nodeInfo: WrapperNodeInfo, subWrappersInfo: Map[AnyRef, WrapperNodeInfo]): (B with PuppetWrapper[B], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
             val wrapperClass            = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
             val helper                  = new WrapperInstantiationHelper(this, behaviorTree)
-            val (instance, subWrappers) = helper.instantiateFromOrigin[B](wrapperClass, obj, subWrappersInfo)
-            instance.initPuppeteer(puppeteer)
-            (instance, subWrappers)
+            val (wrapper, subWrappers) = helper.instantiateFromOrigin[B](wrapperClass, obj, subWrappersInfo)
+            val behavior                = behaviorTree.getFromClass[B](obj.getClass)
+            initializeWrapper(wrapper, nodeInfo, behavior)
+            (wrapper, subWrappers)
         }
+
+        override def initializeWrapper[B <: AnyRef](wrapper: PuppetWrapper[B], nodeInfo: WrapperNodeInfo, behavior: WrapperBehavior[B]): Unit = {
+            val puppeteer               = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, nodeInfo, behavior)
+            wrapper.initPuppeteer(puppeteer)
+        }
+
     }
 
 }
@@ -196,7 +201,7 @@ object DefaultSynchronizedObjectCenter {
             val channel   = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             val context   = handler.network.connection.getApp
             val resources = context.getAppResources.getOrOpenThenRepresent[WrappersClassResource](ClassesResourceDirectory)
-            val generator = new DefaultObjectWrapperClassGenerator(context.compilerCenter, resources)
+            val generator = new DefaultObjectWrapperClassCenter(context.compilerCenter, resources)
 
             new DefaultSynchronizedObjectCenter[A](handler, identifier, channel, generator, behaviors)
         }

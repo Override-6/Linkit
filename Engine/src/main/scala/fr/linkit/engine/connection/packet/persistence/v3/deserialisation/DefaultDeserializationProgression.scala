@@ -35,7 +35,6 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
 
     private val registeredObjects = mutable.HashMap.empty[ObjectPersistor[_], ListBuffer[Any]]
 
-
     def concludeDeserialization(): Unit = {
         registeredObjects.foreachEntry((persistor, deserializedObjects) => {
             persistor.sortedDeserializedObjects(deserializedObjects.toArray.reverse)
@@ -57,6 +56,7 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
             case NullFlag                               => RawObjectNode(if (buff.limit() > buff.position() && buff.get(buff.position()) == NoneFlag) None else null)
             case NoneFlag                               => RawObjectNode(None)
             case ObjectFlag                             => handleObjectFlag(buff, startPos)
+            case ClassFlag                              => in => in.readClass()
             case flag                                   => throw new MalFormedPacketException(buff, s"Unknown flag '$flag' at start of node expression.")
         }
     }
@@ -88,8 +88,5 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
         }
         node
     }
-
-
-
 
 }

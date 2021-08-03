@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperNodeInfo}
+import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperBehavior, WrapperNodeInfo}
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper}
 import fr.linkit.api.local.generation.TypeVariableTranslator
@@ -23,7 +23,7 @@ import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
 import fr.linkit.engine.connection.cache.obj.description.{ObjectTreeDefaultBehavior, SimplePuppetClassDescription}
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassGenerator, WrapperInstantiationHelper, WrappersClassResource}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrapperInstantiationHelper, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
@@ -142,7 +142,7 @@ class ResourcesAndClassGenerationTests {
     private object TestWrapperInstantiator extends ObjectWrapperInstantiator {
 
         private val resource  = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
-        private val generator = new DefaultObjectWrapperClassGenerator(new DefaultCompilerCenter, resource)
+        private val generator = new DefaultObjectWrapperClassCenter(new DefaultCompilerCenter, resource)
 
         override def newWrapper[A <: AnyRef](obj: A, behaviorTree: ObjectTreeBehavior, puppeteerInfo: WrapperNodeInfo, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
             val cl                     = obj.getClass.asInstanceOf[Class[A]]
@@ -154,6 +154,8 @@ class ResourcesAndClassGenerationTests {
             wrapper.initPuppeteer(pup)
             (wrapper, subWrappers)
         }
+
+        override def initializeWrapper[B <: AnyRef](wrapper: PuppetWrapper[B], nodeInfo: WrapperNodeInfo, behavior: WrapperBehavior[B]): Unit = ???
     }
 
 }

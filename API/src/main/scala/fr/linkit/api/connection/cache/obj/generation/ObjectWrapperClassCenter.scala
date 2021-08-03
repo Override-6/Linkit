@@ -9,7 +9,7 @@ import scala.reflect.{ClassTag, classTag}
 /**
  * This class generates a class that extends
  * */
-trait ObjectWrapperClassGenerator {
+trait ObjectWrapperClassCenter {
 
     def getWrapperClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]]
 

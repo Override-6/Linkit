@@ -63,7 +63,7 @@ class PacketTests {
 object PacketTests {
 
     private val serializer = new DefaultPacketSerializer
-    serializer.context.addPersistence(new PuppetWrapperPersistor(null))
+    serializer.context.addPersistence(new PuppetWrapperPersistor(null, null))
 
     def testPacket(obj: Array[AnyRef]): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")

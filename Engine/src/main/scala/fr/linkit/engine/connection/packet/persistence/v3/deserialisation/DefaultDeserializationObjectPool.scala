@@ -12,14 +12,15 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationObjectPool, DeserializationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationObjectPool, DeserializationProgression}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.ArraySign
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{RawObjectNode, SizedDeserializerNode}
 import fr.linkit.engine.local.utils.NumberSerializer
 
 class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends DeserializationObjectPool {
+
     private var poolObject            : Array[Any]                    = _
     private var nonAvailableReferences: Array[ObjectDeserializerNode] = _
 
@@ -66,8 +67,8 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream) extends D
             if (nonAvailableReferences == null || nonAvailableReferences(place) == null)
                 throw new NullPointerException("Unexpected null item in poolObject")
             else nonAvailableReferences(place)
-        }
-        RawObjectNode(obj)
+        } else
+            RawObjectNode(obj)
     }
 
     override def initPool(progress: DeserializationProgression): Unit = {

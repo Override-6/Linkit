@@ -25,10 +25,6 @@ trait SerialisationProgression {
 
     def getSerializationNode(obj: Any): SerializerNode
 
-    def putObject(key: AnyRef, value: AnyRef): Unit
 
-    def getObject[A <: AnyRef](key: AnyRef): Option[A]
-
-    def getOrElseUpdate[A <: AnyRef](key: AnyRef, orElse: => A): A
 
 }
