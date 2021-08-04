@@ -23,7 +23,7 @@ trait SerializableClassDescription {
     val signItemCount     : Int
     val classCode         : Array[Byte]
 
-    def foreachDeserializableFields(deserialize: (Int, Field) => Any)(pasteOnField: (Field, Any) => Unit): Unit
+    def foreachDeserializableFields(deserialize: (Int, Field, Any => Unit) => Unit)(pasteOnField: (Field, Any) => Unit): Unit
 
 }
 

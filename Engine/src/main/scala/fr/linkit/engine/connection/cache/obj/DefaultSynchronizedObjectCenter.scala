@@ -59,7 +59,8 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
         if (isRegistered(id))
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
 
-        val tree = createNewTree(id, currentIdentifier, obj, Map(), behavior)
+        val objClone = WrapperInstantiationHelper.deepClone(obj)
+        val tree = createNewTree(id, currentIdentifier, objClone, Map(), behavior)
         //Indicate that a new object has been posted.
         channel.makeRequest(ChannelScopes.discardCurrent)
                 .addPacket(ObjectPacket(ObjectTreeProfile(id, obj, currentIdentifier, Map())))
@@ -156,10 +157,10 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
         treeCenter.addTree(id, tree)
 
         subWrappers.values.foreach(wrapper => {
-            val info = wrapper.getNodeInfo
-            val path = info.nodePath
+            val info       = wrapper.getNodeInfo
+            val path       = info.nodePath
             val parentPath = path.dropRight(1)
-            val id = path.last
+            val id         = path.last
             tree.registerSynchronizedObject(parentPath, id, wrapper, info.owner)
         })
 
@@ -170,16 +171,16 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
 
         override def newWrapper[B <: AnyRef](obj: B, behaviorTree: ObjectTreeBehavior,
                                              nodeInfo: WrapperNodeInfo, subWrappersInfo: Map[AnyRef, WrapperNodeInfo]): (B with PuppetWrapper[B], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
-            val wrapperClass            = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
-            val helper                  = new WrapperInstantiationHelper(this, behaviorTree)
+            val wrapperClass           = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
+            val helper                 = new WrapperInstantiationHelper(this, behaviorTree)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[B](wrapperClass, obj, subWrappersInfo)
-            val behavior                = behaviorTree.getFromClass[B](obj.getClass)
+            val behavior               = behaviorTree.getFromClass[B](obj.getClass)
             initializeWrapper(wrapper, nodeInfo, behavior)
             (wrapper, subWrappers)
         }
 
         override def initializeWrapper[B <: AnyRef](wrapper: PuppetWrapper[B], nodeInfo: WrapperNodeInfo, behavior: WrapperBehavior[B]): Unit = {
-            val puppeteer               = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, nodeInfo, behavior)
+            val puppeteer = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, nodeInfo, behavior)
             wrapper.initPuppeteer(puppeteer)
         }
 

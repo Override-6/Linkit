@@ -29,8 +29,10 @@ import scala.collection.mutable
 //TODO Factorise this class and optimize it.
 class WrapperInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: ObjectTreeBehavior) {
 
-    def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with PuppetWrapper[A]], origin: A, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
-        instantiateFromOrigin0(wrapperClass, deepClone(origin), subWrappers)
+    def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with PuppetWrapper[A]],
+                                           origin: A,
+                                           subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+        instantiateFromOrigin0(wrapperClass, origin, subWrappers)
     }
 
     private def instantiateFromOrigin0[A <: AnyRef](wrapperClass: Class[A with PuppetWrapper[A]],
@@ -185,16 +187,16 @@ object WrapperInstantiationHelper {
         detachedWrapperClone0(deepClone(origin))
     }
 
-    private def detachedWrapperClone0[A <: AnyRef](origin: PuppetWrapper[A]): (A, Map[AnyRef, PuppetWrapper[_]]) = {
+    private def detachedWrapperClone0[A <: AnyRef](originClone: PuppetWrapper[A]): (A, Map[AnyRef, PuppetWrapper[_]]) = {
         val checkedFields    = mutable.HashMap.empty[Identity[AnyRef], AnyRef]
         val detachedWrappers = mutable.HashMap.empty[PuppetWrapper[_], AnyRef]
         var depth            = 0
 
-        def detachedWrapper(origin: PuppetWrapper[_]): AnyRef = {
-            if (detachedWrappers.contains(origin))
-                return detachedWrappers(origin)
-            val instance = allocate[A](origin.getWrappedClass)
-            detachedWrappers.put(origin, instance)
+        def detachedWrapper(originClone: PuppetWrapper[_]): AnyRef = {
+            if (detachedWrappers.contains(originClone))
+                return detachedWrappers(originClone)
+            val instance = allocate[A](originClone.getWrappedClass)
+            detachedWrappers.put(originClone, instance)
 
             def scanObject(instanceField: Any, originField: Any, root: Boolean): Unit = {
                 if (originField == null || depth > MaxScanDepth)
@@ -214,7 +216,7 @@ object WrapperInstantiationHelper {
             }
 
             def scanField(instanceField: Any, originValue: AnyRef, field: Field, root: Boolean): Unit = {
-                if (JavaUtils.sameInstance(originValue, origin)) {
+                if (JavaUtils.sameInstance(originValue, originClone)) {
                     ScalaUtils.setValue(instanceField, field, instance)
                 }
                 else {
@@ -233,20 +235,20 @@ object WrapperInstantiationHelper {
             def scanArray(array: Array[AnyRef]): Unit = {
                 for (i <- array.indices) {
                     array(i) match {
-                        case x if JavaUtils.sameInstance(x, origin) => array(i) = instance
-                        case wrapper: PuppetWrapper[AnyRef]         => array(i) = detachedWrapper(wrapper)
+                        case x if JavaUtils.sameInstance(x, originClone) => array(i) = instance
+                        case wrapper: PuppetWrapper[AnyRef]              => array(i) = detachedWrapper(wrapper)
                         case obj                                    => scanObject(obj, obj, false)
                     }
                 }
             }
 
-            scanObject(instance, origin, true)
+            scanObject(instance, originClone, true)
             instance
         }
 
-        val instance = detachedWrapper(origin).asInstanceOf[A]
+        val instance = detachedWrapper(originClone).asInstanceOf[A]
 
-        detachedWrappers.remove(origin)
+        detachedWrappers.remove(originClone)
         (instance, detachedWrappers.map(_.swap).toMap)
     }
 

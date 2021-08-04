@@ -23,7 +23,7 @@ import fr.linkit.engine.local.utils.NumberSerializer
 class DefaultDeserializationObjectPool(in: DeserializationInputStream, center: DefaultObjectWrapperClassCenter) extends DeserializationObjectPool {
 
     private var poolObject            : Array[Any]                    = _
-    private var nonAvailableReferences: Array[ObjectDeserializerNode] = _
+    private var nonAvailableReferences: Array[SizedDeserializerNode] = _
 
     private def fillPool(nodes: Seq[DeserializerNode], postInit: Boolean): Unit = {
         def carefulDeserial(i: Int, refSetter: (Any => Unit) => Unit, node: DeserializerNode): Unit = {
@@ -41,13 +41,12 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream, center: D
         for (i <- nodes.indices) {
             nodes(i) match {
                 case node: ObjectDeserializerNode =>
-                    carefulDeserial(i, action => node.addOnReferenceAvailable(action), node)
-                    nonAvailableReferences(i) = node
+                    throw new Error()
                 case e: SizedDeserializerNode     =>
-                    e.node match {
+                    e.subNode match {
                         case node: ObjectDeserializerNode =>
                             carefulDeserial(i, action => node.addOnReferenceAvailable(action), e)
-                            nonAvailableReferences(i) = node
+                            nonAvailableReferences(i) = e
                         case _                            =>
                             if (!postInit)
                                 poolObject(i) = e.deserialize(in)
@@ -83,9 +82,11 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream, center: D
         poolObject = new Array(poolCount)
         nonAvailableReferences = new Array(poolCount)
 
-        buff.limit(length + buff.position())
-
+        val limit = length + buff.position()
+        buff.limit(limit)
         generatedClasses(wrappedClassesCount, progress)
+        buff.limit(limit)
+
         val maxPos = readPool(poolCount, progress)
 
         buff.limit(buff.capacity())
@@ -110,9 +111,9 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream, center: D
         ArraySign.in(classesCount, progress, in).deserializeRef(null) { nodes => {
             for (i <- nodes.indices) {
                 val clazz = nodes(i).deserialize(in).asInstanceOf[Class[_]]
-                center.getWrapperClass(clazz) //Just need to load the class (will have no effect if the class is not loaded)
+                center.getWrapperClass(clazz) //Just need to load the class (will have no effect if the class is already generated and loaded)
             }
         }
-        }
+        }.deserialize(in)
     }
 }

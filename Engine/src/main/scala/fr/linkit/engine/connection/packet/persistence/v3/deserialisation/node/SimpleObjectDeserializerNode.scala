@@ -17,8 +17,8 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Objec
 
 abstract class SimpleObjectDeserializerNode() extends ObjectDeserializerNode {
 
-    protected override var ref: Any = _
-    private var deserialized = false
+    protected override var ref  : Any  = _
+    private            var state: Byte = -1
 
     def setReference(ref: Any): Unit = {
         if (this.ref != null)
@@ -27,13 +27,16 @@ abstract class SimpleObjectDeserializerNode() extends ObjectDeserializerNode {
         this.ref = ref
     }
 
+    override def isDeserializing: Boolean = state == 0
+
     override def deserialize(in: DeserializationInputStream): Any = {
-        if (deserialized)
+        if (state == 1)
             return ref
+        state = 0
         val returned = deserializeAction(in)
+        state = 1
         if (ref == null)
             setReference(returned)
-        deserialized = true
         returned
     }
 

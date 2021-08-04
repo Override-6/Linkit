@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 
-class SizedDeserializerNode(pos: Int, buffLimit: Int, val node: DeserializerNode) extends DeserializerNode {
+class SizedDeserializerNode(pos: Int, buffLimit: Int, val subNode: DeserializerNode) extends DeserializerNode {
 
     //prinln(s"SizedDeserializerNode created ! (pos: $pos, buffLimit: $buffLimit)")
 
@@ -23,7 +23,7 @@ class SizedDeserializerNode(pos: Int, buffLimit: Int, val node: DeserializerNode
         //prinln(s"Deserializing at pos $pos, and limit $buffLimit.")
         in.limit(buffLimit)
         in.position(pos)
-        node.deserialize(in)
+        subNode.deserialize(in)
     }
 
 }
@@ -31,6 +31,6 @@ class SizedDeserializerNode(pos: Int, buffLimit: Int, val node: DeserializerNode
 object SizedDeserializerNode {
 
     def unapply(arg: SizedDeserializerNode): Option[DeserializerNode] = {
-        Some(arg.node)
+        Some(arg.subNode)
     }
 }

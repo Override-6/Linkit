@@ -17,9 +17,9 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.Deserializ
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
-import fr.linkit.engine.connection.packet.persistence.v3.{ArraySign, ClassDescription}
-import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
+import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{SimpleObjectDeserializerNode, SizedDeserializerNode}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{NullInstanceNode, SimpleObjectSerializerNode}
+import fr.linkit.engine.connection.packet.persistence.v3.{ArraySign, ClassDescription}
 import fr.linkit.engine.local.utils.ScalaUtils
 
 object DefaultObjectPersistor extends ObjectPersistor[Any] {
@@ -50,8 +50,19 @@ object DefaultObjectPersistor extends ObjectPersistor[Any] {
             in =>
                 //println(s"Deserializing object ${desc.clazz.getName}...")
                 ArraySign.in(desc.signItemCount, in).deserializeRef(instance)(nodes => {
-                    desc.foreachDeserializableFields { (i, _) =>
-                        nodes(i).deserialize(in)
+                    desc.foreachDeserializableFields { (i, _, setValue) =>
+                        var sized = nodes(i)
+                        sized = sized.subNode match {
+                            case s: SizedDeserializerNode => s
+                            case _ => sized
+                        }
+                        sized.subNode match {
+                            case obj: ObjectDeserializerNode =>
+                                obj.addOnReferenceAvailable(setValue)
+                                if (!obj.isDeserializing)
+                                    sized.deserialize(in)
+                            case _                           => setValue(sized.deserialize(in))
+                        }
                     } { (field, value) =>
                         ScalaUtils.setValue(instance, field, value)
                     }

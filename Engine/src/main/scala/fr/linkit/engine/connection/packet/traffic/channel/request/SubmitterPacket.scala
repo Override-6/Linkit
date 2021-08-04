@@ -30,7 +30,7 @@ sealed abstract class SubmitterPacket(id: Int, packets: Array[Packet]) extends A
         AppLogger.vDebug(s"packetIndex: $packetIndex, packets: ${packets.mkString("Array(", ", ", ")")} + $hashCode")
         //        Thread.dumpStack()
         if (packetIndex >= packets.length)
-            throw new NoSuchElementException(toString)
+            throw new NoSuchElementException(s"Packet Index >= packets.length ($packetIndex >= ${packets.length})")
 
         val packet = packets(packetIndex)
         packetIndex += 1

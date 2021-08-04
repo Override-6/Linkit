@@ -208,7 +208,7 @@ object ClientConnection {
             AppLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
             val readThread  = new PacketReaderThread(packetReader, serverIdentifier)
             val sessionInfo = ClientConnectionSessionInfo(context, configuration, readThread)
-            val session     = ClientConnectionSession(socket, sessionInfo, serverIdentifier)
+            val session     = ClientConnectionSession(socket, sessionInfo, serverIdentifier, translator)
             //Constructing connection instance...
             //Stage 2 will be completed into ClientConnection constructor.
             connection = new ClientConnection(session)

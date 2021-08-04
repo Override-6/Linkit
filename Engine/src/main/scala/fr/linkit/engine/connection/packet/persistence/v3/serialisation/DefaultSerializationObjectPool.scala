@@ -73,10 +73,10 @@ class DefaultSerializationObjectPool() extends SerializationObjectPool {
         isWritingPool = true
         val progression         = out.progression
         val fakeOut             = new DefaultSerialisationOutputStream(ByteBuffer.allocate(out.capacity()), progression.coordinates, this, progression.context)
-        val wrappedClassesArray = ArraySign.out(wrappedClasses.toSeq, fakeOut.progression).getNode
-        val array               = ArraySign.out(pool.toSeq, fakeOut.progression).getNode
-        wrappedClassesArray.writeBytes(fakeOut)
-        array.writeBytes(fakeOut)
+        val wrappedClassesNode = ArraySign.out(wrappedClasses.toSeq, fakeOut.progression).getNode
+        val poolNode               = ArraySign.out(pool.toSeq, fakeOut.progression).getNode
+        wrappedClassesNode.writeBytes(fakeOut)
+        poolNode.writeBytes(fakeOut)
         out.write(NumberSerializer.serializeNumber(fakeOut.position()))
         out.write(NumberSerializer.serializeNumber(wrappedClasses.size))
         out.write(NumberSerializer.serializeNumber(pool.size))

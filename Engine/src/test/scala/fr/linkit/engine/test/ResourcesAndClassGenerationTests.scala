@@ -116,8 +116,8 @@ class ResourcesAndClassGenerationTests {
         val list = forObject(ListBuffer.empty[Player])
         val player = forObject(Player(7, "Salut", "Hey", 891, 45))
         list += player
-        val detached = list.detachedClone()
-        println(s"detached = ${detached}")
+        val clone = forObject(list.detachedClone())
+        println(s"clone = ${clone}")
     }
 
     @Test

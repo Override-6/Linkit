@@ -28,6 +28,8 @@ trait ObjectDeserializerNode extends DeserializerNode {
         else action(ref)
     }
 
+    def isDeserializing: Boolean
+
     override def deserialize(in: DeserializationInputStream): Any
 
 }
