@@ -74,6 +74,7 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] {
         //    return superCall(args).asInstanceOf[R]
         val methodBehavior   = behavior.getMethodBehavior(id).get
         val synchronizedArgs = synchronizedParams(methodBehavior, args)
+        //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
         if (choreographer.isMethodExecutionForcedToLocal) {
             return superCall(synchronizedArgs).asInstanceOf[R]
         }

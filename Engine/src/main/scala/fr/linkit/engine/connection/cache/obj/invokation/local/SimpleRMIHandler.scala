@@ -26,7 +26,7 @@ object SimpleRMIHandler extends RMIHandler {
         val name           = methodBehavior.desc.javaMethod.getName
         val argsString     = args.mkString("(", ", ", ")")
         val className      = methodBehavior.desc.classDesc.clazz
-        AppLogger.debug(s"$name: Performing rmi call for${className.getSimpleName}.$name$argsString (id: $id)")
+        AppLogger.debug(s"$name: Performing rmi call for ${className.getSimpleName}.$name$argsString (id: $id)")
         AppLogger.debug(s"MethodBehavior = $methodBehavior")
         // From here we are sure that we want to perform a remote
         // method invocation. (A Local invocation (super.xxx()) can be added).

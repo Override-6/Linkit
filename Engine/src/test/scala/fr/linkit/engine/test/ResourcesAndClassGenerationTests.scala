@@ -138,6 +138,8 @@ class ResourcesAndClassGenerationTests {
     @Order(3)
     def generateComplexJavaClass(): Unit = {
         val obj = forObject(new Vector2())
+        obj.add(7, 2)
+        obj.add(new Vector2(7, 2))
         println(s"obj = ${obj}")
     }
 
