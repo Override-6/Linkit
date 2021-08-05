@@ -35,10 +35,12 @@ object ScalaBlueprintUtilities {
         val classSymbol  = classType.typeSymbol
         val tParams      = classSymbol.typeSignature.typeParams
         val tpe          = methodSymbol.returnType
-        renderTypes(Seq({
+        val result       = renderTypes(Seq({
             val methodOwner = methodSymbol.owner
-            tpe.asSeenFrom(classType, methodOwner).finalResultType
+            val result      = tpe.asSeenFrom(classType, methodOwner).finalResultType
+            result
         }), tParams).mkString("")
+        result
     }
 
     def getGenericParamsIn(method: MethodDescription): String = {
@@ -137,21 +139,28 @@ object ScalaBlueprintUtilities {
                 if (typeDeclaration.typeSignature.takesTypeArgs)
                     return if (symbol.isParameter) symbol.name.toString else fullName
             }
-            lazy val value = {
+            lazy val genericValue = {
                 if (args.isEmpty) ""
-                else args
-                        .zipWithIndex
-                        .map(pair => renderType(pair._1, symbol, pair._2))
-                        .mkString("[", ",", "]")
+                else if (t.typeSymbol.fullName != "scala.Array") {
+                    args
+                            .map(_ => "Nothing")
+                            .mkString("[", ",", "]")
+                }
+                else {
+                    args
+                            .zipWithIndex
+                            .map(pair => renderType(pair._1, symbol, pair._2))
+                            .mkString("[", ",", "]")
+                }
             }
             if (fullName.startsWith("scala.<"))
                 return tpe.toString
             val idx = classLevelTypes.indexWhere(_.name.toString == symbol.name.toString)
             if (idx != -1 && classLevelTypes.forall(_.fullName != fullName))
-                return s"$$_$idx" + (if (args.nonEmpty) ' ' + value else "")
+                return s"$$_$idx" + (if (args.nonEmpty) ' ' + genericValue else "")
             if (tpe.toString.endsWith("[_]") || fullName.endsWith("<refinement>"))
                 return tpe.toString
-            val result = (if (symbol.isParameter) symbol.name.toString else fullName) + value
+            val result = (if (symbol.isParameter) symbol.name.toString else fullName) + genericValue
             result
         }
 

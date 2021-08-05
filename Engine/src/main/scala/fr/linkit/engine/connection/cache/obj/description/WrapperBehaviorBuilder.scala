@@ -22,7 +22,7 @@ import scala.reflect.ClassTag
 class WrapperBehaviorBuilder[T] private(desc: WrapperBehavior[T]) {
 
     def this(clazz: Class[T], memberBehaviorFactory: MemberBehaviorFactory) {
-        this(SimpleWrapperBehavior(SimplePuppetClassDescription(clazz), new ObjectTreeDefaultBehavior(memberBehaviorFactory)))
+        this(WrapperInstanceBehavior(SimpleClassDescription(clazz), new ObjectTreeDefaultBehavior(memberBehaviorFactory)))
     }
 
     def this(memberBehaviorFactory: MemberBehaviorFactory)(implicit classTag: ClassTag[T]) = {
@@ -30,7 +30,7 @@ class WrapperBehaviorBuilder[T] private(desc: WrapperBehavior[T]) {
     }
 
     def this(treeView: ObjectTreeBehavior)(implicit classTag: ClassTag[T]) {
-        this(SimpleWrapperBehavior(SimplePuppetClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]), treeView))
+        this(WrapperInstanceBehavior(SimpleClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]), treeView))
     }
 
     final def annotate(name: String, params: Class[_]*): MethodModification = {

@@ -12,9 +12,11 @@
 
 package fr.linkit.engine.test.classes
 
+import scala.collection.WithFilter
+
 class ExtendsScalaClass extends ScalaClass {
 
-    override def testRMI(): this.type = {
+    override def testRMI(): WithFilter[_, Nothing] = {
         println("IMPLEMENTATION")
         super.testRMI()
     }

@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj.PuppetWrapper
 import fr.linkit.api.connection.cache.obj.description.MethodDescription
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.PuppetClassDescription
-import fr.linkit.engine.connection.cache.obj.generation.rectifier.ClassRectifier.SuperMethodModifiers
+import fr.linkit.engine.connection.cache.obj.generation.rectifier.ClassRectifier.{StringToPrimitiveID, SuperMethodModifiers}
 import javassist.bytecode.MethodInfo
 import javassist.{ClassPool, CtClass, CtMethod, LoaderClassPath}
 
@@ -48,7 +48,7 @@ class ClassRectifier(desc: PuppetClassDescription[_], puppetClassName: String, c
             val javaMethod   = desc.javaMethod
             val name         = javaMethod.getName
             val superfunName = s"super$$$name$$"
-            val superfunInfo = new MethodInfo(ctClass.getClassFile.getConstPool, superfunName, generateSuperFunDescriptor(javaMethod))
+            val superfunInfo = new MethodInfo(ctClass.getClassFile.getConstPool, superfunName, getMethodDescriptor(javaMethod))
             if (superDescriptors.contains(superfunName + superfunInfo.getDescriptor))
                 return
             val anonfun  = getAnonFun(desc)
@@ -63,32 +63,36 @@ class ClassRectifier(desc: PuppetClassDescription[_], puppetClassName: String, c
             superDescriptors += superfunName + superfunInfo.getDescriptor
             methodNames += javaMethod.getName
         }
+
         for (desc <- methodDescs) {
             fixMethod(desc)
         }
     }
 
     private def getAnonFun(desc: MethodDescription): CtMethod = {
-        val javaMethod          = desc.javaMethod
-        val parametersTypeNames = javaMethod.getParameterTypes.map(_.getName)
-        val anonFunPrefix       = s"$$anonfun$$${javaMethod.getName}$$"
-        val filtered            = ctClass.getDeclaredMethods
+        val javaMethod       = desc.javaMethod
+        val methodReturnType = javaMethod.getReturnType
+        val methodDesc       = getMethodDescriptor(javaMethod)
+        val anonFunPrefix    = s"$$anonfun$$${javaMethod.getName}$$"
+        val filtered         = ctClass.getDeclaredMethods
                 .filter(_.getName.startsWith(anonFunPrefix))
                 .filterNot(_.getName.endsWith("adapted"))
-        val method              = filtered
+        val method           = filtered
                 .find { x =>
                     val params = x.getParameterTypes.drop(1).dropRight(1)
-                    params.map(_.getName) sameElements parametersTypeNames
+                    val desc   = getMethodDescriptor(params, methodReturnType)
+                    desc == methodDesc
                 }
                 .get
         method
     }
 
+
     private def getAnonFunBody(javaMethod: Method, superFun: CtMethod): String = {
 
-        val params = javaMethod.getParameterTypes
+        val params     = javaMethod.getParameterTypes
         val arrayIndex = params.length + 2
-        val str    = s"$$1.${superFun.getName}(${
+        val str        = s"$$1.${superFun.getName}(${
             (0 until javaMethod.getParameterCount).map(i => {
                 val clazz = params(i)
                 s"(${clazz.getTypeName}) ${getWrapperFor(clazz, s"$$$arrayIndex[$i]", true)}"
@@ -101,22 +105,6 @@ class ClassRectifier(desc: PuppetClassDescription[_], puppetClassName: String, c
             s"{return ${getWrapperFor(superFun.getReturnType, str)};}"
         }
     }
-
-
-    /*private def getValueSynchronizationCode(javaMethod: Method): String = {
-        var n = 0
-
-        val parameters = javaMethod.getParameterTypes
-        val lastCount  = parameters.length + 2
-        parameters
-                .map(clazz => {
-                    n += 1
-                    val synchronization = s"$$1.synchronizedParam($$$lastCount, ${getWrapperFor(clazz, s"$$${n + 1}")}, $n)"
-                    val typeName        = clazz.getTypeName
-                    s"$typeName syncArg$n = ($typeName) ${getWrapperFor(clazz, synchronization, true)};"
-                })
-                .mkString("\n")
-    }*/
 
     private def getWrapperFor(returnType: CtClass, str: String): String = {
         if (returnType.isPrimitive) {
@@ -152,21 +140,53 @@ class ClassRectifier(desc: PuppetClassDescription[_], puppetClassName: String, c
         else s"return $str"
     }
 
-    private def generateSuperFunDescriptor(method: Method): String = {
-        def typeString(clazz: Class[_]): String = {
-            if (clazz == Void.TYPE)
-                return "V"
-            val arrayString = java.lang.reflect.Array.newInstance(clazz, 0).toString
-            arrayString.slice(1, arrayString.indexOf('@')).replace(".", "/")
-        }
+    private def getMethodDescriptor(method: Method): String = {
+        getMethodDescriptor(method.getParameterTypes, method.getReturnType)
+    }
+
+    private def getMethodDescriptor(params: Array[Class[_]], returnType: Class[_]): String = {
 
         val sb = new StringBuilder("(")
-        method.getParameterTypes.foreach { clazz =>
-            sb.append(typeString(clazz))
+        params.foreach { clazz =>
+            sb.append(typeStringClass(clazz))
         }
         sb.append(')')
-                .append(typeString(method.getReturnType))
+                .append(typeStringClass(returnType))
         sb.toString()
+    }
+
+    private def getMethodDescriptor(params: Array[CtClass], returnType: Class[_]): String = {
+
+        val sb = new StringBuilder("(")
+        params.foreach { clazz =>
+            sb.append(typeStringCtClass(clazz))
+        }
+        sb.append(')')
+                .append(typeStringClass(returnType))
+        sb.toString()
+    }
+
+    private def typeStringCtClass(clazz: CtClass): String = {
+        val name = clazz.getName
+        StringToPrimitiveID.getOrElse(name, {
+            var cl = clazz
+            val sb = new StringBuilder
+            while (cl.isArray) {
+                sb.append("[")
+                cl = clazz.getComponentType
+            }
+            sb.append("L")
+                    .append(cl.getName.replace(".", "/"))
+                    .append(";")
+            sb.toString()
+        })
+    }
+
+    private def typeStringClass(clazz: Class[_]): String = {
+        if (clazz == Void.TYPE)
+            return "V"
+        val arrayString = java.lang.reflect.Array.newInstance(clazz, 0).toString
+        arrayString.slice(1, arrayString.indexOf('@')).replace(".", "/")
     }
 }
 
@@ -175,4 +195,32 @@ object ClassRectifier {
     //used AccessFlags that are not in the java's reflection public api
     val Access_Synthetic          = 0x00001000
     val SuperMethodModifiers: Int = Modifier.PRIVATE + Access_Synthetic
+
+    import java.{lang => l}
+
+    val StringToPrimitiveClass =
+        Map(
+            "int" -> Integer.TYPE,
+            "double" -> l.Double.TYPE,
+            "float" -> l.Float.TYPE,
+            "char" -> l.Character.TYPE,
+            "boolean" -> l.Boolean.TYPE,
+            "long" -> l.Boolean.TYPE,
+            "void" -> l.Void.TYPE,
+            "short" -> l.Short.TYPE,
+            "byte" -> l.Byte.TYPE
+        )
+
+    val StringToPrimitiveID =
+        Map(
+            "int" -> "I",
+            "double" -> "D",
+            "float" -> "F",
+            "char" -> "C",
+            "boolean" -> "Z",
+            "long" -> "J",
+            "void" -> "V",
+            "short" -> "S",
+            "byte" -> "B"
+        )
 }

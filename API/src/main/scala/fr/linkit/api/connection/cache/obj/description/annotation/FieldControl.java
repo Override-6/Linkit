@@ -21,6 +21,6 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface FieldControl {
 
-    boolean synchronize() default false;
+    boolean synchronize() default true;
 
 }

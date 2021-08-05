@@ -15,8 +15,8 @@ package fr.linkit.engine.connection.cache.obj.description
 import fr.linkit.api.connection.cache.obj.description._
 import fr.linkit.api.local.generation.PuppetClassDescription
 
-class SimpleWrapperBehavior[A] private(override val classDesc: PuppetClassDescription[A],
-                                       override val treeView: ObjectTreeBehavior) extends WrapperBehavior[A] {
+class WrapperInstanceBehavior[A] private(override val classDesc: PuppetClassDescription[A],
+                                         override val treeView: ObjectTreeBehavior) extends WrapperBehavior[A] {
 
     private val factory = treeView.factory
 
@@ -48,10 +48,10 @@ class SimpleWrapperBehavior[A] private(override val classDesc: PuppetClassDescri
 
 }
 
-object SimpleWrapperBehavior {
+object WrapperInstanceBehavior {
 
-    def apply[A](classDesc: PuppetClassDescription[A], treeView: ObjectTreeBehavior): SimpleWrapperBehavior[A] = {
-        val bhv = new SimpleWrapperBehavior(classDesc, treeView)
+    def apply[A](classDesc: PuppetClassDescription[A], treeView: ObjectTreeBehavior): WrapperInstanceBehavior[A] = {
+        val bhv = new WrapperInstanceBehavior(classDesc, treeView)
         treeView.put(classDesc.clazz, bhv)
         bhv
     }

@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.test
 
+import fr.linkit.api.connection.cache.obj.description.annotation.FieldControl
 import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperBehavior, WrapperNodeInfo}
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper}
@@ -22,7 +23,7 @@ import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
-import fr.linkit.engine.connection.cache.obj.description.{ObjectTreeDefaultBehavior, SimplePuppetClassDescription}
+import fr.linkit.engine.connection.cache.obj.description.{ObjectTreeDefaultBehavior, SimpleClassDescription, WrapperInstanceBehavior}
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrapperInstantiationHelper, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
 import fr.linkit.engine.local.LinkitApplication
@@ -30,7 +31,7 @@ import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCente
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.test.ScalaReflectionTests.TestClass
-import fr.linkit.engine.test.classes.Player
+import fr.linkit.engine.test.classes.{Player, Vector2}
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
@@ -103,6 +104,18 @@ class ResourcesAndClassGenerationTests {
         println(s"obj = ${obj}")
     }
 
+    @Test
+    def behaviorTests(): Unit = {
+        val tree = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory())
+        val bhv = WrapperInstanceBehavior[TestClass](SimpleClassDescription(classOf[TestClass]), tree)
+        println(s"bhv = ${bhv}")
+    }
+
+    private class TestClass {
+        @FieldControl(synchronize = true)
+        private val test: String = "salut"
+    }
+
     /*class FakePuppetWrapperPersistor extends PuppetWrapperPersistor(null) {
         override protected def initialiseWrapper(detachedWrapper: PuppetWrapperPersistor.DetachedWrapper): PuppetWrapper[_] = {
             println("Faking wrapper...")
@@ -116,14 +129,16 @@ class ResourcesAndClassGenerationTests {
         val list = forObject(ListBuffer.empty[Player])
         val player = forObject(Player(7, "Salut", "Hey", 891, 45))
         list += player
-        val clone = forObject(list.detachedClone())
-        println(s"clone = ${clone}")
+        //val clone = forObject(list.detachedClone())
+        println(s"list = ${list}")
+        list.copyToArray(new Array(2))
     }
 
     @Test
     @Order(3)
     def generateComplexJavaClass(): Unit = {
-        forObject(LocalFileSystemAdapters.Nio)
+        val obj = forObject(new Vector2())
+        println(s"obj = ${obj}")
     }
 
     def forObject[A <: AnyRef: TypeTag](obj: A): A with PuppetWrapper[A] = {
@@ -147,7 +162,7 @@ class ResourcesAndClassGenerationTests {
         override def newWrapper[A <: AnyRef](obj: A, behaviorTree: ObjectTreeBehavior, puppeteerInfo: WrapperNodeInfo, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
             val cl                     = obj.getClass.asInstanceOf[Class[A]]
             val behaviorDesc           = behaviorTree.getFromClass[A](cl)
-            val puppetClass            = generator.getWrapperClass[A](SimplePuppetClassDescription(cl))
+            val puppetClass            = generator.getWrapperClass[A](SimpleClassDescription(cl))
             val pup                    = new InstancePuppeteer[A](null, app, null, puppeteerInfo, behaviorDesc)
             val helper                 = new WrapperInstantiationHelper(this, behaviorTree)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[A](puppetClass, obj, Map())

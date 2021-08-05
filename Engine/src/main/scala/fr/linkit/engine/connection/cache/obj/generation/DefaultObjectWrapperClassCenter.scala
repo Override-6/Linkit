@@ -17,7 +17,7 @@ import fr.linkit.api.connection.cache.obj.{InvalidPuppetDefException, PuppetWrap
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.obj.description.SimplePuppetClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
 import fr.linkit.engine.local.mapping.ClassMappings
 
 class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: WrappersClassResource) extends ObjectWrapperClassCenter {
@@ -26,7 +26,7 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: Wrapper
     val requestFactory                  = new WrapperCompilationRequestFactory
 
     override def getWrapperClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
-        getWrapperClass[S](SimplePuppetClassDescription[S](clazz))
+        getWrapperClass[S](SimpleClassDescription[S](clazz))
     }
 
     override def getWrapperClass[S](desc: PuppetClassDescription[S]): Class[S with PuppetWrapper[S]] = {
@@ -52,7 +52,7 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: Wrapper
     }
 
     override def preGenerateClasses(classes: Seq[Class[_]]): Unit = {
-        preGenerateClasses(classes.map(SimplePuppetClassDescription(_)).toList)
+        preGenerateClasses(classes.map(SimpleClassDescription(_)).toList)
     }
 
     override def preGenerateClasses(descriptions: List[PuppetClassDescription[_]]): Unit = {

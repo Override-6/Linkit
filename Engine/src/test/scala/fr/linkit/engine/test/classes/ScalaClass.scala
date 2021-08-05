@@ -12,11 +12,13 @@
 
 package fr.linkit.engine.test.classes
 
+import scala.collection.WithFilter
+
 class ScalaClass() {
 
     var b: String = "Wesh la bite bien ou queue ?"
 
-    def testRMI(): this.type = {
+    def testRMI(): WithFilter[_, Nothing] = {
         println(s"RMI Done ! (${b})")
         val consumer: String => Unit = {
             str => println(s"srt = ${str}")
@@ -24,7 +26,7 @@ class ScalaClass() {
         consumer("WOW")
         consumer("WAW")
         consumer("WUW")
-        this
+        null
     }
 
 }

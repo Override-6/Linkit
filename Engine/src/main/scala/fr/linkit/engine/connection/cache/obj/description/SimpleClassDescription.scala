@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj.description
 import fr.linkit.api.connection.cache.obj.PuppetWrapper
 import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, fullNameOf}
 import fr.linkit.api.local.generation.PuppetClassDescription
-import fr.linkit.engine.connection.cache.obj.description.SimplePuppetClassDescription.{PrimitivesNameMap, SyntheticMod}
+import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription.{PrimitivesNameMap, SyntheticMod}
 import fr.linkit.engine.connection.packet.persistence.v3.ClassDescription
 
 import java.lang.reflect.{Field, Method, Modifier}
@@ -23,8 +23,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
-class SimplePuppetClassDescription[A] private(override val classType: u.Type,
-                                              override val clazz: Class[A], val loader: ClassLoader) extends PuppetClassDescription[A] {
+class SimpleClassDescription[A] private(override val classType: u.Type,
+                                        override val clazz: Class[A], val loader: ClassLoader) extends PuppetClassDescription[A] {
 
     import u._
 
@@ -121,7 +121,7 @@ class SimplePuppetClassDescription[A] private(override val classType: u.Type,
 
 }
 
-object SimplePuppetClassDescription {
+object SimpleClassDescription {
 
     import u._
 
@@ -132,14 +132,14 @@ object SimplePuppetClassDescription {
         "scala.Boolean" -> "boolean", "scala.Float" -> "float", "scala.Double" -> "double",
         "scala.Byte" -> "byte", "scala.Short" -> "short", "scala.Array" -> "array")
 
-    private val cache = mutable.HashMap.empty[Class[_], SimplePuppetClassDescription[_]]
+    private val cache = mutable.HashMap.empty[Class[_], SimpleClassDescription[_]]
 
-    def apply[A](clazz: Class[A]): SimplePuppetClassDescription[A] = cache.getOrElse(clazz, {
+    def apply[A](clazz: Class[A]): SimpleClassDescription[A] = cache.getOrElse(clazz, {
         if (classOf[PuppetWrapper[_]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from PuppetWrapper")
 
         val tpe = runtimeMirror(clazz.getClassLoader).classSymbol(clazz).selfType
-        new SimplePuppetClassDescription(tpe, clazz, clazz.getClassLoader)
-    }).asInstanceOf[SimplePuppetClassDescription[A]]
+        new SimpleClassDescription(tpe, clazz, clazz.getClassLoader)
+    }).asInstanceOf[SimpleClassDescription[A]]
 
 }

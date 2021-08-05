@@ -32,7 +32,7 @@ class ObjectTreeDefaultBehavior(override val factory: MemberBehaviorFactory) ext
     }
 
     private def getFromAnyClass[B](clazz: Class[_]): WrapperBehavior[B] = {
-        behaviors.getOrElseUpdate(clazz, SimpleWrapperBehavior(SimplePuppetClassDescription(clazz), this))
+        behaviors.getOrElseUpdate(clazz, WrapperInstanceBehavior(SimpleClassDescription(clazz), this))
                 .asInstanceOf[WrapperBehavior[B]]
     }
 
