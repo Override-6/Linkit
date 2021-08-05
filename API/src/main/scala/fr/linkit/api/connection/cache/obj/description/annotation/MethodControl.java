@@ -30,7 +30,7 @@ public @interface MethodControl {
      *
      * @see fr.linkit.api.connection.cache.obj.description.annotation.InvocationKind
      */
-    InvocationKind value() default InvocationKind.LOCAL_AND_REMOTES;
+    InvocationKind value() default InvocationKind.ONLY_LOCAL;
 
     /**
      * If true, the returned value, if possible, will be synchronized with the caller as well.
