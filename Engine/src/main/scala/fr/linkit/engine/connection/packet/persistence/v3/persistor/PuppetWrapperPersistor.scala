@@ -110,7 +110,9 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
                 .getOrElse {
                     throwNoSuchCacheException(info, Some(wrapper.getWrappedClass))
                 }
-        val tree   = center.treeCenter.findTreeInternal(path.head).get
+        val tree   = center.treeCenter.findTreeInternal(path.head).getOrElse {
+            throw new NoSuchWrapperNodeException(s"No Object Tree found of id ${path.head}") //TODO Replace with NoSuchObjectTreeException
+        }
 
         if (tree.findNode(path).isEmpty) {
             tree.registerSynchronizedObject(path.dropRight(1), path.last, wrapper, info.owner).synchronizedObject

@@ -16,9 +16,11 @@ import fr.linkit.api.connection.cache.obj.PuppetWrapper
 import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, fullNameOf}
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.engine.connection.cache.obj.description.SimplePuppetClassDescription.{PrimitivesNameMap, SyntheticMod}
+import fr.linkit.engine.connection.packet.persistence.v3.ClassDescription
 
-import java.lang.reflect.{Method, Modifier}
+import java.lang.reflect.{Field, Method, Modifier}
 import scala.collection.mutable
+import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
 class SimplePuppetClassDescription[A] private(override val classType: u.Type,
@@ -104,12 +106,15 @@ class SimplePuppetClassDescription[A] private(override val classType: u.Type,
     }
 
     private def collectFields(): Map[Int, FieldDescription] = {
-        classType.decls
-                .filter(_.isMethod)
-                .map(_.asMethod)
-                .filter(_.isGetter)
-                .filterNot(f => BlacklistedSuperClasses.contains(f.owner.fullName))
-                .map(FieldDescription(_, this))
+        val fields = ListBuffer.empty[Field]
+        var clazz: Class[_] = this.clazz
+        while (clazz != null) {
+            fields ++= clazz.getDeclaredFields
+                    .tapEach(_.setAccessible(true))
+                    .filterNot(f => Modifier.isStatic(f.getModifiers))
+            clazz = clazz.getSuperclass
+        }
+        fields.map(FieldDescription(_, this))
                 .map(desc => (desc.fieldId, desc))
                 .toMap
     }

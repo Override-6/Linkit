@@ -12,6 +12,13 @@
 
 package fr.linkit.api.connection.cache.obj.description.annotation;
 
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+
+@Target(ElementType.FIELD)
+@Retention(RetentionPolicy.RUNTIME)
 public @interface FieldControl {
 
     boolean synchronize() default false;

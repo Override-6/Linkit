@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj.generation
 import fr.linkit.api.connection.cache.obj.PuppetWrapper
 import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperNodeInfo}
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
-import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper.{MaxScanDepth, deepClone}
+import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper.MaxScanDepth
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllFields}
 import fr.linkit.engine.local.utils.{Identity, JavaUtils, ScalaUtils, UnWrapper}
 import sun.misc.Unsafe
@@ -95,9 +95,9 @@ class WrapperInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, beha
         def scanArray(array: Array[AnyRef]): Unit = {
             for (i <- array.indices) {
                 array(i) match {
-                    case x if JavaUtils.sameInstance(x, origin) => array(i) = instance
-                    case e if trustedSubWrapper.contains(Identity(e))           => array(i) = asWrapper(e)
-                    case obj                                    => scanObject(obj, obj, false)
+                    case x if JavaUtils.sameInstance(x, origin)       => array(i) = instance
+                    case e if trustedSubWrapper.contains(Identity(e)) => array(i) = asWrapper(e)
+                    case obj                                          => scanObject(obj, obj, false)
                 }
             }
         }
@@ -123,7 +123,7 @@ class WrapperInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, beha
 
 object WrapperInstantiationHelper {
 
-    val MaxScanDepth: Int = 7
+    val MaxScanDepth: Int = 15
 
     def deepClone[A](origin: A): A = {
         val checkedItems = mutable.HashMap.empty[Identity[Any], Any]
@@ -225,7 +225,8 @@ object WrapperInstantiationHelper {
                     checkedFields.put(Identity(originValue), originValue)
                     originValue match {
                         case array: Array[AnyRef]                             => scanArray(array)
-                        case wrapper: PuppetWrapper[AnyRef]                   => ScalaUtils.setValue(instanceField, field, detachedWrapper(wrapper))
+                        case wrapper: PuppetWrapper[AnyRef]                   =>
+                            ScalaUtils.setValue(instanceField, field, detachedWrapper(wrapper))
                         case wrapper if UnWrapper.isPrimitiveWrapper(wrapper) => //just do not scan
                         case _                                                => scanObject(field.get(instanceField), originValue, false)
                     }
@@ -236,8 +237,9 @@ object WrapperInstantiationHelper {
                 for (i <- array.indices) {
                     array(i) match {
                         case x if JavaUtils.sameInstance(x, originClone) => array(i) = instance
-                        case wrapper: PuppetWrapper[AnyRef]              => array(i) = detachedWrapper(wrapper)
-                        case obj                                    => scanObject(obj, obj, false)
+                        case wrapper: PuppetWrapper[AnyRef]              =>
+                            array(i) = detachedWrapper(wrapper)
+                        case obj                                         => scanObject(obj, obj, false)
                     }
                 }
             }

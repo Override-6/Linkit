@@ -15,14 +15,9 @@ package fr.linkit.api.connection.cache.obj.description
 import fr.linkit.api.local.generation.PuppetClassDescription
 
 import java.lang.reflect.Field
-import scala.reflect.runtime.universe.MethodSymbol
 
-case class FieldDescription(fieldGetter: MethodSymbol,
-                            classDesc: PuppetClassDescription[_]) {
-
-    val javaField: Field = classDesc.clazz.getDeclaredField(fieldGetter.name.toString)
-
+case class FieldDescription(javaField: Field, classDesc: PuppetClassDescription[_]) {
     val fieldId: Int = {
-        fieldGetter.hashCode() + fieldGetter.returnType.hashCode()
+        javaField.getName.hashCode + javaField.getDeclaringClass.getName.hashCode
     }
 }

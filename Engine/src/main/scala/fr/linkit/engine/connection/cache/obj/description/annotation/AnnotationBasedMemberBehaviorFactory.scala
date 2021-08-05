@@ -62,7 +62,7 @@ object AnnotationBasedMemberBehaviorFactory {
 
     private val DefaultMethodControl: MethodControl = {
         new MethodControl {
-            override def value(): InvocationKind = InvocationKind.LOCAL_AND_REMOTES
+            override def value(): InvocationKind = InvocationKind.ONLY_LOCAL
 
             override def synchronizeReturnValue(): Boolean = false
 
