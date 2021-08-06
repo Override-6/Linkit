@@ -13,7 +13,6 @@
 package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, ObjectTreeBehavior, WrapperBehavior}
-import fr.linkit.api.connection.cache.obj.description.WrapperBehavior
 import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
 
 import scala.collection.mutable
@@ -23,6 +22,11 @@ import scala.reflect.{ClassTag, classTag}
 class ObjectTreeDefaultBehavior(override val factory: MemberBehaviorFactory) extends ObjectTreeBehavior {
 
     private val behaviors = mutable.HashMap.empty[Class[_], WrapperBehavior[_]]
+
+    def this(factory: MemberBehaviorFactory, behaviors: Map[Class[_], WrapperBehavior[_]]) = {
+        this(factory)
+        this.behaviors ++= behaviors
+    }
 
     override def get[B: universe.TypeTag : ClassTag]: WrapperBehavior[B] = {
         getFromAnyClass(classTag[B].runtimeClass)
@@ -36,7 +40,5 @@ class ObjectTreeDefaultBehavior(override val factory: MemberBehaviorFactory) ext
         behaviors.getOrElseUpdate(clazz, WrapperInstanceBehavior(SimpleClassDescription(clazz), this))
                 .asInstanceOf[WrapperBehavior[B]]
     }
-
-    override def put[B](clazz: Class[B], bhv: WrapperBehavior[B]): Unit = behaviors.put(clazz, bhv)
 
 }

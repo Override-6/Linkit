@@ -12,36 +12,13 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
-import fr.linkit.api.connection.cache.obj.invokation.{WrapperMethodInvocation, MethodInvocationHandler}
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.connection.cache.obj.Puppeteer
+import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
+import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
 
-object InvokeOnlyRMIHandler extends MethodInvocationHandler {
+object InvokeOnlyRMIHandler extends AbstractMethodInvocationHandler {
 
-    override def handleRMI[R](invocation: WrapperMethodInvocation[R]): R = {
-
-        val args           = invocation.methodArguments
-        val methodBehavior = invocation.methodBehavior
-        val methodID       = invocation.methodID
-        val puppeteer      = invocation.wrapper.getPuppeteer
-
-        val enableDebug = invocation.debug
-
-        if (enableDebug)
-            AppLogger.debug("Invoke Only: Sending invocation request.")
-        puppeteer.sendInvoke(invocation)
-        var localResult: Any = methodBehavior.defaultReturnValue
-        if (methodBehavior.invocationKind.isLocalInvocationForced) {
-            if (enableDebug)
-                AppLogger.debug("The call is also redirected to current object...")
-            localResult = invocation.callSuper()
-        }
-        if (enableDebug)
-            AppLogger.debug("Returned local result = " + localResult)
-        //# Note1: value of 'InvokeOnlyResult' can be "localResult", which will return the variable.
-        //# Note2: Be aware that you can get a null value returned
-        //#        if the 'InvokeOnlyResult' value of the annotated
-        //#        method is set to "localResult" and the invocation
-        //#        kind does not force local invocation.
-        localResult.asInstanceOf[R]
+    override def voidRMIInvocation(puppeteer: Puppeteer[_], agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[_]): Unit = {
+        puppeteer.sendInvoke(agreement, invocation)
     }
 }

@@ -25,6 +25,8 @@ trait WrapperMethodInvocation[R] {
 
     val callerIdentifier: String
 
+    val currentIdentifier: String
+
     def callSuper(): R
 
     val methodArguments: Array[Any]

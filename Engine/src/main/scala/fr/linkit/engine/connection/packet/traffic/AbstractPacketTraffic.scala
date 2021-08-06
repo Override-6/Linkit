@@ -172,12 +172,12 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
         }
 
         def isAuthorised(targetID: String): Boolean = {
-            cache.exists(_._1.areAuthorised(targetID))
+            cache.exists(_._1.areAuthorised(Array(targetID)))
         }
 
         def getInjectables(target: String): Seq[PacketInjectable] = {
             cache
-                    .filter(_._1.areAuthorised(target))
+                    .filter(_._1.areAuthorised(Array(target)))
                     .map(_._2)
                     .toSeq
         }

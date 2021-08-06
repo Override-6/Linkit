@@ -109,7 +109,7 @@ class ServerConnection(applicationContext: ServerApplication,
             // There is nowhere to send this packet.
             return
         }
-        val broadcast = BroadcastPacketCoordinates(injectableID, sender, true, discarded: _*)
+        val broadcast = BroadcastPacketCoordinates(injectableID, sender, true, discarded)
         val result    = translator.translate(SimpleTransferInfo(broadcast, attributes, packet))
         connectionsManager.broadcastPacket(result, discarded: _*)
         if (!discarded.contains(currentIdentifier)) {

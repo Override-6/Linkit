@@ -19,11 +19,10 @@ import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.local.system.Reason
 import fr.linkit.engine.local.concurrency.PacketReaderThread
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.utils.ScalaUtils.ensurePacketType
 import org.jetbrains.annotations.Nullable
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag
 
 //TODO doc
@@ -50,8 +49,8 @@ class SyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Channe
 
     override def send(packet: Packet): Unit = scope.sendToAll(packet)
 
-    override def sendTo(packet: Packet, targets: String*): Unit = {
-        scope.sendTo(packet, targets: _*)
+    override def sendTo(packet: Packet, targets: Array[String]): Unit = {
+        scope.sendTo(packet, targets)
     }
 
     override def close(reason: Reason): Unit = {
@@ -75,7 +74,9 @@ class SyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Channe
 
     override def send(packet: Packet, attributes: PacketAttributes): Unit = scope.sendToAll(packet, attributes)
 
-    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = scope.sendTo(packet, attributes, targets: _*)
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit = {
+        scope.sendTo(packet, attributes, targets)
+    }
 }
 
 object SyncPacketChannel extends PacketInjectableFactory[SyncPacketChannel] {

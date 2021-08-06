@@ -75,7 +75,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
             instantiator.initializeWrapper(wrapper, WrapperNodeInfo(center.family, center.cacheID, ownerID, path), behavior)
         }
 
-        val chip                 = ObjectChip[B](ownerID, behavior, wrapper)
+        val chip                 = ObjectChip[B](behavior, wrapper)
         val puppeteer            = wrapper.getPuppeteer
         val node: WrapperNode[B] = new WrapperNode[B](puppeteer, chip, this, platformIdentifier, id, parent)
         parent.addChild(node)

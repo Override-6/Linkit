@@ -11,5 +11,4 @@ trait ObjectTreeBehavior {
 
     def getFromClass[B](clazz: Class[_]): WrapperBehavior[B]
 
-    def put[B](clazz: Class[B], bhv: WrapperBehavior[B])
 }

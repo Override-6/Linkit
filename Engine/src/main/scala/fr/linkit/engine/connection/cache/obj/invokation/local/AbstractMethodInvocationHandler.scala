@@ -12,12 +12,12 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
+import fr.linkit.api.connection.cache.obj.Puppeteer
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
 import fr.linkit.api.connection.cache.obj.invokation.{MethodInvocationHandler, WrapperMethodInvocation}
 import fr.linkit.api.local.system.AppLogger
 
-object SimpleRMIHandler extends MethodInvocationHandler {
-
+abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
     override def handleRMI[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R = {
         val wrapper        = invocation.wrapper
         val args           = invocation.methodArguments
@@ -34,21 +34,21 @@ object SimpleRMIHandler extends MethodInvocationHandler {
             AppLogger.debug(s"MethodBehavior = $methodBehavior")
         }
         // From here we are sure that we want to perform a remote
-        // method invocation. (A Local invocation (super.xxx()) can be added).
-        val puppeteer   = wrapper.getPuppeteer
-        var result: Any = methodBehavior.defaultReturnValue
-        if (methodBehavior.invocationKind.isLocalInvocationForced) {
-            if (enableDebug)
-                AppLogger.debug("The method invocation is redirected to current object...")
-            result = invocation.callSuper()
-            if (enableDebug)
-                AppLogger.debug("Also performing asynchronous remote method invocation...")
-            puppeteer.sendInvoke(invocation)
+        // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
+        val puppeteer        = wrapper.getPuppeteer
+        var result     : Any = methodBehavior.defaultReturnValue
+        var localResult: Any = result
+        if (agreement.mayCallSuper) {
+            localResult = invocation.callSuper()
+        }
+        if (agreement.getDesiredEngineReturn == invocation.currentIdentifier) {
+            voidRMIInvocation(puppeteer, agreement, invocation)
+            result = localResult
         } else {
-            if (enableDebug)
-                AppLogger.debug("Performing synchronous remote method invocation...")
-            result = puppeteer.sendInvokeAndWaitResult[R](invocation)
+            result = puppeteer.sendInvokeAndWaitResult(agreement, invocation)
         }
         result.asInstanceOf[R]
     }
+
+    def voidRMIInvocation(puppeteer: Puppeteer[_], agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[_]): Unit
 }

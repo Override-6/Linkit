@@ -22,6 +22,8 @@ class BehaviorTests {
     @Test
     def testAgreement(): Unit = {
         val agreement = new SimpleRMIRulesAgreement("Johny", "Johny")
+        agreement.discardAll()
+                .acceptOwner()
         Assertions.assertTrue(agreement.mayCallSuper)
     }
 

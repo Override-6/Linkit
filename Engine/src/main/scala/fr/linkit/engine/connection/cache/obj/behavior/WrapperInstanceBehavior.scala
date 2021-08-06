@@ -12,25 +12,20 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MethodBehavior, ObjectTreeBehavior, WrapperBehavior}
-import fr.linkit.api.connection.cache.obj.description._
+import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, ObjectTreeBehavior, WrapperBehavior}
 import fr.linkit.api.local.generation.PuppetClassDescription
 
-class WrapperInstanceBehavior[A] private(override val classDesc: PuppetClassDescription[A],
-                                         override val treeView: ObjectTreeBehavior) extends WrapperBehavior[A] {
-
-    private val factory = treeView.factory
+class WrapperInstanceBehavior[A] protected(override val classDesc: PuppetClassDescription[A],
+                                           factory: MemberBehaviorFactory) extends WrapperBehavior[A] {
 
     private val methods = {
-        classDesc.listMethods()
-                .map(factory.genMethodBehavior)
+        generateMethodsBehavior()
                 .map(bhv => bhv.desc.methodId -> bhv)
                 .toMap
     }
 
     private val fields = {
-        classDesc.listFields()
-                .map(factory.genFieldBehavior)
+        generateFieldsBehavior()
                 .map(bhv => bhv.desc.fieldId -> bhv)
                 .toMap
     }
@@ -47,14 +42,22 @@ class WrapperInstanceBehavior[A] private(override val classDesc: PuppetClassDesc
 
     override def getFieldBehavior(id: Int): Option[FieldBehavior] = fields.get(id)
 
+    protected def generateMethodsBehavior(): Iterable[MethodBehavior] = {
+        classDesc.listMethods()
+                .map(factory.genMethodBehavior)
+    }
+
+    protected def generateFieldsBehavior(): Iterable[FieldBehavior] = {
+        classDesc.listFields()
+                .map(factory.genFieldBehavior)
+    }
+
 }
 
 object WrapperInstanceBehavior {
 
-    def apply[A](classDesc: PuppetClassDescription[A], treeView: ObjectTreeBehavior): WrapperInstanceBehavior[A] = {
-        val bhv = new WrapperInstanceBehavior(classDesc, treeView)
-        treeView.put(classDesc.clazz, bhv)
-        bhv
+    def apply[A](classDesc: PuppetClassDescription[A], tree: ObjectTreeBehavior): WrapperInstanceBehavior[A] = {
+        new WrapperInstanceBehavior(classDesc, tree.factory)
     }
 
 }

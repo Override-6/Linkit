@@ -12,21 +12,20 @@
 
 package fr.linkit.engine.test.objects
 
-import fr.linkit.api.connection.cache.obj.behavior.annotation.InvocationKind.ONLY_LOCAL
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule.BROADCAST
 import fr.linkit.api.connection.cache.obj.behavior.annotation.MethodControl
 
 import scala.annotation.meta._
 
-case class PlayerObject(@(MethodControl @getter)(ONLY_LOCAL) id: Int,
-                        @(MethodControl @getter)(ONLY_LOCAL) owner: String,
-                        @(MethodControl @getter)(ONLY_LOCAL) var name: String,
-                        @(MethodControl @getter)(ONLY_LOCAL) var x: Long,
-                        @(MethodControl @getter)(ONLY_LOCAL) var y: Long) extends Serializable {
+case class PlayerObject(@(MethodControl @setter)(BROADCAST) id: Int,
+                        @(MethodControl @setter)(BROADCAST) owner: String,
+                        @(MethodControl @setter)(BROADCAST) var name: String,
+                        @(MethodControl @setter)(BROADCAST) var x: Long,
+                        @(MethodControl @setter)(BROADCAST) var y: Long) extends Serializable {
 
     def this(other: PlayerObject) = {
         this(other.id, other.owner, other.name, other.x, other.y)
     }
 
-    @MethodControl(ONLY_LOCAL)
     override def toString: String = s"PlayerObject($id, $owner, $name, $x, $y)"
 }

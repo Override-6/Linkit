@@ -52,13 +52,13 @@ class AsyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Chann
         scope.sendToAll(packet, attributes)
     }
 
-    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = {
-        scope.sendTo(packet, attributes, targets: _*)
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit = {
+        scope.sendTo(packet, attributes, targets)
     }
 
     override def send(packet: Packet): Unit = send(packet, SimplePacketAttributes.empty)
 
-    override def sendTo(packet: Packet, targets: String*): Unit = sendTo(packet, SimplePacketAttributes.empty, targets: _*)
+    override def sendTo(packet: Packet, targets: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targets)
 
     override def addOnPacketReceived(callback: PacketBundle => Unit): Unit = {
         packetReceivedContainer += callback

@@ -12,16 +12,16 @@
 
 package fr.linkit.engine.test.classes
 
-import fr.linkit.api.connection.cache.obj.behavior.annotation.InvocationKind.ONLY_LOCAL
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule.BROADCAST
 
-import scala.annotation.meta.getter
+import scala.annotation.meta.setter
 import fr.linkit.api.connection.cache.obj.behavior.annotation.{MethodControl => MC}
 
-case class Player(@(MC@getter)(ONLY_LOCAL) id: Int,
-                  @(MC@getter)(ONLY_LOCAL) owner: String,
-                  @(MC@getter)(ONLY_LOCAL) var name: String,
-                  @(MC@getter)(ONLY_LOCAL) var x: Int,
-                  @(MC@getter)(ONLY_LOCAL) var y: Int) extends Serializable {
+case class Player(@(MC@setter)(BROADCAST) id: Int,
+                  @(MC@setter)(BROADCAST) owner: String,
+                  @(MC@setter)(BROADCAST) var name: String,
+                  @(MC@setter)(BROADCAST) var x: Int,
+                  @(MC@setter)(BROADCAST) var y: Int) extends Serializable {
 
     private val own = this
     private val test = "on m'appelle l'auvni"

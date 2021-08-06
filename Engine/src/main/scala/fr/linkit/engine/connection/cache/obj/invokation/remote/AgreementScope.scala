@@ -39,7 +39,7 @@ class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgree
     override def sendTo(packet: Packet, targetIDs: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs)
 
     override def areAuthorised(identifiers: Array[String]): Boolean = {
-        agreement.getDiscardedEngines.contains(identifiers) == agreement.isAcceptAll
+        !agreement.getDiscardedEngines.containsSlice(identifiers)
     }
 
     override def canConflictWith(scope: ChannelScope): Boolean = {

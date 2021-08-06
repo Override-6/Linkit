@@ -10,15 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.invokation
-
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+package fr.linkit.engine.connection.cache.obj.invokation.local
+import fr.linkit.api.connection.cache.obj.Puppeteer
+import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
 import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
 
-abstract class AbstractWrapperMethodInvocation[R](override val methodBehavior: MethodBehavior,
-                                                  override val wrapper: PuppetWrapper[_]) extends WrapperMethodInvocation[R] {
+object DefaultRMIHandler extends AbstractMethodInvocationHandler {
 
-    override val methodID: Int = methodBehavior.desc.methodId
-
+    override def voidRMIInvocation(puppeteer: Puppeteer[_], agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[_]): Unit = {
+        puppeteer.sendInvokeAndWaitResult(agreement, invocation)
+    }
 }

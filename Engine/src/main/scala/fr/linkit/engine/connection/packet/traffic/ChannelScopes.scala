@@ -98,8 +98,8 @@ object ChannelScopes {
 
     def discardCurrent: ScopeFactory[BroadcastScope] = writer => BroadcastScope(writer, Array(writer.currentIdentifier))
 
-    def discards(discarded: String*): ScopeFactory[BroadcastScope] = BroadcastScope(_, Array(discarded))
+    def discards(discarded: String*): ScopeFactory[BroadcastScope] = BroadcastScope(_, Array(discarded: _*))
 
-    def retains(authorised: String*): ScopeFactory[RetainerScope] = RetainerScope(_, Array(authorised))
+    def retains(authorised: String*): ScopeFactory[RetainerScope] = RetainerScope(_, Array(authorised: _*))
 
 }

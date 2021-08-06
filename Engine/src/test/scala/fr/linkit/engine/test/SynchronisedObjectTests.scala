@@ -12,23 +12,16 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
 import org.junit.jupiter.api.TestInstance.Lifecycle
-import org.junit.jupiter.api.{Assertions, Test, TestInstance}
+import org.junit.jupiter.api.{Test, TestInstance}
 
 @TestInstance(Lifecycle.PER_CLASS)
 class SynchronisedObjectTests {
 
-    private val connection                          = EngineTests.testConnection
-    private var repo: DefaultSynchronizedObjectCenter[Serializable] = _
 
     @Test
     def openSharedCache(): Unit = {
-        Assertions.assertNotNull(connection)
-        val cache = connection.network.cache
-        AppLogger.debug("Opening object repo with identifier '75'")
-        val repo = cache.retrieveCache(75, DefaultSynchronizedObjectCenter[Serializable]())
+
     }
 
 }

@@ -19,7 +19,7 @@ import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrappe
 import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper
 import fr.linkit.engine.connection.cache.obj.invokation.{AbstractWrapperMethodInvocation, SimpleRMIRulesAgreement}
 
-trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] {
+trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] { wrapper =>
 
     @transient protected var puppeteer           : Puppeteer[A]            = _
     @transient protected var behavior            : WrapperBehavior[A]      = _
@@ -34,13 +34,13 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] {
     override def initPuppeteer(puppeteer: Puppeteer[A]): Unit = {
         if (this.puppeteer != null)
             throw new PuppetAlreadyInitialisedException(s"This puppet is already initialized ! ($puppeteer)")
-        this.puppeteer            = puppeteer
+        this.puppeteer = puppeteer
         this.puppeteerDescription = puppeteer.puppeteerInfo
-        this.behavior             = puppeteer.wrapperBehavior
+        this.behavior = puppeteer.wrapperBehavior
         this.puppeteer.init(asAutoWrapped)
-        this.choreographer        = new InvocationChoreographer() //TODO Have the same choreographer for the entire tree
-        this.currentIdentifier    = puppeteer.currentIdentifier
-        this.ownerID              = puppeteer.ownerID
+        this.choreographer = new InvocationChoreographer() //TODO Have the same choreographer for the entire tree
+        this.currentIdentifier = puppeteer.currentIdentifier
+        this.ownerID = puppeteer.ownerID
     }
 
     @inline override def isInitialized: Boolean = puppeteer != null
@@ -91,8 +91,9 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] {
         }
 
         val invocation = new AbstractWrapperMethodInvocation[R](methodBehavior, this) {
-            override val callerIdentifier: String     = currentIdentifier
-            override val methodArguments : Array[Any] = synchronizedArgs
+            override val callerIdentifier : String     = AbstractPuppetWrapper.this.currentIdentifier
+            override val currentIdentifier: String     = AbstractPuppetWrapper.this.currentIdentifier
+            override val methodArguments  : Array[Any] = synchronizedArgs
 
             override def callSuper(): R = performSuperCall(superCall)
         }

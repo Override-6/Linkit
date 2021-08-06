@@ -46,18 +46,18 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
     @workerExecution
     final override def inject(injection: PacketInjection): Unit = {
         val coordinates = injection.coordinates
-        scope.assertAuthorised(coordinates.senderID)
+        scope.assertAuthorised(Array(coordinates.senderID))
         if (subInject(injection)) {
             handleInjection(injection)
         }
     }
 
-    override def canInjectFrom(identifier: String): Boolean = scope.areAuthorised(identifier)
+    override def canInjectFrom(identifier: String): Boolean = scope.areAuthorised(Array(identifier))
 
     override def subInjectable[C <: PacketInjectable](scopes: Array[String],
                                                       factory: PacketInjectableFactory[C],
                                                       transparent: Boolean): C = {
-        if (scopes.exists(!scope.areAuthorised(_)))
+        if (scopes.exists(id => !scope.areAuthorised(Array(id))))
             throw new ForbiddenIdentifierException("This sub injector requests to listen to an identifier that the parent does not support.")
 
         val subScope = ChannelScopes.retains(scopes: _*).apply(writer)

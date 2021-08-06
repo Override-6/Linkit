@@ -74,8 +74,8 @@ class SimpleRMIRulesAgreement(currentID: String, ownerID: String) extends RMIRul
 
     override def mayCallSuper: Boolean = {
         if (acceptAllTargets)
-            !(discarded.contains(currentID) && (isCurrentOwner == discarded.contains(ownerID)))
+            !(discarded.contains(currentID) && (isCurrentOwner || discarded.contains(ownerID)))
         else
-            !(accepted.contains(currentID) && (isCurrentOwner == accepted.contains(ownerID)))
+            accepted.contains(currentID) && (isCurrentOwner || accepted.contains(ownerID))
     }
 }

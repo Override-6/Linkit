@@ -12,70 +12,85 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, MethodBehavior, ObjectTreeBehavior, WrapperBehavior}
-import fr.linkit.api.connection.cache.obj.behavior.annotation.InvocationKind
-import fr.linkit.api.connection.cache.obj.description.WrapperBehavior
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
+import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.MethodDescription
+import fr.linkit.api.local.generation.PuppetClassDescription
+import fr.linkit.engine.connection.cache.obj.behavior.WrapperBehaviorBuilder.MethodControl
 import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
+import fr.linkit.engine.connection.cache.obj.invokation.local.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 
 import java.util
+import scala.collection.mutable
 import scala.reflect.ClassTag
 
-class WrapperBehaviorBuilder[T] private(desc: WrapperBehavior[T]) {
+class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]) {
 
-    def this(clazz: Class[T], memberBehaviorFactory: MemberBehaviorFactory) {
-        this(WrapperInstanceBehavior(SimpleClassDescription(clazz), new ObjectTreeDefaultBehavior(memberBehaviorFactory)))
+    val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
+
+    def this()(implicit classTag: ClassTag[T]) = {
+        this(SimpleClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]))
     }
 
-    def this(memberBehaviorFactory: MemberBehaviorFactory)(implicit classTag: ClassTag[T]) = {
-        this(classTag.runtimeClass.asInstanceOf[Class[T]], memberBehaviorFactory)
-    }
-
-    def this(treeView: ObjectTreeBehavior)(implicit classTag: ClassTag[T]) {
-        this(WrapperInstanceBehavior(SimpleClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]), treeView))
-    }
-
-    final def annotate(name: String, params: Class[_]*): MethodModification = {
+    final def annotateMethod(name: String, params: Class[_]*): MethodModification = {
         val methodID = name.hashCode + util.Arrays.hashCode(params.toArray[AnyRef])
-        val method   = desc.getMethodBehavior(methodID).getOrElse(throw new NoSuchElementException(s"Method description '$name' not found."))
+        val method   = classDesc.getMethodDescription(methodID).getOrElse(throw new NoSuchElementException(s"Method description '$name' not found."))
         new MethodModification(Seq(method))
     }
 
-    final def annotateAll(name: String): MethodModification = {
+    final def annotateAllMethods(name: String): MethodModification = {
         new MethodModification(
-            desc.listMethods()
-                    .filter(_.desc.symbol.name.toString == name)
+            classDesc.listMethods()
+                    .filter(_.symbol.name.toString == name)
         )
     }
 
-    final def annotateAll: MethodModification = {
-        new MethodModification(desc.listMethods())
+    final def annotateAllMethods: MethodModification = {
+        new MethodModification(classDesc.listMethods())
     }
 
-    def build: WrapperBehavior[T] = desc
+    def build(factory: MemberBehaviorFactory): WrapperBehavior[T] = {
+        new WrapperInstanceBehavior[T](classDesc, factory) {
+            override protected def generateMethodsBehavior(): Iterable[MethodBehavior] = {
+                classDesc.listMethods()
+                        .map(genMethodBehavior(factory, _))
+            }
 
-    class MethodModification private[WrapperBehaviorBuilder](descs: Iterable[MethodBehavior]) {
+            override protected def generateFieldsBehavior(): Iterable[FieldBehavior] = {
+                //TODO Handle field customisation as well
+                super.generateFieldsBehavior()
+            }
+        }
+    }
+
+    private def genMethodBehavior(factory: MemberBehaviorFactory, desc: MethodDescription): MethodBehavior = {
+        val opt = methodsMap.get(desc)
+        if (opt.isEmpty)
+            factory.genMethodBehavior(desc)
+        else {
+            val control = opt.get
+            import control._
+            val handler = if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
+            new MethodBehavior(desc, synchronizedParams, synchronizeReturnValue, hide, Array(value), handler)
+        }
+    }
+
+    class MethodModification private[WrapperBehaviorBuilder](descs: Iterable[MethodDescription]) {
 
         def by(control: MethodControl): this.type = {
-            descs.foreach { bhv =>
-                bhv.invocationKind = control.value
-                bhv.synchronizedParams = if (control.synchronizedParams != null) control.synchronizedParams else bhv.synchronizedParams
-                bhv.syncReturnValue = control.synchronizeReturnValue
-                bhv.isHidden = control.hide
-                bhv.invokeOnly = control.invokeOnly
-            }
+            descs.foreach(methodsMap.put(_, control))
             this
         }
 
         def and(otherName: String): MethodModification = {
-            new MethodModification(descs ++ desc.listMethods()
-                    .filter(_.desc.symbol.name.toString == otherName))
+            new MethodModification(descs ++ classDesc.listMethods()
+                    .filter(_.symbol.name.toString == otherName))
         }
     }
-
 }
 
 object WrapperBehaviorBuilder {
 
-    case class MethodControl(value: InvocationKind, synchronizeReturnValue: Boolean = false, invokeOnly: Boolean = false, hide: Boolean = false, synchronizedParams: Seq[Boolean] = null)
+    case class MethodControl(value: BasicRemoteInvocationRule, synchronizeReturnValue: Boolean = false, invokeOnly: Boolean = false, hide: Boolean = false, synchronizedParams: Seq[Boolean] = null)
 
 }

@@ -70,16 +70,16 @@ class SyncAsyncPacketChannel(@Nullable parent: PacketChannel,
         scope.sendToAll(packet, attributes)
     }
 
-    def sendAsync(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = {
+    def sendAsync(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit = {
         attributes.putAttribute(Attribute, true)
         drainAllAttributes(attributes)
-        scope.sendTo(packet, attributes, targets: _*)
+        scope.sendTo(packet, attributes, targets)
     }
 
-    def sendSync(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = {
+    def sendSync(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit = {
         attributes.putAttribute(Attribute, false)
         drainAllAttributes(attributes)
-        scope.sendTo(packet, targets: _*)
+        scope.sendTo(packet, targets)
     }
 
     def sendSync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {

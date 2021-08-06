@@ -26,7 +26,7 @@ import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectTreeDefaultBehavior}
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrapperInstantiationHelper, WrappersClassResource}
-import fr.linkit.engine.connection.cache.obj.invokation.local.{ObjectChip, SimpleRMIHandler}
+import fr.linkit.engine.connection.cache.obj.invokation.local.{ObjectChip, DefaultRMIHandler}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
 import fr.linkit.engine.connection.cache.obj.tree._
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
@@ -151,7 +151,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
         val puppeteerInfo       = WrapperNodeInfo(family, cacheID, rootObjectOwner, Array(id))
         val rootBehavior        = behaviorTree.getFromClass[A](rootObject.getClass)
         val (root, subWrappers) = WrapperInstantiator.newWrapper[A](rootObject, behaviorTree, puppeteerInfo, subWrappersInfo)
-        val chip                = ObjectChip[A](rootObjectOwner, rootBehavior, root)
+        val chip                = ObjectChip[A](rootBehavior, root)
         val rootNode            = new RootWrapperNode[A](root.getPuppeteer, chip, _, currentIdentifier, id)
         val tree                = new DefaultSynchronizedObjectTree[A](currentIdentifier, id, WrapperInstantiator, this, behaviorTree)(rootNode)
         treeCenter.addTree(id, tree)
@@ -196,7 +196,7 @@ object DefaultSynchronizedObjectCenter {
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
     def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCenter[A] with InternalSharedCache] = {
-        val treeView = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory(SimpleRMIHandler))
+        val treeView = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory)
         apply[A](treeView)
     }
 

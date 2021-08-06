@@ -18,8 +18,6 @@ trait WrapperBehavior[A] {
 
     val classDesc: PuppetClassDescription[A]
 
-    val treeView: ObjectTreeBehavior
-
     def listMethods(): Iterable[MethodBehavior]
 
     def getMethodBehavior(id: Int): Option[MethodBehavior]

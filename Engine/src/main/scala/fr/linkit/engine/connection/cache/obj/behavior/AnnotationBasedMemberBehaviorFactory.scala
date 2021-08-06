@@ -13,16 +13,14 @@
 package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior
+import fr.linkit.api.connection.cache.obj.behavior.annotation._
 import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, RemoteInvocationRule}
 import fr.linkit.api.connection.cache.obj.description._
-import fr.linkit.api.connection.cache.obj.behavior.annotation._
-import fr.linkit.api.connection.cache.obj.invokation.MethodInvocationHandler
-import fr.linkit.engine.connection.cache.obj.behavior.AnnotationBasedMemberBehaviorFactory.DefaultMethodControl
-import fr.linkit.engine.connection.cache.obj.invokation.local.SimpleRMIHandler
+import fr.linkit.engine.connection.cache.obj.invokation.local.{InvokeOnlyRMIHandler, DefaultRMIHandler}
 
 import scala.reflect.runtime.universe
 
-class AnnotationBasedMemberBehaviorFactory(handler: MethodInvocationHandler = SimpleRMIHandler) extends MemberBehaviorFactory {
+object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
     def getSynchronizedParams(symbol: universe.MethodSymbol): Seq[Boolean] = {
         val params = symbol
@@ -41,14 +39,15 @@ class AnnotationBasedMemberBehaviorFactory(handler: MethodInvocationHandler = Si
         val javaMethod         = desc.javaMethod
         val control            = Option(javaMethod.getAnnotation(classOf[MethodControl])).getOrElse(DefaultMethodControl)
         val synchronizedParams = getSynchronizedParams(desc.symbol)
-        val invocationRules     = Array[RemoteInvocationRule](control.value())
-        val invokeOnly         = control.invokeOnly
+        val invocationRules    = Array[RemoteInvocationRule](control.value())
         val isHidden           = control.hide
         val syncReturnValue    = control.synchronizeReturnValue
-        behavior.MethodBehavior(
-            desc, synchronizedParams, syncReturnValue, isHidden,
-            invocationRules, handler
-        )
+        val invokeOnly         = control.invokeOnly
+        val handler            = if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
+            behavior.MethodBehavior(
+                desc, synchronizedParams, syncReturnValue, isHidden,
+                invocationRules, handler
+            )
     }
 
     override def genFieldBehavior(desc: FieldDescription): FieldBehavior = {
@@ -57,15 +56,9 @@ class AnnotationBasedMemberBehaviorFactory(handler: MethodInvocationHandler = Si
         behavior.FieldBehavior(desc, isSynchronized)
     }
 
-}
-
-object AnnotationBasedMemberBehaviorFactory {
-
-    def apply(handler: MethodInvocationHandler = SimpleRMIHandler): AnnotationBasedMemberBehaviorFactory = new AnnotationBasedMemberBehaviorFactory(handler)
-
     private val DefaultMethodControl: MethodControl = {
         new MethodControl {
-            override def value(): InvocationKind = InvocationKind.ONLY_LOCAL
+            override def value(): BasicRemoteInvocationRule = BasicRemoteInvocationRule.BLOCK_ALL
 
             override def synchronizeReturnValue(): Boolean = false
 

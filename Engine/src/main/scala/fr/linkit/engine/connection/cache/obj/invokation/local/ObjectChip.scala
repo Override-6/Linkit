@@ -47,7 +47,7 @@ class ObjectChip[S] private(behavior: WrapperBehavior[S],
 
 object ObjectChip {
 
-    def apply[S](owner: String, behavior: WrapperBehavior[S], wrapper: PuppetWrapper[S]): ObjectChip[S] = {
+    def apply[S](behavior: WrapperBehavior[S], wrapper: PuppetWrapper[S]): ObjectChip[S] = {
         if (wrapper == null)
             throw new NullPointerException("puppet is null !")
         val clazz = wrapper.getClass
@@ -55,7 +55,7 @@ object ObjectChip {
         if (Modifier.isFinal(clazz.getModifiers))
             throw new IllegalObjectWrapperException("Puppet can't be final.")
 
-        new ObjectChip[S](owner, behavior, wrapper)
+        new ObjectChip[S](behavior, wrapper)
     }
 
 }

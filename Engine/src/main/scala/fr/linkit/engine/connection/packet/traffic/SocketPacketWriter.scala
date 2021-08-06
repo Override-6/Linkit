@@ -26,11 +26,11 @@ class SocketPacketWriter(socket: DynamicSocket,
     override val currentIdentifier: String = traffic.currentIdentifier
     override val injectableID     : Int    = writerInfo.identifier
 
-    override def writePacket(packet: Packet, targetIDs: String*): Unit = {
-        writePacket(packet, SimplePacketAttributes.empty, targetIDs: _*)
+    override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
+        writePacket(packet, SimplePacketAttributes.empty, targetIDs)
     }
 
-    override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: String*): Unit = {
+    override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
         val coords       = if (targetIDs.length == 1) {
             val target    = targetIDs.head
             val dedicated = DedicatedPacketCoordinates(injectableID, targetIDs(0), currentIdentifier)
@@ -45,15 +45,15 @@ class SocketPacketWriter(socket: DynamicSocket,
                 traffic.processInjection(packet, attributes,  coords)
             }
 
-            BroadcastPacketCoordinates(injectableID, currentIdentifier, false, targetIDs.filter(_ != currentIdentifier): _*)
+            BroadcastPacketCoordinates(injectableID, currentIdentifier, false, targetIDs.filter(_ != currentIdentifier))
         }
         val transferInfo = SimpleTransferInfo(coords, attributes, packet)
 
         choreographer.add(transferInfo)(result => socket.write(result.buff))
     }
 
-    override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: String*): Unit = {
-        val coords            = BroadcastPacketCoordinates(injectableID, currentIdentifier, true, discardedIDs: _*)
+    override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit = {
+        val coords            = BroadcastPacketCoordinates(injectableID, currentIdentifier, true, discardedIDs)
         val transferInfo      = SimpleTransferInfo(coords, attributes, packet)
 
         if (!discardedIDs.contains(currentIdentifier))
@@ -61,8 +61,8 @@ class SocketPacketWriter(socket: DynamicSocket,
         choreographer.add(transferInfo)(result => socket.write(result.buff))
     }
 
-    override def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit = {
-        writeBroadcastPacket(packet, SimplePacketAttributes.empty, discardedIDs: _*)
+    override def writeBroadcastPacket(packet: Packet, discardedIDs: Array[String]): Unit = {
+        writeBroadcastPacket(packet, SimplePacketAttributes.empty, discardedIDs)
     }
 
 }

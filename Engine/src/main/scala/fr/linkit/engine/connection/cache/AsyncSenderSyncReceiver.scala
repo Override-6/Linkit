@@ -29,9 +29,9 @@ class AsyncSenderSyncReceiver(@Nullable parent: PacketChannel, scope: ChannelSco
 
     override def send(packet: Packet, attributes: PacketAttributes): Unit = sendAsync(packet, attributes)
 
-    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: String*): Unit = sendAsync(packet, attributes, targets: _*)
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targets: Array[String]): Unit = sendAsync(packet, attributes, targets)
 
     override def send(packet: Packet): Unit = send(packet, SimplePacketAttributes.empty)
 
-    override def sendTo(packet: Packet, targets: String*): Unit = sendTo(packet, SimplePacketAttributes.empty, targets: _*)
+    override def sendTo(packet: Packet, targets: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targets)
 }
