@@ -12,10 +12,11 @@
 
 package fr.linkit.api.connection.cache.obj
 
-import fr.linkit.api.connection.cache.obj.description.{WrapperNodeInfo, WrapperBehavior}
-import java.util.concurrent.ThreadLocalRandom
+import fr.linkit.api.connection.cache.obj.behavior.{MethodBehavior, RMIRulesAgreement, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
+import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
 
-import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SynchronizedObjectTree}
+import java.util.concurrent.ThreadLocalRandom
 
 trait Puppeteer[S <: AnyRef] {
 
@@ -27,16 +28,19 @@ trait Puppeteer[S <: AnyRef] {
 
     val wrapperBehavior: WrapperBehavior[S]
 
+    val currentIdentifier: String
+
     def isCurrentEngineOwner: Boolean
 
     def getPuppetWrapper: S with PuppetWrapper[S]
 
-    def sendInvokeAndWaitResult[R](methodId: Int, args: Array[Any]): R
+    def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R
+
+    def sendInvoke(agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[_]): Unit
+
+    //TODO make this and "init" for internal use only
+    def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef
 
     def init(wrapper: S with PuppetWrapper[S]): Unit
 
-    def sendInvoke(methodId: Int, args: Array[Any]): Unit
-
-    //TODO make this for internal use only
-    def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef
 }

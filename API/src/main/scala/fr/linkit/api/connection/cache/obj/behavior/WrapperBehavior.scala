@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description
+package fr.linkit.api.connection.cache.obj.behavior
 
 import fr.linkit.api.local.generation.PuppetClassDescription
 

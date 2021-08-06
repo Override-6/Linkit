@@ -27,17 +27,17 @@ trait ChannelScope extends PacketAttributesPresence {
 
     def sendToAll(packet: Packet): Unit
 
-    def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: String*): Unit
+    def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit
 
-    def sendTo(packet: Packet, targetIDs: String*): Unit
+    def sendTo(packet: Packet, targetIDs: Array[String]): Unit
 
-    def areAuthorised(identifiers: String*): Boolean
+    def areAuthorised(identifiers: Array[String]): Boolean
 
     def canConflictWith(scope: ChannelScope): Boolean
 
-    def assertAuthorised(identifiers: String*): Unit = {
-        if (!areAuthorised(identifiers: _*))
-            throw new ForbiddenIdentifierException(s"this identifier '${identifiers}' is not authorised by this scope.")
+    def assertAuthorised(identifiers: Array[String]): Unit = {
+        if (!areAuthorised(identifiers))
+            throw new ForbiddenIdentifierException(s"one of the identifier in '${identifiers.mkString("Array(", ", ", ")")}' is not authorised by this scope.")
     }
 
     def shareWriter[S <: ChannelScope](factory: ScopeFactory[S]): S

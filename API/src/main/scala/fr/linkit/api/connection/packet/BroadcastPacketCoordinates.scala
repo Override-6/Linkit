@@ -15,7 +15,7 @@ package fr.linkit.api.connection.packet
 case class BroadcastPacketCoordinates(override val injectableID: Int,
                                       override val senderID: String,
                                       discardTargets: Boolean,
-                                      targetIDs: String*) extends PacketCoordinates {
+                                      targetIDs: Array[String]) extends PacketCoordinates {
 
 
 

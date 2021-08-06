@@ -1,7 +1,8 @@
 package fr.linkit.api.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.PuppetWrapper
-import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperBehavior, WrapperNodeInfo}
+import fr.linkit.api.connection.cache.obj.behavior.{ObjectTreeBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 
 trait ObjectWrapperInstantiator {
 

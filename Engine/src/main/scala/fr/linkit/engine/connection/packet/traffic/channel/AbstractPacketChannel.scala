@@ -32,7 +32,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
     //it could occurs of unexpected behaviors by the user.
     protected val writer    : PacketWriter  = scope.writer
     override  val ownerID   : String        = writer.serverIdentifier
-    override  val identifier: Int           = writer.identifier
+    override  val identifier: Int           = writer.injectableID
     override  val traffic   : PacketTraffic = writer.traffic
     private   val subChannels               = mutable.Set.empty[SubInjectableContainer]
     private   val storedBundles             = mutable.HashSet.empty[Bundle]

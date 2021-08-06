@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.cache.obj
 
 import fr.linkit.api.connection.cache.SharedCache
-import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
 import fr.linkit.api.connection.cache.obj.tree.ObjectTreeCenter
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 

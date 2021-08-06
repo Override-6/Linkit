@@ -13,14 +13,12 @@
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
 import java.lang.reflect.Modifier
-
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.description.WrapperBehavior
+import fr.linkit.api.connection.cache.obj.behavior.WrapperBehavior
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.local.utils.ScalaUtils
 
-class ObjectChip[S] private(owner: String,
-                            behavior: WrapperBehavior[S],
+class ObjectChip[S] private(behavior: WrapperBehavior[S],
                             wrapper: PuppetWrapper[S]) extends Chip[S] {
 
     override def updateObject(obj: S): Unit = {

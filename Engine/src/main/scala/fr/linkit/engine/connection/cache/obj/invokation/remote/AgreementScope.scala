@@ -1,0 +1,58 @@
+/*
+ *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ *  This code is free software; you can only use it for personal uses, studies or documentation.
+ *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  questions.
+ */
+
+package fr.linkit.engine.connection.cache.obj.invokation.remote
+
+import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.traffic.PacketWriter
+import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
+import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreement
+import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
+
+class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgreement) extends AbstractAttributesPresence with ChannelScope {
+
+    override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
+        if (agreement.isAcceptAll) {
+            writer.writeBroadcastPacket(packet, attributes, agreement.getDiscardedEngines)
+        } else {
+            writer.writePacket(packet, attributes, agreement.getAcceptedEngines)
+        }
+    }
+
+    override def sendToAll(packet: Packet): Unit = sendToAll(packet, SimplePacketAttributes.empty)
+
+    override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
+        throw new UnsupportedOperationException("Not supported.")
+    }
+
+    override def sendTo(packet: Packet, targetIDs: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs)
+
+    override def areAuthorised(identifiers: Array[String]): Boolean = {
+        agreement.getDiscardedEngines.contains(identifiers) == agreement.isAcceptAll
+    }
+
+    override def canConflictWith(scope: ChannelScope): Boolean = {
+        true //This scope may not coexists with another channel on the same injectableID
+    }
+
+    override def shareWriter[S <: ChannelScope](factory: ChannelScope.ScopeFactory[S]): S = factory(writer)
+
+}
+
+object AgreementScope {
+
+    def apply(agreement: SimpleRMIRulesAgreement): ScopeFactory[AgreementScope] = {
+        writer => new AgreementScope(writer, agreement)
+    }
+}

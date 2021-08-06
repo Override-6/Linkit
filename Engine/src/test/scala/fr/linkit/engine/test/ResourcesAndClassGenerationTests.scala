@@ -12,8 +12,9 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.obj.description.annotation.FieldControl
-import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperBehavior, WrapperNodeInfo}
+import fr.linkit.api.connection.cache.obj.behavior.{ObjectTreeBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.annotation.FieldControl
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper}
 import fr.linkit.api.local.generation.TypeVariableTranslator
@@ -22,8 +23,8 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
-import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
-import fr.linkit.engine.connection.cache.obj.description.{ObjectTreeDefaultBehavior, SimpleClassDescription, WrapperInstanceBehavior}
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectTreeDefaultBehavior}
+import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrapperInstantiationHelper, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
 import fr.linkit.engine.local.LinkitApplication

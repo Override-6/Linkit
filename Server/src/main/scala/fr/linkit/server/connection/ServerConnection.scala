@@ -104,7 +104,7 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def runLater(task: => Unit): Unit = workerPool.runLater(task)
 
-    def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, injectableID: Int, discarded: String*): Unit = {
+    def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, injectableID: Int, discarded: Array[String]): Unit = {
         if (connectionsManager.countConnections - discarded.length < 0) {
             // There is nowhere to send this packet.
             return

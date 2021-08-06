@@ -10,8 +10,9 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.description
+package fr.linkit.engine.connection.cache.obj.behavior
 
+import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MethodBehavior, ObjectTreeBehavior, WrapperBehavior}
 import fr.linkit.api.connection.cache.obj.description._
 import fr.linkit.api.local.generation.PuppetClassDescription
 

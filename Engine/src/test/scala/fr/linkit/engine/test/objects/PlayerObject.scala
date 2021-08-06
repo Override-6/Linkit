@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.test.objects
 
-import fr.linkit.api.connection.cache.obj.description.annotation.InvocationKind.ONLY_LOCAL
-import fr.linkit.api.connection.cache.obj.description.annotation.MethodControl
+import fr.linkit.api.connection.cache.obj.behavior.annotation.InvocationKind.ONLY_LOCAL
+import fr.linkit.api.connection.cache.obj.behavior.annotation.MethodControl
 
 import scala.annotation.meta._
 

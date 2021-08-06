@@ -10,11 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.description
+package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.description.annotation.InvocationKind
-import fr.linkit.api.connection.cache.obj.description.{MemberBehaviorFactory, MethodBehavior, ObjectTreeBehavior, WrapperBehavior}
-import fr.linkit.engine.connection.cache.obj.description.WrapperBehaviorBuilder.MethodControl
+import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, MethodBehavior, ObjectTreeBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.annotation.InvocationKind
+import fr.linkit.api.connection.cache.obj.description.WrapperBehavior
+import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
 
 import java.util
 import scala.reflect.ClassTag

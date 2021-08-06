@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.system.fsa.nio
 
-import fr.linkit.api.connection.cache.obj.description.annotation.MethodControl
+import fr.linkit.api.connection.cache.obj.behavior.annotation.MethodControl
 import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 
 import java.io.{InputStream, OutputStream}

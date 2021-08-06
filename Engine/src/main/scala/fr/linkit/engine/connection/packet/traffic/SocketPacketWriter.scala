@@ -23,8 +23,8 @@ class SocketPacketWriter(socket: DynamicSocket,
 
     override val traffic          : PacketTraffic = writerInfo.traffic
     override val serverIdentifier : String        = traffic.serverIdentifier
-    override val currentIdentifier: String        = traffic.currentIdentifier
-    override val identifier       : Int           = writerInfo.identifier
+    override val currentIdentifier: String = traffic.currentIdentifier
+    override val injectableID     : Int    = writerInfo.identifier
 
     override def writePacket(packet: Packet, targetIDs: String*): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs: _*)
@@ -33,7 +33,7 @@ class SocketPacketWriter(socket: DynamicSocket,
     override def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: String*): Unit = {
         val coords       = if (targetIDs.length == 1) {
             val target    = targetIDs.head
-            val dedicated = DedicatedPacketCoordinates(identifier, targetIDs(0), currentIdentifier)
+            val dedicated = DedicatedPacketCoordinates(injectableID, targetIDs(0), currentIdentifier)
             if (target == currentIdentifier) {
                 traffic.processInjection(packet, attributes,  dedicated)
                 return
@@ -41,11 +41,11 @@ class SocketPacketWriter(socket: DynamicSocket,
             dedicated
         } else {
             if (targetIDs.contains(currentIdentifier)) {
-                val coords = DedicatedPacketCoordinates(identifier, serverIdentifier, currentIdentifier)
+                val coords = DedicatedPacketCoordinates(injectableID, serverIdentifier, currentIdentifier)
                 traffic.processInjection(packet, attributes,  coords)
             }
 
-            BroadcastPacketCoordinates(identifier, currentIdentifier, false, targetIDs.filter(_ != currentIdentifier): _*)
+            BroadcastPacketCoordinates(injectableID, currentIdentifier, false, targetIDs.filter(_ != currentIdentifier): _*)
         }
         val transferInfo = SimpleTransferInfo(coords, attributes, packet)
 
@@ -53,7 +53,7 @@ class SocketPacketWriter(socket: DynamicSocket,
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: String*): Unit = {
-        val coords            = BroadcastPacketCoordinates(identifier, currentIdentifier, true, discardedIDs: _*)
+        val coords            = BroadcastPacketCoordinates(injectableID, currentIdentifier, true, discardedIDs: _*)
         val transferInfo      = SimpleTransferInfo(coords, attributes, packet)
 
         if (!discardedIDs.contains(currentIdentifier))

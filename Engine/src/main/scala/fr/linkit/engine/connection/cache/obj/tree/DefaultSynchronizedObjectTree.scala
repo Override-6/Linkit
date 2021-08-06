@@ -1,6 +1,7 @@
 package fr.linkit.engine.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperNodeInfo}
+import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{IllegalObjectWrapperException, PuppetWrapper, SynchronizedObjectCenter}

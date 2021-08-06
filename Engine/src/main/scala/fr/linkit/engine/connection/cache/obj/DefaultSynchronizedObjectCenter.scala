@@ -13,7 +13,8 @@
 package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperBehavior, WrapperNodeInfo}
+import fr.linkit.api.connection.cache.obj.behavior.{ObjectTreeBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassCenter, ObjectWrapperInstantiator}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
@@ -23,8 +24,7 @@ import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
-import fr.linkit.engine.connection.cache.obj.description.ObjectTreeDefaultBehavior
-import fr.linkit.engine.connection.cache.obj.description.annotation.AnnotationBasedMemberBehaviorFactory
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectTreeDefaultBehavior}
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrapperInstantiationHelper, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.local.{ObjectChip, SimpleRMIHandler}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
@@ -60,7 +60,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
 
         val objClone = WrapperInstantiationHelper.deepClone(obj)
-        val tree = createNewTree(id, currentIdentifier, objClone, Map(), behavior)
+        val tree     = createNewTree(id, currentIdentifier, objClone, Map(), behavior)
         //Indicate that a new object has been posted.
         channel.makeRequest(ChannelScopes.discardCurrent)
                 .addPacket(ObjectPacket(ObjectTreeProfile(id, obj, currentIdentifier, Map())))
@@ -156,13 +156,16 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
         val tree                = new DefaultSynchronizedObjectTree[A](currentIdentifier, id, WrapperInstantiator, this, behaviorTree)(rootNode)
         treeCenter.addTree(id, tree)
 
-        subWrappers.values.foreach(wrapper => {
-            val info       = wrapper.getNodeInfo
-            val path       = info.nodePath
-            val parentPath = path.dropRight(1)
-            val id         = path.last
-            tree.registerSynchronizedObject(parentPath, id, wrapper, info.owner)
-        })
+        subWrappers.toSeq
+                .sortBy(pair => pair._2.getNodeInfo.nodePath.length)
+                .foreach(pair => {
+                    val wrapper    = pair._2
+                    val info       = wrapper.getNodeInfo
+                    val path       = info.nodePath
+                    val parentPath = path.dropRight(1)
+                    val id         = path.last
+                    tree.registerSynchronizedObject(parentPath, id, wrapper, info.owner)
+                })
 
         tree
     }

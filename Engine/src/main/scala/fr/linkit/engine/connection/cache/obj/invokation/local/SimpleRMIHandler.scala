@@ -12,51 +12,43 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
-import fr.linkit.api.connection.cache.obj.description.RMIHandler
+import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
+import fr.linkit.api.connection.cache.obj.invokation.{MethodInvocationHandler, WrapperMethodInvocation}
 import fr.linkit.api.local.system.AppLogger
 
-object SimpleRMIHandler extends RMIHandler {
+object SimpleRMIHandler extends MethodInvocationHandler {
 
-    override def handleRMI[R](wrapper: PuppetWrapper[_])
-                             (id: Int, defaultReturnValue: R)
-                             (args: Array[Any])
-                             (superCall: => R): R = {
-        val methodBehavior = wrapper.getBehavior.getMethodBehavior(id).get
+    override def handleRMI[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R = {
+        val wrapper        = invocation.wrapper
+        val args           = invocation.methodArguments
+        val methodBehavior = invocation.methodBehavior
         val name           = methodBehavior.desc.javaMethod.getName
-        val argsString     = args.mkString("(", ", ", ")")
-        val className      = methodBehavior.desc.classDesc.clazz
-        AppLogger.debug(s"$name: Performing rmi call for ${className.getSimpleName}.$name$argsString (id: $id)")
-        AppLogger.debug(s"MethodBehavior = $methodBehavior")
+        val methodID       = invocation.methodID
+
+        val enableDebug = invocation.debug
+
+        lazy val argsString = args.mkString("(", ", ", ")")
+        lazy val className  = methodBehavior.desc.classDesc.clazz
+        if (enableDebug) {
+            AppLogger.debug(s"$name: Performing rmi call for ${className.getSimpleName}.$name$argsString (id: $methodID)")
+            AppLogger.debug(s"MethodBehavior = $methodBehavior")
+        }
         // From here we are sure that we want to perform a remote
         // method invocation. (A Local invocation (super.xxx()) can be added).
-        val puppeteer = wrapper.getPuppeteer
-        if (methodBehavior.invokeOnly) {
-            AppLogger.debug("Invoke Only: Sending invocation request.")
-            puppeteer.sendInvoke(id, args)
-            var localResult: Any = defaultReturnValue
-            if (methodBehavior.invocationKind.isLocalInvocationForced) {
-                AppLogger.debug("The call is also redirected to current object...")
-                localResult = superCall
-            }
-            AppLogger.debug("Returned local result = " + localResult)
-            //# Note1: value of 'InvokeOnlyResult' can be "localResult", which will return the variable.
-            //# Note2: Be aware that you can get a null value returned
-            //#        if the 'InvokeOnlyResult' value of the annotated
-            //#        method is set to "localResult" and the invocation
-            //#        kind does not force local invocation.
-            return localResult.asInstanceOf[R]
-        }
-        var result: R = defaultReturnValue
+        val puppeteer   = wrapper.getPuppeteer
+        var result: Any = methodBehavior.defaultReturnValue
         if (methodBehavior.invocationKind.isLocalInvocationForced) {
-            AppLogger.debug("The method invocation is redirected to current object...")
-            result = superCall
-            AppLogger.debug("Also performing asynchronous remote method invocation...")
-            puppeteer.sendInvoke(id, args)
+            if (enableDebug)
+                AppLogger.debug("The method invocation is redirected to current object...")
+            result = invocation.callSuper()
+            if (enableDebug)
+                AppLogger.debug("Also performing asynchronous remote method invocation...")
+            puppeteer.sendInvoke(invocation)
         } else {
-            AppLogger.debug("Performing synchronous remote method invocation...")
-            result = puppeteer.sendInvokeAndWaitResult[R](id, args)
+            if (enableDebug)
+                AppLogger.debug("Performing synchronous remote method invocation...")
+            result = puppeteer.sendInvokeAndWaitResult[R](invocation)
         }
-        result
+        result.asInstanceOf[R]
     }
 }

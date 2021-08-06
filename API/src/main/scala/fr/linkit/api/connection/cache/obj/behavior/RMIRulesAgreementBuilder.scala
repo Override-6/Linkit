@@ -10,17 +10,27 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description.annotation;
+package fr.linkit.api.connection.cache.obj.behavior
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+trait RMIRulesAgreementBuilder {
 
-@Target(ElementType.FIELD)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface FieldControl {
+    def discard(target: String): this.type
 
-    boolean synchronize() default true;
+    def accept(target: String): this.type
+
+    def acceptOwner(): this.type
+
+    def acceptAll(): this.type
+
+    def discardAll(): this.type
+
+    def acceptCurrent(): this.type
+
+    def discardCurrent(): this.type
+
+    def discardOwner(): this.type
+
+    def setDesiredEngineReturn(target: String): this.type
 
 }
+

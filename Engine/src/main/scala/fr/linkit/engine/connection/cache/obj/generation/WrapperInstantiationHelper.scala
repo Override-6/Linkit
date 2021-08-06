@@ -13,7 +13,8 @@
 package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.PuppetWrapper
-import fr.linkit.api.connection.cache.obj.description.{ObjectTreeBehavior, WrapperNodeInfo}
+import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
+import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper.MaxScanDepth
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllFields}

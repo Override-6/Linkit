@@ -10,14 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description.annotation;
+package fr.linkit.api.connection.cache.obj.behavior
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription}
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.PARAMETER)
-public @interface SynchronizeParam {
+trait MemberBehaviorFactory {
+
+    def genMethodBehavior(desc: MethodDescription): MethodBehavior
+
+    def genFieldBehavior(desc: FieldDescription): FieldBehavior
+
 }

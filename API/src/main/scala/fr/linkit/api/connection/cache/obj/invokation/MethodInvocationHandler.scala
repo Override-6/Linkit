@@ -10,12 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description
+package fr.linkit.api.connection.cache.obj.invokation
 
-trait MemberBehaviorFactory {
+import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
 
-    def genMethodBehavior(desc: MethodDescription): MethodBehavior
+/**
+ *
+ * */
+trait MethodInvocationHandler {
 
-    def genFieldBehavior(desc: FieldDescription): FieldBehavior
+    def handleRMI[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R
 
 }

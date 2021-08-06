@@ -10,16 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description
+package fr.linkit.api.connection.cache.obj.behavior
 
-import scala.reflect.ClassTag
-import scala.reflect.runtime.universe._
+import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
 
-trait ObjectTreeBehavior {
-    val factory: MemberBehaviorFactory
-    def get[B: TypeTag : ClassTag]: WrapperBehavior[B]
+trait RemoteInvocationRule {
 
-    def getFromClass[B](clazz: Class[_]): WrapperBehavior[B]
+    def apply(agreement: RMIRulesAgreementBuilder, invocation: WrapperMethodInvocation[_]): Unit
 
-    def put[B](clazz: Class[B], bhv: WrapperBehavior[B])
 }

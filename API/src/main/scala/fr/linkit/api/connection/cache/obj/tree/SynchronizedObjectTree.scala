@@ -1,7 +1,7 @@
 package fr.linkit.api.connection.cache.obj.tree
 
+import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
 import fr.linkit.api.connection.cache.obj.{PuppetWrapper, SynchronizedObjectCenter}
-import fr.linkit.api.connection.cache.obj.description.ObjectTreeBehavior
 
 trait SynchronizedObjectTree[A <: AnyRef] {
 

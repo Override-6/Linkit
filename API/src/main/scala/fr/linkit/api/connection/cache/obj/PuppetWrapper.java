@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.cache.obj;
 
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo;
-import fr.linkit.api.connection.cache.obj.description.WrapperBehavior;
+import fr.linkit.api.connection.cache.obj.behavior.WrapperBehavior;
 
 import java.io.Serializable;
 

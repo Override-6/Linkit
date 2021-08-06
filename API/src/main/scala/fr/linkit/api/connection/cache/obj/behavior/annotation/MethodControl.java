@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description.annotation;
+package fr.linkit.api.connection.cache.obj.behavior.annotation;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -28,9 +28,9 @@ public @interface MethodControl {
     /**
      * Specifies what kind of invocation the implementation of the annotated method must do.
      *
-     * @see fr.linkit.api.connection.cache.obj.description.annotation.InvocationKind
+     * @see fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
      */
-    InvocationKind value() default InvocationKind.ONLY_LOCAL;
+    BasicRemoteInvocationRule value() default BasicRemoteInvocationRule.BLOCK_ALL;
 
     /**
      * If true, the returned value, if possible, will be synchronized with the caller as well.

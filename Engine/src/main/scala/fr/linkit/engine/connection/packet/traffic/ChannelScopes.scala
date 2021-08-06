@@ -20,24 +20,24 @@ import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePac
 
 object ChannelScopes {
 
-    final case class BroadcastScope private(override val writer: PacketWriter, discarded: String*)
+    final case class BroadcastScope private(override val writer: PacketWriter, discarded: Array[String])
             extends AbstractAttributesPresence with ChannelScope {
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
             defaultAttributes.drainAttributes(attributes)
-            writer.writeBroadcastPacket(packet, attributes, discarded: _*)
+            writer.writeBroadcastPacket(packet, attributes, discarded)
         }
 
-        override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: String*): Unit = {
+        override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
             defaultAttributes.drainAttributes(attributes)
-            writer.writePacket(packet, attributes, targetIDs: _*)
+            writer.writePacket(packet, attributes, targetIDs)
         }
 
         override def sendToAll(packet: Packet): Unit = sendToAll(packet, SimplePacketAttributes.empty)
 
-        override def sendTo(packet: Packet, targetIDs: String*): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs: _*)
+        override def sendTo(packet: Packet, targetIDs: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs)
 
-        override def areAuthorised(identifiers: String*): Boolean = true //everyone is authorised in a BroadcastScope
+        override def areAuthorised(identifiers: Array[String]): Boolean = true //everyone is authorised in a BroadcastScope
 
         override def canConflictWith(scope: ChannelScope): Boolean = {
             //As Long As everyone is authorised by a BroadcastScope,
@@ -53,39 +53,39 @@ object ChannelScopes {
 
     }
 
-    final case class RetainerScope private(override val writer: PacketWriter, authorisedIds: String*)
+    final case class RetainerScope private(override val writer: PacketWriter, authorisedIds: Array[String])
             extends AbstractAttributesPresence with ChannelScope {
 
         override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
             defaultAttributes.drainAttributes(attributes)
-            writer.writePacket(packet, attributes, authorisedIds: _*)
+            writer.writePacket(packet, attributes, authorisedIds)
         }
 
-        override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: String*): Unit = {
-            assertAuthorised(targetIDs: _*)
+        override def sendTo(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit = {
+            assertAuthorised(targetIDs)
             defaultAttributes.drainAttributes(attributes)
-            writer.writePacket(packet, attributes, targetIDs: _*)
+            writer.writePacket(packet, attributes, targetIDs)
         }
 
         override def sendToAll(packet: Packet): Unit = {
             sendToAll(packet, SimplePacketAttributes.empty)
         }
 
-        override def sendTo(packet: Packet, targetIDs: String*): Unit = {
-            sendTo(packet, SimplePacketAttributes.empty, targetIDs: _*)
+        override def sendTo(packet: Packet, targetIDs: Array[String]): Unit = {
+            sendTo(packet, SimplePacketAttributes.empty, targetIDs)
         }
 
-        override def areAuthorised(identifier: String*): Boolean = {
+        override def areAuthorised(identifier: Array[String]): Boolean = {
             authorisedIds.containsSlice(identifier)
         }
 
         override def canConflictWith(scope: ChannelScope): Boolean = {
-            scope.areAuthorised(authorisedIds: _*)
+            scope.areAuthorised(authorisedIds)
         }
 
         override def equals(obj: Any): Boolean = {
             obj match {
-                case s: RetainerScope => s.authorisedIds == this.authorisedIds
+                case s: RetainerScope => s.authorisedIds sameElements this.authorisedIds
                 case _                => false
             }
         }
@@ -94,12 +94,12 @@ object ChannelScopes {
 
     }
 
-    def broadcast: ScopeFactory[BroadcastScope] = BroadcastScope(_)
+    def broadcast: ScopeFactory[BroadcastScope] = BroadcastScope(_, Array.empty)
 
-    def discardCurrent: ScopeFactory[BroadcastScope] = writer => BroadcastScope(writer, writer.currentIdentifier)
+    def discardCurrent: ScopeFactory[BroadcastScope] = writer => BroadcastScope(writer, Array(writer.currentIdentifier))
 
-    def discards(discarded: String*): ScopeFactory[BroadcastScope] = BroadcastScope(_, discarded: _*)
+    def discards(discarded: String*): ScopeFactory[BroadcastScope] = BroadcastScope(_, Array(discarded))
 
-    def retains(authorised: String*): ScopeFactory[RetainerScope] = RetainerScope(_, authorised: _*)
+    def retains(authorised: String*): ScopeFactory[RetainerScope] = RetainerScope(_, Array(authorised))
 
 }

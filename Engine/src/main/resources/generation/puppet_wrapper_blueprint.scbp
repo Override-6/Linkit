@@ -41,7 +41,7 @@ class $WrappedClassSimpleName$Wrapper$TParamsIn$ extends AbstractPuppetWrapper[$
 
 !!INHERITED_METHODS!! {
     $Override$ def $MethodName$$GenericTypesIn$$ParamsIn$: $ReturnType$ = {
-        handleCall[$ReturnType$]($MethodID$, $DefaultReturnValue$)(Array($ParamsOutFlatten$))(args => Array(this: Any $ParamsOutFlattenLambda$): Any)
+        handleCall[$ReturnType$]($MethodID$)(Array($ParamsOutFlatten$))(args => Array(this: Any $ParamsOutFlattenLambda$): Any)
     }
 }
 

@@ -10,18 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description
+package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreement
+import org.junit.jupiter.api.TestInstance.Lifecycle
+import org.junit.jupiter.api.{Assertions, Test, TestInstance}
 
-/**
- *
- * */
-trait RMIHandler {
+@TestInstance(Lifecycle.PER_CLASS)
+class BehaviorTests {
 
-    def handleRMI[R](wrapper: PuppetWrapper[_])
-                    (id: Int, defaultReturnValue: R)
-                    (args: Array[Any])
-                    (superCall: => R = null): R
+    @Test
+    def testAgreement(): Unit = {
+        val agreement = new SimpleRMIRulesAgreement("Johny", "Johny")
+        Assertions.assertTrue(agreement.mayCallSuper)
+    }
 
 }

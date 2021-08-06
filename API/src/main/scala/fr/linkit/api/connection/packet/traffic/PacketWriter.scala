@@ -18,15 +18,15 @@ trait PacketWriter {
 
     val serverIdentifier : String
     val currentIdentifier: String
-    val identifier       : Int
+    val injectableID     : Int
     val traffic          : PacketTraffic
 
-    def writePacket(packet: Packet, targetIDs: String*): Unit
+    def writePacket(packet: Packet, targetIDs: Array[String]): Unit
 
-    def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: String*): Unit
+    def writePacket(packet: Packet, attributes: PacketAttributes, targetIDs: Array[String]): Unit
 
-    def writeBroadcastPacket(packet: Packet, discardedIDs: String*): Unit
+    def writeBroadcastPacket(packet: Packet, discardedIDs: Array[String]): Unit
 
-    def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: String*): Unit
+    def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit
 
 }
