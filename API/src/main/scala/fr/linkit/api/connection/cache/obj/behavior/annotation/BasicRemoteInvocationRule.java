@@ -61,7 +61,7 @@ public enum BasicRemoteInvocationRule implements RemoteInvocationRule {
      */
     BROADCAST_IF_OWNER((agreement, invocation) -> {
         agreement
-                .ifCurrentIsOwner(RMIRulesAgreementBuilder::acceptAll)
+                .ifCurrentIsNotOwner(RMIRulesAgreementBuilder::discardAll)
                 .setDesiredCurrentEngineReturn();
     }),
     /**

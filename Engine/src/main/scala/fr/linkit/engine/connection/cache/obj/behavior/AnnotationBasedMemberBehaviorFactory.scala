@@ -16,23 +16,15 @@ import fr.linkit.api.connection.cache.obj.behavior
 import fr.linkit.api.connection.cache.obj.behavior.annotation._
 import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, RemoteInvocationRule}
 import fr.linkit.api.connection.cache.obj.description._
-import fr.linkit.api.connection.cache.obj.invokation.MethodInvocationHandler
 import fr.linkit.engine.connection.cache.obj.invokation.local.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 
-import scala.reflect.runtime.universe
+import java.lang.reflect.Method
 
 object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
-    def getSynchronizedParams(symbol: universe.MethodSymbol): Seq[Boolean] = {
-        val params = symbol
-                .paramLists
-                .flatten
-                .map(_.annotations
-                        .exists(_.tree
-                                .tpe
-                                .typeSymbol
-                                .fullName == classOf[SynchronizeParam].getName)
-                )
+    def getSynchronizedParams(method: Method): Seq[Boolean] = {
+        val params = method.getParameterAnnotations
+                .map(_.exists(_.annotationType() eq classOf[SynchronizeParam]))
         params
     }
 
@@ -40,7 +32,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         val javaMethod         = desc.javaMethod
         val controlOpt         = Option(javaMethod.getAnnotation(classOf[MethodControl]))
         val control            = controlOpt.getOrElse(DefaultMethodControl)
-        val synchronizedParams = getSynchronizedParams(desc.symbol)
+        val synchronizedParams = getSynchronizedParams(desc.javaMethod)
         val invocationRules    = Array[RemoteInvocationRule](control.value())
         val isHidden           = control.hide
         val syncReturnValue    = control.synchronizeReturnValue

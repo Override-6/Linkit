@@ -77,11 +77,12 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
 
     override def useSortedDeserializedObjects: Boolean = true
 
-    override def sortedDeserializedObjects(objects: Array[Any]): Unit = objects.foreach {
-        case wrapper: PuppetWrapper[AnyRef] => registerWrapper(wrapper)
+    override def sortedDeserializedObjects(objects: Array[Any]): Unit = objects.map {
+        case wrapper: PuppetWrapper[AnyRef] => wrapper
         case null                           => throw new UnexpectedObjectException("Unexpected null PuppetWrapper.")
         case other                          => throw new UnexpectedObjectException(s"Unexpected object of type '${other.getClass}', only PuppetWrapper can be handled by this PuppetWrapperPersistor.")
-    }
+    }.sortBy(_.getNodeInfo.nodePath.length)
+            .foreach(registerWrapper)
 
     private def retrieveWrapper(info: WrapperNodeInfo): PuppetWrapper[_] = {
         val path                   = info.nodePath

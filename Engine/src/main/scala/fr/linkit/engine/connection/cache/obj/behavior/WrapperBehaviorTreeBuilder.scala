@@ -22,8 +22,9 @@ abstract class WrapperBehaviorTreeBuilder(memberBehaviorFactory: MemberBehaviorF
 
     object behaviors {
 
-        def +=(builder: WrapperBehaviorBuilder[_]): Unit = {
+        def +=(builder: WrapperBehaviorBuilder[_]): this.type = {
             mappedBehaviors.put(builder.classDesc.clazz, builder.build(memberBehaviorFactory))
+            this
         }
     }
 

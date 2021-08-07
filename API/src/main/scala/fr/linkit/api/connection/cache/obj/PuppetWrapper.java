@@ -31,6 +31,8 @@ public interface PuppetWrapper<T> extends Serializable {
 
     boolean isInitialized();
 
+    boolean isOwnedByCurrent();
+
     T asWrapped();
 
     T detachedClone();

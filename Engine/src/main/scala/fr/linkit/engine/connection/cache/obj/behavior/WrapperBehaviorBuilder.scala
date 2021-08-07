@@ -71,7 +71,8 @@ class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]
             val control = opt.get
             import control._
             val handler = if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
-            new MethodBehavior(desc, synchronizedParams, synchronizeReturnValue, hide, Array(value), handler)
+            val params = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams
+            new MethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), handler)
         }
     }
 

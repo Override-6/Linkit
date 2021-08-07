@@ -21,10 +21,10 @@ import fr.linkit.engine.connection.cache.obj.invokation.{AbstractWrapperMethodIn
 
 trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] { wrapper =>
 
-    @transient protected var puppeteer           : Puppeteer[A]            = _
-    @transient protected var behavior            : WrapperBehavior[A]      = _
-    @transient protected var choreographer       : InvocationChoreographer = _
-    protected            var puppeteerDescription: WrapperNodeInfo         = _
+    @transient final protected var puppeteer           : Puppeteer[A]            = _
+    @transient final protected var behavior            : WrapperBehavior[A]      = _
+    @transient final protected var choreographer       : InvocationChoreographer = _
+    protected final            var puppeteerDescription: WrapperNodeInfo         = _
 
     private var currentIdentifier: String = _
     private var ownerID          : String = _
@@ -44,6 +44,8 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] { wrapper =>
     }
 
     @inline override def isInitialized: Boolean = puppeteer != null
+
+    override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
     override def detachedClone: A = {
         WrapperInstantiationHelper.detachedWrapperClone(this)._1
