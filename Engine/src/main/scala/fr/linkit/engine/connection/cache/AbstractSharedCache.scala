@@ -20,7 +20,7 @@ import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel, RequestSubmitter}
-import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
+import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes, UnexpectedPacketException}
 import org.jetbrains.annotations.Nullable
 
 abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
@@ -71,6 +71,8 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
     //FIXME optimise (find another way to retrieve the right cache that can accept the bundle)
     channel.addRequestListener(bundle => {
         val attr = bundle.attributes
+        if (bundle.attributes.isEmpty)
+            throw UnexpectedPacketException("Packet bundle for cache injection have no attributes.")
 
         def isPresent(name: String, expected: Any): Boolean = attr.getAttribute(name).contains(expected)
 

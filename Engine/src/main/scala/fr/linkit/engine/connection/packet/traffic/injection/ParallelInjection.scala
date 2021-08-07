@@ -28,8 +28,8 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
 
     private val buff                         = new PacketBuffer
     private val pins                         = ArrayBuffer.empty[PacketInjectionNode]
-    @volatile private var processing         = false
-    @volatile private var performedPinAttach = false
+    private var processing         = false
+    private var performedPinAttach = false
 
     override def attachPin(@workerExecution callback: (Packet, PacketAttributes) => Unit): Unit = {
 

@@ -101,7 +101,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         socket.addConnectionStateListener(tryReconnect)
         readThread.onPacketRead = result => {
             try {
-                AppLogger.debug("Handling deserialisation...")
                 val coordinates: DedicatedPacketCoordinates = result.coords match {
                     case dedicated: DedicatedPacketCoordinates => dedicated
                     case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(currentIdentifier)

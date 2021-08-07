@@ -77,7 +77,7 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] { wrapper =>
     }
 
     protected def handleCall[R](id: Int)
-                               (args: Array[Any])(superCall: Array[Any] => Any): R = {
+                               (args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         //if (!isInitialized) //May be here only during tests
         //    return superCall(args).asInstanceOf[R]
         val methodBehavior   = behavior.getMethodBehavior(id).get
@@ -95,7 +95,9 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] { wrapper =>
             override val currentIdentifier: String     = AbstractPuppetWrapper.this.currentIdentifier
             override val methodArguments  : Array[Any] = synchronizedArgs
 
-            override def callSuper(): R = performSuperCall(superCall)
+            override def callSuper(): R = {
+                performSuperCall[R](superCall(synchronizedArgs))
+            }
         }
         val agreement  = createAgreement(invocation)
 

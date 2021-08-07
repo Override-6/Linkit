@@ -148,7 +148,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
             workTaskIds.toString()
         }
         AppLogger.vWarn(s"${currentTasksId} <> ($activeThreads / ${threadCount}) TASK $submittedTaskID SUBMIT TO POOL $name, TOTAL TASKS : $tasks (${System.identityHashCode(workQueue)}), $this")
-        executor.submit(runnable)
+        executor.execute(runnable)
 
         //If there is one busy thread that is waiting for a new task to be performed,
         //It would instantly execute the current task.
@@ -312,8 +312,8 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
         val sleepingWorker = workers.find(_.isSleeping)
         AppLogger.vDebug(s"unparking busy thread ${sleepingWorker.orNull} (if null, no thread is sleeping)")
         sleepingWorker match {
-            case Some(worker) => LockSupport.unpark(worker)
             case None         => //no-op
+            case Some(worker) => LockSupport.unpark(worker)
         }
     }
 

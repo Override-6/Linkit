@@ -62,7 +62,7 @@ class ConsumerContainer[A]() {
     def +:+=(consumer: A => Unit): this.type = addOnce(consumer)
 
     @workerExecution
-    def applyAllLater(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
+    def applyAllLater(t: A, onException: Throwable => Unit = throw _): this.type = {
         val pool = WorkerPools.ensureCurrentIsWorker("Async execution is impossible for this consumer container in a non worker execution thread.")
         pool.runLater {
             applyAll(t, onException)
@@ -70,7 +70,8 @@ class ConsumerContainer[A]() {
         this
     }
 
-    def applyAll(t: A, onException: Throwable => Unit = _.printStackTrace()): this.type = {
+    def applyAll(t: A, onException: Throwable => Unit = throw _): this.type = {
+        AppLogger.vDebug(s"Apply all for ${consumers.size} consumers.")
         Array.from(consumers).foreach(consumer => {
             try {
                 //AppLogger.vTrace(s"EXECUTING $consumer")
@@ -79,8 +80,8 @@ class ConsumerContainer[A]() {
             } catch {
                 case NonFatal(e) =>
                     onException(e)
-                    AppLogger.fatal("EXITING VM...")
-                    System.exit(1)
+                    //AppLogger.fatal("EXITING VM...")
+                    //System.exit(1)
             }
         })
         this

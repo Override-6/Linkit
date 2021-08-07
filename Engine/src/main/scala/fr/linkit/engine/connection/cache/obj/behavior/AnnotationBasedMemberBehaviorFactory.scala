@@ -16,7 +16,8 @@ import fr.linkit.api.connection.cache.obj.behavior
 import fr.linkit.api.connection.cache.obj.behavior.annotation._
 import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, RemoteInvocationRule}
 import fr.linkit.api.connection.cache.obj.description._
-import fr.linkit.engine.connection.cache.obj.invokation.local.{InvokeOnlyRMIHandler, DefaultRMIHandler}
+import fr.linkit.api.connection.cache.obj.invokation.MethodInvocationHandler
+import fr.linkit.engine.connection.cache.obj.invokation.local.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 
 import scala.reflect.runtime.universe
 
@@ -37,17 +38,21 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
     override def genMethodBehavior(desc: MethodDescription): MethodBehavior = {
         val javaMethod         = desc.javaMethod
-        val control            = Option(javaMethod.getAnnotation(classOf[MethodControl])).getOrElse(DefaultMethodControl)
+        val controlOpt         = Option(javaMethod.getAnnotation(classOf[MethodControl]))
+        val control            = controlOpt.getOrElse(DefaultMethodControl)
         val synchronizedParams = getSynchronizedParams(desc.symbol)
         val invocationRules    = Array[RemoteInvocationRule](control.value())
         val isHidden           = control.hide
         val syncReturnValue    = control.synchronizeReturnValue
         val invokeOnly         = control.invokeOnly
-        val handler            = if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
-            behavior.MethodBehavior(
-                desc, synchronizedParams, syncReturnValue, isHidden,
-                invocationRules, handler
-            )
+        val handler            = controlOpt match {
+            case None => null
+            case Some(_) => if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
+        }
+        behavior.MethodBehavior(
+            desc, synchronizedParams, syncReturnValue, isHidden,
+            invocationRules, handler
+        )
     }
 
     override def genFieldBehavior(desc: FieldDescription): FieldBehavior = {

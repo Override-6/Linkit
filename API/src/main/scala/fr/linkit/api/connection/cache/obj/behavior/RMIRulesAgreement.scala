@@ -24,4 +24,6 @@ trait RMIRulesAgreement {
 
     def mayCallSuper: Boolean
 
+    def mayPerformRemoteInvocation: Boolean
+
 }

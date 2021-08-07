@@ -26,7 +26,7 @@ import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectTreeDefaultBehavior}
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrapperInstantiationHelper, WrappersClassResource}
-import fr.linkit.engine.connection.cache.obj.invokation.local.{ObjectChip, DefaultRMIHandler}
+import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
 import fr.linkit.engine.connection.cache.obj.tree._
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket

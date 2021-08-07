@@ -14,6 +14,7 @@ package fr.linkit.engine.connection.packet.persistence
 
 import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketSerializer}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 
@@ -46,11 +47,13 @@ class LazyPacketDeserializationResult(override val buff: ByteBuffer,
     }
 
     private def createCache(): Array[AnyRef] = {
+        AppLogger.debug("Deserializing Packet and Attributes...")
         val cache = new Array[AnyRef](2)
         deserial.forEachObjects {
             case attributes: PacketAttributes => cache(0) = attributes
             case packet: Packet               => cache(1) = packet
         }
+        AppLogger.debug("Deserialization done.")
         cache
     }
 

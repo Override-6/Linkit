@@ -32,5 +32,13 @@ trait RMIRulesAgreementBuilder {
 
     def setDesiredEngineReturn(target: String): this.type
 
+    def setDesiredCurrentEngineReturn(): this.type
+
+    def setDesiredOwnerEngineReturn(): this.type
+
+    def ifCurrentIsOwner(action: this.type => this.type): this.type
+
+    def ifCurrentIsNotOwner(action: this.type => this.type): this.type
+
 }
 

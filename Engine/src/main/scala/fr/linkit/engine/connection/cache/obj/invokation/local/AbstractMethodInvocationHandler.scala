@@ -18,6 +18,7 @@ import fr.linkit.api.connection.cache.obj.invokation.{MethodInvocationHandler, W
 import fr.linkit.api.local.system.AppLogger
 
 abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
+
     override def handleRMI[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R = {
         val wrapper        = invocation.wrapper
         val args           = invocation.methodArguments
@@ -38,13 +39,15 @@ abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
         val puppeteer        = wrapper.getPuppeteer
         var result     : Any = methodBehavior.defaultReturnValue
         var localResult: Any = result
+        val mayPerformRMI    = agreement.mayPerformRemoteInvocation
         if (agreement.mayCallSuper) {
             localResult = invocation.callSuper()
         }
         if (agreement.getDesiredEngineReturn == invocation.currentIdentifier) {
-            voidRMIInvocation(puppeteer, agreement, invocation)
+            if (mayPerformRMI)
+                voidRMIInvocation(puppeteer, agreement, invocation)
             result = localResult
-        } else {
+        } else if (mayPerformRMI) {
             result = puppeteer.sendInvokeAndWaitResult(agreement, invocation)
         }
         result.asInstanceOf[R]

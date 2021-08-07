@@ -25,43 +25,51 @@ class SimpleRMIRulesAgreement(currentID: String, ownerID: String) extends RMIRul
 
     private val isCurrentOwner = currentID == ownerID
 
-    override def discard(target: String): SimpleRMIRulesAgreement.this.type = {
+    override def discard(target: String): this.type = {
         accepted -= target
         discarded += target
         this
     }
 
-    override def accept(target: String): SimpleRMIRulesAgreement.this.type = {
+    override def accept(target: String): this.type = {
         discarded -= target
         accepted += target
         this
     }
 
-    override def acceptOwner(): SimpleRMIRulesAgreement.this.type = accept(ownerID)
+    override def acceptOwner(): this.type = accept(ownerID)
 
-    override def acceptAll(): SimpleRMIRulesAgreement.this.type = {
+    override def acceptAll(): this.type = {
         discarded.clear()
         accepted.clear()
         acceptAllTargets = true
         this
     }
 
-    override def discardAll(): SimpleRMIRulesAgreement.this.type = {
+    override def discardAll(): this.type = {
         discarded.clear()
         accepted.clear()
         acceptAllTargets = false
         this
     }
 
-    override def acceptCurrent(): SimpleRMIRulesAgreement.this.type = accept(currentID)
+    override def acceptCurrent(): this.type = accept(currentID)
 
-    override def discardCurrent(): SimpleRMIRulesAgreement.this.type = discard(currentID)
+    override def discardCurrent(): this.type = discard(currentID)
 
-    override def discardOwner(): SimpleRMIRulesAgreement.this.type = discard(ownerID)
+    override def discardOwner(): this.type = discard(ownerID)
 
-    override def setDesiredEngineReturn(target: String): SimpleRMIRulesAgreement.this.type = {
+    override def setDesiredEngineReturn(target: String): this.type = {
         desiredEngineReturn = target
         this
+    }
+
+    override def setDesiredOwnerEngineReturn(): this.type = {
+        setDesiredEngineReturn(ownerID)
+    }
+
+    override def setDesiredCurrentEngineReturn(): this.type = {
+        setDesiredEngineReturn(currentID)
     }
 
     override def getAcceptedEngines: Array[String] = accepted.toArray
@@ -77,5 +85,19 @@ class SimpleRMIRulesAgreement(currentID: String, ownerID: String) extends RMIRul
             !(discarded.contains(currentID) && (isCurrentOwner || discarded.contains(ownerID)))
         else
             accepted.contains(currentID) && (isCurrentOwner || accepted.contains(ownerID))
+    }
+
+    override def mayPerformRemoteInvocation: Boolean = {
+        acceptAllTargets || (accepted.nonEmpty && !accepted.contains(currentID))
+    }
+
+    override def ifCurrentIsOwner(action: this.type => this.type): this.type = {
+        if (isCurrentOwner) action(this)
+        this
+    }
+
+    override def ifCurrentIsNotOwner(action: this.type => this.type): this.type = {
+        if (!isCurrentOwner) action(this)
+        this
     }
 }

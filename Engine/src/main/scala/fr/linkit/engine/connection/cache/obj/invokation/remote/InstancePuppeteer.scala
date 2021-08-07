@@ -41,6 +41,8 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     override def getPuppetWrapper: S with PuppetWrapper[S] = puppetWrapper
 
     override def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R = {
+        if (!agreement.mayPerformRemoteInvocation)
+            throw new IllegalAccessException("agreement may not perform remote invocation")
 
         val bhv          = invocation.methodBehavior
         val methodId     = bhv.desc.methodId
@@ -49,8 +51,9 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}")
         val scope     = new AgreementScope(writer, agreement)
+        center.drainAllDefaultAttributes(scope)
         val result    = channel.makeRequest(scope)
-                .addPacket(InvocationPacket(treeViewPath, methodId, args, null))
+                .addPacket(InvocationPacket(treeViewPath, methodId, args, agreement.getDesiredEngineReturn))
                 .submit()
                 .nextResponse
                 .nextPacket[RefPacket[R]].value
@@ -62,15 +65,19 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     }
 
     override def sendInvoke(agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[_]): Unit = {
+        if (!agreement.mayPerformRemoteInvocation)
+            throw new IllegalAccessException("agreement may not perform remote invocation")
+
         procrastinator.runLater {
             val bhv      = invocation.methodBehavior
             val args     = invocation.methodArguments
             val methodId = bhv.desc.methodId
 
             val scope     = new AgreementScope(writer, agreement)
+            center.drainAllDefaultAttributes(scope)
             AppLogger.debug(s"Remotely invoking method asynchronously ${bhv.desc.symbol.name}(${args.mkString(",")})")
             channel.makeRequest(scope)
-                    .addPacket(InvocationPacket(puppeteerInfo.nodePath, methodId, args, agreement.getDesiredEngineReturn))
+                    .addPacket(InvocationPacket(puppeteerInfo.nodePath, methodId, args, null))
                     .submit()
                     .detach()
         }

@@ -22,11 +22,14 @@ import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePac
 
 class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgreement) extends AbstractAttributesPresence with ChannelScope {
 
+    private val currentIdentifier = writer.currentIdentifier
+
     override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
+        defaultAttributes.drainAttributes(attributes)
         if (agreement.isAcceptAll) {
-            writer.writeBroadcastPacket(packet, attributes, agreement.getDiscardedEngines)
+            writer.writeBroadcastPacket(packet, attributes, agreement.getDiscardedEngines :+ currentIdentifier)
         } else {
-            writer.writePacket(packet, attributes, agreement.getAcceptedEngines)
+            writer.writePacket(packet, attributes, agreement.getAcceptedEngines.filterNot(_.equals(currentIdentifier)))
         }
     }
 

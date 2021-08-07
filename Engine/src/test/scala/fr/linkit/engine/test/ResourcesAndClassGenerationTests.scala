@@ -128,8 +128,8 @@ class ResourcesAndClassGenerationTests {
     @Order(3)
     def generateComplexScalaClass(): Unit = InvocationChoreographer.forceLocalInvocation {
         val list = forObject(ListBuffer.empty[Player])
-        val player = forObject(Player(7, "Salut", "Hey", 891, 45))
-        list += player
+        //val player = forObject(Player(7, "Salut", "Hey", 891, 45))
+        //list += player
         //val clone = forObject(list.detachedClone())
         println(s"list = ${list}")
         list.copyToArray(new Array(2))
