@@ -16,11 +16,11 @@ import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectableContainer, PacketTraffic}
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
+import fr.linkit.api.local.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.event.EventNotifier
 
-trait ConnectionContext extends PacketInjectableContainer with Procrastinator {
+trait ConnectionContext extends PacketInjectableContainer with ProcrastinatorControl {
 
     val currentIdentifier: String
 

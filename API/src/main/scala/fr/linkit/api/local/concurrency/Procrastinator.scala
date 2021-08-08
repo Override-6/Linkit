@@ -14,7 +14,18 @@ package fr.linkit.api.local.concurrency
 
 trait Procrastinator {
 
-    def runLaterControl[A](@workerExecution task: => A): AsyncTask[A]
-
     def runLater(@workerExecution task: => Unit): Unit
+
+}
+
+object Procrastinator {
+    def wrapSubmitter(submitter: (=> Unit) => Unit): Procrastinator = {
+        submitter(_)
+    }
+
+    def wrapSubmitterRunnable(submitter: Runnable => Unit): Procrastinator = {
+        new Procrastinator {
+            override def runLater(task: => Unit): Unit = submitter(() => task)
+        }
+    }
 }

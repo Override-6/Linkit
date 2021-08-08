@@ -23,7 +23,7 @@ import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
-import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectTreeDefaultBehavior, WrapperInstanceBehavior}
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectTreeDefaultBehavior, DefaultWrapperBehavior}
 import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrapperInstantiationHelper, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
@@ -108,7 +108,7 @@ class ResourcesAndClassGenerationTests {
     @Test
     def behaviorTests(): Unit = {
         val tree = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory)
-        val bhv = WrapperInstanceBehavior[TestClass](SimpleClassDescription(classOf[TestClass]), tree)
+        val bhv = DefaultWrapperBehavior[TestClass](SimpleClassDescription(classOf[TestClass]), tree)
         println(s"bhv = ${bhv}")
     }
 

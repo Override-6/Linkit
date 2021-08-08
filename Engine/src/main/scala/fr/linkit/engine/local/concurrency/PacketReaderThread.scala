@@ -14,7 +14,7 @@ package fr.linkit.engine.local.concurrency
 
 import fr.linkit.api.connection.packet.persistence.PacketTransferResult
 import fr.linkit.api.connection.packet.traffic.PacketReader
-import fr.linkit.api.local.concurrency.{IllegalThreadException, Procrastinator, packetWorkerExecution}
+import fr.linkit.api.local.concurrency.{IllegalThreadException, ProcrastinatorControl, packetWorkerExecution}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.engine.local.concurrency.PacketReaderThread.packetReaderThreadGroup
 

@@ -15,10 +15,12 @@ package fr.linkit.engine.connection.cache.obj.behavior
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
 import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, WrapperBehavior}
 import fr.linkit.api.connection.cache.obj.description.MethodDescription
+import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.engine.connection.cache.obj.behavior.WrapperBehaviorBuilder.MethodControl
 import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
 import fr.linkit.engine.connection.cache.obj.invokation.local.{DefaultRMIHandler, InvokeOnlyRMIHandler}
+import org.jetbrains.annotations.Nullable
 
 import java.util
 import scala.collection.mutable
@@ -50,7 +52,7 @@ class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]
     }
 
     def build(factory: MemberBehaviorFactory): WrapperBehavior[T] = {
-        new WrapperInstanceBehavior[T](classDesc, factory) {
+        new DefaultWrapperBehavior[T](classDesc, factory) {
             override protected def generateMethodsBehavior(): Iterable[MethodBehavior] = {
                 classDesc.listMethods()
                         .map(genMethodBehavior(factory, _))
@@ -66,13 +68,13 @@ class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]
     private def genMethodBehavior(factory: MemberBehaviorFactory, desc: MethodDescription): MethodBehavior = {
         val opt = methodsMap.get(desc)
         if (opt.isEmpty)
-            factory.genMethodBehavior(desc)
+            factory.genMethodBehavior(None, desc)
         else {
             val control = opt.get
             import control._
             val handler = if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
             val params = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams
-            new MethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), handler)
+            new MethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), procrastinator, handler)
         }
     }
 
@@ -92,6 +94,11 @@ class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]
 
 object WrapperBehaviorBuilder {
 
-    case class MethodControl(value: BasicRemoteInvocationRule, synchronizeReturnValue: Boolean = false, invokeOnly: Boolean = false, hide: Boolean = false, synchronizedParams: Seq[Boolean] = null)
+    case class MethodControl(value: BasicRemoteInvocationRule,
+                             synchronizeReturnValue: Boolean = false,
+                             invokeOnly: Boolean = false,
+                             hide: Boolean = false,
+                             synchronizedParams: Seq[Boolean] = null,
+                             @Nullable procrastinator: Procrastinator = null)
 
 }

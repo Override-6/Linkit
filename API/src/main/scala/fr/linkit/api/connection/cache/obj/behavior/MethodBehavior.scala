@@ -14,12 +14,15 @@ package fr.linkit.api.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.description.MethodDescription
 import fr.linkit.api.connection.cache.obj.invokation.{MethodInvocationHandler, WrapperMethodInvocation}
+import fr.linkit.api.local.concurrency.Procrastinator
+import org.jetbrains.annotations.Nullable
 
 case class MethodBehavior(desc: MethodDescription,
                           synchronizedParams: Seq[Boolean],
                           syncReturnValue: Boolean,
                           isHidden: Boolean,
                           private val invocationRules: Array[RemoteInvocationRule],
+                          @Nullable procrastinator: Procrastinator,
                           handler: MethodInvocationHandler) {
 
     def isRMIEnabled: Boolean = {

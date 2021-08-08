@@ -16,6 +16,7 @@ import fr.linkit.api.connection.cache.obj.behavior
 import fr.linkit.api.connection.cache.obj.behavior.annotation._
 import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, RemoteInvocationRule}
 import fr.linkit.api.connection.cache.obj.description._
+import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.engine.connection.cache.obj.invokation.local.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 
 import java.lang.reflect.Method
@@ -28,7 +29,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         params
     }
 
-    override def genMethodBehavior(desc: MethodDescription): MethodBehavior = {
+    override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): MethodBehavior = {
         val javaMethod         = desc.javaMethod
         val controlOpt         = Option(javaMethod.getAnnotation(classOf[MethodControl]))
         val control            = controlOpt.getOrElse(DefaultMethodControl)
@@ -43,7 +44,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         }
         behavior.MethodBehavior(
             desc, synchronizedParams, syncReturnValue, isHidden,
-            invocationRules, handler
+            invocationRules, procrastinator.orNull, handler
         )
     }
 

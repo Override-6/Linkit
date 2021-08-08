@@ -120,10 +120,7 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     }
 
     override def transformWith[S](f: Try[A] => Future[S])(implicit executor: ExecutionContext): Future[S] = {
-        /*val future = SimpleAsyncTaskFuture[S](taskID, Try(f(attempt)))
-        onComplete(attempt => future.runTask())
-        future*/
-        throw new UnsupportedOperationException("Method signature not understood.")
+       throw new UnsupportedOperationException("Method signature not understood.") //TODO "Method signature not understood."
     }
 
     override def ready(atMost: Duration)(implicit permit: CanAwait): this.type = {
@@ -146,30 +143,23 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
     }
 
     private def awaitComplete(wait: => Unit, wakeup: Thread => Unit): Option[Try[A]] = {
-        //AppLogger.debug("awaitComplete...")
-        //AppLogger.debug(s"isCompleted = ${isCompleted}")
         if (isCompleted)
             return Option(attempt)
 
-        //val pausedTaskID = currentTask.taskID
 
         val parkedThread = currentThread
         onCompleteConsumers.synchronized {
             onCompleteConsumers +:+= (_ => {
-                ////AppLogger.debug(s"waking up task $pausedTaskID that was waiting for task $taskID $parkedThread.")
                 wakeup(parkedThread)
             })
         }
-        ////AppLogger.debug(s"${currentTasksId} waiting task $taskID to be complete.")
         wait
-        ////AppLogger.debug(s"${currentTasksId} task $taskID has been completed.")
         setContinue()
         Option(attempt)
     }
 
     override def throwNextThrowable(): Unit = {
         if (isCompleted) {
-            //AppLogger.debug("throwNextThrowable isCompleted = true !")
             return
         }
         val (waitAction, wakeupAction) = if (WorkerPools.isCurrentThreadWorker) {
@@ -184,18 +174,13 @@ class SimpleAsyncTask[A](override val taskID: Int, @Nullable override val parent
         }
 
         @volatile var exception: Option[Throwable] = None
-        val reference                              = new Object
         addOnNextThrow(t => {
             exception = t
-            //AppLogger.debug(s"setting exception to ${t} ($reference)")
             wakeupAction.apply()
         })
-        //AppLogger.debug(s"$this -> throwNextThrowable preparing to perform wait action... ($reference)")
         waitAction.apply()
         setContinue()
-        //AppLogger.debug(s"$this -> exception: $exception")
         if (exception.isDefined) {
-            //AppLogger.debug(s"Throw ${exception.get}")
             throw exception.get
         }
     }

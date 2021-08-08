@@ -115,13 +115,16 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
             throw new NoSuchWrapperNodeException(s"No Object Tree found of id ${path.head}") //TODO Replace with NoSuchObjectTreeException
         }
 
-        if (tree.findNode(path).isEmpty) {
+        val nodeOpt = tree.findNode(path)
+        if (nodeOpt.isEmpty) {
             tree.registerSynchronizedObject(path.dropRight(1), path.last, wrapper, info.owner).synchronizedObject
+        } else if (nodeOpt.get.synchronizedObject ne wrapper) {
+            throw new UnexpectedObjectException(s"Synchronized object already exists at path ${path.mkString("/")}")
         }
     }
 
     private def throwNoSuchCacheException(info: WrapperNodeInfo, wrappedClass: Option[Class[_]]): Nothing = {
-        throw new NoSuchCacheException(s"Could not find object tree of id ${info.nodePath.head} in cache id ${info.cacheID} from cache manager ${info.cacheFamily} " +
+        throw new NoSuchCacheException(s"Could not find object tree of id ${info.nodePath.head} in synchronized object cache id ${info.cacheID} from cache manager ${info.cacheFamily} " +
                 s": could not properly deserialize and synchronize Wrapper object of class \"${wrappedClass.map(_.getName).getOrElse("(Unknown Wrapped class)")}\".")
     }
 

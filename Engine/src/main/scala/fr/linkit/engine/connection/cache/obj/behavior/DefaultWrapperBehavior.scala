@@ -15,8 +15,8 @@ package fr.linkit.engine.connection.cache.obj.behavior
 import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, ObjectTreeBehavior, WrapperBehavior}
 import fr.linkit.api.local.generation.PuppetClassDescription
 
-class WrapperInstanceBehavior[A] protected(override val classDesc: PuppetClassDescription[A],
-                                           factory: MemberBehaviorFactory) extends WrapperBehavior[A] {
+class DefaultWrapperBehavior[A] protected(override val classDesc: PuppetClassDescription[A],
+                                          factory: MemberBehaviorFactory) extends WrapperBehavior[A] {
 
     private val methods = {
         generateMethodsBehavior()
@@ -44,7 +44,7 @@ class WrapperInstanceBehavior[A] protected(override val classDesc: PuppetClassDe
 
     protected def generateMethodsBehavior(): Iterable[MethodBehavior] = {
         classDesc.listMethods()
-                .map(factory.genMethodBehavior)
+                .map(factory.genMethodBehavior(None, _))
     }
 
     protected def generateFieldsBehavior(): Iterable[FieldBehavior] = {
@@ -54,10 +54,10 @@ class WrapperInstanceBehavior[A] protected(override val classDesc: PuppetClassDe
 
 }
 
-object WrapperInstanceBehavior {
+object DefaultWrapperBehavior {
 
-    def apply[A](classDesc: PuppetClassDescription[A], tree: ObjectTreeBehavior): WrapperInstanceBehavior[A] = {
-        new WrapperInstanceBehavior(classDesc, tree.factory)
+    def apply[A](classDesc: PuppetClassDescription[A], tree: ObjectTreeBehavior): DefaultWrapperBehavior[A] = {
+        new DefaultWrapperBehavior(classDesc, tree.factory)
     }
 
 }

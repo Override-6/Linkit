@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, WrapperBehavior}
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
-import fr.linkit.api.local.concurrency.Procrastinator
+import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.ThrowableWrapper
 import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreement
@@ -24,7 +24,7 @@ import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
 
 class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
-                                     procrastinator: Procrastinator,
+                                     procrastinator: ProcrastinatorControl,
                                      override val center: SynchronizedObjectCenter[_],
                                      override val puppeteerInfo: WrapperNodeInfo,
                                      val wrapperBehavior: WrapperBehavior[S]) extends Puppeteer[S] {

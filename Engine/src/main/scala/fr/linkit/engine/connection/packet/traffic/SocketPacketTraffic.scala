@@ -14,13 +14,13 @@ package fr.linkit.engine.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.PacketWriter
-import fr.linkit.api.local.concurrency.Procrastinator
+import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.engine.connection.packet.persistence.PacketSerializationChoreographer
 import org.jetbrains.annotations.NotNull
 
 class SocketPacketTraffic(@NotNull socket: DynamicSocket,
                           @NotNull translator: PacketTranslator,
-                          @NotNull procrastinator: Procrastinator,
+                          @NotNull procrastinator: ProcrastinatorControl,
                           @NotNull override val currentIdentifier: String,
                           @NotNull override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, procrastinator) {
 

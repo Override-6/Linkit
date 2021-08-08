@@ -10,15 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.behavior
+package fr.linkit.api.local.concurrency
 
-import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription}
-import fr.linkit.api.local.concurrency.Procrastinator
+trait ProcrastinatorControl extends Procrastinator {
 
-trait MemberBehaviorFactory {
-
-    def genMethodBehavior(callProcrastinator: Option[Procrastinator], desc: MethodDescription): MethodBehavior
-
-    def genFieldBehavior(desc: FieldDescription): FieldBehavior
+    def runLaterControl[A](@workerExecution task: => A): AsyncTask[A]
 
 }

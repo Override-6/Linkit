@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.local.concurrency.Procrastinator
+import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.{AppLogger, ClosedException, JustifiedCloseable, Reason}
 import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjectionContainer
 import fr.linkit.engine.local.concurrency.PacketReaderThread
@@ -28,7 +28,7 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
-abstract class AbstractPacketTraffic(override val currentIdentifier: String, procrastinator: Procrastinator) extends PacketTraffic {
+abstract class AbstractPacketTraffic(override val currentIdentifier: String, procrastinator: ProcrastinatorControl) extends PacketTraffic {
 
     private  val holders            = mutable.Map.empty[Int, ScopesHolder]
     private  val lostInjections     = mutable.Map.empty[Int, ListBuffer[PacketInjection]]

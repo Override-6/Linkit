@@ -12,11 +12,15 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
-import java.lang.reflect.Modifier
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.WrapperBehavior
+import fr.linkit.api.local.concurrency.{Procrastinator, WorkerPools}
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.local.utils.ScalaUtils
+
+import java.lang.reflect.{Method, Modifier}
+import java.util.concurrent.locks.LockSupport
 
 class ObjectChip[S] private(behavior: WrapperBehavior[S],
                             wrapper: PuppetWrapper[S]) extends Chip[S] {
@@ -34,15 +38,35 @@ class ObjectChip[S] private(behavior: WrapperBehavior[S],
         }
         val methodBehavior = methodBehaviorOpt.get
         val name           = methodBehavior.desc.javaMethod.getName
-        wrapper.getChoreographer.forceLocalInvocation {
-            AppLogger.debug(s"RMI - Calling method $methodID $name(${params.mkString(", ")})")
-            methodBehaviorOpt.get
-                .desc
-                .javaMethod
-                .invoke(wrapper, params: _*)
+        val procrastinator = methodBehavior.procrastinator
+        val method         = methodBehavior.desc.javaMethod
+        AppLogger.debug(s"RMI - Calling method $methodID $name(${params.mkString(", ")})")
+        if (procrastinator != null) {
+            callMethodProcrastinator(procrastinator, method, params)
+        } else {
+            callMethod(method, params)
         }
     }
 
+    @inline private def callMethod(method: Method, params: Array[Any]): Any = {
+        wrapper.getChoreographer.forceLocalInvocation {
+            method.invoke(wrapper, params: _*)
+        }
+    }
+
+    @inline private def callMethodProcrastinator(procrastinator: Procrastinator, method: Method, params: Array[Any]): Any = {
+        var result: Any = NoResult
+        val worker      = WorkerPools.currentWorker
+        val task        = WorkerPools.currentTask
+        val pool        = worker.pool
+        procrastinator.runLater {
+            result = callMethod(method, params)
+            task.wakeup()
+        }
+        if (result == NoResult)
+            pool.pauseCurrentTask()
+        result
+    }
 }
 
 object ObjectChip {
@@ -58,4 +82,5 @@ object ObjectChip {
         new ObjectChip[S](behavior, wrapper)
     }
 
+    object NoResult
 }

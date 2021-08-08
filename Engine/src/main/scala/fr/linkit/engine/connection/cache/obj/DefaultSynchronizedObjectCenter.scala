@@ -20,7 +20,7 @@ import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, Sync
 import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
-import fr.linkit.api.local.concurrency.Procrastinator
+import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
@@ -45,7 +45,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
                                                                  override val defaultTreeViewBehavior: ObjectTreeBehavior)
         extends AbstractSharedCache(handler, cacheID, channel) with SynchronizedObjectCenter[A] {
 
-    private val procrastinator: Procrastinator = handler.network.connection
+    private val procrastinator: ProcrastinatorControl = handler.network.connection
 
     override val treeCenter: DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this)
     private  val currentIdentifier                      = channel.traffic.currentIdentifier
@@ -67,7 +67,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
                 .putAllAttributes(this)
                 .submit()
         val wrapperNode = tree.getRoot
-        //wrapperNode.setPresentOnNetwork()
+        wrapperNode.setPresentOnNetwork()
         wrapperNode.synchronizedObject
     }
 
@@ -93,7 +93,8 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
                 }
             case ObjectPacket(ObjectTreeProfile(treeID, rootObject: A, owner, subWrappers)) =>
                 if (!isRegistered(treeID)) {
-                    createNewTree(treeID, owner, rootObject, subWrappers, defaultTreeViewBehavior)
+                    val tree = createNewTree(treeID, owner, rootObject, subWrappers, defaultTreeViewBehavior)
+                    tree.getRoot.setPresentOnNetwork()
                 }
         }
     }
@@ -131,7 +132,8 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
             }
             //it's an object that must be remotely controlled because it is chipped by another objects cache.
             else {
-                createNewTree(treeID, owner, puppet, subWrappers, defaultTreeViewBehavior)
+                val tree = createNewTree(treeID, owner, puppet, subWrappers, defaultTreeViewBehavior)
+                tree.getRoot.setPresentOnNetwork()
             }
         })
     }

@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.PacketReader
-import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
+import fr.linkit.api.local.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.engine.local.utils.NumberSerializer
@@ -23,7 +23,7 @@ import java.nio.ByteBuffer
 
 class DefaultPacketReader(socket: DynamicSocket,
                           hasher: BytesHasher,
-                          procrastinator: Procrastinator,
+                          procrastinator: ProcrastinatorControl,
                           translator: PacketTranslator) extends PacketReader {
 
     /**

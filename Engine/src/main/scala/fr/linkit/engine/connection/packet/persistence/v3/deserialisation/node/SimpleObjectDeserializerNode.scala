@@ -24,13 +24,15 @@ abstract class SimpleObjectDeserializerNode() extends ObjectDeserializerNode {
         if (this.ref != null)
             throw new IllegalStateException("Reference is already set.")
         listeners.foreach(listener => listener(ref))
+        if (state != -1)
+            state = 1
         this.ref = ref
     }
 
     override def isDeserializing: Boolean = state == 0
 
     override def deserialize(in: DeserializationInputStream): Any = {
-        if (state == 1)
+        if (state != -1)
             return ref
         state = 0
         val returned = deserializeAction(in)

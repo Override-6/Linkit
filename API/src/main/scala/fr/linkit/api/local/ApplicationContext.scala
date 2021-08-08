@@ -13,7 +13,7 @@
 package fr.linkit.api.local
 
 import fr.linkit.api.connection.ConnectionContext
-import fr.linkit.api.local.concurrency.{Procrastinator, workerExecution}
+import fr.linkit.api.local.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.plugin.PluginManager
 import fr.linkit.api.local.resource.external.ResourceFolder
@@ -23,7 +23,7 @@ import fr.linkit.api.local.system.{Version, Versions}
 //TODO Recap :
 // Rewrite/write Doc and README of API
 // Design a better event hooking system (Object EventCategories with sub parts like ConnectionListeners, PacketListeners, TaskListeners...)
-trait ApplicationContext extends Procrastinator {
+trait ApplicationContext extends ProcrastinatorControl {
 
     val configuration: ApplicationConfiguration
 

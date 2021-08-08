@@ -16,7 +16,7 @@ import java.util.concurrent.{BlockingDeque, BlockingQueue}
 
 import scala.concurrent.ExecutionContext
 
-trait WorkerPool extends Procrastinator with ExecutionContext {
+trait WorkerPool extends ProcrastinatorControl with ExecutionContext {
     def ensureCurrentThreadOwned(msg: String): Unit
 
     def ensureCurrentThreadOwned(): Unit
