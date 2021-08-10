@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter
-import fr.linkit.api.connection.cache.obj.{InvalidPuppetDefException, PuppetWrapper}
+import fr.linkit.api.connection.cache.obj.{InvalidPuppetDefException, SynchronizedObject}
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.system.AppLogger
@@ -25,11 +25,11 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: Wrapper
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val requestFactory                  = new WrapperCompilationRequestFactory
 
-    override def getWrapperClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]] = {
+    override def getWrapperClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]] = {
         getWrapperClass[S](SimpleClassDescription[S](clazz))
     }
 
-    override def getWrapperClass[S](desc: PuppetClassDescription[S]): Class[S with PuppetWrapper[S]] = {
+    override def getWrapperClass[S](desc: PuppetClassDescription[S]): Class[S with SynchronizedObject[S]] = {
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is abstract.")
@@ -45,7 +45,7 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: Wrapper
                 AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
                 val puppetClass = result.getResult
                         .get
-                        .asInstanceOf[Class[S with PuppetWrapper[S]]]
+                        .asInstanceOf[Class[S with SynchronizedObject[S]]]
                 ClassMappings.putClass(puppetClass)
                 puppetClass
             }
@@ -70,7 +70,7 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: Wrapper
         resources.findWrapperClass[S](clazz).isDefined
     }
 
-    override def isClassGenerated[S <: PuppetWrapper[S]](clazz: Class[S]): Boolean = {
+    override def isClassGenerated[S <: SynchronizedObject[S]](clazz: Class[S]): Boolean = {
         resources.findWrapperClass[S](clazz).isDefined
     }
 }

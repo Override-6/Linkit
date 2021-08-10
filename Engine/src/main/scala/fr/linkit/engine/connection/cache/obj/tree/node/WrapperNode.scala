@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.tree
+package fr.linkit.engine.connection.cache.obj.tree.node
 
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode, SynchronizedObjectTree}
-import fr.linkit.api.connection.cache.obj.{Chip, IllegalObjectWrapperException, PuppetWrapper, Puppeteer}
+import fr.linkit.api.connection.cache.obj.{Chip, IllegalObjectWrapperException, SynchronizedObject, Puppeteer}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
@@ -91,7 +91,7 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
         if (packet.expectedEngineIDReturn == platformIdentifier) {
             val methodBehavior    = puppeteer.wrapperBehavior.getMethodBehavior(packet.methodID)
             val canSyncReturnType = methodBehavior.get.syncReturnValue
-            if (result != null && canSyncReturnType && !result.isInstanceOf[PuppetWrapper[_]]) {
+            if (result != null && canSyncReturnType && !result.isInstanceOf[SynchronizedObject[_]]) {
                 val id = ThreadLocalRandom.current().nextInt()
                 result = tree.insertObject(this, id, result, ownerID).synchronizedObject
             }

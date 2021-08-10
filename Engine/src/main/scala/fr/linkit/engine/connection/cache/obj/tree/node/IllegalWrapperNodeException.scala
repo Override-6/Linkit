@@ -10,27 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.engine.connection.cache.obj.tree.node
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+import fr.linkit.engine.connection.cache.obj.tree.SynchronizedObjectException
 
-trait WrapperMethodInvocation[R] {
-
-    val wrapper: SynchronizedObject[_]
-
-    val methodID: Int
-
-    val methodBehavior: MethodBehavior
-
-    val callerIdentifier: String
-
-    val currentIdentifier: String
-
-    def callSuper(): R
-
-    val methodArguments: Array[Any]
-
-    val debug: Boolean = true
+class IllegalWrapperNodeException(msg: String, cause: Throwable = null) extends SynchronizedObjectException(msg, cause) {
 
 }

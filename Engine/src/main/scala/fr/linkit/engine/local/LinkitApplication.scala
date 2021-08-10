@@ -102,7 +102,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
 
         /*import LocalResourceFolder._
         val resource  = appResources.getOrOpenThenRepresent[WrappersClassResource](getProperty("compilation.working_dir.classes"))
-        val generator = new PuppetWrapperClassGenerator(compilerCenter, resource)
+        val generator = new SynchronizedObjectClassGenerator(compilerCenter, resource)
         generator.preGenerateClasses(
             Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter])
         )*/

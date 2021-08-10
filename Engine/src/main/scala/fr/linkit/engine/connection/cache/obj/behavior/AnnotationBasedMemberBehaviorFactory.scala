@@ -54,9 +54,9 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         behavior.FieldBehavior(desc, isSynchronized)
     }
 
-    private val DefaultMethodControl: MethodControl = {
+    val DefaultMethodControl: MethodControl = {
         new MethodControl {
-            override def value(): BasicRemoteInvocationRule = BasicRemoteInvocationRule.BLOCK_ALL
+            override def value(): BasicRemoteInvocationRule = BasicRemoteInvocationRule.ONLY_CURRENT
 
             override def synchronizeReturnValue(): Boolean = false
 

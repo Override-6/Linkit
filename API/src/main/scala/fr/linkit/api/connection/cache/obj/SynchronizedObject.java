@@ -17,7 +17,7 @@ import fr.linkit.api.connection.cache.obj.behavior.WrapperBehavior;
 
 import java.io.Serializable;
 
-public interface PuppetWrapper<T> extends Serializable {
+public interface SynchronizedObject<T> extends Serializable {
 
     void initPuppeteer(Puppeteer<T> puppeteer);
 

@@ -10,27 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.engine.local.parsing.bhv.descriptor
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+class FieldDescriptionResult(val isEnabled: Boolean) extends DescriptionResult {
 
-trait WrapperMethodInvocation[R] {
+}
 
-    val wrapper: SynchronizedObject[_]
-
-    val methodID: Int
-
-    val methodBehavior: MethodBehavior
-
-    val callerIdentifier: String
-
-    val currentIdentifier: String
-
-    def callSuper(): R
-
-    val methodArguments: Array[Any]
-
-    val debug: Boolean = true
-
+object FieldDescriptionResult {
+    val Disabled = new FieldDescriptionResult(false)
 }

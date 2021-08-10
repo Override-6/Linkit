@@ -30,7 +30,7 @@ public @interface MethodControl {
      *
      * @see fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
      */
-    BasicRemoteInvocationRule value() default BasicRemoteInvocationRule.BLOCK_ALL;
+    BasicRemoteInvocationRule value() default BasicRemoteInvocationRule.ONLY_CURRENT;
 
     /**
      * If true, the returned value, if possible, will be synchronized with the caller as well.

@@ -10,27 +10,24 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.engine.local.parsing.bhv
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+import java.io.BufferedReader
+import java.nio.file.{Files, Path}
+import java.util.Scanner
 
-trait WrapperMethodInvocation[R] {
+object TreeBehaviorParser {
 
-    val wrapper: SynchronizedObject[_]
+    def parseFile(behaviorFile: Path): Unit = {
+        parse(Files.newBufferedReader(behaviorFile))
+    }
 
-    val methodID: Int
+    def parse(reader: BufferedReader): Unit = {
+        parse(new Scanner(reader))
+    }
 
-    val methodBehavior: MethodBehavior
-
-    val callerIdentifier: String
-
-    val currentIdentifier: String
-
-    def callSuper(): R
-
-    val methodArguments: Array[Any]
-
-    val debug: Boolean = true
+    def parse(scanner: Scanner): Unit = {
+        scanner.next()
+    }
 
 }

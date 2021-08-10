@@ -18,7 +18,7 @@ import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.SynchronizedObjectPersistor
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
@@ -63,7 +63,7 @@ class PacketTests {
 object PacketTests {
 
     private val serializer = new DefaultPacketSerializer(null)
-    serializer.context.addPersistence(new PuppetWrapperPersistor(null))
+    serializer.context.addPersistence(new SynchronizedObjectPersistor(null))
 
     def testPacket(obj: Array[AnyRef]): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")

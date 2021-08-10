@@ -15,11 +15,11 @@ package fr.linkit.engine.connection.cache.obj
 import fr.linkit.api.connection.cache.obj.behavior.{MethodBehavior, WrapperBehavior}
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
-import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper, Puppeteer}
+import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, SynchronizedObject, Puppeteer}
 import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper
 import fr.linkit.engine.connection.cache.obj.invokation.{AbstractWrapperMethodInvocation, SimpleRMIRulesAgreement}
 
-trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] { wrapper =>
+trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     @transient final protected var puppeteer           : Puppeteer[A]            = _
     @transient final protected var behavior            : WrapperBehavior[A]      = _
@@ -69,7 +69,7 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] { wrapper =>
         val pup                = puppeteer
         objects.map(obj => {
             i += 1
-            if (!synchronizedParams(i) || obj.isInstanceOf[PuppetWrapper[_]])
+            if (!synchronizedParams(i) || obj.isInstanceOf[SynchronizedObject[_]])
                 obj
             else obj match {
                 case anyRef: AnyRef => pup.synchronizedObj(anyRef)
@@ -93,8 +93,8 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] { wrapper =>
         }
 
         val invocation = new AbstractWrapperMethodInvocation[R](methodBehavior, this) {
-            override val callerIdentifier : String     = AbstractPuppetWrapper.this.currentIdentifier
-            override val currentIdentifier: String     = AbstractPuppetWrapper.this.currentIdentifier
+            override val callerIdentifier : String     = AbstractSynchronizedObject.this.currentIdentifier
+            override val currentIdentifier: String     = AbstractSynchronizedObject.this.currentIdentifier
             override val methodArguments  : Array[Any] = synchronizedArgs
 
             override def callSuper(): R = {
@@ -106,7 +106,7 @@ trait AbstractPuppetWrapper[A <: AnyRef] extends PuppetWrapper[A] { wrapper =>
         methodBehavior.handler.handleRMI[R](agreement, invocation)
     }
 
-    private def asAutoWrapped: A with PuppetWrapper[A] = this.asInstanceOf[A with PuppetWrapper[A]]
+    private def asAutoWrapped: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
 
     private def createAgreement(invocation: WrapperMethodInvocation[_]): SimpleRMIRulesAgreement = {
         val agreement = new SimpleRMIRulesAgreement(currentIdentifier, ownerID)

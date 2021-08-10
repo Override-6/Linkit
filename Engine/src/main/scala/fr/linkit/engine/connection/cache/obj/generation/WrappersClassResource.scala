@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
@@ -28,9 +28,9 @@ import scala.collection.mutable
 class WrappersClassResource(override val resource: ResourceFolder) extends FolderRepresentation {
 
     private val folderPath           = Path.of(resource.getAdapter.getAbsolutePath)
-    private val generatedClasses     = mutable.Map.empty[String, Class[_ <: PuppetWrapper[AnyRef]]]
+    private val generatedClasses     = mutable.Map.empty[String, Class[_ <: SynchronizedObject[AnyRef]]]
 
-    def findWrapperClass[S](puppetClass: Class[_]): Option[Class[S with PuppetWrapper[S]]] = {
+    def findWrapperClass[S](puppetClass: Class[_]): Option[Class[S with SynchronizedObject[S]]] = {
         val puppetClassName  = puppetClass.getName
         val wrapperClassName = adaptClassName(puppetClassName)
         generatedClasses.getOrElse(wrapperClassName, {
@@ -43,15 +43,15 @@ class WrappersClassResource(override val resource: ResourceFolder) extends Folde
                     loader = getClass.getClassLoader //Use the Application's classloader
 
                 val classLoader = new GeneratedClassLoader(folderPath, loader, Seq(classOf[LinkitApplication].getClassLoader))
-                val clazz = Class.forName(wrapperClassName, false, classLoader).asInstanceOf[Class[_ <: PuppetWrapper[AnyRef]]]
+                val clazz = Class.forName(wrapperClassName, false, classLoader).asInstanceOf[Class[_ <: SynchronizedObject[AnyRef]]]
                 generatedClasses.put(wrapperClassName, clazz)
                 WrapperInstantiationHelper.prepareClass(clazz)
                 ClassMappings.putClass(clazz)
                 clazz
             }
         }) match {
-            case clazz: Class[S with PuppetWrapper[S]] => Some(clazz)
-            case _                                     => None
+            case clazz: Class[S with SynchronizedObject[S]] => Some(clazz)
+            case _                                          => None
         }
     }
 

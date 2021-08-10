@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation.rectifier
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.description.MethodDescription
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.PuppetClassDescription
@@ -33,8 +33,8 @@ class ClassRectifier(desc: PuppetClassDescription[_], puppetClassName: String, c
     ctClass.setSuperclass(pool.get(superClass.getName))
     fixAllMethods()
 
-    lazy val rectifiedClass: (Array[Byte], Class[PuppetWrapper[_]]) = {
-        (ctClass.toBytecode, ctClass.toClass(classLoader, null).asInstanceOf[Class[PuppetWrapper[_]]])
+    lazy val rectifiedClass: (Array[Byte], Class[SynchronizedObject[_]]) = {
+        (ctClass.toBytecode, ctClass.toClass(classLoader, null).asInstanceOf[Class[SynchronizedObject[_]]])
     }
 
     private def fixAllMethods(): Unit = {

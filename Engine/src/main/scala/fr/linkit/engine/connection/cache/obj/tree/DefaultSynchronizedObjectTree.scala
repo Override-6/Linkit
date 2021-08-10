@@ -4,10 +4,11 @@ import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SynchronizedObjectTree}
-import fr.linkit.api.connection.cache.obj.{IllegalObjectWrapperException, PuppetWrapper, SynchronizedObjectCenter}
+import fr.linkit.api.connection.cache.obj.{IllegalObjectWrapperException, SynchronizedObject, SynchronizedObjectCenter}
 import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InstancePuppeteer
+import fr.linkit.engine.connection.cache.obj.tree.node.{IllegalWrapperNodeException, RootWrapperNode, WrapperNode}
 import fr.linkit.engine.local.utils.ScalaUtils
 
 import java.util.concurrent.ThreadLocalRandom
@@ -54,18 +55,18 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
         genSynchronizedObject[B](wrapperNode, id, WrapperInstantiationHelper.deepClone(obj), ownerID)
     }
 
-    def registerSynchronizedObject[B <: AnyRef](parent: SyncNode[AnyRef], id: Int, wrapper: B with PuppetWrapper[B], ownerID: String): SyncNode[B] = {
+    def registerSynchronizedObject[B <: AnyRef](parent: SyncNode[AnyRef], id: Int, wrapper: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
         registerSynchronizedObject(parent.treePath, id, wrapper, ownerID)
     }
 
-    def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int, wrapper: B with PuppetWrapper[B], ownerID: String): SyncNode[B] = {
+    def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int, wrapper: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
         val wrapperNode = findGrandChild[B](parentPath).getOrElse {
             throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
         registerSynchronizedObject[B](wrapperNode, id, wrapper, ownerID)
     }
 
-    private def registerSynchronizedObject[B <: AnyRef](parent: WrapperNode[_], id: Int, wrapper: B with PuppetWrapper[B], ownerID: String): WrapperNode[B] = {
+    private def registerSynchronizedObject[B <: AnyRef](parent: WrapperNode[_], id: Int, wrapper: B with SynchronizedObject[B], ownerID: String): WrapperNode[B] = {
         val path = parent.treePath :+ id
         if (!(wrapper.getNodeInfo.nodePath sameElements path))
             throw new IllegalWrapperRegistration(s"Could not register wrapper '${wrapper.getClass.getName}' : Wrapper node's information path mismatches from given one: ${path.mkString("/")}")
@@ -86,7 +87,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
         if (parent.tree ne this)
             throw new IllegalArgumentException("Parent node's is not present in this tree.")
 
-        if (obj.isInstanceOf[PuppetWrapper[_]])
+        if (obj.isInstanceOf[SynchronizedObject[_]])
             throw new IllegalObjectWrapperException("This object is already wrapped.")
 
         val parentPath = parent.treePath

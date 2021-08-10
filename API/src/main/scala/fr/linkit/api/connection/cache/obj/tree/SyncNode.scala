@@ -1,6 +1,6 @@
 package fr.linkit.api.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.{Chip, PuppetWrapper, Puppeteer}
+import fr.linkit.api.connection.cache.obj.{Chip, SynchronizedObject, Puppeteer}
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable.ListBuffer
@@ -27,7 +27,7 @@ trait SyncNode[A <: AnyRef] {
 
     val ownerID: String
 
-    val synchronizedObject: A with PuppetWrapper[A] = puppeteer.getPuppetWrapper
+    val synchronizedObject: A with SynchronizedObject[A] = puppeteer.getSynchronizedObject
 
     @Nullable val parent: SyncNode[_]
 

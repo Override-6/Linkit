@@ -23,7 +23,7 @@ import java.lang.reflect.{Method, Modifier}
 import java.util.concurrent.locks.LockSupport
 
 class ObjectChip[S] private(behavior: WrapperBehavior[S],
-                            wrapper: PuppetWrapper[S]) extends Chip[S] {
+                            wrapper: SynchronizedObject[S]) extends Chip[S] {
 
     override def updateObject(obj: S): Unit = {
         ScalaUtils.pasteAllFields(wrapper, obj)
@@ -71,7 +71,7 @@ class ObjectChip[S] private(behavior: WrapperBehavior[S],
 
 object ObjectChip {
 
-    def apply[S](behavior: WrapperBehavior[S], wrapper: PuppetWrapper[S]): ObjectChip[S] = {
+    def apply[S](behavior: WrapperBehavior[S], wrapper: SynchronizedObject[S]): ObjectChip[S] = {
         if (wrapper == null)
             throw new NullPointerException("puppet is null !")
         val clazz = wrapper.getClass

@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
@@ -30,18 +30,18 @@ import scala.collection.mutable
 //TODO Factorise this class and optimize it.
 class WrapperInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: ObjectTreeBehavior) {
 
-    def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with PuppetWrapper[A]],
+    def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with SynchronizedObject[A]],
                                            origin: A,
-                                           subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+                                           subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
         instantiateFromOrigin0(wrapperClass, origin, subWrappers)
     }
 
-    private def instantiateFromOrigin0[A <: AnyRef](wrapperClass: Class[A with PuppetWrapper[A]],
-                                                    origin: A, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+    private def instantiateFromOrigin0[A <: AnyRef](wrapperClass: Class[A with SynchronizedObject[A]],
+                                                    origin: A, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
         val trustedSubWrapper       = subWrappers.map(pair => (Identity(pair._1), pair._2))
-        val instance                = allocate[A with PuppetWrapper[A]](wrapperClass)
+        val instance                = allocate[A with SynchronizedObject[A]](wrapperClass)
         val checkedFields           = mutable.HashSet.empty[Identity[Any]]
-        val subWrappersInstantiated = mutable.HashMap.empty[AnyRef, PuppetWrapper[AnyRef]]
+        val subWrappersInstantiated = mutable.HashMap.empty[AnyRef, SynchronizedObject[AnyRef]]
         var depth: Int              = 0
 
         def scanObject(instanceField: AnyRef, originField: AnyRef, root: Boolean): Unit = {
@@ -75,7 +75,7 @@ class WrapperInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, beha
 
         def scanAllFields(instance: Any, origin: Any, root: Boolean): Unit = {
             depth += 1
-            val classUsed = if (instance.isInstanceOf[PuppetWrapper[_]]) origin.getClass else instance.getClass
+            val classUsed = if (instance.isInstanceOf[SynchronizedObject[_]]) origin.getClass else instance.getClass
             retrieveAllFields(classUsed).foreach(field => {
                 try {
                     var isWrapper   = false
@@ -184,16 +184,16 @@ object WrapperInstantiationHelper {
         clone
     }
 
-    def detachedWrapperClone[A <: AnyRef](origin: PuppetWrapper[A]): (A, Map[AnyRef, PuppetWrapper[_]]) = {
+    def detachedWrapperClone[A <: AnyRef](origin: SynchronizedObject[A]): (A, Map[AnyRef, SynchronizedObject[_]]) = {
         detachedWrapperClone0(deepClone(origin))
     }
 
-    private def detachedWrapperClone0[A <: AnyRef](originClone: PuppetWrapper[A]): (A, Map[AnyRef, PuppetWrapper[_]]) = {
+    private def detachedWrapperClone0[A <: AnyRef](originClone: SynchronizedObject[A]): (A, Map[AnyRef, SynchronizedObject[_]]) = {
         val checkedFields    = mutable.HashMap.empty[Identity[AnyRef], AnyRef]
-        val detachedWrappers = mutable.HashMap.empty[PuppetWrapper[_], AnyRef]
+        val detachedWrappers = mutable.HashMap.empty[SynchronizedObject[_], AnyRef]
         var depth            = 0
 
-        def detachedWrapper(originClone: PuppetWrapper[_]): AnyRef = {
+        def detachedWrapper(originClone: SynchronizedObject[_]): AnyRef = {
             if (detachedWrappers.contains(originClone))
                 return detachedWrappers(originClone)
             val instance = allocate[A](originClone.getWrappedClass)
@@ -226,7 +226,7 @@ object WrapperInstantiationHelper {
                     checkedFields.put(Identity(originValue), originValue)
                     originValue match {
                         case array: Array[AnyRef]                             => scanArray(array)
-                        case wrapper: PuppetWrapper[AnyRef]                   =>
+                        case wrapper: SynchronizedObject[AnyRef]              =>
                             ScalaUtils.setValue(instanceField, field, detachedWrapper(wrapper))
                         case wrapper if UnWrapper.isPrimitiveWrapper(wrapper) => //just do not scan
                         case _                                                => scanObject(field.get(instanceField), originValue, false)
@@ -238,7 +238,7 @@ object WrapperInstantiationHelper {
                 for (i <- array.indices) {
                     array(i) match {
                         case x if JavaUtils.sameInstance(x, originClone) => array(i) = instance
-                        case wrapper: PuppetWrapper[AnyRef]              =>
+                        case wrapper: SynchronizedObject[AnyRef]         =>
                             array(i) = detachedWrapper(wrapper)
                         case obj                                         => scanObject(obj, obj, false)
                     }
@@ -255,8 +255,8 @@ object WrapperInstantiationHelper {
         (instance, detachedWrappers.map(_.swap).toMap)
     }
 
-    def scanSubWrappers(any: AnyRef): Set[PuppetWrapper[AnyRef]] = {
-        val scannedWrappers  = mutable.HashSet.empty[PuppetWrapper[AnyRef]]
+    def scanSubWrappers(any: AnyRef): Set[SynchronizedObject[AnyRef]] = {
+        val scannedWrappers  = mutable.HashSet.empty[SynchronizedObject[AnyRef]]
         val checkedInstances = mutable.HashSet.empty[Identity[AnyRef]]
         var depth            = 0
 
@@ -267,7 +267,7 @@ object WrapperInstantiationHelper {
             checkedInstances += Identity(obj)
             obj match {
                 case array: Array[AnyRef]                                    => array.foreach(scanObject)
-                case wrapper: PuppetWrapper[AnyRef]                          => scannedWrappers += wrapper
+                case wrapper: SynchronizedObject[AnyRef]                     => scannedWrappers += wrapper
                 case _ if clazz.isArray && clazz.componentType().isPrimitive => //Simply do not scan
                 case _: AnyRef                                               => scanAllFields(obj)
 

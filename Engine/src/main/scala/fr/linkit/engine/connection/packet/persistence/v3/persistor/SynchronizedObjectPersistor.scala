@@ -1,7 +1,7 @@
 package fr.linkit.engine.connection.packet.persistence.v3.persistor
 
 import fr.linkit.api.connection.cache.NoSuchCacheException
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
 import fr.linkit.api.connection.network.Network
@@ -14,14 +14,14 @@ import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectS
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.UnexpectedObjectException
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.PuppetWrapperPersistor.WrapperInfo
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.SynchronizedObjectPersistor.WrapperInfo
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.SimpleObjectSerializerNode
 
-class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWrapper[AnyRef]] {
+class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[SynchronizedObject[AnyRef]] {
 
-    override val handledClasses: Seq[HandledClass] = Seq(classOf[PuppetWrapper[_]] -> (true, Seq(SerialisationMethod.Serial)), classOf[WrapperInfo] -> (false, Seq(SerialisationMethod.Deserial)))
+    override val handledClasses: Seq[HandledClass] = Seq(classOf[SynchronizedObject[_]] -> (true, Seq(SerialisationMethod.Serial)), classOf[WrapperInfo] -> (false, Seq(SerialisationMethod.Deserial)))
 
-    override def getSerialNode(wrapper: PuppetWrapper[AnyRef], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(wrapper: SynchronizedObject[AnyRef], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         val wrapperNodeInfo = wrapper.getNodeInfo
         val cache           = findCache(wrapperNodeInfo).getOrElse(throwNoSuchCacheException(wrapperNodeInfo, Option(wrapper.getWrappedClass)))
         val tree            = cache.treeCenter.findTree(wrapperNodeInfo.nodePath.head).get //TODO orElseThrow
@@ -66,8 +66,8 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
                 //val node = progress.getNextDeserializationNode
                 val wrapperOrInfo = node.deserialize(in)
                 val wrapper       = wrapperOrInfo match {
-                    case info: WrapperInfo         => retrieveWrapper(info.nodeInfo)
-                    case wrapper: PuppetWrapper[_] => wrapper
+                    case info: WrapperInfo              => retrieveWrapper(info.nodeInfo)
+                    case wrapper: SynchronizedObject[_] => scanSyncObject(wrapper, progress.coordinates.senderID)
                 }
                 //setReference(wrapper)
                 wrapper
@@ -78,13 +78,31 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
     override def useSortedDeserializedObjects: Boolean = true
 
     override def sortedDeserializedObjects(objects: Array[Any]): Unit = objects.map {
-        case wrapper: PuppetWrapper[AnyRef] => wrapper
-        case null                           => throw new UnexpectedObjectException("Unexpected null PuppetWrapper.")
-        case other                          => throw new UnexpectedObjectException(s"Unexpected object of type '${other.getClass}', only PuppetWrapper can be handled by this PuppetWrapperPersistor.")
+        case wrapper: SynchronizedObject[AnyRef] => wrapper
+        case null                                => throw new UnexpectedObjectException("Unexpected null SynchronizedObject.")
+        case other                               => throw new UnexpectedObjectException(s"Unexpected object of type '${other.getClass}', only SynchronizedObject can be handled by this SynchronizedObjectPersistor.")
     }.sortBy(_.getNodeInfo.nodePath.length)
             .foreach(registerWrapper)
 
-    private def retrieveWrapper(info: WrapperNodeInfo): PuppetWrapper[_] = {
+    //FIXME REMOVE ME (find a way to synchronize objects presences)
+    private def scanSyncObject(obj: SynchronizedObject[_], senderID: String): SynchronizedObject[_] = {
+        val info    = obj.getNodeInfo
+        val center  = findCache(info)
+                .getOrElse {
+                    throwNoSuchCacheException(info, None)
+                }
+        val path    = info.nodePath
+        val nodeOpt = center.treeCenter
+                .findTree(path.head)
+                .flatMap(_.findNode[AnyRef](path))
+        if (nodeOpt.isDefined) {
+            nodeOpt.get.putPresence(senderID)
+        }
+        nodeOpt.map(_.synchronizedObject)
+                .getOrElse(obj)
+    }
+
+    private def retrieveWrapper(info: WrapperNodeInfo): SynchronizedObject[_] = {
         val path                   = info.nodePath
         val center                 = findCache(info)
                 .getOrElse {
@@ -100,7 +118,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
         node.synchronizedObject
     }
 
-    private def registerWrapper(wrapper: PuppetWrapper[AnyRef]): Unit = {
+    private def registerWrapper(wrapper: SynchronizedObject[AnyRef]): Unit = {
         val info = wrapper.getNodeInfo
         val path = info.nodePath
 
@@ -136,7 +154,7 @@ class PuppetWrapperPersistor(network: Network) extends ObjectPersistor[PuppetWra
 
 }
 
-object PuppetWrapperPersistor {
+object SynchronizedObjectPersistor {
 
     final case class WrapperInfo(nodeInfo: WrapperNodeInfo)
 

@@ -1,6 +1,6 @@
 package fr.linkit.api.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.local.generation.PuppetClassDescription
 
 import scala.reflect.runtime.universe
@@ -11,11 +11,11 @@ import scala.reflect.{ClassTag, classTag}
  * */
 trait ObjectWrapperClassCenter {
 
-    def getWrapperClass[S](clazz: Class[S]): Class[S with PuppetWrapper[S]]
+    def getWrapperClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]]
 
-    def getWrapperClass[S](desc: PuppetClassDescription[S]): Class[S with PuppetWrapper[S]]
+    def getWrapperClass[S](desc: PuppetClassDescription[S]): Class[S with SynchronizedObject[S]]
 
-    def getClass[S: universe.TypeTag : ClassTag]: Class[S with PuppetWrapper[S]] = getWrapperClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
+    def getClass[S: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getWrapperClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
     def preGenerateClasses(descriptions: List[PuppetClassDescription[_]]): Unit
 
@@ -25,5 +25,5 @@ trait ObjectWrapperClassCenter {
 
     def isWrapperClassGenerated[T](clazz: Class[T]): Boolean
 
-    def isClassGenerated[S <: PuppetWrapper[S]](clazz: Class[S]): Boolean
+    def isClassGenerated[S <: SynchronizedObject[S]](clazz: Class[S]): Boolean
 }

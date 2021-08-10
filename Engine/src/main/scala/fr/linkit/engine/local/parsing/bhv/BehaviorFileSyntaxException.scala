@@ -10,27 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.engine.local.parsing.bhv
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+import fr.linkit.api.local.system.AppException
 
-trait WrapperMethodInvocation[R] {
-
-    val wrapper: SynchronizedObject[_]
-
-    val methodID: Int
-
-    val methodBehavior: MethodBehavior
-
-    val callerIdentifier: String
-
-    val currentIdentifier: String
-
-    def callSuper(): R
-
-    val methodArguments: Array[Any]
-
-    val debug: Boolean = true
+class BehaviorFileSyntaxException(msg: String, cause: Throwable = null) extends BehaviorFileException(msg, cause){
 
 }

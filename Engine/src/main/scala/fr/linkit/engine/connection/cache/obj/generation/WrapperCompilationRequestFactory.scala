@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.api.local.generation.cbp.ClassBlueprint
@@ -31,12 +31,12 @@ import fr.linkit.engine.local.mapping.ClassMappings
 import java.io.File
 import java.nio.file.{Files, Path}
 
-class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory[PuppetClassDescription[_], Class[PuppetWrapper[_]]] {
+class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory[PuppetClassDescription[_], Class[SynchronizedObject[_]]] {
 
     var classBlueprint: ClassBlueprint[PuppetClassDescription[_]] = DefaultClassBlueprint
 
-    override def createMultiRequest(contexts: Seq[PuppetClassDescription[_]], workingDir: Path): SourceCodeCompilationRequest[Seq[Class[PuppetWrapper[_]]]] = {
-        new SourceCodeCompilationRequest[Seq[Class[PuppetWrapper[_]]]] { req =>
+    override def createMultiRequest(contexts: Seq[PuppetClassDescription[_]], workingDir: Path): SourceCodeCompilationRequest[Seq[Class[SynchronizedObject[_]]]] = {
+        new SourceCodeCompilationRequest[Seq[Class[SynchronizedObject[_]]]] { req =>
 
             override val workingDirectory: Path              = workingDir
             override val classPaths      : Seq[Path]         = defaultClassPaths :+ classDir
@@ -45,9 +45,9 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                 contexts.flatMap(getSourceCode)
             }
 
-            override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[PuppetWrapper[_]]]] = {
-                new AbstractCompilationResult[Seq[Class[PuppetWrapper[_]]]](outs, compilationTime, req) {
-                    lazy val result: Option[Seq[Class[PuppetWrapper[_]]]] = {
+            override def conclude(outs: Seq[Path], compilationTime: Long): CompilationResult[Seq[Class[SynchronizedObject[_]]]] = {
+                new AbstractCompilationResult[Seq[Class[SynchronizedObject[_]]]](outs, compilationTime, req) {
+                    lazy val result: Option[Seq[Class[SynchronizedObject[_]]]] = {
                         Some(contexts
                                 .map { desc =>
                                     AppLogger.debug("Performing post compilation modifications in the class file...")
@@ -64,7 +64,7 @@ class WrapperCompilationRequestFactory extends AbstractCompilationRequestFactory
                                 })
                     }
 
-                    override def getResult: Option[Seq[Class[PuppetWrapper[_]]]] = {
+                    override def getResult: Option[Seq[Class[SynchronizedObject[_]]]] = {
                         result
                     }
                 }

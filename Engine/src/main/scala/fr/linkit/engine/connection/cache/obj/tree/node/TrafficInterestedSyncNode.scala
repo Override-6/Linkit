@@ -10,27 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.engine.connection.cache.obj.tree.node
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+import fr.linkit.api.connection.cache.obj.tree.SyncNode
+import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
+import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 
-trait WrapperMethodInvocation[R] {
+trait TrafficInterestedSyncNode[A <: AnyRef] extends SyncNode[A] {
 
-    val wrapper: SynchronizedObject[_]
-
-    val methodID: Int
-
-    val methodBehavior: MethodBehavior
-
-    val callerIdentifier: String
-
-    val currentIdentifier: String
-
-    def callSuper(): R
-
-    val methodArguments: Array[Any]
-
-    val debug: Boolean = true
+    def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit
 
 }

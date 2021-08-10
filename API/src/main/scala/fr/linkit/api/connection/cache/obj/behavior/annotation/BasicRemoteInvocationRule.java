@@ -23,7 +23,7 @@ public enum BasicRemoteInvocationRule implements RemoteInvocationRule {
      * The invocation will only be performed on the local object.
      * This behavior is the same as calling any normal java method.
      */
-    BLOCK_ALL((agreement, invocation) -> {
+    ONLY_CURRENT((agreement, invocation) -> {
         agreement.discardAll()
                 .acceptCurrent();
     }),

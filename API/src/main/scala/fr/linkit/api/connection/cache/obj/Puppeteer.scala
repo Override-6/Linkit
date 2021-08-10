@@ -32,7 +32,7 @@ trait Puppeteer[S <: AnyRef] {
 
     def isCurrentEngineOwner: Boolean
 
-    def getPuppetWrapper: S with PuppetWrapper[S]
+    def getSynchronizedObject: S with SynchronizedObject[S]
 
     def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R
 
@@ -41,6 +41,6 @@ trait Puppeteer[S <: AnyRef] {
     //TODO make this and "init" for internal use only
     def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef
 
-    def init(wrapper: S with PuppetWrapper[S]): Unit
+    def init(wrapper: S with SynchronizedObject[S]): Unit
 
 }

@@ -34,11 +34,11 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     private lazy val tree                                       = center.treeCenter.findTree(puppeteerInfo.nodePath.head).get
     override     val ownerID          : String                  = puppeteerInfo.owner
     private      val writer                                     = traffic.newWriter(channel.identifier)
-    private var puppetWrapper         : S with PuppetWrapper[S] = _
+    private var puppetWrapper         : S with SynchronizedObject[S] = _
 
     override def isCurrentEngineOwner: Boolean = ownerID == currentIdentifier
 
-    override def getPuppetWrapper: S with PuppetWrapper[S] = puppetWrapper
+    override def getSynchronizedObject: S with SynchronizedObject[S] = puppetWrapper
 
     override def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R = {
         if (!agreement.mayPerformRemoteInvocation)
@@ -83,14 +83,14 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         }
     }
 
-    override def init(wrapper: S with PuppetWrapper[S]): Unit = {
+    override def init(wrapper: S with SynchronizedObject[S]): Unit = {
         if (this.puppetWrapper != null) {
             throw new IllegalStateException("This Puppeteer already controls a puppet instance !")
         }
         this.puppetWrapper = wrapper
     }
 
-    override def synchronizedObj(obj: AnyRef, id: Int): AnyRef with PuppetWrapper[AnyRef] = {
+    override def synchronizedObj(obj: AnyRef, id: Int): AnyRef with SynchronizedObject[AnyRef] = {
         val currentPath = puppeteerInfo.nodePath
         tree.insertObject(currentPath, id, obj, currentIdentifier).synchronizedObject
     }

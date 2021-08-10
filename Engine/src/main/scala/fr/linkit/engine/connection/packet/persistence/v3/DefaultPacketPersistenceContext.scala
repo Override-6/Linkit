@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, IterablePersistor, JavaCollectionPersistor, JavaMapPersistor, ScalaMapPersistor}
 
@@ -43,8 +43,8 @@ class DefaultPacketPersistenceContext extends PacketPersistenceContext {
 
     private def getPersistence(clazz: Class[_], method: SerialisationMethod): ObjectPersistor[Any] = {
         //FIXME this is a fast fix for Persistor priority
-        if (classOf[PuppetWrapper[_]].isAssignableFrom(clazz))
-            return persistors(classOf[PuppetWrapper[_]].getName)._1
+        if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
+            return persistors(classOf[SynchronizedObject[_]].getName)._1
 
         @inline
         def findPersistor(cl: Class[_]): ObjectPersistor[Any] = {

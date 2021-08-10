@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.description
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, fullNameOf}
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription.{PrimitivesNameMap, SyntheticMod}
@@ -135,8 +135,8 @@ object SimpleClassDescription {
     private val cache = mutable.HashMap.empty[Class[_], SimpleClassDescription[_]]
 
     def apply[A](clazz: Class[A]): SimpleClassDescription[A] = cache.getOrElse(clazz, {
-        if (classOf[PuppetWrapper[_]].isAssignableFrom(clazz))
-            throw new IllegalArgumentException("Provided class already extends from PuppetWrapper")
+        if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
+            throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
 
         val tpe = runtimeMirror(clazz.getClassLoader).classSymbol(clazz).selfType
         new SimpleClassDescription(tpe, clazz, clazz.getClassLoader)

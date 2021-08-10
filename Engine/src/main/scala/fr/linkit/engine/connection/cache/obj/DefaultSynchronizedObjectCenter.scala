@@ -29,6 +29,7 @@ import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperCla
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
 import fr.linkit.engine.connection.cache.obj.tree._
+import fr.linkit.engine.connection.cache.obj.tree.node.{RootWrapperNode, TrafficInterestedSyncNode}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
@@ -50,11 +51,11 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
     override val treeCenter: DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this)
     private  val currentIdentifier                      = channel.traffic.currentIdentifier
 
-    override def postObject(id: Int, obj: A): A with PuppetWrapper[A] = {
+    override def postObject(id: Int, obj: A): A with SynchronizedObject[A] = {
         postObject(id, obj, defaultTreeViewBehavior)
     }
 
-    override def postObject(id: Int, obj: A, behavior: ObjectTreeBehavior): A with PuppetWrapper[A] = {
+    override def postObject(id: Int, obj: A, behavior: ObjectTreeBehavior): A with SynchronizedObject[A] = {
         ensureNotWrapped(obj)
         if (isRegistered(id))
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
@@ -71,7 +72,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
         wrapperNode.synchronizedObject
     }
 
-    override def findObject(id: Int): Option[A with PuppetWrapper[A]] = {
+    override def findObject(id: Int): Option[A with SynchronizedObject[A]] = {
         treeCenter.findTree(id).map(_.rootNode.synchronizedObject)
     }
 
@@ -109,7 +110,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
     override def snapshotContent: CacheRepoContent[A] = treeCenter.snapshotContent
 
     private def ensureNotWrapped(any: Any): Unit = {
-        if (any.isInstanceOf[PuppetWrapper[_]])
+        if (any.isInstanceOf[SynchronizedObject[_]])
             throw new IllegalObjectWrapperException("This object is already wrapped.")
     }
 
@@ -175,7 +176,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
     private object WrapperInstantiator extends ObjectWrapperInstantiator {
 
         override def newWrapper[B <: AnyRef](obj: B, behaviorTree: ObjectTreeBehavior,
-                                             nodeInfo: WrapperNodeInfo, subWrappersInfo: Map[AnyRef, WrapperNodeInfo]): (B with PuppetWrapper[B], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+                                             nodeInfo: WrapperNodeInfo, subWrappersInfo: Map[AnyRef, WrapperNodeInfo]): (B with SynchronizedObject[B], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
             val wrapperClass           = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
             val helper                 = new WrapperInstantiationHelper(this, behaviorTree)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[B](wrapperClass, obj, subWrappersInfo)
@@ -184,7 +185,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
             (wrapper, subWrappers)
         }
 
-        override def initializeWrapper[B <: AnyRef](wrapper: PuppetWrapper[B], nodeInfo: WrapperNodeInfo, behavior: WrapperBehavior[B]): Unit = {
+        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: WrapperNodeInfo, behavior: WrapperBehavior[B]): Unit = {
             val puppeteer = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, nodeInfo, behavior)
             wrapper.initPuppeteer(puppeteer)
         }

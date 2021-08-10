@@ -10,27 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
-
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
-
-trait WrapperMethodInvocation[R] {
-
-    val wrapper: SynchronizedObject[_]
-
-    val methodID: Int
-
-    val methodBehavior: MethodBehavior
-
-    val callerIdentifier: String
-
-    val currentIdentifier: String
-
-    def callSuper(): R
-
-    val methodArguments: Array[Any]
-
-    val debug: Boolean = true
+package fr.linkit.engine.local.parsing.bhv
+class CorruptedBehaviorFileException(msg: String, cause: Throwable = null) extends BehaviorFileException(msg, cause) {
 
 }

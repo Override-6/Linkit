@@ -27,11 +27,11 @@ class InvocationChoreographer {
      * The provided action will be executed, and during its execution,
      * the current thread will be added into the [[markedThreads]] set.
      *
-     * A marked thread is a thread that will force all [[fr.linkit.api.connection.cache.obj.PuppetWrapper]] method's invocations
+     * A marked thread is a thread that will force all [[SynchronizedObject]] method's invocations
      * to execute the non overridden method (simply make a super.xxx for a xxx generated method, instead of invoking the remote method.)
      *
      * @param action the action to perform
-     * @see [[fr.linkit.api.connection.cache.obj.PuppetWrapper]] for more information about those 'generated methods'.
+     * @see [[SynchronizedObject]] for more information about those 'generated methods'.
      * */
     def forceLocalInvocation[A](action: => A): A = {
         markedThreads += Thread.currentThread()
@@ -43,7 +43,7 @@ class InvocationChoreographer {
     }
 
     /**
-     * @return true if the current thread is marked as a thread that must perform all PuppetWrapper's executions locally.
+     * @return true if the current thread is marked as a thread that must perform all SynchronizedObject's executions locally.
      *         @see [[forceLocalInvocation()]]
      * */
     def isMethodExecutionForcedToLocal: Boolean = {

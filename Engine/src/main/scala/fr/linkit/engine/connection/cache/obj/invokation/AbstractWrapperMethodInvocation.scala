@@ -12,12 +12,12 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation
 
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
 import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
 
 abstract class AbstractWrapperMethodInvocation[R](override val methodBehavior: MethodBehavior,
-                                                  override val wrapper: PuppetWrapper[_]) extends WrapperMethodInvocation[R] {
+                                                  override val wrapper: SynchronizedObject[_]) extends WrapperMethodInvocation[R] {
 
     override val methodID: Int = methodBehavior.desc.methodId
 

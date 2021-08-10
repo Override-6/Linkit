@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj.behavior.{ObjectTreeBehavior, WrapperB
 import fr.linkit.api.connection.cache.obj.behavior.annotation.FieldControl
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
-import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, PuppetWrapper}
+import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, SynchronizedObject}
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.config.ApplicationConfiguration
@@ -117,8 +117,8 @@ class ResourcesAndClassGenerationTests {
         private val test: String = "salut"
     }
 
-    /*class FakePuppetWrapperPersistor extends PuppetWrapperPersistor(null) {
-        override protected def initialiseWrapper(detachedWrapper: PuppetWrapperPersistor.DetachedWrapper): PuppetWrapper[_] = {
+    /*class FakeSynchronizedObjectPersistor extends SynchronizedObjectPersistor(null) {
+        override protected def initialiseWrapper(detachedWrapper: SynchronizedObjectPersistor.DetachedWrapper): SynchronizedObject[_] = {
             println("Faking wrapper...")
             forObject(detachedWrapper.detached)
         }
@@ -144,7 +144,7 @@ class ResourcesAndClassGenerationTests {
         println(s"obj = ${obj}")
     }
 
-    def forObject[A <: AnyRef: TypeTag](obj: A): A with PuppetWrapper[A] = {
+    def forObject[A <: AnyRef: TypeTag](obj: A): A with SynchronizedObject[A] = {
         Assertions.assertNotNull(resources)
 
         val tree    = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory)
@@ -162,7 +162,7 @@ class ResourcesAndClassGenerationTests {
         private val resource  = resources.getOrOpenThenRepresent[WrappersClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
         private val generator = new DefaultObjectWrapperClassCenter(new DefaultCompilerCenter, resource)
 
-        override def newWrapper[A <: AnyRef](obj: A, behaviorTree: ObjectTreeBehavior, puppeteerInfo: WrapperNodeInfo, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with PuppetWrapper[A], Map[AnyRef, PuppetWrapper[AnyRef]]) = {
+        override def newWrapper[A <: AnyRef](obj: A, behaviorTree: ObjectTreeBehavior, puppeteerInfo: WrapperNodeInfo, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
             val cl                     = obj.getClass.asInstanceOf[Class[A]]
             val behaviorDesc           = behaviorTree.getFromClass[A](cl)
             val puppetClass            = generator.getWrapperClass[A](SimpleClassDescription(cl))
@@ -173,7 +173,7 @@ class ResourcesAndClassGenerationTests {
             (wrapper, subWrappers)
         }
 
-        override def initializeWrapper[B <: AnyRef](wrapper: PuppetWrapper[B], nodeInfo: WrapperNodeInfo, behavior: WrapperBehavior[B]): Unit = ???
+        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: WrapperNodeInfo, behavior: WrapperBehavior[B]): Unit = ???
     }
 
 }

@@ -11,13 +11,13 @@
  */
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
-import fr.linkit.api.connection.cache.obj.PuppetWrapper
 
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 
-abstract class PuppetWrapperDeserializerNode extends SimpleObjectDeserializerNode {
+abstract class SynchronizedObjectDeserializerNode extends SimpleObjectDeserializerNode {
 
-    def deserializeWrapper(ref: AnyRef, in: DeserializationInputStream): PuppetWrapper[_]
+    def deserializeWrapper(ref: AnyRef, in: DeserializationInputStream): SynchronizedObject[_]
 
     def retrieveAndSetWrapperRef(in: DeserializationInputStream): Unit
 

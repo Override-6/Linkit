@@ -10,14 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.tree
+package fr.linkit.engine.local.parsing.bhv.descriptor
 
-import fr.linkit.api.connection.cache.obj.tree.SyncNode
-import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
-import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
+import java.util.Scanner
 
-trait TrafficInterestedSyncNode[A <: AnyRef] extends SyncNode[A] {
+trait Descriptor {
 
-    def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit
+    def describe(scanner: Scanner): DescriptionResult
 
 }

@@ -23,11 +23,11 @@ trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence wit
 
     val defaultTreeViewBehavior: ObjectTreeBehavior
 
-    def postObject(id: Int, obj: A): A with PuppetWrapper[A]
+    def postObject(id: Int, obj: A): A with SynchronizedObject[A]
 
-    def postObject(id: Int, obj: A, behavior: ObjectTreeBehavior): A with PuppetWrapper[A]
+    def postObject(id: Int, obj: A, behavior: ObjectTreeBehavior): A with SynchronizedObject[A]
 
-    def findObject(id: Int): Option[A with PuppetWrapper[A]]
+    def findObject(id: Int): Option[A with SynchronizedObject[A]]
 
     def getOrPost(id: Int, orPost: => A): A = findObject(id).getOrElse(postObject(id, orPost))
 

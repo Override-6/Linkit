@@ -20,7 +20,7 @@ import fr.linkit.engine.connection.cache.obj.generation.DefaultObjectWrapperClas
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer.{AnyPacketCoordinatesFlag, NoPacketCoordinates, NoPacketCoordinatesFlag}
 import fr.linkit.engine.connection.packet.persistence.v3.DefaultPacketPersistenceContext
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.{DefaultDeserializationInputStream, DefaultDeserializationObjectPool, EmptyDeserializationObjectPool}
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, PuppetWrapperPersistor}
+import fr.linkit.engine.connection.packet.persistence.v3.persistor.{DefaultObjectPersistor, SynchronizedObjectPersistor}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.{DefaultSerialisationOutputStream, DefaultSerializationObjectPool, DefaultSerializationProgression, FakeSerializationObjectPool}
 
 import java.nio.ByteBuffer
@@ -117,7 +117,7 @@ class DefaultPacketSerializer(center: DefaultObjectWrapperClassCenter) extends P
         if (this.network != null)
             throw new IllegalStateException("Network already initialised.")
         this.network = network
-        context.addPersistence(new PuppetWrapperPersistor(network))
+        context.addPersistence(new SynchronizedObjectPersistor(network))
     }
 
 }

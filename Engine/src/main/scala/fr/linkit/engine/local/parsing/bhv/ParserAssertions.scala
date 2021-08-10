@@ -10,27 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.engine.local.parsing.bhv
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+import java.util.Scanner
 
-trait WrapperMethodInvocation[R] {
+object ParserAssertions {
 
-    val wrapper: SynchronizedObject[_]
-
-    val methodID: Int
-
-    val methodBehavior: MethodBehavior
-
-    val callerIdentifier: String
-
-    val currentIdentifier: String
-
-    def callSuper(): R
-
-    val methodArguments: Array[Any]
-
-    val debug: Boolean = true
+    def assertEOL(scanner: Scanner): Unit = {
+        if (scanner.nextLine().nonEmpty)
+            throw new BehaviorFileSyntaxException("End of line required.")
+    }
 
 }

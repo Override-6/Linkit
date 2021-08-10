@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.tree
+package fr.linkit.engine.connection.cache.obj.tree.node
 
 import fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree
 import fr.linkit.api.connection.cache.obj.{Chip, Puppeteer}

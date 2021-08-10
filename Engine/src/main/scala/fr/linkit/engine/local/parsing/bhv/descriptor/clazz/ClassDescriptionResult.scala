@@ -10,27 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.engine.local.parsing.bhv.descriptor.clazz
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MethodBehavior}
+import fr.linkit.engine.local.parsing.bhv.descriptor.DescriptionResult
 
-trait WrapperMethodInvocation[R] {
-
-    val wrapper: SynchronizedObject[_]
-
-    val methodID: Int
-
-    val methodBehavior: MethodBehavior
-
-    val callerIdentifier: String
-
-    val currentIdentifier: String
-
-    def callSuper(): R
-
-    val methodArguments: Array[Any]
-
-    val debug: Boolean = true
+class ClassDescriptionResult(fieldBehaviors: Array[FieldBehavior], methodsBehavior: Array[MethodBehavior]) extends DescriptionResult {
 
 }
