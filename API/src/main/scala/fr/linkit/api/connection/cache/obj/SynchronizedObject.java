@@ -14,6 +14,7 @@ package fr.linkit.api.connection.cache.obj;
 
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo;
 import fr.linkit.api.connection.cache.obj.behavior.WrapperBehavior;
+import scala.Option;
 
 import java.io.Serializable;
 

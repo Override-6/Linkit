@@ -10,12 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.parsing.bhv.descriptor
+package fr.linkit.engine.test
 
-class FieldDescriptionResult(val isEnabled: Boolean) extends DescriptionResult {
+import fr.linkit.engine.local.parsing.bhv.TreeBehaviorParser
+import org.junit.jupiter.api.{Test, TestInstance}
+import org.junit.jupiter.api.TestInstance.Lifecycle
 
-}
+@TestInstance(Lifecycle.PER_CLASS)
+class BehaviorParsingTests {
 
-object FieldDescriptionResult {
-    val Disabled = new FieldDescriptionResult(false)
+    @Test
+    def parseListBuffer(): Unit = {
+        TreeBehaviorParser.parse(getClass.getResourceAsStream("/rmi_behaviors/ListBuffer.bhv"))
+    }
+
 }

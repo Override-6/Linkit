@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.tree.node
 
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode, SynchronizedObjectTree}
-import fr.linkit.api.connection.cache.obj.{Chip, IllegalObjectWrapperException, SynchronizedObject, Puppeteer}
+import fr.linkit.api.connection.cache.obj.{Chip, IllegalObjectWrapperException, Puppeteer, SynchronizedObject}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
@@ -47,9 +47,9 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
     def addChild(node: WrapperNode[_]): Unit = {
         if (node.parent ne this)
             throw new IllegalObjectWrapperException("Attempted to add a child to this node with a different parent of this node.")
-        val last = members.put(node.id, node)
-        if (last.isDefined)
-            throw new IllegalStateException(s"Puppet already exists at ${puppeteer.puppeteerInfo.nodePath.mkString("$", " -> ", s" -> ${node.id}")}")
+        if (members.contains(node.id))
+            throw new IllegalStateException(s"Puppet already exists at ${puppeteer.puppeteerInfo.nodePath.mkString("/") + s"/$id"}")
+        members.put(node.id, node)
     }
 
     def getChild[B <: AnyRef](id: Int): Option[WrapperNode[B]] = (members.get(id): Any) match {

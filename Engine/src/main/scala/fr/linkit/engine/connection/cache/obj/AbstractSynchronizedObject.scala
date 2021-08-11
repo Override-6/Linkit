@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj.behavior.{MethodBehavior, WrapperBehav
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
 import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, SynchronizedObject, Puppeteer}
-import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper
+import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
 import fr.linkit.engine.connection.cache.obj.invokation.{AbstractWrapperMethodInvocation, SimpleRMIRulesAgreement}
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
@@ -38,7 +38,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         this.puppeteerDescription = puppeteer.puppeteerInfo
         this.behavior = puppeteer.wrapperBehavior
         this.puppeteer.init(asAutoWrapped)
-        this.choreographer = new InvocationChoreographer() //TODO Have the same choreographer for the entire tree
+        this.choreographer = new InvocationChoreographer()
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
     }
@@ -48,7 +48,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
     override def detachedClone: A = {
-        WrapperInstantiationHelper.detachedWrapperClone(this)._1
+        SyncObjectInstantiationHelper.detachedWrapperClone(this)._1
     }
 
     override def getWrappedClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
@@ -85,11 +85,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         val methodBehavior   = behavior.getMethodBehavior(id).get
         val synchronizedArgs = synchronizedParams(methodBehavior, args)
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
-        if (choreographer.isMethodExecutionForcedToLocal) {
+        if (choreographer.isMethodExecutionForcedToLocal || !methodBehavior.isRMIEnabled) {
             return superCall(synchronizedArgs).asInstanceOf[R]
-        }
-        if (!methodBehavior.isRMIEnabled) {
-            return performSuperCall(superCall(synchronizedArgs))
         }
 
         val invocation = new AbstractWrapperMethodInvocation[R](methodBehavior, this) {

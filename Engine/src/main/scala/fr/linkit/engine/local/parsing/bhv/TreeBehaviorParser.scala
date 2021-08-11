@@ -12,9 +12,10 @@
 
 package fr.linkit.engine.local.parsing.bhv
 
-import java.io.BufferedReader
+import java.io.{BufferedReader, InputStream}
 import java.nio.file.{Files, Path}
 import java.util.Scanner
+import java.util.regex.Pattern
 
 object TreeBehaviorParser {
 
@@ -26,8 +27,13 @@ object TreeBehaviorParser {
         parse(new Scanner(reader))
     }
 
+    def parse(in: InputStream): Unit = {
+        parse(new Scanner(in))
+    }
+
     def parse(scanner: Scanner): Unit = {
-        scanner.next()
+        //scanner.useDelimiter(Pattern.compile("(/\\*.*\\*/)|(//.+\\n)", Pattern.DOTALL))
+        new BehaviorFileParser(scanner).makeParse()
     }
 
 }

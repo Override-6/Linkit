@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, ObjectTreeBehavior, WrapperBehavior}
-import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 
 import scala.collection.mutable
 import scala.reflect.runtime.universe
@@ -37,7 +37,7 @@ class ObjectTreeDefaultBehavior(override val factory: MemberBehaviorFactory) ext
     }
 
     private def getFromAnyClass[B](clazz: Class[_]): WrapperBehavior[B] = {
-        behaviors.getOrElseUpdate(clazz, DefaultWrapperBehavior(SimpleClassDescription(clazz), this))
+        behaviors.getOrElseUpdate(clazz, DefaultWrapperBehavior(SyncObjectClassDescription(clazz), this))
                 .asInstanceOf[WrapperBehavior[B]]
     }
 

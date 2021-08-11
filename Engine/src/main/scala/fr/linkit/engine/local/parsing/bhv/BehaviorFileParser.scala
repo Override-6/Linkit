@@ -21,7 +21,7 @@ class BehaviorFileParser(scanner: Scanner) {
     def makeParse(): Unit = {
         val word = scanner.next()
         word match {
-            case "describe" =>
+            case "describe" => parseDescriptor()
             case _ => throw new CorruptedBehaviorFileException(s"unknown word : $word at start of file.")
         }
     }
@@ -32,8 +32,9 @@ class BehaviorFileParser(scanner: Scanner) {
                 //describe class {class.name}
                 val className = scanner.next()
                 val clazz = Class.forName(className)
-                new ClassDescriptor(clazz)
+                new ClassDescriptor(clazz).describe(scanner)
         }
+
     }
 
 }

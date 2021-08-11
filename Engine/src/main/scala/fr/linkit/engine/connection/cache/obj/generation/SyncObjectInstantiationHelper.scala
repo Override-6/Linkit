@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
-import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper.MaxScanDepth
+import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper.MaxScanDepth
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllFields}
 import fr.linkit.engine.local.utils.{Identity, JavaUtils, ScalaUtils, UnWrapper}
 import sun.misc.Unsafe
@@ -28,7 +28,7 @@ import java.nio.file.WatchKey
 import scala.collection.mutable
 
 //TODO Factorise this class and optimize it.
-class WrapperInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: ObjectTreeBehavior) {
+class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: ObjectTreeBehavior) {
 
     def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with SynchronizedObject[A]],
                                            origin: A,
@@ -122,7 +122,7 @@ class WrapperInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, beha
 
 }
 
-object WrapperInstantiationHelper {
+object SyncObjectInstantiationHelper {
 
     val MaxScanDepth: Int = 15
 
@@ -135,12 +135,13 @@ object WrapperInstantiationHelper {
                 return data
             data match {
                 case null                                 => null
-                case None | Nil                           => data //TODO Remove the deepClone method because it was made for instantiateFromOrigin and only duplicate fields that hosts a the wrapper
+                case None | Nil                           => data //TODO Remove the deepClone method because it was made for instantiateFromOrigin and only duplicate fields that hosts a synchronized object
                 case array: Array[AnyRef]                 => java.util.Arrays.copyOf(array, array.length).map(getClonedInstance)
                 case str: String                          => str
                 case o if UnWrapper.isPrimitiveWrapper(o) => o
                 case hidden if hidden.getClass.isHidden   => data
                 case enum if enum.getClass.isEnum         => enum
+                case syncObj: SynchronizedObject[_]       => syncObj
 
                 //The method will be removed, made this awful match list in order to complete a project test
                 case _: Class[_]    => data

@@ -22,11 +22,11 @@ import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{Nul
 import fr.linkit.engine.connection.packet.persistence.v3.{ArraySign, ClassDescription}
 import fr.linkit.engine.local.utils.ScalaUtils
 
-object DefaultObjectPersistor extends ObjectPersistor[Any] {
+class DefaultObjectPersistor[T <: Any] extends ObjectPersistor[T] {
 
     override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[Object], true, Seq(SerialisationMethod.Deserial, SerialisationMethod.Serial)))
 
-    override def getSerialNode(obj: Any, desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(obj: T, desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         if (obj == null || obj == None)
             return new NullInstanceNode(obj == None)
 
@@ -70,4 +70,8 @@ object DefaultObjectPersistor extends ObjectPersistor[Any] {
                 }).deserialize(in)
         }
     }
+}
+
+object DefaultObjectPersistor extends DefaultObjectPersistor[Any] {
+
 }

@@ -34,11 +34,12 @@ class InvocationChoreographer {
      * @see [[SynchronizedObject]] for more information about those 'generated methods'.
      * */
     def forceLocalInvocation[A](action: => A): A = {
-        markedThreads += Thread.currentThread()
+        val thread = Thread.currentThread()
+        markedThreads += thread
         try {
             action
         } finally {
-            markedThreads -= Thread.currentThread()
+            markedThreads -= thread
         }
     }
 
@@ -47,7 +48,8 @@ class InvocationChoreographer {
      *         @see [[forceLocalInvocation()]]
      * */
     def isMethodExecutionForcedToLocal: Boolean = {
-        markedThreads.contains(Thread.currentThread()) || InvocationChoreographer.isMethodExecutionForcedToLocal
+        val thread = Thread.currentThread()
+        markedThreads.contains(thread) || InvocationChoreographer.markedThreads.contains(thread)
     }
 
 }

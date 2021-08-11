@@ -12,25 +12,36 @@
 
 package fr.linkit.engine.local.parsing.bhv.descriptor.clazz
 
-import fr.linkit.engine.local.parsing.bhv.descriptor.FieldDescriptionResult
-import fr.linkit.engine.local.parsing.bhv.descriptor.method.MethodDescriptionResult
+import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
+import fr.linkit.engine.local.parsing.bhv.descriptor.FieldBehaviorDescriptionResult
+import fr.linkit.engine.local.parsing.bhv.descriptor.method.{MethodBehaviorDescriptionException, MethodBehaviorDescriptionResult, MethodDescriptor}
 import fr.linkit.engine.local.parsing.bhv.{BehaviorFileException, BehaviorFileSyntaxException}
 
 import java.util.Scanner
 import scala.collection.mutable
 
-class ClassDescriptionResultBuilder(scanner: Scanner, clazz: Class[_]) {
+class ClassDescriptionResultBuilder(scanner: Scanner, classDesc: SyncObjectClassDescription[_]) {
 
-    private val className                                      = clazz.getName
-    private var defaultFieldBehavior : FieldDescriptionResult  = _
-    private var defaultMethodBehavior: MethodDescriptionResult = _
+    private val clazz                                                  = classDesc.clazz
+    private val className                                              = clazz.getName
+    private var defaultFieldBehavior : FieldBehaviorDescriptionResult  = _
+    private var defaultMethodBehavior: MethodBehaviorDescriptionResult = _
 
-    private val fieldMap  = mutable.HashMap.empty[String, FieldDescriptionResult]
-    private val methodMap = mutable.HashMap.empty[String, MethodDescriptionResult]
+    private val fieldMap  = mutable.HashMap.empty[String, FieldBehaviorDescriptionResult]
+    private val methodMap = mutable.HashMap.empty[String, MethodBehaviorDescriptionResult]
+
+    private val methodDescs = classDesc.listMethods()
+    private val fieldDescs  = classDesc.listFields()
 
     launchParsing()
 
+    def getMethodResult(name: String): Option[MethodBehaviorDescriptionResult] = methodMap.get(name)
+
+    def getFieldResult(name: String): Option[FieldBehaviorDescriptionResult] = fieldMap.get(name)
+
     private def launchParsing(): Unit = {
+        if (scanner.next() != "{")
+            throw new BehaviorFileSyntaxException("Required '{' character after class descriptor header.")
         var word = scanner.next()
         while (word != "}") {
             word match {
@@ -48,7 +59,10 @@ class ClassDescriptionResultBuilder(scanner: Scanner, clazz: Class[_]) {
             throw new BehaviorFileException(s"'forall $memberName' already defined for class $className description.")
         }
 
-        scanner.next() match {
+        val memberType = scanner.next()
+        if (scanner.next() != "->")
+            throw new BehaviorFileSyntaxException(s"Expected '->' after 'forall $memberType'.")
+        memberType match {
             case "field"  =>
                 if (defaultFieldBehavior != null)
                     fail("field")
@@ -56,42 +70,72 @@ class ClassDescriptionResultBuilder(scanner: Scanner, clazz: Class[_]) {
             case "method" =>
                 if (defaultMethodBehavior != null)
                     fail("method")
-                defaultMethodBehavior = ???
+                defaultMethodBehavior = parseMethodGeneric()
         }
     }
 
-    private def parseField(): FieldDescriptionResult = {
+    private def parseField(): FieldBehaviorDescriptionResult = {
         val word  = scanner.next()
         val isEOL = scanner.nextLine().isEmpty
         word match {
             case "disable" =>
                 if (!isEOL)
                     throw new BehaviorFileSyntaxException("Disabled fields don't needs more instruction (end of line not reached)")
-                new FieldDescriptionResult(isEnabled = false)
+                FieldBehaviorDescriptionResult.Disabled
             case "enabled" =>
                 if (!isEOL)
                     throw new UnsupportedOperationException("Fields can either be enabled or disabled, further enabled description is not yet supported.")
-                new FieldDescriptionResult(isEnabled = true)
+                new FieldBehaviorDescriptionResult(isEnabled = true)
         }
     }
 
-    private def parseEnabledMember(): Unit = {
+    private def parseMethodGeneric(): MethodBehaviorDescriptionResult = {
+        scanner.next() match {
+            case "disable" => MethodBehaviorDescriptionResult.Disabled
+            case "enable"  => parseMethod(null)
+            case other     => throw new MethodBehaviorDescriptionException(s"Expected 'disable' or 'enable' for generic method descriptor but found '$other'.")
+        }
+    }
 
+    private def parseMethod(methodName: String): MethodBehaviorDescriptionResult = {
+        val methodDesc = if (methodName == null) null else methodDescs.find(_.symbol.name.toString == methodName).getOrElse {
+            throw new MethodBehaviorDescriptionException(s"Unknown method $methodName in class $className")
+        }
+        new MethodDescriptor(methodDesc, this).describe(scanner)
+    }
+
+    private def parseEnabledMember(): Unit = {
+        def putMember[M](memberType: String, memberName: String, map: mutable.HashMap[String, M], parseAction: => M): Unit = {
+            if (map.contains(memberName))
+                throw new BehaviorFileException(s"$memberType '$memberName' for $clazz was already described.")
+            val fieldDescription = parseAction
+            map.put(memberName, fieldDescription)
+        }
+
+        scanner.next() match {
+            case "field"    =>
+                putMember("Field", scanner.next(), fieldMap, parseField())
+            case "method"   =>
+                val methodName = scanner.next()
+                putMember("Method", methodName, methodMap, parseMethod(methodName))
+            case methodName =>
+                putMember("Method", methodName, methodMap, parseMethod(methodName))
+        }
     }
 
     private def parseDisabledMember(): Unit = {
-        val word       = scanner.next()
+        val word = scanner.next()
         word match {
-            case "field"  =>
+            case "field"    =>
                 val memberName = scanner.next()
                 if (scanner.nextLine().nonEmpty)
                     throw new UnsupportedOperationException("Fields can either be enabled or disabled, further enabled description is not yet supported.")
-                fieldMap.put(memberName, FieldDescriptionResult.Disabled)
-            case "method" =>
+                fieldMap.put(memberName, FieldBehaviorDescriptionResult.Disabled)
+            case "method"   =>
                 val memberName = scanner.next()
-                methodMap.put(memberName, MethodDescriptionResult.Disabled)
-            case methodName   =>
-                methodMap.put(methodName, MethodDescriptionResult.Disabled)
+                methodMap.put(memberName, MethodBehaviorDescriptionResult.Disabled)
+            case methodName =>
+                methodMap.put(methodName, MethodBehaviorDescriptionResult.Disabled)
         }
     }
 

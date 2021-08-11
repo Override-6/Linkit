@@ -12,13 +12,14 @@
 
 package fr.linkit.engine.local.parsing.bhv.descriptor.method
 
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
 import fr.linkit.engine.local.parsing.bhv.descriptor.DescriptionResult
 
-class MethodDescriptionResult(isEnabled: Boolean) extends DescriptionResult {
+case class MethodBehaviorDescriptionResult(isEnabled: Boolean, synchronizedParameters: Seq[Boolean], syncReturnValue: Boolean, rule: BasicRemoteInvocationRule) extends DescriptionResult {
 
 }
 
-object MethodDescriptionResult {
+object MethodBehaviorDescriptionResult {
 
-    val Disabled = new MethodDescriptionResult(false)
+    val Disabled = new MethodBehaviorDescriptionResult(false, null, false, null)
 }

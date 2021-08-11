@@ -18,7 +18,7 @@ import fr.linkit.api.connection.cache.obj.description.MethodDescription
 import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.engine.connection.cache.obj.behavior.WrapperBehaviorBuilder.MethodControl
-import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 import fr.linkit.engine.connection.cache.obj.invokation.local.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 import org.jetbrains.annotations.Nullable
 
@@ -31,7 +31,7 @@ class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]
     val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
 
     def this()(implicit classTag: ClassTag[T]) = {
-        this(SimpleClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]))
+        this(SyncObjectClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]))
     }
 
     final def annotateMethod(name: String, params: Class[_]*): MethodModification = {

@@ -12,19 +12,22 @@
 
 package fr.linkit.engine.local.parsing.bhv.descriptor.method
 
+import fr.linkit.api.connection.cache.obj.description.MethodDescription
 import fr.linkit.engine.local.parsing.bhv.descriptor.Descriptor
+import fr.linkit.engine.local.parsing.bhv.descriptor.clazz.ClassDescriptionResultBuilder
+import org.jetbrains.annotations.Nullable
 
 import java.util.Scanner
 
-class MethodDescriptor extends Descriptor {
+class MethodDescriptor(@Nullable methodDesc: MethodDescription, classBuilder: ClassDescriptionResultBuilder) extends Descriptor {
 
 
 
-    override def describe(scanner: Scanner): MethodDescriptionResult = {
-        if (scanner.next() != "as") //must start with "as"
-            throw new MethodBehaviorDescriptionException("Method descriptor must start with 'as'.")
-//        val builder = new AbstractMethodDescriptionResultBuilder(scanner)
- //       builder.result()
-        ???
+    override def describe(scanner: Scanner): MethodBehaviorDescriptionResult = {
+        val word = scanner.next()
+        if (word != "as") //must start with "as"
+            throw new MethodBehaviorDescriptionException(s"Method descriptor must start with 'as'. found: $word")
+        val builder = if (methodDesc != null) new ExplicitMethodDescriptionResultBuilder(methodDesc, classBuilder, scanner) else new GenericMethodDescriptionBuilder(scanner, classBuilder)
+        builder.result()
     }
 }

@@ -14,37 +14,66 @@ package fr.linkit.engine.local.parsing.bhv.descriptor.method
 
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
 import fr.linkit.engine.connection.cache.obj.behavior.AnnotationBasedMemberBehaviorFactory.DefaultMethodControl
+import fr.linkit.engine.local.parsing.bhv.ParserAssertions
+import fr.linkit.engine.local.parsing.bhv.descriptor.clazz.ClassDescriptionResultBuilder
 
 import java.util.Scanner
 
-abstract class AbstractMethodDescriptionResultBuilder(scanner: Scanner) {
+abstract class AbstractMethodDescriptionResultBuilder(protected val scanner: Scanner, classBuilder: ClassDescriptionResultBuilder) {
 
-    private var behaviorType: BasicRemoteInvocationRule = DefaultMethodControl.value()
+    protected var behaviorRule   : BasicRemoteInvocationRule = DefaultMethodControl.value()
+    protected var syncReturnValue: Boolean                   = false
 
-    launchParsing()
-
-    private def launchParsing(): Unit = {
+    protected def launchParsing(): Unit = {
         parseType()
-        if (scanner.hasNext("{")) {
+        if (scanner.hasNext("\\{")) {
             scanner.next() //will be "{"
             parseFurtherInformation()
         }
     }
 
     private def parseFurtherInformation(): Unit = {
-
-    }
-
-    private def parseType(): Unit = {
-        val behaviorTypeName = scanner.next()
-        try {
-            behaviorType = BasicRemoteInvocationRule.valueOf(behaviorTypeName)
-        } catch {
-            case e: IllegalArgumentException => throw new MethodBehaviorDescriptionException(s"Unknown behavior type : $behaviorTypeName", e)
+        var word = scanner.next()
+        while (word != "}") {
+            word match {
+                case "returnvalue"                      => parseReturnValue()
+                case category if scanner.hasNext("\\{") => parseCategory(category)
+                case other                              => throw new MethodBehaviorDescriptionException(s"Unknown value '$other'.")
+            }
+            word = scanner.next()
         }
     }
 
-    def result(): MethodDescriptionResult = {
-        null
+    protected def parseCategory(name: String): Unit
+
+    private def parseReturnValue(): Unit = {
+        if (scanner.next() != "->")
+            throw new MethodBehaviorSyntaxDescriptionException("Expected '->' after 'returnvalue' description.")
+        val word = scanner.next();
+        ParserAssertions.assertEOL(scanner)
+        word match {
+            case "enable"  => syncReturnValue = true
+            case "disable" => syncReturnValue = false
+            case other     => throw new MethodBehaviorDescriptionException(s"Wrong: 'returnvalue -> $other' Expected 'enable' or 'disable' but found '$other' during method return value description.")
+        }
     }
+
+    private def parseType(): Unit = {
+        val behaviorName = scanner.next()
+        try {
+            behaviorRule = BasicRemoteInvocationRule.valueOf(behaviorName.toUpperCase)
+        } catch {
+            case e: IllegalArgumentException =>
+                val otherResult = classBuilder.getMethodResult(behaviorName).getOrElse {
+                    throw new MethodBehaviorDescriptionException(s"Unknown behavior : $behaviorName", e)
+                }
+                syncReturnValue = otherResult.syncReturnValue
+                behaviorRule = otherResult.rule
+                baseCurrentOn(otherResult)
+        }
+    }
+
+    def baseCurrentOn(result: MethodBehaviorDescriptionResult): Unit
+
+    def result(): MethodBehaviorDescriptionResult
 }

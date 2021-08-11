@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj.description
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, fullNameOf}
 import fr.linkit.api.local.generation.PuppetClassDescription
-import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription.{PrimitivesNameMap, SyntheticMod}
+import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription.{PrimitivesNameMap, SyntheticMod}
 import fr.linkit.engine.connection.packet.persistence.v3.ClassDescription
 
 import java.lang.reflect.{Field, Method, Modifier}
@@ -23,8 +23,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
-class SimpleClassDescription[A] private(override val classType: u.Type,
-                                        override val clazz: Class[A], val loader: ClassLoader) extends PuppetClassDescription[A] {
+class SyncObjectClassDescription[A] private(override val classType: u.Type,
+                                            override val clazz: Class[A], val loader: ClassLoader) extends PuppetClassDescription[A] {
 
     import u._
 
@@ -121,7 +121,7 @@ class SimpleClassDescription[A] private(override val classType: u.Type,
 
 }
 
-object SimpleClassDescription {
+object SyncObjectClassDescription {
 
     import u._
 
@@ -132,14 +132,14 @@ object SimpleClassDescription {
         "scala.Boolean" -> "boolean", "scala.Float" -> "float", "scala.Double" -> "double",
         "scala.Byte" -> "byte", "scala.Short" -> "short", "scala.Array" -> "array")
 
-    private val cache = mutable.HashMap.empty[Class[_], SimpleClassDescription[_]]
+    private val cache = mutable.HashMap.empty[Class[_], SyncObjectClassDescription[_]]
 
-    def apply[A](clazz: Class[A]): SimpleClassDescription[A] = cache.getOrElse(clazz, {
+    def apply[A](clazz: Class[A]): SyncObjectClassDescription[A] = cache.getOrElse(clazz, {
         if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
 
         val tpe = runtimeMirror(clazz.getClassLoader).classSymbol(clazz).selfType
-        new SimpleClassDescription(tpe, clazz, clazz.getClassLoader)
-    }).asInstanceOf[SimpleClassDescription[A]]
+        new SyncObjectClassDescription(tpe, clazz, clazz.getClassLoader)
+    }).asInstanceOf[SyncObjectClassDescription[A]]
 
 }

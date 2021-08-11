@@ -24,4 +24,5 @@ object HandledClass {
     implicit def fromClass(pair: (Class[_], (Boolean, Seq[SerialisationMethod]))): HandledClass = new HandledClass(pair._1.getName, pair._2._1, pair._2._2)
 
     def apply(clazz: Class[_], extendedClassEnabled: Boolean, methods: Seq[SerialisationMethod]): HandledClass = new HandledClass(clazz.getName, extendedClassEnabled, methods)
+    def apply(clazz: Class[_], extendedClassEnabled: Boolean): HandledClass = new HandledClass(clazz.getName, extendedClassEnabled, Seq.from(SerialisationMethod.values()))
 }

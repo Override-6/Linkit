@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj.SynchronizedObjectCenter
 import fr.linkit.api.connection.cache.obj.tree.{ObjectTreeCenter, SyncNode, SynchronizedObjectTree}
 import fr.linkit.engine.connection.cache.obj.{CacheRepoContent, DefaultSynchronizedObjectCenter}
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
-import fr.linkit.engine.connection.cache.obj.generation.WrapperInstantiationHelper
+import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
 
 import scala.collection.mutable
 
@@ -44,7 +44,7 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCenter[A]) 
         def toProfile(tree: SynchronizedObjectTree[_ <: A]): ObjectTreeProfile[A] = {
             val node = tree.rootNode
             val syncObject = node.synchronizedObject
-            val (detached, subWrappers) = WrapperInstantiationHelper.detachedWrapperClone(syncObject)
+            val (detached, subWrappers) = SyncObjectInstantiationHelper.detachedWrapperClone(syncObject)
             val subWrappersInfo = subWrappers.map(pair => (pair._1, pair._2.getNodeInfo))
             ObjectTreeProfile[A](tree.id, detached, node.ownerID, subWrappersInfo)
         }

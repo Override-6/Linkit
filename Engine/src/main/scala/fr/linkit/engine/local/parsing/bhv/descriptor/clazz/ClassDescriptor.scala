@@ -12,23 +12,22 @@
 
 package fr.linkit.engine.local.parsing.bhv.descriptor.clazz
 
-import fr.linkit.engine.connection.cache.obj.description.SimpleClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 import fr.linkit.engine.local.parsing.bhv.{BehaviorFileSyntaxException, ParserAssertions}
-import fr.linkit.engine.local.parsing.bhv.descriptor.{DescriptionResult, Descriptor, FieldDescriptionResult}
+import fr.linkit.engine.local.parsing.bhv.descriptor.{DescriptionResult, Descriptor, FieldBehaviorDescriptionResult}
 
 import java.util.Scanner
 
-class ClassDescriptor(desc: SimpleClassDescription[_]) extends Descriptor {
+class ClassDescriptor(desc: SyncObjectClassDescription[_]) extends Descriptor {
 
-    def this(clazz: Class[_]) = this(SimpleClassDescription(clazz))
+    def this(clazz: Class[_]) = this(SyncObjectClassDescription(clazz))
 
     private val methods = desc.listMethods()
     private val fields = desc.listFields()
 
     override def describe(scanner: Scanner): DescriptionResult = {
-//        val builder = new ClassDescriptionResultBuilder(scanner)
-  //      builder.result()
-        ???
+        val builder = new ClassDescriptionResultBuilder(scanner, desc)
+        builder.result()
     }
 
 }

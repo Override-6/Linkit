@@ -25,7 +25,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectTreeDefaultBehavior}
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrapperInstantiationHelper, WrappersClassResource}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectInstantiationHelper, WrappersClassResource}
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
 import fr.linkit.engine.connection.cache.obj.tree._
@@ -60,7 +60,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
         if (isRegistered(id))
             throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
 
-        val objClone = WrapperInstantiationHelper.deepClone(obj)
+        val objClone = SyncObjectInstantiationHelper.deepClone(obj)
         val tree     = createNewTree(id, currentIdentifier, objClone, Map(), behavior)
         //Indicate that a new object has been posted.
         channel.makeRequest(ChannelScopes.discardCurrent)
@@ -178,7 +178,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
         override def newWrapper[B <: AnyRef](obj: B, behaviorTree: ObjectTreeBehavior,
                                              nodeInfo: WrapperNodeInfo, subWrappersInfo: Map[AnyRef, WrapperNodeInfo]): (B with SynchronizedObject[B], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
             val wrapperClass           = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
-            val helper                 = new WrapperInstantiationHelper(this, behaviorTree)
+            val helper                 = new SyncObjectInstantiationHelper(this, behaviorTree)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[B](wrapperClass, obj, subWrappersInfo)
             val behavior               = behaviorTree.getFromClass[B](obj.getClass)
             initializeWrapper(wrapper, nodeInfo, behavior)
