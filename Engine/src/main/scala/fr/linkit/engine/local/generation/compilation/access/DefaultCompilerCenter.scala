@@ -55,7 +55,7 @@ class DefaultCompilerCenter extends CompilerCenter {
         compileAll(files, destination, classPaths)
     }
 
-    override def generate[A](request: CompilationRequest[A]): CompilationResult[A] = {
+    override def processRequest[A](request: CompilationRequest[A]): CompilationResult[A] = {
         val restAccesses = accesses.clone()
         var results = request
                 .compilationOrder

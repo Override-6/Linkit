@@ -12,20 +12,20 @@
 
 package fr.linkit.engine.local.generation.compilation
 
+import fr.linkit.api.local.generation.cbp.ClassBlueprint
 import fr.linkit.api.local.generation.compilation.access.CompilerType
-import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationResult}
+import fr.linkit.api.local.generation.compilation.{CompilationContext, CompilationRequest}
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode
 import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.io.{File, InputStream, OutputStream}
 import java.nio.file.{Files, Path, StandardOpenOption}
 
-abstract class SourceCodeCompilationRequest[T] extends CompilationRequest[T] {
+/**
+ * @tparam R the Request result.
+ * */
+abstract class SourceCodeCompilationRequest[R] extends CompilationRequest[R] {
 
-    /*
-     * _1: The top class's package and name.
-     * _2: The Class source code.
-     */
     var sourceCodes: Seq[SourceCode]
 
     protected final val defaultClassPaths: Seq[Path] = {
@@ -53,6 +53,14 @@ abstract class SourceCodeCompilationRequest[T] extends CompilationRequest[T] {
 object SourceCodeCompilationRequest {
 
     case class SourceCode(className: String, sourceCode: String, codeType: CompilerType)
+
+    object SourceCode {
+
+        def apply[V <: CompilationContext](context: V, blueprint: ClassBlueprint[V]): SourceCode = {
+            val source = blueprint.toClassSource(context)
+            SourceCode(context.classPackage, source, blueprint.compilerType)
+        }
+    }
 
     implicit class SourceCodeHelper(className: String) {
 

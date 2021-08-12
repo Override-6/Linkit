@@ -30,7 +30,7 @@ class DefaultResourceEntry[E <: Resource](val resource: E) extends ResourceEntry
 
     override def name: String = resource.name
 
-    override def attachRepresentation[R <: ResourceRepresentation : ClassTag](factory: ResourceRepresentationFactory[R, E]): Unit = {
+    override def attachRepresentation[R <: ResourceRepresentation : ClassTag](implicit factory: ResourceRepresentationFactory[R, E]): R = {
         ensureAlive()
 
         def abort(requested: String, found: String): Unit = {
@@ -47,7 +47,9 @@ class DefaultResourceEntry[E <: Resource](val resource: E) extends ResourceEntry
                     abort("file", "folder")
         }
 
-        representations.put(classTag[R].runtimeClass, factory(resource))
+        val representation = factory(resource)
+        representations.put(classTag[R].runtimeClass, representation)
+        representation
     }
 
     override def findRepresentation[R <: ResourceRepresentation : ClassTag]: Option[R] = {

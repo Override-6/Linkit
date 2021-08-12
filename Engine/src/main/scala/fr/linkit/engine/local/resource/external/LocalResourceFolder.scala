@@ -18,7 +18,7 @@ import fr.linkit.api.local.resource.representation.{ResourceRepresentation, Reso
 import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.engine.local.resource.base.BaseResourceFolder
 
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
 class LocalResourceFolder protected(adapter: FileAdapter,
                                     listener: ResourceListener,
@@ -64,7 +64,7 @@ object LocalResourceFolder extends ResourceFactory[LocalResourceFolder] {
             entry
                     .findRepresentation[R]
                     .getOrElse {
-                        entry.attachRepresentation[R](representationFactory)
+                        entry.attachRepresentation[R](classTag[R], representationFactory)
                         entry.getRepresentation[R]
                     }
         }

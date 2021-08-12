@@ -117,7 +117,7 @@ class DefaultPacketSerializer(center: DefaultObjectWrapperClassCenter) extends P
         if (this.network != null)
             throw new IllegalStateException("Network already initialised.")
         this.network = network
-        context.addPersistence(new SynchronizedObjectPersistor(network))
+        context.putPersistor(new SynchronizedObjectPersistor(network))
     }
 
 }

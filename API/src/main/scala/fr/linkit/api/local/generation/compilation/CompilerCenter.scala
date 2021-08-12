@@ -29,5 +29,5 @@ trait CompilerCenter {
 
     def compileAll(folder: Path, recursively: Boolean, destination: Path, classPaths: Seq[Path]): Unit
 
-    def generate[A](request: CompilationRequest[A]): CompilationResult[A]
+    def processRequest[A](request: CompilationRequest[A]): CompilationResult[A]
 }

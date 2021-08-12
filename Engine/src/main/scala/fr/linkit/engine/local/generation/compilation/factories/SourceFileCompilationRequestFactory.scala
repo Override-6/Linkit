@@ -10,12 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.generation.compilation
+package fr.linkit.engine.local.generation.compilation.factories
 
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.api.local.generation.compilation.{CompilationRequest, CompilationRequestFactory, CompilationResult}
 import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.generation.compilation.SourceFileCompilationRequestFactory.AbstractRequest
+import fr.linkit.engine.local.generation.compilation.AbstractCompilationResult
+import fr.linkit.engine.local.generation.compilation.factories.SourceFileCompilationRequestFactory.AbstractRequest
 import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.nio.file.Path

@@ -37,7 +37,7 @@ object ScalaMapPersistor extends ObjectPersistor[collection.Map[_, _]] {
         findFactoryCompanion(clazz).isDefined
     }
 
-    override def getSerialNode(obj: collection.Map[_, _], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(obj: collection.Map[_, _], desc: SerializableClassDescription[collection.Map[_, _]], context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         val node = ArrayPersistence.serialize(obj.iterator.toArray, progress)
         SimpleObjectSerializerNode(out => {
             out.writeClass(obj.getClass)
@@ -45,7 +45,7 @@ object ScalaMapPersistor extends ObjectPersistor[collection.Map[_, _]] {
         })
     }
 
-    override def getDeserialNode(desc: SerializableClassDescription, context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
+    override def getDeserialNode(desc: SerializableClassDescription[collection.Map[_, _]], context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         //TODO support sequences even if no factory is not found.
         val builder = findFactoryCompanion(desc.clazz)
                 .getOrElse(throw new UnsupportedOperationException(s"factory not found for seq ${desc.clazz.getName}"))

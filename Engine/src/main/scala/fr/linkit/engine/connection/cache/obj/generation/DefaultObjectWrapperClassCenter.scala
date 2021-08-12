@@ -20,7 +20,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 import fr.linkit.engine.local.mapping.ClassMappings
 
-class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: WrappersClassResource) extends ObjectWrapperClassCenter {
+class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends ObjectWrapperClassCenter {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val requestFactory                  = new WrapperCompilationRequestFactory
@@ -35,20 +35,23 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: Wrapper
             throw new InvalidPuppetDefException("Provided class is abstract.")
         if (clazz.isArray)
             throw new InvalidPuppetDefException("Provided class is an Array.")
-        resources
-            .findWrapperClass[S](clazz)
-            .getOrElse {
-                val result = center.generate {
-                    AppLogger.debug(s"Compiling Wrapper class for $clazz...")
-                    requestFactory.makeRequest(desc)
-                }
-                AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
-                val puppetClass = result.getResult
-                        .get
-                        .asInstanceOf[Class[S with SynchronizedObject[S]]]
-                ClassMappings.putClass(puppetClass)
-                puppetClass
+        val opt = resources
+                .findClass[S](clazz)
+
+        if (opt.isDefined)
+            opt.get
+        else {
+            val result = center.processRequest {
+                AppLogger.debug(s"Compiling Wrapper class for $clazz...")
+                requestFactory.makeRequest(desc)
             }
+            AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
+            val puppetClass = result.getResult
+                    .get
+                    .asInstanceOf[Class[S with SynchronizedObject[S]]]
+            ClassMappings.putClass(puppetClass)
+            puppetClass
+        }
     }
 
     override def preGenerateClasses(classes: Seq[Class[_]]): Unit = {
@@ -56,10 +59,10 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: Wrapper
     }
 
     override def preGenerateClasses(descriptions: List[PuppetClassDescription[_]]): Unit = {
-        val toCompile = descriptions.filter(desc => resources.findWrapperClass(desc.clazz).isEmpty)
+        val toCompile = descriptions.filter(desc => resources.findClass(desc.clazz).isEmpty)
         if (toCompile.isEmpty)
             return
-        val ct = center.generate {
+        val ct = center.processRequest {
             AppLogger.debug(s"Compiling Wrapper Classes for ${toCompile.map(_.clazz.getSimpleName).mkString(", ")}...")
             requestFactory.makeMultiRequest(toCompile)
         }.getCompileTime
@@ -67,11 +70,11 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: Wrapper
     }
 
     override def isWrapperClassGenerated[S](clazz: Class[S]): Boolean = {
-        resources.findWrapperClass[S](clazz).isDefined
+        resources.findClass[S](clazz).isDefined
     }
 
     override def isClassGenerated[S <: SynchronizedObject[S]](clazz: Class[S]): Boolean = {
-        resources.findWrapperClass[S](clazz).isDefined
+        resources.findClass[S](clazz).isDefined
     }
 }
 

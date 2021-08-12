@@ -19,14 +19,14 @@ import fr.linkit.api.connection.packet.persistence.v3.serialisation.Serialisatio
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{SimpleObjectDeserializerNode, SizedDeserializerNode}
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.node.{NullInstanceNode, SimpleObjectSerializerNode}
-import fr.linkit.engine.connection.packet.persistence.v3.{ArraySign, ClassDescription}
+import fr.linkit.engine.connection.packet.persistence.v3.{ArraySign, PersistenceClassDescription}
 import fr.linkit.engine.local.utils.ScalaUtils
 
 class DefaultObjectPersistor[T <: Any] extends ObjectPersistor[T] {
 
     override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[Object], true, Seq(SerialisationMethod.Deserial, SerialisationMethod.Serial)))
 
-    override def getSerialNode(obj: T, desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(obj: T, desc: SerializableClassDescription[T], context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         if (obj == null || obj == None)
             return new NullInstanceNode(obj == None)
 
@@ -39,13 +39,13 @@ class DefaultObjectPersistor[T <: Any] extends ObjectPersistor[T] {
         })
     }
 
-    override def getDeserialNode(desc: SerializableClassDescription, context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
+    override def getDeserialNode(desc: SerializableClassDescription[T], context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         val instance = ScalaUtils.allocate[AnyRef](desc.clazz)
-        getCustomDeserialNode(instance)
+        getCustomDeserialNode(instance, context)
     }
 
-    def getCustomDeserialNode(instance: Any): ObjectDeserializerNode = {
-        val desc = ClassDescription(instance.getClass)
+    def getCustomDeserialNode(instance: Any, context: PacketPersistenceContext): ObjectDeserializerNode = {
+        val desc = context.getDescription(instance.getClass)
         SimpleObjectDeserializerNode(instance) {
             in =>
                 //println(s"Deserializing object ${desc.clazz.getName}...")

@@ -15,8 +15,8 @@ package fr.linkit.engine.connection.cache.obj.description
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, fullNameOf}
 import fr.linkit.api.local.generation.PuppetClassDescription
-import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription.{PrimitivesNameMap, SyntheticMod}
-import fr.linkit.engine.connection.packet.persistence.v3.ClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription.PrimitivesNameMap
+import fr.linkit.engine.connection.cache.obj.generation.SyncObjectClassResource.{WrapperPackage, WrapperSuffixName}
 
 import java.lang.reflect.{Field, Method, Modifier}
 import scala.collection.mutable
@@ -43,6 +43,13 @@ class SyncObjectClassDescription[A] private(override val classType: u.Type,
 
     private val methodDescriptions = collectMethods()
     private val fieldDescriptions  = collectFields()
+
+    //The generated class name
+    override def classPackage: String = WrapperPackage + clazz.getPackageName
+
+    override def className: String = clazz.getSimpleName + WrapperSuffixName
+
+    override def parentLoader: ClassLoader = clazz.getClassLoader
 
     override def listMethods(): Iterable[MethodDescription] = {
         methodDescriptions.values
@@ -88,7 +95,7 @@ class SyncObjectClassDescription[A] private(override val classType: u.Type,
                 .flatten
                 .map(t => {
                     val argClass = t.typeSignature.erasure.typeSymbol
-                    val name = argClass.fullName
+                    val name     = argClass.fullName
                     PrimitivesNameMap.getOrElse(name, name)
                 }
                 )
@@ -106,7 +113,7 @@ class SyncObjectClassDescription[A] private(override val classType: u.Type,
     }
 
     private def collectFields(): Map[Int, FieldDescription] = {
-        val fields = ListBuffer.empty[Field]
+        val fields          = ListBuffer.empty[Field]
         var clazz: Class[_] = this.clazz
         while (clazz != null) {
             fields ++= clazz.getDeclaredFields

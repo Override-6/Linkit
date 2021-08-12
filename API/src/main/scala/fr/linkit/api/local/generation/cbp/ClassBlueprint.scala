@@ -12,9 +12,10 @@
 
 package fr.linkit.api.local.generation.cbp
 
+import fr.linkit.api.local.generation.compilation.CompilationContext
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 
-trait ClassBlueprint[V] {
+trait ClassBlueprint[V <: CompilationContext] {
 
     val compilerType: CompilerType
 

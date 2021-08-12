@@ -14,6 +14,7 @@ package fr.linkit.engine.test
 
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
+import fr.linkit.api.connection.packet.persistence.v3.procedure.MiniPersistor
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
@@ -27,6 +28,7 @@ import fr.linkit.engine.test.PacketTests.testPacket
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 
+import java.io.File
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
@@ -40,7 +42,8 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        testPacket(Array(WrapperNodeInfo("GameServer", 0, "test", Array(0))))
+        val f = new File("TestLol")
+        testPacket(Array(f, f, f))
     }
 
     object EmptyObject {
@@ -63,7 +66,16 @@ class PacketTests {
 object PacketTests {
 
     private val serializer = new DefaultPacketSerializer(null)
-    serializer.context.addPersistence(new SynchronizedObjectPersistor(null))
+    serializer.context.putPersistor(new SynchronizedObjectPersistor(null))
+    serializer.context.putMiniPersistor[File](new MiniPersistor[File, String] {
+        override def serialize(a: File): String = {
+            a.getAbsolutePath
+        }
+
+        override def deserialize(b: String): File =  {
+            new File(b)
+        }
+    })
 
     def testPacket(obj: Array[AnyRef]): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")

@@ -13,10 +13,11 @@
 package fr.linkit.api.local.generation
 
 import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription}
+import fr.linkit.api.local.generation.compilation.CompilationContext
 
 import scala.reflect.runtime.universe.Type
 
-trait PuppetClassDescription[A] {
+trait PuppetClassDescription[A] extends CompilationContext {
 
     val classType: Type
 

@@ -25,7 +25,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectTreeDefaultBehavior}
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectInstantiationHelper, WrappersClassResource}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource, SyncObjectInstantiationHelper}
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
 import fr.linkit.engine.connection.cache.obj.tree._
@@ -207,7 +207,8 @@ object DefaultSynchronizedObjectCenter {
         (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
             val channel   = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
             val context   = handler.network.connection.getApp
-            val resources = context.getAppResources.getOrOpenThenRepresent[WrappersClassResource](ClassesResourceDirectory)
+            import fr.linkit.engine.local.resource.external.LocalResourceFolder._
+            val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
             val generator = new DefaultObjectWrapperClassCenter(context.compilerCenter, resources)
 
             new DefaultSynchronizedObjectCenter[A](handler, identifier, channel, generator, behaviors)

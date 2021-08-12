@@ -46,7 +46,7 @@ trait ResourceEntry[+E <: Resource] extends Closeable {
      *                                           as the resource can't be handled as a folder, the implementation may throw this exception.
      */
     @throws[IncompatibleResourceTypeException]("If the requested resource type is incompatible with the resource it targets.")
-    def attachRepresentation[R <: ResourceRepresentation : ClassTag](factory: ResourceRepresentationFactory[R, E]): Unit
+    def attachRepresentation[R <: ResourceRepresentation : ClassTag](implicit factory: ResourceRepresentationFactory[R, E]): R
 
     /**
      * Retrieves the wanted representation of the resource.
@@ -58,6 +58,21 @@ trait ResourceEntry[+E <: Resource] extends Closeable {
     @throws[NoSuchRepresentationException]("If a resource was found but with another type than R.")
     @NotNull
     def getRepresentation[R <: ResourceRepresentation : ClassTag]: R
+
+
+    /**
+     * Retrieves the wanted representation of the resource. If no resource is found, create one.
+     *
+     * @tparam R the type of resource expected.
+     * @throws NoSuchRepresentationException if the resource haven't any attached representation of type [[R]].
+     * @return the expected resource representation.
+     * */
+    @throws[NoSuchRepresentationException]("If a resource was found but with another type than R.")
+    @NotNull
+    def getOrAttachRepresentation[R <: ResourceRepresentation : ClassTag](implicit factory: ResourceRepresentationFactory[R, E]): R = {
+        findRepresentation[R].getOrElse(attachRepresentation[R])
+    }
+
 
     /**
      * Tries to Retrieves the wanted representation of the resource.

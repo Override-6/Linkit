@@ -12,12 +12,13 @@
 
 package fr.linkit.engine.local.generation.cbp
 
-import fr.linkit.api.local.generation.cbp.{ClassBlueprint, ValueScope}
+import fr.linkit.api.local.generation.cbp.ClassBlueprint
+import fr.linkit.api.local.generation.compilation.CompilationContext
 import fr.linkit.engine.local.generation.cbp.AbstractClassBlueprint.removeBPComments
 
 import java.io.InputStream
 
-abstract class AbstractClassBlueprint[V] private(protected val blueprint: String) extends ClassBlueprint[V] {
+abstract class AbstractClassBlueprint[V <: CompilationContext] private(protected val blueprint: String) extends ClassBlueprint[V] {
 
     def this(stream: InputStream) = {
         this(removeBPComments(new String(stream.readAllBytes())))
@@ -29,9 +30,14 @@ abstract class AbstractClassBlueprint[V] private(protected val blueprint: String
 
     override def toClassSource(v: V): String = rootScope.getSourceCode(v)
 
-    abstract class RootValueScope extends AbstractValueScope[V]("ROOT", 0, blueprint)
+    abstract class RootValueScope extends AbstractValueScope[V]("ROOT", 0, blueprint) {
+        bindValue("CompileTime" ~~> System.currentTimeMillis())
+        bindValue("ClassName" ~> (_.className))
+        bindValue("ClassPackage" ~> (_.classPackage))
+    }
 
     object RootValueScope {
+
         def apply(other: AbstractValueScope[V]): RootValueScope = new RootValueScope {
             bindAll(other)
         }

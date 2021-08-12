@@ -26,8 +26,6 @@ class ScalaWrapperClassBlueprint(in: InputStream) extends AbstractClassBlueprint
     override val compilerType: CompilerType = CommonCompilerTypes.Scalac
 
     override val rootScope: RootValueScope = new RootValueScope {
-        bindValue("WrappedClassPackage" ~> (_.clazz.getPackageName))
-        bindValue("CompileTime" ~~> System.currentTimeMillis())
         bindValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
         bindValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
         bindValue("TParamsIn" ~> (getGenericParams(_, _.asType.toType.finalResultType)))

@@ -22,25 +22,15 @@ import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import java.io.InputStream
 import scala.reflect.runtime.universe.symbolOf
 
-class ScalaWrapperMethodBlueprint(bp: InputStream) extends AbstractClassBlueprint[MethodDescription](bp) {
-
-    override val compilerType: CompilerType   = CommonCompilerTypes.Scalac
-    override val rootScope   : RootValueScope = RootValueScope(new ValueScope("ROOT", "", 0))
-
-}
-
 object ScalaWrapperMethodBlueprint {
 
     class ValueScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, pos, blueprint) {
 
         bindValue("ReturnType" ~> getReturnType)
-        //bindValue("DefaultReturnValue" ~> (_.getDefaultTypeReturnValue))
         bindValue("GenericTypesIn" ~> getGenericParamsIn)
-        //bindValue("GenericTypesOut" ~> getGenericParamsOut)
         bindValue("MethodName" ~> (_.symbol.name.toString))
         bindValue("MethodID" ~> (m => m.methodId.toString))
         bindValue("ParamsIn" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), true, false)))
-        //bindValue("ParamsOut" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), false, true)))
         bindValue("ParamsOutFlatten" ~> (getParamsOutFlatten(_, false)))
         bindValue("ParamsOutFlattenLambda" ~> (getParamsOutFlatten(_, true)))
         bindValue("Override" ~> chooseOverride)

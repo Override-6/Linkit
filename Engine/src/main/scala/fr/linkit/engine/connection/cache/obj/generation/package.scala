@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj
 
-import fr.linkit.engine.connection.cache.obj.generation.WrappersClassResource.{WrapperPackage, WrapperSuffixName}
+import fr.linkit.engine.connection.cache.obj.generation.SyncObjectClassResource.{WrapperPackage, WrapperSuffixName}
 
 package object generation {
 

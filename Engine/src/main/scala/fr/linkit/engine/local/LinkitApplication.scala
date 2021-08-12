@@ -20,7 +20,7 @@ import fr.linkit.api.local.resource.external.{LocalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, WrappersClassResource}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.local.LinkitApplication.{getProperty, setInstance}
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
@@ -101,7 +101,7 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
         }
 
         /*import LocalResourceFolder._
-        val resource  = appResources.getOrOpenThenRepresent[WrappersClassResource](getProperty("compilation.working_dir.classes"))
+        val resource  = appResources.getOrOpenThenRepresent[SyncObjectClassResource](getProperty("compilation.working_dir.classes"))
         val generator = new SynchronizedObjectClassGenerator(compilerCenter, resource)
         generator.preGenerateClasses(
             Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter])
@@ -129,7 +129,7 @@ object LinkitApplication {
     //TODO Private this, public for tests purposes
     def setInstance(instance: LinkitApplication): Unit = this.synchronized {
         if (this.instance != null)
-            throw new IllegalAccessError("Only one LinkitApplication per JVM process is permitted.")
+            throw new IllegalAccessException("Only one LinkitApplication per JVM process is permitted.")
         if (!isPrepared)
             throw new IllegalStateException("Application must be prepared before any launch. Please use LinkitApplication.prepareApplication.")
         this.instance = instance

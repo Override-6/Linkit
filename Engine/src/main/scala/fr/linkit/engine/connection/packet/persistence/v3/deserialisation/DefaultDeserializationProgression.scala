@@ -17,6 +17,7 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Deser
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationObjectPool, DeserializationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.{ObjectPersistor, PacketPersistenceContext}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
+import fr.linkit.engine.connection.packet.persistence.v3.NoSuchPersistorException
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{NonObjectDeserializerNode, RawObjectNode}
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.v3.serialisation.SerializerNodeFlags._
@@ -55,13 +56,31 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
             case HeadedValueFlag                        => pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
             case NullFlag                               => RawObjectNode(if (buff.limit() > buff.position() && buff.get(buff.position()) == NoneFlag) None else null)
             case NoneFlag                               => RawObjectNode(None)
-            case ObjectFlag                             => handleObjectFlag(buff, startPos)
             case ClassFlag                              => in => in.readClass()
+            case ObjectFlag                             => handleObjectFlag(buff, startPos)
+            case MappedObjectFlag                       => handleMappedObjectFlag(buff, startPos)
             case flag                                   => throw new MalFormedPacketException(buff, s"Unknown flag '$flag' at start of node expression.")
         }
     }
 
+    private def handleMappedObjectFlag(buffer: ByteBuffer, i: Int): DeserializerNode = {
+        getObjectNode(buffer, i) { clazz => {
+            val miniPersistor = context.getDescription[Any](clazz).miniPersistor.getOrElse {
+                throw new NoSuchPersistorException(s"Could not find mini persistor for clazz $clazz. The packet deserialization requires it.") //Enhance the message by saying "a mini persistor that deserializes 'B' to 'class name'
+            }
+            val node          = getNextDeserializationNode
+            in => miniPersistor.deserialize(cast(node.deserialize(in)))
+        }
+        }
+    }
+
+    private def cast[A](obj: Any): A = obj.asInstanceOf[A]
+
     private def handleObjectFlag(buff: ByteBuffer, startPos: Int): DeserializerNode = {
+        getObjectNode(buff, startPos)(handlePersistor)
+    }
+
+    private def getObjectNode(buff: ByteBuffer, startPos: Int)(action: Class[_] => DeserializerNode): DeserializerNode = {
         if (buff.get(startPos + 1) == HeadedValueFlag) {
             in.position(startPos + 2)
             return pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
@@ -73,12 +92,12 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
         if (objectClass.isEnum)
             NonObjectDeserializerNode(_.readEnum(hint = objectClass))
         else {
-            handlePersistor(objectClass)
+            action(objectClass)
         }
     }
 
     private def handlePersistor(clazz: Class[_]): DeserializerNode = {
-        val persistor = context.getPersistenceForDeserialisation(clazz)
+        val persistor = context.getDescription(clazz).deserialPersistor
         val node      = persistor.getDeserialNode(context.getDescription(clazz), context, this)
         if (!persistor.useSortedDeserializedObjects)
             return node
