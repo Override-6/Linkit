@@ -24,6 +24,28 @@ Most of local features are a non negligeable help for writing and maintaining yo
 * Simple Class Source generation (using ClassBlueprints) and language Compilator management in order to quickly create classes at runtime.  
 * ClassMapping (Mainly used for Packet Persistence) Simply assignates a class name to its name hashcode code.  
 * Script creation. Write your code in a file and then use it for configuration, simple execution, performing remote code execution... 
+
+## Some examples
+### Creating the Application and opening a Connection.
+Note: The kind of application and connection created depends on the used Engine Implementation (Client module creates ClientApplication and creates ClientConnection, and Server module creates ServerApplication, and opens ServerConnection)  
+```scala
+val config           = new ServerApplicationConfigBuilder {
+            //Note : You can specify settings by oberriding values in the ApplicationConfigBuilder. See wiki for further details.
+            loadSchematic = new ScalaServerAppSchematic {
+                servers += new ServerConnectionConfigBuilder {
+                    override val identifier: String = "HelloServer"
+                    override val port      : Int    = 48484
+                    nWorkerThreadFunction = c => c + 1 //allow one thread per connection.
+
+                    configName = "HelloConfig"
+                }
+            }
+        }
+        val serverApp = ServerApplication.launch(config, getClass)
+        AppLogger.trace(s"Build complete: $serverApp")
+        val helloConnection = serverApp.findConnection("HelloServer").get //also works using the server port
+
+```
 ## Acknowledgements
 I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
 Here is a non-ordered list of different people that helped me writing the project, or helped me get more trained with programmation :
