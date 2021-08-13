@@ -47,7 +47,7 @@ object JavaCollectionPersistor extends ObjectPersistor[util.Collection[_]] {
             case _: NoSuchMethodException =>
                 ScalaUtils.allocate(desc.clazz)
         }
-        SimpleObjectDeserializerNode(ref) { in =>
+        SimpleObjectDeserializerNode(ref, context) { in =>
             val content = in.readArray[AnyRef]()
             //TODO handle immutable collections
             if (!content.isEmpty) {

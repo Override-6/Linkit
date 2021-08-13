@@ -68,7 +68,7 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream, center: D
                 throw new NullPointerException("Unexpected null item in poolObject")
             else nonAvailableReferences(place)
         } else
-            RawObjectNode(obj)
+            RawObjectNode(obj, null)
     }
 
     override def initPool(progress: DeserializationProgression): Unit = {

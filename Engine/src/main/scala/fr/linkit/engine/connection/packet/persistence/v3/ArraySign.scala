@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3
 
-import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.{DeserializerNode, ObjectDeserializerNode}
+import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.SerializerNode
@@ -54,7 +54,7 @@ object ArraySign {
 
         def deserializeRef(ref: Any)(group: Array[SizedDeserializerNode] => Unit): ObjectDeserializerNode = {
             //prinln(s"getting node for array sign ref ${ref.getClass.getName}...")
-            SimpleObjectDeserializerNode(ref) {
+            SimpleObjectDeserializerNode(ref, progress.context) {
                 in => {
                     //prinln(s"Deserializing array sign ${ref.getClass.getName}...")
                     val buff      = in.buff
@@ -83,7 +83,12 @@ object ArraySign {
         val pool          = progress.pool
 
         for (i <- values.indices) {
-            val fieldValue = values(i)
+            var fieldValue = values(i)
+            if (fieldValue != null && !fieldValue.getClass.isPrimitive) {
+                val desc = progress.context.getDescription[Any](fieldValue.getClass)
+                desc.procedure.foreach(_.onSerialized(fieldValue))
+                fieldValue = desc.miniPersistor.map(_.serialize(fieldValue)).getOrElse(fieldValue)
+            }
             pool.addSerialisationDepth()
             val node = progress.getSerializationNode(fieldValue)
             pool.removeSerialisationDepth()

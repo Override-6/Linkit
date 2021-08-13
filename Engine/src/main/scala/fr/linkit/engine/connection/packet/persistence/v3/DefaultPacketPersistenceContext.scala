@@ -15,16 +15,21 @@ package fr.linkit.engine.connection.packet.persistence.v3
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.packet.persistence.v3._
 import fr.linkit.api.connection.packet.persistence.v3.procedure.{FieldCompleter, MiniPersistor, Procedure}
+import fr.linkit.api.local.ApplicationContext
+import fr.linkit.engine.connection.packet.persistence.config.{PersistenceConfiguration, ScriptConfigHandler}
 import fr.linkit.engine.connection.packet.persistence.v3.persistor._
+import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.engine.local.script.ScriptExecutor
 
+import java.net.URL
 import scala.collection.mutable
-import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
 
-class DefaultPacketPersistenceContext extends PacketPersistenceContext {
+class DefaultPacketPersistenceContext(app: ApplicationContext) extends PacketPersistenceContext {
 
-    private val persistors   = mutable.HashMap.empty[String, (ObjectPersistor[Any], HandledClass)]
-    private val descriptions = mutable.HashMap.empty[String, PersistenceClassDescription[_]]
+    implicit val configScriptHandler: ScriptConfigHandler = new ScriptConfigHandler(this)
+    private  val persistors                               = mutable.HashMap.empty[String, (ObjectPersistor[Any], HandledClass)]
+    private  val descriptions                             = mutable.HashMap.empty[String, PersistenceClassDescription[_]]
 
     override def putPersistor(persistence: ObjectPersistor[_], classes: Seq[HandledClass]): Unit = {
         classes.foreach(cl => persistors.put(cl.className, (persistence.asInstanceOf[ObjectPersistor[Any]], cl)))
@@ -32,6 +37,11 @@ class DefaultPacketPersistenceContext extends PacketPersistenceContext {
 
     override def getDescription[A](clazz: Class[_]): SerializableClassDescription[A] = {
         getDescription0(clazz)
+    }
+
+    override def executeConfigScript(url: URL): Unit = {
+        val script = ScriptExecutor.getOrCreateScript[PersistenceConfiguration](url, app)(configScriptHandler, app.compilerCenter)
+        script.configure()
     }
 
     override def putProcedure[A: ClassTag](procedure: Procedure[A]): Unit = {
@@ -111,10 +121,7 @@ class DefaultPacketPersistenceContext extends PacketPersistenceContext {
                 .asInstanceOf[PersistenceClassDescription[A]]
     }
 
-    putPersistor(IterablePersistor)
-    putPersistor(ScalaMapPersistor)
-    putPersistor(JavaCollectionPersistor)
-    putPersistor(JavaMapPersistor)
+    executeConfigScript(getClass.getResource("/default_scripts/default_engine_persistence.sc"))
 }
 
 object DefaultPacketPersistenceContext {

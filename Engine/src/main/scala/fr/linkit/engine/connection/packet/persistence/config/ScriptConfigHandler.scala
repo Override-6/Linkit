@@ -21,7 +21,7 @@ class ScriptConfigHandler(context: PacketPersistenceContext) extends LinkitScrip
     override val scriptClassBlueprintResourcePath: String = "/generation/scala_config_script_file.scbp"
 
     override def newScript(clazz: Class[_ <: PersistenceConfiguration]): PersistenceConfiguration = {
-        clazz.getConstructor(context.getClass).newInstance(context)
+        clazz.getConstructor(classOf[PacketPersistenceContext]).newInstance(context)
     }
 
     override protected val className   : String = ScriptName

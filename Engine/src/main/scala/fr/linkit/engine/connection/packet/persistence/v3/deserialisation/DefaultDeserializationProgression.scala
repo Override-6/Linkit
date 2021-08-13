@@ -31,7 +31,7 @@ import scala.collection.mutable.ListBuffer
 
 class DefaultDeserializationProgression(in: DeserializationInputStream,
                                         override val pool: DeserializationObjectPool,
-                                        context: PacketPersistenceContext,
+                                        override val context: PacketPersistenceContext,
                                         override val coordinates: PacketCoordinates) extends DeserializationProgression {
 
     private val registeredObjects = mutable.HashMap.empty[ObjectPersistor[_], ListBuffer[Any]]
@@ -54,8 +54,8 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
                 NonObjectDeserializerNode(_.readString())
             case ArrayFlag                              => ArrayPersistence.deserialize(in)
             case HeadedValueFlag                        => pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
-            case NullFlag                               => RawObjectNode(if (buff.limit() > buff.position() && buff.get(buff.position()) == NoneFlag) None else null)
-            case NoneFlag                               => RawObjectNode(None)
+            case NullFlag                               => RawObjectNode(if (buff.limit() > buff.position() && buff.get(buff.position()) == NoneFlag) None else null, context)
+            case NoneFlag                               => RawObjectNode(None, context)
             case ClassFlag                              => in => in.readClass()
             case ObjectFlag                             => handleObjectFlag(buff, startPos)
             case MappedObjectFlag                       => handleMappedObjectFlag(buff, startPos)
@@ -65,16 +65,18 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
 
     private def handleMappedObjectFlag(buffer: ByteBuffer, i: Int): DeserializerNode = {
         getObjectNode(buffer, i) { clazz => {
-            val miniPersistor = context.getDescription[Any](clazz).miniPersistor.getOrElse {
+            val desc          = context.getDescription[Any](clazz)
+            val miniPersistor = desc.miniPersistor.getOrElse {
                 throw new NoSuchPersistorException(s"Could not find mini persistor for clazz $clazz. The packet deserialization requires it.") //Enhance the message by saying "a mini persistor that deserializes 'B' to 'class name'
             }
             val node          = getNextDeserializationNode
-            in => miniPersistor.deserialize(cast(node.deserialize(in)))
+            in => {
+                val obj: Any = node.deserialize(in)
+                miniPersistor.deserialize(cast(obj))
+            }
         }
         }
     }
-
-    private def cast[A](obj: Any): A = obj.asInstanceOf[A]
 
     private def handleObjectFlag(buff: ByteBuffer, startPos: Int): DeserializerNode = {
         getObjectNode(buff, startPos)(handlePersistor)
@@ -95,6 +97,8 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
             action(objectClass)
         }
     }
+
+    private def cast[A](obj: Any): A = obj.asInstanceOf[A]
 
     private def handlePersistor(clazz: Class[_]): DeserializerNode = {
         val persistor = context.getDescription(clazz).deserialPersistor

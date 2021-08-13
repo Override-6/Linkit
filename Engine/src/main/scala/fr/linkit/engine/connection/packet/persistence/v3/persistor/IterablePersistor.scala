@@ -36,7 +36,7 @@ object IterablePersistor extends ObjectPersistor[IterableOnce[_]] {
             .getOrElse(throw new UnsupportedOperationException(s"factory not found for seq ${desc.clazz.getName}"))
             .newBuilder[AnyRef]
         val ref     = builder.result()
-        SimpleObjectDeserializerNode(ref) { in =>
+        SimpleObjectDeserializerNode(ref, context) { in =>
             val content = in.readArray[AnyRef]()
             builder.addAll(content)
             val result = builder.result()

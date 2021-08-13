@@ -13,9 +13,10 @@
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 
-abstract class SynchronizedObjectDeserializerNode extends SimpleObjectDeserializerNode {
+abstract class SynchronizedObjectDeserializerNode(context: PacketPersistenceContext) extends SimpleObjectDeserializerNode(context) {
 
     def deserializeWrapper(ref: AnyRef, in: DeserializationInputStream): SynchronizedObject[_]
 

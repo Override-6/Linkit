@@ -46,7 +46,7 @@ class DefaultObjectPersistor[T <: Any] extends ObjectPersistor[T] {
 
     def getCustomDeserialNode(instance: Any, context: PacketPersistenceContext): ObjectDeserializerNode = {
         val desc = context.getDescription(instance.getClass)
-        SimpleObjectDeserializerNode(instance) {
+        SimpleObjectDeserializerNode(instance, context) {
             in =>
                 //println(s"Deserializing object ${desc.clazz.getName}...")
                 ArraySign.in(desc.signItemCount, in).deserializeRef(instance)(nodes => {

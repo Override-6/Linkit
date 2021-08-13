@@ -23,6 +23,10 @@ class SyncObjectClassResource(resource: ResourceFolder) extends ClassFolderResou
         findClass[S](wrappedClass.getName, wrappedClass.getClassLoader).asInstanceOf[Option[Class[S with SynchronizedObject[S]]]]
     }
 
+    override def findClass[S](className: String, loader: ClassLoader): Option[Class[S with SynchronizedObject[Any]]] = {
+        super.findClass(adaptClassName(className), loader)
+    }
+
 }
 
 object SyncObjectClassResource extends ResourceRepresentationFactory[SyncObjectClassResource, ResourceFolder] {

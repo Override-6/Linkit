@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.connection.packet.persistence.config
 
-import fr.linkit.engine.connection.packet.persistence.config.ScriptConfigContext.{BlacklistedLines, ScriptConfigName, ScriptConfigPackage}
+import fr.linkit.engine.connection.packet.persistence.config.ScriptConfigContext.BlacklistedLines
+import fr.linkit.engine.connection.packet.persistence.config.ScriptConfigHandler.{ScriptName, ScriptPackage}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.script.SourceScriptContext
-
 case class ScriptConfigContext(private val scriptCode: String,
                                scriptName: String,
                                override val parentLoader: ClassLoader = classOf[LinkitApplication].getClassLoader) extends SourceScriptContext(scriptName, parentLoader) {
@@ -29,15 +29,13 @@ case class ScriptConfigContext(private val scriptCode: String,
         str.toString()
     }
 
-    override def className: String = ScriptConfigName + scriptName
+    override def className: String = ScriptName + scriptName
 
-    override def classPackage: String = ScriptConfigPackage
+    override def classPackage: String = ScriptPackage
 
 }
 
 object ScriptConfigContext {
 
-    val ScriptConfigPackage = "gen.scala.script.config"
-    val ScriptConfigName    = "ScalaConfig_"
     val BlacklistedLines    = Seq("import " + classOf[PersistenceConfigurationMethods].getName + "._")
 }

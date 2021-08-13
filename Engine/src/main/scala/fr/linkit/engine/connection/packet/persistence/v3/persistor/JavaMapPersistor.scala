@@ -48,7 +48,7 @@ object JavaMapPersistor extends ObjectPersistor[util.Map[_, _]] {
             case _: NoSuchMethodException =>
                 ScalaUtils.allocate(desc.clazz)
         }
-        SimpleObjectDeserializerNode(ref) { in =>
+        SimpleObjectDeserializerNode(ref, context) { in =>
             val content = in.readArray[util.Map.Entry[AnyRef, AnyRef]]()
             content.foreach(entry => {
                 val key   = entry.getKey

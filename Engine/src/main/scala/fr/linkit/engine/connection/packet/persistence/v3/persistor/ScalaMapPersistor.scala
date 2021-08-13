@@ -51,7 +51,7 @@ object ScalaMapPersistor extends ObjectPersistor[collection.Map[_, _]] {
                 .getOrElse(throw new UnsupportedOperationException(s"factory not found for seq ${desc.clazz.getName}"))
                 .newBuilder[AnyRef, AnyRef]
         val ref     = builder.result()
-        SimpleObjectDeserializerNode(ref.asInstanceOf[AnyRef]) { in =>
+        SimpleObjectDeserializerNode(ref.asInstanceOf[AnyRef], context) { in =>
             val content = in.readArray[(AnyRef, AnyRef)]()
             builder.addAll(content)
             val result = builder.result()

@@ -27,8 +27,10 @@ class PersistenceClassDescription[A] private[v3](val clazz: Class[A], context: D
     val signItemCount     : Int          = serializableFields.length
     val classCode         : Array[Byte]  = NumberSerializer.serializeInt(clazz.getName.hashCode)
 
-    private  var procedure    : Option[Procedure[_ >: A]]          = None
+    private var procedure0    : Option[Procedure[A]]   = None
     private var miniPersistor0: Option[MiniPersistor[A, _]] = None
+
+    override def procedure: Option[Procedure[A]] = procedure0
 
     override def miniPersistor: Option[MiniPersistor[A, _]] = miniPersistor0
 
@@ -44,14 +46,12 @@ class PersistenceClassDescription[A] private[v3](val clazz: Class[A], context: D
         })
     }
 
-
-
     override def toString: String = s"SerializableClassDescription($clazz, $serializableFields)"
 
     override lazy val serialPersistor  : ObjectPersistor[A] = context.getPersistenceForSerialisation(clazz)
     override lazy val deserialPersistor: ObjectPersistor[A] = context.getPersistenceForDeserialisation(clazz)
 
-    def setProcedure(procedure: Procedure[A]): Unit = this.procedure = Option(procedure)
+    def setProcedure(procedure: Procedure[A]): Unit = this.procedure0 = Option(procedure)
 
     def setMiniPersistor(persistor: MiniPersistor[A, _]): Unit = miniPersistor0 = Option(persistor)
 

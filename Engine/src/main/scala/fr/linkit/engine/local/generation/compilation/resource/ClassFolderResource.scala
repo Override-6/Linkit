@@ -29,16 +29,14 @@ class ClassFolderResource[C](override val resource: ResourceFolder) extends Fold
     private val generatedClasses = mutable.Map.empty[String, Class[_ <: C]]
 
     def findClass[S](className: String, loader: ClassLoader): Option[Class[S with C]] = {
-        val generatedClassName = adaptClassName(className)
-        generatedClasses.getOrElse(generatedClassName, {
-            val wrapperClassPath = folderPath.resolve(generatedClassName.replace('.', File.separatorChar) + ".class")
+        generatedClasses.getOrElse(className, {
+            val wrapperClassPath = folderPath.resolve(className.replace('.', File.separatorChar) + ".class")
             if (Files.notExists(wrapperClassPath))
                 null
             else {
                 val classLoader = new GeneratedClassLoader(folderPath, loader, Seq(classOf[LinkitApplication].getClassLoader))
-                val clazz       = Class.forName(generatedClassName, false, classLoader).asInstanceOf[Class[_ <: C]]
-                generatedClasses.put(generatedClassName, clazz)
-                SyncObjectInstantiationHelper.prepareClass(clazz)
+                val clazz       = Class.forName(className, false, classLoader).asInstanceOf[Class[_ <: C]]
+                generatedClasses.put(className, clazz)
                 ClassMappings.putClass(clazz)
                 clazz
             }

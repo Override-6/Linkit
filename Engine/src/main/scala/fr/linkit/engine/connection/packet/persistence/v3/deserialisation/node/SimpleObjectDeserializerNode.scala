@@ -12,10 +12,11 @@
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
 
+import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.ObjectDeserializerNode
 
-abstract class SimpleObjectDeserializerNode() extends ObjectDeserializerNode {
+abstract class SimpleObjectDeserializerNode(context: PacketPersistenceContext) extends ObjectDeserializerNode {
 
     protected override var ref  : Any  = _
     private            var state: Byte = -1
@@ -39,6 +40,11 @@ abstract class SimpleObjectDeserializerNode() extends ObjectDeserializerNode {
         state = 1
         if (ref == null)
             setReference(returned)
+        if (context != null && ref != null) {
+            context.getDescription[Any](ref.getClass)
+                    .procedure
+                    .foreach(_.onDeserialized(ref))
+        }
         returned
     }
 
@@ -48,8 +54,8 @@ abstract class SimpleObjectDeserializerNode() extends ObjectDeserializerNode {
 
 object SimpleObjectDeserializerNode {
 
-    def apply(ref: Any)(deserializer: DeserializationInputStream => Any): SimpleObjectDeserializerNode = {
-        val node = new SimpleObjectDeserializerNode {
+    def apply(ref: Any, context: PacketPersistenceContext)(deserializer: DeserializationInputStream => Any): SimpleObjectDeserializerNode = {
+        val node = new SimpleObjectDeserializerNode(context) {
             override def deserializeAction(in: DeserializationInputStream): Any = deserializer(in)
         }
         node.setReference(ref)

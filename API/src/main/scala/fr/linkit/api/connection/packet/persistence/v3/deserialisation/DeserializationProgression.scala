@@ -13,14 +13,15 @@
 package fr.linkit.api.connection.packet.persistence.v3.deserialisation
 
 import fr.linkit.api.connection.packet.PacketCoordinates
+import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 
 trait DeserializationProgression {
 
     val coordinates: PacketCoordinates
     val pool       : DeserializationObjectPool
+    val context    : PacketPersistenceContext
 
     def getNextDeserializationNode: DeserializerNode
-
 
 }

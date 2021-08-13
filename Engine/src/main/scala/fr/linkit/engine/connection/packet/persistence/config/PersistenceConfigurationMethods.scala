@@ -12,11 +12,19 @@
 
 package fr.linkit.engine.connection.packet.persistence.config
 
+import fr.linkit.api.connection.packet.persistence.v3.{ObjectPersistor, PacketPersistenceContext}
+
 import scala.reflect.ClassTag
 
 trait PersistenceConfigurationMethods {
-    protected def putMiniPersistor[A : ClassTag, B](serial: A => B)(deserial: B => A): Unit
-    protected def putProcedure[A : ClassTag](serial: A => Unit)(deserial: A => Unit): Unit
+
+    protected def putMiniPersistor[A: ClassTag, B](serial: A => B)(deserial: B => A): Unit
+
+    protected def putProcedure[A: ClassTag](serial: A => Unit = null)(deserial: A => Unit = null): Unit
+
+    protected def putPersistor(persistence: ObjectPersistor[_]): Unit
+
+    protected val context: PacketPersistenceContext
 }
 
 object PersistenceConfigurationMethods extends PersistenceConfigurationMethods {
@@ -24,4 +32,8 @@ object PersistenceConfigurationMethods extends PersistenceConfigurationMethods {
     override def putMiniPersistor[A: ClassTag, B](serial: A => B)(deserial: B => A): Unit = ???
 
     override def putProcedure[A: ClassTag](serial: A => Unit)(deserial: A => Unit): Unit = ???
+
+    override def putPersistor(persistence: ObjectPersistor[_]): Unit = ???
+
+    override protected val context: PacketPersistenceContext = null
 }

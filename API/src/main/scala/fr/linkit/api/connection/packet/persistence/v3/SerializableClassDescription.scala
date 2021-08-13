@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.SerializableClassDescription.Fields
-import fr.linkit.api.connection.packet.persistence.v3.procedure.MiniPersistor
+import fr.linkit.api.connection.packet.persistence.v3.procedure.{MiniPersistor, Procedure}
 
 import java.lang.reflect.Field
 
@@ -31,6 +31,8 @@ trait SerializableClassDescription[A] {
     def deserialPersistor: ObjectPersistor[A]
 
     def miniPersistor: Option[MiniPersistor[A, _]]
+
+    def procedure: Option[Procedure[A]]
 
 }
 

@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.connection.packet.persistence.config
 
-import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
+import fr.linkit.api.connection.packet.persistence.v3.{ObjectPersistor, PacketPersistenceContext}
 import fr.linkit.api.connection.packet.persistence.v3.procedure.{MiniPersistor, Procedure}
 import fr.linkit.engine.local.script.ScriptFile
 
 import scala.reflect.ClassTag
 
-abstract class PersistenceConfiguration(context: PacketPersistenceContext) extends PersistenceConfigurationMethods with ScriptFile {
+abstract class PersistenceConfiguration(override protected val context: PacketPersistenceContext) extends PersistenceConfigurationMethods with ScriptFile {
 
     override protected def putMiniPersistor[A: ClassTag, B](serial: A => B)(deserial: B => A): Unit = {
         context.putMiniPersistor[A](new MiniPersistor[A, B] {
@@ -30,11 +30,13 @@ abstract class PersistenceConfiguration(context: PacketPersistenceContext) exten
 
     override protected def putProcedure[A: ClassTag](serial: A => Unit)(deserial: A => Unit): Unit = {
         context.putProcedure[A](new Procedure[A] {
-            override def onSerialized(obj: A): Unit = serial(obj)
+            override def onSerialized(obj: A): Unit = if (serial != null) serial(obj)
 
-            override def onDeserialized(obj: A): Unit = deserial(obj)
+            override def onDeserialized(obj: A): Unit = if (deserial != null) deserial(obj)
         })
     }
+
+    override protected def putPersistor(persistor: ObjectPersistor[_]): Unit = context.putPersistor(persistor)
 
     /*protected def putFieldCompleter[A : ClassTag, B](complete: A => B): Unit = {
         context.putFieldCompleter[A](new FieldCompleter[A, B] {

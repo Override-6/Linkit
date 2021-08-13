@@ -59,7 +59,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
     override def getDeserialNode(desc: SerializableClassDescription[SynchronizedObject[AnyRef]], context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         val node = DefaultObjectPersistor.getDeserialNode(desc.asInstanceOf[SerializableClassDescription[Any]], context, progress)
         //println(s"Deserialize wrapper...")
-        new SimpleObjectDeserializerNode() {
+        new SimpleObjectDeserializerNode(context) {
             override def deserializeAction(in: DeserializationInputStream): Any = {
                 in.limit(in.capacity())
                 //in.position(in.position() + 1)
