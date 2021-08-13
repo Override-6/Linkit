@@ -71,11 +71,26 @@ collection.add("World") //all remote engines that will get the cache from the Gl
 ```
 
 #### Complex Shared Cache (Synchronized Objects)  
-#### Introduction to Synchronized Objects.  
-If you want to synchronize your objects, you'll have to open a `SynchronizedObjectCenter[T]` Cache,  
-In which you can post objects on an identifier int, and retrieve them using theirs identifier. When you post an object on the cache (using `postObject(int, T)`), you'll create a SynchronizedObjectTree, in which the first object in the node tree is called a **root object**.   
-All root objects must have the type of `T`. but inner synchronized objects (such as fields, methods parameters or methods return values) can be any Object.  
-A `SynchronizedObjectTree` contains a `SynchronizedObjectBehaviorCenter`, which where all `SynchronizedObjectBehavior` are stored.  
+##### Introduction to Synchronized Objects.  
+If you want to synchronize your objects, you'll have to open a `SynchronizedObjectCenter[T]` Cache, in which you can post objects, identified by an int, and retrieve them using theirs identifier.  
+When you post an object on the cache (using `postObject(int, T)`), you'll create a SynchronizedObjectTree, in which the first object in the node tree is called a **root object**.   
+All root objects of a `SynchronizedObjectCenter[T]` must have the type of `T`. but inner synchronized objects (such as fields, methods parameters or methods return values) can be any Object.  
+A `SynchronizedObjectTree` contains a `SynchronizedObjectBehaviorCenter`, which is where all `SynchronizedObjectBehavior` are stored.  
+
+##### Introduction to SynchronizedObjectBehavior
+SynchronizedObjectBehavior contains all informations about the class's fields (FieldBehavior) and methods (MethodBehavior), that depicts what will they do as an object will get synchronized.  
+Example :  
+- For fields, they simply say if a field value must also be synchronized.  
+- For Methods, They depicts what parameters will be synchronized between the caller engine and the processors engines.  
+If the return value may also be synchronized, or if the remote invocation must follow some rules. See wiki for more.  
+A SynchronizedObjectBehavior and a SynchronizedObjectBehaviorTree can be created using their builders.
+
+
+##### Simple use case.
+Let's say you have a `ListBuffer` of `Player`, and you want the list to be the "same" for all connected engines.   
+You also want you Players to be « The same for everyone », like, if you make any action on the player object, the action will be spread out to the other engines, as if they all get the « same instance ».
+Here is what you would do : 
+
 
 ## Acknowledgements
 I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
