@@ -87,10 +87,48 @@ A SynchronizedObjectBehavior and a SynchronizedObjectBehaviorTree can be created
 
 
 ##### Simple use case.
-Let's say you have a `ListBuffer` of `Player`, and you want the list to be the "same" for all connected engines.   
-You also want you Players to be « The same for everyone », like, if you make any action on the player object, the action will be spread out to the other engines, as if they all get the « same instance ».
+Let's say you have an `ArrayList` of `Player`, and you want the list to be the "same" for all connected engines.   
+You also want you Players to be « The same for everyone », like, if you make any action on a player object on your engine, the action will be spread out to the other engines, as if they all get the « same instance ».
 Here is what you would do : 
-
+First: define a behavior tree (using ".bhv" files)
+```bhv
+define class java.util.ArrayList {
+   forall fields -> disable //no inner fields will become a synchronized object. (this is the default behavior)
+   forall methods -> disable //no method invocation will be spread to the other engines. if a method call is performed on your client, you'll be the only one that will keep this action.
+    
+   //"broadcast" means that the RMI request will be send to every engines.  
+   //"invokeonly" means that the RMI will be requested, but no result is awaited (return value or even method throwing).  
+   enable method add as broadcast and invokeonly {
+      args {
+         0 -> enable // the first parameter object will be synchronized. this way, if you add a Player in your list, the Player object will become a synchronized object.
+      }
+      returnvalue -> false //do not synchronize the return value of the method.
+   }
+   //the behavior of the method add is pasted on the method remove. Opening brackets only performs modifications.
+   enable method remove as add {
+      args {
+         0 -> disable //the first parameter is not synchronized (we only want to say that an object is removed, no need to sync it)
+      }
+   }
+   
+   //useless because we've already disabled all methods by default.
+   disable toStream
+   disable addAll
+   //...
+}
+```
+Second: program
+```scala
+// using the « Global Cache »
+val manager = helloConnection.network.globalCache
+// we want our object cache be opened with the id '10'
+val objectCenter = manager.retrieveCache(10, DefaultSynchronizedObjectCenter[ArrayList[Player]])
+//our ListBuffer takes the identifier "0"
+//The third parameter is optional. It defines the behavior of the objects contained in the tree of the synchronized ListBuffer object.
+val synchronizedList = objectCenter.postObject(0, new ArrayList[Player](), BehaviorTreeResource("examples/PlayerTree.bhv")) 
+// NOTE : Only the returned object is synchronized, the given one is only a base which will be cloned for the synchronization.
+// now do what you want. remove, add player, move or kill a player... everything is gonna be the same for all engines.
+```
 
 ## Acknowledgements
 I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
