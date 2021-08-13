@@ -16,7 +16,7 @@
      However, the synchronised objects' behaviors can be controlled using Behavior descriptors and ".bhv" files. (see wiki for more).
 * Static RMI. basic feature but can be very powerful if combined with synchronized objects.
 * Packet management, (registrable channels, Multithreaded packet injection, extendable system)
-* Customizable packet persistence.
+* Customizable / Configurable packet persistence.
 ### Local
 Most of local features are a non negligeable help for writing and maintaining your network developement.  
 * Resource handling (Attach a representation for a Folder or a File, Access to resources of a distant machine).  
