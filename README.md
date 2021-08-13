@@ -50,9 +50,27 @@ val config = new ServerApplicationConfigBuilder {
 
 ### Synchronized and Shared caches
 #### Introduction to SharedCacheManager
-Any network is represented by its Network object. In which you can access to all « Engine » objects where an Engine object represent an Engine connection which is connected to the server (the Server is included in the Engine).  
-The Network object can create a SharedCacheManager. A SharedCacheManager is identified to a « Family » String. Then, the cache manager will open or retrieve caches on a cache integer identifier.  
+Any network is represented by its Network object. In which you can access to all « Engine » objects where an Engine object represent an Engine connection which is connected to the server (the Server Engine is included in the Network).  
+The Network object can create a SharedCacheManager. A SharedCacheManager is identified to a « Family » String, and the cache manager can open or retrieve caches from a cache integer identifier.  
+Each Engine Object contains a default cache manager, where the family string is the engine's identifier. There is also a « global » cache manager of family « Global Cache » which is directly stored in the Network object.  
+Note : The fact that a cache manager is « owned » by a' engine could be a bit misleading. Dont forget this : they are only here for categorisation. The fact that a cache manager is « Global » or not does not affect the caches behavior.
+For further details about the Shared Cache Management, take a look at the wiki.
 
+#### Simple Shared Cache 
+There is currently two type of simple caches : SharedMap, SharedCollection and SharedInstance (the SharedInstance is a simple ValueWrapper).  
+You can create any cache like this :  
+
+```scala
+//let's say we work on the global cache manager, and we open a SharedCollection of Strings
+val manager = helloConnection.network.globalCache
+val cacheId: Int = 45 //cacheID of our cache is 45
+val collection = manager.retrieveCache(45, SharedCollection[String])
+collection.addListener(str => println(s"new String added $str"))
+collection.add("Hello")
+collection.add("World") //all remote engines that will get the cache from the Global Shared Cache Manager will get it updated.
+```
+
+#### Complex Shared Cache
 
 ## Acknowledgements
 I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
