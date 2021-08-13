@@ -70,8 +70,12 @@ collection.add("Hello")
 collection.add("World") //all remote engines that will get the cache from the Global Shared Cache Manager will get it updated.
 ```
 
-#### Complex Shared Cache (Synchronized Objects)
-
+#### Complex Shared Cache (Synchronized Objects)  
+#### Introduction to Synchronized Objects.  
+If you want to synchronize your objects, you'll have to open a `SynchronizedObjectCenter[T]` Cache,  
+In which you can post objects on an identifier int, and retrieve them using theirs identifier. When you post an object on the cache (using `postObject(int, T)`), you'll create a SynchronizedObjectTree, in which the first object in the node tree is called a **root object**.   
+All root objects must have the type of `T`. but inner synchronized objects (such as fields, methods parameters or methods return values) can be any Object.  
+A `SynchronizedObjectTree` contains a `SynchronizedObjectBehaviorCenter`, which where all `SynchronizedObjectBehavior` are stored.  
 
 ## Acknowledgements
 I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
