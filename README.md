@@ -27,9 +27,10 @@ Most of local features are a non negligeable help for writing and maintaining yo
 
 ## Some examples
 ### Creating the Application and opening a Connection.
-Note: The kind of application and connection created depends on the used Engine Implementation (Client module creates ClientApplication and creates ClientConnection, and Server module creates ServerApplication, and opens ServerConnection)  
+Note: The kind of application and connection created depends on the used Engine Implementation (Client module creates ClientApplication and creates ClientConnection, and Server module creates ServerApplication, and opens ServerConnection).  
+Here is an example for the Server module : (Client Modules nearly changes nothing)
 ```scala
-val config           = new ServerApplicationConfigBuilder {
+val config = new ServerApplicationConfigBuilder {
             //Note : You can specify settings by oberriding values in the ApplicationConfigBuilder. See wiki for further details.
             loadSchematic = new ScalaServerAppSchematic {
                 servers += new ServerConnectionConfigBuilder {
@@ -46,6 +47,13 @@ val config           = new ServerApplicationConfigBuilder {
         val helloConnection = serverApp.findConnection("HelloServer").get //also works using the server port
 
 ```
+
+### Synchronized and Shared caches
+#### Introduction to SharedCacheManager
+Any network is represented by its Network object. In which you can access to all « Engine » objects where an Engine object represent an Engine connection which is connected to the server (the Server is included in the Engine).  
+The Network object can create a SharedCacheManager. A SharedCacheManager is identified to a « Family » String. Then, the cache manager will open or retrieve caches on a cache integer identifier.  
+
+
 ## Acknowledgements
 I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
 Here is a non-ordered list of different people that helped me writing the project, or helped me get more trained with programmation :
