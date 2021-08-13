@@ -17,7 +17,11 @@ The Linkit Framework.
 * Packet management, (registrable channels, Multithreaded packet injection, extendable system)
 * Customizable packet persistence.
 ### Local
-<u>Most of local features are a non negligeable help for writing and maintaining your network developement</u>
+Most of local features are a non negligeable help for writing and maintaining your network developement.  
+* Resource handling (Attach a representation for a Folder or a File, Access to resources of a distant machine).
+* ForkJoinPool like thread system.
+* Simple Class Source generation (using ClassBlueprints) and language Compilator management in order to quickly create classes at runtime.
+* ClassMapping (Mainly used for Packet Persistence) Simply assignates a class name to its name hashcode code.
 ## Acknowledgements
 I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
 Here is a non-ordered list of different people that helped me writing the project, or helped me get more trained with programmation :
