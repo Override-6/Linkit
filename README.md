@@ -135,6 +135,10 @@ val synchronizedList = objectCenter.postObject(0, new ArrayList[Player](), Behav
 // NOTE : Only the returned object is synchronized, the given one is only a base which will be cloned for the synchronization.
 // now do what you want. remove, add player, move or kill a player... everything is gonna be the same for all engines.
 ```
+##### More Complex use case : basic 2d game.
+See the repository https://github.com/Override-6/2DShooter, and more specially the class https://github.com/Override-6/2DShooter/blob/master/core/src/main/scala/fr/overrride/game/shooter/session/PlayState.scala.
+##### Even more Complex : Minecraft Server.
+Just jocking. but maybe in few years this would be possible to create a minecraft server from the Client's code and then using Linkit and some ".bhv" files to handle this ? :0
 
 ## Acknowledgements
 I owe a big part of my knowledge to a discord server named [ReadTheDocs](https://readthedocs-fr.github.io/), and some tutorials i found on internet.
