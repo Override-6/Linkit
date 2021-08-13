@@ -92,7 +92,7 @@ You also want you Players to be « The same for everyone », like, if you make a
 Here is what you would do : 
 First: define a behavior tree (using ".bhv" files)
 ```bhv
-define class java.util.ArrayList {
+describe class java.util.ArrayList {
    forall fields -> disable //no inner fields will become a synchronized object. (this is the default behavior)
    forall methods -> disable //no method invocation will be spread to the other engines. if a method call is performed on your client, you'll be the only one that will keep this action.
     
@@ -115,6 +115,12 @@ define class java.util.ArrayList {
    disable toStream
    disable addAll
    //...
+}
+describe class fr.linkit.example.cache.obj.Player {
+    forall methods -> enable as broadcast_if_owner //the RMI request will be requested only if the engine's owns the object.
+    disable toString
+    disable equals
+    disable hashCode
 }
 ```
 Second: program
