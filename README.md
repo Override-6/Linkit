@@ -19,7 +19,7 @@
 * Customizable / Configurable packet persistence.
 ### Local
 Most of local features are a non negligeable help for writing and maintaining your network developement.  
-* Resource handling (Attach a representation for a Folder or a File, Access to resources of a distant machine).  
+* Resource handling (Attach a representation for a Folder or a File, Access to resources of a distant machine, checksums).  
 * ForkJoinPool-like thread system + Using Scala Futures for thread tasks.  
 * Simple Class Source generation (using ClassBlueprints) and language Compilator management in order to quickly create classes at runtime.  
 * ClassMapping (Mainly used for Packet Persistence) Simply assignates a class name to its name hashcode code.  
