@@ -37,7 +37,7 @@ object ArrayPersistence {
         if (buff.get(buff.position()) == EmptyArrayFlag) {
             buff.position(buff.position() + 1)
             val array = buildArray(compType, arrayDepth, 0)
-            return RawObjectNode(array, in.context)
+            return RawObjectNode(array)
         }
 
         val signItemCount = deserializeFlaggedNumber[Int](buff)

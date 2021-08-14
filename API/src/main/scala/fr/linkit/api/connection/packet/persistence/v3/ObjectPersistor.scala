@@ -53,7 +53,7 @@ trait ObjectPersistor[A] {
      * @see [[SerialisationProgression]]
      * @see [[ObjectSerializerNode]]
      */
-    def getSerialNode(obj: A, desc: SerializableClassDescription[A], context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode
+    def getSerialNode(obj: A, desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode
 
     /**
      * Creates an [[ObjectDeserializerNode]] that will later deserialize
@@ -69,7 +69,7 @@ trait ObjectPersistor[A] {
      * @see [[SerialisationProgression]]
      * @see [[ObjectSerializerNode]]
      */
-    def getDeserialNode(desc: SerializableClassDescription[A], context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode
+    def getDeserialNode(desc: SerializableClassDescription, context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode
 
     /**
      * @return `true` if the [[sortedDeserializedObjects]] should be called.

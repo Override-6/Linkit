@@ -16,7 +16,6 @@ import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
-import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.server.local.config.ServerConnectionConfigBuilder.count
 
 abstract class ServerConnectionConfigBuilder {

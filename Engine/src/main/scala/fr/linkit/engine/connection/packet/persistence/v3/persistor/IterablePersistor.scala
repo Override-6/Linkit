@@ -22,7 +22,7 @@ object IterablePersistor extends ObjectPersistor[IterableOnce[_]] {
         findFactoryCompanion(clazz).isDefined
     }
 
-    override def getSerialNode(obj: IterableOnce[_], desc: SerializableClassDescription[IterableOnce[_]], context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(obj: IterableOnce[_], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         val node = ArrayPersistence.serialize(obj.iterator.toArray, progress)
         SimpleObjectSerializerNode(out => {
             out.writeClass(obj.getClass)
@@ -30,13 +30,13 @@ object IterablePersistor extends ObjectPersistor[IterableOnce[_]] {
         })
     }
 
-    override def getDeserialNode(desc: SerializableClassDescription[IterableOnce[_]], context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
+    override def getDeserialNode(desc: SerializableClassDescription, context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         //TODO support sequences even if no factory is not found.
         val builder = findFactoryCompanion(desc.clazz)
             .getOrElse(throw new UnsupportedOperationException(s"factory not found for seq ${desc.clazz.getName}"))
             .newBuilder[AnyRef]
         val ref     = builder.result()
-        SimpleObjectDeserializerNode(ref, context) { in =>
+        SimpleObjectDeserializerNode(ref) { in =>
             val content = in.readArray[AnyRef]()
             builder.addAll(content)
             val result = builder.result()

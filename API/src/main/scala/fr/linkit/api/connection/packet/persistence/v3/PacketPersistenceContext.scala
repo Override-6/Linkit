@@ -12,25 +12,15 @@
 
 package fr.linkit.api.connection.packet.persistence.v3
 
-import fr.linkit.api.connection.packet.persistence.v3.procedure.{FieldCompleter, MiniPersistor, Procedure}
-
-import java.net.URL
-import scala.reflect.ClassTag
-
 trait PacketPersistenceContext {
 
-    def putPersistor(persistence: ObjectPersistor[_], classes: Seq[HandledClass]): Unit
+    def addPersistence(persistence: ObjectPersistor[_], classes: Seq[HandledClass]): Unit
 
-    def putPersistor(persistence: ObjectPersistor[_]): Unit = putPersistor(persistence, persistence.handledClasses)
+    def addPersistence(persistence: ObjectPersistor[_]): Unit = addPersistence(persistence, persistence.handledClasses)
 
-    def putProcedure[A: ClassTag](procedure: Procedure[A]): Unit
+    def getDescription(clazz: Class[_]): SerializableClassDescription
 
-    def putMiniPersistor[A: ClassTag](miniPersistor: MiniPersistor[A, _])
+    def getPersistenceForSerialisation(clazz: Class[_]): ObjectPersistor[Any]
 
-    def putFieldCompleter[A: ClassTag](completer: FieldCompleter[A, _])
-
-    def getDescription[A](clazz: Class[_]): SerializableClassDescription[A]
-
-    def executeConfigScript(url: URL): Unit
-
+    def getPersistenceForDeserialisation(clazz: Class[_]): ObjectPersistor[Any]
 }

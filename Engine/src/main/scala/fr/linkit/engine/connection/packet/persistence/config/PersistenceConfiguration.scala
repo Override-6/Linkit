@@ -21,22 +21,24 @@ import scala.reflect.ClassTag
 abstract class PersistenceConfiguration(override protected val context: PacketPersistenceContext) extends PersistenceConfigurationMethods with ScriptFile {
 
     override protected def putMiniPersistor[A: ClassTag, B](serial: A => B)(deserial: B => A): Unit = {
-        context.putMiniPersistor[A](new MiniPersistor[A, B] {
+        /*context.putMiniPersistor[A](new MiniPersistor[A, B] {
             override def serialize(a: A): B = serial(a)
 
             override def deserialize(b: B): A = deserial(b)
-        })
+        })*/
     }
 
     override protected def putProcedure[A: ClassTag](serial: A => Unit)(deserial: A => Unit): Unit = {
-        context.putProcedure[A](new Procedure[A] {
+        /*context.putProcedure[A](new Procedure[A] {
             override def onSerialized(obj: A): Unit = if (serial != null) serial(obj)
 
             override def onDeserialized(obj: A): Unit = if (deserial != null) deserial(obj)
-        })
+        })*/
     }
 
-    override protected def putPersistor(persistor: ObjectPersistor[_]): Unit = context.putPersistor(persistor)
+    override protected def putPersistor(persistor: ObjectPersistor[_]): Unit = {
+        //context.putPersistor(persistor)
+    }
 
     /*protected def putFieldCompleter[A : ClassTag, B](complete: A => B): Unit = {
         context.putFieldCompleter[A](new FieldCompleter[A, B] {

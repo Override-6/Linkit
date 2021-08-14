@@ -13,26 +13,17 @@
 package fr.linkit.api.connection.packet.persistence.v3
 
 import fr.linkit.api.connection.packet.persistence.v3.SerializableClassDescription.Fields
-import fr.linkit.api.connection.packet.persistence.v3.procedure.{MiniPersistor, Procedure}
 
 import java.lang.reflect.Field
 
-trait SerializableClassDescription[A] {
+trait SerializableClassDescription {
 
-    val clazz             : Class[A]
+    val clazz             : Class[_]
     val serializableFields: List[Fields]
     val signItemCount     : Int
     val classCode         : Array[Byte]
 
     def foreachDeserializableFields(deserialize: (Int, Field, Any => Unit) => Unit)(pasteOnField: (Field, Any) => Unit): Unit
-
-    def serialPersistor: ObjectPersistor[A]
-
-    def deserialPersistor: ObjectPersistor[A]
-
-    def miniPersistor: Option[MiniPersistor[A, _]]
-
-    def procedure: Option[Procedure[A]]
 
 }
 

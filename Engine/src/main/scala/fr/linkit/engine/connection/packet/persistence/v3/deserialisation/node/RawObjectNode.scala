@@ -11,11 +11,9 @@
  */
 
 package fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node
-import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.DeserializationInputStream
-import org.jetbrains.annotations.Nullable
 
-case class RawObjectNode(obj: Any, @Nullable context: PacketPersistenceContext) extends SimpleObjectDeserializerNode(context) {
+case class RawObjectNode(obj: Any) extends SimpleObjectDeserializerNode() {
     setReference(obj)
 
     override def deserializeAction(in: DeserializationInputStream): Any = obj

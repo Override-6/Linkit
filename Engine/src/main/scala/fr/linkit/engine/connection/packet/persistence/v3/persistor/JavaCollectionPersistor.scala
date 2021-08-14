@@ -29,7 +29,7 @@ object JavaCollectionPersistor extends ObjectPersistor[util.Collection[_]] {
 
     override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[util.Collection[_]], true, Seq(Serial, Deserial)))
 
-    override def getSerialNode(obj: util.Collection[_], desc: SerializableClassDescription[util.Collection[_]], context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(obj: util.Collection[_], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         val node = ArrayPersistence.serialize(obj.toArray, progress)
         SimpleObjectSerializerNode { out =>
             out.writeClass(obj.getClass)
@@ -37,7 +37,7 @@ object JavaCollectionPersistor extends ObjectPersistor[util.Collection[_]] {
         }
     }
 
-    override def getDeserialNode(desc: SerializableClassDescription[util.Collection[_]], context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
+    override def getDeserialNode(desc: SerializableClassDescription, context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
         val ref = try {
             val constructor = desc.clazz.getConstructor()
             constructor.setAccessible(true)
@@ -47,7 +47,7 @@ object JavaCollectionPersistor extends ObjectPersistor[util.Collection[_]] {
             case _: NoSuchMethodException =>
                 ScalaUtils.allocate(desc.clazz)
         }
-        SimpleObjectDeserializerNode(ref, context) { in =>
+        SimpleObjectDeserializerNode(ref) { in =>
             val content = in.readArray[AnyRef]()
             //TODO handle immutable collections
             if (!content.isEmpty) {

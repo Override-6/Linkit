@@ -31,7 +31,7 @@ object ClientLauncher {
     val Localhost      : InetSocketAddress = new InetSocketAddress("localhost", Port)
     val HomeProperty   : String            = "LinkitHome"
     val DefaultHomePath: String            = System.getenv("LOCALAPPDATA") + s"${File.separator}Linkit${File.separator}"
-""
+
     def main(args: Array[String]): Unit = {
         AppLogger.info(s"Running client with arguments '${args.mkString(" ")}'")
         val userDefinedPluginFolder = getOrElse(args, "--plugin-path", "/Plugins")

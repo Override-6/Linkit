@@ -21,7 +21,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
 
     override val handledClasses: Seq[HandledClass] = Seq(classOf[SynchronizedObject[_]] -> (true, Seq(SerialisationMethod.Serial)), classOf[WrapperInfo] -> (false, Seq(SerialisationMethod.Deserial)))
 
-    override def getSerialNode(wrapper: SynchronizedObject[AnyRef], desc: SerializableClassDescription[SynchronizedObject[AnyRef]], context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
+    override def getSerialNode(wrapper: SynchronizedObject[AnyRef], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         val wrapperNodeInfo = wrapper.getNodeInfo
         val cache           = findCache(wrapperNodeInfo).getOrElse(throwNoSuchCacheException(wrapperNodeInfo, Option(wrapper.getWrappedClass)))
         val tree            = cache.treeCenter.findTree(wrapperNodeInfo.nodePath.head).get //TODO orElseThrow
@@ -51,15 +51,15 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
         val wrapperNode = if (useInstancePointerOnly) {
             progress.getSerializationNode(WrapperInfo(wrapperNodeInfo))
         } else {
-            DefaultObjectPersistor.getSerialNode(wrapper, desc.asInstanceOf[SerializableClassDescription[Any]], context, progress)
+            DefaultObjectPersistor.getSerialNode(wrapper, desc, context, progress)
         }
         SimpleObjectSerializerNode(wrapperNode)
     }
 
-    override def getDeserialNode(desc: SerializableClassDescription[SynchronizedObject[AnyRef]], context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
-        val node = DefaultObjectPersistor.getDeserialNode(desc.asInstanceOf[SerializableClassDescription[Any]], context, progress)
+    override def getDeserialNode(desc: SerializableClassDescription, context: PacketPersistenceContext, progress: DeserializationProgression): ObjectDeserializerNode = {
+        val node = DefaultObjectPersistor.getDeserialNode(desc, context, progress)
         //println(s"Deserialize wrapper...")
-        new SimpleObjectDeserializerNode(context) {
+        new SimpleObjectDeserializerNode() {
             override def deserializeAction(in: DeserializationInputStream): Any = {
                 in.limit(in.capacity())
                 //in.position(in.position() + 1)
