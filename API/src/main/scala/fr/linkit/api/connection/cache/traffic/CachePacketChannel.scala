@@ -10,10 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache
+package fr.linkit.api.connection.cache.traffic
 
-import fr.linkit.api.local.system.AppException
+import fr.linkit.api.connection.cache.{CacheContent, SharedCacheManager}
+import fr.linkit.api.connection.cache.traffic.handler.CacheHandler
 
-class CacheOpenException(msg: String, cause: Throwable = null) extends CacheException(msg, cause) {
+trait CachePacketChannel {
+
+    val manager: SharedCacheManager
+
+    val cacheID: Int
+
+    def setHandler(handler: CacheHandler): Unit
+
+    def getCacheOfOwner: CacheContent
 
 }

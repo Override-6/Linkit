@@ -12,11 +12,12 @@
 
 package fr.linkit.api.connection.cache
 
+import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 
-trait SharedCacheFactory[A <: InternalSharedCache] {
+trait SharedCacheFactory[A <: SharedCache] {
 
-    def createNew(handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer): A
+    def createNew(channel: CachePacketChannel): A
 
     final def factory: this.type = this //for Java users
 

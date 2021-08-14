@@ -29,7 +29,7 @@ class TaskTicket(executor: TaskExecutor,
                  target: String,
                  ownFreeWill: Boolean) {
 
-    val channel: SyncPacketChannel = connection.getInjectable(taskId, ChannelScopes.retains(target), SyncPacketChannel)
+    val channel: SyncPacketChannel = connection.getInjectable(taskId, ChannelScopes.include(target), SyncPacketChannel)
 
     def abort(): Unit = {
         notifyExecutor()

@@ -12,29 +12,32 @@
 
 package fr.linkit.engine.connection.cache
 
-import fr.linkit.api.connection.cache.{CacheContent, CacheSearchBehavior, InternalSharedCache, SharedCacheManager}
-import fr.linkit.api.connection.network.Engine
+import fr.linkit.api.connection.cache.traffic.CachePacketChannel
+import fr.linkit.api.connection.cache.{CacheSearchBehavior, SharedCache}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel, RequestSubmitter}
+import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacketBundle, RequestSubmitter}
 import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes, UnexpectedPacketException}
-import org.jetbrains.annotations.Nullable
 
-abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
-                                   override val cacheID: Int,
-                                   channel: RequestPacketChannel) extends AbstractAttributesPresence with InternalSharedCache with JustifiedCloseable {
+abstract class AbstractSharedCache(channel: CachePacketChannel,
+                                   override val cacheID: Int) extends AbstractAttributesPresence with SharedCache with JustifiedCloseable {
 
-    override val family: String = if (handler == null) "" else handler.family
+    /*private  val manager        = channel.manager
+    override val family: String = manager.family
 
-    override def close(reason: Reason): Unit = channel.close(reason)
+    override def close(reason: Reason): Unit = {
+        //TODO channel.close(reason)
+    }
 
-    override def isClosed: Boolean = channel.isClosed
+    override def isClosed: Boolean = {
+        //TODO channel.isClosed
+    }
 
     override def update(): this.type = {
-        if (handler == null)
+        if (manager == null)
             return this
 
         //println(s"<$family> UPDATING CACHE $identifier")
@@ -48,7 +51,7 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
 
     //def link(action: A => Unit): this.type
 
-    protected def handleBundle(bundle: RequestBundle): Unit
+    protected def handleBundle(bundle: RequestPacketBundle): Unit
 
     protected def sendModification(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
         val request = makeRequest(ChannelScopes.discardCurrent)
@@ -78,6 +81,6 @@ abstract class AbstractSharedCache(@Nullable handler: SharedCacheManager,
 
         if (isPresent("cache", cacheID) && isPresent("family", family))
             handleBundle(bundle)
-    })
+    })*/
 
 }

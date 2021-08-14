@@ -33,7 +33,7 @@ trait SharedCacheManager extends Updatable {
     val family : String
     /**
      * The [[fr.linkit.api.connection.network.Engine]] identifier that owns this cache.
-     * the value of [[fr.linkit.api.connection.network.Engine.cache]] have the same value for family and ownerID.
+     * The engine owner controls who can attach to a [[SharedCache]] and who can create a [[SharedCache]]
      * */
     val ownerID: String
     /**
@@ -41,6 +41,8 @@ trait SharedCacheManager extends Updatable {
      * */
     val network: Network
 
+
+    /*
     /**
      * A quick way to place instances in a shared cache manager then retrieve it in another engine
      * with [[findInstance()]].
@@ -76,6 +78,7 @@ trait SharedCacheManager extends Updatable {
      * @throws NoSuchElementException if no value bound with the key was found in the quick cache map
      * */
     def apply[A <: Serializable](key: Int): A
+*/
 
     /**
      * Retrieves a [[SharedCache]] hosted by this SharedCacheManager. <br>
@@ -87,6 +90,7 @@ trait SharedCacheManager extends Updatable {
      * then be returned.<br>
      * Note: can't be sure that every cache instances with the same cacheID are of the same type.<br>
      *
+     * @throws CacheTypeMismatchException if the cache is already created but the cache's does not equals to the given one.
      * @param cacheID the cache identifier
      * @param factory the factory that will create the cache instance
      * @param behavior the kind of behavior to adopt when creating a cache
@@ -95,20 +99,7 @@ trait SharedCacheManager extends Updatable {
      * @see [[SharedCacheFactory]]
      * @see [[CacheSearchBehavior]]
      * */
-    def retrieveCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
-
-    /**
-     * Works same as [[retrieveCache]] except that the cache content is retrieved in another worker thread task.
-     * @throws IllegalThreadException if the current thread is not a [[fr.linkit.api.local.concurrency.WorkerThread]]
-     * @param cacheID the cache identifier
-     * @param factory the factory that will create the cache instance
-     * @param behavior the kind of behavior to adopt when creating a cache
-     * @return the cache instance.
-     * @see [[fr.linkit.api.local.concurrency.WorkerPool]]
-     * @see [[fr.linkit.api.local.concurrency.WorkerThread]]
-     * */
-    @workerExecution
-    def retrieveCacheAsync[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A with InternalSharedCache], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
+    def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN)(implicit factory: SharedCacheFactory[A]): A
 
     /**
      * Get cache that is already opened and registered in the local cache.
@@ -118,7 +109,7 @@ trait SharedCacheManager extends Updatable {
      * @param cacheID the cache identifier
      * @return the cache instance.
      */
-    def getCache[A <: SharedCache : ClassTag](cacheID: Int): A
+    def getCacheInLocal[A <: SharedCache : ClassTag](cacheID: Int): A
 
     /**
      * Retrieves the cache content of a given cache identifier.

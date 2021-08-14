@@ -20,7 +20,7 @@ import fr.linkit.engine.connection.cache.SharedInstance.CacheInstanceContent
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
+import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacketBundle, RequestPacketChannel}
 import fr.linkit.engine.local.utils.ConsumerContainer
 
 import scala.reflect.ClassTag
@@ -35,7 +35,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(handler: SharedCacheM
     @volatile private var modCount            = 0
     @volatile private var instance: Option[A] = None
 
-    override def handleBundle(bundle: RequestBundle): Unit = {
+    override def handleBundle(bundle: RequestPacketBundle): Unit = {
         AppLogger.vTrace(s"<$family> Handling packet $bundle")
         bundle.packet.nextPacket[Packet] match {
             case ObjectPacket(remoteInstance: A) =>

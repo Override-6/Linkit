@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.channel.PacketChannel
-import fr.linkit.api.connection.packet.{Bundle, Packet}
+import fr.linkit.api.connection.packet.{PacketBundle, Packet}
 
 import scala.reflect.ClassTag
 
@@ -27,7 +27,7 @@ trait PacketSyncReceiver extends PacketChannel {
     def haveMorePackets: Boolean
 }
 
-trait PacketAsyncReceiver[B <: Bundle] extends PacketChannel {
+trait PacketAsyncReceiver[B <: PacketBundle] extends PacketChannel {
 
     def addOnPacketReceived(callback: B => Unit): Unit
 

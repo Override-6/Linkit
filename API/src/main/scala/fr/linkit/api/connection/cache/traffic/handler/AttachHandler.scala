@@ -10,10 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache
+package fr.linkit.api.connection.cache.traffic.handler
 
-import fr.linkit.api.local.system.AppException
+import fr.linkit.api.connection.network.Engine
 
-class CacheOpenException(msg: String, cause: Throwable = null) extends CacheException(msg, cause) {
+trait AttachHandler {
+
+    def onEngineAttached(engine: Engine): Unit
+
+    def canEngineAttach(engine: Engine): Boolean
+
+    def onEngineDetached(engine: Engine): Unit
 
 }

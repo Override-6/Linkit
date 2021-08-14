@@ -12,12 +12,8 @@
 
 package fr.linkit.api.connection.cache
 
-import fr.linkit.api.connection.network.Engine
+import fr.linkit.api.local.system.AppException
 
-trait InternalSharedCache extends SharedCache {
-
-    def setContent(cacheContent: CacheContent): Unit
-
-    //def onNewEngineConnected(engine: Engine): Unit
+class CacheException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

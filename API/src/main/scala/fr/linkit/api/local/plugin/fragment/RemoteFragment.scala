@@ -12,7 +12,7 @@
 
 package fr.linkit.api.local.plugin.fragment
 
-import fr.linkit.api.connection.packet.Bundle
+import fr.linkit.api.connection.packet.PacketBundle
 import fr.linkit.api.connection.packet.traffic.PacketSender
 import org.jetbrains.annotations.NotNull
 
@@ -20,7 +20,7 @@ trait RemoteFragment extends PluginFragment {
 
     val nameIdentifier: String
 
-    def handleRequest(bundle: Bundle): Unit
+    def handleRequest(bundle: PacketBundle): Unit
 
     @NotNull
     protected def packetSender(): PacketSender

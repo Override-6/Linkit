@@ -10,10 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache
+package fr.linkit.api.connection.cache.traffic.handler
 
-import fr.linkit.api.local.system.AppException
+trait ContentHandler[C] {
 
-class CacheOpenException(msg: String, cause: Throwable = null) extends CacheException(msg, cause) {
+    def setContent(content: C): Unit
+
+    def getContent: C
 
 }

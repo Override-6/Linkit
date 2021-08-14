@@ -31,7 +31,7 @@ import scala.collection.mutable
 class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) {
 
     private val requestHolders         = mutable.LinkedHashMap.empty[Int, RequestHolder]
-    private val requestConsumers       = ConsumerContainer[RequestBundle]()
+    private val requestConsumers       = ConsumerContainer[RequestPacketBundle]()
     @volatile private var requestCount = 0
 
     //debug only
@@ -48,10 +48,10 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
                     AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
                     request.setAttributes(attr)
 
-                    val submitterScope = scope.shareWriter(ChannelScopes.retains(coords.senderID))
+                    val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
                     val submitter      = new ResponseSubmitter(request.id, submitterScope)
 
-                    requestConsumers.applyAllLater(RequestBundle(this, request, coords, submitter))
+                    requestConsumers.applyAllLater(RequestPacketBundle(this, request, coords, submitter))
 
                 case response: ResponsePacket =>
                     AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
@@ -68,7 +68,7 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
         }
     }
 
-    def addRequestListener(callback: RequestBundle => Unit): Unit = {
+    def addRequestListener(callback: RequestPacketBundle => Unit): Unit = {
         requestConsumers += callback
     }
 

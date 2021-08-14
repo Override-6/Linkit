@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.collection
 
-import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.cache.{CacheContent, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.concurrency.WorkerPools
@@ -22,7 +22,7 @@ import fr.linkit.engine.connection.cache.collection.SharedCollection.CollectionA
 import fr.linkit.engine.connection.cache.{AbstractSharedCache, CacheArrayContent}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
+import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacketBundle, RequestPacketChannel}
 import fr.linkit.engine.local.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
 
@@ -45,7 +45,7 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
 
     override def iterator: Iterator[A] = adapter.iterator
 
-    override final def handleBundle(bundle: RequestBundle): Unit = {
+    override final def handleBundle(bundle: RequestPacketBundle): Unit = {
         bundle.packet.nextPacket[Packet] match {
             case modPacket: ObjectPacket => WorkerPools.runLaterOrHere {
                 handleNetworkModRequest(modPacket)

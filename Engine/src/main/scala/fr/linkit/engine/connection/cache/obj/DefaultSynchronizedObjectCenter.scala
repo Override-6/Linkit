@@ -17,9 +17,9 @@ import fr.linkit.api.connection.cache.obj.behavior.{ObjectTreeBehavior, WrapperB
 import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassCenter, ObjectWrapperInstantiator}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
-import fr.linkit.api.connection.cache.{CacheContent, InternalSharedCache, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.cache.traffic.CachePacketChannel
+import fr.linkit.api.connection.cache.{CacheContent, SharedCache, SharedCacheFactory, SharedCacheManager}
 import fr.linkit.api.connection.packet.Packet
-import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
@@ -32,16 +32,13 @@ import fr.linkit.engine.connection.cache.obj.tree._
 import fr.linkit.engine.connection.cache.obj.tree.node.{RootWrapperNode, TrafficInterestedSyncNode}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
+import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacketBundle, RequestPacketChannel}
 import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 
 import scala.reflect.ClassTag
 
 //TODO Redesign the NetworkSharedCacheManager and its way to handle caches
-final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: SharedCacheManager,
-                                                                 cacheID: Int,
-                                                                 channel: RequestPacketChannel,
+final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CachePacketChannel,
                                                                  generator: ObjectWrapperClassCenter,
                                                                  override val defaultTreeViewBehavior: ObjectTreeBehavior)
         extends AbstractSharedCache(handler, cacheID, channel) with SynchronizedObjectCenter[A] {
@@ -80,7 +77,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(handler: Shared
         treeCenter.findTree(id).isDefined
     }
 
-    override protected def handleBundle(bundle: RequestBundle): Unit = {
+    override protected def handleBundle(bundle: RequestPacketBundle): Unit = {
         AppLogger.vDebug(s"Processing bundle : ${bundle}")
         val response = bundle.packet
         response.nextPacket[Packet] match {
@@ -198,15 +195,14 @@ object DefaultSynchronizedObjectCenter {
 
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
-    def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCenter[A] with InternalSharedCache] = {
+    def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCenter[A] with SharedCache] = {
         val treeView = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory)
         apply[A](treeView)
     }
 
-    def apply[A <: AnyRef : ClassTag](behaviors: ObjectTreeBehavior): SharedCacheFactory[SynchronizedObjectCenter[A] with InternalSharedCache] = {
-        (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
-            val channel   = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
-            val context   = handler.network.connection.getApp
+    def apply[A <: AnyRef : ClassTag](behaviors: ObjectTreeBehavior): SharedCacheFactory[SynchronizedObjectCenter[A] with SharedCache] = {
+        channel => {
+            val context = channel.manager.network.connection.getApp
             import fr.linkit.engine.local.resource.external.LocalResourceFolder._
             val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
             val generator = new DefaultObjectWrapperClassCenter(context.compilerCenter, resources)

@@ -12,8 +12,6 @@
 
 package fr.linkit.api.connection.cache
 
-import fr.linkit.api.local.system.AppException
-
-class NoSuchCacheException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+class NoSuchCacheException(msg: String, cause: Throwable = null) extends CacheException(msg, cause) {
 
 }

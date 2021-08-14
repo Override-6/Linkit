@@ -21,7 +21,7 @@ import fr.linkit.engine.connection.cache.map.MapModification._
 import fr.linkit.engine.connection.cache.{AbstractSharedCache, CacheArrayContent}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestBundle, RequestPacketChannel}
+import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacketBundle, RequestPacketChannel}
 import fr.linkit.engine.local.concurrency.pool.SimpleWorkerController
 import fr.linkit.engine.local.utils.{ConsumerContainer, ScalaUtils}
 import org.jetbrains.annotations.{NotNull, Nullable}
@@ -124,7 +124,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
         apply(k)
     }
 
-    override protected def handleBundle(bundle: RequestBundle): Unit = {
+    override protected def handleBundle(bundle: RequestPacketBundle): Unit = {
         bundle.packet.nextPacket[Packet] match {
             case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
         }

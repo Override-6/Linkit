@@ -18,6 +18,6 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, Pack
 case class PacketBundle(private val channel: PacketChannel,
                         override val packet: Packet,
                         override val attributes: PacketAttributes,
-                        override val coords: DedicatedPacketCoordinates) extends AbstractBundle(channel) {
+                        override val coords: DedicatedPacketCoordinates) extends AbstractPacketBundle(channel) {
 
 }

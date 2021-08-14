@@ -35,7 +35,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
     override  val identifier: Int           = writer.injectableID
     override  val traffic   : PacketTraffic = writer.traffic
     private   val subChannels               = mutable.Set.empty[SubInjectableContainer]
-    private   val storedBundles             = mutable.HashSet.empty[Bundle]
+    private   val storedBundles             = mutable.HashSet.empty[PacketBundle]
 
     @volatile private var closed = true
 
@@ -60,7 +60,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
         if (scopes.exists(id => !scope.areAuthorised(Array(id))))
             throw new ForbiddenIdentifierException("This sub injector requests to listen to an identifier that the parent does not support.")
 
-        val subScope = ChannelScopes.retains(scopes: _*).apply(writer)
+        val subScope = ChannelScopes.include(scopes: _*).apply(writer)
         register(subScope, factory, transparent)
     }
 
@@ -70,7 +70,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
 
     override def getParent: Option[PacketChannel] = Option(parent)
 
-    override def storeBundle(bundle: Bundle): Unit = {
+    override def storeBundle(bundle: PacketBundle): Unit = {
         storedBundles.synchronized {
             AppLogger.vDebug(s"$currentTasksId <> STORING BUNDLE $bundle INTO $storedBundles")
         }
@@ -84,7 +84,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
     }
 
     override def injectStoredBundles(): Unit = {
-        var clone: Array[Bundle] = null
+        var clone: Array[PacketBundle] = null
         storedBundles.synchronized {
             AppLogger.vDebug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedBundles")
             clone = Array.from(storedBundles)

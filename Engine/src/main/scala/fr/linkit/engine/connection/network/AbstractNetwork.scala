@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.network
 
 import fr.linkit.api.connection.cache.{CacheSearchBehavior, SharedCacheManager}
 import fr.linkit.api.connection.network.{Engine, Network}
-import fr.linkit.api.connection.packet.Bundle
+import fr.linkit.api.connection.packet.PacketBundle
 import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
@@ -32,7 +32,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     private   val cacheRequestChannel                          = connection.getInjectable(12, ChannelScopes.discardCurrent, RequestPacketChannel)
     private   val caches                                       = mutable.HashMap.empty[String, NetworkSharedCacheManager]
     override  val cache             : SharedCacheManager       = initCaches()
-    protected val sharedIdentifiers : SharedCollection[String] = cache.retrieveCache(3, SharedCollection.set[String], CacheSearchBehavior.GET_OR_WAIT)
+    protected val sharedIdentifiers : SharedCollection[String] = cache.attachToCache(3, SharedCollection.set[String], CacheSearchBehavior.GET_OR_WAIT)
     protected val entityCommunicator: SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScopes.discardCurrent, SyncAsyncPacketChannel.busy)
     protected val entities: BoundedCollection.Immutable[Engine]
 
@@ -48,11 +48,11 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         else None
     }
 
-    override def getCacheManager(family: String, owner: ConnectionContext): SharedCacheManager = {
-        getCachesManager(family, owner.currentIdentifier)
+    override def attachToCacheManager(family: String, owner: ConnectionContext): SharedCacheManager = {
+        attachToCachesManager(family, owner.currentIdentifier)
     }
 
-    protected def getCachesManager(family: String, owner: String): SharedCacheManager = {
+    protected def attachToCachesManager(family: String, owner: String): SharedCacheManager = {
         if (family == null || owner == null)
             throw new NullPointerException("Family or owner is null.")
 
@@ -76,7 +76,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     override def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager = {
-        getCachesManager(family, owner.boundIdentifier)
+        attachToCachesManager(family, owner.boundIdentifier)
     }
 
     protected def createEngine(identifier: String, communicationChannel: SyncAsyncPacketChannel): Engine
@@ -94,7 +94,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     private def initCaches(): SharedCacheManager = {
         connection.translator.initNetwork(this)
 
-        def findCacheToNotify(bundle: Bundle)
+        def findCacheToNotify(bundle: PacketBundle)
                              (notifyAction: NetworkSharedCacheManager => Unit): Unit = {
             val attr = bundle.attributes
             attr.getAttribute[String]("family") match {
@@ -120,7 +120,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             }
         })
 
-        getCachesManager(s"Global Cache", serverIdentifier)
+        attachToCachesManager(s"Global Cache", serverIdentifier)
     }
 
 }

@@ -24,7 +24,7 @@ class ParallelInjectionContainer(currentIdentifier: String) extends InjectionCon
 
     private val processingInjections = new mutable.LinkedHashMap[(Int, String), ParallelInjection]
 
-    override def makeInjection(bundle: Bundle): PacketInjectionController = {
+    override def makeInjection(bundle: PacketBundle): PacketInjectionController = {
         val dedicated = bundle.coords match {
             case dedicated: DedicatedPacketCoordinates => dedicated
             case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(currentIdentifier)

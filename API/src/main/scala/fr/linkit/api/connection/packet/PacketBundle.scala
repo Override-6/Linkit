@@ -20,7 +20,7 @@ import fr.linkit.api.connection.packet.channel.PacketChannel
  *
  * @see [[PacketBundle]] for an implementation.
  * */
-trait Bundle {
+trait PacketBundle {
 
     val packet: Packet
 
