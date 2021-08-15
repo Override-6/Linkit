@@ -218,6 +218,8 @@ object SyncObjectInstantiationHelper {
             }
 
             def scanField(instanceField: Any, originValue: AnyRef, field: Field, root: Boolean): Unit = {
+                if (Modifier.isTransient(field.getModifiers))
+                    return //Do not scan transient fields
                 if (JavaUtils.sameInstance(originValue, originClone)) {
                     ScalaUtils.setValue(instanceField, field, instance)
                 }

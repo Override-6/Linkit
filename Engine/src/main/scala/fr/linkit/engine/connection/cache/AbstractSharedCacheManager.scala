@@ -164,7 +164,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
     }
 
     requestChannel.addRequestListener(handleRequest)
-    val channelIdentifiersShift: Int = family.hashCode //TODO Redesign packet handling and make a system where the identifier is an array if ints
+    val channelIdentifiersShift: Int = family.hashCode + 8882 //TODO Redesign packet handling and make a system where the identifier is an array if ints
 
 
 }
@@ -174,4 +174,5 @@ object AbstractSharedCacheManager {
     val MinSystemCacheID: Int = 0
     val MaxSystemCacheID: Int = 50
     val SystemCacheRange: Range = MinSystemCacheID to MaxSystemCacheID
+
 }

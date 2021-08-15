@@ -27,11 +27,10 @@ import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.connection.network.ClientSideNetwork
 import fr.linkit.client.local.config.ClientConnectionConfiguration
-import fr.linkit.engine.connection.network.SimpleRemoteConsole
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
 import fr.linkit.engine.local.concurrency.PacketReaderThread
-import fr.linkit.engine.local.system.{Rules, SystemPacket}
+import fr.linkit.engine.local.system.Rules
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
 
@@ -53,14 +52,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(this)
     override val network          : Network           = sideNetwork
     @volatile private var alive                       = true
-
-    /*
-    * This will have for consequence to add the current connection's presence to the whole network.
-    * Depending on how many clients are connected over the network, the time
-    * for complete initialization between the server and all the client may vary.
-    * This time is exponential.
-    * */
-    sideNetwork.handshake()
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
         traffic.getInjectable(injectableID, scopeFactory, factory)
@@ -123,37 +114,15 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         if (state == ExternalConnectionState.CONNECTED && socket.isOpen) runLater {
             socket.write(welcomePacket) //The welcome packet will let the server continue its socket handling
             systemChannel.nextPacket[BooleanPacket]
-            sideNetwork.update()
+            sideNetwork.connectionEngine.update()
             translator.initNetwork(network)
-        }
-    }
-
-    private def handleSystemPacket(system: SystemPacket, coords: DedicatedPacketCoordinates): Unit = {
-        val order  = system.order
-        val reason = system.reason.reversedPOV()
-        val sender = coords.senderID
-        SimpleRemoteConsole
-
-        import fr.linkit.engine.local.system.SystemOrder._
-        order match {
-            case CLIENT_CLOSE => shutdown()
-            //FIXME case ABORT_TASK => tasksHandler.skipCurrent(reason)
-
-            //FIXME weird use of exceptions/remote print
-            case SERVER_CLOSE =>
-            //FIXME UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this connection : Received forbidden order")
-            //        .printStackTrace(getConsoleErr(sender))
-
-            case _ => //FIXME UnexpectedPacketException(s"System packet order '$order' couldn't be handled by this connection : Unknown order")
-            // .printStackTrace(getConsoleErr(sender))
         }
     }
 
     private def handlePacket(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit = {
         packet match {
-            //FIXME case init: TaskInitPacket => tasksHandler.handlePacket(init, coordinates)
-            case system: SystemPacket => handleSystemPacket(system, coordinates)
-            case _: Packet            =>
+            //case system: SystemPacket => handleSystemPacket(system, coordinates)
+            case _: Packet =>
                 //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
                 traffic.processInjection(packet, attributes, coordinates)
             //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")

@@ -13,73 +13,27 @@
 package fr.linkit.client.connection.network
 
 import fr.linkit.api.connection.cache.{CacheSearchBehavior, NoSuchCacheException, SharedCacheManager}
-import fr.linkit.api.connection.network.{Engine, ExternalConnectionState}
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.connection.network.Updatable
 import fr.linkit.client.connection.ClientConnection
-import fr.linkit.engine.connection.cache.SharedInstance
-import fr.linkit.engine.connection.cache.collection.{BoundedCollection, CollectionModification}
-import fr.linkit.engine.connection.network.{AbstractNetwork, SelfEngine}
-import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
-
-import java.sql.Timestamp
+import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.connection.network.{AbstractNetwork, EngineStore}
 
 class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
 
-    override      val connectionEngine: SelfEngine         = initSelfEntity
-    override lazy val serverIdentifier: String             = connection.boundIdentifier
-    override lazy val globalCache     : SharedCacheManager = findDistantCacheManager("Global Cache", serverIdentifier).getOrElse {
-        throw new NoSuchCacheException("Global Cache manager not found.")
+    override protected def createEngineStore: EngineStore = {
+        globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[EngineStore](), CacheSearchBehavior.GET_OR_CRASH)
+                .findObject(0)
+                .getOrElse {
+                    throw new NoSuchElementException("Engine Store not found.")
+                }
     }
 
-    override protected val entities: BoundedCollection.Immutable[Engine] = {
-        sharedIdentifiers
-                .addListener((_, _, _) => if (entities != null) AppLogger.vDebug("entities are now : " + entities)) //debug purposes
-                .mapped(createEntity)
-                .addListener(handleTraffic)
-    }
-
-    override def serverEngine: Engine = getEngine(serverIdentifier).get
-
-    override def startUpDate: Timestamp = new Timestamp(0) //cache(2)
-
-    override def createEngine(identifier: String, communicator: SyncAsyncPacketChannel): Engine = {
-        val entityCache = findDistantCacheManager(identifier, identifier).getOrElse {
-            throw new NoSuchCacheException(s"No cache manager is set for engine $identifier")
+    override protected def createGlobalCache: SharedCacheManager = {
+        findDistantCacheManager("Global Cache", serverIdentifier).getOrElse {
+            throw new NoSuchCacheException("Could not find Global Cache manager")
         }
-        new ConnectionEngine(connection, identifier, entityCache)
     }
 
-    def update(): Unit = {
-        globalCache.update()
-        connectionEngine.update()
-    }
-
-    private def initSelfEntity: SelfEngine = {
-        val identifier   = connection.currentIdentifier
-        val sharedCaches = declareNewCacheManager(identifier)
-        sharedCaches
-                .attachToCache(3, SharedInstance[ExternalConnectionState], CacheSearchBehavior.GET_OR_WAIT)
-                .set(ExternalConnectionState.CONNECTED) //technically always connected to himself
-        new SelfEngine(connection, connection.getState, this, sharedCaches)
-    }
-
-    private[client] def handshake(): Unit = {
-        //AppLogger.debug("HANDSHAKING...")
-        val identifier = connection.currentIdentifier
-        if (!sharedIdentifiers.contains(identifier))
-            sharedIdentifiers.add(identifier)
-        //AppLogger.debug("HANDSHAKE MADE !")
-    }
-
-    private def handleTraffic(mod: CollectionModification, index: Int, entityOpt: Option[Engine]): Unit = {
-        //lazy val entity = entityOpt.get
-        /*val event = mod match {
-            case ADD => NetworkEvents.entityAdded(entity)
-            case REMOVE => NetworkEvents.entityRemoved(entity)
-            case _ => return
-        }
-        relay.eventNotifier.notifyEvent(relay.networkHooks, event)
-         */
-    }
+    override def serverIdentifier: String = connection.boundIdentifier
 
 }

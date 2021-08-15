@@ -55,7 +55,7 @@ public enum BasicRemoteInvocationRule implements RemoteInvocationRule {
     })),
 
     /**
-     * The invocation will be performed on the current machine <b>and</b> on every remote machines <b>only if</b> the current machine.
+     * The invocation will be performed on the current machine <b>and</b> on every remote machines <b>only if</b> the current machine
      * is the owner of the object.
      * The return value of the invocation will come from the current machine.
      */
@@ -64,6 +64,15 @@ public enum BasicRemoteInvocationRule implements RemoteInvocationRule {
                 .ifCurrentIsNotOwner(RMIRulesAgreementBuilder::discardAll)
                 .setDesiredCurrentEngineReturn();
     }),
+
+
+    /**
+     * The invocation will be performed on the current machine <b>and</b> on every remote machines <b>only if</b> the current machine
+     * is the owner of the root object.
+     * The return value of the invocation will come from the current machine.
+     */
+    //TODO Build the agreement
+    BROADCAST_IF_ROOT_OWNER(BROADCAST),
     /**
      * The invocation will be performed on the current machine <b>and</b> on the machine that owns the original object.
      * If the current machine owns the wrapper object, the execution will be called only once.

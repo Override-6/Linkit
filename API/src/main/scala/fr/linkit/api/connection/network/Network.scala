@@ -31,7 +31,7 @@ trait Network {
 
     def listEngines: List[Engine]
 
-    def getEngine(identifier: String): Option[Engine]
+    def findEngine(identifier: String): Option[Engine]
 
     def isConnected(identifier: String): Boolean
 

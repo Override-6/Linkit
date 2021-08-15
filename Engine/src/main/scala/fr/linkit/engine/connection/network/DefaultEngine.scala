@@ -12,37 +12,33 @@
 
 package fr.linkit.engine.connection.network
 
-import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.cache.SharedCacheManager
+import fr.linkit.api.connection.cache.obj.behavior.annotation.{BasicRemoteInvocationRule, MethodControl}
 import fr.linkit.api.connection.network.{Engine, ExternalConnectionState, Network, StaticAccessor}
-import fr.linkit.api.local.system.{AppLogger, Versions}
+import fr.linkit.api.local.system.Versions
 import fr.linkit.engine.local.system.StaticVersions
 
 import java.sql.Timestamp
 
-class SelfEngine(connection: ConnectionContext,
-                 state: => ExternalConnectionState,
-                 override val network: Network,
-                 override val cache: SharedCacheManager) extends Engine {
+class DefaultEngine(override val identifier: String,
+                    override val cache: SharedCacheManager) extends Engine {
 
-    override val identifier: String = connection.currentIdentifier
-
-    override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())
+    override val network       : Network        = cache.network
+    override val staticAccessor: StaticAccessor = null
 
     override val versions: Versions = StaticVersions.currentVersions
 
-    update()
+    override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())
+
+    private var connectionState: ExternalConnectionState = ExternalConnectionState.CONNECTED
+
+    override val getConnectionState: ExternalConnectionState = connectionState
+
+    @MethodControl(BasicRemoteInvocationRule.BROADCAST_IF_ROOT_OWNER)
+    def updateState(state: ExternalConnectionState): Unit = connectionState = state
 
     override def update(): this.type = {
-//        cache.postInstance(2, connectionDate)
- //       cache.postInstance(3, versions)
         cache.update()
         this
     }
-
-    override def getConnectionState: ExternalConnectionState = state
-
-    override def toString: String = s"SelfNetworkEngine(identifier: ${identifier})"
-
-    override val staticAccessor: StaticAccessor = null
 }

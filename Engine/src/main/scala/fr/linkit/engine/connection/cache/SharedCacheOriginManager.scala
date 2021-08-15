@@ -88,7 +88,7 @@ final class SharedCacheOriginManager(family: String,
                     case _                          => acceptRequest //There is no attach handler set, the cache is free to accept any thing
                     case Some(_) if isSystemCache   => acceptRequest //System Caches have free to access caches content.
                     case Some(value: AttachHandler) =>
-                        val engine = network.getEngine(senderID).getOrElse {
+                        val engine = network.findEngine(senderID).getOrElse {
                             failRequest(s"Unknown engine '$senderID'.")
                         }
                         value.inspectEngine(engine, cacheType).fold(acceptRequest)(failRequest)
@@ -113,7 +113,7 @@ final class SharedCacheOriginManager(family: String,
         }
 
         def sendContent(content: Option[CacheContent]): Unit = {
-            response.addPacket(RefPacket[Option[CacheContent]](content))
+            response.addPacket(RefPacket[Option[CacheContent]](content)).submit()
         }
 
         def handleContentNotAvailable(): Unit = {
@@ -136,14 +136,14 @@ final class SharedCacheOriginManager(family: String,
 
         LocalCachesStore.getCache(cacheID)
                 .fold(handleContentNotAvailable()) { storedCache =>
-                    lazy val content = storedCache.getContent
+                    val content = storedCache.getContent
                     val isSystemCache = SystemCacheRange contains cacheID
                     storedCache.channel.getHandler match {
                         case Some(_) if isSystemCache                    => sendContent(content)
                         case None                                        => sendContent(content) //There is no handler, the engine is by default accepted.
                         case Some(handler: ContentHandler[CacheContent]) =>
 
-                            val engine = network.getEngine(senderID).getOrElse {
+                            val engine = network.findEngine(senderID).getOrElse {
                                 failRequest(s"Engine not found: $senderID. (manager engine: $currentIdentifier)")
                             }
                             if (handler.canAccessToContent(engine)) {

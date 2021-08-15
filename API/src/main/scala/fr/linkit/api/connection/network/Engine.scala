@@ -27,11 +27,11 @@ trait Engine extends Updatable {
 
     val staticAccessor: StaticAccessor
 
-    def versions: Versions
+    val versions: Versions
 
-    def connectionDate: Timestamp
+    val connectionDate: Timestamp
 
-    def getConnectionState: ExternalConnectionState
+    val getConnectionState: ExternalConnectionState
 
     def toString: String
 

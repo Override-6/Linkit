@@ -44,7 +44,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     override def close(reason: Reason): Unit = {
         socket.close(reason)
         //tasksHandler.close()
-        network.removeEntity(boundIdentifier)
+        network.removeEngine(boundIdentifier)
         serverTraffic.close(reason)
     }
 
@@ -60,7 +60,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
 
     def updateSocket(socket: Socket): Unit = this.socket.set(socket)
 
-    def getEntity: Engine = network.getEngine(boundIdentifier).get
+    def getEntity: Engine = network.findEngine(boundIdentifier).get
 
     override def isClosed: Boolean = socket.isClosed //refers to an used closeable element
 }
