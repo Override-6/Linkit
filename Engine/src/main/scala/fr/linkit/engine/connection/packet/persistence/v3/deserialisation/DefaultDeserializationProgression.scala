@@ -16,6 +16,7 @@ import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.DeserializerNode
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationObjectPool, DeserializationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.{ObjectPersistor, PacketPersistenceContext}
+import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.{NonObjectDeserializerNode, RawObjectNode}
 import fr.linkit.engine.connection.packet.persistence.v3.helper.ArrayPersistence
@@ -55,6 +56,7 @@ class DefaultDeserializationProgression(in: DeserializationInputStream,
             case HeadedValueFlag                        => pool.getHeaderValueNode(NumberSerializer.deserializeFlaggedNumber[Int](in))
             case NullFlag                               => RawObjectNode(if (buff.limit() > buff.position() && buff.get(buff.position()) == NoneFlag) None else null)
             case NoneFlag                               => RawObjectNode(None)
+            case EmptyPacketFlag                        => RawObjectNode(EmptyPacket)
             case ObjectFlag                             => handleObjectFlag(buff, startPos)
             case ClassFlag                              => in => in.readClass()
             case flag                                   => throw new MalFormedPacketException(buff, s"Unknown flag '$flag' at start of node expression.")

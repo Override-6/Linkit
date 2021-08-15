@@ -13,6 +13,7 @@
 package fr.linkit.engine.connection.packet.traffic.channel.request
 
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.channel.request.{RequestPacketBundle, RequestPacketChannel, ResponseHolder, Submitter}
 import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.connection.packet.traffic.PacketInjectableFactory
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
@@ -28,10 +29,10 @@ import java.util.NoSuchElementException
 import java.util.concurrent.LinkedBlockingQueue
 import scala.collection.mutable
 
-class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) {
+class SimpleRequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) with RequestPacketChannel {
 
-    private val requestHolders         = mutable.LinkedHashMap.empty[Int, RequestHolder]
-    private val requestConsumers       = ConsumerContainer[RequestPacketBundle]()
+    private val requestHolders         = mutable.LinkedHashMap.empty[Int, SimpleResponseHolder]
+    private val requestConsumers       = ConsumerContainer[DefaultRequestPacketBundle]()
     @volatile private var requestCount = 0
 
     //debug only
@@ -51,7 +52,7 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
                     val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
                     val submitter      = new ResponseSubmitter(request.id, submitterScope)
 
-                    requestConsumers.applyAllLater(RequestPacketBundle(this, request, coords, submitter))
+                    requestConsumers.applyAllLater(DefaultRequestPacketBundle(this, request, coords, submitter))
 
                 case response: ResponsePacket =>
                     AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
@@ -68,21 +69,21 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
         }
     }
 
-    def addRequestListener(callback: RequestPacketBundle => Unit): Unit = {
+    override def addRequestListener(callback: RequestPacketBundle => Unit): Unit = {
         requestConsumers += callback
     }
 
-    def makeRequest(scopeFactory: ScopeFactory[_ <: ChannelScope]): RequestSubmitter = {
+    override def makeRequest(scopeFactory: ScopeFactory[_ <: ChannelScope]): Submitter[ResponseHolder] = {
         val writer = traffic.newWriter(identifier)
         makeRequest(scopeFactory(writer))
     }
 
-    def makeRequest(scope: ChannelScope): RequestSubmitter = {
+    override def makeRequest(scope: ChannelScope): Submitter[ResponseHolder] = {
         if (scope.writer.injectableID != identifier)
             throw new IllegalArgumentException("Scope is not set on the same injectable id of this packet channel.")
         val requestID = nextRequestID
         //TODO Make an adaptive queue that make non WorkerPool threads wait and worker pools change task when polling.
-        val queue = WorkerPools.currentPool.map(_.newBusyQueue[SubmitterPacket]).getOrElse(new LinkedBlockingQueue[SubmitterPacket]())
+        val queue = WorkerPools.currentPool.map(_.newBusyQueue[AbstractSubmitterPacket]).getOrElse(new LinkedBlockingQueue[AbstractSubmitterPacket]())
         new RequestSubmitter(requestID, scope, queue, this)
     }
 
@@ -91,17 +92,17 @@ class RequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope)
         requestCount
     }
 
-    private[request] def addRequestHolder(holder: RequestHolder): Unit = {
+    private[request] def addRequestHolder(holder: SimpleResponseHolder): Unit = {
         requestHolders.put(holder.id, holder)
     }
 
-    private[request] def removeRequestHolder(holder: RequestHolder): Unit = {
+    private[request] def removeRequestHolder(holder: SimpleResponseHolder): Unit = {
         requestHolders -= holder.id
     }
 
 }
 
-object RequestPacketChannel extends PacketInjectableFactory[RequestPacketChannel] {
+object SimpleRequestPacketChannel extends PacketInjectableFactory[SimpleRequestPacketChannel] {
 
-    override def createNew(@Nullable parent: PacketChannel, scope: ChannelScope): RequestPacketChannel = new RequestPacketChannel(parent, scope)
+    override def createNew(@Nullable parent: PacketChannel, scope: ChannelScope): SimpleRequestPacketChannel = new SimpleRequestPacketChannel(parent, scope)
 }

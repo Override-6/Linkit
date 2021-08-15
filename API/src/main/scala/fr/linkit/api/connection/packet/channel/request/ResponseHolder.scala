@@ -10,8 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache
+package fr.linkit.api.connection.packet.channel.request
 
-class CacheTypeMismatchException(msg: String, cause: Throwable = null) extends CacheException(msg, cause) {
+trait ResponseHolder {
 
+    val id: Int
+
+    def addOnResponseReceived(callback: SubmitterPacket => Unit): Unit
+
+    def nextResponse: SubmitterPacket
+
+    def detach(): Unit
 }

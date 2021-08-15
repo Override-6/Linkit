@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.packet.traffic.channel.request
 
+import fr.linkit.api.connection.packet.channel.request.SubmitterPacket
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.AbstractAttributesPresence
@@ -20,13 +21,13 @@ import fr.linkit.engine.local.utils.ScalaUtils.ensurePacketType
 import java.util.NoSuchElementException
 import scala.reflect.ClassTag
 
-sealed abstract class SubmitterPacket(id: Int, packets: Array[Packet]) extends AbstractAttributesPresence with Packet {
+sealed abstract class AbstractSubmitterPacket(id: Int, packets: Array[Packet]) extends AbstractAttributesPresence with SubmitterPacket {
 
     @transient private var packetIndex                  = 0
     @transient private var attributes: PacketAttributes = _
 
     @throws[NoSuchElementException]("If this method is called more times than packet array's length" + this)
-    def nextPacket[P <: Packet : ClassTag]: P = {
+    override def nextPacket[P <: Packet : ClassTag]: P = {
         AppLogger.vDebug(s"packetIndex: $packetIndex, packets: ${packets.mkString("Array(", ", ", ")")} + $hashCode")
         //        Thread.dumpStack()
         if (packetIndex >= packets.length)
@@ -37,15 +38,15 @@ sealed abstract class SubmitterPacket(id: Int, packets: Array[Packet]) extends A
         ensurePacketType[P](packet)
     }
 
-    def foreach(action: Packet => Unit): Unit = {
+    override def foreach(action: Packet => Unit): Unit = {
         packets.foreach(action)
     }
 
-    def getAttributes: PacketAttributes = attributes
+    override def getAttributes: PacketAttributes = attributes
 
-    def getAttribute[S](key: Serializable): Option[S] = attributes.getAttribute(key)
+    override def getAttribute[S](key: Serializable): Option[S] = attributes.getAttribute(key)
 
-    def putAttribute(key: Serializable, value: Serializable): this.type = {
+    override def putAttribute(key: Serializable, value: Serializable): this.type = {
         attributes.putAttribute(key, value)
         this
     }
@@ -62,9 +63,9 @@ sealed abstract class SubmitterPacket(id: Int, packets: Array[Packet]) extends A
 }
 
 case class ResponsePacket(id: Int, packets: Array[Packet])
-        extends SubmitterPacket(id, packets) {
+        extends AbstractSubmitterPacket(id, packets) {
 
 }
 
 case class RequestPacket(id: Int, packets: Array[Packet])
-        extends SubmitterPacket(id, packets)
+        extends AbstractSubmitterPacket(id, packets)

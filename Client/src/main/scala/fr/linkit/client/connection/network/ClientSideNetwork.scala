@@ -12,7 +12,7 @@
 
 package fr.linkit.client.connection.network
 
-import fr.linkit.api.connection.cache.CacheSearchBehavior
+import fr.linkit.api.connection.cache.{CacheSearchBehavior, NoSuchCacheException, SharedCacheManager}
 import fr.linkit.api.connection.network.{Engine, ExternalConnectionState}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.client.connection.ClientConnection
@@ -25,7 +25,11 @@ import java.sql.Timestamp
 
 class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
 
-    override val connectionEngine: SelfEngine = initSelfEntity
+    override      val connectionEngine: SelfEngine         = initSelfEntity
+    override lazy val serverIdentifier: String             = connection.boundIdentifier
+    override lazy val globalCache     : SharedCacheManager = findDistantCacheManager("Global Cache", serverIdentifier).getOrElse {
+        throw new NoSuchCacheException("Global Cache manager not found.")
+    }
 
     override protected val entities: BoundedCollection.Immutable[Engine] = {
         sharedIdentifiers
@@ -34,25 +38,25 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
                 .addListener(handleTraffic)
     }
 
-    override def serverIdentifier: String = connection.boundIdentifier
-
     override def serverEngine: Engine = getEngine(serverIdentifier).get
 
-    override def startUpDate: Timestamp = cache(2)
+    override def startUpDate: Timestamp = new Timestamp(0) //cache(2)
 
     override def createEngine(identifier: String, communicator: SyncAsyncPacketChannel): Engine = {
-        val entityCache = attachToCachesManager(identifier, identifier)
+        val entityCache = findDistantCacheManager(identifier, identifier).getOrElse {
+            throw new NoSuchCacheException(s"No cache manager is set for engine $identifier")
+        }
         new ConnectionEngine(connection, identifier, entityCache)
     }
 
     def update(): Unit = {
-        cache.update()
+        globalCache.update()
         connectionEngine.update()
     }
 
-    def initSelfEntity: SelfEngine = {
+    private def initSelfEntity: SelfEngine = {
         val identifier   = connection.currentIdentifier
-        val sharedCaches = attachToCachesManager(identifier, identifier)
+        val sharedCaches = declareNewCacheManager(identifier)
         sharedCaches
                 .attachToCache(3, SharedInstance[ExternalConnectionState], CacheSearchBehavior.GET_OR_WAIT)
                 .set(ExternalConnectionState.CONNECTED) //technically always connected to himself

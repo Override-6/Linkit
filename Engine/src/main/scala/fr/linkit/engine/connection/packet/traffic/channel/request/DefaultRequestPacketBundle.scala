@@ -12,14 +12,16 @@
 
 package fr.linkit.engine.connection.packet.traffic.channel.request
 
-import fr.linkit.api.connection.packet.channel.PacketChannel
+import fr.linkit.api.connection.packet.channel.request.{RequestPacketBundle, RequestPacketChannel, Submitter}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, PacketAttributes}
 import fr.linkit.engine.connection.packet.AbstractPacketBundle
 
-case class RequestPacketBundle(channel: PacketChannel,
-                               override val packet: RequestPacket,
-                               override val coords: DedicatedPacketCoordinates,
-                               responseSubmitter: ResponseSubmitter) extends AbstractPacketBundle(channel) {
+case class DefaultRequestPacketBundle(channel: RequestPacketChannel,
+                                      override val packet: RequestPacket,
+                                      override val coords: DedicatedPacketCoordinates,
+                                      override val responseSubmitter: Submitter[Unit]) extends AbstractPacketBundle(channel) with RequestPacketBundle {
 
     override val attributes: PacketAttributes = packet.getAttributes
+
+    override def getChannel: RequestPacketChannel = channel
 }

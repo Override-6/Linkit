@@ -12,10 +12,21 @@
 
 package fr.linkit.api.connection.cache.traffic.handler
 
-import fr.linkit.api.connection.network.Engine
+import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 
+/**
+ * The main class that handles the network operations of a cache.
+ * His behavior may have some differences depending on what cache instance this handler handles.
+ * (May have more privileges if the cache handler handles a cache where its manager is owned by the current engine id)
+ * @see [[AttachHandler]]
+ * @see [[ContentHandler[_]]
+ * */
 trait CacheHandler {
 
-    def listAttachedEngines: List[Engine]
+    /**
+     * Handles a request packet bundle
+     * @param bundle the request to handle.
+     * */
+    def handleBundle(bundle: RequestPacketBundle): Unit
 
 }

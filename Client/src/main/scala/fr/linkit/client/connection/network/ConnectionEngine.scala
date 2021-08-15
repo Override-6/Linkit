@@ -29,8 +29,4 @@ class ConnectionEngine private[network](connection: ConnectionContext,
 
     override def getConnectionState: ExternalConnectionState = stateInstance.get.get
 
-    //TODO Client-side Events
-    stateInstance.addListener(newState => {
-        //TODO Client-side Events
-    })
 }

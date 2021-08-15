@@ -101,7 +101,7 @@ class DefaultPacketSerializer(center: DefaultObjectWrapperClassCenter) extends P
                 if (concluded)
                     throw new IllegalStateException("Objects have already been deserialized.")
                 in.initPool()
-                while (lim > buff.position() && buff.get(buff.position()) != 0) {
+                while (lim - buff.position() > 2 && buff.get(buff.position()) != 0) {
                     val obj = in.progression.getNextDeserializationNode
                             .deserialize(in)
                     buff.limit(lim)

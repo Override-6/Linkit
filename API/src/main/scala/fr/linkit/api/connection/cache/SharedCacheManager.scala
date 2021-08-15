@@ -13,7 +13,6 @@
 package fr.linkit.api.connection.cache
 
 import fr.linkit.api.connection.network.{Network, Updatable}
-import fr.linkit.api.local.concurrency.{IllegalThreadException, workerExecution}
 
 import scala.reflect.ClassTag
 
@@ -80,6 +79,10 @@ trait SharedCacheManager extends Updatable {
     def apply[A <: Serializable](key: Int): A
 */
 
+    def attachToCache[A <: SharedCache : ClassTag](cacheID: Int)(implicit factory: SharedCacheFactory[A]): A = {
+        attachToCache[A](cacheID, CacheSearchBehavior.GET_OR_OPEN)
+    }
+
     /**
      * Retrieves a [[SharedCache]] hosted by this SharedCacheManager. <br>
      * This method will create and synchronise the current content of the cache that is placed on the cacheID :<br>
@@ -90,7 +93,7 @@ trait SharedCacheManager extends Updatable {
      * then be returned.<br>
      * Note: can't be sure that every cache instances with the same cacheID are of the same type.<br>
      *
-     * @throws CacheTypeMismatchException if the cache is already created but the cache's does not equals to the given one.
+     * @throws CacheNotAcceptedException if the cache is already created but the cache's does not equals to the given one.
      * @param cacheID the cache identifier
      * @param factory the factory that will create the cache instance
      * @param behavior the kind of behavior to adopt when creating a cache
@@ -99,7 +102,11 @@ trait SharedCacheManager extends Updatable {
      * @see [[SharedCacheFactory]]
      * @see [[CacheSearchBehavior]]
      * */
-    def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN)(implicit factory: SharedCacheFactory[A]): A
+    def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, behavior: CacheSearchBehavior)(implicit factory: SharedCacheFactory[A]): A = {
+        attachToCache[A](cacheID, factory, behavior)
+    }
+
+    def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchBehavior = CacheSearchBehavior.GET_OR_OPEN): A
 
     /**
      * Get cache that is already opened and registered in the local cache.
@@ -109,7 +116,7 @@ trait SharedCacheManager extends Updatable {
      * @param cacheID the cache identifier
      * @return the cache instance.
      */
-    def getCacheInLocal[A <: SharedCache : ClassTag](cacheID: Int): A
+    def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A
 
     /**
      * Retrieves the cache content of a given cache identifier.

@@ -21,9 +21,9 @@ import java.sql.Timestamp
 abstract class AbstractRemoteEngine(override val identifier: String,
                                     override val cache: SharedCacheManager) extends Engine {
 
-    override def connectionDate: Timestamp = cache.getInstanceOrWait[Timestamp](2)
+    override def connectionDate: Timestamp = new Timestamp(0) //cache.getInstanceOrWait[Timestamp](2)
 
-    override def versions: Versions = cache.getInstanceOrWait[Versions](3)
+    override def versions: Versions = Versions.Unknown //cache.getInstanceOrWait[Versions](3)
 
     override def update(): this.type = {
         cache.update()

@@ -149,7 +149,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
     private def findCache(info: WrapperNodeInfo): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
         val family = info.cacheFamily
         network.findCacheManager(family)
-                .map(_.getCacheInLocal[DefaultSynchronizedObjectCenter[AnyRef]](info.cacheID))
+                .map(_.getCacheInStore[DefaultSynchronizedObjectCenter[AnyRef]](info.cacheID))
     }
 
 }

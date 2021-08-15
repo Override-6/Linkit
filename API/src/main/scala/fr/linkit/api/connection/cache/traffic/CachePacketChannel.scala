@@ -14,8 +14,9 @@ package fr.linkit.api.connection.cache.traffic
 
 import fr.linkit.api.connection.cache.{CacheContent, SharedCacheManager}
 import fr.linkit.api.connection.cache.traffic.handler.CacheHandler
+import fr.linkit.api.connection.packet.channel.request.RequestPacketChannel
 
-trait CachePacketChannel {
+trait CachePacketChannel extends RequestPacketChannel {
 
     val manager: SharedCacheManager
 
@@ -24,5 +25,7 @@ trait CachePacketChannel {
     def setHandler(handler: CacheHandler): Unit
 
     def getCacheOfOwner: CacheContent
+
+    def getHandler: Option[CacheHandler]
 
 }

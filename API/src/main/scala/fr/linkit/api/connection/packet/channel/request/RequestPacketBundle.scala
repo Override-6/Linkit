@@ -10,15 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.tree.node
+package fr.linkit.api.connection.packet.channel.request
 
-import fr.linkit.api.connection.cache.obj.tree.SyncNode
-import fr.linkit.api.connection.packet.channel.request.Submitter
-import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
-import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, PacketBundle}
 
-trait TrafficInterestedSyncNode[A <: AnyRef] extends SyncNode[A] {
+trait RequestPacketBundle extends PacketBundle {
 
-    def handlePacket(packet: InvocationPacket, response: Submitter[Unit]): Unit
+    override def getChannel: RequestPacketChannel
+
+    override val packet: SubmitterPacket
+
+    override val coords: DedicatedPacketCoordinates
+
+    val responseSubmitter: Submitter[Unit]
 
 }

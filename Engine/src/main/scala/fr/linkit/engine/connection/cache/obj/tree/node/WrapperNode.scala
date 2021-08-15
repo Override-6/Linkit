@@ -14,6 +14,7 @@ package fr.linkit.engine.connection.cache.obj.tree.node
 
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{Chip, IllegalObjectWrapperException, Puppeteer, SynchronizedObject}
+import fr.linkit.api.connection.packet.channel.request.Submitter
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
@@ -64,7 +65,7 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
 
     override def putPresence(engineID: String): Unit = presences += engineID
 
-    override def handlePacket(packet: InvocationPacket, response: ResponseSubmitter): Unit = {
+    override def handlePacket(packet: InvocationPacket, response: Submitter[Unit]): Unit = {
         if (!(packet.path sameElements treePath)) {
             val packetPath = packet.path
             if (!packetPath.startsWith(treePath))
@@ -79,14 +80,14 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
         makeMemberInvocation(packet, response)
     }
 
-    private def makeMemberInvocation(packet: InvocationPacket, response: ResponseSubmitter): Unit = {
+    private def makeMemberInvocation(packet: InvocationPacket, response: Submitter[Unit]): Unit = {
         chip.callMethod(packet.methodID, packet.params) match {
             case anyRef: AnyRef => handleInvocationResult(anyRef, packet, response)
             case _              => //do not synchronize primitives (note: this is impossible to get an unwrapped primitive but this match is for the scalac logic)
         }
     }
 
-    private def handleInvocationResult(initialResult: AnyRef, packet: InvocationPacket, response: ResponseSubmitter): Unit = {
+    private def handleInvocationResult(initialResult: AnyRef, packet: InvocationPacket, response: Submitter[Unit]): Unit = {
         var result = initialResult
         if (packet.expectedEngineIDReturn == platformIdentifier) {
             val methodBehavior    = puppeteer.wrapperBehavior.getMethodBehavior(packet.methodID)

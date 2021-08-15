@@ -14,12 +14,35 @@ package fr.linkit.api.connection.cache.traffic.handler
 
 import fr.linkit.api.connection.network.Engine
 
-trait AttachHandler {
+/**
+ * An handler that can get events when an engine attach or detach from the handled cache
+ * And, if the handler handles a cache managed by a manager that handles his own caches (see [[fr.linkit.api.connection.cache.SharedCacheManager]])
+ * */
+trait AttachHandler extends CacheHandler {
 
-    def onEngineAttached(engine: Engine): Unit
+    /**
+     * Called when a [[Engine]] is accepted (see [[inspectEngine()]]) and attaches to the handled cache.
+     * This method is called on all handlers of a cache
+     * @param engine the engine that attaches to this cache.
+     * */
+    def onEngineAttached(engine: Engine): Unit = ()
 
-    def canEngineAttach(engine: Engine): Boolean
+    /**
+     * Controls if an engine is accepted or not.
+     * This method is called only if the handler handles a cache where its manager handles itself.
+     * @param engine the tested engine
+     * @param requestedCacheType the Shared Cache class that the engine want to use.
+     *                           The requestedCacheType is assignable to the current handled cache type.
+     * @return None if there is no reason for why the engine is not accepted, Some[String]
+     *         to specify why the engine is not accepted.
+     * */
+    def inspectEngine(engine: Engine, requestedCacheType: Class[_]): Option[String] = None //All engines accepted by default
 
-    def onEngineDetached(engine: Engine): Unit
+    /**
+     * Called when an [[Engine]] is detached.
+     * This method is called on all handlers of a cache.
+     * @param engine the engine that attaches to this cache.
+     * */
+    def onEngineDetached(engine: Engine): Unit = ()
 
 }

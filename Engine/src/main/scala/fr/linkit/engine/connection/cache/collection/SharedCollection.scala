@@ -12,17 +12,19 @@
 
 package fr.linkit.engine.connection.cache.collection
 
-import fr.linkit.api.connection.cache.{CacheContent, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.cache.SharedCacheFactory
+import fr.linkit.api.connection.cache.traffic.CachePacketChannel
+import fr.linkit.api.connection.cache.traffic.handler.{CacheHandler, ContentHandler}
 import fr.linkit.api.connection.packet.Packet
-import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
+import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.local.concurrency.WorkerPools
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.collection.CollectionModification._
 import fr.linkit.engine.connection.cache.collection.SharedCollection.CollectionAdapter
 import fr.linkit.engine.connection.cache.{AbstractSharedCache, CacheArrayContent}
+import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacketBundle, RequestPacketChannel}
 import fr.linkit.engine.local.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
 
@@ -31,34 +33,17 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
-class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager,
-                                                     identifier: Int,
-                                                     adapter: CollectionAdapter[A],
-                                                     channel: RequestPacketChannel)
-        extends AbstractSharedCache(handler, identifier, channel) with mutable.Iterable[A] with InternalSharedCache {
+class SharedCollection[A <: Serializable : ClassTag](adapter: CollectionAdapter[A],
+                                                     channel: CachePacketChannel)
+        extends AbstractSharedCache(channel) with mutable.Iterable[A] {
 
-    private val networkListeners        = ConsumerContainer[(CollectionModification, Int, A)]()
+    channel.setHandler(CollectionHandler)
 
-    override def toString: String = getClass.getSimpleName + s"(family: $family, id: $identifier, content: ${adapter.toString})"
+    private val networkListeners = ConsumerContainer[(CollectionModification, Int, A)]()
 
-    override def snapshotContent: CacheContent = CacheArrayContent[A](toArray)
+    override def toString: String = getClass.getSimpleName + s"(family: $family, id: $cacheID, content: ${adapter.toString})"
 
     override def iterator: Iterator[A] = adapter.iterator
-
-    override final def handleBundle(bundle: RequestPacketBundle): Unit = {
-        bundle.packet.nextPacket[Packet] match {
-            case modPacket: ObjectPacket => WorkerPools.runLaterOrHere {
-                handleNetworkModRequest(modPacket)
-            }
-        }
-    }
-
-    override def setContent(content: CacheContent): Unit = {
-        content match {
-            case content: CacheArrayContent[A] => set(content.array)
-            case _                             => throw new IllegalArgumentException(s"Received unexpected content '$content'")
-        }
-    }
 
     def contains(a: Any): Boolean = adapter.contains(a)
 
@@ -129,38 +114,57 @@ class SharedCollection[A <: Serializable : ClassTag](handler: SharedCacheManager
     }
 
     private def flushModification(mod: (CollectionModification, Int, Any)): Unit = {
-        sendModification(ObjectPacket(mod))
+        channel.makeRequest(ChannelScopes.broadcast)
+                .addPacket(ObjectPacket(mod))
+                .submit()
+                .detach()
         networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Int, A)])
         AppLogger.vTrace(s"<$family> (${
             channel.traffic.currentIdentifier
         }) COLLECTION IS NOW (local): " + this)
     }
 
-    private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
-        val mod    : (CollectionModification, Int, Any) = packet.casted
-        val modKind: CollectionModification             = mod._1
-        val index                                       = mod._2.toInt
-        lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed (could occur to NPE)
 
-        AppLogger.vTrace(s"<$family> Received mod request : $mod")
-        AppLogger.vTrace(s"<$family> Current items : $this")
-        val action: CollectionAdapter[A] => Unit = modKind match {
-            case CLEAR  => _.clear()
-            case SET    => _.set(index, item)
-            case REMOVE => _.remove(index)
-            case ADD    => if (index < 0) _.add(item) else _.insert(index, item)
+    private object CollectionHandler extends CacheHandler with ContentHandler[CacheArrayContent[A]] {
+
+        override def handleBundle(bundle: RequestPacketBundle): Unit = bundle.packet.nextPacket[Packet] match {
+            case modPacket: ObjectPacket => WorkerPools.runLaterOrHere {
+                handleNetworkModRequest(modPacket)
+            }
+            case other                   => throw UnexpectedPacketException(s"Received unknown packet: $other")
         }
 
-        try {
-            action(adapter)
-        } catch {
-            case NonFatal(e) =>
-                AppLogger.printStackTrace(e)
-                System.exit(1)
+        override def setContent(content: CacheArrayContent[A]): Unit = set(content.array)
+
+        override def getContent: CacheArrayContent[A] = CacheArrayContent[A](toArray)
+
+        private def handleNetworkModRequest(packet: ObjectPacket): Unit = {
+            val mod    : (CollectionModification, Int, Any) = packet.casted
+            val modKind: CollectionModification             = mod._1
+            val index                                       = mod._2
+            lazy val item: A = mod._3.asInstanceOf[A] //Only instantiate value if needed (could occur to NPE)
+
+            AppLogger.vTrace(s"<$family> Received mod request : $mod")
+            AppLogger.vTrace(s"<$family> Current items : $this")
+            val action: CollectionAdapter[A] => Unit = modKind match {
+                case CLEAR  => _.clear()
+                case SET    => _.set(index, item)
+                case REMOVE => _.remove(index)
+                case ADD    => if (index < 0) _.add(item) else _.insert(index, item)
+            }
+
+            try {
+                action(adapter)
+            } catch {
+                case NonFatal(e) =>
+                    AppLogger.printStackTrace(e)
+                    System.exit(1)
+            }
+
+            networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Int, A)])
+            AppLogger.vTrace(s"<$family> COLLECTION IS NOW (network) $this")
         }
 
-        networkListeners.applyAllLater(mod.asInstanceOf[(CollectionModification, Int, A)])
-        AppLogger.vTrace(s"<$family> COLLECTION IS NOW (network) $this")
     }
 
 }
@@ -171,8 +175,7 @@ object SharedCollection {
 
     def set[A <: Serializable : ClassTag]: SharedCacheFactory[SharedCollection[A]] = {
         ofInsertFilter[A]((coll, it) => {
-            val b = !coll.contains(it)
-            b
+            !coll.contains(it)
         })
     }
 
@@ -186,12 +189,10 @@ object SharedCollection {
      * The insertFilter must be true in order to authorise the insertion
      * */
     def ofInsertFilter[A <: Serializable : ClassTag](insertFilter: (CollectionAdapter[A], A) => Boolean): SharedCacheFactory[SharedCollection[A]] = {
-        (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
+        (channel: CachePacketChannel) => {
             var adapter: CollectionAdapter[A] = null
             adapter = new CollectionAdapter[A](insertFilter(adapter, _))
-            val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
-
-            new SharedCollection[A](handler, identifier, adapter, channel)
+            new SharedCollection[A](adapter, channel)
         }
     }
 

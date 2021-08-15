@@ -18,8 +18,11 @@ import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassCenter, ObjectWrapperInstantiator}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
-import fr.linkit.api.connection.cache.{CacheContent, SharedCache, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
+import fr.linkit.api.connection.cache.{SharedCache, SharedCacheFactory}
+import fr.linkit.api.connection.network.Engine
 import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
@@ -32,7 +35,6 @@ import fr.linkit.engine.connection.cache.obj.tree._
 import fr.linkit.engine.connection.cache.obj.tree.node.{RootWrapperNode, TrafficInterestedSyncNode}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacketBundle, RequestPacketChannel}
 import fr.linkit.engine.local.LinkitApplication
 
 import scala.reflect.ClassTag
@@ -41,12 +43,12 @@ import scala.reflect.ClassTag
 final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CachePacketChannel,
                                                                  generator: ObjectWrapperClassCenter,
                                                                  override val defaultTreeViewBehavior: ObjectTreeBehavior)
-        extends AbstractSharedCache(handler, cacheID, channel) with SynchronizedObjectCenter[A] {
+        extends AbstractSharedCache(channel) with SynchronizedObjectCenter[A] {
 
-    private val procrastinator: ProcrastinatorControl = handler.network.connection
-
-    override val treeCenter: DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this)
-    private  val currentIdentifier                      = channel.traffic.currentIdentifier
+    private  val procrastinator: ProcrastinatorControl      = channel.manager.network.connection
+    private  val currentIdentifier                          = channel.traffic.currentIdentifier
+    override val treeCenter    : DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this)
+    channel.setHandler(CenterHandler)
 
     override def postObject(id: Int, obj: A): A with SynchronizedObject[A] = {
         postObject(id, obj, defaultTreeViewBehavior)
@@ -64,6 +66,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                 .addPacket(ObjectPacket(ObjectTreeProfile(id, obj, currentIdentifier, Map())))
                 .putAllAttributes(this)
                 .submit()
+                .detach()
         val wrapperNode = tree.getRoot
         wrapperNode.setPresentOnNetwork()
         wrapperNode.synchronizedObject
@@ -77,63 +80,9 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         treeCenter.findTree(id).isDefined
     }
 
-    override protected def handleBundle(bundle: RequestPacketBundle): Unit = {
-        AppLogger.vDebug(s"Processing bundle : ${bundle}")
-        val response = bundle.packet
-        response.nextPacket[Packet] match {
-            case ip: InvocationPacket                                                       =>
-                val path = ip.path
-                val node = findNode(path)
-                node.fold(AppLogger.error(s"Could not find puppet node at path ${path.mkString("/")}")) {
-                    case node: TrafficInterestedSyncNode[_] => node.handlePacket(ip, bundle.responseSubmitter)
-                    case _                                  =>
-                        throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedSyncNode[_]].getSimpleName} in order to handle a member rmi request.")
-                }
-            case ObjectPacket(ObjectTreeProfile(treeID, rootObject: A, owner, subWrappers)) =>
-                if (!isRegistered(treeID)) {
-                    val tree = createNewTree(treeID, owner, rootObject, subWrappers, defaultTreeViewBehavior)
-                    tree.getRoot.setPresentOnNetwork()
-                }
-        }
-    }
-
-    override def setContent(content: CacheContent): Unit = {
-        content match {
-            case content: CacheRepoContent[A] => setRepoContent(content)
-            case _                            => throw new IllegalArgumentException(s"Received unknown content '$content'")
-        }
-    }
-
-    override def snapshotContent: CacheRepoContent[A] = treeCenter.snapshotContent
-
     private def ensureNotWrapped(any: Any): Unit = {
         if (any.isInstanceOf[SynchronizedObject[_]])
             throw new IllegalObjectWrapperException("This object is already wrapped.")
-    }
-
-    private def setRepoContent(content: CacheRepoContent[A]): Unit = {
-        if (content.array.isEmpty)
-            return
-        val array = content.array
-
-        array.foreach(profile => {
-            val puppet      = profile.rootObject
-            val owner       = profile.treeOwner
-            val treeID      = profile.treeID
-            val subWrappers = profile.subWrappers
-            val path        = Array(treeID)
-            //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
-            if (isRegistered(treeID)) {
-                findNode(path).fold {
-                    throw new NoSuchWrapperNodeException(s"Unknown local object of path '${path.mkString("/")}'")
-                }((n: SyncNode[A]) => n.chip.updateObject(puppet))
-            }
-            //it's an object that must be remotely controlled because it is chipped by another objects cache.
-            else {
-                val tree = createNewTree(treeID, owner, puppet, subWrappers, defaultTreeViewBehavior)
-                tree.getRoot.setPresentOnNetwork()
-            }
-        })
     }
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
@@ -189,6 +138,72 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
 
     }
 
+    private object CenterHandler extends CacheHandler with ContentHandler[CacheRepoContent[A]] with AttachHandler {
+
+        override def handleBundle(bundle: RequestPacketBundle): Unit = {
+            AppLogger.vDebug(s"Processing bundle : ${bundle}")
+            val response = bundle.packet
+            response.nextPacket[Packet] match {
+                case ip: InvocationPacket                                                       =>
+                    val path = ip.path
+                    val node = findNode(path)
+                    node.fold(AppLogger.error(s"Could not find puppet node at path ${path.mkString("/")}")) {
+                        case node: TrafficInterestedSyncNode[_] => node.handlePacket(ip, bundle.responseSubmitter)
+                        case _                                  =>
+                            throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedSyncNode[_]].getSimpleName} in order to handle a member rmi request.")
+                    }
+                case ObjectPacket(ObjectTreeProfile(treeID, rootObject: A, owner, subWrappers)) =>
+                    if (!isRegistered(treeID)) {
+                        val tree = createNewTree(treeID, owner, rootObject, subWrappers, defaultTreeViewBehavior)
+                        tree.getRoot.setPresentOnNetwork()
+                    }
+            }
+        }
+
+        override def setContent(content: CacheRepoContent[A]): Unit = {
+            if (content.array.isEmpty)
+                return
+            val array = content.array
+
+            array.foreach(profile => {
+                val puppet      = profile.rootObject
+                val owner       = profile.treeOwner
+                val treeID      = profile.treeID
+                val subWrappers = profile.subWrappers
+                val path        = Array(treeID)
+                //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
+                if (isRegistered(treeID)) {
+                    findNode(path).fold {
+                        throw new NoSuchWrapperNodeException(s"Unknown local object of path '${path.mkString("/")}'")
+                    }((n: SyncNode[A]) => n.chip.updateObject(puppet))
+                }
+                //it's an object that must be remotely controlled because it is chipped by another objects cache.
+                else {
+                    val tree = createNewTree(treeID, owner, puppet, subWrappers, defaultTreeViewBehavior)
+                    tree.getRoot.setPresentOnNetwork()
+                }
+            })
+        }
+
+        override def getContent: CacheRepoContent[A] = treeCenter.snapshotContent
+
+        override def onEngineAttached(engine: Engine): Unit = {
+            AppLogger.debug(s"Engine ${engine.identifier} attached to this synchronized object center !")
+        }
+
+        override def inspectEngine(engine: Engine, requestedCacheType: Class[_]): Option[String] = {
+            val clazz = classOf[DefaultSynchronizedObjectCenter[A]]
+            if (requestedCacheType eq clazz)
+                None
+            else Some(s"Requested cache class is not ${clazz.getName} (received: ${requestedCacheType.getName}).")
+        }
+
+        override def onEngineDetached(engine: Engine): Unit = {
+            AppLogger.debug(s"Engine ${engine.identifier} detached to this synchronized object center !")
+        }
+
+    }
+
 }
 
 object DefaultSynchronizedObjectCenter {
@@ -207,7 +222,7 @@ object DefaultSynchronizedObjectCenter {
             val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
             val generator = new DefaultObjectWrapperClassCenter(context.compilerCenter, resources)
 
-            new DefaultSynchronizedObjectCenter[A](handler, identifier, channel, generator, behaviors)
+            new DefaultSynchronizedObjectCenter[A](channel, generator, behaviors)
         }
     }
 

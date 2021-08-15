@@ -12,31 +12,35 @@
 
 package fr.linkit.engine.connection.cache.map
 
-import fr.linkit.api.connection.cache.{CacheContent, SharedCacheFactory, SharedCacheManager}
+import fr.linkit.api.connection.cache.SharedCacheFactory
+import fr.linkit.api.connection.cache.traffic.CachePacketChannel
+import fr.linkit.api.connection.cache.traffic.handler.{CacheHandler, ContentHandler}
 import fr.linkit.api.connection.packet.Packet
-import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
+import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.map.MapModification._
 import fr.linkit.engine.connection.cache.{AbstractSharedCache, CacheArrayContent}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacketBundle, RequestPacketChannel}
+import fr.linkit.engine.connection.packet.traffic.channel.request.DefaultRequestPacketBundle
 import fr.linkit.engine.local.concurrency.pool.SimpleWorkerController
-import fr.linkit.engine.local.utils.{ConsumerContainer, ScalaUtils}
+import fr.linkit.engine.local.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: RequestPacketChannel)
-        extends AbstractSharedCache(handler, identifier, channel) {
+class SharedMap[K, V](channel: CachePacketChannel)
+        extends AbstractSharedCache(channel) {
 
-    private val networkListeners        = ConsumerContainer[(MapModification, K, V)]()
-    private val controller              = new SimpleWorkerController()
+
+    channel.setHandler(MapHandler)
+
+    private val networkListeners = ConsumerContainer[(MapModification, K, V)]()
+    private val controller       = new SimpleWorkerController()
 
     override def toString: String = LocalMap.toString
-
 
     /**
      * (MapModification, _, _) : the kind of modification that were done<p>
@@ -124,12 +128,6 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
         apply(k)
     }
 
-    override protected def handleBundle(bundle: RequestPacketBundle): Unit = {
-        bundle.packet.nextPacket[Packet] match {
-            case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
-        }
-    }
-
     private def handleNetworkModRequest(mod: (MapModification, K, V)): Unit = {
         val modKind: MapModification = mod._1
         val key                      = mod._2
@@ -152,25 +150,29 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
     }
 
     private def flushModification(mod: (MapModification, Any, Any)): Unit = {
-        //        Thread.dumpStack()
         println(s"Flushed $mod, $this, $hashCode, ${LocalMap.hashCode()}")
-        sendModification(ObjectPacket(mod))
+        channel.makeRequest(ChannelScopes.broadcast)
+                .addPacket(ObjectPacket(mod))
+                .submit()
+                .detach()
         networkListeners.applyAll(mod.asInstanceOf[(MapModification, K, V)])
     }
 
     private def println(msg: String): Unit = {
-        AppLogger.vTrace(s"<$family, $identifier> $msg")
+        AppLogger.vTrace(s"<$family, $cacheID> $msg")
     }
 
-    override def snapshotContent: CacheContent = {
-        CacheArrayContent(LocalMap.toArray)
-    }
+    private object MapHandler extends CacheHandler with ContentHandler[CacheArrayContent[(K, V)]] {
 
-    override def setContent(content: CacheContent): Unit = {
-        LocalMap.set(content match {
-            case content: CacheArrayContent[(K, V)] => ScalaUtils.slowCopy(content.array)
-            case _                                  => throw new IllegalArgumentException(s"Received unexpected content $content")
-        })
+        override def handleBundle(bundle: RequestPacketBundle): Unit = {
+            bundle.packet.nextPacket[Packet] match {
+                case ObjectPacket(modPacket: (MapModification, K, V)) => handleNetworkModRequest(modPacket)
+            }
+        }
+
+        override def setContent(content: CacheArrayContent[(K, V)]): Unit = LocalMap.set(content.array)
+
+        override def getContent: CacheArrayContent[(K, V)] = CacheArrayContent[(K, V)](LocalMap.toArray)
     }
 
     private object LocalMap {
@@ -227,7 +229,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
 
         def contains(key: K): Boolean = mainMap.contains(key)
 
-        def toArray: Array[Any] = mainMap.toArray
+        def toArray: Array[(K, V)] = mainMap.toArray
 
         def iterator: Iterator[(K, V)] = mainMap.iterator
 
@@ -244,10 +246,7 @@ class SharedMap[K, V](handler: SharedCacheManager, identifier: Int, channel: Req
 object SharedMap {
 
     def apply[K, V]: SharedCacheFactory[SharedMap[K, V]] = {
-        (handler: SharedCacheManager, identifier: Int, container: PacketInjectableContainer) => {
-            val channel = container.getInjectable(5, ChannelScopes.discardCurrent, RequestPacketChannel)
-            new SharedMap[K, V](handler, identifier, channel)
-        }
+        new SharedMap[K, V](_)
     }
 
 }

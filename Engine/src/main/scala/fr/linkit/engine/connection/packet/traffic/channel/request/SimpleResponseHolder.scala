@@ -12,30 +12,33 @@
 
 package fr.linkit.engine.connection.packet.traffic.channel.request
 
+import fr.linkit.api.connection.packet.channel.request.{ResponseHolder, SubmitterPacket}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.engine.local.utils.ConsumerContainer
 
 import java.util.concurrent.BlockingQueue
 
-case class RequestHolder(id: Int, queue: BlockingQueue[SubmitterPacket], handler: RequestPacketChannel) {
+case class SimpleResponseHolder(override val id: Int,
+                                queue: BlockingQueue[AbstractSubmitterPacket],
+                                handler: SimpleRequestPacketChannel) extends ResponseHolder {
 
-    private val responseConsumer = ConsumerContainer[SubmitterPacket]()
+    private val responseConsumer = ConsumerContainer[AbstractSubmitterPacket]()
 
-    def nextResponse: SubmitterPacket = {
+    override def nextResponse: SubmitterPacket = {
         AppLogger.vDebug(s"$currentTasksId <> Waiting for response... ($id) " + this)
         val response = queue.take()
         AppLogger.vError(s"$currentTasksId <> RESPONSE ($id) RECEIVED ! $response, $queue")
         response
     }
 
-    def addOnResponseReceived(callback: SubmitterPacket => Unit): Unit = {
+    override def addOnResponseReceived(callback: SubmitterPacket => Unit): Unit = {
         responseConsumer += callback
     }
 
-    def detach(): Unit = handler.removeRequestHolder(this)
+    override def detach(): Unit = handler.removeRequestHolder(this)
 
-    private[request] def pushResponse(response: SubmitterPacket): Unit = {
+    private[request] def pushResponse(response: AbstractSubmitterPacket): Unit = {
         AppLogger.vError(s"$currentTasksId <> ADDING RESPONSE $response FOR REQUEST $this")
         queue.add(response)
         responseConsumer.applyAllLater(response)

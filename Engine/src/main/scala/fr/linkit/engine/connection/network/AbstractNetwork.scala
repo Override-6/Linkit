@@ -12,29 +12,32 @@
 
 package fr.linkit.engine.connection.network
 
-import fr.linkit.api.connection.cache.{CacheSearchBehavior, SharedCacheManager}
+import fr.linkit.api.connection.ConnectionContext
+import fr.linkit.api.connection.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.connection.network.{Engine, Network}
-import fr.linkit.api.connection.packet.PacketBundle
-import fr.linkit.api.connection.{ConnectionContext, ExternalConnection}
+import fr.linkit.api.connection.packet.Packet
+import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.NetworkSharedCacheManager
 import fr.linkit.engine.connection.cache.collection.{BoundedCollection, SharedCollection}
+import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
+import fr.linkit.engine.connection.packet.UnexpectedPacketException
+import fr.linkit.engine.connection.packet.fundamental.RefPacket.StringPacket
+import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
-import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
-import sun.misc.Unsafe
+import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 import scala.collection.mutable
 
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
-    private   val cacheRequestChannel                          = connection.getInjectable(12, ChannelScopes.discardCurrent, RequestPacketChannel)
-    private   val caches                                       = mutable.HashMap.empty[String, NetworkSharedCacheManager]
-    override  val cache             : SharedCacheManager       = initCaches()
-    protected val sharedIdentifiers : SharedCollection[String] = cache.attachToCache(3, SharedCollection.set[String], CacheSearchBehavior.GET_OR_WAIT)
+    private   val caches                                       = mutable.HashMap.empty[String, SharedCacheManager]
+    private   val cacheManagerChannel                          = connection.getInjectable(10, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
     protected val entityCommunicator: SyncAsyncPacketChannel   = connection.getInjectable(9, ChannelScopes.discardCurrent, SyncAsyncPacketChannel.busy)
+    protected val sharedIdentifiers : SharedCollection[String] = globalCache.attachToCache(3, SharedCollection.set[String])
     protected val entities: BoundedCollection.Immutable[Engine]
+    postInit()
 
     override def listEngines: List[Engine] = {
         entities.toList
@@ -48,36 +51,30 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         else None
     }
 
-    override def attachToCacheManager(family: String, owner: ConnectionContext): SharedCacheManager = {
-        attachToCachesManager(family, owner.currentIdentifier)
-    }
-
-    protected def attachToCachesManager(family: String, owner: String): SharedCacheManager = {
-        if (family == null || owner == null)
-            throw new NullPointerException("Family or owner is null.")
-
-        caches.getOrElse(family, {
-            AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family, $owner>")
-            val cache = new NetworkSharedCacheManager(family, owner, this, connection, cacheRequestChannel)
-
-            //Will inject all packet that the new cache have possibly missed.
-            caches.synchronized {
-                AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: PUTTING CACHE <$family, $owner> INTO CACHES")
-                caches.put(family, cache)
-                AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: CACHES <$family, $owner> IS NOW : $caches")
-            }
-            cacheRequestChannel.injectStoredBundles()
-            cache: SharedCacheManager
-        })
-    }
-
     override def findCacheManager(family: String): Option[SharedCacheManager] = {
-        caches.get(family)
+        caches.get(family).orElse(findDistantCacheManager(family))
     }
 
-    override def newCacheManager(family: String, owner: ExternalConnection): SharedCacheManager = {
-        attachToCachesManager(family, owner.boundIdentifier)
+    override def attachToCacheManager(family: String): SharedCacheManager = {
+        caches.getOrElse(family, declareNewCacheManager(family))
     }
+
+    override def declareNewCacheManager(family: String): SharedCacheManager = {
+        if (caches.contains(family))
+            throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
+        AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
+        val channel = connection.getInjectable(family.hashCode, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
+        val cache   = new SharedCacheOriginManager(family, this, channel)
+
+        //Will inject all packet that the new cache have possibly missed.
+        caches.synchronized {
+            caches.put(family, cache)
+        }
+        channel.injectStoredBundles()
+        cache
+    }
+
+    def globalCache: SharedCacheManager
 
     protected def createEngine(identifier: String, communicationChannel: SyncAsyncPacketChannel): Engine
 
@@ -91,36 +88,46 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         ent
     }
 
-    private def initCaches(): SharedCacheManager = {
-        connection.translator.initNetwork(this)
-
-        def findCacheToNotify(bundle: PacketBundle)
-                             (notifyAction: NetworkSharedCacheManager => Unit): Unit = {
-            val attr = bundle.attributes
-            attr.getAttribute[String]("family") match {
-                case Some(family) =>
-                    val opt = caches.synchronized {
-                        AppLogger.vWarn(s"$currentTasksId <> ${connection.currentIdentifier}: FINDING CACHE '$family' FOR PACKET ${bundle.packet} into $caches")
-                        caches.get(family)
-                    }
-                    opt
-                            //If cache does not contains the family tag, this mean that it could possibly be
-                            //opened in the future, so received packets will be stored and reInjected every
-                            //time a cache opens.
-                            .fold(bundle.store())(cache => {
-                                notifyAction(cache)
-                            })
-            }
+    protected def handleRequest(bundle: RequestPacketBundle): Unit = {
+        val response = bundle.responseSubmitter
+        bundle.packet.nextPacket[Packet] match {
+            //Request for testing the presence of a CacheManager on this machine.
+            case StringPacket(managerFamily: String) =>
+                response.addPacket(BooleanPacket(caches.contains(managerFamily))).submit()
+            case other                               => throw UnexpectedPacketException(s"Unknown request '$other'.")
         }
+    }
 
-        cacheRequestChannel.addRequestListener(bundle => {
-            AppLogger.vDebug(s"Request body: ${bundle}")
-            findCacheToNotify(bundle) {
-                _.handleRequest(bundle)
-            }
-        })
+    protected def findDistantCacheManager(family: String, owner: String): Option[SharedCacheManager] = {
+        //TODO Pretty slow, and does not ensure that only one engine is the owner of the family.
+        // A registry where all opened managers are stored may be done.
+        if (owner == connection.currentIdentifier)
+            throw new IllegalArgumentException("Can't find a distant manager that would be owned by this engine. (use find or declareCacheManager instead)")
+        if (caches.contains(family))
+            return Some(caches(family))
+        val isSet = cacheManagerChannel.makeRequest(ChannelScopes.include(owner))
+                .addPacket(StringPacket(family))
+                .submit()
+                .nextResponse
+                .nextPacket[BooleanPacket].value
 
-        attachToCachesManager(s"Global Cache", serverIdentifier)
+        if (isSet) {
+            val channel = connection.getInjectable(family.hashCode, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
+            val manager = new SharedCacheDistantManager(family, owner, this, channel)
+            caches.put(family, manager)
+            Some(manager)
+        } else None
+    }
+
+    protected def findDistantCacheManager(family: String): Option[SharedCacheManager] = {
+        listEngines.filter(_.identifier != connection.currentIdentifier)
+                .flatMap(c => findDistantCacheManager(family, c.identifier))
+                .headOption
+    }
+
+    private def postInit(): Unit = {
+        connection.translator.initNetwork(this)
+        cacheManagerChannel.addRequestListener(handleRequest)
     }
 
 }

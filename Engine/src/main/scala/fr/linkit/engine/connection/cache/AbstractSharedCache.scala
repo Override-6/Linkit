@@ -13,74 +13,34 @@
 package fr.linkit.engine.connection.cache
 
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
-import fr.linkit.api.connection.cache.{CacheSearchBehavior, SharedCache}
-import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
-import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
-import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.{RequestPacketBundle, RequestSubmitter}
-import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes, UnexpectedPacketException}
+import fr.linkit.api.connection.cache.traffic.handler.ContentHandler
+import fr.linkit.api.connection.cache.{CacheContent, SharedCache}
+import fr.linkit.engine.connection.packet.AbstractAttributesPresence
 
-abstract class AbstractSharedCache(channel: CachePacketChannel,
-                                   override val cacheID: Int) extends AbstractAttributesPresence with SharedCache with JustifiedCloseable {
+abstract class AbstractSharedCache(channel: CachePacketChannel) extends AbstractAttributesPresence with SharedCache {
 
-    /*private  val manager        = channel.manager
-    override val family: String = manager.family
-
-    override def close(reason: Reason): Unit = {
-        //TODO channel.close(reason)
-    }
-
-    override def isClosed: Boolean = {
-        //TODO channel.isClosed
-    }
+    private  val manager         = channel.manager
+    override val family : String = manager.family
+    override val cacheID: Int    = channel.cacheID
 
     override def update(): this.type = {
         if (manager == null)
             return this
 
         //println(s"<$family> UPDATING CACHE $identifier")
-        val content = handler.retrieveCacheContent(cacheID, CacheSearchBehavior.GET_OR_CRASH)
+        val content = channel.getCacheOfOwner
+        val handler = channel.getHandler
         //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
-        if (content.isDefined) {
-            setContent(content.get)
+        if (handler.isDefined) {
+            handler.get match { //TODO ensure that the content cache is the expected type.
+                case c: ContentHandler[CacheContent] => c.setContent(content)
+                case _                               => //simply do nothing
+            }
         }
         this
     }
 
-    //def link(action: A => Unit): this.type
-
-    protected def handleBundle(bundle: RequestPacketBundle): Unit
-
-    protected def sendModification(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
-        val request = makeRequest(ChannelScopes.discardCurrent)
-                .addPacket(packet)
-        attributes.drainAttributes(request)
-        request.submit()
-    }
-
-    protected def makeRequest(scopeFactory: ScopeFactory[_ <: ChannelScope]): RequestSubmitter = {
-        val request = channel.makeRequest(scopeFactory)
-        drainAllAttributes(request)
-        request
-    }
-
-    //override def onNewEngineConnected(engine: Engine): Unit = ()
-
-    addDefaultAttribute("family", family)
-    addDefaultAttribute("cache", cacheID)
-
-    //FIXME optimise (find another way to retrieve the right cache that can accept the bundle)
-    channel.addRequestListener(bundle => {
-        val attr = bundle.attributes
-        if (bundle.attributes.isEmpty)
-            throw UnexpectedPacketException("Packet bundle for cache injection have no attributes.")
-
-        def isPresent(name: String, expected: Any): Boolean = attr.getAttribute(name).contains(expected)
-
-        if (isPresent("cache", cacheID) && isPresent("family", family))
-            handleBundle(bundle)
-    })*/
+    /*addDefaultAttribute("family", family)
+    addDefaultAttribute("cache", cacheID)*/
 
 }

@@ -34,8 +34,8 @@ class SelfEngine(connection: ConnectionContext,
     update()
 
     override def update(): this.type = {
-        cache.postInstance(2, connectionDate)
-        cache.postInstance(3, versions)
+//        cache.postInstance(2, connectionDate)
+ //       cache.postInstance(3, versions)
         cache.update()
         this
     }

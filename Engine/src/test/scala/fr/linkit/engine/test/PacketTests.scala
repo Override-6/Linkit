@@ -66,7 +66,7 @@ class PacketTests {
 object PacketTests {
 
     private val serializer = new DefaultPacketSerializer(null)
-    serializer.context.putPersistor(new SynchronizedObjectPersistor(null))
+    /*serializer.context.putPersistor(new SynchronizedObjectPersistor(null))
     serializer.context.putMiniPersistor[File](new MiniPersistor[File, String] {
         override def serialize(a: File): String = {
             a.getAbsolutePath
@@ -76,7 +76,7 @@ object PacketTests {
             new File(b)
         }
     })
-
+*/
     def testPacket(obj: Array[AnyRef]): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")
         val buff = ByteBuffer.allocate(1000)

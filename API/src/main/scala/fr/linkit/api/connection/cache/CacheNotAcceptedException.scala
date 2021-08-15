@@ -10,15 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.tree.node
+package fr.linkit.api.connection.cache
 
-import fr.linkit.api.connection.cache.obj.tree.SyncNode
-import fr.linkit.api.connection.packet.channel.request.Submitter
-import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
-import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
-
-trait TrafficInterestedSyncNode[A <: AnyRef] extends SyncNode[A] {
-
-    def handlePacket(packet: InvocationPacket, response: Submitter[Unit]): Unit
+class CacheNotAcceptedException(msg: String, cause: Throwable = null) extends CacheException(msg, cause) {
 
 }

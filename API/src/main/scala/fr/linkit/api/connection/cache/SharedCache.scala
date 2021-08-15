@@ -20,6 +20,4 @@ trait SharedCache extends Updatable {
 
     val cacheID: Int
 
-    def snapshotContent: CacheContent
-
 }

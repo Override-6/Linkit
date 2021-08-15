@@ -14,6 +14,7 @@ package fr.linkit.engine.connection.packet.traffic.channel.request
 
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.channel.request.{ResponseHolder, Submitter}
 import fr.linkit.api.local.concurrency.WorkerPool
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
@@ -23,24 +24,24 @@ import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import java.util.concurrent.BlockingQueue
 import scala.collection.mutable.ListBuffer
 
-sealed abstract class Submitter[P](id: Int, scope: ChannelScope) extends SimplePacketAttributes {
+sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends SimplePacketAttributes with Submitter[P] {
 
     protected val packets: ListBuffer[Packet] = ListBuffer.empty[Packet]
     @volatile private var isSubmit            = false
 
-    def addPacket(packet: Packet): this.type = {
+    override def addPacket(packet: Packet): this.type = {
         ensureNotSubmit()
         packets += packet
         this
     }
 
-    def addPackets(packets: Packet*): this.type = {
+    override def addPackets(packets: Packet*): this.type = {
         ensureNotSubmit()
         this.packets ++= packets
         this
     }
 
-    def submit(): P = {
+    override def submit(): P = {
         ensureNotSubmit()
         AppLogger.vDebug(s"$currentTasksId <> Submitting ${getClass.getSimpleName} ($id)... with scope $scope")
         val result = makeSubmit()
@@ -60,7 +61,7 @@ sealed abstract class Submitter[P](id: Int, scope: ChannelScope) extends SimpleP
 
 }
 
-class ResponseSubmitter(id: Int, scope: ChannelScope) extends Submitter[Unit](id, scope) {
+class ResponseSubmitter(id: Int, scope: ChannelScope) extends AbstractSubmitter[Unit](id, scope) with Submitter[Unit] {
 
     override protected def makeSubmit(): Unit = {
         val response = ResponsePacket(id, packets.toArray)
@@ -68,10 +69,10 @@ class ResponseSubmitter(id: Int, scope: ChannelScope) extends Submitter[Unit](id
     }
 }
 
-class RequestSubmitter(id: Int, scope: ChannelScope, blockingQueue: BlockingQueue[SubmitterPacket], handler: RequestPacketChannel) extends Submitter[RequestHolder](id, scope) {
+class RequestSubmitter(id: Int, scope: ChannelScope, blockingQueue: BlockingQueue[AbstractSubmitterPacket], handler: SimpleRequestPacketChannel) extends AbstractSubmitter[ResponseHolder](id, scope) {
 
-    override protected def makeSubmit(): RequestHolder = {
-        val holder  = RequestHolder(id, blockingQueue, handler)
+    override protected def makeSubmit(): SimpleResponseHolder = {
+        val holder  = SimpleResponseHolder(id, blockingQueue, handler)
         val request = RequestPacket(id, packets.toArray)
 
         handler.addRequestHolder(holder)

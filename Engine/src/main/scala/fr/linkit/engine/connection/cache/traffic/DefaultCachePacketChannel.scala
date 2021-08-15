@@ -12,25 +12,42 @@
 
 package fr.linkit.engine.connection.cache.traffic
 
+import fr.linkit.api.connection.cache.{CacheContent, CacheSearchBehavior, NoSuchCacheException, SharedCacheManager}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
-import fr.linkit.api.connection.cache.traffic.handler.{CacheHandler, ContentHandler}
-import fr.linkit.api.connection.cache.{CacheContent, SharedCacheManager}
-import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacketChannel
+import fr.linkit.api.connection.cache.traffic.handler.CacheHandler
+import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
+import fr.linkit.api.connection.packet.traffic.PacketInjectableFactory
+import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 class DefaultCachePacketChannel(scope: ChannelScope,
+                                parent: PacketChannel,
                                 override val manager: SharedCacheManager,
-                                override val cacheID: Int) extends RequestPacketChannel(null, scope) with CachePacketChannel {
+                                override val cacheID: Int) extends SimpleRequestPacketChannel(parent, scope) with CachePacketChannel {
 
     private var handler: Option[CacheHandler] = None
 
     override def getCacheOfOwner: CacheContent = {
-
+        manager.retrieveCacheContent(cacheID, CacheSearchBehavior.GET_OR_CRASH).getOrElse {
+            throw new NoSuchCacheException(s"No content was found for cache $cacheID.")
+        }
     }
 
     override def setHandler(handler: CacheHandler): Unit = {
-        this.handler = Option(handler)
+        if (this.handler.isDefined)
+            throw new IllegalStateException("Handler is already defined !")
+        if (handler == null)
+            throw new NullPointerException("Handler is null.")
+        this.handler = Some(handler)
+        addRequestListener(handler.handleBundle)
     }
 
     def getHandler: Option[CacheHandler] = handler
+
+}
+
+object DefaultCachePacketChannel {
+
+    def apply(cacheID: Int, manager: SharedCacheManager): PacketInjectableFactory[CachePacketChannel] = (parent: PacketChannel, scope: ChannelScope) => {
+        new DefaultCachePacketChannel(scope, parent, manager, cacheID)
+    }
 }
