@@ -31,7 +31,7 @@ trait Chip[S] {
      * The method is determined by the methodID integer.
      * @param methodID the method identifier that must be called
      * @param params the parameters for the method call
-     * @see [[fr.linkit.api.connection.cache.obj.description.SyncObjectSuperClassDescription]]
+     * @see [[fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription]]
      * */
     def callMethod(methodID: Int, params: Array[Any]): Any
 }

@@ -14,7 +14,7 @@ package fr.linkit.api.connection.cache.obj.description
 
 import java.lang.reflect.Field
 
-case class FieldDescription(javaField: Field, classDesc: SyncObjectSuperClassDescription[_]) {
+case class FieldDescription(javaField: Field, classDesc: SyncObjectSuperclassDescription[_]) {
     val fieldId: Int = {
         javaField.getName.hashCode + javaField.getDeclaringClass.getName.hashCode
     }

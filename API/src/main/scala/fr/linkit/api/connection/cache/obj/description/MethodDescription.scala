@@ -19,7 +19,7 @@ import scala.reflect.runtime.universe._
 
 case class MethodDescription(symbol: MethodSymbol,
                              javaMethod: Method,
-                             classDesc: SyncObjectSuperClassDescription[_],
+                             classDesc: SyncObjectSuperclassDescription[_],
                              overloadOrdinal: Int) {
 
     val methodId: Int = {
@@ -41,8 +41,8 @@ case class MethodDescription(symbol: MethodSymbol,
         var result = 1
         for (tpe <- a) {
             result = 31 * result +
-                    (if (tpe == null) 0
-                    else tpe.getTypeName.hashCode)
+                (if (tpe == null) 0
+                else tpe.getTypeName.hashCode)
         }
         result
     }

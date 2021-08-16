@@ -10,13 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.tree
+package fr.linkit.api.connection.cache.obj
 
-import fr.linkit.api.connection.cache.CacheContent
+class IllegalSynchronizationException(msg: String) extends SyncObjectException(msg) {
 
-trait ObjectTreeCenter[A <: AnyRef] {
-
-    def findTree(id: Int): Option[SynchronizedObjectTree[A]]
-
-    def snapshotContent: CacheContent
 }

@@ -22,7 +22,7 @@ import scala.reflect.runtime.universe.Type
  * @see [[fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter]]
  * @see [[fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator]]
  * */
-trait SyncObjectSuperClassDescription[A] extends CompilationContext {
+trait SyncObjectSuperclassDescription[A] extends CompilationContext {
 
     /**
      * The super class's type (for scala reflection api)

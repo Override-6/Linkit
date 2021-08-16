@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation.bp
 
-import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperClassDescription}
+import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaBlueprintUtilities._
 import fr.linkit.engine.local.generation.cbp.AbstractClassBlueprint
@@ -20,7 +20,7 @@ import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 
 import java.io.InputStream
 
-class ScalaWrapperClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncObjectSuperClassDescription[_]](in) {
+class ScalaWrapperClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncObjectSuperclassDescription[_]](in) {
 
     override val compilerType: CompilerType = CommonCompilerTypes.Scalac
 
@@ -42,7 +42,7 @@ class ScalaWrapperClassBlueprint(in: InputStream) extends AbstractClassBlueprint
 
     }
 
-    private def getBustedConstructor(desc: SyncObjectSuperClassDescription[_]): String = {
+    private def getBustedConstructor(desc: SyncObjectSuperclassDescription[_]): String = {
         desc.classType
                 .decls
                 .find(dec => dec.isConstructor && (dec.isPublic || dec.isProtected))

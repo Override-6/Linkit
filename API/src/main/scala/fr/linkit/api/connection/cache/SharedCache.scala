@@ -14,10 +14,20 @@ package fr.linkit.api.connection.cache
 
 import fr.linkit.api.connection.network.Updatable
 
+/**
+ * The shared cache trait that depicts the information a cache must contain
+ * In order to be correctly managed by its [[SharedCacheManager]]
+ */
 trait SharedCache extends Updatable {
 
+    /**
+     * The [[SharedCacheManager]] family that manages this cache.
+     */
     val family: String
 
+    /**
+     * The cache ID of this cache.
+     */
     val cacheID: Int
 
 }

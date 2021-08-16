@@ -3,21 +3,20 @@ package fr.linkit.engine.connection.cache.obj.tree
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
-import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SynchronizedObjectTree}
-import fr.linkit.api.connection.cache.obj.{IllegalObjectWrapperException, SynchronizedObject, SynchronizedObjectCenter}
+import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
+import fr.linkit.api.connection.cache.obj.{IllegalSynchronizationException, SynchronizedObject, SynchronizedObjectCenter}
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.invokation.remote.ObjectPuppeteer
 import fr.linkit.engine.connection.cache.obj.tree.node.{IllegalWrapperNodeException, RootWrapperNode, WrapperNode}
 import fr.linkit.engine.local.utils.ScalaUtils
-
 import java.util.concurrent.ThreadLocalRandom
 
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifier: String,
                                                                val instantiator: ObjectWrapperInstantiator,
                                                                override val id: Int,
                                                                override val center: SynchronizedObjectCenter[A],
-                                                               override val behaviorTree: SynchronizedObjectBehaviorStore) extends SynchronizedObjectTree[A] {
+                                                               override val behaviorStore: SynchronizedObjectBehaviorStore) extends SynchronizedObjectTree[A] {
 
     def this(platformIdentifier: String, id: Int,
              instantiator: ObjectWrapperInstantiator, center: SynchronizedObjectCenter[A], behaviorTree: SynchronizedObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootWrapperNode[A]) = {
@@ -61,7 +60,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
 
     def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int, wrapper: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
         val wrapperNode = findGrandChild[B](parentPath).getOrElse {
-            throw new IllegalArgumentException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
+            throw new NoSuchSyncNodeException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
         registerSynchronizedObject[B](wrapperNode, id, wrapper, ownerID)
     }
@@ -71,7 +70,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
         if (!(wrapper.getNodeInfo.nodePath sameElements path))
             throw new IllegalWrapperRegistration(s"Could not register wrapper '${wrapper.getClass.getName}' : Wrapper node's information path mismatches from given one: ${path.mkString("/")}")
 
-        val behavior = behaviorTree.getFromClass[B](wrapper.getSuperClass)
+        val behavior = behaviorStore.getFromClass[B](wrapper.getSuperClass)
         if (!wrapper.isInitialized) {
             instantiator.initializeWrapper(wrapper, SyncNodeInfo(center.family, center.cacheID, ownerID, path), behavior)
         }
@@ -88,13 +87,13 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
             throw new IllegalArgumentException("Parent node's is not present in this tree.")
 
         if (obj.isInstanceOf[SynchronizedObject[_]])
-            throw new IllegalObjectWrapperException("This object is already wrapped.")
+            throw new IllegalSynchronizationException("This object is already wrapped.")
 
         val parentPath = parent.treePath
 
-        val wrapperBehavior = behaviorTree.getFromClass[B](obj.getClass.asInstanceOf[Class[B]])
+        val wrapperBehavior = behaviorStore.getFromClass[B](obj.getClass.asInstanceOf[Class[B]])
         val puppeteerInfo   = SyncNodeInfo(center.family, center.cacheID, ownerID, parentPath :+ id)
-        val (wrapper, _)    = instantiator.newWrapper[B](obj, behaviorTree, puppeteerInfo, Map())
+        val (wrapper, _)    = instantiator.newWrapper[B](obj, behaviorStore, puppeteerInfo, Map())
         val node            = registerSynchronizedObject[B](parent, id, wrapper, ownerID)
 
         for (bhv <- wrapperBehavior.listField() if bhv.isSynchronized) {

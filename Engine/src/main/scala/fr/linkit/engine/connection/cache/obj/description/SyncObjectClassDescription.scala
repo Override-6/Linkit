@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.description
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, SyncObjectSuperClassDescription, fullNameOf}
+import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, SyncObjectSuperclassDescription, fullNameOf}
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription.PrimitivesNameMap
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectClassResource.{WrapperPackage, WrapperSuffixName}
 
@@ -23,7 +23,7 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
 class SyncObjectClassDescription[A] private(override val classType: u.Type,
-                                            override val clazz: Class[A], val loader: ClassLoader) extends SyncObjectSuperClassDescription[A] {
+                                            override val clazz: Class[A], val loader: ClassLoader) extends SyncObjectSuperclassDescription[A] {
 
     import u._
 

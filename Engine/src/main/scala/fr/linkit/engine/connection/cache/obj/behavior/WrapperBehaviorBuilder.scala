@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
 import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, SynchronizedObjectBehavior}
-import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperClassDescription}
+import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.engine.connection.cache.obj.behavior.WrapperBehaviorBuilder.MethodControl
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
@@ -25,7 +25,7 @@ import java.util
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-class WrapperBehaviorBuilder[T] private(val classDesc: SyncObjectSuperClassDescription[T]) {
+class WrapperBehaviorBuilder[T] private(val classDesc: SyncObjectSuperclassDescription[T]) {
 
     val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
 

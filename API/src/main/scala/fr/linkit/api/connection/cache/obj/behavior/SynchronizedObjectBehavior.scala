@@ -12,11 +12,11 @@
 
 package fr.linkit.api.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperClassDescription
+import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 
 trait SynchronizedObjectBehavior[A] {
 
-    val classDesc: SyncObjectSuperClassDescription[A]
+    val classDesc: SyncObjectSuperclassDescription[A]
 
     def listMethods(): Iterable[MethodBehavior]
 

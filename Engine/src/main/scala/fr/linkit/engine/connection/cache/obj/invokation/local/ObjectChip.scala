@@ -78,7 +78,7 @@ object ObjectChip {
         val clazz = wrapper.getClass
 
         if (Modifier.isFinal(clazz.getModifiers))
-            throw new IllegalObjectWrapperException("Puppet can't be final.")
+            throw new IllegalSynchronizationException("Puppet can't be final.")
 
         new ObjectChip[S](behavior, wrapper)
     }

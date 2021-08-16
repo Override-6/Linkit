@@ -14,11 +14,11 @@ package fr.linkit.api.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.obj.SyncObjectException
 
-class NoSuchWrapperNodeException(msg: String) extends SyncObjectException(msg) {
+class NoSuchSyncNodeException(msg: String) extends SyncObjectException(msg) {
 
 }
 
-object NoSuchWrapperNodeException {
+object NoSuchSyncNodeException {
 
-    def apply(msg: String): NoSuchWrapperNodeException = new NoSuchWrapperNodeException(msg)
+    def apply(msg: String): NoSuchSyncNodeException = new NoSuchSyncNodeException(msg)
 }

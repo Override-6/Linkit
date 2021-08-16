@@ -109,7 +109,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     private def createAgreement(invocation: SynchronizedMethodInvocation[_]): SimpleRMIRulesAgreement = {
         val agreement = new SimpleRMIRulesAgreement(currentIdentifier, ownerID)
         val behavior  = invocation.methodBehavior
-        behavior.completeAgreement(agreement, invocation)
+        behavior.completeAgreement(agreement)
         agreement
     }
 

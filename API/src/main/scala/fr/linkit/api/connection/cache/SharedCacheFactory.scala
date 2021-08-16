@@ -15,8 +15,17 @@ package fr.linkit.api.connection.cache
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
 
+/**
+ * Used by the [[SharedCacheManager]] to create a [[SharedCache]] of type [[A]]
+ * @tparam A the type of the created [[SharedCache]]
+ */
 trait SharedCacheFactory[A <: SharedCache] {
-
+    /**
+     * Creates a Shared Cache instance
+     * @param channel the channel used by the shared cache
+     * @return an instance of [[A]]
+     * @see [[CachePacketChannel]]
+     */
     def createNew(channel: CachePacketChannel): A
 
     final def factory: this.type = this //for Java users

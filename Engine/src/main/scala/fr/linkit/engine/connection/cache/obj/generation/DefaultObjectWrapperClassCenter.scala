@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperClassDescription
+import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter
 import fr.linkit.api.connection.cache.obj.{InvalidPuppetDefException, SynchronizedObject}
 import fr.linkit.api.local.generation.compilation.CompilerCenter
@@ -29,7 +29,7 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObj
         getWrapperClass[S](SyncObjectClassDescription[S](clazz))
     }
 
-    override def getWrapperClass[S](desc: SyncObjectSuperClassDescription[S]): Class[S with SynchronizedObject[S]] = {
+    override def getWrapperClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = {
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is abstract.")
@@ -58,7 +58,7 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObj
         preGenerateClasses(classes.map(SyncObjectClassDescription(_)).toList)
     }
 
-    override def preGenerateClasses(descriptions: List[SyncObjectSuperClassDescription[_]]): Unit = {
+    override def preGenerateClasses(descriptions: List[SyncObjectSuperclassDescription[_]]): Unit = {
         val toCompile = descriptions.filter(desc => resources.findClass(desc.clazz).isEmpty)
         if (toCompile.isEmpty)
             return

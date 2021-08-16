@@ -13,9 +13,9 @@
 package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, SynchronizedObjectBehaviorStore, SynchronizedObjectBehavior}
-import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperClassDescription
+import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 
-class DefaultSynchronziedObjectBehavior[A] protected(override val classDesc: SyncObjectSuperClassDescription[A],
+class DefaultSynchronziedObjectBehavior[A] protected(override val classDesc: SyncObjectSuperclassDescription[A],
                                                      factory: MemberBehaviorFactory) extends SynchronizedObjectBehavior[A] {
 
     private val methods = {
@@ -56,7 +56,7 @@ class DefaultSynchronziedObjectBehavior[A] protected(override val classDesc: Syn
 
 object DefaultSynchronziedObjectBehavior {
 
-    def apply[A](classDesc: SyncObjectSuperClassDescription[A], tree: SynchronizedObjectBehaviorStore): DefaultSynchronziedObjectBehavior[A] = {
+    def apply[A](classDesc: SyncObjectSuperclassDescription[A], tree: SynchronizedObjectBehaviorStore): DefaultSynchronziedObjectBehavior[A] = {
         new DefaultSynchronziedObjectBehavior(classDesc, tree.factory)
     }
 

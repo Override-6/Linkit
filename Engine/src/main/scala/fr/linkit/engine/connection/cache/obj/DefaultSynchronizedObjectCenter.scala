@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.{SynchronizedObjectBehaviorStore, SynchronizedObjectBehavior}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassCenter, ObjectWrapperInstantiator}
-import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
+import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
 import fr.linkit.api.connection.cache.{SharedCache, SharedCacheFactory}
@@ -82,7 +82,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
 
     private def ensureNotWrapped(any: Any): Unit = {
         if (any.isInstanceOf[SynchronizedObject[_]])
-            throw new IllegalObjectWrapperException("This object is already wrapped.")
+            throw new IllegalSynchronizationException("This object is already wrapped.")
     }
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
@@ -174,7 +174,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                 //it's an object that must be chipped by this current repo cache (owner is the same as current identifier)
                 if (isRegistered(treeID)) {
                     findNode(path).fold {
-                        throw new NoSuchWrapperNodeException(s"Unknown local object of path '${path.mkString("/")}'")
+                        throw new NoSuchSyncNodeException(s"Unknown local object of path '${path.mkString("/")}'")
                     }((n: SyncNode[A]) => n.chip.updateObject(puppet))
                 }
                 //it's an object that must be remotely controlled because it is chipped by another objects cache.

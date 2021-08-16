@@ -14,7 +14,7 @@ package fr.linkit.api.connection.cache.obj
 
 import fr.linkit.api.connection.cache.SharedCache
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.tree.ObjectTreeCenter
+import fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTreeStore
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 
 /**
@@ -52,7 +52,7 @@ trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence wit
      * @see [[fr.linkit.api.connection.cache.obj.tree.SyncNode]]
      * @see [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]]
      * */
-    val treeCenter: ObjectTreeCenter[A]
+    val treeCenter: SynchronizedObjectTreeStore[A]
 
     /**
      * The default behavior tree for an [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]].
@@ -64,13 +64,14 @@ trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence wit
     /**
      * posts an object in the cache.
      * The behavior of the object and sub objects will depends on the [[defaultTreeViewBehavior]]
-     * @throws IllegalObjectWrapperException If the given object is a synchronized object.
-     *                                       (No matters if the object is handled by this cache or not)
+ *
+     * @throws IllegalSynchronizationException If the given object is a synchronized object.
+     *                                         (No matters if the object is handled by this cache or not)
      * @param id the identifier of the root object
      * @param obj the object to synchronize.
      * @return the synchronized object.
      * */
-    @throws[IllegalObjectWrapperException]("If the given object is a synchronized object.")
+    @throws[IllegalSynchronizationException]("If the given object is a synchronized object.")
     def postObject(id: Int, obj: A): A with SynchronizedObject[A]
 
     /**

@@ -13,14 +13,14 @@
 package fr.linkit.engine.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObjectCenter
-import fr.linkit.api.connection.cache.obj.tree.{ObjectTreeCenter, SyncNode, SynchronizedObjectTree}
+import fr.linkit.api.connection.cache.obj.tree.{SynchronizedObjectTreeStore, SyncNode, SynchronizedObjectTree}
 import fr.linkit.engine.connection.cache.obj.{CacheRepoContent, DefaultSynchronizedObjectCenter}
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
 
 import scala.collection.mutable
 
-class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCenter[A]) extends ObjectTreeCenter[A] {
+class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCenter[A]) extends SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 

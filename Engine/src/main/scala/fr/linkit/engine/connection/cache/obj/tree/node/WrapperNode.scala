@@ -14,8 +14,8 @@ package fr.linkit.engine.connection.cache.obj.tree.node
 
 import fr.linkit.api.connection.cache.obj.invokation.local.Chip
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
-import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode, SynchronizedObjectTree}
-import fr.linkit.api.connection.cache.obj.{IllegalObjectWrapperException, SynchronizedObject}
+import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
+import fr.linkit.api.connection.cache.obj.{IllegalSynchronizationException, SynchronizedObject}
 import fr.linkit.api.connection.packet.channel.request.Submitter
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
@@ -49,7 +49,7 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
 
     def addChild(node: WrapperNode[_]): Unit = {
         if (node.parent ne this)
-            throw new IllegalObjectWrapperException("Attempted to add a child to this node with a different parent of this node.")
+            throw new IllegalSynchronizationException("Attempted to add a child to this node with a different parent of this node.")
         if (members.contains(node.id))
             throw new IllegalStateException(s"Puppet already exists at ${puppeteer.nodeInfo.nodePath.mkString("/") + s"/$id"}")
         members.put(node.id, node)
@@ -74,7 +74,7 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
                 throw UnexpectedPacketException(s"Received invocation packet that does not target this node or this node's children ${packetPath.mkString("/")}.")
 
             tree.findNode[AnyRef](packetPath.drop(treePath.length))
-                    .fold[Unit](throw new NoSuchWrapperNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
+                    .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
                         case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, response)
                         case _                                  =>
                     }
