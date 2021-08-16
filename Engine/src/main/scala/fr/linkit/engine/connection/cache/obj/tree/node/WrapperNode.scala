@@ -12,7 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.tree.node
 
-import fr.linkit.api.connection.cache.obj.invokation.{Chip, Puppeteer}
+import fr.linkit.api.connection.cache.obj.invokation.local.Chip
+import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{IllegalObjectWrapperException, SynchronizedObject}
 import fr.linkit.api.connection.packet.channel.request.Submitter

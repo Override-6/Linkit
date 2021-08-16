@@ -15,18 +15,18 @@ package fr.linkit.engine.connection.cache.obj.invokation.remote
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, SynchronizedObjectBehavior}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.invokation.{Puppeteer, WrapperMethodInvocation}
+import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, SynchronizedMethodInvocation}
 import fr.linkit.api.connection.packet.channel.request.RequestPacketChannel
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.ThrowableWrapper
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 
-class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
-                                     procrastinator: ProcrastinatorControl,
-                                     override val center: SynchronizedObjectCenter[_],
-                                     override val nodeInfo: SyncNodeInfo,
-                                     val wrapperBehavior: SynchronizedObjectBehavior[S]) extends Puppeteer[S] {
+class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
+                                   procrastinator: ProcrastinatorControl,
+                                   override val center: SynchronizedObjectCenter[_],
+                                   override val nodeInfo: SyncNodeInfo,
+                                   val wrapperBehavior: SynchronizedObjectBehavior[S]) extends Puppeteer[S] {
 
     private      val traffic                                         = channel.traffic
     override     val currentIdentifier: String                       = traffic.currentIdentifier
@@ -38,7 +38,7 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
     override def getSynchronizedObject: S with SynchronizedObject[S] = puppetWrapper
 
-    override def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R = {
+    override def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[R]): R = {
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
 
@@ -62,7 +62,7 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         }
     }
 
-    override def sendInvoke(agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[_]): Unit = {
+    override def sendInvoke(agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[_]): Unit = {
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
 

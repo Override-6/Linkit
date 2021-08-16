@@ -3,7 +3,11 @@ package fr.linkit.api.connection.cache.obj.behavior
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 
-trait ObjectTreeBehavior {
+/**
+ * A store of [[SynchronizedObjectBehavior]], used by [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]]
+ * */
+//TODO This class is not furthermore documented, some change will be made and it's development is not yet completely ended.
+trait SynchronizedObjectBehaviorStore {
 
     val factory: MemberBehaviorFactory
 

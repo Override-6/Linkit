@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.api.connection.cache.obj.invokation.local
 
 /**
  * The Chip is a class that controls an object of type [[S]]
@@ -28,7 +28,10 @@ trait Chip[S] {
 
     /**
      * Invokes the method of the chipped object.
-     * The method is determined by the methoidID integer. (see [[SimplePuppetClassDescription]]
+     * The method is determined by the methodID integer.
+     * @param methodID the method identifier that must be called
+     * @param params the parameters for the method call
+     * @see [[fr.linkit.api.connection.cache.obj.description.SyncObjectSuperClassDescription]]
      * */
     def callMethod(methodID: Int, params: Array[Any]): Any
 }

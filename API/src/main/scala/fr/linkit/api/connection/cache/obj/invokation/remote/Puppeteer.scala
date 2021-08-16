@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.api.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, SynchronizedObjectBehavior}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
@@ -65,14 +65,14 @@ trait Puppeteer[S <: AnyRef] {
      * @tparam R the return type of the RMI result value.
      * @return the RMI result value
      */
-    def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R //TODO add a timeout. (here or in the MethodBehavior)
+    def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[R]): R //TODO add a timeout. (here or in the MethodBehavior)
 
     /**
      * Send an RMI Invocation based on the given agreement and invocation without waiting for any result.
      * @param agreement the agreement that determines who will handle the request, who will be listened for the invocation result.
      * @param invocation the method's invocation information.
      */
-    def sendInvoke(agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[_]): Unit
+    def sendInvoke(agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[_]): Unit
 
     //TODO make this and "init" for internal use only
     def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef

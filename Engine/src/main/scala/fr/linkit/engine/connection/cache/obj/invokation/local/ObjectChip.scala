@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.cache.obj.invokation.local
 
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
-import fr.linkit.api.connection.cache.obj.invokation.Chip
+import fr.linkit.api.connection.cache.obj.invokation.local.Chip
 import fr.linkit.api.local.concurrency.{Procrastinator, WorkerPools}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip.NoResult
@@ -56,7 +56,7 @@ class ObjectChip[S] private(behavior: SynchronizedObjectBehavior[S],
     }
 
     @inline private def callMethodProcrastinator(procrastinator: Procrastinator, method: Method, params: Array[Any]): Any = {
-        var result: Any = NoResult
+        @volatile var result: Any = NoResult
         val worker      = WorkerPools.currentWorker
         val task        = WorkerPools.currentTask
         val pool        = worker.pool

@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.api.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj.SyncObjectException
 

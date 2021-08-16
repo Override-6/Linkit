@@ -12,11 +12,10 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
 import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, SynchronizedObjectBehavior}
-import fr.linkit.api.connection.cache.obj.description.MethodDescription
+import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperClassDescription}
 import fr.linkit.api.local.concurrency.Procrastinator
-import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.engine.connection.cache.obj.behavior.WrapperBehaviorBuilder.MethodControl
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 import fr.linkit.engine.connection.cache.obj.invokation.local.{DefaultRMIHandler, InvokeOnlyRMIHandler}
@@ -26,7 +25,7 @@ import java.util
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]) {
+class WrapperBehaviorBuilder[T] private(val classDesc: SyncObjectSuperClassDescription[T]) {
 
     val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
 
@@ -36,7 +35,7 @@ class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]
 
     final def annotateMethod(name: String, params: Class[_]*): MethodModification = {
         val methodID = name.hashCode + util.Arrays.hashCode(params.toArray[AnyRef])
-        val method   = classDesc.getMethodDescription(methodID).getOrElse(throw new NoSuchElementException(s"Method description '$name' not found."))
+        val method   = classDesc.findMethodDescription(methodID).getOrElse(throw new NoSuchElementException(s"Method description '$name' not found."))
         new MethodModification(Seq(method))
     }
 
@@ -94,7 +93,7 @@ class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]
 
 object WrapperBehaviorBuilder {
 
-    case class MethodControl(value: BasicRemoteInvocationRule,
+    case class MethodControl(value: BasicInvocationRule,
                              synchronizeReturnValue: Boolean = false,
                              invokeOnly: Boolean = false,
                              hide: Boolean = false,

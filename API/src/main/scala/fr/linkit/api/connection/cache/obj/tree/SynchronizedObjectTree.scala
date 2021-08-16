@@ -1,6 +1,6 @@
 package fr.linkit.api.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCenter}
 
 trait SynchronizedObjectTree[A <: AnyRef] {
@@ -11,7 +11,7 @@ trait SynchronizedObjectTree[A <: AnyRef] {
 
     def rootNode: SyncNode[A]
 
-    val behaviorTree: ObjectTreeBehavior
+    val behaviorTree: SynchronizedObjectBehaviorStore
 
     def findNode[B <: AnyRef](path: Array[Int]): Option[SyncNode[B]]
 

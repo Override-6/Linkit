@@ -28,6 +28,6 @@ abstract class WrapperBehaviorTreeBuilder(memberBehaviorFactory: MemberBehaviorF
         }
     }
 
-    def build = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory, mappedBehaviors.toMap)
+    def build = new SynchronizedObjectDefaultBehaviorCenter(AnnotationBasedMemberBehaviorFactory, mappedBehaviors.toMap)
 
 }

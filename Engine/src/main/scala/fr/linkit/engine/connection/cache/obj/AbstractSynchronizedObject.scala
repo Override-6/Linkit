@@ -14,10 +14,11 @@ package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj.behavior.{MethodBehavior, SynchronizedObjectBehavior}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.invokation.{InvocationChoreographer, Puppeteer, WrapperMethodInvocation}
+import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, SynchronizedMethodInvocation}
+import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
 import fr.linkit.api.connection.cache.obj.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
-import fr.linkit.engine.connection.cache.obj.invokation.{AbstractWrapperMethodInvocation, SimpleRMIRulesAgreement}
+import fr.linkit.engine.connection.cache.obj.invokation.{AbstractSynchronizedMethodInvocation, SimpleRMIRulesAgreement}
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
@@ -89,7 +90,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             return superCall(synchronizedArgs).asInstanceOf[R]
         }
 
-        val invocation = new AbstractWrapperMethodInvocation[R](methodBehavior, this) {
+        val invocation = new AbstractSynchronizedMethodInvocation[R](methodBehavior, this) {
             override val callerIdentifier : String     = AbstractSynchronizedObject.this.currentIdentifier
             override val currentIdentifier: String     = AbstractSynchronizedObject.this.currentIdentifier
             override val methodArguments  : Array[Any] = synchronizedArgs
@@ -105,7 +106,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     private def asAutoWrapped: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
 
-    private def createAgreement(invocation: WrapperMethodInvocation[_]): SimpleRMIRulesAgreement = {
+    private def createAgreement(invocation: SynchronizedMethodInvocation[_]): SimpleRMIRulesAgreement = {
         val agreement = new SimpleRMIRulesAgreement(currentIdentifier, ownerID)
         val behavior  = invocation.methodBehavior
         behavior.completeAgreement(agreement, invocation)

@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.cache.obj
 
 import fr.linkit.api.connection.cache.SharedCache
-import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.tree.ObjectTreeCenter
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 
@@ -59,7 +59,7 @@ trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence wit
      * "the behavior of a tree" is simply a set of [[fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior]]
      * that will set the behavior of each objects of a tree.
      * */
-    val defaultTreeViewBehavior: ObjectTreeBehavior
+    val defaultTreeViewBehavior: SynchronizedObjectBehaviorStore
 
     /**
      * posts an object in the cache.
@@ -79,7 +79,7 @@ trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence wit
      * @param behavior the behavior tree of the object and its inner objects
      * @return the synchronized object.
      * */
-    def postObject(id: Int, obj: A, behavior: ObjectTreeBehavior): A with SynchronizedObject[A]
+    def postObject(id: Int, obj: A, behavior: SynchronizedObjectBehaviorStore): A with SynchronizedObject[A]
 
     /**
      * Finds a synchronized object in the cache.

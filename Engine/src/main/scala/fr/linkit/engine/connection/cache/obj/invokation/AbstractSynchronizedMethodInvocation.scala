@@ -14,10 +14,10 @@ package fr.linkit.engine.connection.cache.obj.invokation
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
-import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
+import fr.linkit.api.connection.cache.obj.invokation.remote.SynchronizedMethodInvocation
 
-abstract class AbstractWrapperMethodInvocation[R](override val methodBehavior: MethodBehavior,
-                                                  override val wrapper: SynchronizedObject[_]) extends WrapperMethodInvocation[R] {
+abstract class AbstractSynchronizedMethodInvocation[R](override val methodBehavior: MethodBehavior,
+                                                       override val synchronizedObject: SynchronizedObject[_]) extends SynchronizedMethodInvocation[R] {
 
     override val methodID: Int = methodBehavior.desc.methodId
 

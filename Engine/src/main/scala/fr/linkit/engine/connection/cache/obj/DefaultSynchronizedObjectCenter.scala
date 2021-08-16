@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.behavior.{ObjectTreeBehavior, SynchronizedObjectBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.{SynchronizedObjectBehaviorStore, SynchronizedObjectBehavior}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassCenter, ObjectWrapperInstantiator}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
@@ -27,10 +27,10 @@ import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
-import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectTreeDefaultBehavior}
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectDefaultBehaviorCenter}
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource, SyncObjectInstantiationHelper}
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
-import fr.linkit.engine.connection.cache.obj.invokation.remote.{InstancePuppeteer, InvocationPacket}
+import fr.linkit.engine.connection.cache.obj.invokation.remote.{ObjectPuppeteer, InvocationPacket}
 import fr.linkit.engine.connection.cache.obj.tree._
 import fr.linkit.engine.connection.cache.obj.tree.node.{RootWrapperNode, TrafficInterestedSyncNode}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
@@ -42,7 +42,7 @@ import scala.reflect.ClassTag
 //TODO Redesign the NetworkSharedCacheManager and its way to handle caches
 final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CachePacketChannel,
                                                                  generator: ObjectWrapperClassCenter,
-                                                                 override val defaultTreeViewBehavior: ObjectTreeBehavior)
+                                                                 override val defaultTreeViewBehavior: SynchronizedObjectBehaviorStore)
         extends AbstractSharedCache(channel) with SynchronizedObjectCenter[A] {
 
     private  val procrastinator: ProcrastinatorControl      = channel.manager.network.connection
@@ -54,7 +54,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         postObject(id, obj, defaultTreeViewBehavior)
     }
 
-    override def postObject(id: Int, obj: A, behavior: ObjectTreeBehavior): A with SynchronizedObject[A] = {
+    override def postObject(id: Int, obj: A, behavior: SynchronizedObjectBehaviorStore): A with SynchronizedObject[A] = {
         ensureNotWrapped(obj)
         if (isRegistered(id))
             throw new ObjectAlreadyPostedException(s"Another object with id '$id' figures in the repo's list.")
@@ -96,7 +96,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                 })
     }
 
-    private def createNewTree(id: Int, rootObjectOwner: String, rootObject: A, subWrappersInfo: Map[AnyRef, SyncNodeInfo], behaviorTree: ObjectTreeBehavior = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
+    private def createNewTree(id: Int, rootObjectOwner: String, rootObject: A, subWrappersInfo: Map[AnyRef, SyncNodeInfo], behaviorTree: SynchronizedObjectBehaviorStore = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
         val puppeteerInfo       = SyncNodeInfo(family, cacheID, rootObjectOwner, Array(id))
         val rootBehavior        = behaviorTree.getFromClass[A](rootObject.getClass)
         val (root, subWrappers) = WrapperInstantiator.newWrapper[A](rootObject, behaviorTree, puppeteerInfo, subWrappersInfo)
@@ -121,7 +121,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
 
     private object WrapperInstantiator extends ObjectWrapperInstantiator {
 
-        override def newWrapper[B <: AnyRef](obj: B, behaviorTree: ObjectTreeBehavior,
+        override def newWrapper[B <: AnyRef](obj: B, behaviorTree: SynchronizedObjectBehaviorStore,
                                              nodeInfo: SyncNodeInfo, subWrappersInfo: Map[AnyRef, SyncNodeInfo]): (B with SynchronizedObject[B], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
             val wrapperClass           = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
             val helper                 = new SyncObjectInstantiationHelper(this, behaviorTree)
@@ -132,7 +132,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         }
 
         override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo, behavior: SynchronizedObjectBehavior[B]): Unit = {
-            val puppeteer = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, nodeInfo, behavior)
+            val puppeteer = new ObjectPuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, nodeInfo, behavior)
             wrapper.initPuppeteer(puppeteer)
         }
 
@@ -211,11 +211,11 @@ object DefaultSynchronizedObjectCenter {
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
     def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCenter[A] with SharedCache] = {
-        val treeView = new ObjectTreeDefaultBehavior(AnnotationBasedMemberBehaviorFactory)
+        val treeView = new SynchronizedObjectDefaultBehaviorCenter(AnnotationBasedMemberBehaviorFactory)
         apply[A](treeView)
     }
 
-    def apply[A <: AnyRef : ClassTag](behaviors: ObjectTreeBehavior): SharedCacheFactory[SynchronizedObjectCenter[A] with SharedCache] = {
+    def apply[A <: AnyRef : ClassTag](behaviors: SynchronizedObjectBehaviorStore): SharedCacheFactory[SynchronizedObjectCenter[A] with SharedCache] = {
         channel => {
             val context = channel.manager.network.connection.getApp
             import fr.linkit.engine.local.resource.external.LocalResourceFolder._

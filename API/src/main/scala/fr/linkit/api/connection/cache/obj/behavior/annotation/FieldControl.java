@@ -17,10 +17,14 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
+/**
+ * Specify that a Field must also be synchronized.<br>
+ * (The annotation takes only effect if the object that contains the annotated field
+ * is a synchronized object).<br>
+ * If a field is not annotated by FieldControl, it will not be synchronized.
+ * */
 @Target(ElementType.FIELD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface FieldControl {
-
-    boolean synchronize() default true;
 
 }

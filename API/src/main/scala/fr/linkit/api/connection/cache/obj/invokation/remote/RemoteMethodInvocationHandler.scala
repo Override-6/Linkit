@@ -10,15 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.api.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
 
-/**
- *
- * */
-trait MethodInvocationHandler {
+trait RemoteMethodInvocationHandler {
 
-    def handleRMI[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R
+    def handleRMI[R](agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[R]): R
 
 }

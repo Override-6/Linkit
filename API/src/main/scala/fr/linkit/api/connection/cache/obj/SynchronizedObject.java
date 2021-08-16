@@ -15,12 +15,12 @@ package fr.linkit.api.connection.cache.obj;
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo;
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior;
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer;
-import fr.linkit.api.connection.cache.obj.invokation.Puppeteer;
+import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer;
 
 import java.io.Serializable;
 
 /**
- * This interface depicts a synchronized object.
+ * This interface depicts a synchronized object. <br>
  * SynchronizedObject classes are dynamically generated and extends the class {@link T}
  * Handwritten classes may not implement this interface.
  * @see fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter

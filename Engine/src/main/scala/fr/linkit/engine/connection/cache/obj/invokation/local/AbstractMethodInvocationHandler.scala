@@ -13,13 +13,13 @@
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
-import fr.linkit.api.connection.cache.obj.invokation.{MethodInvocationHandler, Puppeteer, WrapperMethodInvocation}
+import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, RemoteMethodInvocationHandler, SynchronizedMethodInvocation}
 import fr.linkit.api.local.system.AppLogger
 
-abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
+abstract class AbstractMethodInvocationHandler extends RemoteMethodInvocationHandler {
 
-    override def handleRMI[R](agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[R]): R = {
-        val wrapper        = invocation.wrapper
+    override def handleRMI[R](agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[R]): R = {
+        val wrapper        = invocation.synchronizedObject
         val args           = invocation.methodArguments
         val methodBehavior = invocation.methodBehavior
         val name           = methodBehavior.desc.javaMethod.getName
@@ -52,5 +52,5 @@ abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
         result.asInstanceOf[R]
     }
 
-    def voidRMIInvocation(puppeteer: Puppeteer[_], agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[_]): Unit
+    def voidRMIInvocation(puppeteer: Puppeteer[_], agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[_]): Unit
 }

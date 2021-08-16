@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.network
 
-import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule._
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule._
 import fr.linkit.api.connection.cache.obj.behavior.annotation.{MethodControl, Synchronized}
 import fr.linkit.api.connection.network.Engine
 

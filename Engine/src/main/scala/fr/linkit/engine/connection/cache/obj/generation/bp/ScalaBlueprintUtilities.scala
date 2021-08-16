@@ -12,14 +12,13 @@
 
 package fr.linkit.engine.connection.cache.obj.generation.bp
 
-import fr.linkit.api.connection.cache.obj.description.MethodDescription
-import fr.linkit.api.local.generation.PuppetClassDescription
+import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperClassDescription}
 
 import scala.reflect.runtime.universe._
 
 object ScalaBlueprintUtilities {
 
-    def getGenericParams(desc: PuppetClassDescription[_], transform: Symbol => Any): String = {
+    def getGenericParams(desc: SyncObjectSuperClassDescription[_], transform: Symbol => Any): String = {
         val result = desc
                 .classType
                 .typeArgs

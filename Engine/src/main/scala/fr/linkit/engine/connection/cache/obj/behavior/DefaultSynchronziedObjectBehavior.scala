@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, ObjectTreeBehavior, SynchronizedObjectBehavior}
-import fr.linkit.api.local.generation.PuppetClassDescription
+import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, SynchronizedObjectBehaviorStore, SynchronizedObjectBehavior}
+import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperClassDescription
 
-class DefaultSynchronziedObjectBehavior[A] protected(override val classDesc: PuppetClassDescription[A],
+class DefaultSynchronziedObjectBehavior[A] protected(override val classDesc: SyncObjectSuperClassDescription[A],
                                                      factory: MemberBehaviorFactory) extends SynchronizedObjectBehavior[A] {
 
     private val methods = {
@@ -56,7 +56,7 @@ class DefaultSynchronziedObjectBehavior[A] protected(override val classDesc: Pup
 
 object DefaultSynchronziedObjectBehavior {
 
-    def apply[A](classDesc: PuppetClassDescription[A], tree: ObjectTreeBehavior): DefaultSynchronziedObjectBehavior[A] = {
+    def apply[A](classDesc: SyncObjectSuperClassDescription[A], tree: SynchronizedObjectBehaviorStore): DefaultSynchronziedObjectBehavior[A] = {
         new DefaultSynchronziedObjectBehavior(classDesc, tree.factory)
     }
 

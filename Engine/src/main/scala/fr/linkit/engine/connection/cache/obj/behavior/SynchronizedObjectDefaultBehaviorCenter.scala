@@ -12,14 +12,14 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, ObjectTreeBehavior, SynchronizedObjectBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, SynchronizedObjectBehaviorStore, SynchronizedObjectBehavior}
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 
 import scala.collection.mutable
 import scala.reflect.runtime.universe
 import scala.reflect.{ClassTag, classTag}
 
-class ObjectTreeDefaultBehavior(override val factory: MemberBehaviorFactory) extends ObjectTreeBehavior {
+class SynchronizedObjectDefaultBehaviorCenter(override val factory: MemberBehaviorFactory) extends SynchronizedObjectBehaviorStore {
 
     private val behaviors = mutable.HashMap.empty[Class[_], SynchronizedObjectBehavior[_]]
 

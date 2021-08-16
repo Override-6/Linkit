@@ -13,8 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.description
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, fullNameOf}
-import fr.linkit.api.local.generation.PuppetClassDescription
+import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, SyncObjectSuperClassDescription, fullNameOf}
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription.PrimitivesNameMap
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectClassResource.{WrapperPackage, WrapperSuffixName}
 
@@ -24,7 +23,7 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.runtime.{universe => u}
 
 class SyncObjectClassDescription[A] private(override val classType: u.Type,
-                                            override val clazz: Class[A], val loader: ClassLoader) extends PuppetClassDescription[A] {
+                                            override val clazz: Class[A], val loader: ClassLoader) extends SyncObjectSuperClassDescription[A] {
 
     import u._
 
@@ -55,7 +54,7 @@ class SyncObjectClassDescription[A] private(override val classType: u.Type,
         methodDescriptions.values
     }
 
-    override def getMethodDescription(methodID: Int): Option[MethodDescription] = {
+    override def findMethodDescription(methodID: Int): Option[MethodDescription] = {
         methodDescriptions.get(methodID)
     }
 

@@ -12,11 +12,9 @@
 
 package fr.linkit.api.connection.cache.obj.description
 
-import fr.linkit.api.local.generation.PuppetClassDescription
-
 import java.lang.reflect.Field
 
-case class FieldDescription(javaField: Field, classDesc: PuppetClassDescription[_]) {
+case class FieldDescription(javaField: Field, classDesc: SyncObjectSuperClassDescription[_]) {
     val fieldId: Int = {
         javaField.getName.hashCode + javaField.getDeclaringClass.getName.hashCode
     }

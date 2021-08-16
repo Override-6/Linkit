@@ -10,28 +10,49 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.invokation
+package fr.linkit.api.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
 
 /**
- * The invocation information of a synchronized object's method.
+ * The invocation information for a synchronized object's method.
+ * @tparam R the return type of the method invoked
  * */
-trait WrapperMethodInvocation[R] {
+trait SynchronizedMethodInvocation[R] {
 
-    val wrapper: SynchronizedObject[_]
+    /**
+     * The synchronized object on which the method is called.
+     * */
+    val synchronizedObject: SynchronizedObject[_]
 
+    /**
+     * The method's identifier.
+     * */
     val methodID: Int
 
+    /**
+     * The method's behavior
+     */
     val methodBehavior: MethodBehavior
 
+    //TODO doc
     val callerIdentifier: String
 
+    /**
+     * The identifier of the current engine.
+     */
     val currentIdentifier: String
 
+    /**
+     * Calls the local method of the object.
+     * @return the method's call result.
+     * */
     def callSuper(): R
 
+    /**
+     * The final argument array for the method invocation that will be used in [[callSuper()]] and for the RMI
+     * */
     val methodArguments: Array[Any]
 
     val debug: Boolean = true
