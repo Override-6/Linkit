@@ -20,7 +20,7 @@ import fr.linkit.engine.connection.network.{AbstractNetwork, EngineStore}
 
 class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
 
-    override protected def createEngineStore: EngineStore = {
+    override protected def retrieveEngineStore: EngineStore = {
         globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[EngineStore](), CacheSearchBehavior.GET_OR_CRASH)
                 .findObject(0)
                 .getOrElse {

@@ -13,8 +13,8 @@
 package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.behavior.{ObjectTreeBehavior, WrapperBehavior}
-import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
+import fr.linkit.api.connection.cache.obj.behavior.{ObjectTreeBehavior, SynchronizedObjectBehavior}
+import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassCenter, ObjectWrapperInstantiator}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
@@ -57,7 +57,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
     override def postObject(id: Int, obj: A, behavior: ObjectTreeBehavior): A with SynchronizedObject[A] = {
         ensureNotWrapped(obj)
         if (isRegistered(id))
-            throw new ObjectAlreadyPostException(s"Another object with id '$id' figures in the repo's list.")
+            throw new ObjectAlreadyPostedException(s"Another object with id '$id' figures in the repo's list.")
 
         val objClone = SyncObjectInstantiationHelper.deepClone(obj)
         val tree     = createNewTree(id, currentIdentifier, objClone, Map(), behavior)
@@ -96,8 +96,8 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                 })
     }
 
-    private def createNewTree(id: Int, rootObjectOwner: String, rootObject: A, subWrappersInfo: Map[AnyRef, WrapperNodeInfo], behaviorTree: ObjectTreeBehavior = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
-        val puppeteerInfo       = WrapperNodeInfo(family, cacheID, rootObjectOwner, Array(id))
+    private def createNewTree(id: Int, rootObjectOwner: String, rootObject: A, subWrappersInfo: Map[AnyRef, SyncNodeInfo], behaviorTree: ObjectTreeBehavior = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
+        val puppeteerInfo       = SyncNodeInfo(family, cacheID, rootObjectOwner, Array(id))
         val rootBehavior        = behaviorTree.getFromClass[A](rootObject.getClass)
         val (root, subWrappers) = WrapperInstantiator.newWrapper[A](rootObject, behaviorTree, puppeteerInfo, subWrappersInfo)
         val chip                = ObjectChip[A](rootBehavior, root)
@@ -122,7 +122,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
     private object WrapperInstantiator extends ObjectWrapperInstantiator {
 
         override def newWrapper[B <: AnyRef](obj: B, behaviorTree: ObjectTreeBehavior,
-                                             nodeInfo: WrapperNodeInfo, subWrappersInfo: Map[AnyRef, WrapperNodeInfo]): (B with SynchronizedObject[B], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
+                                             nodeInfo: SyncNodeInfo, subWrappersInfo: Map[AnyRef, SyncNodeInfo]): (B with SynchronizedObject[B], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
             val wrapperClass           = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
             val helper                 = new SyncObjectInstantiationHelper(this, behaviorTree)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[B](wrapperClass, obj, subWrappersInfo)
@@ -131,7 +131,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
             (wrapper, subWrappers)
         }
 
-        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: WrapperNodeInfo, behavior: WrapperBehavior[B]): Unit = {
+        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo, behavior: SynchronizedObjectBehavior[B]): Unit = {
             val puppeteer = new InstancePuppeteer[B](channel, procrastinator, DefaultSynchronizedObjectCenter.this, nodeInfo, behavior)
             wrapper.initPuppeteer(puppeteer)
         }
@@ -226,6 +226,6 @@ object DefaultSynchronizedObjectCenter {
         }
     }
 
-    case class ObjectTreeProfile[A](treeID: Int, rootObject: A, treeOwner: String, subWrappers: Map[AnyRef, WrapperNodeInfo]) extends Serializable
+    case class ObjectTreeProfile[A](treeID: Int, rootObject: A, treeOwner: String, subWrappers: Map[AnyRef, SyncNodeInfo]) extends Serializable
 
 }

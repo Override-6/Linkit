@@ -12,9 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
-import fr.linkit.api.connection.cache.obj.Puppeteer
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
-import fr.linkit.api.connection.cache.obj.invokation.{MethodInvocationHandler, WrapperMethodInvocation}
+import fr.linkit.api.connection.cache.obj.invokation.{MethodInvocationHandler, Puppeteer, WrapperMethodInvocation}
 import fr.linkit.api.local.system.AppLogger
 
 abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {

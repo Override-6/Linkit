@@ -13,7 +13,8 @@
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.behavior.WrapperBehavior
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.connection.cache.obj.invokation.Chip
 import fr.linkit.api.local.concurrency.{Procrastinator, WorkerPools}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip.NoResult
@@ -22,7 +23,7 @@ import fr.linkit.engine.local.utils.ScalaUtils
 import java.lang.reflect.{Method, Modifier}
 import java.util.concurrent.locks.LockSupport
 
-class ObjectChip[S] private(behavior: WrapperBehavior[S],
+class ObjectChip[S] private(behavior: SynchronizedObjectBehavior[S],
                             wrapper: SynchronizedObject[S]) extends Chip[S] {
 
     override def updateObject(obj: S): Unit = {
@@ -32,7 +33,7 @@ class ObjectChip[S] private(behavior: WrapperBehavior[S],
     override def callMethod(methodID: Int, params: Array[Any]): Any = {
         val methodBehaviorOpt = behavior.getMethodBehavior(methodID)
         if (methodBehaviorOpt.forall(_.isHidden)) {
-            throw new PuppetException(s"Attempted to invoke ${methodBehaviorOpt.fold("unknown")(_ => "hidden")} method '${
+            throw new SyncObjectException(s"Attempted to invoke ${methodBehaviorOpt.fold("unknown")(_ => "hidden")} method '${
                 methodBehaviorOpt.map(_.desc.symbol.name.toString).getOrElse(s"(unknown method id '$methodID')")
             }(${params.mkString(", ")}) in class ${methodBehaviorOpt.map(_.desc.symbol).getOrElse("Unknown")}'")
         }
@@ -71,7 +72,7 @@ class ObjectChip[S] private(behavior: WrapperBehavior[S],
 
 object ObjectChip {
 
-    def apply[S](behavior: WrapperBehavior[S], wrapper: SynchronizedObject[S]): ObjectChip[S] = {
+    def apply[S](behavior: SynchronizedObjectBehavior[S], wrapper: SynchronizedObject[S]): ObjectChip[S] = {
         if (wrapper == null)
             throw new NullPointerException("puppet is null !")
         val clazz = wrapper.getClass

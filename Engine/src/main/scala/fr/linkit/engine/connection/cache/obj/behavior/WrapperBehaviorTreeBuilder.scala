@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, SynchronizedObjectBehavior}
 
 import scala.collection.mutable
 
 abstract class WrapperBehaviorTreeBuilder(memberBehaviorFactory: MemberBehaviorFactory) {
 
-    private val mappedBehaviors = mutable.HashMap.empty[Class[_], WrapperBehavior[_]]
+    private val mappedBehaviors = mutable.HashMap.empty[Class[_], SynchronizedObjectBehavior[_]]
 
     object behaviors {
 

@@ -1,6 +1,7 @@
 package fr.linkit.api.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.{Chip, SynchronizedObject, Puppeteer}
+import fr.linkit.api.connection.cache.obj.invokation.{Chip, Puppeteer}
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable.ListBuffer

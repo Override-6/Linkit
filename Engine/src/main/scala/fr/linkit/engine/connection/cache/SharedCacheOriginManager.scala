@@ -153,14 +153,5 @@ final class SharedCacheOriginManager(family: String,
                             }
                     }
                 }
-
-        val contentOpt = LocalCachesStore.getContent(cacheID)
-        if (contentOpt.isDefined) {
-            response.addPacket(RefPacket[Option[CacheContent]](contentOpt))
-        } else {
-            handleContentNotAvailable()
-        }
-        println(s"Content Response for cache $cacheID = $response.")
-        response.submit()
     }
 }

@@ -10,13 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.invokation.local
-import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
-import fr.linkit.api.connection.cache.obj.invokation.{Puppeteer, WrapperMethodInvocation}
+package fr.linkit.api.connection.cache.obj.invokation
 
-object DefaultRMIHandler extends AbstractMethodInvocationHandler {
+import fr.linkit.api.connection.cache.obj.SyncObjectException
 
-    override def voidRMIInvocation(puppeteer: Puppeteer[_], agreement: RMIRulesAgreement, invocation: WrapperMethodInvocation[_]): Unit = {
-        puppeteer.sendInvokeAndWaitResult(agreement, invocation)
-    }
+class RMIException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause) {
+
 }

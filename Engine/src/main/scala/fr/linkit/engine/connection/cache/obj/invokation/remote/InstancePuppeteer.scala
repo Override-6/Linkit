@@ -13,9 +13,9 @@
 package fr.linkit.engine.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, WrapperBehavior}
-import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
-import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
+import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, SynchronizedObjectBehavior}
+import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
+import fr.linkit.api.connection.cache.obj.invokation.{Puppeteer, WrapperMethodInvocation}
 import fr.linkit.api.connection.packet.channel.request.RequestPacketChannel
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
@@ -25,13 +25,12 @@ import fr.linkit.engine.connection.packet.fundamental.RefPacket
 class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                      procrastinator: ProcrastinatorControl,
                                      override val center: SynchronizedObjectCenter[_],
-                                     override val puppeteerInfo: WrapperNodeInfo,
-                                     val wrapperBehavior: WrapperBehavior[S]) extends Puppeteer[S] {
+                                     override val nodeInfo: SyncNodeInfo,
+                                     val wrapperBehavior: SynchronizedObjectBehavior[S]) extends Puppeteer[S] {
 
     private      val traffic                                         = channel.traffic
     override     val currentIdentifier: String                       = traffic.currentIdentifier
-    private lazy val tree                                            = center.treeCenter.findTree(puppeteerInfo.nodePath.head).get
-    override     val ownerID          : String                       = puppeteerInfo.owner
+    private lazy val tree                                            = center.treeCenter.findTree(nodeInfo.nodePath.head).get
     private      val writer                                          = traffic.newWriter(channel.identifier)
     private var puppetWrapper         : S with SynchronizedObject[S] = _
 
@@ -45,7 +44,7 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         val bhv          = invocation.methodBehavior
         val methodId     = bhv.desc.methodId
-        val treeViewPath = puppeteerInfo.nodePath
+        val treeViewPath = nodeInfo.nodePath
         val args         = invocation.methodArguments
 
         AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}")
@@ -76,7 +75,7 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             center.drainAllDefaultAttributes(scope)
             AppLogger.debug(s"Remotely invoking method asynchronously ${bhv.desc.symbol.name}(${args.mkString(",")})")
             channel.makeRequest(scope)
-                    .addPacket(InvocationPacket(puppeteerInfo.nodePath, methodId, args, null))
+                    .addPacket(InvocationPacket(nodeInfo.nodePath, methodId, args, null))
                     .submit()
                     .detach()
         }
@@ -90,7 +89,7 @@ class InstancePuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     }
 
     override def synchronizedObj(obj: AnyRef, id: Int): AnyRef with SynchronizedObject[AnyRef] = {
-        val currentPath = puppeteerInfo.nodePath
+        val currentPath = nodeInfo.nodePath
         tree.insertObject(currentPath, id, obj, currentIdentifier).synchronizedObject
     }
 

@@ -25,7 +25,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
     def getSynchronizedParams(method: Method): Seq[Boolean] = {
         val params = method.getParameterAnnotations
-                .map(_.exists(_.annotationType() eq classOf[SynchronizeParam]))
+                .map(_.exists(_.annotationType() eq classOf[Synchronized]))
         params
     }
 

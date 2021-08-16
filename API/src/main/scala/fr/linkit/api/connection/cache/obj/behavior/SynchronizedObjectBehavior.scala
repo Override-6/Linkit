@@ -10,11 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.description
+package fr.linkit.api.connection.cache.obj.behavior
 
-case class WrapperNodeInfo(cacheFamily: String,
-                           cacheID: Int,
-                           owner: String,
-                           nodePath: Array[Int]) {
+import fr.linkit.api.local.generation.PuppetClassDescription
 
+trait SynchronizedObjectBehavior[A] {
+
+    val classDesc: PuppetClassDescription[A]
+
+    def listMethods(): Iterable[MethodBehavior]
+
+    def getMethodBehavior(id: Int): Option[MethodBehavior]
+
+    def listField(): Iterable[FieldBehavior]
+
+    def getFieldBehavior(id: Int): Option[FieldBehavior]
 }

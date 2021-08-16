@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.network
 
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule._
-import fr.linkit.api.connection.cache.obj.behavior.annotation.MethodControl
+import fr.linkit.api.connection.cache.obj.behavior.annotation.{MethodControl, Synchronized}
 import fr.linkit.api.connection.network.Engine
 
 import java.sql.Timestamp
@@ -26,7 +26,9 @@ class EngineStore {
     val startUpDate: Timestamp = new Timestamp(System.currentTimeMillis())
 
     @MethodControl(value = BROADCAST, invokeOnly = true)
-    def addEngine(engine: Engine): Unit = engines.put(engine.identifier, engine)
+    def addEngine(@Synchronized engine: Engine): Unit = {
+        engines.put(engine.identifier, engine)
+    }
 
     @MethodControl(value = BROADCAST, invokeOnly = true)
     def removeEngine(engine: Engine): Unit = engines -= engine.identifier

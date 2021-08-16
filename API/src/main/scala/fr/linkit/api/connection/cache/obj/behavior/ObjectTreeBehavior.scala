@@ -7,8 +7,8 @@ trait ObjectTreeBehavior {
 
     val factory: MemberBehaviorFactory
 
-    def get[B: TypeTag : ClassTag]: WrapperBehavior[B]
+    def get[B: TypeTag : ClassTag]: SynchronizedObjectBehavior[B]
 
-    def getFromClass[B](clazz: Class[_]): WrapperBehavior[B]
+    def getFromClass[B](clazz: Class[_]): SynchronizedObjectBehavior[B]
 
 }

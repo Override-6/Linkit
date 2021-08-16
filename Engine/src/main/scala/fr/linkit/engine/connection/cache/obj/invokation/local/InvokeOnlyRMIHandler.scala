@@ -12,9 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
-import fr.linkit.api.connection.cache.obj.Puppeteer
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
-import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
+import fr.linkit.api.connection.cache.obj.invokation.{Puppeteer, WrapperMethodInvocation}
 
 object InvokeOnlyRMIHandler extends AbstractMethodInvocationHandler {
 

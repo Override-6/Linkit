@@ -12,6 +12,6 @@
 
 package fr.linkit.api.connection.cache.obj
 
-class IllegalObjectWrapperException(msg: String) extends PuppetException(msg) {
+class IllegalObjectWrapperException(msg: String) extends SyncObjectException(msg) {
 
 }

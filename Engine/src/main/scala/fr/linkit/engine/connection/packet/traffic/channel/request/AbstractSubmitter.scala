@@ -54,7 +54,7 @@ sealed abstract class AbstractSubmitter[P](id: Int, scope: ChannelScope) extends
 
     private def ensureNotSubmit(): Unit = {
         if (isSubmit)
-            throw new IllegalStateException("Response was already sent." + this)
+            throw new IllegalStateException("Response was already sent " + this)
     }
 
     override def toString: String = s"${getClass.getSimpleName}(id: $id, packets: $packets, isSubmit: $isSubmit)"

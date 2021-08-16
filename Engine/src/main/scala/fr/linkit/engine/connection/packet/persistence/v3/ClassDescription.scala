@@ -18,6 +18,7 @@ import fr.linkit.engine.connection.packet.persistence.v3.ClassDescription.Synthe
 import fr.linkit.engine.local.utils.NumberSerializer
 
 import java.lang.reflect.{Field, Modifier}
+import java.nio.file.AccessDeniedException
 import scala.collection.mutable
 
 class ClassDescription private(val clazz: Class[_]) extends SerializableClassDescription {
@@ -50,9 +51,18 @@ class ClassDescription private(val clazz: Class[_]) extends SerializableClassDes
             val fields = cl.getDeclaredFields
             fields
                     .filterNot(p => Modifier.isTransient(p.getModifiers) || Modifier.isStatic(p.getModifiers) || ((p.getModifiers & Synthetic) == Synthetic))
+                    .filter(makeAccessible)
                     //.tapEach(field => println(s"Field ${field.getName}: ${field.getType}"))
-                    .tapEach(_.setAccessible(true))
                     .toList ++ listAllSerialFields(cl.getSuperclass)
+        }
+
+        def makeAccessible(field: Field): Boolean = {
+            try {
+                field.setAccessible(true)
+                true
+            } catch {
+                case _: AccessDeniedException => false
+            }
         }
 
         listAllSerialFields(cl)

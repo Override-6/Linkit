@@ -10,8 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj
+package fr.linkit.api.connection.cache.obj.description
 
-class ObjectAlreadyPostException(msg: String) extends PuppetException(msg) {
+case class SyncNodeInfo(cacheFamily: String,
+                        cacheID: Int,
+                        owner: String,
+                        nodePath: Array[Int]) {
 
 }

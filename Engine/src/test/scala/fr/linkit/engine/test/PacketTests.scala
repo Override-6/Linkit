@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
+import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3.procedure.MiniPersistor
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
@@ -30,6 +30,7 @@ import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 
 import java.io.File
 import java.nio.ByteBuffer
+import java.sql.Timestamp
 import scala.collection.mutable.ArrayBuffer
 
 @TestInstance(Lifecycle.PER_CLASS)
@@ -42,7 +43,7 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        val f = new File("TestLol")
+        val f = new Timestamp(System.currentTimeMillis())
         testPacket(Array(f, f, f))
     }
 

@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, ObjectTreeBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.{MemberBehaviorFactory, ObjectTreeBehavior, SynchronizedObjectBehavior}
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 
 import scala.collection.mutable
@@ -21,24 +21,24 @@ import scala.reflect.{ClassTag, classTag}
 
 class ObjectTreeDefaultBehavior(override val factory: MemberBehaviorFactory) extends ObjectTreeBehavior {
 
-    private val behaviors = mutable.HashMap.empty[Class[_], WrapperBehavior[_]]
+    private val behaviors = mutable.HashMap.empty[Class[_], SynchronizedObjectBehavior[_]]
 
-    def this(factory: MemberBehaviorFactory, behaviors: Map[Class[_], WrapperBehavior[_]]) = {
+    def this(factory: MemberBehaviorFactory, behaviors: Map[Class[_], SynchronizedObjectBehavior[_]]) = {
         this(factory)
         this.behaviors ++= behaviors
     }
 
-    override def get[B: universe.TypeTag : ClassTag]: WrapperBehavior[B] = {
+    override def get[B: universe.TypeTag : ClassTag]: SynchronizedObjectBehavior[B] = {
         getFromAnyClass(classTag[B].runtimeClass)
     }
 
-    override def getFromClass[B](clazz: Class[_]): WrapperBehavior[B] = {
+    override def getFromClass[B](clazz: Class[_]): SynchronizedObjectBehavior[B] = {
         getFromAnyClass[B](clazz)
     }
 
-    private def getFromAnyClass[B](clazz: Class[_]): WrapperBehavior[B] = {
-        behaviors.getOrElseUpdate(clazz, DefaultWrapperBehavior(SyncObjectClassDescription(clazz), this))
-                .asInstanceOf[WrapperBehavior[B]]
+    private def getFromAnyClass[B](clazz: Class[_]): SynchronizedObjectBehavior[B] = {
+        behaviors.getOrElseUpdate(clazz, DefaultSynchronziedObjectBehavior(SyncObjectClassDescription(clazz), this))
+                .asInstanceOf[SynchronizedObjectBehavior[B]]
     }
 
 }

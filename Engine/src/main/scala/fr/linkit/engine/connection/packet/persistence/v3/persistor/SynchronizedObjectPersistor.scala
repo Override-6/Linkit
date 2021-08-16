@@ -2,7 +2,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.persistor
 
 import fr.linkit.api.connection.cache.NoSuchCacheException
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
+import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.BroadcastPacketCoordinates
@@ -23,7 +23,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
 
     override def getSerialNode(wrapper: SynchronizedObject[AnyRef], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         val wrapperNodeInfo = wrapper.getNodeInfo
-        val cache           = findCache(wrapperNodeInfo).getOrElse(throwNoSuchCacheException(wrapperNodeInfo, Option(wrapper.getWrappedClass)))
+        val cache           = findCache(wrapperNodeInfo).getOrElse(throwNoSuchCacheException(wrapperNodeInfo, Option(wrapper.getSuperClass)))
         val tree            = cache.treeCenter.findTree(wrapperNodeInfo.nodePath.head).get //TODO orElseThrow
         val path            = wrapperNodeInfo.nodePath
         val node            = tree.findNode(path).get
@@ -47,7 +47,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
             case other => other.forallConcernedTargets(check)
         }
 
-        progress.pool.addWrappedClassHeader(wrapper.getWrappedClass)
+        progress.pool.addWrappedClassHeader(wrapper.getSuperClass)
         val wrapperNode = if (useInstancePointerOnly) {
             progress.getSerializationNode(WrapperInfo(wrapperNodeInfo))
         } else {
@@ -102,7 +102,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
                 .getOrElse(obj)
     }
 
-    private def retrieveWrapper(info: WrapperNodeInfo): SynchronizedObject[_] = {
+    private def retrieveWrapper(info: SyncNodeInfo): SynchronizedObject[_] = {
         val path                   = info.nodePath
         val center                 = findCache(info)
                 .getOrElse {
@@ -127,7 +127,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
 
         val center = findCache(info)
                 .getOrElse {
-                    throwNoSuchCacheException(info, Some(wrapper.getWrappedClass))
+                    throwNoSuchCacheException(info, Some(wrapper.getSuperClass))
                 }
         val tree   = center.treeCenter.findTreeInternal(path.head).getOrElse {
             throw new NoSuchWrapperNodeException(s"No Object Tree found of id ${path.head}") //TODO Replace with NoSuchObjectTreeException
@@ -141,12 +141,12 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
         }
     }
 
-    private def throwNoSuchCacheException(info: WrapperNodeInfo, wrappedClass: Option[Class[_]]): Nothing = {
+    private def throwNoSuchCacheException(info: SyncNodeInfo, wrappedClass: Option[Class[_]]): Nothing = {
         throw new NoSuchCacheException(s"Could not find object tree of id ${info.nodePath.head} in synchronized object cache id ${info.cacheID} from cache manager ${info.cacheFamily} " +
                 s": could not properly deserialize and synchronize Wrapper object of class \"${wrappedClass.map(_.getName).getOrElse("(Unknown Wrapped class)")}\".")
     }
 
-    private def findCache(info: WrapperNodeInfo): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
+    private def findCache(info: SyncNodeInfo): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
         val family = info.cacheFamily
         network.findCacheManager(family)
                 .map(_.getCacheInStore[DefaultSynchronizedObjectCenter[AnyRef]](info.cacheID))
@@ -156,6 +156,6 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
 
 object SynchronizedObjectPersistor {
 
-    final case class WrapperInfo(nodeInfo: WrapperNodeInfo)
+    final case class WrapperInfo(nodeInfo: SyncNodeInfo)
 
 }

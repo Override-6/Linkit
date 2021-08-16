@@ -21,10 +21,10 @@ import fr.linkit.engine.local.system.StaticVersions
 import java.sql.Timestamp
 
 class DefaultEngine(override val identifier: String,
-                    override val cache: SharedCacheManager) extends Engine {
+                    @transient override val cache: SharedCacheManager) extends Engine {
 
-    override val network       : Network        = cache.network
-    override val staticAccessor: StaticAccessor = null
+    @transient override def network       : Network        = cache.network
+    override            val staticAccessor: StaticAccessor = null
 
     override val versions: Versions = StaticVersions.currentVersions
 
@@ -32,7 +32,7 @@ class DefaultEngine(override val identifier: String,
 
     private var connectionState: ExternalConnectionState = ExternalConnectionState.CONNECTED
 
-    override val getConnectionState: ExternalConnectionState = connectionState
+    override def getConnectionState: ExternalConnectionState = connectionState
 
     @MethodControl(BasicRemoteInvocationRule.BROADCAST_IF_ROOT_OWNER)
     def updateState(state: ExternalConnectionState): Unit = connectionState = state

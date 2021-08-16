@@ -12,9 +12,9 @@
 
 package fr.linkit.api.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.PuppetException
+import fr.linkit.api.connection.cache.obj.SyncObjectException
 
-class NoSuchWrapperNodeException(msg: String) extends PuppetException(msg) {
+class NoSuchWrapperNodeException(msg: String) extends SyncObjectException(msg) {
 
 }
 

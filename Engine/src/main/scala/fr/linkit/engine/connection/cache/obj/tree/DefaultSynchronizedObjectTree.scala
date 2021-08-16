@@ -1,7 +1,7 @@
 package fr.linkit.engine.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
-import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
+import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{IllegalObjectWrapperException, SynchronizedObject, SynchronizedObjectCenter}
@@ -71,9 +71,9 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
         if (!(wrapper.getNodeInfo.nodePath sameElements path))
             throw new IllegalWrapperRegistration(s"Could not register wrapper '${wrapper.getClass.getName}' : Wrapper node's information path mismatches from given one: ${path.mkString("/")}")
 
-        val behavior = behaviorTree.getFromClass[B](wrapper.getWrappedClass)
+        val behavior = behaviorTree.getFromClass[B](wrapper.getSuperClass)
         if (!wrapper.isInitialized) {
-            instantiator.initializeWrapper(wrapper, WrapperNodeInfo(center.family, center.cacheID, ownerID, path), behavior)
+            instantiator.initializeWrapper(wrapper, SyncNodeInfo(center.family, center.cacheID, ownerID, path), behavior)
         }
 
         val chip                 = ObjectChip[B](behavior, wrapper)
@@ -93,7 +93,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(platformIdentifie
         val parentPath = parent.treePath
 
         val wrapperBehavior = behaviorTree.getFromClass[B](obj.getClass.asInstanceOf[Class[B]])
-        val puppeteerInfo   = WrapperNodeInfo(center.family, center.cacheID, ownerID, parentPath :+ id)
+        val puppeteerInfo   = SyncNodeInfo(center.family, center.cacheID, ownerID, parentPath :+ id)
         val (wrapper, _)    = instantiator.newWrapper[B](obj, behaviorTree, puppeteerInfo, Map())
         val node            = registerSynchronizedObject[B](parent, id, wrapper, ownerID)
 

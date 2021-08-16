@@ -15,6 +15,9 @@ package fr.linkit.api.connection.cache.obj.invokation
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
 
+/**
+ * The invocation information of a synchronized object's method.
+ * */
 trait WrapperMethodInvocation[R] {
 
     val wrapper: SynchronizedObject[_]

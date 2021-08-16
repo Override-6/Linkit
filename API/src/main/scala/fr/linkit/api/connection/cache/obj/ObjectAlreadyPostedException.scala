@@ -10,8 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj
+package fr.linkit.api.connection.cache.obj
 
-class PuppetAlreadyInitialisedException(msg: String) extends RuntimeException(msg) {
+class ObjectAlreadyPostedException(msg: String) extends SyncObjectException(msg) {
 
 }

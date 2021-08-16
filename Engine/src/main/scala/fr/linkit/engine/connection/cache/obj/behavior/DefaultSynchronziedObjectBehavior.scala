@@ -12,11 +12,11 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, ObjectTreeBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, ObjectTreeBehavior, SynchronizedObjectBehavior}
 import fr.linkit.api.local.generation.PuppetClassDescription
 
-class DefaultWrapperBehavior[A] protected(override val classDesc: PuppetClassDescription[A],
-                                          factory: MemberBehaviorFactory) extends WrapperBehavior[A] {
+class DefaultSynchronziedObjectBehavior[A] protected(override val classDesc: PuppetClassDescription[A],
+                                                     factory: MemberBehaviorFactory) extends SynchronizedObjectBehavior[A] {
 
     private val methods = {
         generateMethodsBehavior()
@@ -54,10 +54,10 @@ class DefaultWrapperBehavior[A] protected(override val classDesc: PuppetClassDes
 
 }
 
-object DefaultWrapperBehavior {
+object DefaultSynchronziedObjectBehavior {
 
-    def apply[A](classDesc: PuppetClassDescription[A], tree: ObjectTreeBehavior): DefaultWrapperBehavior[A] = {
-        new DefaultWrapperBehavior(classDesc, tree.factory)
+    def apply[A](classDesc: PuppetClassDescription[A], tree: ObjectTreeBehavior): DefaultSynchronziedObjectBehavior[A] = {
+        new DefaultSynchronziedObjectBehavior(classDesc, tree.factory)
     }
 
 }

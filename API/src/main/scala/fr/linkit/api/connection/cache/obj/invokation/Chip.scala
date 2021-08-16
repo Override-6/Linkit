@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj
+package fr.linkit.api.connection.cache.obj.invokation
 
 /**
  * The Chip is a class that controls an object of type [[S]]

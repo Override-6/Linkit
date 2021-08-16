@@ -24,6 +24,7 @@ import org.jetbrains.annotations.NotNull
 import java.io.File
 import java.net.InetSocketAddress
 import java.util.Scanner
+import scala.util.Try
 
 object ClientLauncher {
     val Port           : Int               = 48484
@@ -49,7 +50,7 @@ object ClientLauncher {
         println(s"Choose how much client will connect to $address")
         print("Nothing = 1 > ")
         val numberEntry = scanner.nextLine()
-        val raidCount   = if (numberEntry.isEmpty) 1 else numberEntry.toInt
+        val raidCount   = if (numberEntry.isEmpty) 1 else Try(numberEntry.toInt).getOrElse(0)
 
         val resourcesFolder = getOrElse(args, "--home-path", getDefaultLinkitHome)
 

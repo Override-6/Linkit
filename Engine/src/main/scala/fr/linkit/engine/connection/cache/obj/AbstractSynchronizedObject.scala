@@ -12,19 +12,19 @@
 
 package fr.linkit.engine.connection.cache.obj
 
-import fr.linkit.api.connection.cache.obj.behavior.{MethodBehavior, WrapperBehavior}
-import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
-import fr.linkit.api.connection.cache.obj.invokation.WrapperMethodInvocation
-import fr.linkit.api.connection.cache.obj.{InvocationChoreographer, SynchronizedObject, Puppeteer}
+import fr.linkit.api.connection.cache.obj.behavior.{MethodBehavior, SynchronizedObjectBehavior}
+import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
+import fr.linkit.api.connection.cache.obj.invokation.{InvocationChoreographer, Puppeteer, WrapperMethodInvocation}
+import fr.linkit.api.connection.cache.obj.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
 import fr.linkit.engine.connection.cache.obj.invokation.{AbstractWrapperMethodInvocation, SimpleRMIRulesAgreement}
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    @transient final protected var puppeteer           : Puppeteer[A]            = _
-    @transient final protected var behavior            : WrapperBehavior[A]      = _
+    @transient final protected var puppeteer           : Puppeteer[A]                  = _
+    @transient final protected var behavior            : SynchronizedObjectBehavior[A] = _
     @transient final protected var choreographer       : InvocationChoreographer = _
-    protected final            var puppeteerDescription: WrapperNodeInfo         = _
+    protected final            var puppeteerDescription: SyncNodeInfo            = _
 
     private var currentIdentifier: String = _
     private var ownerID          : String = _
@@ -33,9 +33,9 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def initPuppeteer(puppeteer: Puppeteer[A]): Unit = {
         if (this.puppeteer != null)
-            throw new PuppetAlreadyInitialisedException(s"This puppet is already initialized ! ($puppeteer)")
+            throw new SyncObjectAlreadyInitialisedException(s"This puppet is already initialized ! ($puppeteer)")
         this.puppeteer = puppeteer
-        this.puppeteerDescription = puppeteer.puppeteerInfo
+        this.puppeteerDescription = puppeteer.nodeInfo
         this.behavior = puppeteer.wrapperBehavior
         this.puppeteer.init(asAutoWrapped)
         this.choreographer = new InvocationChoreographer()
@@ -51,7 +51,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         SyncObjectInstantiationHelper.detachedWrapperClone(this)._1
     }
 
-    override def getWrappedClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
+    override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
 
     override def asWrapped(): A = asAutoWrapped
 
@@ -59,9 +59,9 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getPuppeteer: Puppeteer[A] = puppeteer
 
-    override def getBehavior: WrapperBehavior[A] = behavior
+    override def getBehavior: SynchronizedObjectBehavior[A] = behavior
 
-    override def getNodeInfo: WrapperNodeInfo = puppeteerDescription
+    override def getNodeInfo: SyncNodeInfo = puppeteerDescription
 
     private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
         var i                  = -1

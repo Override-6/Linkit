@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
-import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, WrapperBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, SynchronizedObjectBehavior}
 import fr.linkit.api.connection.cache.obj.description.MethodDescription
 import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.api.local.generation.PuppetClassDescription
@@ -51,8 +51,8 @@ class WrapperBehaviorBuilder[T] private(val classDesc: PuppetClassDescription[T]
         new MethodModification(classDesc.listMethods())
     }
 
-    def build(factory: MemberBehaviorFactory): WrapperBehavior[T] = {
-        new DefaultWrapperBehavior[T](classDesc, factory) {
+    def build(factory: MemberBehaviorFactory): SynchronizedObjectBehavior[T] = {
+        new DefaultSynchronziedObjectBehavior[T](classDesc, factory) {
             override protected def generateMethodsBehavior(): Iterable[MethodBehavior] = {
                 classDesc.listMethods()
                         .map(genMethodBehavior(factory, _))

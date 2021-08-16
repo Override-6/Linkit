@@ -36,7 +36,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     private   val currentIdentifier                    = connection.currentIdentifier
     override  val connectionEngine: Engine             = new DefaultEngine(currentIdentifier, declareNewCacheManager(currentIdentifier))
     override  val globalCache     : SharedCacheManager = createGlobalCache
-    protected val engineStore     : EngineStore        = createEngineStore
+    protected val engineStore     : EngineStore        = retrieveEngineStore
     engineStore.addEngine(connectionEngine)
     postInit()
 
@@ -75,7 +75,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         cache
     }
 
-    protected def createEngineStore: EngineStore
+    protected def retrieveEngineStore: EngineStore
 
     protected def createGlobalCache: SharedCacheManager
 

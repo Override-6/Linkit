@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.connection.cache.obj
 
-import fr.linkit.api.connection.cache.obj.PuppetException
+import fr.linkit.api.connection.cache.obj.SyncObjectException
 
-class BadRMIRequestException(msg: String, cause: Throwable = null) extends PuppetException(msg, cause) {
+class BadRMIRequestException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause) {
 
 }

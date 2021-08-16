@@ -10,19 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.behavior
+package fr.linkit.api.connection.cache.obj
 
-import fr.linkit.api.local.generation.PuppetClassDescription
+import fr.linkit.api.local.system.AppException
 
-trait WrapperBehavior[A] {
+class SyncObjectException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
-    val classDesc: PuppetClassDescription[A]
-
-    def listMethods(): Iterable[MethodBehavior]
-
-    def getMethodBehavior(id: Int): Option[MethodBehavior]
-
-    def listField(): Iterable[FieldBehavior]
-
-    def getFieldBehavior(id: Int): Option[FieldBehavior]
 }

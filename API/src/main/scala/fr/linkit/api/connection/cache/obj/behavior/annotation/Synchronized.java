@@ -10,10 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj
+package fr.linkit.api.connection.cache.obj.behavior.annotation;
 
-import fr.linkit.api.local.system.AppException
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-class PuppetException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
-
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.PARAMETER)
+public @interface Synchronized {
 }

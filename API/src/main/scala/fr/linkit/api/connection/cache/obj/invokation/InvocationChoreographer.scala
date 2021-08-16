@@ -10,7 +10,9 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj
+package fr.linkit.api.connection.cache.obj.invokation
+
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 
 import scala.collection.mutable
 

@@ -12,9 +12,9 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.cache.obj.{SyncObjectDetachException, SynchronizedObject}
 import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
-import fr.linkit.api.connection.cache.obj.description.WrapperNodeInfo
+import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper.MaxScanDepth
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllFields}
@@ -26,18 +26,19 @@ import java.lang.reflect.{Field, Modifier}
 import java.nio.Buffer
 import java.nio.file.WatchKey
 import scala.collection.mutable
+import scala.util.control.NonFatal
 
 //TODO Factorise this class and optimize it.
 class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: ObjectTreeBehavior) {
 
     def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with SynchronizedObject[A]],
                                            origin: A,
-                                           subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
+                                           subWrappers: Map[AnyRef, SyncNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
         instantiateFromOrigin0(wrapperClass, origin, subWrappers)
     }
 
     private def instantiateFromOrigin0[A <: AnyRef](wrapperClass: Class[A with SynchronizedObject[A]],
-                                                    origin: A, subWrappers: Map[AnyRef, WrapperNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
+                                                    origin: A, subWrappers: Map[AnyRef, SyncNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
         val trustedSubWrapper       = subWrappers.map(pair => (Identity(pair._1), pair._2))
         val instance                = allocate[A with SynchronizedObject[A]](wrapperClass)
         val checkedFields           = mutable.HashSet.empty[Identity[Any]]
@@ -76,7 +77,7 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
         def scanAllFields(instance: Any, origin: Any, root: Boolean): Unit = {
             depth += 1
             val classUsed = if (instance.isInstanceOf[SynchronizedObject[_]]) origin.getClass else instance.getClass
-            retrieveAllFields(classUsed).foreach(field => {
+            retrieveAllFields(classUsed).foreach(field => if (!Modifier.isTransient(field.getModifiers)) {
                 try {
                     var isWrapper   = false
                     var originValue = field.get(origin)
@@ -124,7 +125,7 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
 
 object SyncObjectInstantiationHelper {
 
-    val MaxScanDepth: Int = 15
+    val MaxScanDepth: Int = 10
 
     def deepClone[A](origin: A): A = {
         val checkedItems = mutable.HashMap.empty[Identity[Any], Any]
@@ -166,7 +167,7 @@ object SyncObjectInstantiationHelper {
                                     val copied = getClonedInstance(field.get(data))
                                     ScalaUtils.setValue(instance, field, copied)
                                 } catch {
-                                    case e: IllegalAccessException =>
+                                    case _: IllegalAccessException =>
                                     //Simply do not scan
                                 }
                             })
@@ -186,7 +187,11 @@ object SyncObjectInstantiationHelper {
     }
 
     def detachedWrapperClone[A <: AnyRef](origin: SynchronizedObject[A]): (A, Map[AnyRef, SynchronizedObject[_]]) = {
-        detachedWrapperClone0(deepClone(origin))
+        try {
+            detachedWrapperClone0(deepClone(origin))
+        } catch {
+            case NonFatal(e) => throw new SyncObjectDetachException(s"Could not detach origin: $origin. ", e)
+        }
     }
 
     private def detachedWrapperClone0[A <: AnyRef](originClone: SynchronizedObject[A]): (A, Map[AnyRef, SynchronizedObject[_]]) = {
@@ -197,7 +202,7 @@ object SyncObjectInstantiationHelper {
         def detachedWrapper(originClone: SynchronizedObject[_]): AnyRef = {
             if (detachedWrappers.contains(originClone))
                 return detachedWrappers(originClone)
-            val instance = allocate[A](originClone.getWrappedClass)
+            val instance = allocate[A](originClone.getSuperClass)
             detachedWrappers.put(originClone, instance)
 
             def scanObject(instanceField: Any, originField: Any, root: Boolean): Unit = {

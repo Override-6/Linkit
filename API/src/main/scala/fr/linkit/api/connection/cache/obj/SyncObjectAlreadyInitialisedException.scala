@@ -10,14 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj.behavior.annotation;
+package fr.linkit.api.connection.cache.obj
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+class SyncObjectAlreadyInitialisedException(msg: String) extends RuntimeException(msg) {
 
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.PARAMETER)
-public @interface SynchronizeParam {
 }
