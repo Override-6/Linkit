@@ -12,15 +12,17 @@
 
 package fr.linkit.api.connection.cache.obj.behavior.annotation;
 
+import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Contains basic information for a {@link fr.linkit.api.connection.cache.obj.behavior.MethodBehavior}
+ * Contains basic information for a {@link MethodBehavior}
  * @see fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
- * @see fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+ * @see MethodBehavior
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

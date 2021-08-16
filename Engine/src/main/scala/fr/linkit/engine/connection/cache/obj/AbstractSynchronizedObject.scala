@@ -12,20 +12,21 @@
 
 package fr.linkit.engine.connection.cache.obj
 
-import fr.linkit.api.connection.cache.obj.behavior.{MethodBehavior, SynchronizedObjectBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, SynchronizedMethodInvocation}
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
+import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
-import fr.linkit.engine.connection.cache.obj.invokation.{AbstractSynchronizedMethodInvocation, SimpleRMIRulesAgreement}
+import fr.linkit.engine.connection.cache.obj.invokation.AbstractSynchronizedMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     @transient final protected var puppeteer           : Puppeteer[A]                  = _
     @transient final protected var behavior            : SynchronizedObjectBehavior[A] = _
-    @transient final protected var choreographer       : InvocationChoreographer = _
-    protected final            var puppeteerDescription: SyncNodeInfo            = _
+    @transient final protected var choreographer       : InvocationChoreographer       = _
+    protected final            var puppeteerDescription: SyncNodeInfo                  = _
 
     private var currentIdentifier: String = _
     private var ownerID          : String = _
@@ -65,16 +66,17 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     override def getNodeInfo: SyncNodeInfo = puppeteerDescription
 
     private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
-        var i                  = -1
-        val synchronizedParams = bhv.synchronizedParams
-        val pup                = puppeteer
+        var i              = -1
+        val paramBehaviors = bhv.parameterBehaviors
+        val pup            = puppeteer
         objects.map(obj => {
             i += 1
-            if (!synchronizedParams(i) || obj.isInstanceOf[SynchronizedObject[_]])
-                obj
-            else obj match {
-                case anyRef: AnyRef => pup.synchronizedObj(anyRef)
-                case _              =>
+            val behavior = paramBehaviors(i)
+            val modifier = behavior.modifier
+            if (modifier != null) modifier(obj) else obj match {
+                case sync: SynchronizedObject[_] => sync
+                case anyRef: AnyRef              => pup.synchronizedObj(anyRef)
+                case other                       => other
             }
         })
     }
@@ -99,19 +101,11 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
                 performSuperCall[R](superCall(synchronizedArgs))
             }
         }
-        val agreement  = createAgreement(invocation)
 
-        methodBehavior.handler.handleRMI[R](agreement, invocation)
+        methodBehavior.handler.handleRMI[R](invocation)
     }
 
     private def asAutoWrapped: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
-
-    private def createAgreement(invocation: SynchronizedMethodInvocation[_]): SimpleRMIRulesAgreement = {
-        val agreement = new SimpleRMIRulesAgreement(currentIdentifier, ownerID)
-        val behavior  = invocation.methodBehavior
-        behavior.completeAgreement(agreement)
-        agreement
-    }
 
     @inline private def performSuperCall[R](@inline superCall: => Any): R = {
         choreographer.forceLocalInvocation[R] {

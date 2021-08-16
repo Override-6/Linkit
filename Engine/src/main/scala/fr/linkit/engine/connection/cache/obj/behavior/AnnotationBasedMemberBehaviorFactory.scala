@@ -12,21 +12,27 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior
+import java.lang.reflect.{Method, Parameter}
+
+import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
 import fr.linkit.api.connection.cache.obj.behavior.annotation._
-import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, RemoteInvocationRule}
+import fr.linkit.api.connection.cache.obj.behavior.member._
 import fr.linkit.api.connection.cache.obj.description._
 import fr.linkit.api.local.concurrency.Procrastinator
-import fr.linkit.engine.connection.cache.obj.invokation.local.{DefaultRMIHandler, InvokeOnlyRMIHandler}
-
-import java.lang.reflect.Method
+import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreementBuilder
+import fr.linkit.engine.connection.cache.obj.invokation.remote.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 
 object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
-    def getSynchronizedParams(method: Method): Seq[Boolean] = {
-        val params = method.getParameterAnnotations
-                .map(_.exists(_.annotationType() eq classOf[Synchronized]))
+    def getSynchronizedParams(method: Method): Array[MethodParameterBehavior[Any]] = {
+        val params = method.getParameters
+            .map(genParameterBehavior)
         params
+    }
+
+    private def genParameterBehavior(param: Parameter): MethodParameterBehavior[Any] = {
+        val isSynchronized = param.isAnnotationPresent(classOf[Synchronized])
+        new MethodParameterBehavior[Any](isSynchronized, null)
     }
 
     override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): MethodBehavior = {
@@ -34,24 +40,24 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         val controlOpt         = Option(javaMethod.getAnnotation(classOf[MethodControl]))
         val control            = controlOpt.getOrElse(DefaultMethodControl)
         val synchronizedParams = getSynchronizedParams(desc.javaMethod)
-        val invocationRules    = Array[RemoteInvocationRule](control.value())
+        val rules              = Array[RemoteInvocationRule](control.value())
         val isHidden           = control.hide
         val syncReturnValue    = control.synchronizeReturnValue
         val invokeOnly         = control.invokeOnly
         val handler            = controlOpt match {
-            case None => null
+            case None    => null
             case Some(_) => if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
         }
-        behavior.MethodBehavior(
+        MethodBehavior(
             desc, synchronizedParams, syncReturnValue, isHidden,
-            invocationRules, procrastinator.orNull, handler
+            rules, procrastinator.orNull, handler
         )
     }
 
     override def genFieldBehavior(desc: FieldDescription): FieldBehavior = {
         val control        = Option(desc.javaField.getAnnotation(classOf[FieldControl]))
         val isSynchronized = control.isDefined
-        behavior.FieldBehavior(desc, isSynchronized)
+        FieldBehavior(desc, isSynchronized)
     }
 
     val DefaultMethodControl: MethodControl = {

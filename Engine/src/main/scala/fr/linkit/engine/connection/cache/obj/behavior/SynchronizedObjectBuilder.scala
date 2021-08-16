@@ -13,19 +13,22 @@
 package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
-import fr.linkit.api.connection.cache.obj.behavior.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, SynchronizedObjectBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.local.concurrency.Procrastinator
-import fr.linkit.engine.connection.cache.obj.behavior.WrapperBehaviorBuilder.MethodControl
+import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBuilder.MethodControl
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
-import fr.linkit.engine.connection.cache.obj.invokation.local.{DefaultRMIHandler, InvokeOnlyRMIHandler}
+import fr.linkit.engine.connection.cache.obj.invokation.remote.InvokeOnlyRMIHandler
 import org.jetbrains.annotations.Nullable
-
 import java.util
+
+import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, MethodParameterBehavior}
+import fr.linkit.engine.connection.cache.obj.invokation.remote.{DefaultRMIHandler, InvokeOnlyRMIHandler}
+
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-class WrapperBehaviorBuilder[T] private(val classDesc: SyncObjectSuperclassDescription[T]) {
+class SynchronizedObjectBuilder[T] private(val classDesc: SyncObjectSuperclassDescription[T]) {
 
     val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
 
@@ -51,7 +54,7 @@ class WrapperBehaviorBuilder[T] private(val classDesc: SyncObjectSuperclassDescr
     }
 
     def build(factory: MemberBehaviorFactory): SynchronizedObjectBehavior[T] = {
-        new DefaultSynchronziedObjectBehavior[T](classDesc, factory) {
+        new DefaultSynchronizedObjectBehavior[T](classDesc, factory) {
             override protected def generateMethodsBehavior(): Iterable[MethodBehavior] = {
                 classDesc.listMethods()
                         .map(genMethodBehavior(factory, _))
@@ -72,12 +75,12 @@ class WrapperBehaviorBuilder[T] private(val classDesc: SyncObjectSuperclassDescr
             val control = opt.get
             import control._
             val handler = if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
-            val params = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams
-            new MethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), procrastinator, handler)
+            val params = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams.toArray
+            MethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), procrastinator, handler)
         }
     }
 
-    class MethodModification private[WrapperBehaviorBuilder](descs: Iterable[MethodDescription]) {
+    class MethodModification private[SynchronizedObjectBuilder](descs: Iterable[MethodDescription]) {
 
         def by(control: MethodControl): this.type = {
             descs.foreach(methodsMap.put(_, control))
@@ -91,13 +94,13 @@ class WrapperBehaviorBuilder[T] private(val classDesc: SyncObjectSuperclassDescr
     }
 }
 
-object WrapperBehaviorBuilder {
+object SynchronizedObjectBuilder {
 
     case class MethodControl(value: BasicInvocationRule,
                              synchronizeReturnValue: Boolean = false,
                              invokeOnly: Boolean = false,
                              hide: Boolean = false,
-                             synchronizedParams: Seq[Boolean] = null,
+                             synchronizedParams: Seq[MethodParameterBehavior[Any]] = null,
                              @Nullable procrastinator: Procrastinator = null)
 
 }

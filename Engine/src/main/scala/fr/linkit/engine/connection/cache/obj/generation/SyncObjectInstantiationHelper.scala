@@ -47,8 +47,8 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
 
         def scanObject(instanceField: AnyRef, originField: AnyRef, root: Boolean): Unit = {
             if (depth >= MaxScanDepth ||
-                    originField == null ||
-                    UnWrapper.isPrimitiveWrapper(instanceField))
+                originField == null ||
+                UnWrapper.isPrimitiveWrapper(instanceField))
                 return
             scanAllFields(instanceField, originField, root)
         }
@@ -115,9 +115,9 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
         scanObject(instance, origin, true)
 
         wrapperClass.getDeclaredFields
-                .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isFinal(f.getModifiers))
-                .tapEach(_.setAccessible(true))
-                .foreach(_.set(instance, null))
+            .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isFinal(f.getModifiers))
+            .tapEach(_.setAccessible(true))
+            .foreach(_.set(instance, null))
         (instance, subWrappersInstantiated.toMap)
     }
 

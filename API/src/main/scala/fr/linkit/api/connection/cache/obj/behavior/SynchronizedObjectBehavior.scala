@@ -12,6 +12,7 @@
 
 package fr.linkit.api.connection.cache.obj.behavior
 
+import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, MethodBehavior}
 import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 
 trait SynchronizedObjectBehavior[A] {

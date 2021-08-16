@@ -12,10 +12,8 @@
 
 package fr.linkit.api.connection.cache.obj.invokation.remote
 
-import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
-
 trait RemoteMethodInvocationHandler {
 
-    def handleRMI[R](agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[R]): R
+    def handleRMI[R](invocation: SynchronizedMethodInvocation[R]): R
 
 }

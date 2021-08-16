@@ -51,10 +51,10 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         val scope = new AgreementScope(writer, agreement)
         center.drainAllDefaultAttributes(scope)
         val result = channel.makeRequest(scope)
-                .addPacket(InvocationPacket(treeViewPath, methodId, args, agreement.getDesiredEngineReturn))
-                .submit()
-                .nextResponse
-                .nextPacket[RefPacket[R]].value
+            .addPacket(InvocationPacket(treeViewPath, methodId, args, agreement.getDesiredEngineReturn))
+            .submit()
+            .nextResponse
+            .nextPacket[RefPacket[R]].value
         result match {
             //FIXME ambiguity with broadcast method invocation.
             case ThrowableWrapper(e) => throw new RemoteInvocationFailedException(s"Invocation of method $methodId with arguments '${args.mkString(", ")}' failed.", e)
@@ -75,9 +75,9 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             center.drainAllDefaultAttributes(scope)
             AppLogger.debug(s"Remotely invoking method asynchronously ${bhv.desc.symbol.name}(${args.mkString(",")})")
             channel.makeRequest(scope)
-                    .addPacket(InvocationPacket(nodeInfo.nodePath, methodId, args, null))
-                    .submit()
-                    .detach()
+                .addPacket(InvocationPacket(nodeInfo.nodePath, methodId, args, null))
+                .submit()
+                .detach()
         }
     }
 

@@ -1,5 +1,7 @@
 package fr.linkit.api.connection.cache.obj.behavior
 
+import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehaviorFactory
+
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._
 

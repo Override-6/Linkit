@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.PacketWriter
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
-import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreement
+import fr.linkit.engine.connection.cache.obj.invokation.{SimpleRMIRulesAgreement, SimpleRMIRulesAgreementBuilder}
 import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
 class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgreement) extends AbstractAttributesPresence with ChannelScope {

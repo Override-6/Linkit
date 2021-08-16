@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.MethodBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
 
 /**
  * The invocation information for a synchronized object's method.
