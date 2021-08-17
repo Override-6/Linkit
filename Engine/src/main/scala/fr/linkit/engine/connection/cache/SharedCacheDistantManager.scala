@@ -26,10 +26,10 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestP
 
 final class SharedCacheDistantManager(family: String,
                                       override val ownerID: String,
-                                      network: Network,
-                                      requestChannel: SimpleRequestPacketChannel) extends AbstractSharedCacheManager(family, network, requestChannel) {
+                                      @transient network: Network,
+                                      @transient requestChannel: SimpleRequestPacketChannel) extends AbstractSharedCacheManager(family, network, requestChannel) {
 
-    private val ownerScope = prepareScope(ChannelScopes.include(ownerID))
+    @transient private val ownerScope = prepareScope(ChannelScopes.include(ownerID))
 
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchBehavior): Option[CacheContent] = {
         println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")

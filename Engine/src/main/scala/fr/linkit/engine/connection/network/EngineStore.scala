@@ -34,7 +34,7 @@ class EngineStore {
         engine
     }
 
-    @MethodControl(value = BROADCAST, invokeOnly = true)
+    @MethodControl(value = BROADCAST_IF_ROOT_OWNER, invokeOnly = true)
     def removeEngine(engine: Engine): Unit = engines -= engine.identifier
 
     def findEngine(identifier: String): Option[Engine] = engines.get(identifier)

@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-class SynchronizedObjectBuilder[T] private(val classDesc: SyncObjectSuperclassDescription[T]) {
+abstract class SynchronizedObjectBuilder[T] private(val classDesc: SyncObjectSuperclassDescription[T]) {
 
     val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
 
@@ -74,7 +74,7 @@ class SynchronizedObjectBuilder[T] private(val classDesc: SyncObjectSuperclassDe
             val control = opt.get
             import control._
             val handler = if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
-            val params = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams.toArray
+            val params = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams.toArray.asInstanceOf[Array[MethodParameterBehavior[Any]]]
             MethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), procrastinator, handler)
         }
     }
@@ -99,7 +99,7 @@ object SynchronizedObjectBuilder {
                              synchronizeReturnValue: Boolean = false,
                              invokeOnly: Boolean = false,
                              hide: Boolean = false,
-                             synchronizedParams: Seq[MethodParameterBehavior[Any]] = null,
+                             synchronizedParams: Seq[MethodParameterBehavior[_]] = null,
                              @Nullable procrastinator: Procrastinator = null)
 
 }

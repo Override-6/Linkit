@@ -16,12 +16,16 @@ import java.sql.Timestamp
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule._
+import fr.linkit.api.connection.cache.obj.behavior.member.MethodParameterBehavior
 import fr.linkit.api.connection.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.connection.network.{Engine, Network}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBuilder.MethodControl
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectBuilder, SynchronizedObjectStoreBuilder}
 import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
@@ -123,9 +127,17 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         cacheManagerChannel.addRequestListener(handleRequest)
     }
 
+    private def transformToDistantCache(manager: SharedCacheManager): SharedCacheManager = {
+        val family  = manager.family
+        val channel = connection.getInjectable(family.hashCode, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
+        new SharedCacheDistantManager(family, manager.ownerID, this, channel)
+    }
+
     private def getEngineStoreBehaviors: SynchronizedObjectBehaviorStore = {
         new SynchronizedObjectStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
-            behaviors += new SynchronizedObjectBuilder[EngineStore]()
+            behaviors += new SynchronizedObjectBuilder[EngineStore]() {
+                annotateAllMethods("newEngine") by MethodControl(BROADCAST, synchronizedParams = Seq(MethodParameterBehavior(false, null, null), MethodParameterBehavior[SharedCacheManager](false, null, (manager, comesFromRMI) => if (comesFromRMI) transformToDistantCache(manager) else manager)))
+            }
         }.build
     }
 }

@@ -22,7 +22,7 @@ class SimpleRMIRulesAgreement(currentID: String, ownerID: String,
             accepted.contains(currentID) && (currentIsOwner || accepted.contains(ownerID))
     }
 
-    override def mayPerformRemoteInvocation: Boolean = {
+    override val mayPerformRemoteInvocation: Boolean = {
         acceptAll || (accepted.nonEmpty && !accepted.contains(currentID))
     }
 

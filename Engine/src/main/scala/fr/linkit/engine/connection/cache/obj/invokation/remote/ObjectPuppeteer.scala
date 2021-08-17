@@ -21,9 +21,9 @@ import fr.linkit.api.connection.packet.channel.request.{RequestPacketChannel, Re
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.RMIExceptionString
-import fr.linkit.engine.connection.cache.obj.invokation.remote.ObjectPuppeteer.NoResult
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
+import fr.linkit.engine.local.utils.JavaUtils
 import org.jetbrains.annotations.Nullable
 
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
@@ -46,25 +46,31 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         val agreement = invocation.agreement
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
+        val desiredEngineReturn = agreement.getDesiredEngineReturn
+
+        if (desiredEngineReturn == currentIdentifier)
+            throw new IllegalArgumentException("invocation's desired engine return is this engine.")
 
         val bhv                 = invocation.methodBehavior
         val methodId            = bhv.desc.methodId
-        val desiredEngineReturn = agreement.getDesiredEngineReturn
         AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}")
         val scope            = new AgreementScope(writer, agreement)
-        var requestResult: R = NoResult()
+        var requestResult: R = JavaUtils.nl()
+        var isResultSet      = false
         val dispatcher       = new ObjectRMIDispatcher(scope, methodId, desiredEngineReturn) {
             override protected def handleResponseHolder(holder: ResponseHolder): Unit = {
                 holder
                     .nextResponse
                     .nextPacket[RefPacket[R]].value match {
                     case RMIExceptionString(exceptionString) => throw new RemoteInvocationFailedException(s"Remote Invocation for method $methodId for engine id '$desiredEngineReturn' failed : $exceptionString")
-                    case result                              => requestResult = result
+                    case result                              =>
+                        requestResult = result
+                        isResultSet = true
                 }
             }
         }
         invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
-        if (requestResult == NoResult)
+        if (!isResultSet)
             throw new IllegalStateException("RMI dispatch has been processed asynchronously.")
         requestResult
     }
@@ -103,7 +109,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         override def foreachEngines(action: String => Array[Any]): Unit = {
             scope.foreachAcceptedEngines(engineID => {
-                if (engineID != returnEngine) //return engine is processed at last
+                if (engineID != returnEngine && engineID != currentIdentifier) //return engine is processed at last
                     makeRequest(ChannelScopes.include(engineID)(writer), action(engineID)).detach()
             })
             handleResponseHolder(makeRequest(ChannelScopes.include(returnEngine)(writer), action(returnEngine)))
@@ -116,14 +122,6 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         }
 
         protected def handleResponseHolder(holder: ResponseHolder): Unit = holder.detach()
-    }
-
-}
-
-object ObjectPuppeteer {
-
-    object NoResult {
-        @inline def apply(): Nothing = this.asInstanceOf[Nothing]
     }
 
 }

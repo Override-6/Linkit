@@ -7,6 +7,6 @@ import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, RemoteMe
 object DefaultRMIHandler extends AbstractMethodInvocationHandler {
 
     override def voidRMIInvocation(puppeteer: Puppeteer[_], invocation: RemoteMethodInvocation[_]): Unit = {
-        puppeteer.sendInvokeAndWaitResult(invocation)
+        puppeteer.sendInvoke(invocation)
     }
 }

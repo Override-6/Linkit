@@ -14,12 +14,10 @@ package fr.linkit.engine.connection.cache.obj.behavior
 
 import java.lang.reflect.{Method, Parameter}
 
-import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
 import fr.linkit.api.connection.cache.obj.behavior.annotation._
 import fr.linkit.api.connection.cache.obj.behavior.member._
 import fr.linkit.api.connection.cache.obj.description._
 import fr.linkit.api.local.concurrency.Procrastinator
-import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreementBuilder
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 
 object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {

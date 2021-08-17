@@ -74,10 +74,10 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             i += 1
             val behavior = paramBehaviors(i)
             val modifier = behavior.localParamModifier
-            if (modifier != null) modifier(obj) else obj match {
-                case sync: SynchronizedObject[_] => sync
-                case anyRef: AnyRef              => pup.synchronizedObj(anyRef)
-                case other                       => other
+            if (modifier != null) modifier(obj, false) else obj match {
+                case sync: SynchronizedObject[_]               => sync
+                case anyRef: AnyRef if behavior.isSynchronized => pup.synchronizedObj(anyRef)
+                case other                                     => other
             }
         })
     }

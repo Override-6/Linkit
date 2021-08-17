@@ -16,9 +16,9 @@ import fr.linkit.api.connection.packet.persistence.v3.SerializableClassDescripti
 import fr.linkit.api.connection.packet.persistence.v3.SerializableClassDescription.Fields
 import fr.linkit.engine.connection.packet.persistence.v3.ClassDescription.Synthetic
 import fr.linkit.engine.local.utils.NumberSerializer
-
-import java.lang.reflect.{Field, Modifier}
+import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
 import java.nio.file.AccessDeniedException
+
 import scala.collection.mutable
 
 class ClassDescription private(val clazz: Class[_]) extends SerializableClassDescription {
@@ -61,7 +61,7 @@ class ClassDescription private(val clazz: Class[_]) extends SerializableClassDes
                 field.setAccessible(true)
                 true
             } catch {
-                case _: AccessDeniedException => false
+                case _: InaccessibleObjectException => false
             }
         }
 

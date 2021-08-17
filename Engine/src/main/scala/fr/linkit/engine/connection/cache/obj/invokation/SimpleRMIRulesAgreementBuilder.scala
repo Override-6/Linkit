@@ -13,7 +13,6 @@
 package fr.linkit.engine.connection.cache.obj.invokation
 
 import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder}
-import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreementBuilder.{CurrentID, OwnerID}
 
 import scala.collection.mutable.ListBuffer
 
@@ -23,7 +22,7 @@ class SimpleRMIRulesAgreementBuilder(ownerID: String, currentID: String) extends
     private val discarded                    = ListBuffer.empty[String]
     private val accepted                     = ListBuffer.empty[String]
     private var acceptAllTargets   : Boolean = true
-    private var desiredEngineReturn: String  = CurrentID
+    private var desiredEngineReturn: String  = currentID
 
     override def discard(target: String): this.type = {
         accepted -= target
@@ -37,7 +36,7 @@ class SimpleRMIRulesAgreementBuilder(ownerID: String, currentID: String) extends
         this
     }
 
-    override def acceptOwner(): this.type = accept(OwnerID)
+    override def acceptOwner(): this.type = accept(ownerID)
 
     override def acceptAll(): this.type = {
         discarded.clear()
@@ -53,11 +52,11 @@ class SimpleRMIRulesAgreementBuilder(ownerID: String, currentID: String) extends
         this
     }
 
-    override def acceptCurrent(): this.type = accept(CurrentID)
+    override def acceptCurrent(): this.type = accept(currentID)
 
-    override def discardCurrent(): this.type = discard(CurrentID)
+    override def discardCurrent(): this.type = discard(currentID)
 
-    override def discardOwner(): this.type = discard(OwnerID)
+    override def discardOwner(): this.type = discard(ownerID)
 
     override def setDesiredEngineReturn(target: String): this.type = {
         desiredEngineReturn = target
@@ -65,11 +64,11 @@ class SimpleRMIRulesAgreementBuilder(ownerID: String, currentID: String) extends
     }
 
     override def setDesiredOwnerEngineReturn(): this.type = {
-        setDesiredEngineReturn(OwnerID)
+        setDesiredEngineReturn(ownerID)
     }
 
     override def setDesiredCurrentEngineReturn(): this.type = {
-        setDesiredEngineReturn(CurrentID)
+        setDesiredEngineReturn(currentID)
     }
 
     override def ifCurrentIsOwner(action: RMIRulesAgreementBuilder => RMIRulesAgreementBuilder): this.type = {
@@ -85,12 +84,5 @@ class SimpleRMIRulesAgreementBuilder(ownerID: String, currentID: String) extends
     def result: RMIRulesAgreement = {
         new SimpleRMIRulesAgreement(currentID, ownerID, desiredEngineReturn, acceptAllTargets, accepted.toArray, discarded.toArray)
     }
-
-}
-
-object SimpleRMIRulesAgreementBuilder {
-    //';' char is blacklisted so this string can be safely used as a flag
-    val CurrentID: String = "a;Current"
-    val OwnerID  : String = "a;Owner"
 
 }
