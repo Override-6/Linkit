@@ -13,21 +13,24 @@
 package fr.linkit.engine.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
-import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, RemoteMethodInvocationHandler, SynchronizedMethodInvocation}
+import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
+import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
+import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, RemoteMethodInvocation, RemoteMethodInvocationHandler}
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreementBuilder
+import fr.linkit.engine.connection.cache.obj.invokation.{AbstractMethodInvocation, SimpleRMIRulesAgreementBuilder}
 
 abstract class AbstractMethodInvocationHandler extends RemoteMethodInvocationHandler {
 
-    override def handleRMI[R](invocation: SynchronizedMethodInvocation[R]): R = {
-        val wrapper        = invocation.synchronizedObject
-        val methodBehavior = invocation.methodBehavior
-        val agreement      = methodBehavior.completeAgreement(new SimpleRMIRulesAgreementBuilder(wrapper.getPuppeteer.ownerID, invocation.currentIdentifier))
-        val args           = invocation.methodArguments
-        val name           = methodBehavior.desc.javaMethod.getName
-        val methodID       = invocation.methodID
+    override def handleRMI[R](localInvocation: LocalMethodInvocation[R]): R = {
+        val wrapper           = localInvocation.synchronizedObject
+        val methodBehavior    = localInvocation.methodBehavior
+        val puppeteer         = wrapper.getPuppeteer
+        val currentIdentifier = puppeteer.currentIdentifier
+        val args              = localInvocation.methodArguments
+        val name              = methodBehavior.desc.javaMethod.getName
+        val methodID          = localInvocation.methodID
 
-        val enableDebug = invocation.debug
+        val enableDebug = localInvocation.debug
 
         lazy val argsString = args.mkString("(", ", ", ")")
         lazy val className  = methodBehavior.desc.classDesc.clazz
@@ -37,22 +40,30 @@ abstract class AbstractMethodInvocationHandler extends RemoteMethodInvocationHan
         }
         // From here we are sure that we want to perform a remote
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
-        val puppeteer        = wrapper.getPuppeteer
         var result     : Any = methodBehavior.defaultReturnValue
         var localResult: Any = result
-        val mayPerformRMI    = agreement.mayPerformRemoteInvocation
-        if (agreement.mayCallSuper) {
-            localResult = invocation.callSuper()
+        val methodAgreement  = methodBehavior.completeAgreement(new SimpleRMIRulesAgreementBuilder(wrapper.getPuppeteer.ownerID, localInvocation.currentIdentifier))
+        val mayPerformRMI    = methodAgreement.mayPerformRemoteInvocation
+        if (methodAgreement.mayCallSuper) {
+            localResult = localInvocation.callSuper()
         }
-        if (agreement.getDesiredEngineReturn == invocation.currentIdentifier) {
+        val remoteInvocation = new AbstractMethodInvocation[R](localInvocation) with RemoteMethodInvocation[R] {
+            override val agreement: RMIRulesAgreement = methodAgreement
+
+            override def dispatchRMI(dispatcher: Puppeteer[_]#RMIDispatcher): Unit = {
+                methodBehavior.dispatch(dispatcher)
+            }
+        }
+        if (methodAgreement.getDesiredEngineReturn == currentIdentifier) {
             if (mayPerformRMI)
-                voidRMIInvocation(puppeteer, agreement, invocation)
+                voidRMIInvocation(puppeteer, remoteInvocation)
             result = localResult
         } else if (mayPerformRMI) {
-            result = puppeteer.sendInvokeAndWaitResult(agreement, invocation)
+            result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
         }
         result.asInstanceOf[R]
     }
 
-    def voidRMIInvocation(puppeteer: Puppeteer[_], agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[_]): Unit
+
+    protected def voidRMIInvocation(puppeteer: Puppeteer[_], invocation: RemoteMethodInvocation[_]): Unit
 }

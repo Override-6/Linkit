@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
+import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._

@@ -41,7 +41,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     import session._
 
-    initPacketReader()
+    init()
 
     override val currentIdentifier: String            = configuration.identifier
     override val port             : Int               = configuration.remoteAddress.getPort
@@ -80,6 +80,12 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
         socket.close()
 
         alive = false
+    }
+
+    @workerExecution
+    private def init(): Unit = {
+        session.traffic.setConnection(this)
+        initPacketReader()
     }
 
     @workerExecution

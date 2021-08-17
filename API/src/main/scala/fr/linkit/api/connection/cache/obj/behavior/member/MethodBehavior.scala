@@ -2,7 +2,7 @@ package fr.linkit.api.connection.cache.obj.behavior.member
 
 import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder}
 import fr.linkit.api.connection.cache.obj.description.MethodDescription
-import fr.linkit.api.connection.cache.obj.invokation.remote.RemoteMethodInvocationHandler
+import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, RemoteMethodInvocationHandler}
 import fr.linkit.api.local.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
 
@@ -32,6 +32,8 @@ case class MethodBehavior(desc: MethodDescription,
         handler != null
     }
 
+    val usesRemoteParametersModifier: Boolean = parameterBehaviors.exists(_.remoteParamModifier != null)
+
     /**
      * The default return value of the method, based on
      * [[https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html the default primitives value]].
@@ -53,6 +55,18 @@ case class MethodBehavior(desc: MethodDescription,
     def completeAgreement(agreement: RMIRulesAgreementBuilder): RMIRulesAgreement = {
         rules.foreach(_.apply(agreement))
         agreement.result
+    }
+
+    def dispatch(dispatcher: Puppeteer[_]#RMIDispatcher, args: Array[Any]): Unit = {
+        if (!usesRemoteParametersModifier) {
+            dispatcher.broadcast(args)
+        }
+        dispatcher.foreachEngines(engine => {
+            for (i <- args.indices) {
+                val paramBehavior = parameterBehaviors(i)
+                par
+            }
+        })
     }
 
 }

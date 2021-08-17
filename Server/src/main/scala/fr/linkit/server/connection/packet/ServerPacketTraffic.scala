@@ -16,12 +16,12 @@ import fr.linkit.api.connection.packet.traffic.PacketWriter
 import fr.linkit.engine.connection.packet.traffic.{AbstractPacketTraffic, WriterInfo}
 import fr.linkit.server.connection.ServerConnection
 
-class ServerPacketTraffic(serverConnection: ServerConnection) extends AbstractPacketTraffic(serverConnection.currentIdentifier, serverConnection) {
+class ServerPacketTraffic(override val connection: ServerConnection) extends AbstractPacketTraffic(connection.currentIdentifier, connection) {
 
-    override val currentIdentifier: String = serverConnection.currentIdentifier
+    override val currentIdentifier: String = connection.currentIdentifier
     override val serverIdentifier : String = currentIdentifier
 
     override def newWriter(identifier: Int): PacketWriter = {
-        new ServerPacketWriter(serverConnection, WriterInfo(this, identifier))
+        new ServerPacketWriter(connection, WriterInfo(this, identifier))
     }
 }

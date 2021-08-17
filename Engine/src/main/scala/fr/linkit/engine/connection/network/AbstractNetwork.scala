@@ -12,13 +12,17 @@
 
 package fr.linkit.engine.connection.network
 
+import java.sql.Timestamp
+
 import fr.linkit.api.connection.ConnectionContext
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
 import fr.linkit.api.connection.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.connection.network.{Engine, Network}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectBuilder, SynchronizedObjectStoreBuilder}
 import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.StringPacket
@@ -26,7 +30,6 @@ import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
 
-import java.sql.Timestamp
 import scala.collection.mutable
 
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
@@ -34,10 +37,9 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     private   val caches                               = mutable.HashMap.empty[String, SharedCacheManager]
     private   val cacheManagerChannel                  = connection.getInjectable(10, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
     private   val currentIdentifier                    = connection.currentIdentifier
-    override  val connectionEngine: Engine             = new DefaultEngine(currentIdentifier, declareNewCacheManager(currentIdentifier))
     override  val globalCache     : SharedCacheManager = createGlobalCache
-    protected val engineStore     : EngineStore        = retrieveEngineStore
-    engineStore.addEngine(connectionEngine)
+    protected val engineStore     : EngineStore        = retrieveEngineStore(getEngineStoreBehaviors)
+    override  val connectionEngine: Engine             = engineStore.newEngine(currentIdentifier, declareNewCacheManager(currentIdentifier))
     postInit()
 
     override def serverEngine: Engine = engineStore.findEngine(serverIdentifier).getOrElse {
@@ -75,7 +77,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         cache
     }
 
-    protected def retrieveEngineStore: EngineStore
+    protected def retrieveEngineStore(behaviors: SynchronizedObjectBehaviorStore): EngineStore
 
     protected def createGlobalCache: SharedCacheManager
 
@@ -87,10 +89,10 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         if (caches.contains(family))
             return Some(caches(family))
         val isSet = cacheManagerChannel.makeRequest(ChannelScopes.include(owner))
-                .addPacket(StringPacket(family))
-                .submit()
-                .nextResponse
-                .nextPacket[BooleanPacket].value
+            .addPacket(StringPacket(family))
+            .submit()
+            .nextResponse
+            .nextPacket[BooleanPacket].value
 
         if (isSet) {
             val channel = connection.getInjectable(family.hashCode, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
@@ -102,8 +104,8 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
     protected def findDistantCacheManager(family: String): Option[SharedCacheManager] = {
         listEngines.filter(_.identifier != connection.currentIdentifier)
-                .flatMap(c => findDistantCacheManager(family, c.identifier))
-                .headOption
+            .flatMap(c => findDistantCacheManager(family, c.identifier))
+            .headOption
     }
 
     protected def handleRequest(bundle: RequestPacketBundle): Unit = {
@@ -119,5 +121,11 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     private def postInit(): Unit = {
         connection.translator.initNetwork(this)
         cacheManagerChannel.addRequestListener(handleRequest)
+    }
+
+    private def getEngineStoreBehaviors: SynchronizedObjectBehaviorStore = {
+        new SynchronizedObjectStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
+            behaviors += new SynchronizedObjectBuilder[EngineStore]()
+        }.build
     }
 }

@@ -22,9 +22,13 @@ import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
 import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 import org.jetbrains.annotations.Nullable
-
 import java.util.concurrent.ThreadLocalRandom
+
+import fr.linkit.engine.connection.cache.obj.RMIExceptionString
+
 import scala.collection.mutable
+import scala.util.control.NonFatal
+import scala.util.{Failure, Success, Try}
 
 class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote invocation
                                override val chip: Chip[A], //Reflective invocation
@@ -74,18 +78,24 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
                 throw UnexpectedPacketException(s"Received invocation packet that does not target this node or this node's children ${packetPath.mkString("/")}.")
 
             tree.findNode[AnyRef](packetPath.drop(treePath.length))
-                    .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
-                        case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, response)
-                        case _                                  =>
-                    }
+                .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
+                    case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, response)
+                    case _                                  =>
+                }
         }
         makeMemberInvocation(packet, response)
     }
 
     private def makeMemberInvocation(packet: InvocationPacket, response: Submitter[Unit]): Unit = {
-        chip.callMethod(packet.methodID, packet.params) match {
-            case anyRef: AnyRef => handleInvocationResult(anyRef, packet, response)
-            case _              => //do not synchronize primitives (note: this is impossible to get an unwrapped primitive but this match is for the scalac logic)
+        Try(chip.callMethod(packet.methodID, packet.params)) match {
+            case Success(value)     => value match {
+                case anyRef: AnyRef => handleInvocationResult(anyRef, packet, response)
+                case _              => //do not synchronize primitives (note: this is impossible to get an unwrapped primitive but this match is for the scalac logic)
+            }
+            case Failure(exception) => exception match {
+                case NonFatal(e) => response.addPacket(RMIExceptionString(e.toString)).submit()
+                case fatal       => throw fatal
+            }
         }
     }
 
@@ -99,8 +109,8 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
                 result = tree.insertObject(this, id, result, ownerID).synchronizedObject
             }
             response
-                    .addPacket(RefPacket[Any](result))
-                    .submit()
+                .addPacket(RefPacket[Any](result))
+                .submit()
         }
     }
 }

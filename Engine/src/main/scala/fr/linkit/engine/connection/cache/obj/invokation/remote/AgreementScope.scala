@@ -51,6 +51,11 @@ class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgree
 
     override def shareWriter[S <: ChannelScope](factory: ChannelScope.ScopeFactory[S]): S = factory(writer)
 
+    def foreachAcceptedEngines(action: String => Unit): Unit = {
+        if (agreement.isAcceptAll)
+            writer.traffic.
+    }
+
 }
 
 object AgreementScope {

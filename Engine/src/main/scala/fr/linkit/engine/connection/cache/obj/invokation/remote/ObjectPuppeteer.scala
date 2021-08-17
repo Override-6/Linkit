@@ -13,14 +13,18 @@
 package fr.linkit.engine.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, SynchronizedObjectBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, SynchronizedMethodInvocation}
-import fr.linkit.api.connection.packet.channel.request.RequestPacketChannel
+import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, RemoteMethodInvocation}
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.channel.request.{RequestPacketChannel, ResponseHolder}
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.obj.ThrowableWrapper
+import fr.linkit.engine.connection.cache.obj.RMIExceptionString
+import fr.linkit.engine.connection.cache.obj.invokation.remote.ObjectPuppeteer.NoResult
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
+import fr.linkit.engine.connection.packet.traffic.ChannelScopes
+import org.jetbrains.annotations.Nullable
 
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    procrastinator: ProcrastinatorControl,
@@ -38,46 +42,45 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
     override def getSynchronizedObject: S with SynchronizedObject[S] = puppetWrapper
 
-    override def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[R]): R = {
+    override def sendInvokeAndWaitResult[R](invocation: RemoteMethodInvocation[R]): R = {
+        val agreement = invocation.agreement
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
 
-        val bhv          = invocation.methodBehavior
-        val methodId     = bhv.desc.methodId
-        val treeViewPath = nodeInfo.nodePath
-        val args         = invocation.methodArguments
-
+        val bhv                 = invocation.methodBehavior
+        val methodId            = bhv.desc.methodId
+        val desiredEngineReturn = agreement.getDesiredEngineReturn
         AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}")
-        val scope = new AgreementScope(writer, agreement)
-        center.drainAllDefaultAttributes(scope)
-        val result = channel.makeRequest(scope)
-            .addPacket(InvocationPacket(treeViewPath, methodId, args, agreement.getDesiredEngineReturn))
-            .submit()
-            .nextResponse
-            .nextPacket[RefPacket[R]].value
-        result match {
-            //FIXME ambiguity with broadcast method invocation.
-            case ThrowableWrapper(e) => throw new RemoteInvocationFailedException(s"Invocation of method $methodId with arguments '${args.mkString(", ")}' failed.", e)
-            case result              => result
+        val scope            = new AgreementScope(writer, agreement)
+        var requestResult: R = NoResult()
+        val dispatcher       = new ObjectRMIDispatcher(scope, methodId, desiredEngineReturn) {
+            override protected def handleResponseHolder(holder: ResponseHolder): Unit = {
+                holder
+                    .nextResponse
+                    .nextPacket[RefPacket[R]].value match {
+                    case RMIExceptionString(exceptionString) => throw new RemoteInvocationFailedException(s"Remote Invocation for method $methodId for engine id '$desiredEngineReturn' failed : $exceptionString")
+                    case result                              => requestResult = result
+                }
+            }
         }
+        invocation.dispatchRMI(dispatcher)
+        if (requestResult == NoResult)
+            throw new IllegalStateException("RMI dispatch has been processed asynchronously.")
+        requestResult
     }
 
-    override def sendInvoke(agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[_]): Unit = {
+    override def sendInvoke(invocation: RemoteMethodInvocation[_]): Unit = {
+        val agreement = invocation.agreement
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
 
         procrastinator.runLater {
             val bhv      = invocation.methodBehavior
-            val args     = invocation.methodArguments
             val methodId = bhv.desc.methodId
 
-            val scope = new AgreementScope(writer, agreement)
-            center.drainAllDefaultAttributes(scope)
-            AppLogger.debug(s"Remotely invoking method asynchronously ${bhv.desc.symbol.name}(${args.mkString(",")})")
-            channel.makeRequest(scope)
-                .addPacket(InvocationPacket(nodeInfo.nodePath, methodId, args, null))
-                .submit()
-                .detach()
+            val scope      = new AgreementScope(writer, agreement)
+            val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
+            invocation.dispatchRMI(dispatcher)
         }
     }
 
@@ -91,6 +94,36 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     override def synchronizedObj(obj: AnyRef, id: Int): AnyRef with SynchronizedObject[AnyRef] = {
         val currentPath = nodeInfo.nodePath
         tree.insertObject(currentPath, id, obj, currentIdentifier).synchronizedObject
+    }
+
+    class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngine: String) extends RMIDispatcher {
+        override def broadcast(args: Array[Any]): Unit = {
+            handleResponseHolder(makeRequest(scope, args))
+        }
+
+        override def foreachEngines(action: String => Array[Any]): Unit = {
+            scope.foreachAcceptedEngines(engineID => {
+                if (engineID != returnEngine) //return engine is processed at last
+                    makeRequest(ChannelScopes.include(engineID)(writer), action(engineID)).detach()
+            })
+            handleResponseHolder(makeRequest(ChannelScopes.include(returnEngine)(writer), action(returnEngine)))
+        }
+
+        private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
+            channel.makeRequest(scope)
+                .addPacket(InvocationPacket(nodeInfo.nodePath, methodID, args, returnEngine))
+                .submit()
+        }
+
+        protected def handleResponseHolder(holder: ResponseHolder): Unit = holder.detach()
+    }
+
+}
+
+object ObjectPuppeteer {
+
+    object NoResult {
+        @inline def apply(): Nothing = this.asInstanceOf[Nothing]
     }
 
 }

@@ -15,8 +15,9 @@ package fr.linkit.api.connection.cache.obj.invokation.remote
 import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, SynchronizedObjectBehavior}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCenter}
-
 import java.util.concurrent.ThreadLocalRandom
+
+import fr.linkit.api.connection.cache.obj.invokation.MethodInvocation
 
 /**
  * The puppeteer of a SynchronizedObject creates all RMI requests and handles the results.
@@ -59,24 +60,30 @@ trait Puppeteer[S <: AnyRef] {
 
     /**
      * Send an RMI invocation based on the given agreement and invocation and waits for any result (return value or exception)
+     *
      * @throws RMIException if any exception was received from the RMI response.
-     * @param agreement the agreement that determines who will handle the request, who will be listened for the invocation result.
      * @param invocation the method's invocation information.
      * @tparam R the return type of the RMI result value.
      * @return the RMI result value
      */
-    def sendInvokeAndWaitResult[R](agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[R]): R //TODO add a timeout. (here or in the MethodBehavior)
+    def sendInvokeAndWaitResult[R](invocation: RemoteMethodInvocation[R]): R //TODO add a timeout. (here or in the MethodBehavior)
 
     /**
      * Send an RMI Invocation based on the given agreement and invocation without waiting for any result.
-     * @param agreement the agreement that determines who will handle the request, who will be listened for the invocation result.
+     *
      * @param invocation the method's invocation information.
      */
-    def sendInvoke(agreement: RMIRulesAgreement, invocation: SynchronizedMethodInvocation[_]): Unit
+    def sendInvoke(invocation: RemoteMethodInvocation[_]): Unit
 
     //TODO make this and "init" for internal use only
     def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef
 
     def init(wrapper: S with SynchronizedObject[S]): Unit
+
+    trait RMIDispatcher {
+        def broadcast(args: Array[Any]): Unit
+
+        def foreachEngines(action: String => Array[Any]): Unit
+    }
 
 }

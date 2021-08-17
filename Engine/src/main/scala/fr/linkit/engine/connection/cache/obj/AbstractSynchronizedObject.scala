@@ -16,10 +16,11 @@ import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
+import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
-import fr.linkit.engine.connection.cache.obj.invokation.AbstractSynchronizedMethodInvocation
+import fr.linkit.engine.connection.cache.obj.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
@@ -72,7 +73,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         objects.map(obj => {
             i += 1
             val behavior = paramBehaviors(i)
-            val modifier = behavior.modifier
+            val modifier = behavior.localParamModifier
             if (modifier != null) modifier(obj) else obj match {
                 case sync: SynchronizedObject[_] => sync
                 case anyRef: AnyRef              => pup.synchronizedObj(anyRef)
@@ -92,17 +93,15 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             return superCall(synchronizedArgs).asInstanceOf[R]
         }
 
-        val invocation = new AbstractSynchronizedMethodInvocation[R](methodBehavior, this) {
-            override val callerIdentifier : String     = AbstractSynchronizedObject.this.currentIdentifier
-            override val currentIdentifier: String     = AbstractSynchronizedObject.this.currentIdentifier
-            override val methodArguments  : Array[Any] = synchronizedArgs
+        val localInvocation = new AbstractMethodInvocation[R](methodBehavior, this) with LocalMethodInvocation[R] {
+            override val methodArguments: Array[Any] = synchronizedArgs
 
             override def callSuper(): R = {
                 performSuperCall[R](superCall(synchronizedArgs))
             }
         }
 
-        methodBehavior.handler.handleRMI[R](invocation)
+        methodBehavior.handler.handleRMI[R](localInvocation)
     }
 
     private def asAutoWrapped: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]

@@ -15,8 +15,10 @@ package fr.linkit.engine.connection.network
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule._
 import fr.linkit.api.connection.cache.obj.behavior.annotation.{MethodControl, Synchronized}
 import fr.linkit.api.connection.network.Engine
-
 import java.sql.Timestamp
+
+import fr.linkit.api.connection.cache.SharedCacheManager
+
 import scala.collection.mutable
 
 class EngineStore {
@@ -26,8 +28,10 @@ class EngineStore {
     val startUpDate: Timestamp = new Timestamp(System.currentTimeMillis())
 
     @MethodControl(value = BROADCAST, invokeOnly = true)
-    def addEngine(@Synchronized engine: Engine): Unit = {
-        engines.put(engine.identifier, engine)
+    def newEngine(engineIdentifier: String, cache: SharedCacheManager): Engine = {
+        val engine = new DefaultEngine(engineIdentifier, cache)
+        engines.put(engineIdentifier, engine)
+        engine
     }
 
     @MethodControl(value = BROADCAST, invokeOnly = true)

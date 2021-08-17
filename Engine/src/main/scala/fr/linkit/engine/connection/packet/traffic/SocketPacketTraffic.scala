@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
+import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.PacketWriter
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
@@ -25,6 +26,14 @@ class SocketPacketTraffic(@NotNull socket: DynamicSocket,
                           @NotNull override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, procrastinator) {
 
     private val choreographer = new PacketSerializationChoreographer(translator)
+    private var connection0: ConnectionContext = null
+    override def connection: ConnectionContext = connection0
+
+    def setConnection(connection: ConnectionContext): Unit = {
+        if (connection0 != null)
+            throw new IllegalStateException("Connection already set !")
+        connection0 = connection
+    }
 
     override def newWriter(identifier: Int): PacketWriter = {
         new SocketPacketWriter(socket, choreographer, WriterInfo(this, identifier))

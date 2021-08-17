@@ -12,18 +12,17 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
+import java.util
+
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
+import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, MethodParameterBehavior}
 import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBuilder.MethodControl
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
-import fr.linkit.engine.connection.cache.obj.invokation.remote.InvokeOnlyRMIHandler
-import org.jetbrains.annotations.Nullable
-import java.util
-
-import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, MethodParameterBehavior}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{DefaultRMIHandler, InvokeOnlyRMIHandler}
+import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable
 import scala.reflect.ClassTag

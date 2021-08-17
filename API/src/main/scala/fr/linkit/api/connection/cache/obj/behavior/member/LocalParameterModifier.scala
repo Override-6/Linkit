@@ -1,6 +1,6 @@
 package fr.linkit.api.connection.cache.obj.behavior.member
 
-trait ParameterModifier[P] {
+trait LocalParameterModifier[P] {
 
     def apply(param: P): P
 

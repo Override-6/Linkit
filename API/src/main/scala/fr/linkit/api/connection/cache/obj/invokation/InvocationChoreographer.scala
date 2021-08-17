@@ -35,7 +35,7 @@ class InvocationChoreographer {
      * @param action the action to perform
      * @tparam A return type of action
      *@return the return value of action
-     * @see [[fr.linkit.api.connection.cache.obj.invokation.remote.SynchronizedMethodInvocation]]
+     * @see [[MethodInvocation]]
      * @see [[SynchronizedObject]] for more information about those 'generated methods'.
      * */
     def forceLocalInvocation[A](action: => A): A = {
