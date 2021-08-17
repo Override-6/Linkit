@@ -1,4 +1,5 @@
-# The Linkit Framework.
+<center> <h1>The Linkit Framework</h1> </center>  
+
 ![Cover](RCover.png)
  A Framework to easily synchronise and link (remote) JVM processes between them.  
 
