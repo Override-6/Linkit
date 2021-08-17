@@ -25,8 +25,8 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBuilder.MethodControl
-import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectBuilder, SynchronizedObjectStoreBuilder}
+import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBehaviorBuilder.MethodControl
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectBehaviorBuilder, SynchronizedObjectBehaviorStoreBuilder}
 import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.StringPacket
@@ -134,8 +134,8 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def getEngineStoreBehaviors: SynchronizedObjectBehaviorStore = {
-        new SynchronizedObjectStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
-            behaviors += new SynchronizedObjectBuilder[EngineStore]() {
+        new SynchronizedObjectBehaviorStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
+            behaviors += new SynchronizedObjectBehaviorBuilder[EngineStore]() {
                 annotateAllMethods("newEngine") by MethodControl(BROADCAST, synchronizedParams = Seq(MethodParameterBehavior(false, null, null), MethodParameterBehavior[SharedCacheManager](false, null, (manager, comesFromRMI) => if (comesFromRMI) transformToDistantCache(manager) else manager)))
             }
         }.build

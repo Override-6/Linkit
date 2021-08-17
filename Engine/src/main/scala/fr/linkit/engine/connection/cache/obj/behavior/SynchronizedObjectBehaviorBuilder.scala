@@ -19,7 +19,7 @@ import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRul
 import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, MethodParameterBehavior}
 import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.local.concurrency.Procrastinator
-import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBuilder.MethodControl
+import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBehaviorBuilder.MethodControl
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 import org.jetbrains.annotations.Nullable
@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-abstract class SynchronizedObjectBuilder[T] private(val classDesc: SyncObjectSuperclassDescription[T]) {
+abstract class SynchronizedObjectBehaviorBuilder[T] private(val classDesc: SyncObjectSuperclassDescription[T]) {
 
     val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
 
@@ -79,7 +79,7 @@ abstract class SynchronizedObjectBuilder[T] private(val classDesc: SyncObjectSup
         }
     }
 
-    class MethodModification private[SynchronizedObjectBuilder](descs: Iterable[MethodDescription]) {
+    class MethodModification private[SynchronizedObjectBehaviorBuilder](descs: Iterable[MethodDescription]) {
 
         def by(control: MethodControl): this.type = {
             descs.foreach(methodsMap.put(_, control))
@@ -93,7 +93,7 @@ abstract class SynchronizedObjectBuilder[T] private(val classDesc: SyncObjectSup
     }
 }
 
-object SynchronizedObjectBuilder {
+object SynchronizedObjectBehaviorBuilder {
 
     case class MethodControl(value: BasicInvocationRule,
                              synchronizeReturnValue: Boolean = false,

@@ -17,13 +17,13 @@ import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehaviorFactory
 
 import scala.collection.mutable
 
-abstract class SynchronizedObjectStoreBuilder(memberBehaviorFactory: MemberBehaviorFactory) {
+abstract class SynchronizedObjectBehaviorStoreBuilder(memberBehaviorFactory: MemberBehaviorFactory) {
 
     private val mappedBehaviors = mutable.HashMap.empty[Class[_], SynchronizedObjectBehavior[_]]
 
     object behaviors {
 
-        def +=(builder: SynchronizedObjectBuilder[_]): this.type = {
+        def +=(builder: SynchronizedObjectBehaviorBuilder[_]): this.type = {
             mappedBehaviors.put(builder.classDesc.clazz, builder.build(memberBehaviorFactory))
             this
         }
