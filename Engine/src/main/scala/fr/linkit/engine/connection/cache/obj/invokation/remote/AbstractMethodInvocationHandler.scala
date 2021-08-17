@@ -42,7 +42,7 @@ abstract class AbstractMethodInvocationHandler extends RemoteMethodInvocationHan
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
         var result     : Any = methodBehavior.defaultReturnValue
         var localResult: Any = result
-        val methodAgreement  = methodBehavior.completeAgreement(new SimpleRMIRulesAgreementBuilder(wrapper.getPuppeteer.ownerID, localInvocation.currentIdentifier))
+        val methodAgreement  = methodBehavior.completeAgreement(new SimpleRMIRulesAgreementBuilder(puppeteer.ownerID, currentIdentifier))
         val mayPerformRMI    = methodAgreement.mayPerformRemoteInvocation
         if (methodAgreement.mayCallSuper) {
             localResult = localInvocation.callSuper()
@@ -50,8 +50,8 @@ abstract class AbstractMethodInvocationHandler extends RemoteMethodInvocationHan
         val remoteInvocation = new AbstractMethodInvocation[R](localInvocation) with RemoteMethodInvocation[R] {
             override val agreement: RMIRulesAgreement = methodAgreement
 
-            override def dispatchRMI(dispatcher: Puppeteer[_]#RMIDispatcher): Unit = {
-                methodBehavior.dispatch(dispatcher)
+            override def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher): Unit = {
+                methodBehavior.dispatch(dispatcher, args)
             }
         }
         if (methodAgreement.getDesiredEngineReturn == currentIdentifier) {

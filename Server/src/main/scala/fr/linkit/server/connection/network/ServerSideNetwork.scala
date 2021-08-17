@@ -13,6 +13,7 @@
 package fr.linkit.server.connection.network
 
 import fr.linkit.api.connection.cache.SharedCacheManager
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.connection.network.{AbstractNetwork, EngineStore}
@@ -23,9 +24,9 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
 
     override def serverIdentifier: String = serverConnection.currentIdentifier
 
-    override protected def retrieveEngineStore: EngineStore = {
+    override protected def retrieveEngineStore(store: SynchronizedObjectBehaviorStore): EngineStore = {
         globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[EngineStore]())
-                .postObject(0, new EngineStore)
+                .postObject(0, new EngineStore, store)
     }
 
     override protected def createGlobalCache: SharedCacheManager = {

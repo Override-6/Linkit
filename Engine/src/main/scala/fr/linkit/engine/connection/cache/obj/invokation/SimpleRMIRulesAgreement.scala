@@ -7,9 +7,9 @@ class SimpleRMIRulesAgreement(currentID: String, ownerID: String,
                               accepted: Array[String], excluded: Array[String]) extends RMIRulesAgreement {
     private val currentIsOwner = currentID == ownerID
 
-    override def getAcceptedEngines: Array[String] = accepted
+    override val acceptedEngines: Array[String] = accepted
 
-    override def getDiscardedEngines: Array[String] = excluded
+    override val discardedEngines: Array[String] = excluded
 
     override def isAcceptAll: Boolean = acceptAll
 

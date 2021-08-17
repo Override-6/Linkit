@@ -63,7 +63,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                 }
             }
         }
-        invocation.dispatchRMI(dispatcher)
+        invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
         if (requestResult == NoResult)
             throw new IllegalStateException("RMI dispatch has been processed asynchronously.")
         requestResult
@@ -80,7 +80,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
             val scope      = new AgreementScope(writer, agreement)
             val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
-            invocation.dispatchRMI(dispatcher)
+            invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
         }
     }
 

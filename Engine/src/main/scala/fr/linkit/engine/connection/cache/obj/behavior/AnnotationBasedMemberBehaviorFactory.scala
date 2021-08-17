@@ -32,7 +32,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
     private def genParameterBehavior(param: Parameter): MethodParameterBehavior[Any] = {
         val isSynchronized = param.isAnnotationPresent(classOf[Synchronized])
-        new MethodParameterBehavior[Any](isSynchronized, null)
+        new MethodParameterBehavior[Any](isSynchronized, null, null)
     }
 
     override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): MethodBehavior = {

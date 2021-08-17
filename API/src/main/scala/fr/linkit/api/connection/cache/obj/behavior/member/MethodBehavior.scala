@@ -6,17 +6,7 @@ import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, RemoteMe
 import fr.linkit.api.local.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
 
-/**
- * Determines the behaviors of a method invocation (local or remote).
- *
- * @param desc               the method description
- * @param synchronizedParams a Seq of boolean representing the method's arguments where the arguments at index n is synchronized if synchronizedParams(n) == true.
- * @param syncReturnValue    if true, synchronize the return value of the method.
- * @param isHidden           If hidden, this method should not be called from distant engines.
- * @param invocationRules    //TODO doc
- * @param procrastinator     if not null, the procrastinator that will process the method call
- * @param handler            the used [[RemoteMethodInvocationHandler]]
- */
+
 case class MethodBehavior(desc: MethodDescription,
                           parameterBehaviors: Array[MethodParameterBehavior[Any]],
                           syncReturnValue: Boolean,
@@ -57,15 +47,26 @@ case class MethodBehavior(desc: MethodDescription,
         agreement.result
     }
 
-    def dispatch(dispatcher: Puppeteer[_]#RMIDispatcher, args: Array[Any]): Unit = {
+    /**
+     * uses the given RMIDispatcher
+     *
+     * @param dispatcher the dispatcher to use
+     * @param args       the arguments that will be used for the RMI request. <br>*
+     */
+    def dispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher, args: Array[Any]): Unit = {
         if (!usesRemoteParametersModifier) {
             dispatcher.broadcast(args)
+            return
         }
-        dispatcher.foreachEngines(engine => {
+        val buff = args.clone()
+        dispatcher.foreachEngines(engineID => {
             for (i <- args.indices) {
-                val paramBehavior = parameterBehaviors(i)
-                par
+                val paramBehavior  = parameterBehaviors(i)
+                val remoteModifier = paramBehavior.remoteParamModifier
+                if (remoteModifier != null)
+                    buff(i) = remoteModifier.forRemote(args(i), engineID)
             }
+            buff
         })
     }
 
