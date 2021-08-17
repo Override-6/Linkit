@@ -63,8 +63,8 @@ You can create any cache like this :
 ```scala
 //let's say we work on the global cache manager, and we open a SharedCollection of Strings
 val manager = helloConnection.network.globalCache
-val cacheId: Int = 45 //cacheID of our cache is 45
-val collection = manager.retrieveCache(45, SharedCollection[String])
+val cacheId: Int = 45 //cacheID of our cache is 45 (the value can be any integer
+val collection = manager.retrieveCache(cacheId, SharedCollection[String])
 collection.addListener(str => println(s"new String added $str"))
 collection.add("Hello")
 collection.add("World") //all remote engines that will get the cache from the Global Shared Cache Manager will get it updated.
@@ -151,5 +151,3 @@ Here is a non-ordered list of different people that helped me writing the projec
 - [Hokkayado](https://github.com/Hokkaydo)
 - [Mesabloo](https://github.com/Mesabloo)
 - [MinusKube](https://github.com/MinusKube)
-
-thanks for you <3
