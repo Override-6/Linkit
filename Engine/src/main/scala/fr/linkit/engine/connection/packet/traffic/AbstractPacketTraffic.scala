@@ -24,9 +24,8 @@ import scala.reflect.ClassTag
 
 abstract class AbstractPacketTraffic(override val currentIdentifier: String, procrastinator: ProcrastinatorControl) extends PacketTraffic {
 
-    @volatile private var closed   = false
-    override  val path: Array[Int] = Array.empty
-    protected val rootStore        = new SimplePacketInjectableStore(this, path)
+    @volatile private var closed = false
+    protected val rootStore      = new SimplePacketInjectableStore(this, Array.empty)
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
         rootStore.getInjectable[C](injectableID, factory, scopeFactory)

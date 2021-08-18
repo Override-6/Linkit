@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.connection.packet
 
-import fr.linkit.api.connection.packet.ChannelBundle
+import fr.linkit.api.connection.packet.ChannelPacketBundle
 import fr.linkit.api.connection.packet.channel.PacketChannel
 
-abstract class AbstractChannelBundle(channel: PacketChannel) extends ChannelBundle {
+abstract class AbstractChannelPacketBundle(channel: PacketChannel) extends ChannelPacketBundle {
 
     override def getChannel: PacketChannel = channel
 

@@ -36,7 +36,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     override     val network                                         = traffic.connection.network
     override     val currentIdentifier: String                       = traffic.currentIdentifier
     private lazy val tree                                            = center.treeCenter.findTree(nodeInfo.nodePath.head).get
-    private      val writer                                          = traffic.newWriter(channel.identifier)
+    private      val writer                                          = traffic.newWriter(channel.path)
     private var puppetWrapper         : S with SynchronizedObject[S] = _
 
     override def isCurrentEngineOwner: Boolean = ownerID == currentIdentifier

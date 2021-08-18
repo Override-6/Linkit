@@ -12,23 +12,22 @@
 
 package fr.linkit.engine.connection.packet.traffic.channel
 
-import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
-import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
-import fr.linkit.api.connection.packet.traffic.{PacketInjectableFactory, PacketSender, PacketSyncReceiver}
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
-import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
+
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.traffic.{PacketInjectableFactory, PacketInjectableStore, PacketSender, PacketSyncReceiver}
+import fr.linkit.api.connection.packet.{ChannelPacketBundle, Packet, PacketAttributes}
+import fr.linkit.api.local.concurrency.WorkerPools
 import fr.linkit.api.local.system.Reason
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.utils.ScalaUtils.ensurePacketType
-import org.jetbrains.annotations.Nullable
 
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 import scala.reflect.ClassTag
 
 //TODO doc
-class SyncPacketChannel protected(@Nullable parent: PacketChannel, scope: ChannelScope,
-                                  providable: Boolean) extends AbstractPacketChannel(parent, scope)
-        with PacketSender with PacketSyncReceiver {
+class SyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelScope,
+                                  providable: Boolean) extends AbstractPacketChannel(store, scope)
+    with PacketSender with PacketSyncReceiver {
 
     /**
      * this blocking queue stores the received packets until they are requested
@@ -38,13 +37,12 @@ class SyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Channe
             new LinkedBlockingQueue[Packet]()
         else {
             WorkerPools
-                    .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
+                .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 
-    @workerExecution
-    override def handleInjection(injection: PacketInjection): Unit = {
-        injection.attachPinPacket(queue.add)
+    override def handleBundle(bundle: ChannelPacketBundle): Unit = {
+        queue.add(bundle.packet)
     }
 
     override def send(packet: Packet): Unit = scope.sendToAll(packet)
@@ -81,8 +79,8 @@ class SyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Channe
 
 object SyncPacketChannel extends PacketInjectableFactory[SyncPacketChannel] {
 
-    override def createNew(@Nullable parent: PacketChannel, scope: ChannelScope): SyncPacketChannel = {
-        new SyncPacketChannel(parent, scope, false)
+    override def createNew(store: PacketInjectableStore, scope: ChannelScope): SyncPacketChannel = {
+        new SyncPacketChannel(store, scope, false)
     }
 
     def providable: PacketInjectableFactory[SyncPacketChannel] = new SyncPacketChannel(_, _, true)

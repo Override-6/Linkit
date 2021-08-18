@@ -13,12 +13,12 @@
 package fr.linkit.engine.local.system
 
 import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
-import fr.linkit.api.connection.packet.traffic.PacketInjectableFactory
+import fr.linkit.api.connection.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
 import fr.linkit.api.local.system.Reason
 import fr.linkit.engine.connection.packet.traffic.channel.SyncPacketChannel
 
-class SystemPacketChannel(scope: ChannelScope)
-        extends SyncPacketChannel(null, scope, true) {
+class SystemPacketChannel(store: PacketInjectableStore, scope: ChannelScope)
+    extends SyncPacketChannel(store, scope, true) {
 
     def sendOrder(systemOrder: SystemOrder, reason: Reason, content: Array[Byte] = Array()): Unit = {
         send(SystemPacket(systemOrder, reason, content))
@@ -29,9 +29,7 @@ class SystemPacketChannel(scope: ChannelScope)
 
 object SystemPacketChannel extends PacketInjectableFactory[SystemPacketChannel] {
 
-    override def createNew(parent: PacketChannel, scope: ChannelScope): SystemPacketChannel = {
-        if (parent != null)
-            throw new IllegalArgumentException("System Packet Channel can't have any parent.")
-        new SystemPacketChannel(scope)
+    override def createNew(store: PacketInjectableStore, scope: ChannelScope): SystemPacketChannel = {
+        new SystemPacketChannel(store, scope)
     }
 }

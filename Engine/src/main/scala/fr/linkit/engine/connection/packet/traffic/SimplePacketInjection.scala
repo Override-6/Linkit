@@ -18,7 +18,7 @@ import fr.linkit.api.connection.packet.traffic.PacketInjection
 class SimplePacketInjection(override val bundle: PacketBundle) extends PacketInjection {
 
     private val path = bundle.coords.path
-    private val limit = path.length - 1
+    private val limit = path.length
     private var index: Int = -1
 
     override def nextIdentifier: Int = {
@@ -27,6 +27,6 @@ class SimplePacketInjection(override val bundle: PacketBundle) extends PacketInj
     }
 
     override def haveMoreIdentifier: Boolean = {
-        index >= limit
+        index <= limit
     }
 }

@@ -12,17 +12,17 @@
 
 package fr.linkit.engine.connection.cache.traffic
 
-import fr.linkit.api.connection.cache.{CacheContent, CacheSearchBehavior, NoSuchCacheException, SharedCacheManager}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.cache.traffic.handler.CacheHandler
-import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
-import fr.linkit.api.connection.packet.traffic.PacketInjectableFactory
+import fr.linkit.api.connection.cache.{CacheContent, CacheSearchBehavior, NoSuchCacheException, SharedCacheManager}
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
 import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 class DefaultCachePacketChannel(scope: ChannelScope,
-                                parent: PacketChannel,
+                                store: PacketInjectableStore,
                                 override val manager: SharedCacheManager,
-                                override val cacheID: Int) extends SimpleRequestPacketChannel(parent, scope) with CachePacketChannel {
+                                override val cacheID: Int) extends SimpleRequestPacketChannel(store, scope) with CachePacketChannel {
 
     private var handler: Option[CacheHandler] = None
 
@@ -47,7 +47,7 @@ class DefaultCachePacketChannel(scope: ChannelScope,
 
 object DefaultCachePacketChannel {
 
-    def apply(cacheID: Int, manager: SharedCacheManager): PacketInjectableFactory[CachePacketChannel] = (parent: PacketChannel, scope: ChannelScope) => {
-        new DefaultCachePacketChannel(scope, parent, manager, cacheID)
+    def apply(cacheID: Int, manager: SharedCacheManager): PacketInjectableFactory[CachePacketChannel] = (store: PacketInjectableStore, scope: ChannelScope) => {
+        new DefaultCachePacketChannel(scope, store, manager, cacheID)
     }
 }

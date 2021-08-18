@@ -21,7 +21,7 @@ import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {
 
-    override val path             : Array[Int]    = info.identifier
+    override val path             : Array[Int]    = info.path
     override val traffic          : PacketTraffic = info.traffic
     override val serverIdentifier : String        = serverConnection.currentIdentifier
     override val currentIdentifier: String        = traffic.currentIdentifier

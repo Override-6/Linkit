@@ -23,8 +23,8 @@ class SocketPacketWriter(socket: DynamicSocket,
 
     override val traffic          : PacketTraffic = writerInfo.traffic
     override val serverIdentifier : String        = traffic.serverIdentifier
-    override val currentIdentifier: String = traffic.currentIdentifier
-    override val path             : Int    = writerInfo.identifier
+    override val currentIdentifier: String        = traffic.currentIdentifier
+    override val path             : Array[Int]    = writerInfo.path
 
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs)
@@ -35,14 +35,14 @@ class SocketPacketWriter(socket: DynamicSocket,
             val target    = targetIDs.head
             val dedicated = DedicatedPacketCoordinates(path, targetIDs(0), currentIdentifier)
             if (target == currentIdentifier) {
-                traffic.processInjection(packet, attributes,  dedicated)
+                traffic.processInjection(packet, attributes, dedicated)
                 return
             }
             dedicated
         } else {
             if (targetIDs.contains(currentIdentifier)) {
                 val coords = DedicatedPacketCoordinates(path, serverIdentifier, currentIdentifier)
-                traffic.processInjection(packet, attributes,  coords)
+                traffic.processInjection(packet, attributes, coords)
             }
 
             BroadcastPacketCoordinates(path, currentIdentifier, false, targetIDs.filter(_ != currentIdentifier))
@@ -53,8 +53,8 @@ class SocketPacketWriter(socket: DynamicSocket,
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit = {
-        val coords            = BroadcastPacketCoordinates(path, currentIdentifier, true, discardedIDs)
-        val transferInfo      = SimpleTransferInfo(coords, attributes, packet)
+        val coords       = BroadcastPacketCoordinates(path, currentIdentifier, true, discardedIDs)
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet)
 
         if (!discardedIDs.contains(currentIdentifier))
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(coords.path, currentIdentifier, currentIdentifier))

@@ -12,15 +12,15 @@
 
 package fr.linkit.api.connection.packet.channel.request
 
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, PacketBundle}
+import fr.linkit.api.connection.packet.{ChannelPacketBundle, DedicatedPacketCoordinates, PacketBundle, PacketCoordinates}
 
-trait RequestPacketBundle extends PacketBundle {
+trait RequestPacketBundle extends ChannelPacketBundle {
 
     override def getChannel: RequestPacketChannel
 
     override val packet: SubmitterPacket
 
-    override val coords: DedicatedPacketCoordinates
+    override val coords: PacketCoordinates
 
     val responseSubmitter: Submitter[Unit]
 

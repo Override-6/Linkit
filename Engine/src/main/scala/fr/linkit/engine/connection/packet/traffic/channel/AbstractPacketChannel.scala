@@ -15,17 +15,17 @@ package fr.linkit.engine.connection.packet.traffic.channel
 import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{AppLogger, Reason}
 import fr.linkit.engine.connection.packet.AbstractAttributesPresence
-import org.jetbrains.annotations.Nullable
+import fr.linkit.engine.connection.packet.traffic.DefaultChannelPacketBundle
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractAttributesPresence with PacketChannel with PacketInjectable {
+abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
+                                     scope: ChannelScope) extends AbstractAttributesPresence with PacketChannel with PacketInjectable {
 
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
@@ -33,7 +33,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
     override  val ownerID: String        = writer.serverIdentifier
     override  val path   : Array[Int]    = writer.path
     override  val traffic: PacketTraffic = writer.traffic
-    private   val storedBundles          = mutable.HashSet.empty[PacketBundle]
+    private   val storedBundles          = mutable.HashSet.empty[ChannelPacketBundle]
 
     @volatile private var closed = true
 
@@ -42,17 +42,15 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
     override def isClosed: Boolean = closed
 
     @workerExecution
-    final override def inject(injection: PacketInjection): Unit = {
-        val coordinates = injection.coordinates
+    final override def inject(bundle: PacketBundle): Unit = {
+        val coordinates = bundle.coords
         scope.assertAuthorised(Array(coordinates.senderID))
-        handleInjection(injection)
+        handleBundle(DefaultChannelPacketBundle(this, bundle))
     }
 
     override def canInjectFrom(identifier: String): Boolean = scope.areAuthorised(Array(identifier))
 
-    override def getParent: Option[PacketChannel] = Option(parent)
-
-    override def storeBundle(bundle: PacketBundle): Unit = {
+    override def storeBundle(bundle: ChannelPacketBundle): Unit = {
         AppLogger.vDebug(s"$currentTasksId <> STORING BUNDLE $bundle INTO $storedBundles")
         if (bundle.getChannel ne this) {
             throw new IllegalArgumentException("The stored bundle's channel is not this.")
@@ -64,7 +62,7 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
     }
 
     override def injectStoredBundles(): Unit = {
-        var clone: Array[PacketBundle] = null
+        var clone: Array[ChannelPacketBundle] = null
         storedBundles.synchronized {
             AppLogger.vDebug(s"$currentTasksId <> REINJECTING STORED PACKETS $storedBundles")
             clone = Array.from(storedBundles)
@@ -80,13 +78,12 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
             if (injected.contains(stored))
                 throw new Error("Double instance packet in storage.")
 
-            val injection = traffic.injectionContainer.makeInjection(stored)
-            inject(injection)
+            inject(stored)
         })
     }
 
     @workerExecution
-    def handleInjection(injection: PacketInjection): Unit
+    def handleBundle(injection: ChannelPacketBundle): Unit
 
     protected case class SubInjectableContainer(subInjectable: PacketInjectable, transparent: Boolean)
 

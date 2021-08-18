@@ -12,16 +12,15 @@
 
 package fr.linkit.engine.connection.cache
 
-import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
-import fr.linkit.api.connection.packet.traffic.{PacketSender, PacketSyncReceiver}
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.traffic.{PacketInjectableStore, PacketSender, PacketSyncReceiver}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel
-import org.jetbrains.annotations.Nullable
 
 import scala.reflect.ClassTag
 
-class AsyncSenderSyncReceiver(@Nullable parent: PacketChannel, scope: ChannelScope) extends SyncAsyncPacketChannel(parent, scope, true) with PacketSender with PacketSyncReceiver {
+class AsyncSenderSyncReceiver(store: PacketInjectableStore, scope: ChannelScope) extends SyncAsyncPacketChannel(store, scope, true) with PacketSender with PacketSyncReceiver {
 
     override def nextPacket[P <: Packet : ClassTag]: P = nextSync
 
