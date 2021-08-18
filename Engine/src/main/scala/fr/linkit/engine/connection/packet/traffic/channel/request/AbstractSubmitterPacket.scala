@@ -28,10 +28,13 @@ sealed abstract class AbstractSubmitterPacket(id: Int, packets: Array[Packet]) e
 
     @throws[NoSuchElementException]("If this method is called more times than packet array's length" + this)
     override def nextPacket[P <: Packet : ClassTag]: P = {
-        AppLogger.vDebug(s"packetIndex: $packetIndex, packets: ${packets.mkString("Array(", ", ", ")")} + $hashCode")
+        //      AppLogger.debug(s"packetIndex: $packetIndex, packets: ${packets.mkString("Array(", ", ", ")")} + $hashCode")
         //        Thread.dumpStack()
-        if (packetIndex >= packets.length)
-            throw new NoSuchElementException(s"Packet Index >= packets.length ($packetIndex >= ${packets.length})")
+        if (packetIndex >= packets.length) {
+            //FIXME FAST FIX
+            packetIndex = packets.length - 1
+            //throw new NoSuchElementException(s"Packet Index >= packets.length ($packetIndex >= ${packets.length})")
+        }
 
         val packet = packets(packetIndex)
         packetIndex += 1
@@ -63,9 +66,9 @@ sealed abstract class AbstractSubmitterPacket(id: Int, packets: Array[Packet]) e
 }
 
 case class ResponsePacket(id: Int, packets: Array[Packet])
-        extends AbstractSubmitterPacket(id, packets) {
+    extends AbstractSubmitterPacket(id, packets) {
 
 }
 
 case class RequestPacket(id: Int, packets: Array[Packet])
-        extends AbstractSubmitterPacket(id, packets)
+    extends AbstractSubmitterPacket(id, packets)

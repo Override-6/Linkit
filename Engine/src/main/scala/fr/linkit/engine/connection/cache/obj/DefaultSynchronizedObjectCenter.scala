@@ -141,7 +141,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
     private object CenterHandler extends CacheHandler with ContentHandler[CacheRepoContent[A]] with AttachHandler {
 
         override def handleBundle(bundle: RequestPacketBundle): Unit = {
-            AppLogger.vDebug(s"Processing bundle : ${bundle}")
+            //AppLogger.debug(s"Processing bundle : ${bundle}")
             val response = bundle.packet
             response.nextPacket[Packet] match {
                 case ip: InvocationPacket                                                       =>

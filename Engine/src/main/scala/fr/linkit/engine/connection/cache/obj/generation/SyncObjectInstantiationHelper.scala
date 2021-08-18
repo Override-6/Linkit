@@ -77,7 +77,7 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
         def scanAllFields(instance: Any, origin: Any, root: Boolean): Unit = {
             depth += 1
             val classUsed = if (instance.isInstanceOf[SynchronizedObject[_]]) origin.getClass else instance.getClass
-            retrieveAllFields(classUsed).foreach(field => if (!Modifier.isTransient(field.getModifiers)) {
+            retrieveAllFields(classUsed).foreach(field => /*if (!Modifier.isTransient(field.getModifiers))*/ {
                 try {
                     var isWrapper   = false
                     var originValue = field.get(origin)
@@ -223,8 +223,8 @@ object SyncObjectInstantiationHelper {
             }
 
             def scanField(instanceField: Any, originValue: AnyRef, field: Field, root: Boolean): Unit = {
-                if (Modifier.isTransient(field.getModifiers))
-                    return //Do not scan transient fields
+                //if (Modifier.isTransient(field.getModifiers))
+                //    return //Do not scan transient fields
                 if (JavaUtils.sameInstance(originValue, originClone)) {
                     ScalaUtils.setValue(instanceField, field, instance)
                 }
