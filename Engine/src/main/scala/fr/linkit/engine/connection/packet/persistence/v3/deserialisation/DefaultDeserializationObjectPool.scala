@@ -56,7 +56,7 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream, center: D
                     if (!postInit)
                         poolObject(i) = node.deserialize(in)
             }
-            if (nodes(i) == null && postInit)
+            if ((nodes(i) == null) && postInit)
                 throw new MalFormedPacketException("Packet pool contains null elements")
         }
     }
@@ -64,7 +64,7 @@ class DefaultDeserializationObjectPool(in: DeserializationInputStream, center: D
     override def getHeaderValueNode(place: Int): DeserializerNode = {
         val obj = poolObject(place)
         if (obj == null) {
-            if (nonAvailableReferences == null || nonAvailableReferences(place) == null)
+            if ((nonAvailableReferences == null) || nonAvailableReferences(place) == null)
                 throw new NullPointerException("Unexpected null item in poolObject")
             else nonAvailableReferences(place)
         } else

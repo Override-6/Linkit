@@ -20,7 +20,7 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, Pack
 import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine
-import fr.linkit.engine.connection.packet.{PacketBundle, SimplePacketAttributes}
+import fr.linkit.engine.connection.packet.{SimplePacketBundle, SimplePacketAttributes}
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.utils.ConsumerContainer
 import org.jetbrains.annotations.Nullable
@@ -28,9 +28,9 @@ import org.jetbrains.annotations.Nullable
 import scala.util.control.NonFatal
 
 class AsyncPacketChannel protected(@Nullable parent: PacketChannel, scope: ChannelScope)
-        extends AbstractPacketChannel(parent, scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {
+        extends AbstractPacketChannel(parent, scope) with PacketSender with PacketAsyncReceiver[SimplePacketBundle] {
 
-    private val packetReceivedContainer: ConsumerContainer[PacketBundle] = ConsumerContainer()
+    private val packetReceivedContainer: ConsumerContainer[SimplePacketBundle] = ConsumerContainer()
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
@@ -39,7 +39,7 @@ class AsyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Chann
             injection.attachPin((packet, attr) => {
                 try {
                     val coords = injection.coordinates
-                    packetReceivedContainer.applyAll(engine.connection.packet.PacketBundle(this, packet, attr, coords))
+                    packetReceivedContainer.applyAll(engine.connection.packet.SimplePacketBundle(this, packet, attr, coords))
                 } catch {
                     case NonFatal(e) =>
                         AppLogger.printStackTrace(e)
@@ -60,7 +60,7 @@ class AsyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Chann
 
     override def sendTo(packet: Packet, targets: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targets)
 
-    override def addOnPacketReceived(callback: PacketBundle => Unit): Unit = {
+    override def addOnPacketReceived(callback: SimplePacketBundle => Unit): Unit = {
         packetReceivedContainer += callback
     }
 }

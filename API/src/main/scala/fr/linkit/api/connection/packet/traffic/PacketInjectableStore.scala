@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 
 import scala.reflect.ClassTag
 
-trait PacketInjectableContainer {
+trait PacketInjectableStore extends TrafficPresence {
 
     /**
      * retrieves or create (and register) a [[PacketInjectable]] depending on the requested id and scope
@@ -29,6 +29,14 @@ trait PacketInjectableContainer {
      * @see [[ChannelScope]]
      * @see [[PacketChannel]]
      * */
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C
+
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): C = {
+        getInjectable[C](injectableID, factory, scopeFactory)
+    }
+
+    def findStore(id: Int): Option[PacketInjectableStore]
+
+    def createStore(id: Int): PacketInjectableStore
 
 }

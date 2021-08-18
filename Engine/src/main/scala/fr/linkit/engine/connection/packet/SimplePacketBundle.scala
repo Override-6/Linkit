@@ -10,21 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet
+package fr.linkit.engine.connection.packet
 
-/**
- * a Bundle is a class that contains a defined amount of typed items.
- * Bundle are useful to packet channels because they can be stored and processed later.
- *
- * @see [[PacketBundle]] for an implementation.
- * */
-trait PacketBundle {
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 
-    val packet: Packet
-
-    val attributes: PacketAttributes
-
-    val coords: PacketCoordinates
-
+case class SimplePacketBundle(override val packet: Packet,
+                              override val attributes: PacketAttributes,
+                              override val coords: DedicatedPacketCoordinates) extends PacketBundle {
 
 }

@@ -13,19 +13,15 @@
 package fr.linkit.api.connection.packet.traffic
 
 import fr.linkit.api.connection.ConnectionContext
-import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.traffic.injection.PacketInjectionController
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.JustifiedCloseable
 
-trait PacketTraffic extends JustifiedCloseable with PacketInjectableContainer {
+trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
 
     val currentIdentifier: String
 
     val serverIdentifier: String
-
-    val injectionContainer: InjectionContainer
 
     def connection: ConnectionContext
 
@@ -33,16 +29,13 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableContainer {
     def processInjection(packet: Packet, attr: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit
 
     @workerExecution
-    def processInjection(injection: PacketInjectionController): Unit
+    def processInjection(bundle: PacketBundle): Unit
 
-    def canConflict(id: Int, scope: ChannelScope): Boolean
-
-    def newWriter(id: Int): PacketWriter
+    def newWriter(path: Array[Int]): PacketWriter
 
 }
 
 object PacketTraffic {
-
     val SystemChannelID = 1
     val RemoteConsoles  = 2
 }

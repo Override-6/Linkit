@@ -10,14 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet
+package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.channel.PacketChannel
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.PacketBundle
 
-case class PacketBundle(private val channel: PacketChannel,
-                        override val packet: Packet,
-                        override val attributes: PacketAttributes,
-                        override val coords: DedicatedPacketCoordinates) extends AbstractPacketBundle(channel) {
+trait PacketInjection {
+
+    val bundle: PacketBundle
+
+    def nextIdentifier: Int
+
+    def haveMoreIdentifier: Boolean
 
 }

@@ -11,15 +11,7 @@
  */
 
 package fr.linkit.api.connection.packet.traffic
-import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
-import fr.linkit.api.connection.packet.{PacketBundle, DedicatedPacketCoordinates, Packet, PacketAttributes}
 
-trait InjectionContainer {
-
-    def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjectionController
-
-    def makeInjection(bundle: PacketBundle): PacketInjectionController
-
-    def isInjecting(injection: PacketInjection): Boolean
+class NoSuchTrafficPresenceException(msg: String, cause: Throwable = null) extends TrafficException(msg, cause) {
 
 }

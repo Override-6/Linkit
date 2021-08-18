@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.cache
 
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
-import fr.linkit.api.connection.packet.traffic.PacketInjectableContainer
+import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 
 /**
  * Used by the [[SharedCacheManager]] to create a [[SharedCache]] of type [[A]]

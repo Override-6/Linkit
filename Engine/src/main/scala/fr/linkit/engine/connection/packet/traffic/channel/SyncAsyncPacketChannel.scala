@@ -18,7 +18,7 @@ import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel.Attribute
-import fr.linkit.engine.connection.packet.{PacketBundle, SimplePacketAttributes}
+import fr.linkit.engine.connection.packet.{SimplePacketBundle, SimplePacketAttributes}
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.utils.ConsumerContainer
 import fr.linkit.engine.local.utils.ScalaUtils.ensurePacketType
@@ -41,7 +41,7 @@ class SyncAsyncPacketChannel(@Nullable parent: PacketChannel,
         }
     }
 
-    private val asyncListeners = new ConsumerContainer[PacketBundle]
+    private val asyncListeners = new ConsumerContainer[SimplePacketBundle]
 
     @workerExecution
     override def handleInjection(injection: PacketInjection): Unit = {
@@ -50,14 +50,14 @@ class SyncAsyncPacketChannel(@Nullable parent: PacketChannel,
             attr.getAttribute[Boolean](Attribute) match {
                 case Some(isAsync) =>
                     if (isAsync)
-                        asyncListeners.applyAll(PacketBundle(this, packet, attr, coordinates))
+                        asyncListeners.applyAll(SimplePacketBundle(this, packet, attr, coordinates))
                     else
                         sync.add(packet)
             }
         }
     }
 
-    def addAsyncListener(action: PacketBundle => Unit): Unit =
+    def addAsyncListener(action: SimplePacketBundle => Unit): Unit =
         asyncListeners += action
 
     def nextSync[P <: Packet : ClassTag]: P = {

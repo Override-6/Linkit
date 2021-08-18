@@ -32,7 +32,7 @@ import scala.collection.mutable
 class SimpleRequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) with RequestPacketChannel {
 
     private val requestHolders         = mutable.LinkedHashMap.empty[Int, SimpleResponseHolder]
-    private val requestConsumers       = ConsumerContainer[DefaultRequestPacketBundle]()
+    private val requestConsumers       = ConsumerContainer[DefaultRequestChannelBundle]()
     @volatile private var requestCount = 0
 
     //debug only
@@ -52,7 +52,7 @@ class SimpleRequestPacketChannel(@Nullable parent: PacketChannel, scope: Channel
                     val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
                     val submitter      = new ResponseSubmitter(request.id, submitterScope)
 
-                    requestConsumers.applyAllLater(DefaultRequestPacketBundle(this, request, coords, submitter))
+                    requestConsumers.applyAllLater(DefaultRequestChannelBundle(this, request, coords, submitter))
 
                 case response: ResponsePacket =>
                     AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
@@ -79,7 +79,7 @@ class SimpleRequestPacketChannel(@Nullable parent: PacketChannel, scope: Channel
     }
 
     override def makeRequest(scope: ChannelScope): Submitter[ResponseHolder] = {
-        if (scope.writer.injectableID != identifier)
+        if (scope.writer.path != identifier)
             throw new IllegalArgumentException("Scope is not set on the same injectable id of this packet channel.")
         val requestID = nextRequestID
         //TODO Make an adaptive queue that make non WorkerPool threads wait and worker pools change task when polling.

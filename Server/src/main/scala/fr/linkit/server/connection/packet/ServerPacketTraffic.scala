@@ -21,7 +21,7 @@ class ServerPacketTraffic(override val connection: ServerConnection) extends Abs
     override val currentIdentifier: String = connection.currentIdentifier
     override val serverIdentifier : String = currentIdentifier
 
-    override def newWriter(identifier: Int): PacketWriter = {
-        new ServerPacketWriter(connection, WriterInfo(this, identifier))
+    override def newWriter(path: Array[Int]): PacketWriter = {
+        new ServerPacketWriter(connection, WriterInfo(this, path))
     }
 }

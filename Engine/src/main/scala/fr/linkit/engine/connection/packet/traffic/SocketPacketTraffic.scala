@@ -26,7 +26,7 @@ class SocketPacketTraffic(socket: DynamicSocket,
                           override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, procrastinator) {
 
     private val choreographer = new PacketSerializationChoreographer(translator)
-    private var connection0: ConnectionContext = null
+    private var connection0: ConnectionContext = _
     override def connection: ConnectionContext = connection0
 
     def setConnection(connection: ConnectionContext): Unit = {
@@ -35,8 +35,8 @@ class SocketPacketTraffic(socket: DynamicSocket,
         connection0 = connection
     }
 
-    override def newWriter(identifier: Int): PacketWriter = {
-        new SocketPacketWriter(socket, choreographer, WriterInfo(this, identifier))
+    override def newWriter(path: Array[Int]): PacketWriter = {
+        new SocketPacketWriter(socket, choreographer, WriterInfo(this, path))
     }
 
 }

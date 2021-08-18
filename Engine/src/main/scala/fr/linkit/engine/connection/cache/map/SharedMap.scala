@@ -23,7 +23,7 @@ import fr.linkit.engine.connection.cache.map.MapModification._
 import fr.linkit.engine.connection.cache.{AbstractSharedCache, CacheArrayContent}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.DefaultRequestPacketBundle
+import fr.linkit.engine.connection.packet.traffic.channel.request.DefaultRequestChannelBundle
 import fr.linkit.engine.local.concurrency.pool.SimpleWorkerController
 import fr.linkit.engine.local.utils.ConsumerContainer
 import org.jetbrains.annotations.{NotNull, Nullable}
