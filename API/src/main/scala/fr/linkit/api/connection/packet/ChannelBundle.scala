@@ -10,10 +10,20 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.resource
+package fr.linkit.api.connection.packet
 
-import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.api.connection.packet.channel.PacketChannel
 
-trait RemoteResourceFolder extends ResourceFolder with RemoteResource {
+trait ChannelBundle extends PacketBundle {
+
+    /**
+     * the bounded channel of this bundle
+     * */
+    def getChannel: PacketChannel
+
+    /**
+     * Stores this bundle into the bounded channel.
+     * */
+    def store(): Unit
 
 }

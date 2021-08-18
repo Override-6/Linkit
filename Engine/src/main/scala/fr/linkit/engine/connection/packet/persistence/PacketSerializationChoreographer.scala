@@ -11,7 +11,7 @@ class PacketSerializationChoreographer(translator: PacketTranslator) {
 
     def add(transferInfo: TransferInfo)(onResultAvailable: PacketSerializationResult => Unit): Unit = {
         val coords = transferInfo.coords
-        serialQueue.enqueue(coords.injectableID, transferInfo)(info => onResultAvailable(translator.translate(info)))
+        serialQueue.enqueue(coords.path, transferInfo)(info => onResultAvailable(translator.translate(info)))
     }
 
 }

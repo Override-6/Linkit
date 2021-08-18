@@ -12,15 +12,11 @@
 
 package fr.linkit.api.connection.packet.channel
 
-import fr.linkit.api.connection.packet.traffic.PacketTraffic
-import fr.linkit.api.connection.packet.{PacketBundle, PacketAttributesPresence}
+import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketTraffic}
+import fr.linkit.api.connection.packet.{PacketAttributesPresence, PacketBundle}
 import fr.linkit.api.local.system.JustifiedCloseable
 
-trait PacketChannel extends JustifiedCloseable with PacketAttributesPresence {
-
-    val ownerID   : String
-    val traffic   : PacketTraffic
-    val identifier: Int
+trait PacketChannel extends PacketInjectable with JustifiedCloseable with PacketAttributesPresence {
 
     def storeBundle(bundle: PacketBundle): Unit
 

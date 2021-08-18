@@ -12,13 +12,13 @@
 
 package fr.linkit.api.connection.packet
 
-case class DedicatedPacketCoordinates(override val injectableID: Int,
+case class DedicatedPacketCoordinates(override val path: Array[Int],
                                       targetID: String,
                                       override val senderID: String) extends PacketCoordinates {
 
-    override def toString: String = s"DedicatedPacketCoordinates(channelId: $injectableID, targetID: $targetID, senderID: $senderID)"
+    override def toString: String = s"$productPrefix(${path.mkString("Array(", ", ", ")")}, $targetID, $senderID)"
 
-    def reversed: DedicatedPacketCoordinates = DedicatedPacketCoordinates(injectableID, senderID, targetID)
+    def reversed: DedicatedPacketCoordinates = DedicatedPacketCoordinates(path, senderID, targetID)
 
     override def forallConcernedTargets(action: String => Boolean): Boolean = {
         action(targetID)

@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.resource
+package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.local.resource.representation.ResourceRepresentation
+trait TrafficPresence {
 
-trait RemoteResourceRepresentation extends ResourceRepresentation {
+    val path: Array[Int]
 
 }

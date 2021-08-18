@@ -12,8 +12,21 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.traffic.TrafficException
+import fr.linkit.api.connection.packet.PacketBundle
+import fr.linkit.api.connection.packet.traffic.PacketInjection
 
-class ConflictException(msg: String) extends TrafficException(msg) {
+class SimplePacketInjection(override val bundle: PacketBundle) extends PacketInjection {
 
+    private val path = bundle.coords.path
+    private val limit = path.length - 1
+    private var index: Int = -1
+
+    override def nextIdentifier: Int = {
+        index += 1
+        path(index)
+    }
+
+    override def haveMoreIdentifier: Boolean = {
+        index >= limit
+    }
 }

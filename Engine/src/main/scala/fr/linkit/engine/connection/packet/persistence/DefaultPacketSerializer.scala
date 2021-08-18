@@ -130,8 +130,8 @@ object DefaultPacketSerializer {
 
     object NoPacketCoordinates extends PacketCoordinates {
 
-        override val injectableID: Int    = -1
-        override val senderID    : String = null
+        override val path    : Int    = -1
+        override val senderID: String = null
 
         override def forallConcernedTargets(action: String => Boolean): Boolean = true
     }
