@@ -17,7 +17,6 @@ import fr.linkit.api.connection.packet.Packet.nextPacketID
 //TODO Doc
 trait Packet extends Serializable {
 
-    @volatile
     @transient private var id = nextPacketID
 
     def className: String = getClass.getSimpleName

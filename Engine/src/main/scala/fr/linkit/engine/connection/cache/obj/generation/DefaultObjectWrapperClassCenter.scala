@@ -42,7 +42,7 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObj
             opt.get
         else {
             val result = center.processRequest {
-                AppLogger.debug(s"Compiling Wrapper class for $clazz...")
+                AppLogger.debug(s"Compiling Sync class for ${clazz.getName}...")
                 requestFactory.makeRequest(desc)
             }
             AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")

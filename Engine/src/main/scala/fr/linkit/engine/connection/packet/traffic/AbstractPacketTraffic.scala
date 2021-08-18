@@ -12,17 +12,15 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
-import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.{AppLogger, ClosedException, JustifiedCloseable, Reason}
 import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjectionContainer
-import fr.linkit.engine.local.concurrency.PacketReaderThread
-import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
@@ -32,7 +30,7 @@ import scala.util.control.NonFatal
 abstract class AbstractPacketTraffic(override val currentIdentifier: String, procrastinator: ProcrastinatorControl) extends PacketTraffic {
 
     private  val holders            = mutable.Map.empty[Int, ScopesHolder]
-    private  val lostInjections     = mutable.Map.empty[Int, ListBuffer[PacketInjection]]
+    private  val lostInjections     = mutable.Map.empty[Int, mutable.HashSet[PacketInjectionController]]
     override val injectionContainer = new ParallelInjectionContainer(currentIdentifier)
     @volatile private var closed    = false
 
@@ -83,7 +81,9 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
         //Will inject every lost packets
         val opt = lostInjections.get(id)
         if (opt.isDefined) lostInjections.synchronized {
-            opt.get.foreach(injectable.inject)
+            opt.get.foreach(injection => {
+                injection.inject(injectable)
+            })
             lostInjections.remove(id)
         }
     }
@@ -120,7 +120,6 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
 
             AppLogger.vError(s"$currentTasksId <> PROCESSING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
             val coordinates = injection.coordinates
-            PacketReaderThread.checkNotCurrent()
             ensureOpen()
 
             val id = coordinates.injectableID
@@ -128,7 +127,8 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
             val sender      = coordinates.senderID
             val injectables = getInjectables(id, sender)
             if (injectables.isEmpty) lostInjections.synchronized {
-                lostInjections.getOrElseUpdate(id, ListBuffer.empty) += injection
+                AppLogger.vError(s"Injection lost, it has been stored in order to reinject it once an injectable becomes available with identifier $id")
+                lostInjections.getOrElseUpdate(id, mutable.HashSet.empty) += injection //TODO remove this
             } else {
                 performInjection(injection, injectables)
             }
@@ -144,11 +144,9 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
         AppLogger.vError(s"$currentTasksId <> PERFORMING PIN INJECTIONS '${injection.coordinates}' - ${injection.hashCode()}")
         injection.processRemainingPins()
 
-        procrastinator.runLater {
-            AppLogger.vError(s"$currentTasksId <> REMOVING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
-            injectionContainer.removeInjection(injection)
-            AppLogger.vError(s"$currentTasksId <> REMOVED INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
-        }
+        AppLogger.vError(s"$currentTasksId <> REMOVING INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
+        injectionContainer.removeInjection(injection)
+        AppLogger.vError(s"$currentTasksId <> REMOVED INJECTION '${injection.coordinates}' - ${injection.hashCode()}")
     }
 
     protected case class ScopesHolder(identifier: Int) extends JustifiedCloseable {

@@ -14,15 +14,14 @@ package fr.linkit.engine.connection.cache.obj.invokation.local
 
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
 import fr.linkit.api.connection.cache.obj.invokation.local.Chip
 import fr.linkit.api.local.concurrency.{Procrastinator, WorkerPools}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.local.utils.ScalaUtils
-import java.lang.reflect.{Method, Modifier}
-import java.util.concurrent.locks.LockSupport
 
-import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
+import java.lang.reflect.Modifier
 
 class ObjectChip[S] private(behavior: SynchronizedObjectBehavior[S],
                             wrapper: SynchronizedObject[S]) extends Chip[S] {
@@ -65,9 +64,9 @@ class ObjectChip[S] private(behavior: SynchronizedObjectBehavior[S],
 
     @inline private def callMethodProcrastinator(procrastinator: Procrastinator, behavior: MethodBehavior, params: Array[Any]): Any = {
         @volatile var result: Any = NoResult
-        val worker      = WorkerPools.currentWorker
-        val task        = WorkerPools.currentTask
-        val pool        = worker.pool
+        val worker                = WorkerPools.currentWorker
+        val task                  = WorkerPools.currentTask
+        val pool                  = worker.pool
         procrastinator.runLater {
             result = callMethod(behavior, params)
             task.wakeup()

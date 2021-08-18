@@ -21,12 +21,9 @@ import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, Pack
 import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.engine.connection.packet.fundamental.TaskInitPacket
 import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull
 
@@ -126,7 +123,6 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
         packet match {
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
-            case init: TaskInitPacket       => tasksHandler.handlePacket(init, coordinates)
             case _: Packet                  =>
                 serverTraffic.processInjection(packet, attributes, coordinates)
         }
@@ -134,12 +130,10 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     private def handleSystemOrder(packet: SystemPacket): Unit = {
         val orderType = packet.order
-        val reason    = packet.reason.reversedPOV()
         import fr.linkit.engine.local.system.SystemOrder._
         orderType match {
             case CLIENT_CLOSE => runLater(shutdown())
             case SERVER_CLOSE => server.shutdown()
-            case ABORT_TASK   => tasksHandler.skipCurrent(reason)
 
             case _ =>
                 val msg = s"Could not complete order '$orderType', can't be handled by a server or unknown order"

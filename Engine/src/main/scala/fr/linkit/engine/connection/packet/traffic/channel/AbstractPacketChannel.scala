@@ -129,8 +129,8 @@ abstract class AbstractPacketChannel(@Nullable parent: PacketChannel, scope: Cha
 
         for (container <- subChannels if container.subInjectable.canInjectFrom(target)) {
             //println(s"FOR container = ${container}")
-            val injectable = container.subInjectable
-            injectable.inject(injection)
+            val sub = container.subInjectable
+            sub.inject(injection)
 
             authoriseInject = authoriseInject && container.transparent
         }

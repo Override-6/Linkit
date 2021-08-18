@@ -26,7 +26,7 @@ trait PacketInjectionController extends PacketInjection {
      *
      * @return true if given injectables received their injection.
      * */
-    def performPinAttach(injectables: Iterable[PacketInjectable]): Boolean
+    def performPinAttach(injectables: Iterable[PacketInjectable]): Unit
 
     /**
      * Notifies that all attached pins may be processed. <br>
@@ -38,4 +38,5 @@ trait PacketInjectionController extends PacketInjection {
 
     def isProcessing: Boolean
 
+    def inject(injectable: PacketInjectable): Unit
 }

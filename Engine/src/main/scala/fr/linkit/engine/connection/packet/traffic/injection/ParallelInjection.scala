@@ -21,15 +21,15 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjection.{PacketBuffer, PacketInjectionNode}
 
 import java.nio.BufferOverflowException
-import scala.collection.mutable.ArrayBuffer
+import scala.collection.mutable
 import scala.util.control.Breaks.{break, breakable}
 
 class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) extends PacketInjection with PacketInjectionController {
 
-    private val buff                         = new PacketBuffer
-    private val pins                         = ArrayBuffer.empty[PacketInjectionNode]
-    private var processing         = false
-    private var performedPinAttach = false
+    private val buff              = new PacketBuffer
+    private val pins              = mutable.HashSet.empty[PacketInjectionNode]
+    private val markedInjectables = mutable.HashSet.empty[PacketInjectable]
+    private var processing        = false
 
     override def attachPin(@workerExecution callback: (Packet, PacketAttributes) => Unit): Unit = {
 
@@ -45,42 +45,44 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
     }
 
     override def processRemainingPins(): Unit = {
-
+        processing = true
         AppLogger.vDebug(s"processRemainingPins ($hashCode)[$coordinates]")
-        for (i <- pins.indices) {
-            buff.process(pins(i))
-        }
+        pins.foreach(buff.process)
     }
 
     override def isProcessing: Boolean = {
         processing
     }
 
-    override def performPinAttach(injectables: Iterable[PacketInjectable]): Boolean = {
-        var tookEffect = false
-        if (!performedPinAttach) {
-            injectables.foreach(_.inject(this))
-            performedPinAttach = true
-            tookEffect = true
+    override def performPinAttach(injectables: Iterable[PacketInjectable]): Unit = {
+        injectables.foreach(inject)
+    }
+
+    override def inject(injectable: PacketInjectable): Unit = {
+        if (!markedInjectables(injectable)) {
+            markedInjectables += injectable
+            injectable.inject(this)
         }
-        tookEffect
     }
 
     override def processOrElse(processAction: => Unit)(orElse: => Unit): Unit = {
         var callOrElse: Boolean = false
         this.synchronized {
             if (processing) {
-            //throw InjectionAlreadyProcessingException(this, "Attempted to call PacketInjectionController#process while another process is handled.")
+                //throw InjectionAlreadyProcessingException(this, "Attempted to call PacketInjectionController#process while another process is handled.")
                 callOrElse = true
             }
-            processing = true
         }
+        AppLogger.vDebug(s"callOrElse = $callOrElse, $hashCode")
         if (callOrElse) {
             orElse
             return
         }
-        processAction
-        processing = false
+        try {
+            processAction
+        } finally {
+            processing = false
+        }
     }
 
     def insert(packet: Packet, attributes: PacketAttributes): Unit = {
@@ -167,8 +169,8 @@ object ParallelInjection {
                 val indexPacketNumber = indexPacket.number
                 if (packetNumber < indexPacketNumber) {
                     var nextIndex = index + 1
-                    //println(s"nextIndex = ${nextIndex}")
-                    //println(s"buff = ${buff.mkString("Array(", ", ", ")")}")
+                    AppLogger.vDebug(s"nextIndex = ${nextIndex}")
+                    AppLogger.vDebug(s"buff = ${buff.mkString("Array(", ", ", ")")}")
                     while (nextIndex < buff.length) {
                         val pair = buff(nextIndex)
                         buff(index) = (packet, attributes)

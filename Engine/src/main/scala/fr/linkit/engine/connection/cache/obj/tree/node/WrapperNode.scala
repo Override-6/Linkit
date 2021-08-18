@@ -17,15 +17,13 @@ import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{IllegalSynchronizationException, SynchronizedObject}
 import fr.linkit.api.connection.packet.channel.request.Submitter
+import fr.linkit.engine.connection.cache.obj.RMIExceptionString
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
-import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmitter
 import org.jetbrains.annotations.Nullable
+
 import java.util.concurrent.ThreadLocalRandom
-
-import fr.linkit.engine.connection.cache.obj.RMIExceptionString
-
 import scala.collection.mutable
 import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
@@ -33,7 +31,7 @@ import scala.util.{Failure, Success, Try}
 class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote invocation
                                override val chip: Chip[A], //Reflective invocation
                                val tree: SynchronizedObjectTree[_],
-                               val platformIdentifier: String,
+                               val currentIdentifier: String,
                                override val id: Int,
                                @Nullable override val parent: SyncNode[_]) extends TrafficInterestedSyncNode[A] {
 
@@ -49,7 +47,7 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
     /**
      * This set stores every engine where this object is synchronized.
      * */
-    private   val presences       = mutable.HashSet[String](ownerID, platformIdentifier)
+    private   val presences       = mutable.HashSet[String](ownerID, currentIdentifier)
 
     def addChild(node: WrapperNode[_]): Unit = {
         if (node.parent ne this)
@@ -78,10 +76,10 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
                 throw UnexpectedPacketException(s"Received invocation packet that does not target this node or this node's children ${packetPath.mkString("/")}.")
 
             tree.findNode[AnyRef](packetPath.drop(treePath.length))
-                .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
-                    case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, response)
-                    case _                                  =>
-                }
+                    .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
+                        case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, response)
+                        case _                                  =>
+                    }
         }
         makeMemberInvocation(packet, response)
     }
@@ -93,15 +91,17 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
                 case _              => //do not synchronize primitives (note: this is impossible to get an unwrapped primitive but this match is for the scalac logic)
             }
             case Failure(exception) => exception match {
-                case NonFatal(e) => response.addPacket(RMIExceptionString(e.toString)).submit()
-                case fatal       => throw fatal
+                case NonFatal(e) =>
+                    e.printStackTrace()
+                    if (packet.expectedEngineIDReturn == currentIdentifier)
+                        response.addPacket(RMIExceptionString(e.toString)).submit()
             }
         }
     }
 
     private def handleInvocationResult(initialResult: AnyRef, packet: InvocationPacket, response: Submitter[Unit]): Unit = {
         var result = initialResult
-        if (packet.expectedEngineIDReturn == platformIdentifier) {
+        if (packet.expectedEngineIDReturn == currentIdentifier) {
             val methodBehavior    = puppeteer.wrapperBehavior.getMethodBehavior(packet.methodID)
             val canSyncReturnType = methodBehavior.get.syncReturnValue
             if (result != null && canSyncReturnType && !result.isInstanceOf[SynchronizedObject[_]]) {
@@ -109,8 +109,8 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
                 result = tree.insertObject(this, id, result, ownerID).synchronizedObject
             }
             response
-                .addPacket(RefPacket[Any](result))
-                .submit()
+                    .addPacket(RefPacket[Any](result))
+                    .submit()
         }
     }
 }
