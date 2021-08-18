@@ -24,11 +24,11 @@ trait PacketInjectable extends TrafficPresence with JustifiedCloseable with Pack
      * */
     val traffic: PacketTraffic
 
+    val store: PacketInjectableStore
+
     @workerExecution
     def inject(bundle: PacketBundle): Unit
 
     def canInjectFrom(identifier: String): Boolean
-
-    def getStore: PacketInjectableStore
 
 }

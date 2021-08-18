@@ -12,60 +12,58 @@
 
 package fr.linkit.engine.connection.packet.traffic.channel.request
 
+import java.util.NoSuchElementException
+import java.util.concurrent.LinkedBlockingQueue
+
+import fr.linkit.api.connection.packet.{ChannelPacketBundle, PacketBundle}
+import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.channel.request.{RequestPacketBundle, RequestPacketChannel, ResponseHolder, Submitter}
-import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
-import fr.linkit.api.connection.packet.traffic.PacketInjectableFactory
-import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
+import fr.linkit.api.connection.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
 import fr.linkit.api.local.concurrency.WorkerPools
-import fr.linkit.api.local.concurrency.WorkerPools.{currentTasksId, ensureCurrentIsWorker}
+import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.AbstractPacketChannel
 import fr.linkit.engine.local.utils.ConsumerContainer
-import org.jetbrains.annotations.Nullable
 
-import java.util.NoSuchElementException
-import java.util.concurrent.LinkedBlockingQueue
 import scala.collection.mutable
 
-class SimpleRequestPacketChannel(@Nullable parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) with RequestPacketChannel {
+class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) with RequestPacketChannel {
 
     private val requestHolders         = mutable.LinkedHashMap.empty[Int, SimpleResponseHolder]
-    private val requestConsumers       = ConsumerContainer[DefaultRequestChannelBundle]()
+    private val requestConsumers       = ConsumerContainer[DefaultRequestChannelPacketBundle]()
     @volatile private var requestCount = 0
 
     //debug only
     private val source = scope.traffic.currentIdentifier
 
-    AppLogger.vDebug(s"Created $this, of parent $parent")
+    override def handleBundle(bundle: ChannelPacketBundle): Unit = {
+        val packet = bundle.packet
+        val attr   = bundle.attributes
+        val coords = bundle.coords
+        packet match {
+            case request: RequestPacket =>
+                AppLogger.vDebug(this)
+                AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
+                request.setAttributes(attr)
 
-    override def handleInjection(injection: PacketInjection): Unit = {
-        val coords = injection.coordinates
-        injection.attachPin { (packet, attr) =>
-            packet match {
-                case request: RequestPacket =>
-                    AppLogger.vDebug(this)
-                    AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING REQUEST $request with attributes ${request.getAttributes}" + this)
-                    request.setAttributes(attr)
+                val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
+                val submitter      = new ResponseSubmitter(request.id, submitterScope)
 
-                    val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
-                    val submitter      = new ResponseSubmitter(request.id, submitterScope)
+                requestConsumers.applyAllLater(DefaultRequestChannelPacketBundle(this, request, coords, submitter))
 
-                    requestConsumers.applyAllLater(DefaultRequestChannelBundle(this, request, coords, submitter))
+            case response: ResponsePacket =>
+                AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
+                response.setAttributes(attr)
 
-                case response: ResponsePacket =>
-                    AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)
-                    response.setAttributes(attr)
-
-                    val responseID = response.id
-                    requestHolders.get(responseID) match {
-                        case Some(request)                     => request.pushResponse(response)
-                        case None if responseID > requestCount =>
-                            throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requestHolders)")
-                        case _                                 =>
-                    }
-            }
+                val responseID = response.id
+                requestHolders.get(responseID) match {
+                    case Some(request)                     => request.pushResponse(response)
+                    case None if responseID > requestCount =>
+                        throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requestHolders)")
+                    case _                                 =>
+                }
         }
     }
 
@@ -74,16 +72,15 @@ class SimpleRequestPacketChannel(@Nullable parent: PacketChannel, scope: Channel
     }
 
     override def makeRequest(scopeFactory: ScopeFactory[_ <: ChannelScope]): Submitter[ResponseHolder] = {
-        val writer = traffic.newWriter(identifier)
         makeRequest(scopeFactory(writer))
     }
 
     override def makeRequest(scope: ChannelScope): Submitter[ResponseHolder] = {
-        if (scope.writer.path != identifier)
+        if (!(scope.writer.path sameElements path))
             throw new IllegalArgumentException("Scope is not set on the same injectable id of this packet channel.")
         val requestID = nextRequestID
         //TODO Make an adaptive queue that make non WorkerPool threads wait and worker pools change task when polling.
-        val queue = WorkerPools.currentPool.map(_.newBusyQueue[AbstractSubmitterPacket]).getOrElse(new LinkedBlockingQueue[AbstractSubmitterPacket]())
+        val queue     = WorkerPools.currentPool.map(_.newBusyQueue[AbstractSubmitterPacket]).getOrElse(new LinkedBlockingQueue[AbstractSubmitterPacket]())
         new RequestSubmitter(requestID, scope, queue, this)
     }
 
@@ -104,5 +101,5 @@ class SimpleRequestPacketChannel(@Nullable parent: PacketChannel, scope: Channel
 
 object SimpleRequestPacketChannel extends PacketInjectableFactory[SimpleRequestPacketChannel] {
 
-    override def createNew(@Nullable parent: PacketChannel, scope: ChannelScope): SimpleRequestPacketChannel = new SimpleRequestPacketChannel(parent, scope)
+    override def createNew(store: PacketInjectableStore, scope: ChannelScope): SimpleRequestPacketChannel = new SimpleRequestPacketChannel(store, scope)
 }

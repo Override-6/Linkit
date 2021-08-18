@@ -17,7 +17,7 @@ import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 
 import scala.reflect.ClassTag
 
-trait PacketInjectableStore extends TrafficPresence {
+trait PacketInjectableStore {
 
     /**
      * retrieves or create (and register) a [[PacketInjectable]] depending on the requested id and scope

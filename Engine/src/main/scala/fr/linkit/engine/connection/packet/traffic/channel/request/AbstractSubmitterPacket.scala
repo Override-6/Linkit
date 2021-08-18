@@ -28,7 +28,7 @@ sealed abstract class AbstractSubmitterPacket(id: Int, packets: Array[Packet]) e
 
     @throws[NoSuchElementException]("If this method is called more times than packet array's length" + this)
     override def nextPacket[P <: Packet : ClassTag]: P = {
-        AppLogger.debug(s"packetIndex: $packetIndex, packets: ${packets.mkString("Array(", ", ", ")")} + id: $id, code: $hashCode")
+        //AppLogger.debug(s"packetIndex: $packetIndex, packets: ${packets.mkString("Array(", ", ", ")")} + id: $id, code: $hashCode")
         //        Thread.dumpStack()
         if (packetIndex >= packets.length) {
             throw new NoSuchElementException(s"Packet Index >= packets.length ($packetIndex >= ${packets.length})")

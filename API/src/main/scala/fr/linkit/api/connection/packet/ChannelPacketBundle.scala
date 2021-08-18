@@ -14,7 +14,7 @@ package fr.linkit.api.connection.packet
 
 import fr.linkit.api.connection.packet.channel.PacketChannel
 
-trait ChannelBundle extends PacketBundle {
+trait ChannelPacketBundle extends PacketBundle {
 
     /**
      * the bounded channel of this bundle

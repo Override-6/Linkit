@@ -16,7 +16,6 @@ import java.sql.Timestamp
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule._
 import fr.linkit.api.connection.cache.obj.behavior.member.MethodParameterBehavior
 import fr.linkit.api.connection.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
@@ -39,7 +38,8 @@ import scala.collection.mutable
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
     private   val caches                               = mutable.HashMap.empty[String, SharedCacheManager]
-    private   val cacheManagerChannel                  = connection.getInjectable(10, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
+    private   val networkInjectableStore               = connection.createStore(0)
+    private   val cacheManagerChannel                  = networkInjectableStore.getInjectable(1, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
     private   val currentIdentifier                    = connection.currentIdentifier
     override  val globalCache     : SharedCacheManager = createGlobalCache
     protected val engineStore     : EngineStore        = retrieveEngineStore(getEngineStoreBehaviors)
@@ -70,14 +70,14 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         if (caches.contains(family))
             throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
         AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
-        val channel = connection.getInjectable(family.hashCode, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
-        val cache   = new SharedCacheOriginManager(family, this, channel)
+        val store = networkInjectableStore.createStore(family.hashCode)
+        val cache = new SharedCacheOriginManager(family, this, store)
 
         //Will inject all packet that the new cache have possibly missed.
         caches.synchronized {
             caches.put(family, cache)
         }
-        channel.injectStoredBundles()
+        //channel.injectStoredBundles()
         cache
     }
 
@@ -99,7 +99,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             .nextPacket[BooleanPacket].value
 
         if (isSet) {
-            val channel = connection.getInjectable(family.hashCode, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
+            val channel = networkInjectableStore.createStore(family.hashCode)
             val manager = new SharedCacheDistantManager(family, owner, this, channel)
             caches.put(family, manager)
             Some(manager)
@@ -128,9 +128,9 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def transformToDistantCache(manager: SharedCacheManager): SharedCacheManager = {
-        val family  = manager.family
-        val channel = connection.getInjectable(family.hashCode, ChannelScopes.discardCurrent, SimpleRequestPacketChannel)
-        new SharedCacheDistantManager(family, manager.ownerID, this, channel)
+        val family = manager.family
+        val store  = connection.createStore(family.hashCode)
+        new SharedCacheDistantManager(family, manager.ownerID, this, store)
     }
 
     private def getEngineStoreBehaviors: SynchronizedObjectBehaviorStore = {

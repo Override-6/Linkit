@@ -21,20 +21,23 @@ import scala.collection.mutable
 import scala.reflect.ClassTag
 
 class SimplePacketInjectableStore(traffic: PacketTraffic,
-                                  override val path: Array[Int]) extends PacketInjectableStore with JustifiedCloseable {
+                                  override val path: Array[Int]) extends PacketInjectableStore with JustifiedCloseable with TrafficPresence {
 
     private val presences       = mutable.HashMap.empty[Int, TrafficPresence]
     private var closed: Boolean = false
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): C = {
+        ensureFree(id)
         val childPath = path :+ id
         val scope     = scopeFactory(traffic.newWriter(childPath))
-        val holderOpt = presences.get(id)
-        if (holderOpt.isDefined) {
-            throw new ConflictException("This scope can conflict with other scopes that are registered within this injectable identifier")
-        }
 
         completeCreation(id, scope, factory)
+    }
+
+    private def ensureFree(id: Int): Unit = {
+        if (presences.contains(id)) {
+            throw new ConflictException("This scope can conflict with other scopes that are registered within this injectable identifier")
+        }
     }
 
     @inline
@@ -49,7 +52,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
 
         def fail(): Nothing = {
             val path = bundle.coords.path
-            throw new NoSuchTrafficPresenceException(s"Could not find TrafficPresence at path ${path.mkString("Array(", ", ", ")")}.")
+            throw new NoSuchTrafficPresenceException(s"Could not find TrafficPresence at path ${path.mkString("/")}.")
         }
 
         if (!injection.haveMoreIdentifier)
@@ -80,7 +83,9 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     override def createStore(id: Int): PacketInjectableStore = {
         if (presences.contains(id))
             throw new ConflictException(s"PacketInjectableStore already created at ${path.mkString("/")}/$id")
-        new SimplePacketInjectableStore(traffic, path :+ id)
+        val store = new SimplePacketInjectableStore(traffic, path :+ id)
+        presences.put(id, store)
+        store
     }
 
     override def isClosed: Boolean = closed
