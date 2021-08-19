@@ -40,7 +40,7 @@ class SelectivePacketReader(socket: DynamicSocket,
         }
     }
 
-    private def nextConcernedPacket(callback: (PacketDeserializationResult) => Unit): Unit = try {
+    private def nextConcernedPacket(callback: PacketDeserializationResult => Unit): Unit = try {
         simpleReader.nextPacket(result => {
             handleDeserialResult(result, callback)
         })
