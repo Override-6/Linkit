@@ -14,6 +14,7 @@ package fr.linkit.engine.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.traffic._
+import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 
 import java.io.Closeable
@@ -51,11 +52,10 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         injectable
     }
 
-    def inject(injection: PacketInjection): Unit = {
-        val bundle = injection.bundle
+    def inject(injection: PacketInjectionController): Unit = {
 
         def fail(): Nothing = {
-            val path = bundle.coords.path
+            val path = injection.injectablePath
             throw new NoSuchTrafficPresenceException(s"Could not find TrafficPresence at path ${path.mkString("/")}.")
         }
 
@@ -64,7 +64,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         presences.get(injection.nextIdentifier) match {
             case None        => fail()
             case Some(value) => value match {
-                case injectable: PacketInjectable       => injectable.inject(bundle)
+                case injectable: PacketInjectable       => injection.process(injectable)
                 case store: SimplePacketInjectableStore => store.inject(injection)
             }
         }

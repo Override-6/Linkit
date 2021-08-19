@@ -12,14 +12,13 @@
 
 package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.PacketBundle
+import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
+import fr.linkit.api.connection.packet.{DedicatedPacketBundle, DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 
-trait PacketInjection {
+trait InjectionContainer {
 
-    val bundle: PacketBundle
+    def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjectionController
 
-    def nextIdentifier: Int
-
-    def haveMoreIdentifier: Boolean
+    def makeInjection(bundle: PacketBundle): PacketInjectionController
 
 }

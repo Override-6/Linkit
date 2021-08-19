@@ -46,7 +46,6 @@ class SyncAsyncPacketChannel(store: PacketInjectableStore,
     override def handleBundle(bundle: ChannelPacketBundle): Unit = {
         val attr        = bundle.attributes
         val packet      = bundle.packet
-        val coordinates = bundle.coords
         attr.getAttribute[Boolean](Attribute) match {
             case Some(isAsync) =>
                 if (isAsync)
@@ -60,7 +59,8 @@ class SyncAsyncPacketChannel(store: PacketInjectableStore,
         asyncListeners += action
 
     def nextSync[P <: Packet : ClassTag]: P = {
-        ensurePacketType[P](sync.take())
+        val take = sync.take()
+        ensurePacketType[P](take)
     }
 
     def sendAsync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {

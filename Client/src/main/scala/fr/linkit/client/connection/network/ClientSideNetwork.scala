@@ -17,12 +17,12 @@ import fr.linkit.api.connection.cache.{CacheSearchBehavior, NoSuchCacheException
 import fr.linkit.api.connection.network.Updatable
 import fr.linkit.client.connection.ClientConnection
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
-import fr.linkit.engine.connection.network.{AbstractNetwork, EngineStore}
+import fr.linkit.engine.connection.network.{AbstractNetwork, NetworkDataTrunk}
 
 class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
 
-    override protected def retrieveEngineStore(store: SynchronizedObjectBehaviorStore): EngineStore = {
-        globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[EngineStore](store), CacheSearchBehavior.GET_OR_CRASH)
+    override protected def retrieveEngineStore(store: SynchronizedObjectBehaviorStore): NetworkDataTrunk = {
+        globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](store), CacheSearchBehavior.GET_OR_CRASH)
                 .findObject(0)
                 .getOrElse {
                     throw new NoSuchElementException("Engine Store not found.")
