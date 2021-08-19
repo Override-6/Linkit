@@ -20,7 +20,7 @@ import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, Member
 import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBehaviorBuilder.MethodControl
-import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 import org.jetbrains.annotations.Nullable
 
@@ -32,7 +32,7 @@ abstract class SynchronizedObjectBehaviorBuilder[T] private(val classDesc: SyncO
     val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
 
     def this()(implicit classTag: ClassTag[T]) = {
-        this(SyncObjectClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]))
+        this(SimpleSyncObjectSuperClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]))
     }
 
     final def annotateMethod(name: String, params: Class[_]*): MethodModification = {

@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehaviorFactory
 import fr.linkit.api.connection.cache.obj.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorStore}
-import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
 
 import scala.collection.mutable
 import scala.reflect.runtime.universe
@@ -38,7 +38,7 @@ class SynchronizedObjectDefaultBehaviorCenter(override val factory: MemberBehavi
     }
 
     private def getFromAnyClass[B](clazz: Class[_]): SynchronizedObjectBehavior[B] = {
-        behaviors.getOrElseUpdate(clazz, DefaultSynchronizedObjectBehavior(SyncObjectClassDescription(clazz), this))
+        behaviors.getOrElseUpdate(clazz, DefaultSynchronizedObjectBehavior(SimpleSyncObjectSuperClassDescription(clazz), this))
                 .asInstanceOf[SynchronizedObjectBehavior[B]]
     }
 

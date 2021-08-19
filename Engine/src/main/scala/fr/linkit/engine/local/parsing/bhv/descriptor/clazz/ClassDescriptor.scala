@@ -12,15 +12,15 @@
 
 package fr.linkit.engine.local.parsing.bhv.descriptor.clazz
 
-import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
 import fr.linkit.engine.local.parsing.bhv.{BehaviorFileSyntaxException, ParserAssertions}
 import fr.linkit.engine.local.parsing.bhv.descriptor.{DescriptionResult, Descriptor, FieldBehaviorDescriptionResult}
 
 import java.util.Scanner
 
-class ClassDescriptor(desc: SyncObjectClassDescription[_]) extends Descriptor {
+class ClassDescriptor(desc: SimpleSyncObjectSuperClassDescription[_]) extends Descriptor {
 
-    def this(clazz: Class[_]) = this(SyncObjectClassDescription(clazz))
+    def this(clazz: Class[_]) = this(SimpleSyncObjectSuperClassDescription(clazz))
 
     private val methods = desc.listMethods()
     private val fields = desc.listFields()

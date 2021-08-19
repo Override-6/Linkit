@@ -16,12 +16,13 @@ import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorSto
 import fr.linkit.api.connection.cache.{CacheSearchBehavior, NoSuchCacheException, SharedCacheManager}
 import fr.linkit.api.connection.network.Updatable
 import fr.linkit.client.connection.ClientConnection
+import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.connection.network.{AbstractNetwork, NetworkDataTrunk}
 
 class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
 
-    override protected def retrieveEngineStore(store: SynchronizedObjectBehaviorStore): NetworkDataTrunk = {
+    override protected def retrieveDataTrunk(store: SynchronizedObjectBehaviorStore): NetworkDataTrunk = {
         globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](store), CacheSearchBehavior.GET_OR_CRASH)
                 .findObject(0)
                 .getOrElse {
@@ -30,9 +31,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
     }
 
     override protected def createGlobalCache: SharedCacheManager = {
-        findDistantCacheManager("Global Cache", serverIdentifier).getOrElse {
-            throw new NoSuchCacheException("Could not find Global Cache manager")
-        }
+        new SharedCacheDistantManager("Global Cache", serverIdentifier, this, networkStore)
     }
 
     override def serverIdentifier: String = connection.boundIdentifier

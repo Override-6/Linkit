@@ -36,9 +36,9 @@ class NetworkDataTrunk {
     @MethodControl(value = BROADCAST_IF_ROOT_OWNER, invokeOnly = true)
     def removeEngine(engine: Engine): Unit = engines -= engine.identifier
 
-    def findCache(family: String): Option[SharedCacheManager]
+    def findCache(family: String): Option[SharedCacheManager] = caches.get(family)
 
-    @MethodControl(value = BROADCAST_IF_ROOT_OWNER, invokeOnly = true)
+    @MethodControl(value = BROADCAST, invokeOnly = true)
     def addCacheManager(manager: SharedCacheManager): Unit = {
         if (caches.contains(manager.family))
             throw new Exception("Cache Manager already exists")
