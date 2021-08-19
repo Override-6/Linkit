@@ -53,9 +53,13 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     override val network          : Network           = sideNetwork
     @volatile private var alive                       = true
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
-        traffic.getInjectable(injectableID, scopeFactory, factory)
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+        traffic.getInjectable(injectableID, factory, scopeFactory)
     }
+
+    override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
+
+    override def createStore(id: Int): PacketInjectableStore = traffic.createStore(id)
 
     override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
 

@@ -17,7 +17,7 @@ import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
-import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
+import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
@@ -34,8 +34,8 @@ import fr.linkit.server.connection.packet.ServerPacketTraffic
 import fr.linkit.server.local.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
-
 import java.net.{ServerSocket, SocketException}
+
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -92,9 +92,13 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def isAlive: Boolean = alive
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
-        traffic.getInjectable(injectableID, scopeFactory, factory)
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+        traffic.getInjectable(injectableID, factory, scopeFactory)
     }
+
+    override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
+
+    override def createStore(id: Int): PacketInjectableStore = traffic.createStore(id)
 
     override def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
 
@@ -104,16 +108,16 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def runLater(task: => Unit): Unit = workerPool.runLater(task)
 
-    def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, injectableID: Int, discarded: Array[String]): Unit = {
+    def broadcastPacket(packet: Packet, attributes: PacketAttributes, sender: String, path: Array[Int], discarded: Array[String]): Unit = {
         if (connectionsManager.countConnections - discarded.length < 0) {
             // There is nowhere to send this packet.
             return
         }
-        val broadcast = BroadcastPacketCoordinates(injectableID, sender, true, discarded)
+        val broadcast = BroadcastPacketCoordinates(path, sender, true, discarded)
         val result    = translator.translate(SimpleTransferInfo(broadcast, attributes, packet))
         connectionsManager.broadcastPacket(result, discarded: _*)
         if (!discarded.contains(currentIdentifier)) {
-            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(injectableID, currentIdentifier, sender))
+            traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentIdentifier, sender))
         }
     }
 

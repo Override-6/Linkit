@@ -31,18 +31,6 @@ trait PacketInjection {
     /**
      * Coordinates that all packets contained in the injection are targeting.
      * */
-    val coordinates: DedicatedPacketCoordinates
-
-    /**
-     * A Pin is a Packet Injection Node, it is used whenever the implementation decides it,
-     * but it must must be called once for each packets.
-     * @param callback the action to perform for each packets of this injection.
-     *                 The thread that processes this action depends on the implementation, so be aware
-     *                 that the callback can be executed in the same thread that attached the pin, or be
-     *                 called later.
-     * */
-    def attachPin(@workerExecution callback: (Packet, PacketAttributes) => Unit): Unit
-
-    def attachPinPacket(@workerExecution callback: (Packet) => Unit): Unit
+    val injectablePath: Array[Int]
 
 }

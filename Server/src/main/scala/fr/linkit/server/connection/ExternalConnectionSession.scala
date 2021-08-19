@@ -35,7 +35,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     val connectionManager: ExternalConnectionsManager = info.manager
     val readThread       : PacketReaderThread         = info.readThread
     val serverTraffic    : PacketTraffic              = server.traffic
-    val channel          : SystemPacketChannel        = serverTraffic.getInjectable(SystemChannelID, ChannelScopes.include(boundIdentifier), SystemPacketChannel)
+    val channel          : SystemPacketChannel        = serverTraffic.getInjectable(SystemChannelID, SystemPacketChannel, ChannelScopes.include(boundIdentifier))
 
     @workerExecution
     override def close(reason: Reason): Unit = {

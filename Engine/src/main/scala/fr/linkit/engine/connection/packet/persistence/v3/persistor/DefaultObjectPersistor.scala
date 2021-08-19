@@ -27,7 +27,7 @@ class DefaultObjectPersistor[T <: Any] extends ObjectPersistor[T] {
     override val handledClasses: Seq[HandledClass] = Seq(HandledClass(classOf[Object], true, Seq(SerialisationMethod.Deserial, SerialisationMethod.Serial)))
 
     override def getSerialNode(obj: T, desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
-        if (obj == null || obj == None)
+        if ((obj == null) || obj == None)
             return new NullInstanceNode(obj == None)
 
         val fieldValues = desc.serializableFields

@@ -17,7 +17,7 @@ import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter
 import fr.linkit.api.connection.cache.obj.{InvalidPuppetDefException, SynchronizedObject}
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
 import fr.linkit.engine.local.mapping.ClassMappings
 
 class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends ObjectWrapperClassCenter {
@@ -26,7 +26,7 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObj
     val requestFactory                  = new WrapperCompilationRequestFactory
 
     override def getWrapperClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]] = {
-        getWrapperClass[S](SyncObjectClassDescription[S](clazz))
+        getWrapperClass[S](SimpleSyncObjectSuperClassDescription[S](clazz))
     }
 
     override def getWrapperClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = {
@@ -55,7 +55,7 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObj
     }
 
     override def preGenerateClasses(classes: Seq[Class[_]]): Unit = {
-        preGenerateClasses(classes.map(SyncObjectClassDescription(_)).toList)
+        preGenerateClasses(classes.map(SimpleSyncObjectSuperClassDescription(_)).toList)
     }
 
     override def preGenerateClasses(descriptions: List[SyncObjectSuperclassDescription[_]]): Unit = {

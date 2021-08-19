@@ -10,14 +10,20 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet
+package fr.linkit.api.connection.packet
 
 import fr.linkit.api.connection.packet.channel.PacketChannel
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 
-case class PacketBundle(private val channel: PacketChannel,
-                        override val packet: Packet,
-                        override val attributes: PacketAttributes,
-                        override val coords: DedicatedPacketCoordinates) extends AbstractPacketBundle(channel) {
+trait ChannelPacketBundle extends PacketBundle {
+
+    /**
+     * the bounded channel of this bundle
+     * */
+    def getChannel: PacketChannel
+
+    /**
+     * Stores this bundle into the bounded channel.
+     * */
+    def store(): Unit
 
 }

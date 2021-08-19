@@ -10,10 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.resource
+package fr.linkit.engine.connection.packet
 
-import fr.linkit.api.local.resource.external.ResourceFolder
+import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 
-trait RemoteResourceFolder extends ResourceFolder with RemoteResource {
+case class SimplePacketBundle(override val packet: Packet,
+                              override val attributes: PacketAttributes,
+                              override val coords: DedicatedPacketCoordinates) extends PacketBundle {
 
 }

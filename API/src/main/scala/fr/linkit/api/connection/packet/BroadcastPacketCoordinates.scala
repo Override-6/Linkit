@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet
 
-case class BroadcastPacketCoordinates(override val injectableID: Int,
+case class BroadcastPacketCoordinates(override val path: Array[Int],
                                       override val senderID: String,
                                       discardTargets: Boolean,
                                       targetIDs: Seq[String]) extends PacketCoordinates {
@@ -25,7 +25,7 @@ case class BroadcastPacketCoordinates(override val injectableID: Int,
         targetIDs.forall(action)
     }
 
-    override def toString: String = s"BroadcastPacketCoordinates(injectableID: $injectableID, senderID: $senderID, discardTargets: $discardTargets, targetIDs: $targetIDs)"
+    override def toString: String = s"BroadcastPacketCoordinates(${path.mkString("Array(", ", ", ")")}, $senderID, $discardTargets, $targetIDs)"
 
     def listDiscarded(alreadyConnected: Seq[String]): Seq[String] = {
         if (discardTargets)
@@ -38,7 +38,7 @@ case class BroadcastPacketCoordinates(override val injectableID: Int,
             throw new IllegalArgumentException(s"These coordinates does not target $target (discardTargets = $discardTargets).")
         }
 
-        DedicatedPacketCoordinates(injectableID, target, senderID)
+        DedicatedPacketCoordinates(path, target, senderID)
     }
 }
 

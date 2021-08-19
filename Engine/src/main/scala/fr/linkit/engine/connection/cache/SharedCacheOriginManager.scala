@@ -14,22 +14,24 @@ package fr.linkit.engine.connection.cache
 
 import fr.linkit.api.connection.cache.CacheSearchBehavior.{GET_OR_CRASH, GET_OR_OPEN, GET_OR_WAIT}
 import fr.linkit.api.connection.cache.traffic.handler.{AttachHandler, ContentHandler}
-import fr.linkit.api.connection.cache.{CacheContent, CacheSearchBehavior}
+import fr.linkit.api.connection.cache.{CacheContent, CacheOpenException, CacheSearchBehavior}
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.{RequestPacketBundle, Submitter}
+import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.connection.cache.AbstractSharedCacheManager.SystemCacheRange
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.fundamental.{EmptyPacket, RefPacket}
+import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 import scala.util.control.Breaks.{break, breakable}
 
 final class SharedCacheOriginManager(family: String,
                                      @transient network: Network,
-                                     @transient requestChannel: SimpleRequestPacketChannel) extends AbstractSharedCacheManager(family, network, requestChannel) {
+                                     @transient store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, store) {
 
     override val ownerID: String = network.connection.currentIdentifier
 
@@ -52,7 +54,7 @@ final class SharedCacheOriginManager(family: String,
     /**
      * Retrieves the cache content of a given cache identifier.
      *
-     * @param cacheID the identifier of a cache content that needs to be retrieved.
+     * @param cacheID  the identifier of a cache content that needs to be retrieved.
      * @param behavior the kind of behavior to adopt when retrieving a cache content
      * @return Some(content) if the cache content was retrieved, None if no cache has been found.
      * @throws CacheOpenException if something went wrong during the cache content retrieval (can be affected by behavior parameter)
@@ -108,7 +110,7 @@ final class SharedCacheOriginManager(family: String,
 
         def failRequest(msg: String): Nothing = {
             response.addPacket(StringPacket(msg))
-                    .submit()
+                .submit()
             break
         }
 
@@ -123,7 +125,7 @@ final class SharedCacheOriginManager(family: String,
                 case GET_OR_WAIT  =>
                     //If the requester is not the owner, wait the owner to open the cache.
                     if (senderID != ownerID) {
-                        requestChannel.storeBundle(requestBundle)
+                        channel.storeBundle(requestBundle)
                         println(s"Await open ($cacheID)...")
                         return
                     }
@@ -135,23 +137,23 @@ final class SharedCacheOriginManager(family: String,
         }
 
         LocalCachesStore.getCache(cacheID)
-                .fold(handleContentNotAvailable()) { storedCache =>
-                    val content = storedCache.getContent
-                    val isSystemCache = SystemCacheRange contains cacheID
-                    storedCache.channel.getHandler match {
-                        case Some(_) if isSystemCache                    => sendContent(content)
-                        case None                                        => sendContent(content) //There is no handler, the engine is by default accepted.
-                        case Some(handler: ContentHandler[CacheContent]) =>
+            .fold(handleContentNotAvailable()) { storedCache =>
+                val content       = storedCache.getContent
+                val isSystemCache = SystemCacheRange contains cacheID
+                storedCache.channel.getHandler match {
+                    case Some(_) if isSystemCache                    => sendContent(content)
+                    case None                                        => sendContent(content) //There is no handler, the engine is by default accepted.
+                    case Some(handler: ContentHandler[CacheContent]) =>
 
-                            val engine = network.findEngine(senderID).getOrElse {
-                                failRequest(s"Engine not found: $senderID. (manager engine: $currentIdentifier)")
-                            }
-                            if (handler.canAccessToContent(engine)) {
-                                sendContent(content)
-                            } else {
-                                failRequest(s"Engine $engine can't access to content of cache '$cacheID'.")
-                            }
-                    }
+                        val engine = network.findEngine(senderID).getOrElse {
+                            failRequest(s"Engine not found: $senderID. (manager engine: $currentIdentifier)")
+                        }
+                        if (handler.canAccessToContent(engine)) {
+                            sendContent(content)
+                        } else {
+                            failRequest(s"Engine $engine can't access to content of cache '$cacheID'.")
+                        }
                 }
+            }
     }
 }

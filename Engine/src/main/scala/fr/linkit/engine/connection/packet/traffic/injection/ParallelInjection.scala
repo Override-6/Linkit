@@ -14,180 +14,100 @@ package fr.linkit.engine.connection.packet.traffic.injection
 
 import fr.linkit.api.connection.packet.traffic.PacketInjectable
 import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.{Packet, PacketBundle}
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
-import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjection.{PacketBuffer, PacketInjectionNode}
+import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjection.PacketBuffer
 
 import java.nio.BufferOverflowException
-import scala.collection.mutable
-import scala.util.control.Breaks.{break, breakable}
 
-class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) extends PacketInjection with PacketInjectionController {
+class ParallelInjection(override val injectablePath: Array[Int]) extends PacketInjection with PacketInjectionController {
 
-    private val buff              = new PacketBuffer
-    private val pins              = mutable.HashSet.empty[PacketInjectionNode]
-    private val markedInjectables = mutable.HashSet.empty[PacketInjectable]
-    private var processing        = false
+    private var processing = false
+    private val buff       = new PacketBuffer
+    private var pathIndex  = -1
+    private val limit      = injectablePath.length
 
-    override def attachPin(@workerExecution callback: (Packet, PacketAttributes) => Unit): Unit = {
+    override def isProcessing: Boolean = processing
 
-        val pin = new PacketInjectionNode(callback)
-        pins += pin
-        AppLogger.vDebug(s"Pin attached ! ($hashCode)(${pin.hashCode()})[$coordinates]")
-        if (processing)
-            buff.process(pin)
-    }
+    override def markAsProcessing(): Unit = processing = true
 
-    override def attachPinPacket(callback: Packet => Unit): Unit = {
-        attachPin((packet, _) => callback(packet))
-    }
+    def insert(bundle: PacketBundle): Unit = {
 
-    override def processRemainingPins(): Unit = {
-        processing = true
-        AppLogger.vDebug(s"processRemainingPins ($hashCode)[$coordinates]")
-        pins.foreach(buff.process)
-    }
-
-    override def isProcessing: Boolean = {
-        processing
-    }
-
-    override def performPinAttach(injectables: Iterable[PacketInjectable]): Unit = {
-        injectables.foreach(inject)
-    }
-
-    override def inject(injectable: PacketInjectable): Unit = {
-        if (!markedInjectables(injectable)) {
-            markedInjectables += injectable
-            injectable.inject(this)
-        }
-    }
-
-    override def processOrElse(processAction: => Unit)(orElse: => Unit): Unit = {
-        var callOrElse: Boolean = false
-        this.synchronized {
-            if (processing) {
-                //throw InjectionAlreadyProcessingException(this, "Attempted to call PacketInjectionController#process while another process is handled.")
-                callOrElse = true
-            }
-        }
-        AppLogger.vDebug(s"callOrElse = $callOrElse, $hashCode")
-        if (callOrElse) {
-            orElse
-            return
-        }
-        try {
-            processAction
-        } finally {
-            processing = false
-        }
-    }
-
-    def insert(packet: Packet, attributes: PacketAttributes): Unit = {
-
-        if (buff.containsNumber(packet))
+        if (buff.containsNumber(bundle.packet))
             return
 
-        buff.insert(packet, attributes)
+        buff.insert(bundle)
     }
 
     override def canAcceptMoreInjection: Boolean = {
         buff.canAcceptMoreInjection
     }
 
+    override def nextIdentifier: Int = {
+        pathIndex += 1
+        injectablePath(pathIndex)
+    }
+
+    override def haveMoreIdentifier: Boolean = pathIndex <= limit
+
+    override def process(injectable: PacketInjectable): Unit = buff.process(injectable)
 }
 
 object ParallelInjection {
 
-    private var totalProcess = 0
-    private val BuffLength   = 100
+    private val BuffLength = 100
 
-    private class PacketInjectionNode(callback: (Packet, PacketAttributes) => Unit) {
-
-        private val marks = new Array[Int](BuffLength)
-        private var i     = 0
-
-        def makeProcess(packet: Packet, attributes: PacketAttributes): Unit = {
-            val number = packet.number
-            AppLogger.vDebug(s"PACKET NUMBER ${number} - ($hashCode)")
-            val canProcess = marks.synchronized {
-                val contains = marks.contains(number)
-                marks(i) = number
-                !contains
-            }
-            if (canProcess) {
-                i += 1
-                totalProcess += 1
-                AppLogger.vDebug(s"${currentTasksId} <> PROCESSING ($number) $packet with attributes $attributes ($totalProcess / ${number})")
-                callback(packet, attributes)
-            } else {
-                AppLogger.vDebug(s"PACKET ABORTED ${number} - ($hashCode)")
-            }
-        }
-
-        def foreachUnmarked(f: (Packet, PacketAttributes) => Unit, buff: Array[(Packet, PacketAttributes)]): Unit = breakable {
-            buff.foreach(tuple => {
-                if (tuple == null)
-                    break() //we have reached the end of the tuple.
-                if (!marks.contains(tuple._1.number))
-                    f(tuple._1, tuple._2)
-            })
-        }
-
-        override def toString: String = s"PacketInjectionNode(${i}, ${marks.mkString("Array(", ", ", ")")})"
-    }
-
+    //TODO This buffer can be optimised : some iterations while searching or inserting can be avoided
     class PacketBuffer {
 
-        private val buff        = new Array[(Packet, PacketAttributes)](BuffLength)
+        private val buff        = new Array[PacketBundle](BuffLength)
         private var insertCount = 0
 
         def containsNumber(packet: Packet): Boolean = {
             val packetNumber = packet.number
-
-            for ((packet, _) <- buff) {
-                if (packet == null)
+            for (bundle <- buff) {
+                if (bundle == null)
                     return false //we reached the last element of this buffer.
 
-                if (packet.number == packetNumber)
+                if (bundle.packet.number == packetNumber)
                     return true
             }
             false
         }
 
-        def insert(packet: Packet, attributes: PacketAttributes): Unit = buff.synchronized {
+        def insert(bundle: PacketBundle): Unit = buff.synchronized {
             var index        = 0
+            val packet       = bundle.packet
             val packetNumber = packet.number
-            AppLogger.vDebug(s"${currentTasksId} <> Inserting $packet ($packetNumber) with attributes $attributes in buffer")
+            //AppLogger.vDebug(s"${currentTasksId} <> Inserting bundle $bundle")
             while (index < buff.length) {
-                val pair = buff(index)
-                if (pair == null || (pair._1 eq packet)) {
+                val buffBundle = buff(index)
+                if (buffBundle == null || (buffBundle eq bundle)) {
                     insertCount += 1
-                    buff(index) = (packet, attributes)
-                    AppLogger.vDebug(s"${currentTasksId} <> Insertion done ! (${buff.mkString("Array(", ", ", ")")})")
+                    buff(index) = bundle
+                    //AppLogger.vDebug(s"${currentTasksId} <> Insertion done ! (${buff.mkString("Array(", ", ", ")")})")
                     return
                 }
-                val indexPacket       = pair._1
-                val indexPacketNumber = indexPacket.number
+                val buffPacket        = buffBundle.packet
+                val indexPacketNumber = buffPacket.number
                 if (packetNumber < indexPacketNumber) {
                     var nextIndex = index + 1
-                    AppLogger.vDebug(s"nextIndex = ${nextIndex}")
-                    AppLogger.vDebug(s"buff = ${buff.mkString("Array(", ", ", ")")}")
+                    //AppLogger.vDebug(s"nextIndex = ${nextIndex}")
+                    //AppLogger.vDebug(s"buff = ${buff.mkString("Array(", ", ", ")")}")
                     while (nextIndex < buff.length) {
                         val pair = buff(nextIndex)
-                        buff(index) = (packet, attributes)
-                        buff(nextIndex) = (indexPacket, attributes)
+                        buff(index) = bundle
+                        buff(nextIndex) = buffBundle
 
                         if (pair == null) {
-                            AppLogger.vDebug(s"Insertion done !")
+                            //AppLogger.vDebug(s"Insertion done !")
                             insertCount += 1
                             return
                         }
                         nextIndex += 1
                     }
-                    AppLogger.vDebug(s"Insertion done !")
+                    //AppLogger.vDebug(s"Insertion done !")
                     insertCount += 1
                     return
                 }
@@ -201,7 +121,7 @@ object ParallelInjection {
             throw new BufferOverflowException()
         }
 
-        def process(pin: PacketInjectionNode): Unit = {
+        def process(injectable: PacketInjectable): Unit = {
             var validatedInsertCount = insertCount
             var i                    = 0
 
@@ -209,11 +129,11 @@ object ParallelInjection {
                 AppLogger.vDebug(s"BUFFER HAS BEEN MODIFIED ${buff.mkString("Array(", ", ", ")")}")
                 if (i == buff.length - 1)
                     return
-                val packetNumber = buff(i)._1.number
+                val packetNumber = buff(i).packet.number
                 val next         = buff(i + 1)
                 if (next == null)
                     return
-                val nextPacketNumber = next._1.number
+                val nextPacketNumber = next.packet.number
 
                 if (packetNumber < nextPacketNumber) {
                     //Synchronize buffer in order to prone any insertion during this operation.
@@ -225,9 +145,6 @@ object ParallelInjection {
                     return
                 }
 
-                //Insertions were done before the current packet's index
-                //So we will process all inserted packet before continuing.
-                pin.foreachUnmarked(pin.makeProcess, buff)
                 //Synchronize buffer in order to prone any insertion during this operation.
                 buff.synchronized {
                     i += (insertCount - validatedInsertCount)
@@ -239,11 +156,11 @@ object ParallelInjection {
             //AppLogger.vDebug(s"PROCESSING ALL PACKETS OF BUFFER ${buff.mkString("Array(", ", ", ")")}")
 
             while (i <= buff.length) {
-                val pair = buff(i)
-                if (pair == null)
+                val bundle = buff(i)
+                if (bundle == null)
                     return //We reached the last element of this buffer.
 
-                pin.makeProcess(pair._1, pair._2)
+                injectable.inject(bundle)
                 if (validatedInsertCount != insertCount) {
                     rectifyConcurrentInsertion()
                 } else {

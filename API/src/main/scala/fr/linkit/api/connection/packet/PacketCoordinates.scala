@@ -14,8 +14,8 @@ package fr.linkit.api.connection.packet
 
 trait PacketCoordinates extends Serializable {
 
-    val injectableID: Int
-    val senderID    : String
+    val path    : Array[Int]
+    val senderID: String
 
     def forallConcernedTargets(action: String => Boolean): Boolean
 

@@ -12,48 +12,46 @@
 
 package fr.linkit.engine.connection.packet.traffic.channel
 
+import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
+
 import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
-import fr.linkit.api.connection.packet.traffic.PacketInjectableFactory
-import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
-import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
+import fr.linkit.api.connection.packet.{ChannelPacketBundle, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
 import fr.linkit.engine.connection.packet.traffic.channel.SyncAsyncPacketChannel.Attribute
-import fr.linkit.engine.connection.packet.{PacketBundle, SimplePacketAttributes}
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.connection.packet.{SimplePacketAttributes, SimplePacketBundle}
 import fr.linkit.engine.local.utils.ConsumerContainer
 import fr.linkit.engine.local.utils.ScalaUtils.ensurePacketType
 import org.jetbrains.annotations.Nullable
-import java.util.concurrent.{BlockingQueue, LinkedBlockingQueue}
 
 import scala.reflect.ClassTag
 
-class SyncAsyncPacketChannel(@Nullable parent: PacketChannel,
+class SyncAsyncPacketChannel(store: PacketInjectableStore,
                              scope: ChannelScope,
                              busy: Boolean)
-        extends AbstractPacketChannel(parent, scope) {
+    extends AbstractPacketChannel(store, scope) {
 
     private val sync: BlockingQueue[Packet] = {
         if (!busy) {
             new LinkedBlockingQueue[Packet]()
         } else {
             WorkerPools
-                    .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
+                .ifCurrentWorkerOrElse(_.newBusyQueue, new LinkedBlockingQueue[Packet]())
         }
     }
 
     private val asyncListeners = new ConsumerContainer[PacketBundle]
 
     @workerExecution
-    override def handleInjection(injection: PacketInjection): Unit = {
-        val coordinates = injection.coordinates
-        injection.attachPin { (packet, attr) =>
-            attr.getAttribute[Boolean](Attribute) match {
-                case Some(isAsync) =>
-                    if (isAsync)
-                        asyncListeners.applyAll(PacketBundle(this, packet, attr, coordinates))
-                    else
-                        sync.add(packet)
-            }
+    override def handleBundle(bundle: ChannelPacketBundle): Unit = {
+        val attr        = bundle.attributes
+        val packet      = bundle.packet
+        attr.getAttribute[Boolean](Attribute) match {
+            case Some(isAsync) =>
+                if (isAsync)
+                    asyncListeners.applyAll(bundle)
+                else
+                    sync.add(packet)
         }
     }
 
@@ -61,7 +59,8 @@ class SyncAsyncPacketChannel(@Nullable parent: PacketChannel,
         asyncListeners += action
 
     def nextSync[P <: Packet : ClassTag]: P = {
-        ensurePacketType[P](sync.take())
+        val take = sync.take()
+        ensurePacketType[P](take)
     }
 
     def sendAsync(packet: Packet, attributes: PacketAttributes = SimplePacketAttributes.empty): Unit = {
@@ -94,15 +93,8 @@ object SyncAsyncPacketChannel extends PacketInjectableFactory[SyncAsyncPacketCha
 
     val Attribute: Int = 5
 
-    @volatile private var channelNumber: Int = 0
-
-    private def nextChannelNumber: Int = {
-        channelNumber += 1
-        channelNumber
-    }
-
-    override def createNew(@Nullable parent: PacketChannel, scope: ChannelScope): SyncAsyncPacketChannel = {
-        new SyncAsyncPacketChannel(parent, scope, false)
+    override def createNew(store: PacketInjectableStore, scope: ChannelScope): SyncAsyncPacketChannel = {
+        new SyncAsyncPacketChannel(store, scope, false)
     }
 
     def busy: PacketInjectableFactory[SyncAsyncPacketChannel] = new SyncAsyncPacketChannel(_, _, true)

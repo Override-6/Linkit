@@ -12,27 +12,13 @@
 
 package fr.linkit.engine.connection.packet
 
-import fr.linkit.api.connection.packet.PacketBundle
+import fr.linkit.api.connection.packet.ChannelPacketBundle
 import fr.linkit.api.connection.packet.channel.PacketChannel
 
-abstract class AbstractPacketBundle(channel: PacketChannel) extends PacketBundle {
+abstract class AbstractChannelPacketBundle(channel: PacketChannel) extends ChannelPacketBundle {
 
     override def getChannel: PacketChannel = channel
 
     override def store(): Unit = channel.storeBundle(this)
 
-    override def storeInParent(): Unit = {
-        val parent = channel.getParent
-        if (parent.isDefined)
-            parent.get.storeBundle(this)
-    }
-
-    override def storeInAllParents(): Unit = {
-        var lastParent = channel.getParent
-        while (lastParent.isDefined) {
-            val parent = lastParent.get
-            parent.storeBundle(this)
-            lastParent = parent.getParent
-        }
-    }
 }

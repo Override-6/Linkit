@@ -10,13 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.resource
+package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.ConnectionContext
-import fr.linkit.api.local.resource.external.Resource
+import fr.linkit.api.connection.packet.PacketException
 
-trait RemoteResource extends Resource {
-
-    def getConnectionOwner: ConnectionContext
+class TrafficException(msg: String, cause: Throwable = null) extends PacketException(msg, cause) {
 
 }

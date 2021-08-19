@@ -30,7 +30,7 @@ class GeneratedClassLoader(val classRootFolder: Path, parent: ClassLoader, mates
             case _: ClassNotFoundException => {
                 var clazz: Class[_] = null
                 var i               = 0
-                while (clazz == null && i < mates.length) {
+                while ((clazz == null) && i < mates.length) {
                     try {
                         clazz = mates(i).loadClass(name)
                     } catch {

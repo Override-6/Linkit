@@ -19,9 +19,8 @@ case class InjectionAlreadyProcessingException(injection: PacketInjection, msg: 
 
     override protected def appendMessage(sb: StringBuilder): Unit = {
         super.appendMessage(sb)
-        val coords = injection.coordinates
-        sb.append(s"For injection into packet injectable of id '${coords.injectableID}'\n")
-                .append(s"Targeting ${coords.targetID}, sent by ${coords.senderID}\n")
+        val path = injection.injectablePath
+        sb.append(s"For injection into packet injectable at '${path.mkString("/")}'\n")
     }
 
 }

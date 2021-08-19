@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.parsing.bhv.descriptor.clazz
 
-import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
+import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
 import fr.linkit.engine.local.parsing.bhv.descriptor.FieldBehaviorDescriptionResult
 import fr.linkit.engine.local.parsing.bhv.descriptor.method.{MethodBehaviorDescriptionException, MethodBehaviorDescriptionResult, MethodDescriptor}
 import fr.linkit.engine.local.parsing.bhv.{BehaviorFileException, BehaviorFileSyntaxException}
@@ -20,7 +20,7 @@ import fr.linkit.engine.local.parsing.bhv.{BehaviorFileException, BehaviorFileSy
 import java.util.Scanner
 import scala.collection.mutable
 
-class ClassDescriptionResultBuilder(scanner: Scanner, classDesc: SyncObjectClassDescription[_]) {
+class ClassDescriptionResultBuilder(scanner: Scanner, classDesc: SimpleSyncObjectSuperClassDescription[_]) {
 
     private val clazz                                                  = classDesc.clazz
     private val className                                              = clazz.getName

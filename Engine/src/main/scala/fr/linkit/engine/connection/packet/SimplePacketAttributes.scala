@@ -33,7 +33,7 @@ class SimplePacketAttributes extends PacketAttributes {
 
     override def putAttribute(name: Serializable, value: Serializable): this.type = {
         attributes.put(name, value)
-        AppLogger.vError(s"Attribute put ($name -> $value), $attributes - $hashCode")
+        //AppLogger.vError(s"Attribute put ($name -> $value), $attributes - $hashCode")
         this
     }
 

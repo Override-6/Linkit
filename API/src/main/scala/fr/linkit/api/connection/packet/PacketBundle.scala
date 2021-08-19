@@ -12,8 +12,6 @@
 
 package fr.linkit.api.connection.packet
 
-import fr.linkit.api.connection.packet.channel.PacketChannel
-
 /**
  * a Bundle is a class that contains a defined amount of typed items.
  * Bundle are useful to packet channels because they can be stored and processed later.
@@ -28,41 +26,5 @@ trait PacketBundle {
 
     val coords: PacketCoordinates
 
-    /**
-     * The channel that have created this bundle.
-     * */
-    def getChannel: PacketChannel
-
-
-    /**
-     * Stores this bundle into the channel.
-     * */
-    def store(): Unit
-
-    /**
-     * Stores this bundle in the parent's of the bundle's channel only.
-     * */
-    def storeInParent(): Unit
-
-    /**
-     * Stores this bundle in the parent's of the bundle's channel and in its channel
-     * */
-    def storeWithParent(): Unit = {
-        store()
-        storeInParent()
-    }
-
-    /**
-     * Stores this bundle into all parents of its channel's parent except for its channel
-     * */
-    def storeInAllParents(): Unit
-
-    /**
-     * Stores this bundle into all parents of its channel's parent and its channel.
-     * */
-    def storeWithAllParents(): Unit = {
-        store()
-        storeInAllParents()
-    }
 
 }

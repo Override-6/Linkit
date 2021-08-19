@@ -35,7 +35,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     private      val traffic                                         = channel.traffic
     override     val currentIdentifier: String                       = traffic.currentIdentifier
     private lazy val tree                                            = center.treeCenter.findTree(nodeInfo.nodePath.head).get
-    private      val writer                                          = traffic.newWriter(channel.identifier)
+    private      val writer                                          = traffic.newWriter(channel.path)
     private var puppetWrapper         : S with SynchronizedObject[S] = _
 
     override def isCurrentEngineOwner: Boolean = ownerID == currentIdentifier
@@ -51,8 +51,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         if (desiredEngineReturn == currentIdentifier)
             throw new IllegalArgumentException("invocation's desired engine return is this engine.")
 
-        val bhv                 = invocation.methodBehavior
-        val methodId            = bhv.desc.methodId
+        val bhv      = invocation.methodBehavior
+        val methodId = bhv.desc.methodId
         AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}")
         val scope            = new AgreementScope(writer, agreement)
         var requestResult: R = JavaUtils.nl()

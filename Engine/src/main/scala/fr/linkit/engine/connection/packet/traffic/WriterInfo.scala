@@ -14,4 +14,4 @@ package fr.linkit.engine.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 
-case class WriterInfo(traffic: PacketTraffic, identifier: Int)
+case class WriterInfo(traffic: PacketTraffic, path: Array[Int])

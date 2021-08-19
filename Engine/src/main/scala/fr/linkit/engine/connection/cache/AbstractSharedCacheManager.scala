@@ -19,6 +19,7 @@ import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.traffic.DefaultCachePacketChannel
@@ -30,20 +31,21 @@ import scala.reflect.{ClassTag, classTag}
 
 abstract class AbstractSharedCacheManager(override val family: String,
                                           @transient override val network: Network,
-                                          @transient requestChannel: SimpleRequestPacketChannel) extends SharedCacheManager {
+                                          @transient store: PacketInjectableStore) extends SharedCacheManager {
+
 
     println(s"New SharedCacheManager created ! $family")
-
-    @transient protected val broadcastScope   : ChannelScope = prepareScope(ChannelScopes.broadcast)
-    @transient private   val traffic                         = network.connection.traffic
-    protected            val currentIdentifier: String       = network.connection.currentIdentifier
+    @transient protected            val channel          : SimpleRequestPacketChannel = store.getInjectable(0, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
+    @transient protected val broadcastScope   : ChannelScope               = prepareScope(ChannelScopes.broadcast)
+    @transient private   val traffic                                       = network.connection.traffic
+    protected            val currentIdentifier: String                     = network.connection.currentIdentifier
 
     override def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchBehavior): A = {
         LocalCachesStore
             .findCache[A](cacheID)
             .getOrElse {
                 preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
-                val channel     = traffic.getInjectable(cacheID + channelIdentifiersShift, ChannelScopes.broadcast, DefaultCachePacketChannel(cacheID, this))
+                val channel     = traffic.getInjectable(cacheID + channelIdentifiersShift, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
                 val sharedCache = factory.createNew(channel)
                 LocalCachesStore.store(cacheID, sharedCache, channel)
 
@@ -57,7 +59,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
                         case _                               => //Simply don't set the content
                     }
                 }
-                requestChannel.injectStoredBundles()
+                channel.injectStoredBundles()
                 sharedCache
             }
     }
@@ -85,8 +87,8 @@ abstract class AbstractSharedCacheManager(override val family: String,
     protected def preCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit
 
     protected def prepareScope(factory: ScopeFactory[_ <: ChannelScope]): ChannelScope = {
-        val traffic = requestChannel.traffic
-        val writer  = traffic.newWriter(requestChannel.identifier)
+        val traffic = channel.traffic
+        val writer  = traffic.newWriter(channel.path)
         val scope   = factory.apply(writer)
         scope.addDefaultAttribute("family", family)
         scope
@@ -148,11 +150,11 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
     }
 
-    private def println(msg: => String): Unit = {
+    protected def println(msg: => String): Unit = {
         AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
-    requestChannel.addRequestListener(handleRequest)
+    channel.addRequestListener(handleRequest)
     val channelIdentifiersShift: Int = family.hashCode + 8882 //TODO Redesign packet handling and make a system where the identifier is an array if ints
 
 

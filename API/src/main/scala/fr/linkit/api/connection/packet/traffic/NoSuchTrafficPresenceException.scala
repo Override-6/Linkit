@@ -10,16 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.channel
+package fr.linkit.api.connection.packet.traffic
 
-import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketTraffic}
-import fr.linkit.api.connection.packet.{ChannelPacketBundle, PacketAttributesPresence, PacketBundle}
-import fr.linkit.api.local.system.JustifiedCloseable
-
-trait PacketChannel extends PacketInjectable with JustifiedCloseable with PacketAttributesPresence {
-
-    def storeBundle(bundle: ChannelPacketBundle): Unit
-
-    def injectStoredBundles(): Unit
+class NoSuchTrafficPresenceException(msg: String, cause: Throwable = null) extends TrafficException(msg, cause) {
 
 }
