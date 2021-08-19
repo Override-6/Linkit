@@ -93,12 +93,16 @@ class ParallelInjection(override val coordinates: DedicatedPacketCoordinates) ex
         buff.insert(packet, attributes)
     }
 
+    override def canAcceptMoreInjection: Boolean = {
+        buff.canAcceptMoreInjection
+    }
+
 }
 
 object ParallelInjection {
 
-    @volatile private var totalProcess = 0
-    private val BuffLength             = 100
+    private var totalProcess = 0
+    private val BuffLength   = 100
 
     private class PacketInjectionNode(callback: (Packet, PacketAttributes) => Unit) {
 
@@ -137,8 +141,8 @@ object ParallelInjection {
 
     class PacketBuffer {
 
-        private val buff                  = new Array[(Packet, PacketAttributes)](BuffLength)
-        @volatile private var insertCount = 0
+        private val buff        = new Array[(Packet, PacketAttributes)](BuffLength)
+        private var insertCount = 0
 
         def containsNumber(packet: Packet): Boolean = {
             val packetNumber = packet.number
@@ -247,6 +251,8 @@ object ParallelInjection {
                 }
             }
         }
+
+        def canAcceptMoreInjection: Boolean = insertCount < BuffLength
 
         override def toString: String = buff.mkString("PacketBuffer(", ", ", ")")
     }

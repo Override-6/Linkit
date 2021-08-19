@@ -39,4 +39,6 @@ trait PacketInjectionController extends PacketInjection {
     def isProcessing: Boolean
 
     def inject(injectable: PacketInjectable): Unit
+
+    def canAcceptMoreInjection: Boolean
 }

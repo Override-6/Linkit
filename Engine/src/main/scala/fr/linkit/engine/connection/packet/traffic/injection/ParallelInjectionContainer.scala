@@ -15,8 +15,8 @@ package fr.linkit.engine.connection.packet.traffic.injection
 import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.traffic.InjectionContainer
 import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
-import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
+import fr.linkit.api.local.system.AppLogger
 
 import scala.collection.mutable
 
@@ -37,16 +37,16 @@ class ParallelInjectionContainer(currentIdentifier: String) extends InjectionCon
                                attributes: PacketAttributes,
                                coordinates: DedicatedPacketCoordinates): PacketInjectionController = this.synchronized {
         val number = packet.number
-        AppLogger.vDebug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates AND ATTRIBUTES $attributes")
+        AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates AND ATTRIBUTES $attributes")
         val id     = coordinates.injectableID
         val sender = coordinates.senderID
 
         val injection = processingInjections.get((id, sender)) match {
-            case Some(value) =>
-                AppLogger.vError(s"${currentTasksId} <> $number -> INJECTION ALREADY EXISTS, ADDING PACKET.")
+            case Some(value) if value.canAcceptMoreInjection() =>
+                AppLogger.error(s"${currentTasksId} <> $number -> INJECTION Available EXISTS, ADDING PACKET.")
                 value
-            case None        =>
-                AppLogger.vError(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
+            case _                                             =>
+                AppLogger.error(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
                 val injection = new ParallelInjection(coordinates)
                 processingInjections.put((id, sender), injection)
                 injection

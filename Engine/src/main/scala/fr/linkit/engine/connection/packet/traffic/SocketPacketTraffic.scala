@@ -19,11 +19,11 @@ import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.engine.connection.packet.persistence.PacketSerializationChoreographer
 import org.jetbrains.annotations.NotNull
 
-class SocketPacketTraffic(@NotNull socket: DynamicSocket,
-                          @NotNull translator: PacketTranslator,
-                          @NotNull procrastinator: ProcrastinatorControl,
-                          @NotNull override val currentIdentifier: String,
-                          @NotNull override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, procrastinator) {
+class SocketPacketTraffic(socket: DynamicSocket,
+                          translator: PacketTranslator,
+                          procrastinator: ProcrastinatorControl,
+                          override val currentIdentifier: String,
+                          override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, procrastinator) {
 
     private val choreographer = new PacketSerializationChoreographer(translator)
     private var connection0: ConnectionContext = null
