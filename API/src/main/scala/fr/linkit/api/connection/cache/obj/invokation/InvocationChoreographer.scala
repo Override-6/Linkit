@@ -20,8 +20,8 @@ class InvocationChoreographer {
 
     /**
      * All threads that figures in this set are running the
-     * [[forceLocalInvocation()]] method.
-     * @see [[forceLocalInvocation()]] for more details
+     * [[forceLocalInvocation]] method.
+     * @see [[forceLocalInvocation]] for more details
      * */
     protected val markedThreads = new mutable.HashSet[Thread]
 
@@ -30,9 +30,12 @@ class InvocationChoreographer {
      * the current thread will be added into the [[markedThreads]] set.
      *
      * A marked thread is a thread that will force all [[SynchronizedObject]] method's invocations
-     * to execute the non overridden method (simply make a super.xxx for a xxx generated method, instead of invoking the remote method.)
+     * to execute the original method (simply make a super.xxx for a xxx generated method, instead of invoking the remote method.)
      *
      * @param action the action to perform
+     * @tparam A return type of action
+     *@return the return value of action
+     * @see [[MethodInvocation]]
      * @see [[SynchronizedObject]] for more information about those 'generated methods'.
      * */
     def forceLocalInvocation[A](action: => A): A = {

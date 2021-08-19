@@ -23,6 +23,6 @@ object Rules {
     val WPArgsLength   : Byte        = 3
     val WPArgsSeparator: Array[Byte] = ";".getBytes()
 
-    val IdentifierPattern: Pattern = Pattern.compile("^\\w{0,16}$")
+    val IdentifierPattern: Pattern = Pattern.compile("[^;]{0,1024}$")
 
 }

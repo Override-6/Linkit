@@ -3,7 +3,7 @@ package fr.linkit.engine.connection.packet.persistence.v3.persistor
 import fr.linkit.api.connection.cache.NoSuchCacheException
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.tree.{NoSuchWrapperNodeException, SyncNode}
+import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode}
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.BroadcastPacketCoordinates
 import fr.linkit.api.connection.packet.persistence.v3._
@@ -113,7 +113,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
         val node: SyncNode[AnyRef] = tree.findNode[AnyRef](path)
                 .getOrElse {
                     //Replace this by a request to the sender in order to get the wrapped value.
-                    throw new NoSuchWrapperNodeException(s"No puppet node found at ${info.nodePath.mkString("/")}")
+                    throw new NoSuchSyncNodeException(s"No puppet node found at ${info.nodePath.mkString("/")}")
                 }
         node.synchronizedObject
     }
@@ -130,7 +130,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
                     throwNoSuchCacheException(info, Some(wrapper.getSuperClass))
                 }
         val tree   = center.treeCenter.findTreeInternal(path.head).getOrElse {
-            throw new NoSuchWrapperNodeException(s"No Object Tree found of id ${path.head}") //TODO Replace with NoSuchObjectTreeException
+            throw new NoSuchSyncNodeException(s"No Object Tree found of id ${path.head}") //TODO Replace with NoSuchObjectTreeException
         }
 
         val nodeOpt = tree.findNode(path)

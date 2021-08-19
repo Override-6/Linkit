@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.parsing.bhv.descriptor.method
 
-import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
 import fr.linkit.engine.connection.cache.obj.behavior.AnnotationBasedMemberBehaviorFactory.DefaultMethodControl
 import fr.linkit.engine.local.parsing.bhv.ParserAssertions
 import fr.linkit.engine.local.parsing.bhv.descriptor.clazz.ClassDescriptionResultBuilder
@@ -21,8 +21,8 @@ import java.util.Scanner
 
 abstract class AbstractMethodDescriptionResultBuilder(protected val scanner: Scanner, classBuilder: ClassDescriptionResultBuilder) {
 
-    protected var behaviorRule   : BasicRemoteInvocationRule = DefaultMethodControl.value()
-    protected var syncReturnValue: Boolean                   = false
+    protected var behaviorRule   : BasicInvocationRule = DefaultMethodControl.value()
+    protected var syncReturnValue: Boolean             = false
 
     protected def launchParsing(): Unit = {
         parseType()
@@ -61,7 +61,7 @@ abstract class AbstractMethodDescriptionResultBuilder(protected val scanner: Sca
     private def parseType(): Unit = {
         val behaviorName = scanner.next()
         try {
-            behaviorRule = BasicRemoteInvocationRule.valueOf(behaviorName.toUpperCase)
+            behaviorRule = BasicInvocationRule.valueOf(behaviorName.toUpperCase)
         } catch {
             case e: IllegalArgumentException =>
                 val otherResult = classBuilder.getMethodResult(behaviorName).getOrElse {

@@ -12,11 +12,12 @@
 
 package fr.linkit.api.connection.cache.obj.behavior
 
-import fr.linkit.api.local.generation.PuppetClassDescription
+import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, MethodBehavior}
+import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 
 trait SynchronizedObjectBehavior[A] {
 
-    val classDesc: PuppetClassDescription[A]
+    val classDesc: SyncObjectSuperclassDescription[A]
 
     def listMethods(): Iterable[MethodBehavior]
 

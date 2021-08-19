@@ -13,8 +13,8 @@
 package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
-import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.api.local.generation.compilation.CompilationRequest
 import fr.linkit.engine.connection.cache.obj.generation.WrapperCompilationRequestFactory.DefaultClassBlueprint
 import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaWrapperClassBlueprint
@@ -25,9 +25,9 @@ import fr.linkit.engine.local.mapping.ClassMappings
 import java.io.File
 import java.nio.file.Files
 
-class WrapperCompilationRequestFactory extends ClassCompilationRequestFactory[PuppetClassDescription[_], SynchronizedObject[_]](DefaultClassBlueprint) {
+class WrapperCompilationRequestFactory extends ClassCompilationRequestFactory[SyncObjectSuperclassDescription[_], SynchronizedObject[_]](DefaultClassBlueprint) {
 
-    override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]], context: PuppetClassDescription[_], className: String, loader: GeneratedClassLoader): Class[_] = {
+    override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]], context: SyncObjectSuperclassDescription[_], className: String, loader: GeneratedClassLoader): Class[_] = {
         val (byteCode, wrapperClass) = new ClassRectifier(context, className, loader, context.clazz).rectifiedClass
         val wrapperClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")
         Files.write(wrapperClassFile, byteCode)

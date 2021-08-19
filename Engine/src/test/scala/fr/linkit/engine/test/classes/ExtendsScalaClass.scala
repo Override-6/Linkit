@@ -16,9 +16,4 @@ import scala.collection.WithFilter
 
 class ExtendsScalaClass extends ScalaClass {
 
-    override def testRMI(): WithFilter[_, Nothing] = {
-        println("IMPLEMENTATION")
-        super.testRMI()
-    }
-
 }

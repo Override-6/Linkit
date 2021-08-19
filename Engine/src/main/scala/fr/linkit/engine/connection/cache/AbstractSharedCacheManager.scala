@@ -19,6 +19,7 @@ import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.traffic.DefaultCachePacketChannel
@@ -29,45 +30,46 @@ import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 abstract class AbstractSharedCacheManager(override val family: String,
-                                          override val network: Network,
-                                          requestChannel: SimpleRequestPacketChannel) extends SharedCacheManager {
+                                          @transient override val network: Network,
+                                          @transient store: PacketInjectableStore) extends SharedCacheManager {
+
 
     println(s"New SharedCacheManager created ! $family")
-
-    protected val broadcastScope   : ChannelScope = prepareScope(ChannelScopes.broadcast)
-    private   val traffic                         = network.connection.traffic
-    protected val currentIdentifier: String       = network.connection.currentIdentifier
+    @transient protected            val channel          : SimpleRequestPacketChannel = store.getInjectable(0, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
+    @transient protected val broadcastScope   : ChannelScope               = prepareScope(ChannelScopes.broadcast)
+    @transient private   val traffic                                       = network.connection.traffic
+    protected            val currentIdentifier: String                     = network.connection.currentIdentifier
 
     override def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchBehavior): A = {
         LocalCachesStore
-                .findCache[A](cacheID)
-                .getOrElse {
-                    preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
-                    val channel     = traffic.getInjectable(cacheID + channelIdentifiersShift, ChannelScopes.broadcast, DefaultCachePacketChannel(cacheID, this))
-                    val sharedCache = factory.createNew(channel)
-                    LocalCachesStore.store(cacheID, sharedCache, channel)
+            .findCache[A](cacheID)
+            .getOrElse {
+                preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
+                val channel     = traffic.getInjectable(cacheID + channelIdentifiersShift, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
+                val sharedCache = factory.createNew(channel)
+                LocalCachesStore.store(cacheID, sharedCache, channel)
 
-                    println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
-                    val baseContent = retrieveCacheContent(cacheID, behavior).orNull
-                    println(s"CONTENT RECEIVED (${baseContent}) FOR CACHE $cacheID")
+                println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
+                val baseContent = retrieveCacheContent(cacheID, behavior).orNull
+                println(s"CONTENT RECEIVED (${baseContent}) FOR CACHE $cacheID")
 
-                    if (baseContent != null) {
-                        channel.getHandler.foreach {
-                            case e: ContentHandler[CacheContent] => e.setContent(baseContent)
-                            case _                               => //Simply don't set the content
-                        }
+                if (baseContent != null) {
+                    channel.getHandler.foreach {
+                        case e: ContentHandler[CacheContent] => e.setContent(baseContent)
+                        case _                               => //Simply don't set the content
                     }
-                    requestChannel.injectStoredBundles()
-                    sharedCache
                 }
+                channel.injectStoredBundles()
+                sharedCache
+            }
     }
 
     override def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A = {
         LocalCachesStore
-                .findCache[A](cacheID)
-                .getOrElse {
-                    throw new NoSuchCacheException(s"No cache was found in the local cache manager for cache identifier $cacheID.")
-                }
+            .findCache[A](cacheID)
+            .getOrElse {
+                throw new NoSuchCacheException(s"No cache was found in the local cache manager for cache identifier $cacheID.")
+            }
     }
 
     override def update(): this.type = {
@@ -85,8 +87,8 @@ abstract class AbstractSharedCacheManager(override val family: String,
     protected def preCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit
 
     protected def prepareScope(factory: ScopeFactory[_ <: ChannelScope]): ChannelScope = {
-        val traffic = requestChannel.traffic
-        val writer  = traffic.newWriter(requestChannel.identifier)
+        val traffic = channel.traffic
+        val writer  = traffic.newWriter(channel.path)
         val scope   = factory.apply(writer)
         scope.addDefaultAttribute("family", family)
         scope
@@ -103,12 +105,12 @@ abstract class AbstractSharedCacheManager(override val family: String,
             }
         }
 
-        private val localRegisteredHandlers = mutable.Map.empty[Int, RegisteredCache]
+        @transient private val localRegisteredHandlers = mutable.HashMap.empty[Int, RegisteredCache]
 
         def updateAll(): Unit = {
             println(s"updating cache ($localRegisteredHandlers)...")
             localRegisteredHandlers
-                    .foreach(_._2.cache.update())
+                .foreach(_._2.cache.update())
             println(s"cache updated ! ($localRegisteredHandlers)")
         }
 
@@ -134,9 +136,9 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
         def findCache[A: ClassTag](cacheID: Int): Option[A] = {
             val opt            = localRegisteredHandlers
-                    .get(cacheID)
-                    .map(_.cache)
-                    .asInstanceOf[Option[A]]
+                .get(cacheID)
+                .map(_.cache)
+                .asInstanceOf[Option[A]]
             val requestedClass = classTag[A].runtimeClass
             opt match {
                 case Some(c: SharedCache) if c.getClass != requestedClass => throw new CacheNotAcceptedException(s"Attempted to open a cache of type '$cacheID' while a cache with the same id is already registered, but does not have the same type. (${c.getClass} vs $requestedClass)")
@@ -146,24 +148,13 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
         override def toString: String = localRegisteredHandlers.toString()
 
-        /*
-        * Don't touch, scala companions instances works as a lazy val, and all lazy val are synchronized on the instance that
-        * they are computing. If you remove this line, NetworkSCManager could some times be deadlocked because retrieveCacheContent
-        * will wait for its content's request, and thus its request response will be handled by another thread,
-        * which will need LocalCacheHandler in order to retrieve the local cache, which is synchronized, so it will
-        * be blocked until the thread that requested the content get it's response, but it's impossible because the thread
-        * that handles the request is waiting...
-        * For simple, if you remove this method, a deadlock will occur.
-        * */
-        def loadClass(): Unit = ()
-
     }
 
-    private def println(msg: => String): Unit = {
+    protected def println(msg: => String): Unit = {
         AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
-    requestChannel.addRequestListener(handleRequest)
+    channel.addRequestListener(handleRequest)
     val channelIdentifiersShift: Int = family.hashCode + 8882 //TODO Redesign packet handling and make a system where the identifier is an array if ints
 
 
@@ -171,8 +162,8 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
 object AbstractSharedCacheManager {
     //The identifiers of caches used for system. Creating a cache between MinSystemCacheID and MaxSystemCacheID is not recommended.
-    val MinSystemCacheID: Int = 0
-    val MaxSystemCacheID: Int = 50
+    val MinSystemCacheID: Int   = 0
+    val MaxSystemCacheID: Int   = 50
     val SystemCacheRange: Range = MinSystemCacheID to MaxSystemCacheID
 
 }

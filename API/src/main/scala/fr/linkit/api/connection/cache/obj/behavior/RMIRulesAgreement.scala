@@ -14,9 +14,9 @@ package fr.linkit.api.connection.cache.obj.behavior
 
 trait RMIRulesAgreement {
 
-    def getAcceptedEngines: Array[String]
+    val acceptedEngines: Array[String]
 
-    def getDiscardedEngines: Array[String]
+    val discardedEngines: Array[String]
 
     def isAcceptAll: Boolean
 

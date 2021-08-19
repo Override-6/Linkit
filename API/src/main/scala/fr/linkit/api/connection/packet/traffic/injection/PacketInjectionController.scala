@@ -13,29 +13,18 @@
 package fr.linkit.api.connection.packet.traffic.injection
 
 import fr.linkit.api.connection.packet.traffic.PacketInjectable
-import fr.linkit.api.local.concurrency.workerExecution
 
 trait PacketInjectionController extends PacketInjection {
 
-    @workerExecution
-    def processOrElse(processAction: => Unit)(orElse: => Unit): Unit
-
-    /**
-     * This method takes effect only once, and thus perform injection
-     * only if it didn't done it before.
-     *
-     * @return true if given injectables received their injection.
-     * */
-    def performPinAttach(injectables: Iterable[PacketInjectable]): Boolean
-
-    /**
-     * Notifies that all attached pins may be processed. <br>
-     * Each callbacks of pins will be called if the implementation
-     * decides to do it for the current thread.
-     * */
-    @workerExecution
-    def processRemainingPins(): Unit
-
     def isProcessing: Boolean
 
+    def markAsProcessing(): Unit
+
+    def canAcceptMoreInjection: Boolean
+
+    def nextIdentifier: Int
+
+    def haveMoreIdentifier: Boolean
+
+    def process(injectable: PacketInjectable): Unit
 }

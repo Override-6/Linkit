@@ -11,7 +11,7 @@ class PacketSerializationChoreographer(translator: PacketTranslator) {
 
     def add(transferInfo: TransferInfo)(onResultAvailable: PacketSerializationResult => Unit): Unit = {
         val coords = transferInfo.coords
-        serialQueue.enqueue(coords.injectableID, transferInfo)(info => onResultAvailable(translator.translate(info)))
+        serialQueue.enqueue(coords.path, transferInfo)(info => onResultAvailable(translator.translate(info)))
     }
 
 }
@@ -19,12 +19,12 @@ class PacketSerializationChoreographer(translator: PacketTranslator) {
 object PacketSerializationChoreographer {
 
     class MappedQueues[A]() {
-        val map = mutable.HashMap.empty[Int, mutable.Queue[A]]
+        val map = mutable.HashMap.empty[Array[Int], mutable.Queue[A]]
 
-        def enqueue(i: Int, a: A)(action: A => Unit): Unit = {
+        def enqueue(path: Array[Int], a: A)(action: A => Unit): Unit = {
             var queue: mutable.Queue[A] = null
             map.synchronized {
-                queue = map.getOrElseUpdate(i, mutable.Queue.empty[A])
+                queue = map.getOrElseUpdate(path, mutable.Queue.empty[A])
                 if (queue.nonEmpty)
                     return
                 queue += a

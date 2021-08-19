@@ -12,6 +12,6 @@
 
 package fr.linkit.api.local.plugin
 
-import fr.linkit.api.connection.task.TaskException
+import fr.linkit.api.local.system.AppException
 
-case class PluginLoadException(msg: String, cause: Throwable = null) extends TaskException(msg, cause)
+case class PluginLoadException(msg: String, cause: Throwable = null) extends AppException(msg, cause)

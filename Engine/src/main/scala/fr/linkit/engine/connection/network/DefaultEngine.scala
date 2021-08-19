@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.network
 
 import fr.linkit.api.connection.cache.SharedCacheManager
-import fr.linkit.api.connection.cache.obj.behavior.annotation.{BasicRemoteInvocationRule, MethodControl}
+import fr.linkit.api.connection.cache.obj.behavior.annotation.{BasicInvocationRule, MethodControl}
 import fr.linkit.api.connection.network.{Engine, ExternalConnectionState, Network, StaticAccessor}
 import fr.linkit.api.local.system.Versions
 import fr.linkit.engine.local.system.StaticVersions
@@ -34,7 +34,7 @@ class DefaultEngine(override val identifier: String,
 
     override def getConnectionState: ExternalConnectionState = connectionState
 
-    @MethodControl(BasicRemoteInvocationRule.BROADCAST_IF_ROOT_OWNER)
+    @MethodControl(BasicInvocationRule.BROADCAST_IF_ROOT_OWNER)
     def updateState(state: ExternalConnectionState): Unit = connectionState = state
 
     override def update(): this.type = {

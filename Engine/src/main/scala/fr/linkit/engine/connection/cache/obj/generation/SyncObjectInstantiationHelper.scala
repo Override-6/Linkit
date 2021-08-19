@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.{SyncObjectDetachException, SynchronizedObject}
-import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper.MaxScanDepth
@@ -29,7 +29,7 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 
 //TODO Factorise this class and optimize it.
-class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: ObjectTreeBehavior) {
+class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: SynchronizedObjectBehaviorStore) {
 
     def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with SynchronizedObject[A]],
                                            origin: A,
@@ -47,8 +47,8 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
 
         def scanObject(instanceField: AnyRef, originField: AnyRef, root: Boolean): Unit = {
             if (depth >= MaxScanDepth ||
-                    originField == null ||
-                    UnWrapper.isPrimitiveWrapper(instanceField))
+                originField == null ||
+                UnWrapper.isPrimitiveWrapper(instanceField))
                 return
             scanAllFields(instanceField, originField, root)
         }
@@ -77,7 +77,7 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
         def scanAllFields(instance: Any, origin: Any, root: Boolean): Unit = {
             depth += 1
             val classUsed = if (instance.isInstanceOf[SynchronizedObject[_]]) origin.getClass else instance.getClass
-            retrieveAllFields(classUsed).foreach(field => if (!Modifier.isTransient(field.getModifiers)) {
+            retrieveAllFields(classUsed).foreach(field => /*if (!Modifier.isTransient(field.getModifiers))*/ {
                 try {
                     var isWrapper   = false
                     var originValue = field.get(origin)
@@ -115,9 +115,9 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
         scanObject(instance, origin, true)
 
         wrapperClass.getDeclaredFields
-                .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isFinal(f.getModifiers))
-                .tapEach(_.setAccessible(true))
-                .foreach(_.set(instance, null))
+            .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isFinal(f.getModifiers))
+            .tapEach(_.setAccessible(true))
+            .foreach(_.set(instance, null))
         (instance, subWrappersInstantiated.toMap)
     }
 
@@ -223,8 +223,8 @@ object SyncObjectInstantiationHelper {
             }
 
             def scanField(instanceField: Any, originValue: AnyRef, field: Field, root: Boolean): Unit = {
-                if (Modifier.isTransient(field.getModifiers))
-                    return //Do not scan transient fields
+                //if (Modifier.isTransient(field.getModifiers))
+                //    return //Do not scan transient fields
                 if (JavaUtils.sameInstance(originValue, originClone)) {
                     ScalaUtils.setValue(instanceField, field, instance)
                 }

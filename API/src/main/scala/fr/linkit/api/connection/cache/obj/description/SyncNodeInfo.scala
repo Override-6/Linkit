@@ -12,6 +12,13 @@
 
 package fr.linkit.api.connection.cache.obj.description
 
+/**
+ * All the information that allows to retrieve the synchronized object node.
+ * @param cacheFamily the cache family of the object cache's manager.
+ * @param cacheID the object cache identifier
+ * @param owner the owner of the object (the engine's identifier that created the object)
+ * @param nodePath the path of the object's node in its [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]]
+ */
 case class SyncNodeInfo(cacheFamily: String,
                         cacheID: Int,
                         owner: String,

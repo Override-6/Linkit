@@ -12,6 +12,6 @@
 
 package fr.linkit.api.connection.cache.obj
 
-class RemoteInvocationFailedException(msg: String, cause: Throwable) extends SyncObjectException(msg, cause) {
+class RemoteInvocationFailedException(msg: String, cause: Throwable = null) extends SyncObjectException(msg, cause) {
 
 }

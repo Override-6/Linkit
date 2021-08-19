@@ -1,7 +1,7 @@
 package fr.linkit.api.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.local.generation.PuppetClassDescription
+import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 
 import scala.reflect.runtime.universe
 import scala.reflect.{ClassTag, classTag}
@@ -13,11 +13,11 @@ trait ObjectWrapperClassCenter {
 
     def getWrapperClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]]
 
-    def getWrapperClass[S](desc: PuppetClassDescription[S]): Class[S with SynchronizedObject[S]]
+    def getWrapperClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]]
 
     def getClass[S: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getWrapperClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
-    def preGenerateClasses(descriptions: List[PuppetClassDescription[_]]): Unit
+    def preGenerateClasses(descriptions: List[SyncObjectSuperclassDescription[_]]): Unit
 
     def preGenerateClasses(classes: Seq[Class[_]]): Unit
 

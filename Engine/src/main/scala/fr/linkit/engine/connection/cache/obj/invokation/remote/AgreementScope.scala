@@ -27,9 +27,9 @@ class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgree
     override def sendToAll(packet: Packet, attributes: PacketAttributes): Unit = {
         defaultAttributes.drainAttributes(attributes)
         if (agreement.isAcceptAll) {
-            writer.writeBroadcastPacket(packet, attributes, agreement.getDiscardedEngines :+ currentIdentifier)
+            writer.writeBroadcastPacket(packet, attributes, agreement.discardedEngines :+ currentIdentifier)
         } else {
-            writer.writePacket(packet, attributes, agreement.getAcceptedEngines.filterNot(_.equals(currentIdentifier)))
+            writer.writePacket(packet, attributes, agreement.acceptedEngines.filterNot(_.equals(currentIdentifier)))
         }
     }
 
@@ -42,7 +42,7 @@ class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgree
     override def sendTo(packet: Packet, targetIDs: Array[String]): Unit = sendTo(packet, SimplePacketAttributes.empty, targetIDs)
 
     override def areAuthorised(identifiers: Array[String]): Boolean = {
-        !agreement.getDiscardedEngines.containsSlice(identifiers)
+        !agreement.discardedEngines.containsSlice(identifiers)
     }
 
     override def canConflictWith(scope: ChannelScope): Boolean = {
@@ -50,6 +50,19 @@ class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgree
     }
 
     override def shareWriter[S <: ChannelScope](factory: ChannelScope.ScopeFactory[S]): S = factory(writer)
+
+    def foreachAcceptedEngines(action: String => Unit): Unit = {
+        if (agreement.isAcceptAll) {
+            val engines = writer.traffic.connection.network.listEngines
+            engines.foreach { engine =>
+                val id = engine.identifier
+                if (!agreement.discardedEngines.contains(id))
+                    action(id)
+            }
+        } else {
+            agreement.acceptedEngines.foreach(action)
+        }
+    }
 
 }
 

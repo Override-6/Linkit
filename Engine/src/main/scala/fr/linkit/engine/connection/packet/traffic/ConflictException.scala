@@ -12,6 +12,8 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
-class ConflictException(msg: String) extends Exception(msg) {
+import fr.linkit.api.connection.packet.traffic.TrafficException
+
+class ConflictException(msg: String) extends TrafficException(msg) {
 
 }

@@ -16,37 +16,36 @@ import fr.linkit.api.connection.cache.{CacheContent, CacheNotAcceptedException, 
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.packet.fundamental.EmptyPacket.EmptyPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.fundamental.{EmptyPacket, RefPacket}
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 final class SharedCacheDistantManager(family: String,
                                       override val ownerID: String,
-                                      network: Network,
-                                      requestChannel: SimpleRequestPacketChannel) extends AbstractSharedCacheManager(family, network, requestChannel) {
+                                      @transient network: Network,
+                                      @transient store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, store) {
 
-    private val ownerScope = prepareScope(ChannelScopes.include(ownerID))
+    @transient private val ownerScope = prepareScope(ChannelScopes.include(ownerID))
 
     override def retrieveCacheContent(cacheID: Int, behavior: CacheSearchBehavior): Option[CacheContent] = {
         println(s"Sending request to $ownerID in order to retrieve content of cache number $cacheID")
-        val request = requestChannel
-                .makeRequest(ownerScope)
-                .putAttribute("behavior", behavior)
-                .addPacket(IntPacket(cacheID))
-                .submit()
+        val request = channel
+            .makeRequest(ownerScope)
+            .putAttribute("behavior", behavior)
+            .addPacket(IntPacket(cacheID))
+            .submit()
 
         try {
             val response = request.nextResponse
             request.detach()
             response.nextPacket[Packet] match {
-                case StringPacket(errorMsg) => throw new CacheOpenException(errorMsg + s"(this = $ownerID)")
+                case StringPacket(errorMsg)               => throw new CacheOpenException(errorMsg + s"(this = $ownerID)")
                 case ref: RefPacket[Option[CacheContent]] =>
                     val content = ref.value
-                    println(s"Content '$cacheID' received ! ($content)")
+                    //println(s"Content '$cacheID' received ! ($content)")
                     content
             }
         } catch {
@@ -59,11 +58,11 @@ final class SharedCacheDistantManager(family: String,
     }
 
     override protected def preCacheOpenChecks(cacheID: Int, cacheType: Class[_]): Unit = {
-        requestChannel.makeRequest(ownerScope)
-                .addPacket(ObjectPacket((cacheID, cacheType)))
-                .submit()
-                .nextResponse
-                .nextPacket[Packet] match {
+        channel.makeRequest(ownerScope)
+            .addPacket(ObjectPacket((cacheID, cacheType)))
+            .submit()
+            .nextResponse
+            .nextPacket[Packet] match {
             case EmptyPacket =>
             // OK, the cache is not open or is open and the given cacheType
             // is assignable and was accepted by the AttachHandler of the owner's cache handler.

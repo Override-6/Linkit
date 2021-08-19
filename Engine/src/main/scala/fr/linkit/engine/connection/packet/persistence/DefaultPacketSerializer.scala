@@ -48,29 +48,29 @@ class DefaultPacketSerializer(center: DefaultObjectWrapperClassCenter) extends P
                 val fakeOut     = new DefaultSerialisationOutputStream(buff, coordinates, FakeSerializationObjectPool, context)
                 val fakeProgess = new DefaultSerializationProgression(context, FakeSerializationObjectPool, NoPacketCoordinates, fakeOut)
                 DefaultObjectPersistor
-                        .getSerialNode(other, context.getDescription(other.getClass), context, fakeProgess)
-                        .writeBytes(fakeOut)
+                    .getSerialNode(other, context.getDescription(other.getClass), context, fakeProgess)
+                    .writeBytes(fakeOut)
         }
         objects
-                .map(obj => bodyStream.progression.getSerializationNode(obj))
-                .foreach(_.writeBytes(bodyStream))
+            .map(obj => bodyStream.progression.getSerializationNode(obj))
+            .foreach(_.writeBytes(bodyStream))
         pool.writePool(poolStream)
         bodyStream.flip()
         poolStream.put(bodyStream)
     }
 
     override def deserializePacket(buff: ByteBuffer): PacketDeserial = {
-        val lim                            = buff.limit()
+        val lim         = buff.limit()
         val coordinates = {
             buff.get match {
                 case NoPacketCoordinatesFlag  => NoPacketCoordinates
                 case AnyPacketCoordinatesFlag =>
                     buff.position(buff.position() + 1)
-                    val in = new DefaultDeserializationInputStream(buff, context, NoPacketCoordinates, _ => EmptyDeserializationObjectPool)
+                    val in     = new DefaultDeserializationInputStream(buff, context, NoPacketCoordinates, _ => EmptyDeserializationObjectPool)
                     val coords = DefaultObjectPersistor
-                            .getDeserialNode(context.getDescription(in.readClass()), context, in.progression)
-                            .deserialize(in)
-                            .asInstanceOf[PacketCoordinates]
+                        .getDeserialNode(context.getDescription(in.readClass()), context, in.progression)
+                        .deserialize(in)
+                        .asInstanceOf[PacketCoordinates]
                     in.progression.concludeDeserialization()
                     coords
             }
@@ -103,7 +103,7 @@ class DefaultPacketSerializer(center: DefaultObjectWrapperClassCenter) extends P
                 in.initPool()
                 while (lim - buff.position() > 2 && buff.get(buff.position()) != 0) {
                     val obj = in.progression.getNextDeserializationNode
-                            .deserialize(in)
+                        .deserialize(in)
                     buff.limit(lim)
                     f(obj)
                 }
@@ -130,8 +130,8 @@ object DefaultPacketSerializer {
 
     object NoPacketCoordinates extends PacketCoordinates {
 
-        override val injectableID: Int    = -1
-        override val senderID    : String = null
+        override val path    : Array[Int] = Array.empty
+        override val senderID: String     = null
 
         override def forallConcernedTargets(action: String => Boolean): Boolean = true
     }

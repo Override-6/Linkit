@@ -20,7 +20,7 @@ trait JustifiedCloseable extends AutoCloseable {
 
     def isClosed: Boolean
 
-    def isOpen: Boolean = !isClosed
+    @inline def isOpen: Boolean = !isClosed
 
     override def close(): Unit = close(NOT_SPECIFIED)
 

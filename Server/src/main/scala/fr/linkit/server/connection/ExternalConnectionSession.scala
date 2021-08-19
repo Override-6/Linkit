@@ -13,17 +13,15 @@
 package fr.linkit.server.connection
 
 import fr.linkit.api.connection.network.{Engine, ExternalConnectionState}
-import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketTranslator}
-import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
+import fr.linkit.api.connection.packet.persistence.PacketSerializationResult
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
+import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.system.SystemPacketChannel
-import fr.linkit.engine.local.utils.NumberSerializer
 import fr.linkit.server.connection.network.ServerSideNetwork
-import fr.linkit.server.local.task.ConnectionTasksHandler
 
 import java.net.Socket
 import java.nio.ByteBuffer
@@ -37,8 +35,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
     val connectionManager: ExternalConnectionsManager = info.manager
     val readThread       : PacketReaderThread         = info.readThread
     val serverTraffic    : PacketTraffic              = server.traffic
-    val channel          : SystemPacketChannel        = serverTraffic.getInjectable(SystemChannelID, ChannelScopes.include(boundIdentifier), SystemPacketChannel)
-    val tasksHandler     : ConnectionTasksHandler     = null //new ConnectionTasksHandler(this)
+    val channel          : SystemPacketChannel        = serverTraffic.getInjectable(SystemChannelID, SystemPacketChannel, ChannelScopes.include(boundIdentifier))
 
     @workerExecution
     override def close(reason: Reason): Unit = {

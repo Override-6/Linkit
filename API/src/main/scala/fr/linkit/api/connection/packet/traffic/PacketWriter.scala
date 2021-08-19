@@ -18,7 +18,7 @@ trait PacketWriter {
 
     val serverIdentifier : String
     val currentIdentifier: String
-    val injectableID     : Int
+    val path             : Array[Int]
     val traffic          : PacketTraffic
 
     def writePacket(packet: Packet, targetIDs: Array[String]): Unit

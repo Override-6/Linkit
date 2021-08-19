@@ -12,4 +12,9 @@
 
 package fr.linkit.api.connection.cache
 
+/**
+ * A Marker trait for data classes that represents the content of a
+ * cache.
+ * @see [[fr.linkit.api.connection.cache.traffic.handler.ContentHandler]]
+ */
 trait CacheContent extends Serializable

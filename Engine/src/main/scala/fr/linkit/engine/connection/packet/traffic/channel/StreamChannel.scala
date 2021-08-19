@@ -12,57 +12,54 @@
 
 package fr.linkit.engine.connection.packet.traffic.channel
 
-import fr.linkit.api.connection.packet.Packet
-import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
-import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
-import fr.linkit.engine.connection.packet.UnexpectedPacketException
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import org.jetbrains.annotations.Nullable
 import java.io.{DataInputStream, DataOutputStream}
 
+import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
+import fr.linkit.api.connection.packet.{ChannelPacketBundle, Packet}
 import fr.linkit.api.local.concurrency.WorkerPools
+import fr.linkit.engine.connection.packet.UnexpectedPacketException
+import org.jetbrains.annotations.Nullable
 
-class StreamChannel(parent: PacketChannel, scope: ChannelScope) extends AbstractPacketChannel(parent, scope) {
+class StreamChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) {
 
     @Nullable private var input : DataInputStream  = _
     @Nullable private var output: DataOutputStream = _
     @volatile private var transferConstantly       = false
 
-    override def handleInjection(injection: PacketInjection): Unit = {
-        injection.attachPin { (packet, _) =>
-            packet match {
-                case packet: StreamPacket =>
-                    output.write(packet.streamSlice)
-                case p                    => throw UnexpectedPacketException(s"Received forbidden packet $p")
-            }
+    override def handleBundle(bundle: ChannelPacketBundle): Unit = {
+        bundle.packet match {
+            case packet: StreamPacket =>
+                output.write(packet.streamSlice)
+            case other                => throw UnexpectedPacketException(s"Received forbidden packet $other")
         }
-
-        def transferAll(): Unit = {
-            val available = input.available()
-            val buff      = new Array[Byte](available)
-            input.readFully(buff)
-            scope.sendToAll(new StreamPacket(buff))
-        }
-
-        def startConstantTransfer(): Unit = {
-            WorkerPools.ensureCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
-            transferConstantly = true
-            while (transferConstantly) {
-                transferAll()
-            }
-        }
-
-        def stopConstantTransfer(): Unit = transferConstantly = false
-
-        def inputStream: DataInputStream = input
-
-        def outputStream: DataOutputStream = output
-
-        def setInput(input: DataInputStream): Unit = this.input = input
-
-        def setOutput(output: DataOutputStream): Unit = this.output = output
-
-        class StreamPacket(val streamSlice: Array[Byte]) extends Packet
-
     }
+
+    def transferAll(): Unit = {
+        val available = input.available()
+        val buff      = new Array[Byte](available)
+        input.readFully(buff)
+        scope.sendToAll(new StreamPacket(buff))
+    }
+
+    def startConstantTransfer(): Unit = {
+        WorkerPools.ensureCurrentIsNotWorker("This worker thread can't be undefinitely locked.")
+        transferConstantly = true
+        while (transferConstantly) {
+            transferAll()
+        }
+    }
+
+    def stopConstantTransfer(): Unit = transferConstantly = false
+
+    def inputStream: DataInputStream = input
+
+    def outputStream: DataOutputStream = output
+
+    def setInput(input: DataInputStream): Unit = this.input = input
+
+    def setOutput(output: DataOutputStream): Unit = this.output = output
+
+    class StreamPacket(val streamSlice: Array[Byte]) extends Packet
+
 }

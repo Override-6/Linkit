@@ -13,14 +13,13 @@
 package fr.linkit.api.connection.cache.obj.description
 
 import fr.linkit.api.connection.cache.obj.description.MethodDescription.NumberTypes
-import fr.linkit.api.local.generation.PuppetClassDescription
 
 import java.lang.reflect.Method
 import scala.reflect.runtime.universe._
 
 case class MethodDescription(symbol: MethodSymbol,
                              javaMethod: Method,
-                             classDesc: PuppetClassDescription[_],
+                             classDesc: SyncObjectSuperclassDescription[_],
                              overloadOrdinal: Int) {
 
     val methodId: Int = {
@@ -42,8 +41,8 @@ case class MethodDescription(symbol: MethodSymbol,
         var result = 1
         for (tpe <- a) {
             result = 31 * result +
-                    (if (tpe == null) 0
-                    else tpe.getTypeName.hashCode)
+                (if (tpe == null) 0
+                else tpe.getTypeName.hashCode)
         }
         result
     }

@@ -12,39 +12,23 @@
 
 package fr.linkit.engine.connection.packet.traffic.channel
 
-import fr.linkit.api.connection
 import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
 import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.packet.traffic.injection.PacketInjection
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.connection.packet.{ChannelPacketBundle, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine
-import fr.linkit.engine.connection.packet.{PacketBundle, SimplePacketAttributes}
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.connection.packet.{SimplePacketAttributes, SimplePacketBundle}
 import fr.linkit.engine.local.utils.ConsumerContainer
-import org.jetbrains.annotations.Nullable
 
-import scala.util.control.NonFatal
-
-class AsyncPacketChannel protected(@Nullable parent: PacketChannel, scope: ChannelScope)
-        extends AbstractPacketChannel(parent, scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {
+class AsyncPacketChannel protected(store: PacketInjectableStore, scope: ChannelScope)
+    extends AbstractPacketChannel(store, scope) with PacketSender with PacketAsyncReceiver[PacketBundle] {
 
     private val packetReceivedContainer: ConsumerContainer[PacketBundle] = ConsumerContainer()
 
     @workerExecution
-    override def handleInjection(injection: PacketInjection): Unit = {
+    override def handleBundle(bundle: ChannelPacketBundle): Unit = {
         val pool = WorkerPools.currentPool.get
         pool.runLater {
-            injection.attachPin((packet, attr) => {
-                try {
-                    val coords = injection.coordinates
-                    packetReceivedContainer.applyAll(engine.connection.packet.PacketBundle(this, packet, attr, coords))
-                } catch {
-                    case NonFatal(e) =>
-                        AppLogger.printStackTrace(e)
-                }
-            })
+            packetReceivedContainer.applyAll(bundle)
         }
     }
 
@@ -67,8 +51,8 @@ class AsyncPacketChannel protected(@Nullable parent: PacketChannel, scope: Chann
 
 object AsyncPacketChannel extends PacketInjectableFactory[AsyncPacketChannel] {
 
-    override def createNew(parent: PacketChannel, scope: ChannelScope): AsyncPacketChannel = {
-        new AsyncPacketChannel(parent, scope)
+    override def createNew(store: PacketInjectableStore, scope: ChannelScope): AsyncPacketChannel = {
+        new AsyncPacketChannel(store, scope)
     }
 
 }

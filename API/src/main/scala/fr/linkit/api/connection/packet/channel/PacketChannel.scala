@@ -12,20 +12,14 @@
 
 package fr.linkit.api.connection.packet.channel
 
-import fr.linkit.api.connection.packet.traffic.PacketTraffic
-import fr.linkit.api.connection.packet.{PacketBundle, PacketAttributesPresence}
+import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketTraffic}
+import fr.linkit.api.connection.packet.{ChannelPacketBundle, PacketAttributesPresence, PacketBundle}
 import fr.linkit.api.local.system.JustifiedCloseable
 
-trait PacketChannel extends JustifiedCloseable with PacketAttributesPresence {
+trait PacketChannel extends PacketInjectable with JustifiedCloseable with PacketAttributesPresence {
 
-    val ownerID   : String
-    val traffic   : PacketTraffic
-    val identifier: Int
-
-    def storeBundle(bundle: PacketBundle): Unit
+    def storeBundle(bundle: ChannelPacketBundle): Unit
 
     def injectStoredBundles(): Unit
-
-    def getParent: Option[PacketChannel]
 
 }

@@ -65,7 +65,7 @@ class SelectivePacketReader(socket: DynamicSocket,
 
                 //would inject into the server too
                 if (broadcast.targetIDs.contains(serverIdentifier) != broadcast.discardTargets) {
-                    val coords     = DedicatedPacketCoordinates(broadcast.injectableID, server.currentIdentifier, broadcast.senderID)
+                    val coords     = DedicatedPacketCoordinates(broadcast.path, server.currentIdentifier, broadcast.senderID)
                     val attributes = result.attributes
                     server.traffic.processInjection(result.packet, attributes, coords)
                 }

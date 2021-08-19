@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.local.parsing.bhv.descriptor.method
 
-import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
 import fr.linkit.engine.local.parsing.bhv.descriptor.DescriptionResult
 
-case class MethodBehaviorDescriptionResult(isEnabled: Boolean, synchronizedParameters: Seq[Boolean], syncReturnValue: Boolean, rule: BasicRemoteInvocationRule) extends DescriptionResult {
+case class MethodBehaviorDescriptionResult(isEnabled: Boolean, synchronizedParameters: Seq[Boolean], syncReturnValue: Boolean, rule: BasicInvocationRule) extends DescriptionResult {
 
 }
 

@@ -12,38 +12,44 @@
 
 package fr.linkit.api.connection.cache.obj.behavior.annotation;
 
+import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Contains all the information of a method declared by a class
- * that would be extended at runtime for an object synchronization.
+ * Contains basic information for a {@link MethodBehavior}
+ * @see fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+ * @see MethodBehavior
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface MethodControl {
 
     /**
-     * Specifies what kind of invocation the implementation of the annotated method must do.
-     *
-     * @see fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule
+     * @return The basic rules for the annotated method invocation
+     * @see BasicInvocationRule
      */
-    BasicRemoteInvocationRule value() default BasicRemoteInvocationRule.ONLY_CURRENT;
+    BasicInvocationRule value() default BasicInvocationRule.ONLY_CURRENT;
 
     /**
-     * If true, the returned value, if possible, will be synchronized with the caller as well.
-     * as well.
+     * @return true if the returned value of the method must be synchronized
+     * (Only useful if the value is an object. Nothing would be sync if the value is a primitive.)
      */
     boolean synchronizeReturnValue() default false;
 
     /**
-     * If a method is hidden, this mean that it can't be called remotely.
-     * If a distant object reference call the annotated method with this param on,
-     * It will receive a {@link fr.linkit.api.connection.cache.obj.RemoteInvocationFailedException}
-     */
+     * Used to hide this method from remote invocations.
+     * If a RMI request tries to call this method while this method is set as hidden,
+     * an exception will occur. //TODO Throw the exception on the RMI request sender
+     * */
     boolean hide() default false;
 
+    /**
+     *
+     * @return true if the Remote Method Invocation should not wait for any resulting value or exception.
+     */
     boolean invokeOnly() default false;
 }

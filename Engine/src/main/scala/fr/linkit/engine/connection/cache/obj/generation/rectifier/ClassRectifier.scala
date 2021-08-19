@@ -13,9 +13,8 @@
 package fr.linkit.engine.connection.cache.obj.generation.rectifier
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.description.MethodDescription
+import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
-import fr.linkit.api.local.generation.PuppetClassDescription
 import fr.linkit.engine.connection.cache.obj.generation.rectifier.ClassRectifier.{StringToPrimitiveID, SuperMethodModifiers}
 import javassist.bytecode.MethodInfo
 import javassist.{ClassPool, CtClass, CtMethod, LoaderClassPath}
@@ -23,7 +22,7 @@ import javassist.{ClassPool, CtClass, CtMethod, LoaderClassPath}
 import java.lang.reflect.{Method, Modifier}
 import scala.collection.mutable.ListBuffer
 
-class ClassRectifier(desc: PuppetClassDescription[_], puppetClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
+class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
 
     private val pool = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))

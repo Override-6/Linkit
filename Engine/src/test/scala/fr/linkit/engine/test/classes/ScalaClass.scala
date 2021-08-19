@@ -18,7 +18,7 @@ class ScalaClass() {
 
     var b: String = "Wesh la bite bien ou queue ?"
 
-    def testRMI(): WithFilter[_, Nothing] = {
+    def testRMI(obj: Any): WithFilter[_, Nothing] = {
         println(s"RMI Done ! (${b})")
         val consumer: String => Unit = {
             str => println(s"srt = ${str}")

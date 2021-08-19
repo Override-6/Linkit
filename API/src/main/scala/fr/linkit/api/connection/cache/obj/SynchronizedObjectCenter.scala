@@ -13,8 +13,8 @@
 package fr.linkit.api.connection.cache.obj
 
 import fr.linkit.api.connection.cache.SharedCache
-import fr.linkit.api.connection.cache.obj.behavior.ObjectTreeBehavior
-import fr.linkit.api.connection.cache.obj.tree.ObjectTreeCenter
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
+import fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTreeStore
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 
 /**
@@ -52,25 +52,26 @@ trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence wit
      * @see [[fr.linkit.api.connection.cache.obj.tree.SyncNode]]
      * @see [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]]
      * */
-    val treeCenter: ObjectTreeCenter[A]
+    val treeCenter: SynchronizedObjectTreeStore[A]
 
     /**
      * The default behavior tree for an [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]].
      * "the behavior of a tree" is simply a set of [[fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior]]
      * that will set the behavior of each objects of a tree.
      * */
-    val defaultTreeViewBehavior: ObjectTreeBehavior
+    val defaultTreeViewBehavior: SynchronizedObjectBehaviorStore
 
     /**
      * posts an object in the cache.
      * The behavior of the object and sub objects will depends on the [[defaultTreeViewBehavior]]
-     * @throws IllegalObjectWrapperException If the given object is a synchronized object.
-     *                                       (No matters if the object is handled by this cache or not)
+ *
+     * @throws IllegalSynchronizationException If the given object is a synchronized object.
+     *                                         (No matters if the object is handled by this cache or not)
      * @param id the identifier of the root object
      * @param obj the object to synchronize.
      * @return the synchronized object.
      * */
-    @throws[IllegalObjectWrapperException]("If the given object is a synchronized object.")
+    @throws[IllegalSynchronizationException]("If the given object is a synchronized object.")
     def postObject(id: Int, obj: A): A with SynchronizedObject[A]
 
     /**
@@ -79,7 +80,7 @@ trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence wit
      * @param behavior the behavior tree of the object and its inner objects
      * @return the synchronized object.
      * */
-    def postObject(id: Int, obj: A, behavior: ObjectTreeBehavior): A with SynchronizedObject[A]
+    def postObject(id: Int, obj: A, behavior: SynchronizedObjectBehaviorStore): A with SynchronizedObject[A]
 
     /**
      * Finds a synchronized object in the cache.

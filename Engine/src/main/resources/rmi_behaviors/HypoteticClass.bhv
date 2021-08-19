@@ -1,0 +1,62 @@
+
+//Normal imports
+import fr.overrride.game.shooter.api.other.GraphicComponent
+import fr.overrride.game.shooter.api.session.character.Collidable
+import fr.overrride.game.shooter.session.character.ShooterCharacter
+
+//Scala imports
+scala import fr.example.ExampleObject
+
+//Disabling a class mean that all of its fields and methods are not synchronized
+disable class GraphicComponent
+disable class Collidable
+// We describe the class. the class names after ':' are used to inherit the method behaviors of the classes 
+// (the described class, (here ShooterCharacter), must extend or implement those classes
+describe class ShooterCharacter : GraphicComponent, Collidable {
+    
+    forall method -> disable //We disable all methods by default
+    
+    //describing the dash and kill methods. 
+    [procrastinator = @lwjgl] //We use the lwjgl thread pool in which we want the method to be processed if the execution was triggered from a RMI request.
+                   // The RMI rule which says that the remote call must be broadcasted to every connected clients (only if the method is called on an object owned by the current engine)
+    enable dash, kill as broadcast(if owner) and invokeonly //invokeonly means that we only send the RMI request without waiting for any result.
+    
+    //The behavior of dash is pasted to these methods
+    enable setWeapon, damage, heal, setHealth as dash
+    
+    //Same behavior as dash excepted that we don't specify an executor
+    [procrastinator = none]
+    enable shoot as dash
+    
+    //Here is another method example
+                            //We describe the rule using scala code
+    enable exampleMethod as ${agreement => { agreement
+                                                   .ifCurrentIsNotOwner(_.discardAll)
+                                                   .setDesiredCurrentEngineReturn()}} {
+         // We describe the arguments
+         args {
+            enable arg1 { //Enabling the argument, (it will be synchronized too)
+                local modifier -> { //local modifier to apply to the parameter
+                      callComesFromRemote -> ${arg => new ModifiedArgument(arg.value + 1)}  //modifier applied if the method invocation comes from a RMI request
+                      callComesFromLocal  -> ${arg => arg} //modifier applied if the method is called by the current engine, (note: this currently does nothing, this is the normal behavior for a parameter)
+                }
+                remote modifier -> ${arg, engineID => if (engineID != "DumbEngine") localModifier(arg) else null} //Modifier applied in order to modify the arguments of the RMI request of any engineID
+            }
+            //We don't want this argument to be synchronized, however, we still want it to be modified as for arg1.
+            disable arg2 as arg1 {
+                remote modifier -> ${arg, engineID => if (engineID != "DumbEngine") localModifier(arg) else ExampleObject.modified(arg)}
+            }
+         }         
+         returnvalue -> disable //we don't want the returnvalue of this method to be synchronized
+    }
+
+    //Let's say that the exampleMethod returns an integer.
+    enable exampleMethod2 as @complexBehavior("Hello") { //We can take a behavior from the tree context, giving the factory argument if defined
+             returnvalue -> disable { //we don't want the returnvalue of this method to be synchronized (because we can't synchronize primitives)
+                remote modifier -> ${x => x * 2} //however we modify it if the invocation comes from a distant engine
+             }
+    }
+
+    //the method won't even be called by any RMI.
+    hide getPassword.
+}

@@ -229,7 +229,7 @@ class ListBuffer[A]
         else {
             val p = locate(idx)
             val nx = elem :: getNext(p)
-            if(p eq null) first = nx else p.next = nx
+            if(p == null) first = nx else p.next = nx
             len += 1
         }
     }
@@ -243,7 +243,7 @@ class ListBuffer[A]
     private def insertAfter(prev: Predecessor[A], fresh: ListBuffer[A]): Unit = {
         if (!fresh.isEmpty) {
             val follow = getNext(prev)
-            if (prev eq null) first = fresh.first else prev.next = fresh.first
+            if (prev == null) first = fresh.first else prev.next = fresh.first
             fresh.last0.next = follow
             len += fresh.length
         }
@@ -267,7 +267,7 @@ class ListBuffer[A]
         if (idx < 0 || idx >= len) throw new IndexOutOfBoundsException(s"$idx is out of bounds (min 0, max ${len-1})")
         val p = locate(idx)
         val nx = getNext(p)
-        if(p eq null) {
+        if(p == null) {
             first = nx.tail
             if(first.isEmpty) last0 = null
         } else {
@@ -291,7 +291,7 @@ class ListBuffer[A]
         @tailrec def ahead(p: List[A], n: Int): List[A] =
             if (n == 0) p else ahead(p.tail, n - 1)
         val nx = ahead(getNext(prev), n)
-        if(prev eq null) first = nx else prev.next = nx
+        if(prev == null) first = nx else prev.next = nx
         if(nx.isEmpty) last0 = prev
         len -= n
     }
@@ -316,13 +316,13 @@ class ListBuffer[A]
             val it = f(src.head).iterator
             while(it.hasNext) {
                 val v = new ::(it.next(), Nil)
-                if(dst eq null) dst = v else last0.next = v
+                if(dst == null) dst = v else last0.next = v
                 last0 = v
                 len += 1
             }
             src = src.tail
         }
-        first = if(dst eq null) Nil else dst
+        first = if(dst == null) Nil else dst
         aliased = false // we just rebuilt a fresh, unaliased instance
         this
     }
@@ -334,7 +334,7 @@ class ListBuffer[A]
         while (!cur.isEmpty) {
             val follow = cur.tail
             if (!p(cur.head)) {
-                if(prev eq null) first = follow
+                if(prev == null) first = follow
                 else prev.next = follow
                 len -= 1
             } else {
@@ -377,7 +377,7 @@ class ListBuffer[A]
      * @return The last element of this $coll.
      * @throws NoSuchElementException If the $coll is empty.
      */
-    override def last: A = if (last0 eq null) throw new NoSuchElementException("last of empty ListBuffer") else last0.head
+    override def last: A = if (last0 == null) throw new NoSuchElementException("last of empty ListBuffer") else last0.head
 
     /**
      * Optionally selects the last element.
@@ -386,7 +386,7 @@ class ListBuffer[A]
      *
      * @return the last element of this $coll$ if it is nonempty, `None` if it is empty.
      */
-    override def lastOption: Option[A] = if (last0 eq null) None else Some(last0.head)
+    override def lastOption: Option[A] = if (last0 == null) None else Some(last0.head)
 
     @nowarn("""cat=deprecation&origin=scala\.collection\.Iterable\.stringPrefix""")
     override protected[this] def stringPrefix = "ListBuffer"

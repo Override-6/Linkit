@@ -16,22 +16,19 @@ import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketTranslator}
-import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketTraffic}
+import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.engine.connection.packet.fundamental.TaskInitPacket
 import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull
-
 import java.net.Socket
 import java.nio.ByteBuffer
+
 import scala.reflect.ClassTag
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
@@ -64,9 +61,13 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     override def isAlive: Boolean = alive
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope], factory: PacketInjectableFactory[C]): C = {
-        serverTraffic.getInjectable(injectableID, scopeFactory, factory)
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+        traffic.getInjectable(injectableID, factory, scopeFactory)
     }
+
+    override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
+
+    override def createStore(id: Int): PacketInjectableStore = traffic.createStore(id)
 
     override def getState: ExternalConnectionState = session.getSocketState
 
@@ -93,9 +94,9 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         //Method useless but kept because services could need to be started in the future?
     }
 
-    def sendPacket(packet: Packet, attributes: PacketAttributes, channelID: Int): Unit = {
+    def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
         runLater {
-            val coords       = DedicatedPacketCoordinates(channelID, boundIdentifier, server.currentIdentifier)
+            val coords       = DedicatedPacketCoordinates(path, boundIdentifier, server.currentIdentifier)
             val transferInfo = SimpleTransferInfo(coords, attributes, packet)
             val result       = translator.translate(transferInfo)
             session.send(result)
@@ -126,7 +127,6 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
         packet match {
             case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
-            case init: TaskInitPacket       => tasksHandler.handlePacket(init, coordinates)
             case _: Packet                  =>
                 serverTraffic.processInjection(packet, attributes, coordinates)
         }
@@ -134,12 +134,10 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     private def handleSystemOrder(packet: SystemPacket): Unit = {
         val orderType = packet.order
-        val reason    = packet.reason.reversedPOV()
         import fr.linkit.engine.local.system.SystemOrder._
         orderType match {
             case CLIENT_CLOSE => runLater(shutdown())
             case SERVER_CLOSE => server.shutdown()
-            case ABORT_TASK   => tasksHandler.skipCurrent(reason)
 
             case _ =>
                 val msg = s"Could not complete order '$orderType', can't be handled by a server or unknown order"

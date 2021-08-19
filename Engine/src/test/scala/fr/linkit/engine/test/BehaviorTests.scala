@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreement
+import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreementBuilder
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Assertions, Test, TestInstance}
 
@@ -21,9 +21,10 @@ class BehaviorTests {
 
     @Test
     def testAgreement(): Unit = {
-        val agreement = new SimpleRMIRulesAgreement("Johny", "Johny")
-        agreement.discardAll()
+        val builder = new SimpleRMIRulesAgreementBuilder("Johny", "Johny")
+        builder.discardAll()
                 .acceptOwner()
+        val agreement = builder.result
         Assertions.assertTrue(agreement.mayCallSuper)
     }
 

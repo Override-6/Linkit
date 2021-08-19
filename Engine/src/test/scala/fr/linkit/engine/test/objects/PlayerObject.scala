@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test.objects
 
-import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicRemoteInvocationRule.BROADCAST
+import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule.BROADCAST
 import fr.linkit.api.connection.cache.obj.behavior.annotation.MethodControl
 
 import scala.annotation.meta._
