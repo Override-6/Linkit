@@ -10,16 +10,21 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.traffic
+package fr.linkit.api.connection.packet.traffic.injection
 
-import fr.linkit.api.connection.packet.PacketBundle
+import fr.linkit.api.connection.packet.traffic.PacketInjectable
 
-trait PacketInjection {
+trait PacketInjectionController extends PacketInjection {
 
-    val bundle: PacketBundle
+    def isProcessing: Boolean
+
+    def markAsProcessing(): Unit
+
+    def canAcceptMoreInjection: Boolean
 
     def nextIdentifier: Int
 
     def haveMoreIdentifier: Boolean
 
+    def process(injectable: PacketInjectable): Unit
 }

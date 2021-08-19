@@ -37,12 +37,11 @@ import scala.collection.mutable
 
 abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
 
-    private   val caches                               = mutable.HashMap.empty[String, SharedCacheManager]
     private   val networkInjectableStore               = connection.createStore(0)
     private   val cacheManagerChannel                  = networkInjectableStore.getInjectable(1, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
     private   val currentIdentifier                    = connection.currentIdentifier
     override  val globalCache     : SharedCacheManager = createGlobalCache
-    protected val engineStore     : EngineStore        = retrieveEngineStore(getEngineStoreBehaviors)
+    protected val engineStore     : NetworkDataTrunk   = retrieveEngineStore(getEngineStoreBehaviors)
     override  val connectionEngine: Engine             = engineStore.newEngine(currentIdentifier, declareNewCacheManager(currentIdentifier))
     postInit()
 
@@ -81,7 +80,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         cache
     }
 
-    protected def retrieveEngineStore(behaviors: SynchronizedObjectBehaviorStore): EngineStore
+    protected def retrieveEngineStore(behaviors: SynchronizedObjectBehaviorStore): NetworkDataTrunk
 
     protected def createGlobalCache: SharedCacheManager
 
@@ -135,7 +134,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
 
     private def getEngineStoreBehaviors: SynchronizedObjectBehaviorStore = {
         new SynchronizedObjectBehaviorStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
-            behaviors += new SynchronizedObjectBehaviorBuilder[EngineStore]() {
+            behaviors += new SynchronizedObjectBehaviorBuilder[NetworkDataTrunk]() {
                 annotateAllMethods("newEngine") by MethodControl(BROADCAST, synchronizedParams = Seq(MethodParameterBehavior(false, null, null), MethodParameterBehavior[SharedCacheManager](false, null, (manager, comesFromRMI) => if (comesFromRMI) transformToDistantCache(manager) else manager)))
             }
         }.build

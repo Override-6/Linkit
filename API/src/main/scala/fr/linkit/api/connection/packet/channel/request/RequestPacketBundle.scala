@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.channel.request
 
-import fr.linkit.api.connection.packet.{ChannelPacketBundle, DedicatedPacketCoordinates, PacketBundle, PacketCoordinates}
+import fr.linkit.api.connection.packet.{ChannelPacketBundle, PacketCoordinates}
 
 trait RequestPacketBundle extends ChannelPacketBundle {
 

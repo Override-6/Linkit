@@ -12,10 +12,7 @@
 
 package fr.linkit.engine.connection.packet.traffic.channel.request
 
-import java.util.NoSuchElementException
-import java.util.concurrent.LinkedBlockingQueue
-
-import fr.linkit.api.connection.packet.{ChannelPacketBundle, PacketBundle}
+import fr.linkit.api.connection.packet.ChannelPacketBundle
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.channel.request.{RequestPacketBundle, RequestPacketChannel, ResponseHolder, Submitter}
@@ -27,11 +24,13 @@ import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.AbstractPacketChannel
 import fr.linkit.engine.local.utils.ConsumerContainer
 
-import scala.collection.mutable
+import java.util
+import java.util.NoSuchElementException
+import java.util.concurrent.LinkedBlockingQueue
 
 class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) with RequestPacketChannel {
 
-    private val requestHolders         = mutable.LinkedHashMap.empty[Int, SimpleResponseHolder]
+    private val requestHolders         = new util.LinkedHashMap[Int, SimpleResponseHolder]()
     private val requestConsumers       = ConsumerContainer[DefaultRequestChannelPacketBundle]()
     @volatile private var requestCount = 0
 
@@ -58,7 +57,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
                 response.setAttributes(attr)
 
                 val responseID = response.id
-                requestHolders.get(responseID) match {
+                Option(requestHolders.get(responseID)) match {
                     case Some(request)                     => request.pushResponse(response)
                     case None if responseID > requestCount =>
                         throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requestHolders)")
@@ -94,7 +93,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
     }
 
     private[request] def removeRequestHolder(holder: SimpleResponseHolder): Unit = {
-        requestHolders -= holder.id
+        requestHolders remove holder.id
     }
 
 }
