@@ -18,7 +18,7 @@ import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 
 import java.io.Closeable
 import scala.collection.mutable
-import scala.reflect.ClassTag
+import scala.reflect.{ClassTag, classTag}
 
 class SimplePacketInjectableStore(traffic: PacketTraffic,
                                   override val path: Array[Int]) extends PacketInjectableStore with JustifiedCloseable with TrafficPresence {
@@ -27,17 +27,21 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     private var closed: Boolean = false
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): C = {
-        ensureFree(id)
         val childPath = path :+ id
-        val scope     = scopeFactory(traffic.newWriter(childPath))
 
-        completeCreation(id, scope, factory)
-    }
-
-    private def ensureFree(id: Int): Unit = {
-        if (presences.contains(id)) {
-            throw new ConflictException("This scope can conflict with other scopes that are registered within this injectable identifier")
+        val presenceOpt = presences.get(id)
+        if (presenceOpt.isDefined) {
+            val clazz    = classTag[C].runtimeClass
+            val presence = presenceOpt.get
+            presence match {
+                case injectable: C if injectable.getClass eq clazz => return injectable
+                case _                                             =>
+                    throw new ConflictException("This scope can conflict with other scopes that are registered within this injectable identifier.")
+            }
         }
+
+        val scope = scopeFactory(traffic.newWriter(childPath))
+        completeCreation(id, scope, factory)
     }
 
     @inline

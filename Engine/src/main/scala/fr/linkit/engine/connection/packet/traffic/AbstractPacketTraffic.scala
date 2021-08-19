@@ -47,7 +47,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
         processInjection(SimplePacketBundle(packet, attr, coordinates))
     }
 
-    override def processInjection(bundle: PacketBundle): Unit = procrastinator.runLater {
+    override def processInjection(bundle: PacketBundle): Unit = /*procrastinator.runLater*/ {
         rootStore.inject(new SimplePacketInjection(bundle))
     }
 
