@@ -12,7 +12,6 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.engine.local.parsing.bhv.TreeBehaviorParser
 import org.junit.jupiter.api.{Test, TestInstance}
 import org.junit.jupiter.api.TestInstance.Lifecycle
 
