@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.cache.obj.behavior.annotation;
 
-import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior;
+import fr.linkit.api.connection.cache.obj.behavior.member.method.MethodBehavior;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;

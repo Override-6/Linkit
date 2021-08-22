@@ -7,6 +7,4 @@ trait RemoteMethodInvocation[R] extends MethodInvocation[R] {
 
     val agreement: RMIRulesAgreement
 
-    def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher)
-
 }

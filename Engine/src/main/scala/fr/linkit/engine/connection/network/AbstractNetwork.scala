@@ -16,9 +16,9 @@ import java.sql.Timestamp
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule._
-import fr.linkit.api.connection.cache.obj.behavior.member.MethodParameterBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterModifier
+import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
 import fr.linkit.api.connection.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.connection.network.{Engine, Network}
 import fr.linkit.api.connection.packet.Packet
@@ -26,7 +26,8 @@ import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBehaviorBuilder.MethodControl
-import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectBehaviorBuilder, SynchronizedObjectBehaviorStoreBuilder}
+import fr.linkit.engine.connection.cache.obj.behavior.member.MethodParameterBehavior
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectBehaviorBuilder, SynchronizedObjectBehaviorStoreBuilder, member}
 import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.StringPacket
@@ -134,9 +135,12 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     }
 
     private def getEngineStoreBehaviors: SynchronizedObjectBehaviorStore = {
+        val modifier = new ParameterModifier[SharedCacheManager] {
+            override def forLocalComingFromRemote(receivedParam: SharedCacheManager, invocation: LocalMethodInvocation[_], remote: Engine): SharedCacheManager = transformToDistantCache(receivedParam)
+        }
         new SynchronizedObjectBehaviorStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
             behaviors += new SynchronizedObjectBehaviorBuilder[EngineStore]() {
-                annotateAllMethods("newEngine") by MethodControl(BROADCAST, synchronizedParams = Seq(MethodParameterBehavior(false, null, null), MethodParameterBehavior[SharedCacheManager](false, null, (manager, comesFromRMI) => if (comesFromRMI) transformToDistantCache(manager) else manager)))
+                annotateAllMethods("newEngine") by MethodControl(BROADCAST, synchronizedParams = Seq(MethodParameterBehavior(false, null), MethodParameterBehavior[SharedCacheManager](false, modifier)))
             }
         }.build
     }

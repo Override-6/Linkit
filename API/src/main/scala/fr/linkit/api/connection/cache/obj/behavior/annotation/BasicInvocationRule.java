@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.cache.obj.behavior.annotation;
 
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreementBuilder;
-import fr.linkit.api.connection.cache.obj.behavior.member.RemoteInvocationRule;
+import fr.linkit.api.connection.cache.obj.behavior.RemoteInvocationRule;
 
 /**
  * Basic RMI rules that defines simple agreements.

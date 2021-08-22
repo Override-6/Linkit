@@ -10,10 +10,4 @@ trait LocalMethodInvocation[R] extends MethodInvocation[R] {
      * */
     val methodArguments: Array[Any]
 
-    /**
-     * Calls the local method of the object.
-     * @return the method's call result.
-     * */
-    def callSuper(): R
-
 }

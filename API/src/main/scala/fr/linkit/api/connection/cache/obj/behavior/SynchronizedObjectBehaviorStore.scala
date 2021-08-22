@@ -13,8 +13,10 @@ trait SynchronizedObjectBehaviorStore {
 
     val factory: MemberBehaviorFactory
 
-    def get[B: TypeTag : ClassTag]: SynchronizedObjectBehavior[B]
+    def get[B <: AnyRef: TypeTag : ClassTag]: SynchronizedObjectBehavior[B]
 
-    def getFromClass[B](clazz: Class[_]): SynchronizedObjectBehavior[B]
+    def getFromClass[B <: AnyRef](clazz: Class[_]): SynchronizedObjectBehavior[B]
+
+    def findFromClass[B <: AnyRef](clazz: Class[_]): Option[SynchronizedObjectBehavior[B]]
 
 }

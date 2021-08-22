@@ -12,10 +12,10 @@
 
 package fr.linkit.api.connection.cache.obj.invokation.remote
 
-import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
+import fr.linkit.api.connection.cache.obj.invokation.local.CallableLocalMethodInvocation
 
-trait RemoteMethodInvocationHandler {
+trait MethodInvocationHandler {
 
-    def handleRMI[R](invocation: LocalMethodInvocation[R]): R
+    def handleRMI[R](invocation: CallableLocalMethodInvocation[R]): R
 
 }

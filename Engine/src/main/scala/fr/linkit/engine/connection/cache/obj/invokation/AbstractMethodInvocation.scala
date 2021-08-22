@@ -13,9 +13,10 @@
 package fr.linkit.engine.connection.cache.obj.invokation
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.method.MethodBehavior
 import fr.linkit.api.connection.cache.obj.invokation.MethodInvocation
 import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
+import fr.linkit.engine.connection.cache.obj.behavior.member.SyncMethodBehavior
 
 abstract class AbstractMethodInvocation[R](override val methodBehavior: MethodBehavior,
                                            override val synchronizedObject: SynchronizedObject[_]) extends MethodInvocation[R] {

@@ -12,9 +12,10 @@
 
 package fr.linkit.engine.local.parsing.bhv.descriptor.clazz
 
-import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, MethodBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldBehavior
+import fr.linkit.engine.connection.cache.obj.behavior.member.SyncMethodBehavior
 import fr.linkit.engine.local.parsing.bhv.descriptor.DescriptionResult
 
-class ClassDescriptionResult(fieldBehaviors: Array[FieldBehavior], methodsBehavior: Array[MethodBehavior]) extends DescriptionResult {
+class ClassDescriptionResult(fieldBehaviors: Array[FieldBehavior[Any]], methodsBehavior: Array[SyncMethodBehavior]) extends DescriptionResult {
 
 }

@@ -29,17 +29,20 @@ class SynchronizedObjectDefaultBehaviorCenter(override val factory: MemberBehavi
         this.behaviors ++= behaviors
     }
 
-    override def get[B: universe.TypeTag : ClassTag]: SynchronizedObjectBehavior[B] = {
+    override def get[B <: AnyRef : universe.TypeTag : ClassTag]: SynchronizedObjectBehavior[B] = {
         getFromAnyClass(classTag[B].runtimeClass)
     }
 
-    override def getFromClass[B](clazz: Class[_]): SynchronizedObjectBehavior[B] = {
+    override def getFromClass[B <: AnyRef](clazz: Class[_]): SynchronizedObjectBehavior[B] = {
         getFromAnyClass[B](clazz)
     }
 
-    private def getFromAnyClass[B](clazz: Class[_]): SynchronizedObjectBehavior[B] = {
-        behaviors.getOrElseUpdate(clazz, DefaultSynchronizedObjectBehavior(SyncObjectClassDescription(clazz), this))
-                .asInstanceOf[SynchronizedObjectBehavior[B]]
+    private def getFromAnyClass[B <: AnyRef](clazz: Class[_]): SynchronizedObjectBehavior[B] = {
+        behaviors.getOrElseUpdate(clazz, DefaultSynchronizedObjectBehavior[B](SyncObjectClassDescription[B](clazz), this, null, null, null))
+            .asInstanceOf[SynchronizedObjectBehavior[B]]
     }
 
+    override def findFromClass[B <: AnyRef](clazz: Class[_]): Option[SynchronizedObjectBehavior[B]] = {
+        behaviors.get(clazz).asInstanceOf[Option[SynchronizedObjectBehavior[B]]]
+    }
 }

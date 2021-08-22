@@ -16,10 +16,14 @@ import java.util
 
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
-import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, MemberBehaviorFactory, MethodBehavior, MethodParameterBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehaviorFactory
+import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.method.InternalMethodBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterBehavior
 import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBehaviorBuilder.MethodControl
+import fr.linkit.engine.connection.cache.obj.behavior.member.{MethodParameterBehavior, SyncMethodBehavior}
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{DefaultRMIHandler, InvokeOnlyRMIHandler}
 import org.jetbrains.annotations.Nullable
@@ -27,12 +31,12 @@ import org.jetbrains.annotations.Nullable
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-abstract class SynchronizedObjectBehaviorBuilder[T] private(val classDesc: SyncObjectSuperclassDescription[T]) {
+abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classDesc: SyncObjectSuperclassDescription[T]) {
 
     val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
 
     def this()(implicit classTag: ClassTag[T]) = {
-        this(SyncObjectClassDescription(classTag.runtimeClass.asInstanceOf[Class[T]]))
+        this(SyncObjectClassDescription[T](classTag.runtimeClass.asInstanceOf[Class[T]]))
     }
 
     final def annotateMethod(name: String, params: Class[_]*): MethodModification = {
@@ -53,20 +57,20 @@ abstract class SynchronizedObjectBehaviorBuilder[T] private(val classDesc: SyncO
     }
 
     def build(factory: MemberBehaviorFactory): SynchronizedObjectBehavior[T] = {
-        new DefaultSynchronizedObjectBehavior[T](classDesc, factory) {
-            override protected def generateMethodsBehavior(): Iterable[MethodBehavior] = {
+        new DefaultSynchronizedObjectBehavior[T](classDesc, factory, null, null, null) {
+            override protected def generateMethodsBehavior(): Iterable[InternalMethodBehavior] = {
                 classDesc.listMethods()
                         .map(genMethodBehavior(factory, _))
             }
 
-            override protected def generateFieldsBehavior(): Iterable[FieldBehavior] = {
+            override protected def generateFieldsBehavior(): Iterable[FieldBehavior[Any]] = {
                 //TODO Handle field customisation as well
                 super.generateFieldsBehavior()
             }
         }
     }
 
-    private def genMethodBehavior(factory: MemberBehaviorFactory, desc: MethodDescription): MethodBehavior = {
+    private def genMethodBehavior(factory: MemberBehaviorFactory, desc: MethodDescription): InternalMethodBehavior = {
         val opt = methodsMap.get(desc)
         if (opt.isEmpty)
             factory.genMethodBehavior(None, desc)
@@ -74,8 +78,8 @@ abstract class SynchronizedObjectBehaviorBuilder[T] private(val classDesc: SyncO
             val control = opt.get
             import control._
             val handler = if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
-            val params = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams.toArray.asInstanceOf[Array[MethodParameterBehavior[Any]]]
-            MethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), procrastinator, handler)
+            val params = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams.toArray.asInstanceOf[Array[ParameterBehavior[Any]]]
+            SyncMethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), procrastinator, handler)
         }
     }
 

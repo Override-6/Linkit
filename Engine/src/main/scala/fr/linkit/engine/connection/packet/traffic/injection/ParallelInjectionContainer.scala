@@ -42,10 +42,10 @@ class ParallelInjectionContainer(currentIdentifier: String) extends InjectionCon
         val sender = coordinates.senderID
 
         val injection = processingInjections.get((id, sender)) match {
-            case Some(value) if value.canAcceptMoreInjection() =>
+            case Some(value) if value.canAcceptMoreInjection =>
                 AppLogger.error(s"${currentTasksId} <> $number -> INJECTION Available EXISTS, ADDING PACKET.")
                 value
-            case _                                             =>
+            case _                                           =>
                 AppLogger.error(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
                 val injection = new ParallelInjection(coordinates)
                 processingInjections.put((id, sender), injection)

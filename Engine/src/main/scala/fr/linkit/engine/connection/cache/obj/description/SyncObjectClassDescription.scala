@@ -140,7 +140,7 @@ object SyncObjectClassDescription {
 
     private val cache = mutable.HashMap.empty[Class[_], SyncObjectClassDescription[_]]
 
-    def apply[A](clazz: Class[A]): SyncObjectClassDescription[A] = cache.getOrElse(clazz, {
+    def apply[A](clazz: Class[_]): SyncObjectClassDescription[A] = cache.getOrElse(clazz, {
         if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
 

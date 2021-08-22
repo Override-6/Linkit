@@ -12,25 +12,28 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
+import java.lang.reflect.Modifier
+
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
-import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
-import fr.linkit.api.connection.cache.obj.invokation.local.Chip
-import fr.linkit.api.local.concurrency.{Procrastinator, WorkerPools}
+import fr.linkit.api.connection.cache.obj.behavior.member.method.MethodBehavior
+import fr.linkit.api.connection.cache.obj.invokation.local.{Chip, LocalMethodInvocation}
+import fr.linkit.api.connection.network.Network
+import fr.linkit.api.local.concurrency.WorkerPools
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.connection.cache.obj.invokation.AbstractMethodInvocation
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip.NoResult
 import fr.linkit.engine.local.utils.ScalaUtils
 
-import java.lang.reflect.Modifier
-
-class ObjectChip[S] private(behavior: SynchronizedObjectBehavior[S],
-                            wrapper: SynchronizedObject[S]) extends Chip[S] {
+class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
+                                      syncObject: SynchronizedObject[S],
+                                      network: Network) extends Chip[S] {
 
     override def updateObject(obj: S): Unit = {
-        ScalaUtils.pasteAllFields(wrapper, obj)
+        ScalaUtils.pasteAllFields(syncObject, obj)
     }
 
-    override def callMethod(methodID: Int, params: Array[Any]): Any = {
+    override def callMethod(methodID: Int, params: Array[Any], origin: String): Any = {
         val methodBehaviorOpt = behavior.getMethodBehavior(methodID)
         if (methodBehaviorOpt.forall(_.isHidden)) {
             throw new SyncObjectException(s"Attempted to invoke ${methodBehaviorOpt.fold("unknown")(_ => "hidden")} method '${
@@ -40,35 +43,41 @@ class ObjectChip[S] private(behavior: SynchronizedObjectBehavior[S],
         val methodBehavior = methodBehaviorOpt.get
         val name           = methodBehavior.desc.javaMethod.getName
         val procrastinator = methodBehavior.procrastinator
-        val method         = methodBehavior.desc.javaMethod
         AppLogger.debug(s"RMI - Calling method $methodID $name(${params.mkString(", ")})")
         if (procrastinator != null) {
-            callMethodProcrastinator(procrastinator, methodBehavior, params)
+            callMethodProcrastinator(methodBehavior, params, origin)
         } else {
-            callMethod(methodBehavior, params)
+            callMethod(methodBehavior, params, origin)
         }
     }
 
-    @inline private def callMethod(behavior: MethodBehavior, params: Array[Any]): Any = {
-        wrapper.getChoreographer.forceLocalInvocation {
+    @inline private def callMethod(behavior: MethodBehavior, params: Array[Any], origin: String): Any = {
+        syncObject.getChoreographer.forceLocalInvocation {
             //TODO cache action in the behavior
+            lazy val invocation = new AbstractMethodInvocation[Any](behavior, syncObject) with LocalMethodInvocation[Any] {
+                /**
+                 * The final argument array for the method invocation.
+                 * */
+                override val methodArguments: Array[Any] = params
+            }
+            lazy val engine     = network.findEngine(origin).get
             val paramsBehaviors = behavior.parameterBehaviors
             for (i <- params.indices) {
-                val modifier = paramsBehaviors(i).localParamModifier
+                val modifier = paramsBehaviors(i).modifier
                 if (modifier != null)
-                    params(i) = modifier(params(i), true)
+                    params(i) = modifier.forLocalComingFromRemote(params(i), invocation, engine)
             }
-            behavior.desc.javaMethod.invoke(wrapper, params: _*)
+            behavior.desc.javaMethod.invoke(syncObject, params: _*)
         }
     }
 
-    @inline private def callMethodProcrastinator(procrastinator: Procrastinator, behavior: MethodBehavior, params: Array[Any]): Any = {
+    @inline private def callMethodProcrastinator(behavior: MethodBehavior, params: Array[Any], origin: String): Any = {
         @volatile var result: Any = NoResult
         val worker                = WorkerPools.currentWorker
         val task                  = WorkerPools.currentTask
         val pool                  = worker.pool
-        procrastinator.runLater {
-            result = callMethod(behavior, params)
+        behavior.procrastinator.runLater {
+            result = callMethod(behavior, params, origin)
             task.wakeup()
         }
         if (result == NoResult)
@@ -79,7 +88,7 @@ class ObjectChip[S] private(behavior: SynchronizedObjectBehavior[S],
 
 object ObjectChip {
 
-    def apply[S](behavior: SynchronizedObjectBehavior[S], wrapper: SynchronizedObject[S]): ObjectChip[S] = {
+    def apply[S <: AnyRef](behavior: SynchronizedObjectBehavior[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
         if (wrapper == null)
             throw new NullPointerException("puppet is null !")
         val clazz = wrapper.getClass
@@ -87,8 +96,9 @@ object ObjectChip {
         if (Modifier.isFinal(clazz.getModifiers))
             throw new IllegalSynchronizationException("Puppet can't be final.")
 
-        new ObjectChip[S](behavior, wrapper)
+        new ObjectChip[S](behavior, wrapper, network)
     }
 
     object NoResult
+
 }

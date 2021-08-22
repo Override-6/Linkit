@@ -13,10 +13,10 @@
 package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
-import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
-import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
+import fr.linkit.api.connection.cache.obj.invokation.local.CallableLocalMethodInvocation
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
@@ -73,11 +73,11 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         objects.map(obj => {
             i += 1
             val behavior = paramBehaviors(i)
-            val modifier = behavior.localParamModifier
-            if (modifier != null) modifier(obj, false) else obj match {
-                case sync: SynchronizedObject[_]               => sync
-                case anyRef: AnyRef if behavior.isSynchronized => pup.synchronizedObj(anyRef)
-                case other                                     => other
+            val modifier = behavior.modifier
+            if (modifier == null) obj else modifier.forLocalComingFromLocal(obj, objects) match {
+                case sync: SynchronizedObject[_]            => sync
+                case anyRef: AnyRef if behavior.isActivated => pup.synchronizedObj(anyRef)
+                case other                                  => other
             }
         })
     }
@@ -86,22 +86,23 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
                                (args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         //if (!isInitialized) //May be here only during tests
         //    return superCall(args).asInstanceOf[R]
-        val methodBehavior   = behavior.getMethodBehavior(id).get
-        val synchronizedArgs = synchronizedParams(methodBehavior, args)
+        val methodBhv        = behavior.getMethodBehavior(id).get
+        val synchronizedArgs = synchronizedParams(methodBhv, args)
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")
-        if (choreographer.isMethodExecutionForcedToLocal || !methodBehavior.isRMIEnabled) {
+        if (choreographer.isMethodExecutionForcedToLocal || !methodBhv.isActivated) {
             return superCall(synchronizedArgs).asInstanceOf[R]
         }
 
-        val localInvocation = new AbstractMethodInvocation[R](methodBehavior, this) with LocalMethodInvocation[R] {
-            override val methodArguments: Array[Any] = synchronizedArgs
+        val localInvocation: CallableLocalMethodInvocation[R] = new AbstractMethodInvocation[R](methodBhv, this) with CallableLocalMethodInvocation[R] {
+            override val methodArguments: Array[Any]             = synchronizedArgs
+            override val methodBehavior : InternalMethodBehavior = methodBhv
 
             override def callSuper(): R = {
                 performSuperCall[R](superCall(synchronizedArgs))
             }
         }
 
-        methodBehavior.handler.handleRMI[R](localInvocation)
+        methodBhv.handler.handleRMI[R](localInvocation)
     }
 
     private def asAutoWrapped: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]

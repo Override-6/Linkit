@@ -13,45 +13,45 @@
 package fr.linkit.engine.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
-import fr.linkit.api.connection.cache.obj.behavior.member.MethodBehavior
-import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
-import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, RemoteMethodInvocation, RemoteMethodInvocationHandler}
+import fr.linkit.api.connection.cache.obj.invokation.local.CallableLocalMethodInvocation
+import fr.linkit.api.connection.cache.obj.invokation.remote.{DispatchableRemoteMethodInvocation, MethodInvocationHandler, Puppeteer, RemoteMethodInvocation}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.invokation.{AbstractMethodInvocation, SimpleRMIRulesAgreementBuilder}
 
-abstract class AbstractMethodInvocationHandler extends RemoteMethodInvocationHandler {
+abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
 
-    override def handleRMI[R](localInvocation: LocalMethodInvocation[R]): R = {
+    override def handleRMI[R](localInvocation: CallableLocalMethodInvocation[R]): R = {
         val wrapper           = localInvocation.synchronizedObject
-        val methodBehavior    = localInvocation.methodBehavior
+        val behavior          = localInvocation.methodBehavior
         val puppeteer         = wrapper.getPuppeteer
         val currentIdentifier = puppeteer.currentIdentifier
         val args              = localInvocation.methodArguments
-        val name              = methodBehavior.desc.javaMethod.getName
+        val name              = behavior.desc.javaMethod.getName
         val methodID          = localInvocation.methodID
+        val network           = puppeteer.network
 
         val enableDebug = localInvocation.debug
 
         lazy val argsString = args.mkString("(", ", ", ")")
-        lazy val className  = methodBehavior.desc.classDesc.clazz
+        lazy val className  = behavior.desc.classDesc.clazz
         if (enableDebug) {
             AppLogger.debug(s"$name: Performing rmi call for ${className.getSimpleName}.$name$argsString (id: $methodID)")
-            AppLogger.debug(s"MethodBehavior = $methodBehavior")
+            AppLogger.debug(s"MethodBehavior = $behavior")
         }
         // From here we are sure that we want to perform a remote
         // method invocation. (An invocation to the current machine (invocation.callSuper()) can be added).
-        var result     : Any = methodBehavior.defaultReturnValue
+        var result     : Any = behavior.defaultReturnValue
         var localResult: Any = result
-        val methodAgreement  = methodBehavior.completeAgreement(new SimpleRMIRulesAgreementBuilder(puppeteer.ownerID, currentIdentifier))
+        val methodAgreement  = behavior.completeAgreement(new SimpleRMIRulesAgreementBuilder(puppeteer.ownerID, currentIdentifier))
         val mayPerformRMI    = methodAgreement.mayPerformRemoteInvocation
         if (methodAgreement.mayCallSuper) {
             localResult = localInvocation.callSuper()
         }
-        val remoteInvocation = new AbstractMethodInvocation[R](localInvocation) with RemoteMethodInvocation[R] {
+        val remoteInvocation = new AbstractMethodInvocation[R](localInvocation) with DispatchableRemoteMethodInvocation[R] {
             override val agreement: RMIRulesAgreement = methodAgreement
 
             override def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher): Unit = {
-                methodBehavior.dispatch(dispatcher, args)
+                behavior.dispatch(dispatcher, network, localInvocation)
             }
         }
         if (methodAgreement.getDesiredEngineReturn == currentIdentifier) {
@@ -65,5 +65,5 @@ abstract class AbstractMethodInvocationHandler extends RemoteMethodInvocationHan
     }
 
 
-    protected def voidRMIInvocation(puppeteer: Puppeteer[_], invocation: RemoteMethodInvocation[_]): Unit
+    protected def voidRMIInvocation(puppeteer: Puppeteer[_], invocation: DispatchableRemoteMethodInvocation[_]): Unit
 }

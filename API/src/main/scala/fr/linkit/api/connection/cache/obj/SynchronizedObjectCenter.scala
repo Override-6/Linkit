@@ -15,6 +15,7 @@ package fr.linkit.api.connection.cache.obj
 import fr.linkit.api.connection.cache.SharedCache
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTreeStore
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.PacketAttributesPresence
 
 /**
@@ -32,6 +33,8 @@ import fr.linkit.api.connection.packet.PacketAttributesPresence
  * @tparam A the type of root objects.
  * */
 trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence with SharedCache {
+
+    val network: Network
 
     /**
      * Once an object [[A]] gets posted, it will create a [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]],

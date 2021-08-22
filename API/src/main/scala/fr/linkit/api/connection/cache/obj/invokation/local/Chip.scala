@@ -33,5 +33,5 @@ trait Chip[S] {
      * @param params the parameters for the method call
      * @see [[fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription]]
      * */
-    def callMethod(methodID: Int, params: Array[Any]): Any
+    def callMethod(methodID: Int, params: Array[Any], origin: String): Any
 }

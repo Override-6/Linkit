@@ -69,7 +69,7 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
 
     override def putPresence(engineID: String): Unit = presences += engineID
 
-    override def handlePacket(packet: InvocationPacket, response: Submitter[Unit]): Unit = {
+    override def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
         if (!(packet.path sameElements treePath)) {
             val packetPath = packet.path
             if (!packetPath.startsWith(treePath))
@@ -77,15 +77,15 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
 
             tree.findNode[AnyRef](packetPath.drop(treePath.length))
                     .fold[Unit](throw new NoSuchSyncNodeException(s"Received packet that aims for an unknown puppet children node (${packetPath.mkString("/")})")) {
-                        case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, response)
+                        case node: TrafficInterestedSyncNode[_] => node.handlePacket(packet, senderID, response)
                         case _                                  =>
                     }
         }
-        makeMemberInvocation(packet, response)
+        makeMemberInvocation(packet, senderID, response)
     }
 
-    private def makeMemberInvocation(packet: InvocationPacket, response: Submitter[Unit]): Unit = {
-        Try(chip.callMethod(packet.methodID, packet.params)) match {
+    private def makeMemberInvocation(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit = {
+        Try(chip.callMethod(packet.methodID, packet.params, senderID)) match {
             case Success(value)     => value match {
                 case anyRef: AnyRef => handleInvocationResult(anyRef, packet, response)
                 case _              => //do not synchronize primitives (note: this is impossible to get an unwrapped primitive but this match is for the scalac logic)

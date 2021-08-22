@@ -19,6 +19,6 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.ResponseSubmit
 
 trait TrafficInterestedSyncNode[A <: AnyRef] extends SyncNode[A] {
 
-    def handlePacket(packet: InvocationPacket, response: Submitter[Unit]): Unit
+    def handlePacket(packet: InvocationPacket, senderID: String, response: Submitter[Unit]): Unit
 
 }

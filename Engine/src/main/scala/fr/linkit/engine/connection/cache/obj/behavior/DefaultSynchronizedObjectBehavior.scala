@@ -12,53 +12,68 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.member.{FieldBehavior, MemberBehaviorFactory, MethodBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehaviorFactory
+import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
+import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.method.returnvalue.ReturnValueBehavior
 import fr.linkit.api.connection.cache.obj.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorStore}
 import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 
-class DefaultSynchronizedObjectBehavior[A] protected(override val classDesc: SyncObjectSuperclassDescription[A],
-                                                     factory: MemberBehaviorFactory) extends SynchronizedObjectBehavior[A] {
+class DefaultSynchronizedObjectBehavior[A <: AnyRef] protected(override val classDesc: SyncObjectSuperclassDescription[A],
+                                                               factory: MemberBehaviorFactory,
+                                                               asFieldBehavior: FieldBehavior[A],
+                                                               asParameterBehavior: ParameterBehavior[A],
+                                                               asReturnValueBehavior: ReturnValueBehavior[A]) extends SynchronizedObjectBehavior[A] {
 
     private val methods = {
         generateMethodsBehavior()
-                .map(bhv => bhv.desc.methodId -> bhv)
-                .toMap
+            .map(bhv => bhv.desc.methodId -> bhv)
+            .toMap
     }
 
     private val fields = {
         generateFieldsBehavior()
-                .map(bhv => bhv.desc.fieldId -> bhv)
-                .toMap
+            .map(bhv => bhv.desc.fieldId -> bhv)
+            .toMap
     }
 
     override def listMethods(): Iterable[MethodBehavior] = {
         methods.values
     }
 
-    override def getMethodBehavior(id: Int): Option[MethodBehavior] = methods.get(id)
+    override def getMethodBehavior(id: Int): Option[InternalMethodBehavior] = methods.get(id)
 
-    override def listField(): Iterable[FieldBehavior] = {
+    override def listField(): Iterable[FieldBehavior[Any]] = {
         fields.values
     }
 
-    override def getFieldBehavior(id: Int): Option[FieldBehavior] = fields.get(id)
+    override def getFieldBehavior(id: Int): Option[FieldBehavior[Any]] = fields.get(id)
 
-    protected def generateMethodsBehavior(): Iterable[MethodBehavior] = {
+    protected def generateMethodsBehavior(): Iterable[InternalMethodBehavior] = {
         classDesc.listMethods()
-                .map(factory.genMethodBehavior(None, _))
+            .map(factory.genMethodBehavior(None, _))
     }
 
-    protected def generateFieldsBehavior(): Iterable[FieldBehavior] = {
+    protected def generateFieldsBehavior(): Iterable[FieldBehavior[Any]] = {
         classDesc.listFields()
-                .map(factory.genFieldBehavior)
+            .map(factory.genFieldBehavior)
     }
 
+    override def whenField: FieldBehavior[A] = asFieldBehavior
+
+    override def whenParameter: ParameterBehavior[A] = asParameterBehavior
+
+    override def whenMethodReturnValue: ReturnValueBehavior[A] = asReturnValueBehavior
 }
 
 object DefaultSynchronizedObjectBehavior {
 
-    def apply[A](classDesc: SyncObjectSuperclassDescription[A], tree: SynchronizedObjectBehaviorStore): DefaultSynchronizedObjectBehavior[A] = {
-        new DefaultSynchronizedObjectBehavior(classDesc, tree.factory)
+    def apply[A <: AnyRef](classDesc: SyncObjectSuperclassDescription[A], tree: SynchronizedObjectBehaviorStore,
+                           asFieldBehavior: FieldBehavior[A],
+                           asParameterBehavior: ParameterBehavior[A],
+                           asReturnValueBehavior: ReturnValueBehavior[A]): DefaultSynchronizedObjectBehavior[A] = {
+        new DefaultSynchronizedObjectBehavior(classDesc, tree.factory, asFieldBehavior, asParameterBehavior, asReturnValueBehavior)
     }
 
 }

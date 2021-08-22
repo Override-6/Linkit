@@ -12,11 +12,14 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.obj.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorStore}
+import java.util
+
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.annotation.FieldControl
+import fr.linkit.api.connection.cache.obj.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorStore}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.config.ApplicationConfiguration
@@ -31,15 +34,11 @@ import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.resource.external.LocalResourceFolder._
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.test.ScalaReflectionTests.TestClass
 import fr.linkit.engine.test.classes.{Player, ScalaClass, Vector2}
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
-import java.util
-
-import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
 
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.reflect.runtime.universe.TypeTag
@@ -111,7 +110,7 @@ class ResourcesAndClassGenerationTests {
     @Test
     def behaviorTests(): Unit = {
         val tree = new SynchronizedObjectDefaultBehaviorCenter(AnnotationBasedMemberBehaviorFactory)
-        val bhv = DefaultSynchronizedObjectBehavior[TestClass](SyncObjectClassDescription(classOf[TestClass]), tree)
+        val bhv  = DefaultSynchronizedObjectBehavior[TestClass](SyncObjectClassDescription(classOf[TestClass]), tree, null, null, null)
         println(s"bhv = ${bhv}")
     }
 
@@ -147,10 +146,10 @@ class ResourcesAndClassGenerationTests {
         println(s"obj = ${obj}")
     }
 
-    def forObject[A <: AnyRef: TypeTag](obj: A, tree: SynchronizedObjectBehaviorStore = new SynchronizedObjectDefaultBehaviorCenter(AnnotationBasedMemberBehaviorFactory)): A with SynchronizedObject[A] = {
+    def forObject[A <: AnyRef : TypeTag](obj: A, tree: SynchronizedObjectBehaviorStore = new SynchronizedObjectDefaultBehaviorCenter(AnnotationBasedMemberBehaviorFactory)): A with SynchronizedObject[A] = {
         Assertions.assertNotNull(resources)
 
-        val info    = SyncNodeInfo("", 8, "", Array(1))
+        val info         = SyncNodeInfo("", 8, "", Array(1))
         val (wrapper, _) = TestWrapperInstantiator.newWrapper[A](obj, tree, info, Map())
         wrapper.getChoreographer.forceLocalInvocation {
             println(s"wrapper = ${wrapper}")
@@ -167,7 +166,7 @@ class ResourcesAndClassGenerationTests {
         override def newWrapper[A <: AnyRef](obj: A, behaviorTree: SynchronizedObjectBehaviorStore, puppeteerInfo: SyncNodeInfo, subWrappers: Map[AnyRef, SyncNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
             val cl                     = obj.getClass.asInstanceOf[Class[A]]
             val behaviorDesc           = behaviorTree.getFromClass[A](cl)
-            val puppetClass            = generator.getWrapperClass[A](SyncObjectClassDescription(cl))
+            val puppetClass            = generator.getWrapperClass[A](SyncObjectClassDescription[A](cl))
             val pup                    = new ObjectPuppeteer[A](null, app, null, puppeteerInfo, behaviorDesc)
             val helper                 = new SyncObjectInstantiationHelper(this, behaviorTree)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[A](puppetClass, obj, Map())

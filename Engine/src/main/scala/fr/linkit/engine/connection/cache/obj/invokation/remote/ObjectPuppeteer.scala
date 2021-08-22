@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj.invokation.remote
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.invokation.remote.{Puppeteer, RemoteMethodInvocation}
+import fr.linkit.api.connection.cache.obj.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer, RemoteMethodInvocation}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.request.{RequestPacketChannel, ResponseHolder}
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
@@ -33,6 +33,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    val wrapperBehavior: SynchronizedObjectBehavior[S]) extends Puppeteer[S] {
 
     private      val traffic                                         = channel.traffic
+    override     val network                                         = traffic.connection.network
     override     val currentIdentifier: String                       = traffic.currentIdentifier
     private lazy val tree                                            = center.treeCenter.findTree(nodeInfo.nodePath.head).get
     private      val writer                                          = traffic.newWriter(channel.identifier)
@@ -42,7 +43,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
     override def getSynchronizedObject: S with SynchronizedObject[S] = puppetWrapper
 
-    override def sendInvokeAndWaitResult[R](invocation: RemoteMethodInvocation[R]): R = {
+    override def sendInvokeAndWaitResult[R](invocation: DispatchableRemoteMethodInvocation[R]): R = {
         val agreement = invocation.agreement
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
@@ -51,8 +52,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         if (desiredEngineReturn == currentIdentifier)
             throw new IllegalArgumentException("invocation's desired engine return is this engine.")
 
-        val bhv                 = invocation.methodBehavior
-        val methodId            = bhv.desc.methodId
+        val bhv      = invocation.methodBehavior
+        val methodId = bhv.desc.methodId
         AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}")
         val scope            = new AgreementScope(writer, agreement)
         var requestResult: R = JavaUtils.nl()
@@ -75,7 +76,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         requestResult
     }
 
-    override def sendInvoke(invocation: RemoteMethodInvocation[_]): Unit = {
+    override def sendInvoke(invocation: DispatchableRemoteMethodInvocation[_]): Unit = {
         val agreement = invocation.agreement
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
