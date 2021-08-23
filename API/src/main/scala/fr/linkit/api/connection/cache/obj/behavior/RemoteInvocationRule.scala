@@ -1,6 +1,4 @@
-package fr.linkit.api.connection.cache.obj.behavior.member
-
-import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreementBuilder
+package fr.linkit.api.connection.cache.obj.behavior
 
 /**
  * Defines the rules of a remote invocation request.

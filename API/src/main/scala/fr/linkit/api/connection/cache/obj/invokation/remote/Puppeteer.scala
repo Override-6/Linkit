@@ -12,12 +12,12 @@
 
 package fr.linkit.api.connection.cache.obj.invokation.remote
 
-import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, SynchronizedObjectBehavior}
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCenter}
 import java.util.concurrent.ThreadLocalRandom
 
-import fr.linkit.api.connection.cache.obj.invokation.MethodInvocation
+import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
+import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCenter}
+import fr.linkit.api.connection.network.Network
 
 /**
  * The puppeteer of a SynchronizedObject creates all RMI requests and handles the results.
@@ -32,6 +32,7 @@ trait Puppeteer[S <: AnyRef] {
      * The engine's identifier that have created the synchronized object
      * */
     val ownerID: String = nodeInfo.owner
+
 
     /**
      * The object center that stores the synchronized object.
@@ -66,14 +67,16 @@ trait Puppeteer[S <: AnyRef] {
      * @tparam R the return type of the RMI result value.
      * @return the RMI result value
      */
-    def sendInvokeAndWaitResult[R](invocation: RemoteMethodInvocation[R]): R //TODO add a timeout. (here or in the MethodBehavior)
+    def sendInvokeAndWaitResult[R](invocation: DispatchableRemoteMethodInvocation[R]): R //TODO add a timeout. (here or in the MethodBehavior)
 
     /**
      * Send an RMI Invocation based on the given agreement and invocation without waiting for any result.
      *
      * @param invocation the method's invocation information.
      */
-    def sendInvoke(invocation: RemoteMethodInvocation[_]): Unit
+    def sendInvoke(invocation: DispatchableRemoteMethodInvocation[_]): Unit
+
+    val network: Network //Keep an access to Network
 
     //TODO make this and "init" for internal use only
     def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef
