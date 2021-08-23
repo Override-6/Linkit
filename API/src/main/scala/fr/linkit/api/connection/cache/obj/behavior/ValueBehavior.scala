@@ -6,10 +6,9 @@ import fr.linkit.api.connection.cache.obj.behavior.member.method.returnvalue.Ret
 
 trait ValueBehavior[A] {
 
-    def whenField: FieldBehavior[A]
+    def whenField: Option[FieldBehavior[A]]
 
-    def whenParameter: ParameterBehavior[A]
+    def whenParameter: Option[ParameterBehavior[A]]
 
-    def whenMethodReturnValue: ReturnValueBehavior[A]
-
+    def whenMethodReturnValue: Option[ReturnValueBehavior[A]]
 }

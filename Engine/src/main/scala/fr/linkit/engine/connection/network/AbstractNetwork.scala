@@ -27,7 +27,7 @@ import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBehaviorBuilder.MethodControl
 import fr.linkit.engine.connection.cache.obj.behavior.member.MethodParameterBehavior
-import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectBehaviorBuilder, SynchronizedObjectBehaviorStoreBuilder, member}
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectBehaviorBuilder, SynchronizedObjectBehaviorStoreBuilder}
 import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.StringPacket
@@ -44,7 +44,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
     private   val currentIdentifier                    = connection.currentIdentifier
     override  val globalCache     : SharedCacheManager = createGlobalCache
     protected val engineStore     : EngineStore        = retrieveEngineStore(getEngineStoreBehaviors)
-    override  val connectionEngine: Engine             = engineStore.newEngine(currentIdentifier, declareNewCacheManager(currentIdentifier))
+    override  val connectionEngine: Engine             = new DefaultEngine(currentIdentifier, declareNewCacheManager(currentIdentifier))
     postInit()
 
     override def serverEngine: Engine = engineStore.findEngine(serverIdentifier).getOrElse {

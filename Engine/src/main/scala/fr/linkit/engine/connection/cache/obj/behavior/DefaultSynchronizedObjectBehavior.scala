@@ -14,17 +14,17 @@ package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehaviorFactory
 import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldBehavior
-import fr.linkit.api.connection.cache.obj.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
 import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterBehavior
 import fr.linkit.api.connection.cache.obj.behavior.member.method.returnvalue.ReturnValueBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
 import fr.linkit.api.connection.cache.obj.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorStore}
 import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 
 class DefaultSynchronizedObjectBehavior[A <: AnyRef] protected(override val classDesc: SyncObjectSuperclassDescription[A],
                                                                factory: MemberBehaviorFactory,
-                                                               asFieldBehavior: FieldBehavior[A],
-                                                               asParameterBehavior: ParameterBehavior[A],
-                                                               asReturnValueBehavior: ReturnValueBehavior[A]) extends SynchronizedObjectBehavior[A] {
+                                                               asFieldBehavior: Option[FieldBehavior[A]],
+                                                               asParameterBehavior: Option[ParameterBehavior[A]],
+                                                               asReturnValueBehavior: Option[ReturnValueBehavior[A]]) extends SynchronizedObjectBehavior[A] {
 
     private val methods = {
         generateMethodsBehavior()
@@ -60,11 +60,11 @@ class DefaultSynchronizedObjectBehavior[A <: AnyRef] protected(override val clas
             .map(factory.genFieldBehavior)
     }
 
-    override def whenField: FieldBehavior[A] = asFieldBehavior
+    override def whenField: Option[FieldBehavior[A]] = asFieldBehavior
 
-    override def whenParameter: ParameterBehavior[A] = asParameterBehavior
+    override def whenParameter: Option[ParameterBehavior[A]] = asParameterBehavior
 
-    override def whenMethodReturnValue: ReturnValueBehavior[A] = asReturnValueBehavior
+    override def whenMethodReturnValue: Option[ReturnValueBehavior[A]] = asReturnValueBehavior
 }
 
 object DefaultSynchronizedObjectBehavior {
@@ -73,7 +73,7 @@ object DefaultSynchronizedObjectBehavior {
                            asFieldBehavior: FieldBehavior[A],
                            asParameterBehavior: ParameterBehavior[A],
                            asReturnValueBehavior: ReturnValueBehavior[A]): DefaultSynchronizedObjectBehavior[A] = {
-        new DefaultSynchronizedObjectBehavior(classDesc, tree.factory, asFieldBehavior, asParameterBehavior, asReturnValueBehavior)
+        new DefaultSynchronizedObjectBehavior(classDesc, tree.factory, Option(asFieldBehavior), Option(asParameterBehavior), Option(asReturnValueBehavior))
     }
 
 }

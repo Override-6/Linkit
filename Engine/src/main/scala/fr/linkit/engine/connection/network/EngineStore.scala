@@ -28,10 +28,8 @@ class EngineStore {
     val startUpDate: Timestamp = new Timestamp(System.currentTimeMillis())
 
     @MethodControl(value = BROADCAST, invokeOnly = true)
-    def newEngine(engineIdentifier: String, cache: SharedCacheManager): Engine = {
-        val engine = new DefaultEngine(engineIdentifier, cache)
-        engines.put(engineIdentifier, engine)
-        engine
+    def addEngine(engine: Engine): Unit = {
+        engines.put(engine.identifier, engine)
     }
 
     @MethodControl(value = BROADCAST_IF_ROOT_OWNER, invokeOnly = true)

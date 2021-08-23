@@ -14,15 +14,18 @@ package fr.linkit.engine.connection.cache.obj.behavior
 
 import java.util
 
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule
 import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehaviorFactory
-import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.field.{FieldBehavior, FieldModifier}
 import fr.linkit.api.connection.cache.obj.behavior.member.method.InternalMethodBehavior
 import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterBehavior
-import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
+import fr.linkit.api.connection.cache.obj.behavior.member.method.returnvalue.ReturnValueBehavior
+import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, SyncObjectSuperclassDescription}
+import fr.linkit.api.connection.network.Engine
 import fr.linkit.api.local.concurrency.Procrastinator
-import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBehaviorBuilder.MethodControl
+import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBehaviorBuilder.{FieldControl, MethodControl}
 import fr.linkit.engine.connection.cache.obj.behavior.member.{MethodParameterBehavior, SyncMethodBehavior}
 import fr.linkit.engine.connection.cache.obj.description.SyncObjectClassDescription
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{DefaultRMIHandler, InvokeOnlyRMIHandler}
@@ -33,7 +36,11 @@ import scala.reflect.ClassTag
 
 abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classDesc: SyncObjectSuperclassDescription[T]) {
 
-    val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
+    protected val methodsMap = mutable.HashMap.empty[MethodDescription, MethodControl]
+    protected val fieldsMap  = mutable.HashMap.empty[FieldDescription, FieldControl[Any]]
+    protected var asField      : Option[FieldBehavior[T]] = None
+    protected var asParameter  : Option[ParameterBehavior[T]] = None
+    protected var asReturnValue: Option[ReturnValueBehavior[T]] = None
 
     def this()(implicit classTag: ClassTag[T]) = {
         this(SyncObjectClassDescription[T](classTag.runtimeClass.asInstanceOf[Class[T]]))
@@ -48,7 +55,7 @@ abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classD
     final def annotateAllMethods(name: String): MethodModification = {
         new MethodModification(
             classDesc.listMethods()
-                    .filter(_.symbol.name.toString == name)
+                .filter(_.symbol.name.toString == name)
         )
     }
 
@@ -57,10 +64,10 @@ abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classD
     }
 
     def build(factory: MemberBehaviorFactory): SynchronizedObjectBehavior[T] = {
-        new DefaultSynchronizedObjectBehavior[T](classDesc, factory, null, null, null) {
+        new DefaultSynchronizedObjectBehavior[T](classDesc, factory, asField, asParameter, asReturnValue) {
             override protected def generateMethodsBehavior(): Iterable[InternalMethodBehavior] = {
                 classDesc.listMethods()
-                        .map(genMethodBehavior(factory, _))
+                    .map(genMethodBehavior(factory, _))
             }
 
             override protected def generateFieldsBehavior(): Iterable[FieldBehavior[Any]] = {
@@ -78,7 +85,7 @@ abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classD
             val control = opt.get
             import control._
             val handler = if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
-            val params = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams.toArray.asInstanceOf[Array[ParameterBehavior[Any]]]
+            val params  = if (synchronizedParams == null) AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(desc.javaMethod) else synchronizedParams.toArray.asInstanceOf[Array[ParameterBehavior[Any]]]
             SyncMethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), procrastinator, handler)
         }
     }
@@ -92,9 +99,22 @@ abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classD
 
         def and(otherName: String): MethodModification = {
             new MethodModification(descs ++ classDesc.listMethods()
-                    .filter(_.symbol.name.toString == otherName))
+                .filter(_.symbol.name.toString == otherName))
         }
     }
+
+    class FieldModification private[SynchronizedObjectBehaviorBuilder](descs: Iterable[FieldDescription]) {
+        def by(control: FieldControl[Any]): this.type = {
+            descs.foreach(fieldsMap.put(_, control))
+            this
+        }
+
+        def and(otherName: String): FieldModification = {
+            new FieldModification(descs ++ classDesc.listFields()
+                .filter(_.javaField.getName == otherName))
+        }
+    }
+
 }
 
 object SynchronizedObjectBehaviorBuilder {
@@ -105,5 +125,13 @@ object SynchronizedObjectBehaviorBuilder {
                              hide: Boolean = false,
                              synchronizedParams: Seq[MethodParameterBehavior[_]] = null,
                              @Nullable procrastinator: Procrastinator = null)
+
+    case class FieldControl[A](isActivated: Boolean) extends FieldModifier[A] {
+        override def forLocalComingFromLocal(localField: A, containingObject: SynchronizedObject[_]): A = localField
+
+        override def forLocalComingFromRemote(receivedField: A, containingObject: SynchronizedObject[_], remote: Engine): A = receivedField
+
+        override def forRemote(localField: A, containingObject: SynchronizedObject[_], remote: Engine): A = localField
+    }
 
 }
