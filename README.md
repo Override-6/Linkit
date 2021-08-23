@@ -55,7 +55,7 @@ Any network is represented by its Network object. In which you can access to all
 The Network object can create a SharedCacheManager. A SharedCacheManager is identified to a « Family » String, and the cache manager can open or retrieve caches from a cache integer identifier.  
 Each Engine Object contains a default cache manager, where the family string is the engine's identifier. There is also a « global » cache manager of family « Global Cache » which is directly stored in the Network object.  
 Note : The fact that a cache manager is « owned » by a' engine could be a bit misleading. Dont forget this : they are only here for categorisation. The fact that a cache manager is « Global » or not does not affect the caches behavior.
-For further details about the Shared Cache Management, take a look at the wiki.
+For further details about the Shared Cache Management, take a look at the (wiki)[https://github.com/Override-6/Linkit/wiki/Introducing-Linkit].
 
 #### Simple Shared Cache 
 There is currently two type of simple caches : SharedMap, SharedCollection and SharedInstance (the SharedInstance is a simple ValueWrapper).  
@@ -139,7 +139,7 @@ val synchronizedList = objectCenter.postObject(0, new ArrayList[Player](), Behav
 ##### More Complex use case : basic 2d game.
 See the repository https://github.com/Override-6/2DShooter, and more specially the class https://github.com/Override-6/2DShooter/blob/master/core/src/main/scala/fr/overrride/game/shooter/session/PlayState.scala.
 ##### Even more Complex : Minecraft Server.
-Just jocking. but maybe in few years this would be possible to create a minecraft server from the Client's code and then using Linkit and some ".bhv" files to handle this ? :0
+Just Kidding. but maybe in few years this would be possible to create a minecraft server from the Client's code and then using Linkit and some ".bhv" files to handle this ? :0
 
 don't forget to put a ⭐ on the project if you want !
 
