@@ -29,6 +29,6 @@ abstract class SynchronizedObjectBehaviorStoreBuilder(memberBehaviorFactory: Mem
         }
     }
 
-    def build = new SynchronizedObjectDefaultBehaviorCenter(AnnotationBasedMemberBehaviorFactory, mappedBehaviors.toMap)
+    def build = new DefaultSynchronizedObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory, mappedBehaviors.toMap)
 
 }

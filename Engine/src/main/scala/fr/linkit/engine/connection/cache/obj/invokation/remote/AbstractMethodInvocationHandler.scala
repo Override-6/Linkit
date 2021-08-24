@@ -26,7 +26,7 @@ abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
         val puppeteer         = wrapper.getPuppeteer
         val currentIdentifier = puppeteer.currentIdentifier
         val args              = localInvocation.methodArguments
-        val name              = behavior.desc.javaMethod.getName
+        val name              = behavior.desc.method.getName
         val methodID          = localInvocation.methodID
         val network           = puppeteer.network
 

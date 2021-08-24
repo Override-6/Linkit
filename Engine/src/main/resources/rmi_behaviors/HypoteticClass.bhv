@@ -51,7 +51,7 @@ describe class ShooterCharacter : GraphicComponent, Collidable {
 
     //Let's say that the exampleMethod returns an integer.
     enable exampleMethod2 as @complexBehavior("Hello") { //We can take a behavior from the tree context, giving the factory argument if defined
-             returnvalue -> disable { //we don't want the returnvalue of this method to be synchronized (because we can't synchronize primitives)
+             returnvalue -> disable { //we don't want the returnvalue of this method to be synchronized (we can't synchronize primitives)
                 modifier from remote -> ${x => x * 2} //however we modify it if the invocation comes from a distant engine
              }
     }

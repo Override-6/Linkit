@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.local.generation.compilation
 
-import fr.linkit.api.local.generation.cbp.ClassBlueprint
+import fr.linkit.api.local.language.cbp.ClassBlueprint
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.api.local.generation.compilation.{CompilationContext, CompilationRequest}
 import fr.linkit.engine.local.generation.compilation.SourceCodeCompilationRequest.SourceCode

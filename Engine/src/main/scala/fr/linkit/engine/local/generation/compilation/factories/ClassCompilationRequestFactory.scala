@@ -13,7 +13,7 @@
 package fr.linkit.engine.local.generation.compilation.factories
 
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
-import fr.linkit.api.local.generation.cbp.ClassBlueprint
+import fr.linkit.api.local.language.cbp.ClassBlueprint
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.api.local.generation.compilation.{CompilationContext, CompilationRequest, CompilationResult}
 import fr.linkit.api.local.system.AppLogger

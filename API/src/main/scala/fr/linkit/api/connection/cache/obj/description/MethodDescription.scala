@@ -15,20 +15,17 @@ package fr.linkit.api.connection.cache.obj.description
 import fr.linkit.api.connection.cache.obj.description.MethodDescription.NumberTypes
 
 import java.lang.reflect.Method
-import scala.reflect.runtime.universe._
 
-case class MethodDescription(symbol: MethodSymbol,
-                             javaMethod: Method,
-                             classDesc: SyncObjectSuperclassDescription[_],
-                             overloadOrdinal: Int) {
+case class MethodDescription(method: Method,
+                             classDesc: SyncObjectSuperclassDescription[_]) {
 
     val methodId: Int = {
-        val parameters: Array[Class[_]] = javaMethod.getParameterTypes
-        symbol.name.toString.hashCode + hashCode(parameters)
+        val parameters: Array[Class[_]] = method.getParameterTypes
+        method.getName.hashCode + hashCode(parameters)
     }
 
     def getDefaultTypeReturnValue: String = {
-        val nme = symbol.returnType.typeSymbol.fullName
+        val nme = method.getReturnType.getName
 
         if (nme == fullNameOf[Boolean]) "false"
         else if (NumberTypes.contains(fullNameOf)) "-1"
@@ -41,8 +38,8 @@ case class MethodDescription(symbol: MethodSymbol,
         var result = 1
         for (tpe <- a) {
             result = 31 * result +
-                (if (tpe == null) 0
-                else tpe.getTypeName.hashCode)
+                    (if (tpe == null) 0
+                    else tpe.getTypeName.hashCode)
         }
         result
     }

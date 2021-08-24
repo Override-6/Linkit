@@ -21,7 +21,7 @@ import fr.linkit.api.connection.cache.SharedCacheManager
 
 import scala.collection.mutable
 
-class EngineStore {
+class NetworkDataTrunk {
 
     private val engines = mutable.HashMap.empty[String, Engine]
 

@@ -91,7 +91,6 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         if (obj.isInstanceOf[SynchronizedObject[_]])
             throw new IllegalSynchronizationException("This object is already wrapped.")
 
-        lazy val engine = network.findEngine(ownerID).get
         val parentPath      = parent.treePath
         val wrapperBehavior = behaviorStore.getFromClass[B](obj.getClass.asInstanceOf[Class[B]])
         val puppeteerInfo   = SyncNodeInfo(center.family, center.cacheID, ownerID, parentPath :+ id)
@@ -99,44 +98,10 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         val node            = registerSynchronizedObject[B](parent, id, syncObject, ownerID)
         val isCurrentOwner  = ownerID == currentIdentifier
 
-        /*
-         * Applies the modifiers of the field's class if any.
-         * Then sync the field if the fieldBhv decided to.
-         */
-        def forField(field: AnyRef, fieldBhv: FieldBehavior[Any]): Any = {
-            val f = {
-                val clazz         = field.getClass
-                val fieldValueBhv = behaviorStore.findFromClass[AnyRef](clazz).orNull
-                if (fieldValueBhv == null)
-                    field
-                else {
-                    val modifier = fieldValueBhv.whenField.modifier
-                    if (modifier == null)
-                        field
-                    else {
-                        if (isCurrentOwner) modifier.forLocalComingFromLocal(field, syncObject)
-                        else modifier.forLocalComingFromRemote(field, syncObject, engine)
-                    }
-                }
-            }
-            if (fieldBhv.isActivated) {
-                val id = ThreadLocalRandom.current().nextInt()
-                genSynchronizedObject(node, id, f)(ownerID).synchronizedObject
-            } else {
-                f
-            }
-        }
-
         for (bhv <- wrapperBehavior.listField()) {
             val field      = bhv.desc.javaField
             val fieldValue = field.get(obj)
-            val value      = forField(fieldValue, bhv)
-            val modifier   = bhv.modifier
-            val finalField = if (modifier == null) value else {
-                if (isCurrentOwner) modifier.forLocalComingFromLocal(value, syncObject)
-                else modifier.forLocalComingFromRemote(value, syncObject, engine)
-            }
-
+            val finalField = behaviorStore.modifyField(isCurrentOwner, fieldValue, bhv, wrapperBehavior)
             ScalaUtils.setValue(syncObject, field, finalField)
         }
         node

@@ -6,7 +6,7 @@ import org.jetbrains.annotations.Nullable
 case class MethodParameterBehavior[A](paramName: String,
                                       override val isActivated: Boolean,
                                       @Nullable override val modifier: ParameterModifier[A]) extends ParameterBehavior[A] {
-    override def getMemberName: String = paramName
+    override def getName: String = paramName
 
 }
 object MethodParameterBehavior {

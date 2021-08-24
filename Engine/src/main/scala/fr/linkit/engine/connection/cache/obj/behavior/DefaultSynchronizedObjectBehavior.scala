@@ -13,29 +13,30 @@
 package fr.linkit.engine.connection.cache.obj.behavior
 
 import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehaviorFactory
-import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldBehavior
-import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterBehavior
-import fr.linkit.api.connection.cache.obj.behavior.member.method.returnvalue.ReturnValueBehavior
+import fr.linkit.api.connection.cache.obj.behavior.member.field.{FieldBehavior, FieldModifier}
+import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.{ParameterBehavior, ParameterModifier}
+import fr.linkit.api.connection.cache.obj.behavior.member.method.returnvalue.{ReturnValueBehavior, ReturnValueModifier}
 import fr.linkit.api.connection.cache.obj.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
 import fr.linkit.api.connection.cache.obj.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorStore}
 import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
+import org.jetbrains.annotations.Nullable
 
 class DefaultSynchronizedObjectBehavior[A <: AnyRef] protected(override val classDesc: SyncObjectSuperclassDescription[A],
                                                                factory: MemberBehaviorFactory,
-                                                               asFieldBehavior: Option[FieldBehavior[A]],
-                                                               asParameterBehavior: Option[ParameterBehavior[A]],
-                                                               asReturnValueBehavior: Option[ReturnValueBehavior[A]]) extends SynchronizedObjectBehavior[A] {
+                                                               whenFieldModifier: Option[FieldModifier[A]],
+                                                               whenParameterModifier: Option[ParameterModifier[A]],
+                                                               whenReturnValueModifier: Option[ReturnValueModifier[A]]) extends SynchronizedObjectBehavior[A] {
 
     private val methods = {
         generateMethodsBehavior()
-            .map(bhv => bhv.desc.methodId -> bhv)
-            .toMap
+                .map(bhv => bhv.desc.methodId -> bhv)
+                .toMap
     }
 
     private val fields = {
         generateFieldsBehavior()
-            .map(bhv => bhv.desc.fieldId -> bhv)
-            .toMap
+                .map(bhv => bhv.desc.fieldId -> bhv)
+                .toMap
     }
 
     override def listMethods(): Iterable[MethodBehavior] = {
@@ -52,28 +53,28 @@ class DefaultSynchronizedObjectBehavior[A <: AnyRef] protected(override val clas
 
     protected def generateMethodsBehavior(): Iterable[InternalMethodBehavior] = {
         classDesc.listMethods()
-            .map(factory.genMethodBehavior(None, _))
+                .map(factory.genMethodBehavior(None, _))
     }
 
     protected def generateFieldsBehavior(): Iterable[FieldBehavior[Any]] = {
         classDesc.listFields()
-            .map(factory.genFieldBehavior)
+                .map(factory.genFieldBehavior)
     }
 
-    override def whenField: Option[FieldBehavior[A]] = asFieldBehavior
+    override def whenField: Option[FieldModifier[A]] = whenFieldModifier
 
-    override def whenParameter: Option[ParameterBehavior[A]] = asParameterBehavior
+    override def whenParameter: Option[ParameterModifier[A]] = whenParameterModifier
 
-    override def whenMethodReturnValue: Option[ReturnValueBehavior[A]] = asReturnValueBehavior
+    override def whenMethodReturnValue: Option[ReturnValueModifier[A]] = whenReturnValueModifier
 }
 
 object DefaultSynchronizedObjectBehavior {
 
     def apply[A <: AnyRef](classDesc: SyncObjectSuperclassDescription[A], tree: SynchronizedObjectBehaviorStore,
-                           asFieldBehavior: FieldBehavior[A],
-                           asParameterBehavior: ParameterBehavior[A],
-                           asReturnValueBehavior: ReturnValueBehavior[A]): DefaultSynchronizedObjectBehavior[A] = {
-        new DefaultSynchronizedObjectBehavior(classDesc, tree.factory, Option(asFieldBehavior), Option(asParameterBehavior), Option(asReturnValueBehavior))
+                           @Nullable whenFieldModifier: FieldModifier[A],
+                           @Nullable whenParameterModifier: ParameterModifier[A],
+                           @Nullable whenReturnValueModifier: ReturnValueModifier[A]): DefaultSynchronizedObjectBehavior[A] = {
+        new DefaultSynchronizedObjectBehavior(classDesc, tree.factory, Option(whenFieldModifier), Option(whenParameterModifier), Option(whenReturnValueModifier))
     }
 
 }

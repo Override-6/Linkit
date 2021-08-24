@@ -38,10 +38,10 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
     }
 
     override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): SyncMethodBehavior = {
-        val javaMethod         = desc.javaMethod
+        val javaMethod         = desc.method
         val controlOpt         = Option(javaMethod.getAnnotation(classOf[MethodControl]))
         val control            = controlOpt.getOrElse(DefaultMethodControl)
-        val synchronizedParams = getSynchronizedParams(desc.javaMethod)
+        val synchronizedParams = getSynchronizedParams(desc.method)
         val rules              = Array[RemoteInvocationRule](control.value())
         val isHidden           = control.hide
         val syncReturnValue    = control.synchronizeReturnValue

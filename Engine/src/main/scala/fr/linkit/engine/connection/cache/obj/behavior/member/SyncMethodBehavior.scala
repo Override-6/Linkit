@@ -18,7 +18,7 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
                               @Nullable override val procrastinator: Procrastinator,
                               @Nullable override val handler: MethodInvocationHandler) extends InternalMethodBehavior {
 
-    override def getMemberName: String = desc.javaMethod.getName
+    override def getName: String = desc.method.getName
 
     /**
      * @return true if the method can perform an RMI
@@ -36,7 +36,7 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
      * [[https://docs.oracle.com/javase/tutorial/java/nutsandbolts/datatypes.html the default primitives value]].
      * */
     override lazy val defaultReturnValue: Any = {
-        val clazz = desc.javaMethod.getReturnType
+        val clazz = desc.method.getReturnType
         if (clazz.isPrimitive) {
             import java.{lang => l}
             clazz match {

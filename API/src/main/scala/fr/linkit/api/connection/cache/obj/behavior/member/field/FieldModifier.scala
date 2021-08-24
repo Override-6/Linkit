@@ -5,10 +5,10 @@ import fr.linkit.api.connection.network.Engine
 
 trait FieldModifier[F] {
 
-    def forLocalComingFromLocal(localField: F, containingObject: SynchronizedObject[_]): F
+    def forLocalComingFromLocal(localField: F, containingObject: SynchronizedObject[_]): F = localField
 
-    def forLocalComingFromRemote(receivedField: F, containingObject: SynchronizedObject[_], remote: Engine): F
+    def forLocalComingFromRemote(receivedField: F, containingObject: SynchronizedObject[_], remote: Engine): F = receivedField
 
-    def forRemote(localField: F, containingObject: SynchronizedObject[_], remote: Engine): F
+    def forRemote(localField: F, containingObject: SynchronizedObject[_], remote: Engine): F = localField
 
 }

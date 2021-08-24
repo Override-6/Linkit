@@ -13,7 +13,7 @@
 package fr.linkit.engine.local.script
 
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.generation.cbp.ClassBlueprint
+import fr.linkit.api.local.language.cbp.ClassBlueprint
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.local.LinkitApplication

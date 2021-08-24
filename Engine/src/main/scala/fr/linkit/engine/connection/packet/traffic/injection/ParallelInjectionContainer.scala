@@ -14,60 +14,47 @@ package fr.linkit.engine.connection.packet.traffic.injection
 
 import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.traffic.InjectionContainer
-import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjectionController
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.connection.packet.SimplePacketBundle
 
 import scala.collection.mutable
 
-class ParallelInjectionContainer(currentIdentifier: String) extends InjectionContainer {
+class ParallelInjectionContainer extends InjectionContainer {
 
-    private val processingInjections = new mutable.LinkedHashMap[(Int, String), ParallelInjection]
+    private val processingInjections = new mutable.LinkedHashMap[Array[Int], ParallelInjection]
 
-    override def makeInjection(bundle: PacketBundle): PacketInjectionController = {
-        val dedicated = bundle.coords match {
-            case dedicated: DedicatedPacketCoordinates => dedicated
-            case broadcast: BroadcastPacketCoordinates => broadcast.getDedicated(currentIdentifier)
-            case _                                     => throw new UnsupportedOperationException("Attempted to perform an injection with unknown PacketCoordinates implementation.")
-        }
-        makeInjection(bundle.packet, bundle.attributes, dedicated)
+    override def makeInjection(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): PacketInjectionController = {
+        makeInjection(SimplePacketBundle(packet, attributes, coordinates))
     }
 
-    override def makeInjection(packet: Packet,
-                               attributes: PacketAttributes,
-                               coordinates: DedicatedPacketCoordinates): PacketInjectionController = this.synchronized {
-        val number = packet.number
-        AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR PACKET $packet WITH COORDINATES $coordinates AND ATTRIBUTES $attributes")
-        val id     = coordinates.injectableID
-        val sender = coordinates.senderID
+    override def makeInjection(bundle: PacketBundle): PacketInjectionController = {
+        val packet      = bundle.packet
+        val number      = packet.number
+        val coordinates = bundle.coords
+        //AppLogger.debug(s"${currentTasksId} <> $number -> CREATING INJECTION FOR BUNDLE $bundle")
+        val path = coordinates.path
 
-        val injection = processingInjections.get((id, sender)) match {
-            case Some(value) if value.canAcceptMoreInjection =>
-                AppLogger.error(s"${currentTasksId} <> $number -> INJECTION Available EXISTS, ADDING PACKET.")
-                value
-            case _                                           =>
-                AppLogger.error(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
-                val injection = new ParallelInjection(coordinates)
-                processingInjections.put((id, sender), injection)
-                injection
+        val injection = this.synchronized {
+            processingInjections.get(path) match {
+                case Some(value) if value.canAcceptMoreInjection =>
+                    //AppLogger.error(s"${currentTasksId} <> $number -> INJECTION IS AVAILABLE, ADDING PACKET.")
+                    value
+                case _                                           =>
+                    //AppLogger.error(s"${currentTasksId} <> $number -> INJECTION DOES NOT EXISTS, CREATING IT.")
+                    val injection = new ParallelInjection(path)
+                    processingInjections.put(path, injection)
+                    injection
+            }
         }
 
-        injection.insert(packet, attributes)
+        injection.insert(bundle)
         injection
     }
 
-    override def isInjecting(injection: PacketInjection): Boolean = {
-        val coords = injection.coordinates
-        val id     = coords.injectableID
-        val sender = coords.senderID
-        processingInjections.contains((id, sender))
-    }
-
-    def removeInjection(injection: PacketInjectionController): Unit = this.synchronized {
-        val coords = injection.coordinates
-        val id     = coords.injectableID
-        val sender = coords.senderID
-        processingInjections.remove((id, sender))
+    def removeInjection(injection: PacketInjectionController): Unit = {
+        processingInjections.remove(injection.injectablePath)
     }
 
 }

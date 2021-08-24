@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj.invokation.remote
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer, RemoteMethodInvocation}
+import fr.linkit.api.connection.cache.obj.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.request.{RequestPacketChannel, ResponseHolder}
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
@@ -54,15 +54,15 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         val bhv      = invocation.methodBehavior
         val methodId = bhv.desc.methodId
-        AppLogger.debug(s"Remotely invoking method ${bhv.desc.symbol.name}")
+        AppLogger.debug(s"Remotely invoking method ${bhv.desc.method.getName}")
         val scope            = new AgreementScope(writer, agreement)
         var requestResult: R = JavaUtils.nl()
         var isResultSet      = false
         val dispatcher       = new ObjectRMIDispatcher(scope, methodId, desiredEngineReturn) {
             override protected def handleResponseHolder(holder: ResponseHolder): Unit = {
                 holder
-                    .nextResponse
-                    .nextPacket[RefPacket[R]].value match {
+                        .nextResponse
+                        .nextPacket[RefPacket[R]].value match {
                     case RMIExceptionString(exceptionString) => throw new RemoteInvocationFailedException(s"Remote Invocation for method $methodId for engine id '$desiredEngineReturn' failed : $exceptionString")
                     case result                              =>
                         requestResult = result
@@ -104,6 +104,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
     }
 
     class ObjectRMIDispatcher(scope: AgreementScope, methodID: Int, @Nullable returnEngine: String) extends RMIDispatcher {
+
         override def broadcast(args: Array[Any]): Unit = {
             handleResponseHolder(makeRequest(scope, args))
         }
@@ -118,8 +119,8 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
             channel.makeRequest(scope)
-                .addPacket(InvocationPacket(nodeInfo.nodePath, methodID, args, returnEngine))
-                .submit()
+                    .addPacket(InvocationPacket(nodeInfo.nodePath, methodID, args, returnEngine))
+                    .submit()
         }
 
         protected def handleResponseHolder(holder: ResponseHolder): Unit = holder.detach()

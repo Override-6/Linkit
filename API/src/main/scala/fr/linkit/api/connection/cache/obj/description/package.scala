@@ -12,8 +12,6 @@
 
 package fr.linkit.api.connection.cache.obj
 
-import scala.reflect.api
-import scala.reflect.api.{TypeCreator, Universe}
 import scala.reflect.runtime.universe._
 
 package object description {

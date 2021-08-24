@@ -27,7 +27,7 @@ import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
-import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectDefaultBehaviorCenter}
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultSynchronizedObjectBehaviorStore}
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource, SyncObjectInstantiationHelper}
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InvocationPacket, ObjectPuppeteer}
@@ -213,7 +213,7 @@ object DefaultSynchronizedObjectCenter {
     private val ClassesResourceDirectory = LinkitApplication.getProperty("compilation.working_dir.classes")
 
     def apply[A <: AnyRef : ClassTag](): SharedCacheFactory[SynchronizedObjectCenter[A] with SharedCache] = {
-        val treeView = new SynchronizedObjectDefaultBehaviorCenter(AnnotationBasedMemberBehaviorFactory)
+        val treeView = new DefaultSynchronizedObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory)
         apply[A](treeView)
     }
 

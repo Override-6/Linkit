@@ -62,7 +62,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
                 //If a thread is already processing the injection, don't do it with this thread.
                 return
             }
-            injection.markAsProcessing()
+            injection.markAsProcessing
         }
         //AppLogger.debug(s"Injection is not processing : injection.isProcessing = ${injection.isProcessing}")
         makeProcess(injection)

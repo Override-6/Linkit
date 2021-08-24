@@ -25,10 +25,6 @@ import scala.reflect.runtime.universe.Type
 trait SyncObjectSuperclassDescription[A] extends CompilationContext {
 
     /**
-     * The super class's type (for scala reflection api)
-     * */
-    val classType: Type
-    /**
      * The super class's type (for java reflection api)
      * */
     val clazz: Class[A]
