@@ -11,7 +11,7 @@ import org.jetbrains.annotations.Nullable
 trait MethodBehavior extends MemberBehavior {
 
               val desc              : MethodDescription
-              val parameterBehaviors: Array[ParameterBehavior[Any]]
+              val parameterBehaviors: Array[ParameterBehavior[AnyRef]]
               val syncReturnValue   : Boolean
               val isHidden          : Boolean
               val defaultReturnValue: Any

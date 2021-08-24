@@ -13,6 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.traffic.PacketWriter
@@ -20,7 +21,7 @@ import fr.linkit.api.connection.packet.{Packet, PacketAttributes}
 import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreement
 import fr.linkit.engine.connection.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
-class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgreement) extends AbstractAttributesPresence with ChannelScope {
+class AgreementScope(override val writer: PacketWriter, network: Network, agreement: RMIRulesAgreement) extends AbstractAttributesPresence with ChannelScope {
 
     private val currentIdentifier = writer.currentIdentifier
 
@@ -53,7 +54,7 @@ class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgree
 
     def foreachAcceptedEngines(action: String => Unit): Unit = {
         if (agreement.isAcceptAll) {
-            val engines = writer.traffic.connection.network.listEngines
+            val engines = network.listEngines
             engines.foreach { engine =>
                 val id = engine.identifier
                 if (!agreement.discardedEngines.contains(id))
@@ -68,7 +69,7 @@ class AgreementScope(override val writer: PacketWriter, agreement: RMIRulesAgree
 
 object AgreementScope {
 
-    def apply(agreement: SimpleRMIRulesAgreement): ScopeFactory[AgreementScope] = {
-        writer => new AgreementScope(writer, agreement)
+    def apply(agreement: SimpleRMIRulesAgreement, network: Network): ScopeFactory[AgreementScope] = {
+        writer => new AgreementScope(writer, network, agreement)
     }
 }

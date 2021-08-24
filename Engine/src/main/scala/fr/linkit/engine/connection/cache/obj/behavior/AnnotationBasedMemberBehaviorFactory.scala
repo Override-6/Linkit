@@ -12,8 +12,6 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import java.lang.reflect.{Method, Parameter}
-
 import fr.linkit.api.connection.cache.obj.behavior.RemoteInvocationRule
 import fr.linkit.api.connection.cache.obj.behavior.annotation._
 import fr.linkit.api.connection.cache.obj.behavior.member._
@@ -22,19 +20,21 @@ import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.Param
 import fr.linkit.api.connection.cache.obj.description._
 import fr.linkit.api.local.concurrency.Procrastinator
 import fr.linkit.engine.connection.cache.obj.behavior.member.{MethodParameterBehavior, SyncFieldBehavior, SyncMethodBehavior}
-import fr.linkit.engine.connection.cache.obj.invokation.remote.{DefaultRMIHandler, InvokeOnlyRMIHandler}
+import fr.linkit.engine.connection.cache.obj.invokation.DefaultMethodInvocationHandler
+
+import java.lang.reflect.{Method, Parameter}
 
 object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
 
-    def getSynchronizedParams(method: Method): Array[ParameterBehavior[Any]] = {
+    def getSynchronizedParams(method: Method): Array[ParameterBehavior[AnyRef]] = {
         val params = method.getParameters
-            .map(genParameterBehavior)
+                .map(genParameterBehavior)
         params
     }
 
-    private def genParameterBehavior(param: Parameter): ParameterBehavior[Any] = {
+    private def genParameterBehavior(param: Parameter): ParameterBehavior[AnyRef] = {
         val isSynchronized = param.isAnnotationPresent(classOf[Synchronized])
-        new MethodParameterBehavior[Any](param.getName, isSynchronized, null)
+        new MethodParameterBehavior[AnyRef](param, isSynchronized, null)
     }
 
     override def genMethodBehavior(procrastinator: Option[Procrastinator], desc: MethodDescription): SyncMethodBehavior = {
@@ -45,10 +45,9 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         val rules              = Array[RemoteInvocationRule](control.value())
         val isHidden           = control.hide
         val syncReturnValue    = control.synchronizeReturnValue
-        val invokeOnly         = control.invokeOnly
         val handler            = controlOpt match {
             case None    => null
-            case Some(_) => if (invokeOnly) InvokeOnlyRMIHandler else DefaultRMIHandler
+            case Some(_) => DefaultMethodInvocationHandler
         }
         SyncMethodBehavior(
             desc, synchronizedParams, syncReturnValue, isHidden,
@@ -56,7 +55,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         )
     }
 
-    override def genFieldBehavior(desc: FieldDescription): FieldBehavior[Any] = {
+    override def genFieldBehavior(desc: FieldDescription): FieldBehavior[AnyRef] = {
         val control        = Option(desc.javaField.getAnnotation(classOf[FieldControl]))
         val isSynchronized = control.isDefined
         SyncFieldBehavior(desc, isSynchronized, null)
@@ -69,8 +68,6 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
             override def synchronizeReturnValue(): Boolean = false
 
             override def hide(): Boolean = false
-
-            override def invokeOnly(): Boolean = false
 
             override def annotationType(): Class[_ <: java.lang.annotation.Annotation] = getClass
         }

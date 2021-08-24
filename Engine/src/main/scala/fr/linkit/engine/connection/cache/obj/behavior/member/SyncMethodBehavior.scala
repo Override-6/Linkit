@@ -2,7 +2,7 @@ package fr.linkit.engine.connection.cache.obj.behavior.member
 
 import fr.linkit.api.connection.cache.obj.behavior.member.method.InternalMethodBehavior
 import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterBehavior
-import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder, RemoteInvocationRule}
+import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder, RemoteInvocationRule, ObjectBehaviorStore}
 import fr.linkit.api.connection.cache.obj.description.MethodDescription
 import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
 import fr.linkit.api.connection.cache.obj.invokation.remote.{MethodInvocationHandler, Puppeteer}
@@ -11,7 +11,7 @@ import fr.linkit.api.local.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
 
 case class SyncMethodBehavior(override val desc: MethodDescription,
-                              override val parameterBehaviors: Array[ParameterBehavior[Any]],
+                              override val parameterBehaviors: Array[ParameterBehavior[AnyRef]],
                               override val syncReturnValue: Boolean,
                               override val isHidden: Boolean,
                               private val rules: Array[RemoteInvocationRule],
@@ -59,7 +59,7 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
      *
      * @param dispatcher the dispatcher to use
      */
-    override def dispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher, network: Network, invocation: LocalMethodInvocation[_]): Unit = {
+    override def dispatch(dispatcher: Puppeteer[AnyRef]#RMIDispatcher, network: Network, store: ObjectBehaviorStore, invocation: LocalMethodInvocation[_]): Unit = {
         val args = invocation.methodArguments
         if (!usesRemoteParametersModifier) {
             dispatcher.broadcast(args)
@@ -67,10 +67,11 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
         }
         val buff = args.clone()
         dispatcher.foreachEngines(engineID => {
+            val engine = network.findEngine(engineID).get
             for (i <- args.indices) {
                 val paramBehavior = parameterBehaviors(i)
-                val modifier = paramBehavior.modifier
-                buff(i) = modifier.forRemote(args(i), invocation, network.findEngine(engineID).get)
+                val modifier      = paramBehavior.modifier
+                buff(i) = store.modifyParameterForRemote(invocation, engine, buff(i).asInstanceOf[AnyRef], paramBehavior)
             }
             buff
         })

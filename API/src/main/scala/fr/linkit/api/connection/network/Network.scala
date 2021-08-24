@@ -29,6 +29,8 @@ trait Network {
 
     def serverEngine: Engine
 
+    def countConnections: Int
+
     def listEngines: List[Engine]
 
     def findEngine(identifier: String): Option[Engine]

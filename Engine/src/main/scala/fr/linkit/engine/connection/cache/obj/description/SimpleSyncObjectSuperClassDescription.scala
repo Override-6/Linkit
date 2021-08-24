@@ -22,11 +22,10 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class[A],
-                                                       val loader: ClassLoader,
-                                                       superDesc: SimpleSyncObjectSuperClassDescription[_ >: A]) extends SyncObjectSuperclassDescription[A] {
+                                                       val loader: ClassLoader) extends SyncObjectSuperclassDescription[A] {
 
-    private val methodDescriptions: Map[Int, MethodDescription] = if (superDesc == null) Map.empty else collectMethods().concat(superDesc.methodDescriptions)
-    private val fieldDescriptions : Map[Int, FieldDescription]  = if (superDesc == null) Map.empty else collectFields().concat(superDesc.fieldDescriptions)
+    private val methodDescriptions: Map[Int, MethodDescription] = collectMethods()
+    private val fieldDescriptions : Map[Int, FieldDescription]  = collectFields()
 
     //The generated class name
     override def classPackage: String = WrapperPackage + clazz.getPackageName
@@ -59,7 +58,7 @@ class SimpleSyncObjectSuperClassDescription[A] private(override val clazz: Class
     }
 
     private def getFiltered(clazz: Class[_]): Iterable[Method] = {
-        val filtered = clazz.getDeclaredMethods
+        val filtered = clazz.getMethods
         filtered.filterNot(isNotOverridable)
                 .filterNot(m => m.getName == "equals" && m.getParameterTypes.length == 1)//FIXME Weird bug due to scala's Any and AnyRef stuff...
     }
@@ -118,8 +117,7 @@ object SimpleSyncObjectSuperClassDescription {
         if (classOf[SynchronizedObject[_]].isAssignableFrom(clazz))
             throw new IllegalArgumentException("Provided class already extends from SynchronizedObject")
         val AClass    = clazz.asInstanceOf[Class[A]]
-        val superDesc = if (AClass eq classOf[Object]) null else apply(AClass.getSuperclass)
-        new SimpleSyncObjectSuperClassDescription[A](AClass, clazz.getClassLoader, superDesc.asInstanceOf[SimpleSyncObjectSuperClassDescription[_ >: A]])
+        new SimpleSyncObjectSuperClassDescription[A](AClass, clazz.getClassLoader)
     }).asInstanceOf[SimpleSyncObjectSuperClassDescription[A]]
 
 }

@@ -14,156 +14,54 @@ package fr.linkit.engine.connection.cache.obj.generation.bp
 
 import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 
-import scala.reflect.runtime.universe._
+import java.lang.reflect.TypeVariable
+import scala.language.existentials
 
 object ScalaBlueprintUtilities {
 
-    def getGenericParams(desc: SyncObjectSuperclassDescription[_], transform: Symbol => Any): String = {
+    def getGenericParams(desc: SyncObjectSuperclassDescription[_], transform: TypeVariable[_] => Any): String = {
         val result = desc
-                .classType
-                .typeArgs
-                .map(t => transform(t.typeSymbol))
+                .clazz
+                .getTypeParameters
+                .map(transform)
                 .mkString(",")
         if (result.isEmpty) ""
         else s"[$result]"
     }
 
-    def getReturnType(method: MethodDescription): String = {
-        val methodSymbol = method.symbol
-        val classType    = method.classDesc.classType
-        val classSymbol  = classType.typeSymbol
-        val tParams      = classSymbol.typeSignature.typeParams
-        val tpe          = methodSymbol.returnType
-        val result       = renderTypes(Seq({
-            val methodOwner = methodSymbol.owner
-            val result      = tpe.asSeenFrom(classType, methodOwner).finalResultType
-            result
-        }), tParams).mkString("")
-        result
+    def getReturnType(desc: MethodDescription): String = {
+        toScalaString(desc.method.getReturnType)
     }
 
-    def getGenericParamsIn(method: MethodDescription): String = {
-        val symbol      = method.symbol
-        val classType   = method.classDesc.classType
-        val cTypeParams = classType.typeParams
-        val mTypeParams = symbol.typeParams
-        if (mTypeParams.isEmpty)
-            return ""
-        mTypeParams
-                .map(_.typeSignature.asSeenFrom(classType, symbol.owner).finalResultType)
-                .zipWithIndex
-                .map(pair => {
-                    val i   = pair._2
-                    val tpe = mTypeParams(i)
-                    if (cTypeParams.exists(_.name == tpe.name)) s"$$_$i"
-                    else tpe.name.toString + pair._1
-                })
-                .mkString("[", ",", "]")
-    }
-
-    def getGenericParamsOut(method: MethodDescription): String = {
-        val cTypeParams = method
-                .classDesc
-                .classType
-                .typeParams
-        val mTypeParams = method
-                .symbol
-                .typeSignature
-                .typeParams
-                .zipWithIndex
-        if (mTypeParams.isEmpty)
-            return ""
-        mTypeParams
-                .zipWithIndex
-                .map(pair => {
-                    val i    = pair._2
-                    val name = mTypeParams(i)._1.name.toString
-                    if (cTypeParams.exists(_.name.toString == name)) s"$$_$i"
-                    else name
-                })
-                .mkString("[", ",", "]")
-    }
-
-    def getParameters(method: MethodDescription)(firstMkString: Seq[String] => String,
-                                                 secondMkString: Seq[String] => String,
-                                                 allowTypes: Boolean, allowVarargUpcast: Boolean): String = {
-        var i = 0
-
-        def n = {
-            i += 1
-            i
+    private def toScalaString(clazz: Class[_]): String = {
+        if (clazz.isArray) {
+            return s"Array[${toScalaString(clazz.componentType())}]"
         }
-
-        val symbol = method.symbol
-
-        def argType(s: Symbol): String = {
-            val classType = method.classDesc.classType
-            val str       = renderTypes({
-                Seq(s
-                        .typeSignature
-                        .asSeenFrom(classType, symbol.owner).finalResultType)
-            }, classType.typeParams).head
-            if (str.endsWith("*") && allowVarargUpcast) s": _*"
-            else if (allowTypes) ": " + str else ""
+        val name = {
+            val fullName = clazz.getTypeName
+            val simpleName = clazz.getSimpleName
+            fullName.dropRight(simpleName.length).replace("$", ".") + simpleName
         }
-
-        secondMkString {
-            symbol
-                    .paramLists
-                    .map(l => {
-                        var markedAsImplicit = false
-                        firstMkString(l.map(s => {
-                            val result = s"arg${n}${argType(s)}"
-                            if (allowTypes && !markedAsImplicit && s.isImplicit) {
-                                markedAsImplicit = true
-                                "implicit " + result
-                            } else result
-                        }))
-                    })
-        }
-    }
-
-    def renderTypes(types: Seq[Type], classLevelTypes: Seq[Symbol]): Seq[String] = {
-        if (types.isEmpty)
-            return Seq.empty
-
-        def renderType(t: Type, slot: Symbol, typePos: Int): String = {
-            val tpe      = t.finalResultType
-            val args     = tpe.typeArgs
-            val symbol   = tpe.typeSymbol
-            val fullName = symbol.fullName
-            if (slot != null && slot.typeSignature.takesTypeArgs) {
-                val ownerType       = slot.typeSignature
-                val typeDeclaration = ownerType.typeParams(typePos)
-                if (typeDeclaration.typeSignature.takesTypeArgs)
-                    return if (symbol.isParameter) symbol.name.toString else fullName
+        if (clazz.isPrimitive) {
+            name match {
+                case "void" => "Unit"
+                case _      => name(0).toUpper + name.drop(1)
             }
-            lazy val genericValue = {
-                if (args.isEmpty) ""
-                else if (t.typeSymbol.fullName != "scala.Array") {
-                    args
-                            .map(_ => "Nothing")
-                            .mkString("[", ",", "]")
-                }
-                else {
-                    args
-                            .zipWithIndex
-                            .map(pair => renderType(pair._1, symbol, pair._2))
-                            .mkString("[", ",", "]")
-                }
-            }
-            if (fullName.startsWith("scala.<"))
-                return tpe.toString
-            val idx = classLevelTypes.indexWhere(_.name.toString == symbol.name.toString)
-            if (idx != -1 && classLevelTypes.forall(_.fullName != fullName))
-                return s"$$_$idx" + (if (args.nonEmpty) ' ' + genericValue else "")
-            if (tpe.toString.endsWith("[_]") || fullName.endsWith("<refinement>"))
-                return tpe.toString
-            val result = (if (symbol.isParameter) symbol.name.toString else fullName) + genericValue
-            result
+        } else {
+            val tParams    = clazz.getTypeParameters
+            if (tParams.nonEmpty) name + tParams.map(_ => "Nothing").mkString("[", ",", "]")
+            else name
         }
+    }
 
-        for (tpe <- types) yield renderType(tpe, null, 0)
+
+    def getParameters(desc: MethodDescription, withTypes: Boolean): String = {
+        desc.method.getParameterTypes
+                .zipWithIndex
+                .map(pair => s"arg${
+                    pair._2 + 1
+                }" + (if (withTypes) ": " + toScalaString(pair._1) else ""))
+                .mkString(", ")
     }
 
 }

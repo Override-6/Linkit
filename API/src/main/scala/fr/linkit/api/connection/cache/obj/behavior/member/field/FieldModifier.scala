@@ -9,6 +9,4 @@ trait FieldModifier[F] {
 
     def forLocalComingFromRemote(receivedField: F, containingObject: SynchronizedObject[_], remote: Engine): F = receivedField
 
-    def forRemote(localField: F, containingObject: SynchronizedObject[_], remote: Engine): F = localField
-
 }

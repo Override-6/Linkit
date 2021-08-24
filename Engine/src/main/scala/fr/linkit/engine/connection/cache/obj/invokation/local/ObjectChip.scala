@@ -12,22 +12,24 @@
 
 package fr.linkit.engine.connection.cache.obj.invokation.local
 
-import java.lang.reflect.Modifier
-
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior
 import fr.linkit.api.connection.cache.obj.behavior.member.method.MethodBehavior
 import fr.linkit.api.connection.cache.obj.invokation.local.{Chip, LocalMethodInvocation}
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.local.concurrency.WorkerPools
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.obj.invokation.AbstractMethodInvocation
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip.NoResult
+import fr.linkit.engine.connection.cache.obj.invokation.{AbstractMethodInvocation, ExecutorEngine}
 import fr.linkit.engine.local.utils.ScalaUtils
 
-class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
+import java.lang.reflect.Modifier
+
+class ObjectChip[S <: AnyRef] private(behavior: ObjectBehavior[S],
                                       syncObject: SynchronizedObject[S],
                                       network: Network) extends Chip[S] {
+
+    private val store = syncObject.getStore
 
     override def updateObject(obj: S): Unit = {
         ScalaUtils.pasteAllFields(syncObject, obj)
@@ -60,14 +62,15 @@ class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
                  * */
                 override val methodArguments: Array[Any] = params
             }
-            lazy val engine     = network.findEngine(origin).get
+            val engine          = network.findEngine(origin).get
             val paramsBehaviors = behavior.parameterBehaviors
             for (i <- params.indices) {
-                val modifier = paramsBehaviors(i).modifier
-                if (modifier != null)
-                    params(i) = modifier.forLocalComingFromRemote(params(i), invocation, engine)
+                val bhv = paramsBehaviors(i)
+                params(i) = store.modifyParameterForLocalComingFromRemote(invocation, engine, params(i).asInstanceOf[AnyRef], bhv)
             }
+            ExecutorEngine.setCurrentEngine(engine)
             behavior.desc.method.invoke(syncObject, params: _*)
+            ExecutorEngine.setCurrentEngine(network.connectionEngine) //return to the current engine.
         }
     }
 
@@ -88,7 +91,7 @@ class ObjectChip[S <: AnyRef] private(behavior: SynchronizedObjectBehavior[S],
 
 object ObjectChip {
 
-    def apply[S <: AnyRef](behavior: SynchronizedObjectBehavior[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
+    def apply[S <: AnyRef](behavior: ObjectBehavior[S], network: Network, wrapper: SynchronizedObject[S]): ObjectChip[S] = {
         if (wrapper == null)
             throw new NullPointerException("puppet is null !")
         val clazz = wrapper.getClass

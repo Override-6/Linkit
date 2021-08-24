@@ -21,7 +21,7 @@ trait Engine extends Updatable {
 
     val identifier: String
 
-    val cache: SharedCacheManager
+    def cache: SharedCacheManager
 
     val staticAccessor: StaticAccessor
 

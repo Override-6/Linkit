@@ -9,6 +9,6 @@ trait MemberBehaviorFactory {
 
     def genMethodBehavior(callProcrastinator: Option[Procrastinator], desc: MethodDescription): InternalMethodBehavior
 
-    def genFieldBehavior(desc: FieldDescription): FieldBehavior[Any]
+    def genFieldBehavior(desc: FieldDescription): FieldBehavior[AnyRef]
 
 }

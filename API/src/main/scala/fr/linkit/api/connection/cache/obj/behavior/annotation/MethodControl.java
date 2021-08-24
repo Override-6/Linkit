@@ -21,7 +21,7 @@ import java.lang.annotation.Target;
 
 /**
  * Contains basic information for a {@link MethodBehavior}
- * @see fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+ * @see fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior
  * @see MethodBehavior
  */
 @Target(ElementType.METHOD)
@@ -47,9 +47,4 @@ public @interface MethodControl {
      * */
     boolean hide() default false;
 
-    /**
-     *
-     * @return true if the Remote Method Invocation should not wait for any resulting value or exception.
-     */
-    boolean invokeOnly() default false;
 }

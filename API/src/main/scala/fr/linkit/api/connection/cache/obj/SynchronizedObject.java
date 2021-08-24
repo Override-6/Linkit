@@ -12,8 +12,9 @@
 
 package fr.linkit.api.connection.cache.obj;
 
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore;
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo;
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior;
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior;
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer;
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer;
 
@@ -32,7 +33,7 @@ public interface SynchronizedObject<T> extends Serializable {
      * Initialize the puppeteer of the synchronized object.
      * @throws SyncObjectAlreadyInitialisedException if this object is already initialized.
      * */
-    void initPuppeteer(Puppeteer<T> puppeteer);
+    void initPuppeteer(Puppeteer<T> puppeteer, ObjectBehaviorStore store); //TODO pass in internal
 
     /**
      * @return The used {@link Puppeteer} of this object.
@@ -42,9 +43,9 @@ public interface SynchronizedObject<T> extends Serializable {
 
     /**
      * @return the behavior of this object
-     * @see SynchronizedObjectBehavior
+     * @see ObjectBehavior
      * */
-    SynchronizedObjectBehavior<T> getBehavior();
+    ObjectBehavior<T> getBehavior();
 
     /**
      * @return the information of the node of this object.
@@ -57,6 +58,8 @@ public interface SynchronizedObject<T> extends Serializable {
      * @see InvocationChoreographer
      */
     InvocationChoreographer getChoreographer();
+
+    ObjectBehaviorStore getStore();
 
     /**
      * Note: a synchronized object is always initialized if it was retrieved normally.

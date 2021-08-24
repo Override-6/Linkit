@@ -13,48 +13,37 @@
 package fr.linkit.engine.connection.cache.obj.generation.bp
 
 import fr.linkit.api.connection.cache.obj.description.MethodDescription
-import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaBlueprintUtilities._
-import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaWrapperMethodBlueprint.ValueScope
-import fr.linkit.engine.local.generation.cbp.{AbstractClassBlueprint, AbstractValueScope}
-import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
-
-import java.io.InputStream
-import scala.reflect.runtime.universe.symbolOf
+import fr.linkit.engine.local.language.cbp.AbstractValueScope
 
 object ScalaWrapperMethodBlueprint {
 
     class ValueScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, pos, blueprint) {
 
         bindValue("ReturnType" ~> getReturnType)
-        bindValue("GenericTypesIn" ~> getGenericParamsIn)
-        bindValue("MethodName" ~> (_.symbol.name.toString))
+        bindValue("MethodName" ~> (_.method.getName))
         bindValue("MethodID" ~> (m => m.methodId.toString))
-        bindValue("ParamsIn" ~> (getParameters(_)(_.mkString("(", ", ", ")"), _.mkString(""), true, false)))
-        bindValue("ParamsOutFlatten" ~> (getParamsOutFlatten(_, false)))
-        bindValue("ParamsOutFlattenLambda" ~> (getParamsOutFlatten(_, true)))
+        bindValue("ParamsIn" ~> (getParameters(_, true)))
+        bindValue("ParamsOut" ~> (getParameters(_, false)))
+        bindValue("ParamsOutLambda" ~> getParamsOutLambda)
         bindValue("Override" ~> chooseOverride)
 
     }
 
-    private def getParamsOutFlatten(desc: MethodDescription, forLambda: Boolean): String = {
-        val result = (1 to desc.javaMethod.getParameterCount)
+    private def getParamsOutLambda(desc: MethodDescription): String = {
+        val result = (1 to desc.method.getParameterCount)
                 .map(i => s"arg$i").mkString(", ")
-        if (forLambda)
-            if (result.isEmpty) result else ", " + result
-        else result
+        if (result.isEmpty) result else ", " + result
     }
 
     private def chooseOverride(desc: MethodDescription): String = {
-        val symbol = desc.symbol
-        val owner  = symbol
-                .overrides
-                .lastOption
-                .map(_.owner)
-                .getOrElse(symbol.owner)
-        if (owner == symbolOf[Any] || owner == symbolOf[Object])
-            "override"
-        else ""
+        val method = desc.method
+        val params = method.getParameterTypes
+        method.getName match {
+            case "toString" | "clone" | "hashCode" if params.isEmpty              => "override"
+            case "equals" if params.length == 1 && (params(0) eq classOf[Object]) => "override"
+            case _                                                                => ""
+        }
     }
 
 }

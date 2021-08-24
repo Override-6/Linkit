@@ -17,15 +17,15 @@ import fr.linkit.api.connection.cache.obj.behavior.member.field.{FieldBehavior, 
 import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.{ParameterBehavior, ParameterModifier}
 import fr.linkit.api.connection.cache.obj.behavior.member.method.returnvalue.{ReturnValueBehavior, ReturnValueModifier}
 import fr.linkit.api.connection.cache.obj.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
-import fr.linkit.api.connection.cache.obj.behavior.{SynchronizedObjectBehavior, SynchronizedObjectBehaviorStore}
+import fr.linkit.api.connection.cache.obj.behavior.{ObjectBehavior, ObjectBehaviorStore}
 import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 import org.jetbrains.annotations.Nullable
 
-class DefaultSynchronizedObjectBehavior[A <: AnyRef] protected(override val classDesc: SyncObjectSuperclassDescription[A],
-                                                               factory: MemberBehaviorFactory,
-                                                               whenFieldModifier: Option[FieldModifier[A]],
-                                                               whenParameterModifier: Option[ParameterModifier[A]],
-                                                               whenReturnValueModifier: Option[ReturnValueModifier[A]]) extends SynchronizedObjectBehavior[A] {
+class DefaultObjectBehavior[A <: AnyRef] protected(override val classDesc: SyncObjectSuperclassDescription[A],
+                                                   factory: MemberBehaviorFactory,
+                                                   whenFieldModifier: Option[FieldModifier[A]],
+                                                   whenParameterModifier: Option[ParameterModifier[A]],
+                                                   whenReturnValueModifier: Option[ReturnValueModifier[A]]) extends ObjectBehavior[A] {
 
     private val methods = {
         generateMethodsBehavior()
@@ -45,18 +45,18 @@ class DefaultSynchronizedObjectBehavior[A <: AnyRef] protected(override val clas
 
     override def getMethodBehavior(id: Int): Option[InternalMethodBehavior] = methods.get(id)
 
-    override def listField(): Iterable[FieldBehavior[Any]] = {
+    override def listField(): Iterable[FieldBehavior[AnyRef]] = {
         fields.values
     }
 
-    override def getFieldBehavior(id: Int): Option[FieldBehavior[Any]] = fields.get(id)
+    override def getFieldBehavior(id: Int): Option[FieldBehavior[AnyRef]] = fields.get(id)
 
     protected def generateMethodsBehavior(): Iterable[InternalMethodBehavior] = {
         classDesc.listMethods()
                 .map(factory.genMethodBehavior(None, _))
     }
 
-    protected def generateFieldsBehavior(): Iterable[FieldBehavior[Any]] = {
+    protected def generateFieldsBehavior(): Iterable[FieldBehavior[AnyRef]] = {
         classDesc.listFields()
                 .map(factory.genFieldBehavior)
     }
@@ -68,13 +68,13 @@ class DefaultSynchronizedObjectBehavior[A <: AnyRef] protected(override val clas
     override def whenMethodReturnValue: Option[ReturnValueModifier[A]] = whenReturnValueModifier
 }
 
-object DefaultSynchronizedObjectBehavior {
+object DefaultObjectBehavior {
 
-    def apply[A <: AnyRef](classDesc: SyncObjectSuperclassDescription[A], tree: SynchronizedObjectBehaviorStore,
+    def apply[A <: AnyRef](classDesc: SyncObjectSuperclassDescription[A], tree: ObjectBehaviorStore,
                            @Nullable whenFieldModifier: FieldModifier[A],
                            @Nullable whenParameterModifier: ParameterModifier[A],
-                           @Nullable whenReturnValueModifier: ReturnValueModifier[A]): DefaultSynchronizedObjectBehavior[A] = {
-        new DefaultSynchronizedObjectBehavior(classDesc, tree.factory, Option(whenFieldModifier), Option(whenParameterModifier), Option(whenReturnValueModifier))
+                           @Nullable whenReturnValueModifier: ReturnValueModifier[A]): DefaultObjectBehavior[A] = {
+        new DefaultObjectBehavior(classDesc, tree.factory, Option(whenFieldModifier), Option(whenParameterModifier), Option(whenReturnValueModifier))
     }
 
 }

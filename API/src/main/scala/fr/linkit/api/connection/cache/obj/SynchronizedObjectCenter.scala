@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.cache.obj
 
 import fr.linkit.api.connection.cache.SharedCache
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTreeStore
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.PacketAttributesPresence
@@ -25,7 +25,7 @@ import fr.linkit.api.connection.packet.PacketAttributesPresence
  * Once the object is posted in the cache, it's cloned then transformed to an object of type `A with SynchronizedObject[A]`.<br>
  * Then, The object is broadcasted to all engines that are attached to this cache. <bt>
  * All method invocations performed on the transformed object will be synchronized,
- * This means that an RMI may occur following the [[fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior]] of the synchronized object.<br>
+ * This means that an RMI may occur following the [[fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior]] of the synchronized object.<br>
  * Notes: - A Synchronized object of type `A with SynchronizedObject[A]` can also hold inner synchronized objects of [[AnyRef]] type.
  *            These inner objects can be fields, or method parameters or return values.
  *        - An object posted on the cache is called a "Root object", they must be of type [A] but, as said before, they can contains
@@ -59,10 +59,10 @@ trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence wit
 
     /**
      * The default behavior tree for an [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]].
-     * "the behavior of a tree" is simply a set of [[fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior]]
+     * "the behavior of a tree" is simply a set of [[fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior]]
      * that will set the behavior of each objects of a tree.
      * */
-    val defaultTreeViewBehavior: SynchronizedObjectBehaviorStore
+    val defaultTreeViewBehavior: ObjectBehaviorStore
 
     /**
      * posts an object in the cache.
@@ -83,7 +83,7 @@ trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence wit
      * @param behavior the behavior tree of the object and its inner objects
      * @return the synchronized object.
      * */
-    def postObject(id: Int, obj: A, behavior: SynchronizedObjectBehaviorStore): A with SynchronizedObject[A]
+    def postObject(id: Int, obj: A, behavior: ObjectBehaviorStore): A with SynchronizedObject[A]
 
     /**
      * Finds a synchronized object in the cache.

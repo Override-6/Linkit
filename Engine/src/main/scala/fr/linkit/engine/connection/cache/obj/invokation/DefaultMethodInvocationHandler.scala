@@ -10,30 +10,30 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.obj.invokation.remote
+package fr.linkit.engine.connection.cache.obj.invokation
 
 import fr.linkit.api.connection.cache.obj.behavior.RMIRulesAgreement
 import fr.linkit.api.connection.cache.obj.invokation.local.CallableLocalMethodInvocation
-import fr.linkit.api.connection.cache.obj.invokation.remote.{DispatchableRemoteMethodInvocation, MethodInvocationHandler, Puppeteer, RemoteMethodInvocation}
+import fr.linkit.api.connection.cache.obj.invokation.remote.{DispatchableRemoteMethodInvocation, MethodInvocationHandler, Puppeteer}
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.obj.invokation.{AbstractMethodInvocation, SimpleRMIRulesAgreementBuilder}
 
-abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
+object DefaultMethodInvocationHandler extends MethodInvocationHandler {
 
     override def handleRMI[R](localInvocation: CallableLocalMethodInvocation[R]): R = {
-        val wrapper           = localInvocation.synchronizedObject
+        val syncObject        = localInvocation.synchronizedObject
         val behavior          = localInvocation.methodBehavior
-        val puppeteer         = wrapper.getPuppeteer
+        val desc              = behavior.desc
+        val puppeteer         = syncObject.getPuppeteer
         val currentIdentifier = puppeteer.currentIdentifier
         val args              = localInvocation.methodArguments
-        val name              = behavior.desc.method.getName
+        val name              = desc.method.getName
         val methodID          = localInvocation.methodID
         val network           = puppeteer.network
 
         val enableDebug = localInvocation.debug
 
         lazy val argsString = args.mkString("(", ", ", ")")
-        lazy val className  = behavior.desc.classDesc.clazz
+        lazy val className  = desc.classDesc.clazz
         if (enableDebug) {
             AppLogger.debug(s"$name: Performing rmi call for ${className.getSimpleName}.$name$argsString (id: $methodID)")
             AppLogger.debug(s"MethodBehavior = $behavior")
@@ -51,12 +51,12 @@ abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
             override val agreement: RMIRulesAgreement = methodAgreement
 
             override def dispatchRMI(dispatcher: Puppeteer[AnyRef]#RMIDispatcher): Unit = {
-                behavior.dispatch(dispatcher, network, localInvocation)
+                behavior.dispatch(dispatcher, network, syncObject.getStore, localInvocation)
             }
         }
         if (methodAgreement.getDesiredEngineReturn == currentIdentifier) {
             if (mayPerformRMI)
-                voidRMIInvocation(puppeteer, remoteInvocation)
+                puppeteer.sendInvoke(remoteInvocation)
             result = localResult
         } else if (mayPerformRMI) {
             result = puppeteer.sendInvokeAndWaitResult(remoteInvocation)
@@ -64,6 +64,4 @@ abstract class AbstractMethodInvocationHandler extends MethodInvocationHandler {
         result.asInstanceOf[R]
     }
 
-
-    protected def voidRMIInvocation(puppeteer: Puppeteer[_], invocation: DispatchableRemoteMethodInvocation[_]): Unit
 }

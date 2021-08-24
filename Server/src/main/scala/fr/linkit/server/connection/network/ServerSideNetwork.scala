@@ -13,7 +13,7 @@
 package fr.linkit.server.connection.network
 
 import fr.linkit.api.connection.cache.SharedCacheManager
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.engine.connection.cache.SharedCacheOriginManager
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
@@ -25,8 +25,8 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
 
     override def serverIdentifier: String = serverConnection.currentIdentifier
 
-    override protected def retrieveDataTrunk(store: SynchronizedObjectBehaviorStore): NetworkDataTrunk = {
-        globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk]())
+    override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
+        globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](this))
                 .postObject(0, new NetworkDataTrunk, store)
     }
 

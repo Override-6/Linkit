@@ -17,7 +17,7 @@ import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescri
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.compilation.CompilationRequest
 import fr.linkit.engine.connection.cache.obj.generation.WrapperCompilationRequestFactory.DefaultClassBlueprint
-import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaWrapperClassBlueprint
+import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaSyncClassBlueprint
 import fr.linkit.engine.connection.cache.obj.generation.rectifier.ClassRectifier
 import fr.linkit.engine.local.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.local.mapping.ClassMappings
@@ -39,5 +39,5 @@ class WrapperCompilationRequestFactory extends ClassCompilationRequestFactory[Sy
 
 object WrapperCompilationRequestFactory {
 
-    private val DefaultClassBlueprint = new ScalaWrapperClassBlueprint(getClass.getResourceAsStream("/generation/puppet_wrapper_blueprint.scbp"))
+    private val DefaultClassBlueprint = new ScalaSyncClassBlueprint(getClass.getResourceAsStream("/generation/sync_object.scbp"))
 }

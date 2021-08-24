@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldBehavior
 import fr.linkit.api.connection.cache.obj.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
 import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 
-trait SynchronizedObjectBehavior[A <: AnyRef] extends ValueBehavior[A] {
+trait ObjectBehavior[A <: AnyRef] extends ValueBehavior[A] {
 
     val classDesc: SyncObjectSuperclassDescription[A]
 
@@ -24,8 +24,8 @@ trait SynchronizedObjectBehavior[A <: AnyRef] extends ValueBehavior[A] {
 
     def getMethodBehavior(id: Int): Option[InternalMethodBehavior]
 
-    def listField(): Iterable[FieldBehavior[Any]]
+    def listField(): Iterable[FieldBehavior[AnyRef]]
 
-    def getFieldBehavior(id: Int): Option[FieldBehavior[Any]]
+    def getFieldBehavior(id: Int): Option[FieldBehavior[AnyRef]]
 
 }

@@ -2,7 +2,7 @@ package fr.linkit.engine.connection.cache.obj.tree
 
 import java.util.concurrent.ThreadLocalRandom
 
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
@@ -16,12 +16,12 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
                                                                val instantiator: ObjectWrapperInstantiator,
                                                                override val id: Int,
                                                                override val center: SynchronizedObjectCenter[A],
-                                                               override val behaviorStore: SynchronizedObjectBehaviorStore) extends SynchronizedObjectTree[A] {
+                                                               override val behaviorStore: ObjectBehaviorStore) extends SynchronizedObjectTree[A] {
 
     private val network = center.network
 
     def this(platformIdentifier: String, id: Int,
-             instantiator: ObjectWrapperInstantiator, center: SynchronizedObjectCenter[A], behaviorTree: SynchronizedObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootWrapperNode[A]) = {
+             instantiator: ObjectWrapperInstantiator, center: SynchronizedObjectCenter[A], behaviorTree: ObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootWrapperNode[A]) = {
         this(platformIdentifier, instantiator, id, center, behaviorTree)
         val root = rootSupplier(this)
         if (root.tree ne this)
@@ -74,7 +74,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
         val behavior = behaviorStore.getFromClass[B](wrapper.getSuperClass)
         if (!wrapper.isInitialized) {
-            instantiator.initializeWrapper(wrapper, SyncNodeInfo(center.family, center.cacheID, ownerID, path), behavior)
+            instantiator.initializeWrapper(wrapper, SyncNodeInfo(center.family, center.cacheID, ownerID, path), behaviorStore)
         }
 
         val chip                 = ObjectChip[B](behavior, center.network, wrapper)
@@ -97,11 +97,15 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         val (syncObject, _) = instantiator.newWrapper[B](obj, behaviorStore, puppeteerInfo, Map())
         val node            = registerSynchronizedObject[B](parent, id, syncObject, ownerID)
         val isCurrentOwner  = ownerID == currentIdentifier
+        val engine = if (!isCurrentOwner) network.findEngine(ownerID).get else null //should not be used if isCurrentOwner = false
 
         for (bhv <- wrapperBehavior.listField()) {
             val field      = bhv.desc.javaField
             val fieldValue = field.get(obj)
-            val finalField = behaviorStore.modifyField(isCurrentOwner, fieldValue, bhv, wrapperBehavior)
+            val finalField = {
+                if (isCurrentOwner) behaviorStore.modifyFieldForLocalComingFromLocal(syncObject, fieldValue, bhv)
+                else behaviorStore.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
+            }
             ScalaUtils.setValue(syncObject, field, finalField)
         }
         node

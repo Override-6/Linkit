@@ -15,22 +15,21 @@ package fr.linkit.engine.connection.cache.obj.generation.bp
 import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.local.generation.compilation.access.CompilerType
 import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaBlueprintUtilities._
-import fr.linkit.engine.local.generation.cbp.AbstractClassBlueprint
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
+import fr.linkit.engine.local.language.cbp.AbstractClassBlueprint
 
 import java.io.InputStream
 
-class ScalaWrapperClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncObjectSuperclassDescription[_]](in) {
+class ScalaSyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncObjectSuperclassDescription[_]](in) {
 
     override val compilerType: CompilerType = CommonCompilerTypes.Scalac
 
     override val rootScope: RootValueScope = new RootValueScope {
         bindValue("WrappedClassSimpleName" ~> (_.clazz.getSimpleName))
         bindValue("WrappedClassName" ~> (_.clazz.getTypeName.replaceAll("\\$", ".")))
-        bindValue("TParamsIn" ~> (getGenericParams(_, _.asType.toType.finalResultType)))
-        bindValue("TParamsOut" ~> (getGenericParams(_, _.name)))
+        bindValue("TParamsIn" ~> (getGenericParams(_, _.getName)))
+        bindValue("TParamsOut" ~> (getGenericParams(_, _.getName)))
         bindValue("TParamsInBusted" ~> (getGenericParams(_, _ => "_")))
-        bindValue("BustedConstructor" ~> getBustedConstructor)
 
         bindSubScope(new ScalaWrapperMethodBlueprint.ValueScope("INHERITED_METHODS", _, _), (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
@@ -40,18 +39,6 @@ class ScalaWrapperClassBlueprint(in: InputStream) extends AbstractClassBlueprint
                     .foreach(action)
         })
 
-    }
-
-    private def getBustedConstructor(desc: SyncObjectSuperclassDescription[_]): String = {
-        desc.classType
-                .decls
-                .find(dec => dec.isConstructor && (dec.isPublic || dec.isProtected))
-                .fold("") {
-                    _.asMethod
-                            .paramLists
-                            .map(_.map(_ => "nl").mkString("(", ",", ")"))
-                            .mkString(",")
-                }
     }
 
 }

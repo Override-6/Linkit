@@ -12,14 +12,14 @@
 
 package fr.linkit.engine.connection.cache.obj.behavior
 
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior
 import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehaviorFactory
 
 import scala.collection.mutable
 
 abstract class SynchronizedObjectBehaviorStoreBuilder(memberBehaviorFactory: MemberBehaviorFactory) {
 
-    private val mappedBehaviors = mutable.HashMap.empty[Class[_], SynchronizedObjectBehavior[_]]
+    private val mappedBehaviors = mutable.HashMap.empty[Class[_], ObjectBehavior[_]]
 
     object behaviors {
 
@@ -29,6 +29,6 @@ abstract class SynchronizedObjectBehaviorStoreBuilder(memberBehaviorFactory: Mem
         }
     }
 
-    def build = new DefaultSynchronizedObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory, mappedBehaviors.toMap)
+    def build = new DefaultObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory, mappedBehaviors.toMap)
 
 }

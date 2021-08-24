@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.{SyncObjectDetachException, SynchronizedObject}
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper.MaxScanDepth
@@ -29,7 +29,7 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 
 //TODO Factorise this class and optimize it.
-class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: SynchronizedObjectBehaviorStore) {
+class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: ObjectBehaviorStore) {
 
     def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with SynchronizedObject[A]],
                                            origin: A,

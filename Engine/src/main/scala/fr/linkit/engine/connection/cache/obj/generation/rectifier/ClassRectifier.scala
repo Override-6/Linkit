@@ -44,7 +44,7 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: 
         val methodNames      = ListBuffer.empty[String]
 
         def fixMethod(desc: MethodDescription): Unit = {
-            val javaMethod   = desc.javaMethod
+            val javaMethod   = desc.method
             val name         = javaMethod.getName
             val superfunName = s"super$$$name$$"
             val superfunInfo = new MethodInfo(ctClass.getClassFile.getConstPool, superfunName, getMethodDescriptor(javaMethod))
@@ -69,7 +69,7 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: 
     }
 
     private def getAnonFun(desc: MethodDescription): CtMethod = {
-        val javaMethod       = desc.javaMethod
+        val javaMethod       = desc.method
         val methodReturnType = javaMethod.getReturnType
         val methodDesc       = getMethodDescriptor(javaMethod)
         val anonFunPrefix    = s"$$anonfun$$${javaMethod.getName}$$"

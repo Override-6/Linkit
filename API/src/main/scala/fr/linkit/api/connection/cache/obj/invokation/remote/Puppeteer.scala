@@ -14,7 +14,7 @@ package fr.linkit.api.connection.cache.obj.invokation.remote
 
 import java.util.concurrent.ThreadLocalRandom
 
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCenter}
 import fr.linkit.api.connection.network.Network
@@ -42,7 +42,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The behavior of the synchronized object.
      * */
-    val wrapperBehavior: SynchronizedObjectBehavior[S]
+    val wrapperBehavior: ObjectBehavior[S]
 
     /**
      * The identifier of the current engine.

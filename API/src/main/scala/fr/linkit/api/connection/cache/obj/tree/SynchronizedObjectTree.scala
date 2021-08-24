@@ -1,6 +1,6 @@
 package fr.linkit.api.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehaviorStore
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCenter}
 import fr.linkit.api.connection.cache.obj.IllegalSynchronizationException
 
@@ -20,7 +20,7 @@ trait SynchronizedObjectTree[A <: AnyRef] {
     /**
      * The behavior store of this object's tree
      */
-    val behaviorStore: SynchronizedObjectBehaviorStore
+    val behaviorStore: ObjectBehaviorStore
 
     /**
      *

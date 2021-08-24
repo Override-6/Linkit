@@ -14,6 +14,7 @@ package fr.linkit.engine.local.concurrency.pool
 
 import fr.linkit.api.local.concurrency._
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.connection.cache.obj.invokation.ExecutorEngine
 import fr.linkit.engine.local.concurrency.{SimpleAsyncTask, now, timedPark}
 
 import java.util.concurrent._
@@ -121,7 +122,11 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
         val submittedTaskID = taskCount
         val currentTask     = currentTaskWithController.orNull
         val childTask       = SimpleAsyncTask[A](submittedTaskID, currentTask)(Try(task))
+        val currentEngine   = ExecutorEngine.currentEngine
         runnable = () => {
+            val oldEngine = ExecutorEngine.currentEngine
+            if (currentEngine != null)
+                ExecutorEngine.setCurrentEngine(currentEngine)
             val rootExecution = currentTaskExecutionDepth == 0
             if (rootExecution)
                 activeThreads += 1
@@ -135,6 +140,8 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
                 case e: Throwable =>
                     e.printStackTrace()
             }
+            if (oldEngine != null)
+                ExecutorEngine.setCurrentEngine(oldEngine) //return to the previous engine
             if (rootExecution)
                 activeThreads -= 1
             workTaskIds.synchronized {

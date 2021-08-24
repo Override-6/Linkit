@@ -98,8 +98,7 @@ describe class java.util.ArrayList {
    forall methods -> disable //no method invocation will be spread to the other engines. if a method call is performed on your client, you'll be the only one that will keep this action.
     
    //"broadcast" means that the RMI request will be send to every engines.  
-   //"invokeonly" means that the RMI will be requested, but no result is awaited (return value or even method throwing).  
-   enable method add as broadcast and invokeonly {
+   enable method add as broadcast {
       args {
          0 -> enable // the first parameter object will be synchronized. this way, if you add a Player in your list, the Player object will become a synchronized object.
       }

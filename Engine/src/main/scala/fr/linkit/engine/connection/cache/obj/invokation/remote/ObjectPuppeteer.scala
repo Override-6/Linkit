@@ -13,9 +13,10 @@
 package fr.linkit.engine.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj._
-import fr.linkit.api.connection.cache.obj.behavior.SynchronizedObjectBehavior
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.request.{RequestPacketChannel, ResponseHolder}
 import fr.linkit.api.local.concurrency.ProcrastinatorControl
@@ -30,10 +31,10 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    procrastinator: ProcrastinatorControl,
                                    override val center: SynchronizedObjectCenter[_],
                                    override val nodeInfo: SyncNodeInfo,
-                                   val wrapperBehavior: SynchronizedObjectBehavior[S]) extends Puppeteer[S] {
+                                   val wrapperBehavior: ObjectBehavior[S]) extends Puppeteer[S] {
 
     private      val traffic                                         = channel.traffic
-    override     val network                                         = traffic.connection.network
+    override     val network          : Network                      = center.network
     override     val currentIdentifier: String                       = traffic.currentIdentifier
     private lazy val tree                                            = center.treeCenter.findTree(nodeInfo.nodePath.head).get
     private      val writer                                          = traffic.newWriter(channel.path)
@@ -55,7 +56,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         val bhv      = invocation.methodBehavior
         val methodId = bhv.desc.methodId
         AppLogger.debug(s"Remotely invoking method ${bhv.desc.method.getName}")
-        val scope            = new AgreementScope(writer, agreement)
+        val scope            = new AgreementScope(writer, network, agreement)
         var requestResult: R = JavaUtils.nl()
         var isResultSet      = false
         val dispatcher       = new ObjectRMIDispatcher(scope, methodId, desiredEngineReturn) {
@@ -85,7 +86,7 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             val bhv      = invocation.methodBehavior
             val methodId = bhv.desc.methodId
 
-            val scope      = new AgreementScope(writer, agreement)
+            val scope      = new AgreementScope(writer, network, agreement)
             val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
             invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
         }
@@ -111,10 +112,11 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
 
         override def foreachEngines(action: String => Array[Any]): Unit = {
             scope.foreachAcceptedEngines(engineID => {
-                if (engineID != returnEngine && engineID != currentIdentifier) //return engine is processed at last
+                if (engineID != returnEngine && engineID != currentIdentifier) //return engine is processed at last, don't send a request to the curernt engine
                     makeRequest(ChannelScopes.include(engineID)(writer), action(engineID)).detach()
             })
-            handleResponseHolder(makeRequest(ChannelScopes.include(returnEngine)(writer), action(returnEngine)))
+            if (returnEngine != null && returnEngine != currentIdentifier)
+                handleResponseHolder(makeRequest(ChannelScopes.include(returnEngine)(writer), action(returnEngine)))
         }
 
         private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {

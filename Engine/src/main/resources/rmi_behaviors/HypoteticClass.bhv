@@ -21,7 +21,7 @@ describe class ShooterCharacter : GraphicComponent, Collidable {
     //describing the dash and kill methods. 
     [procrastinator = @lwjgl] //We use the lwjgl thread pool in which we want the method to be processed if the execution was triggered from a RMI request.
                    // The RMI rule which says that the remote call must be broadcasted to every connected clients (only if the method is called on an object owned by the current engine)
-    enable dash, kill as broadcast(if owner) and invokeonly //invokeonly means that we only send the RMI request without waiting for any result.
+    enable dash, kill as broadcast(if owner)
     
     //The behavior of dash is pasted to these methods
     enable setWeapon, damage, heal, setHealth as dash
