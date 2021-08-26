@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.network
 
 import fr.linkit.api.connection.cache.SharedCacheManager
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule._
-import fr.linkit.api.connection.cache.obj.behavior.annotation.MethodControl
+import fr.linkit.api.connection.cache.obj.behavior.annotation.{MethodControl, Synchronized}
 import fr.linkit.api.connection.network.{Engine, Network}
 import fr.linkit.engine.connection.cache.SharedCacheDistantManager
 import fr.linkit.engine.connection.cache.obj.invokation.ExecutorEngine
@@ -22,24 +22,25 @@ import fr.linkit.engine.connection.cache.obj.invokation.ExecutorEngine
 import java.sql.Timestamp
 import scala.collection.mutable
 
-class NetworkDataTrunk(network: Network) {
+class NetworkDataTrunk {
 
     private val engines = mutable.HashMap.empty[String, Engine]
     private val caches  = mutable.HashMap.empty[String, SharedCacheManager]
     val startUpDate: Timestamp = new Timestamp(System.currentTimeMillis())
 
-    @MethodControl(value = BROADCAST)
-    def newEngine(engineIdentifier: String): Engine = {
+    @MethodControl(value = BROADCAST, innerInvocations = true)
+    def newEngine(network: Network, engineIdentifier: String): Engine = {
         if (engines.contains(engineIdentifier))
             throw new IllegalArgumentException("This engine already exists !")
         val current = ExecutorEngine.currentEngine
         val cache = {
-            if (network.connectionEngine ne current) network.findCacheManager(engineIdentifier).get //TODO orElse throw
+            if (network.connectionEngine ne current) findCache(engineIdentifier).getOrElse {
+                val store = network.connection.createStore(engineIdentifier.hashCode)
+                new SharedCacheDistantManager(engineIdentifier, engineIdentifier, network, store)
+            }
             else network.declareNewCacheManager(engineIdentifier)
         }
-        val engine = new DefaultEngine(engineIdentifier, cache)
-        engines.put(engineIdentifier, engine)
-        engine
+        addEngine(new DefaultEngine(engineIdentifier, cache))
     }
 
     @MethodControl(value = BROADCAST_IF_ROOT_OWNER)
@@ -59,5 +60,10 @@ class NetworkDataTrunk(network: Network) {
     def listEngines: List[Engine] = engines.values.toList
 
     def countConnection: Int = engines.size
+
+    protected def addEngine(@Synchronized engine: Engine): Engine = {
+        engines.put(engine.identifier, engine)
+        engine
+    }
 
 }

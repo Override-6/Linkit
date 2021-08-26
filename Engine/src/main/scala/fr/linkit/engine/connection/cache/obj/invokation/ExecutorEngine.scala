@@ -23,8 +23,8 @@ object ExecutorEngine {
     def currentEngine: Engine = local.get()
 
     private[linkit] def setCurrentEngine(engine: Engine): Unit = {
-        if (engine == null && networkStarted)
-            throw new NullPointerException
+        /*if (engine == null && networkStarted)
+            throw new NullPointerException*/
         networkStarted = engine != null
         local.set(engine)
     }

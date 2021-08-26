@@ -23,7 +23,7 @@ import java.sql.Timestamp
 class DefaultEngine(override val identifier: String,
                     @transient override val cache: SharedCacheManager) extends Engine {
 
-    @transient override def network       : Network        = cache.network
+    @transient override val network       : Network        = cache.network
     override            val staticAccessor: StaticAccessor = null
 
     override val versions: Versions = StaticVersions.currentVersions

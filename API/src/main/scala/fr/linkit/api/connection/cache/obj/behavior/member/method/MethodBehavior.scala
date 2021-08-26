@@ -1,6 +1,5 @@
 package fr.linkit.api.connection.cache.obj.behavior.member.method
 
-import fr.linkit.api.connection.cache.obj.behavior.{RMIRulesAgreement, RMIRulesAgreementBuilder}
 import fr.linkit.api.connection.cache.obj.behavior.member.MemberBehavior
 import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterBehavior
 import fr.linkit.api.connection.cache.obj.description.MethodDescription
@@ -14,9 +13,9 @@ trait MethodBehavior extends MemberBehavior {
               val parameterBehaviors: Array[ParameterBehavior[AnyRef]]
               val syncReturnValue   : Boolean
               val isHidden          : Boolean
+              val innerInvocations  : Boolean
               val defaultReturnValue: Any
     @Nullable val procrastinator    : Procrastinator
     @Nullable val handler           : MethodInvocationHandler
-
 
 }

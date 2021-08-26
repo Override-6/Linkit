@@ -14,6 +14,7 @@ case class SyncMethodBehavior(override val desc: MethodDescription,
                               override val parameterBehaviors: Array[ParameterBehavior[AnyRef]],
                               override val syncReturnValue: Boolean,
                               override val isHidden: Boolean,
+                              override val innerInvocations: Boolean,
                               private val rules: Array[RemoteInvocationRule],
                               @Nullable override val procrastinator: Procrastinator,
                               @Nullable override val handler: MethodInvocationHandler) extends InternalMethodBehavior {

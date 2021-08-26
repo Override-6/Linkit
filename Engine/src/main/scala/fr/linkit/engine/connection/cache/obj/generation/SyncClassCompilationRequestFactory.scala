@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.compilation.CompilationRequest
-import fr.linkit.engine.connection.cache.obj.generation.WrapperCompilationRequestFactory.DefaultClassBlueprint
+import fr.linkit.engine.connection.cache.obj.generation.SyncClassCompilationRequestFactory.DefaultClassBlueprint
 import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaSyncClassBlueprint
 import fr.linkit.engine.connection.cache.obj.generation.rectifier.ClassRectifier
 import fr.linkit.engine.local.generation.compilation.factories.ClassCompilationRequestFactory
@@ -25,7 +25,7 @@ import fr.linkit.engine.local.mapping.ClassMappings
 import java.io.File
 import java.nio.file.Files
 
-class WrapperCompilationRequestFactory extends ClassCompilationRequestFactory[SyncObjectSuperclassDescription[_], SynchronizedObject[_]](DefaultClassBlueprint) {
+class SyncClassCompilationRequestFactory extends ClassCompilationRequestFactory[SyncObjectSuperclassDescription[_], SynchronizedObject[_]](DefaultClassBlueprint) {
 
     override def loadClass(req: CompilationRequest[Seq[Class[_ <: SynchronizedObject[_]]]], context: SyncObjectSuperclassDescription[_], className: String, loader: GeneratedClassLoader): Class[_] = {
         val (byteCode, wrapperClass) = new ClassRectifier(context, className, loader, context.clazz).rectifiedClass
@@ -37,7 +37,7 @@ class WrapperCompilationRequestFactory extends ClassCompilationRequestFactory[Sy
     }
 }
 
-object WrapperCompilationRequestFactory {
+object SyncClassCompilationRequestFactory {
 
     private val DefaultClassBlueprint = new ScalaSyncClassBlueprint(getClass.getResourceAsStream("/generation/sync_object.scbp"))
 }

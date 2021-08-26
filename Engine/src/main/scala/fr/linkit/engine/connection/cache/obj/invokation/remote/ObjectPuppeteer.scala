@@ -82,14 +82,14 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
         if (!agreement.mayPerformRemoteInvocation)
             throw new IllegalAccessException("agreement may not perform remote invocation")
 
-        procrastinator.runLater {
+        //procrastinator.runLater {
             val bhv      = invocation.methodBehavior
             val methodId = bhv.desc.methodId
 
             val scope      = new AgreementScope(writer, network, agreement)
             val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
             invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
-        }
+        //}
     }
 
     override def init(wrapper: S with SynchronizedObject[S]): Unit = {

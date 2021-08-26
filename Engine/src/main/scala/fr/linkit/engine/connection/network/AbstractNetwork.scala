@@ -13,7 +13,11 @@
 package fr.linkit.engine.connection.network
 
 import fr.linkit.api.connection.ConnectionContext
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
+import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldModifier
+import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterModifier
+import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
 import fr.linkit.api.connection.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.connection.network.{Engine, Network}
 import fr.linkit.api.connection.packet.Packet
@@ -21,23 +25,23 @@ import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.engine.connection.cache.SharedCacheOriginManager
-import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, SynchronizedObjectBehaviorStoreBuilder}
+import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder, ObjectBehaviorStoreBuilder}
 import fr.linkit.engine.connection.cache.obj.invokation.ExecutorEngine
+import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 import java.sql.Timestamp
 
-abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network {
+abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network { network =>
 
     protected val networkStore    : PacketInjectableStore = connection.createStore(0)
     private   val cacheManagerChannel                     = networkStore.getInjectable(1, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
     private   val currentIdentifier                       = connection.currentIdentifier
     override  val globalCache     : SharedCacheManager    = createGlobalCache
     protected val trunk           : NetworkDataTrunk      = retrieveDataTrunk(getEngineStoreBehaviors)
-    override  val connectionEngine: Engine                = trunk.newEngine(currentIdentifier)
+    override  val connectionEngine: Engine                = trunk.newEngine(this, currentIdentifier)
     postInit()
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
@@ -91,9 +95,39 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         cacheManagerChannel.addRequestListener(handleRequest)
     }
 
-    private def getEngineStoreBehaviors: ObjectBehaviorStore = {
-        new SynchronizedObjectBehaviorStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
+    private def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {
+        val family = cache.family
+        val store  = networkStore.createStore(family.hashCode)
+        new SharedCacheDistantManager(family, cache.ownerID, this, store)
+    }
 
+    private def getEngineStoreBehaviors: ObjectBehaviorStore = {
+        new ObjectBehaviorStoreBuilder(AnnotationBasedMemberBehaviorFactory) {
+            behaviors += new ObjectBehaviorBuilder[SharedCacheManager]() {
+                asParameter = new ParameterModifier[SharedCacheManager] {
+                    override def forLocalComingFromRemote(receivedParam: SharedCacheManager, invocation: LocalMethodInvocation[_], remote: Engine): SharedCacheManager = {
+                        receivedParam match {
+                            case origin: SharedCacheOriginManager => transformToDistant(origin)
+                            case _                                => receivedParam
+                        }
+                    }
+                }
+            }
+            behaviors += new ObjectBehaviorBuilder[Network]() {
+                //Small trick before serialisation system redesign
+                asParameter = new ParameterModifier[Network] {
+                    override def forRemote(localParam: Network, invocation: LocalMethodInvocation[_], remote: Engine): Network = null
+                    override def forLocalComingFromRemote(receivedParam: Network, invocation: LocalMethodInvocation[_], remote: Engine): Network = network
+                }
+            }
+            behaviors += new ObjectBehaviorBuilder[DefaultEngine]() {
+                asField = new FieldModifier[DefaultEngine] {
+                    override def forLocalComingFromRemote(receivedField: DefaultEngine, containingObject: SynchronizedObject[_], remote: Engine): DefaultEngine = {
+                        val identifier = receivedField.identifier
+                        new DefaultEngine(identifier, findCacheManager(identifier).get)
+                    }
+                }
+            }
         }.build
     }
 }

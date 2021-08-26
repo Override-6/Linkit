@@ -21,7 +21,7 @@ import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.{Para
 import fr.linkit.api.connection.cache.obj.behavior.member.method.returnvalue.ReturnValueModifier
 import fr.linkit.api.connection.cache.obj.description.{FieldDescription, MethodDescription, SyncObjectSuperclassDescription}
 import fr.linkit.api.local.concurrency.Procrastinator
-import fr.linkit.engine.connection.cache.obj.behavior.SynchronizedObjectBehaviorBuilder.{FieldControl, MethodControl}
+import fr.linkit.engine.connection.cache.obj.behavior.ObjectBehaviorBuilder.{FieldControl, MethodControl}
 import fr.linkit.engine.connection.cache.obj.behavior.member.{MethodParameterBehavior, SyncFieldBehavior, SyncMethodBehavior}
 import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
 import fr.linkit.engine.connection.cache.obj.invokation.DefaultMethodInvocationHandler
@@ -31,7 +31,7 @@ import java.util
 import scala.collection.mutable
 import scala.reflect.ClassTag
 
-abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classDesc: SyncObjectSuperclassDescription[T]) {
+abstract class ObjectBehaviorBuilder[T <: AnyRef] private(val classDesc: SyncObjectSuperclassDescription[T]) {
 
     protected val methodsMap                            = mutable.HashMap.empty[MethodDescription, MethodControl]
     protected val fieldsMap                             = mutable.HashMap.empty[FieldDescription, FieldControl[AnyRef]]
@@ -93,7 +93,7 @@ abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classD
             import control._
             val handler = DefaultMethodInvocationHandler
             val params  = extractParams(control, desc)
-            SyncMethodBehavior(desc, params, synchronizeReturnValue, hide, Array(value), procrastinator, handler)
+            SyncMethodBehavior(desc, params, synchronizeReturnValue, hide, innerInvocations, Array(value), procrastinator, handler)
         }
     }
 
@@ -102,14 +102,13 @@ abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classD
         val defaults   = AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(javaMethod)
         control.paramMap.foreachEntry((argName, argControl) => {
             val i = defaults.indexWhere(_.getName == argName)
-            if (i > 0)
-                defaults(i) = new MethodParameterBehavior[AnyRef](defaults(i).param, argControl.isActivated, argControl)
+            if (i > 0) defaults(i) = new MethodParameterBehavior[AnyRef](defaults(i).param, argControl.isActivated, argControl)
             else throw new IllegalArgumentException(s"Unknown parameter '$argName' for method ${javaMethod.getName}")
         })
         defaults
     }
 
-    class MethodModification private[SynchronizedObjectBehaviorBuilder](descs: Iterable[MethodDescription]) {
+    class MethodModification private[ObjectBehaviorBuilder](descs: Iterable[MethodDescription]) {
 
         def by(control: MethodControl): this.type = {
             descs.foreach(methodsMap.put(_, control))
@@ -122,7 +121,7 @@ abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classD
         }
     }
 
-    class FieldModification private[SynchronizedObjectBehaviorBuilder](descs: Iterable[FieldDescription]) {
+    class FieldModification private[ObjectBehaviorBuilder](descs: Iterable[FieldDescription]) {
 
         def by(control: FieldControl[Any]): this.type = {
             descs.foreach(fieldsMap.put(_, control.asInstanceOf[FieldControl[AnyRef]]))
@@ -137,14 +136,15 @@ abstract class SynchronizedObjectBehaviorBuilder[T <: AnyRef] private(val classD
 
 }
 
-object SynchronizedObjectBehaviorBuilder {
+object ObjectBehaviorBuilder {
 
     class MethodControl(val value: BasicInvocationRule,
                         val synchronizeReturnValue: Boolean = false,
                         val hide: Boolean = false,
+                        val innerInvocations: Boolean = false,
                         @Nullable val procrastinator: Procrastinator = null) {
 
-        private[SynchronizedObjectBehaviorBuilder] val paramMap = mutable.HashMap.empty[String, ParameterControl[AnyRef]]
+        private[ObjectBehaviorBuilder] val paramMap = mutable.HashMap.empty[String, ParameterControl[AnyRef]]
 
         def arg[P](argName: String)(configure: ParameterControl[P]): Unit = {
             paramMap.put(argName, configure.asInstanceOf[ParameterControl[AnyRef]])

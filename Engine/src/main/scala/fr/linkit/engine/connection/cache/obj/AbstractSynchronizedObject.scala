@@ -27,10 +27,10 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient final protected var puppeteer        : Puppeteer[A]            = _
     @transient final protected var behavior         : ObjectBehavior[A]       = _
     @transient final protected var choreographer    : InvocationChoreographer = _
-    @transient final protected var store            : ObjectBehaviorStore = _
+    @transient final protected var store            : ObjectBehaviorStore     = _
     //fast cache for handleCall
-    @transient private         var currentIdentifier: String                          = _
-    @transient private         var ownerID          : String                          = _
+    @transient private         var currentIdentifier: String                  = _
+    @transient private         var ownerID          : String                  = _
 
     protected final var puppeteerDescription: SyncNodeInfo = _
 
@@ -101,7 +101,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             override val methodBehavior : InternalMethodBehavior = methodBhv
 
             override def callSuper(): R = {
-                performSuperCall[R](superCall(modifiedParamsForLocal(methodBhv, synchronizedArgs)))
+                performSuperCall[R](!methodBhv.innerInvocations, superCall(modifiedParamsForLocal(methodBhv, synchronizedArgs)))
             }
         }
 
@@ -120,8 +120,10 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     private def asAutoWrapped: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
 
-    @inline private def performSuperCall[R](@inline superCall: => Any): R = {
-        choreographer.forceLocalInvocation[R] {
+    @inline private def performSuperCall[R](forceLocal: Boolean, @inline superCall: => Any): R = {
+        if (forceLocal) choreographer.forceLocalInvocation[R] {
+            superCall.asInstanceOf[R]
+        } else {
             superCall.asInstanceOf[R]
         }
     }

@@ -58,7 +58,7 @@ object SourceCodeCompilationRequest {
 
         def apply[V <: CompilationContext](context: V, blueprint: ClassBlueprint[V]): SourceCode = {
             val source = blueprint.toClassSource(context)
-            SourceCode(context.classPackage, source, blueprint.compilerType)
+            SourceCode(context.classPackage + '.' + context.className, source, blueprint.compilerType)
         }
     }
 

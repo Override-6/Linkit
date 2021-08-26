@@ -62,7 +62,7 @@ class ObjectChip[S <: AnyRef] private(behavior: ObjectBehavior[S],
                  * */
                 override val methodArguments: Array[Any] = params
             }
-            val engine          = network.findEngine(origin).get
+            val engine          = network.findEngine(origin).orNull
             val paramsBehaviors = behavior.parameterBehaviors
             for (i <- params.indices) {
                 val bhv = paramsBehaviors(i)

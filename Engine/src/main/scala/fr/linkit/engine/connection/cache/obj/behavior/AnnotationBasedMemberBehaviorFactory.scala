@@ -44,6 +44,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         val synchronizedParams = getSynchronizedParams(desc.method)
         val rules              = Array[RemoteInvocationRule](control.value())
         val isHidden           = control.hide
+        val innerInvocations   = control.innerInvocations()
         val syncReturnValue    = control.synchronizeReturnValue
         val handler            = controlOpt match {
             case None    => null
@@ -51,7 +52,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
         }
         SyncMethodBehavior(
             desc, synchronizedParams, syncReturnValue, isHidden,
-            rules, procrastinator.orNull, handler
+            innerInvocations, rules, procrastinator.orNull, handler
         )
     }
 
@@ -68,6 +69,8 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
             override def synchronizeReturnValue(): Boolean = false
 
             override def hide(): Boolean = false
+
+            override def innerInvocations(): Boolean = false
 
             override def annotationType(): Class[_ <: java.lang.annotation.Annotation] = getClass
         }

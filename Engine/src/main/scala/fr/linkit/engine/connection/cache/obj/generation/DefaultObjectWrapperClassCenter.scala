@@ -23,7 +23,7 @@ import fr.linkit.engine.local.mapping.ClassMappings
 class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends ObjectWrapperClassCenter {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
-    val requestFactory                  = new WrapperCompilationRequestFactory
+    val requestFactory                  = new SyncClassCompilationRequestFactory
 
     override def getWrapperClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]] = {
         getWrapperClass[S](SimpleSyncObjectSuperClassDescription[S](clazz))

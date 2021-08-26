@@ -21,7 +21,7 @@ trait Engine extends Updatable {
 
     val identifier: String
 
-    def cache: SharedCacheManager
+    val cache: SharedCacheManager
 
     val staticAccessor: StaticAccessor
 
@@ -29,9 +29,9 @@ trait Engine extends Updatable {
 
     val connectionDate: Timestamp
 
-    def getConnectionState: ExternalConnectionState
+    val network: Network
 
-    def network: Network
+    def getConnectionState: ExternalConnectionState
 
     def toString: String
 

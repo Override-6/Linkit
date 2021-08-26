@@ -21,6 +21,7 @@ import java.lang.annotation.Target;
 
 /**
  * Contains basic information for a {@link MethodBehavior}
+ *
  * @see fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior
  * @see MethodBehavior
  */
@@ -44,7 +45,13 @@ public @interface MethodControl {
      * Used to hide this method from remote invocations.
      * If a RMI request tries to call this method while this method is set as hidden,
      * an exception will occur. //TODO Throw the exception on the RMI request sender
-     * */
+     */
     boolean hide() default false;
+
+    /**
+     * If true, the annotated method would also perform inner
+     * remote method invocations for synchronized methods / objects
+     */
+    boolean innerInvocations() default false;
 
 }
