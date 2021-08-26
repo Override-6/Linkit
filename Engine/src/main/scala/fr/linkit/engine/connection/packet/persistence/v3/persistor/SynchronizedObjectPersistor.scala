@@ -11,7 +11,7 @@ import fr.linkit.api.connection.packet.persistence.v3.deserialisation.node.Objec
 import fr.linkit.api.connection.packet.persistence.v3.deserialisation.{DeserializationInputStream, DeserializationProgression}
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.SerialisationProgression
 import fr.linkit.api.connection.packet.persistence.v3.serialisation.node.ObjectSerializerNode
-import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCache
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.UnexpectedObjectException
 import fr.linkit.engine.connection.packet.persistence.v3.deserialisation.node.SimpleObjectDeserializerNode
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.SynchronizedObjectPersistor.WrapperInfo
@@ -24,7 +24,7 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
     override def getSerialNode(wrapper: SynchronizedObject[AnyRef], desc: SerializableClassDescription, context: PacketPersistenceContext, progress: SerialisationProgression): ObjectSerializerNode = {
         val wrapperNodeInfo = wrapper.getNodeInfo
         val cache           = findCache(wrapperNodeInfo).getOrElse(throwNoSuchCacheException(wrapperNodeInfo, Option(wrapper.getSuperClass)))
-        val tree            = cache.treeCenter.findTree(wrapperNodeInfo.nodePath.head).get //TODO orElseThrow
+        val tree            = cache.treeCenter.findTree(wrapperNodeInfo.nodePath.head).get //TODO orElse throw
         val path            = wrapperNodeInfo.nodePath
         val node            = tree.findNode(path).get
         //root objects are present on all clients.
@@ -142,14 +142,14 @@ class SynchronizedObjectPersistor(network: Network) extends ObjectPersistor[Sync
     }
 
     private def throwNoSuchCacheException(info: SyncNodeInfo, wrappedClass: Option[Class[_]]): Nothing = {
-        throw new NoSuchCacheException(s"Could not find object tree of id ${info.nodePath.head} in synchronized object cache id ${info.cacheID} from cache manager ${info.cacheFamily} " +
-                s": could not properly deserialize and synchronize Wrapper object of class \"${wrappedClass.map(_.getName).getOrElse("(Unknown Wrapped class)")}\".")
+        throw new NoSuchCacheException(s"For Object: ${info.nodePath.mkString("/")} Could not find object tree of id ${info.nodePath.head} in synchronized object cache id ${info.cacheID} from cache manager ${info.cacheFamily} " +
+                s": could not properly deserialize and synchronize Sync object of class \"${wrappedClass.map(_.getName).getOrElse("(Unknown Wrapped class)")}\".")
     }
 
-    private def findCache(info: SyncNodeInfo): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
+    private def findCache(info: SyncNodeInfo): Option[DefaultSynchronizedObjectCache[AnyRef]] = {
         val family = info.cacheFamily
         network.findCacheManager(family)
-                .map(_.getCacheInStore[DefaultSynchronizedObjectCenter[AnyRef]](info.cacheID))
+                .map(_.getCacheInStore[DefaultSynchronizedObjectCache[AnyRef]](info.cacheID))
     }
 
 }

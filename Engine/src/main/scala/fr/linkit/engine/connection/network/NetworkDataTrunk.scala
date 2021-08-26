@@ -22,6 +22,7 @@ import fr.linkit.engine.connection.cache.obj.invokation.ExecutorEngine
 import java.sql.Timestamp
 import scala.collection.mutable
 
+//FIXME OriginManagers and DistantManagers
 class NetworkDataTrunk {
 
     private val engines = mutable.HashMap.empty[String, Engine]

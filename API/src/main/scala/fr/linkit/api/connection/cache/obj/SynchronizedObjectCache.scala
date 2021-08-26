@@ -32,7 +32,7 @@ import fr.linkit.api.connection.packet.PacketAttributesPresence
  *            other objects of any type.
  * @tparam A the type of root objects.
  * */
-trait SynchronizedObjectCenter[A <: AnyRef] extends PacketAttributesPresence with SharedCache {
+trait SynchronizedObjectCache[A <: AnyRef] extends PacketAttributesPresence with SharedCache {
 
     val network: Network
 

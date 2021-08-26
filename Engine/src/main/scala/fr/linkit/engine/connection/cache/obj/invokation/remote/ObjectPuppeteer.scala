@@ -28,15 +28,14 @@ import fr.linkit.engine.local.utils.JavaUtils
 import org.jetbrains.annotations.Nullable
 
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
-                                   procrastinator: ProcrastinatorControl,
-                                   override val center: SynchronizedObjectCenter[_],
+                                   override val cache: SynchronizedObjectCache[_],
                                    override val nodeInfo: SyncNodeInfo,
                                    val wrapperBehavior: ObjectBehavior[S]) extends Puppeteer[S] {
 
     private      val traffic                                         = channel.traffic
-    override     val network          : Network                      = center.network
+    override     val network          : Network                      = cache.network
     override     val currentIdentifier: String                       = traffic.currentIdentifier
-    private lazy val tree                                            = center.treeCenter.findTree(nodeInfo.nodePath.head).get
+    private lazy val tree                                            = cache.treeCenter.findTree(nodeInfo.nodePath.head).get
     private      val writer                                          = traffic.newWriter(channel.path)
     private var puppetWrapper         : S with SynchronizedObject[S] = _
 

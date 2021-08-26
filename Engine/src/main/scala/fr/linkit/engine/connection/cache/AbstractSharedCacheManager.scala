@@ -33,53 +33,48 @@ abstract class AbstractSharedCacheManager(override val family: String,
                                           @transient override val network: Network,
                                           @transient store: PacketInjectableStore) extends SharedCacheManager {
 
-
     println(s"New SharedCacheManager created ! $family")
-    @transient protected            val channel          : SimpleRequestPacketChannel = store.getInjectable(0, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
+    @transient protected val channel          : SimpleRequestPacketChannel = store.getInjectable(0, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
     @transient protected val broadcastScope   : ChannelScope               = prepareScope(ChannelScopes.broadcast)
     @transient private   val traffic                                       = network.connection.traffic
     protected            val currentIdentifier: String                     = network.connection.currentIdentifier
 
     override def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchBehavior): A = {
         LocalCachesStore
-            .findCache[A](cacheID)
-            .getOrElse {
-                preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
-                val channel     = traffic.getInjectable(cacheID + channelIdentifiersShift, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
-                val sharedCache = factory.createNew(channel)
-                LocalCachesStore.store(cacheID, sharedCache, channel)
+                .findCache[A](cacheID)
+                .getOrElse {
+                    preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
+                    val channel     = traffic.getInjectable(cacheID + channelIdentifiersShift, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
+                    val sharedCache = factory.createNew(channel)
+                    LocalCachesStore.store(cacheID, sharedCache, channel)
 
-                println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
-                val baseContent = retrieveCacheContent(cacheID, behavior).orNull
-                println(s"CONTENT RECEIVED (${baseContent}) FOR CACHE $cacheID")
+                    println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
+                    val baseContent = retrieveCacheContent(cacheID, behavior).orNull
+                    println(s"CONTENT RECEIVED (${baseContent}) FOR CACHE $cacheID")
 
-                if (baseContent != null) {
-                    channel.getHandler.foreach {
-                        case e: ContentHandler[CacheContent] => e.setContent(baseContent)
-                        case _                               => //Simply don't set the content
+                    if (baseContent != null) {
+                        channel.getHandler.foreach {
+                            case e: ContentHandler[CacheContent] => e.setContent(baseContent)
+                            case _                               => //Simply don't set the content
+                        }
                     }
+                    channel.injectStoredBundles()
+                    sharedCache
                 }
-                channel.injectStoredBundles()
-                sharedCache
-            }
     }
 
     override def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A = {
         LocalCachesStore
-            .findCache[A](cacheID)
-            .getOrElse {
-                throw new NoSuchCacheException(s"No cache was found in the local cache manager for cache identifier $cacheID.")
-            }
+                .findCache[A](cacheID)
+                .getOrElse {
+                    throw new NoSuchCacheException(s"No cache was found in the local cache manager for cache identifier $cacheID.")
+                }
     }
 
     override def update(): this.type = {
         println(s"all Cache of family '$family' will be updated.")
         LocalCachesStore.updateAll()
         this
-    }
-
-    def forget(cacheID: Int): Unit = {
-        LocalCachesStore.unregister(cacheID)
     }
 
     def handleRequest(requestBundle: RequestPacketBundle): Unit
@@ -110,7 +105,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
         def updateAll(): Unit = {
             println(s"updating cache ($localRegisteredHandlers)...")
             localRegisteredHandlers
-                .foreach(_._2.cache.update())
+                    .foreach(_._2.cache.update())
             println(s"cache updated ! ($localRegisteredHandlers)")
         }
 
@@ -136,9 +131,9 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
         def findCache[A: ClassTag](cacheID: Int): Option[A] = {
             val opt            = localRegisteredHandlers
-                .get(cacheID)
-                .map(_.cache)
-                .asInstanceOf[Option[A]]
+                    .get(cacheID)
+                    .map(_.cache)
+                    .asInstanceOf[Option[A]]
             val requestedClass = classTag[A].runtimeClass
             opt match {
                 case Some(c: SharedCache) if c.getClass != requestedClass => throw new CacheNotAcceptedException(s"Attempted to open a cache of type '$cacheID' while a cache with the same id is already registered, but does not have the same type. (${c.getClass} vs $requestedClass)")
@@ -157,10 +152,10 @@ abstract class AbstractSharedCacheManager(override val family: String,
     channel.addRequestListener(handleRequest)
     val channelIdentifiersShift: Int = family.hashCode + 8882 //TODO Redesign packet handling and make a system where the identifier is an array if ints
 
-
 }
 
 object AbstractSharedCacheManager {
+
     //The identifiers of caches used for system. Creating a cache between MinSystemCacheID and MaxSystemCacheID is not recommended.
     val MinSystemCacheID: Int   = 0
     val MaxSystemCacheID: Int   = 50

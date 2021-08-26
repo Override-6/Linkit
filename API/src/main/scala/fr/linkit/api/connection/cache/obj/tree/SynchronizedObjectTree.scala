@@ -1,7 +1,7 @@
 package fr.linkit.api.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCenter}
+import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.connection.cache.obj.IllegalSynchronizationException
 
 
@@ -10,7 +10,7 @@ trait SynchronizedObjectTree[A <: AnyRef] {
     /**
      * The center of the tree
      */
-    val center: SynchronizedObjectCenter[A]
+    val cache: SynchronizedObjectCache[A]
 
     /**
      * This tree's identifier (rootNode.id == this.id)

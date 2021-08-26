@@ -167,7 +167,7 @@ class ResourcesAndClassGenerationTests {
             val cl                     = obj.getClass.asInstanceOf[Class[A]]
             val behaviorDesc           = store.getFromClass[A](cl)
             val puppetClass            = generator.getWrapperClass[A](SimpleSyncObjectSuperClassDescription[A](cl))
-            val pup                    = new ObjectPuppeteer[A](null, app, null, puppeteerInfo, behaviorDesc)
+            val pup                    = new ObjectPuppeteer[A](null, null, puppeteerInfo, behaviorDesc)
             val helper                 = new SyncObjectInstantiationHelper(this, store)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[A](puppetClass, obj, Map())
             wrapper.initPuppeteer(pup, store)

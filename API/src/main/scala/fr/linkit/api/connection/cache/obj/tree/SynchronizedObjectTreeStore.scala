@@ -15,7 +15,7 @@ package fr.linkit.api.connection.cache.obj.tree
 import fr.linkit.api.connection.cache.CacheContent
 
 /**
- * Used by [[fr.linkit.api.connection.cache.obj.SynchronizedObjectCenter]] to store its trees
+ * Used by [[fr.linkit.api.connection.cache.obj.SynchronizedObjectCache]] to store its trees
  * @tparam A the type of the tree's root object (it's the same type for SynchronizedObjectCenter[A])
  */
 trait SynchronizedObjectTreeStore[A <: AnyRef] {

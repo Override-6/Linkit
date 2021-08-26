@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.engine.connection.cache.CacheArrayContent
-import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
+import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCache.ObjectTreeProfile
 
 class CacheRepoContent[A](content: Array[ObjectTreeProfile[A]]) extends CacheArrayContent[ObjectTreeProfile[A]](content)
 

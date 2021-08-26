@@ -1,28 +1,27 @@
 package fr.linkit.engine.connection.cache.obj.tree
 
-import java.util.concurrent.ThreadLocalRandom
-
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
-import fr.linkit.api.connection.cache.obj.{IllegalSynchronizationException, SynchronizedObject, SynchronizedObjectCenter}
+import fr.linkit.api.connection.cache.obj.{IllegalSynchronizationException, SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.tree.node.{IllegalWrapperNodeException, RootWrapperNode, WrapperNode}
 import fr.linkit.engine.local.utils.ScalaUtils
 
+import scala.util.Try
+
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
                                                                val instantiator: ObjectWrapperInstantiator,
                                                                override val id: Int,
-                                                               override val center: SynchronizedObjectCenter[A],
+                                                               override val cache: SynchronizedObjectCache[A],
                                                                override val behaviorStore: ObjectBehaviorStore) extends SynchronizedObjectTree[A] {
 
-    private val network = center.network
+    private val network = cache.network
 
     def this(platformIdentifier: String, id: Int,
-             instantiator: ObjectWrapperInstantiator, center: SynchronizedObjectCenter[A], behaviorTree: ObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootWrapperNode[A]) = {
-        this(platformIdentifier, instantiator, id, center, behaviorTree)
+             instantiator: ObjectWrapperInstantiator, cache: SynchronizedObjectCache[A], behaviorTree: ObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootWrapperNode[A]) = {
+        this(platformIdentifier, instantiator, id, cache, behaviorTree)
         val root = rootSupplier(this)
         if (root.tree ne this)
             throw new IllegalWrapperNodeException("Root node's tree != this")
@@ -45,7 +44,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     override def insertObject[B <: AnyRef](parent: SyncNode[_], id: Int, obj: B, ownerID: String): SyncNode[B] = {
         if (parent.tree ne this)
-            throw new IllegalArgumentException("Parent node's is not owner by this tree's center.")
+            throw new IllegalArgumentException("Parent node's is not owner by this tree's cache.")
         insertObject[B](parent.treePath, id, obj, ownerID)
     }
 
@@ -56,29 +55,31 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         genSynchronizedObject[B](wrapperNode, id, obj)(ownerID)
     }
 
-    def registerSynchronizedObject[B <: AnyRef](parent: SyncNode[AnyRef], id: Int, wrapper: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
-        registerSynchronizedObject(parent.treePath, id, wrapper, ownerID)
+    def registerSynchronizedObject[B <: AnyRef](parent: SyncNode[AnyRef], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
+        registerSynchronizedObject(parent.treePath, id, syncObject, ownerID)
     }
 
-    def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int, wrapper: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
+    def registerSynchronizedObject[B <: AnyRef](parentPath: Array[Int], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): SyncNode[B] = {
         val wrapperNode = findGrandChild[B](parentPath).getOrElse {
             throw new NoSuchSyncNodeException(s"Could not find parent path in this object tree (${parentPath.mkString("/")}) (tree id == ${this.id}).")
         }
-        registerSynchronizedObject[B](wrapperNode, id, wrapper, ownerID)
+        registerSynchronizedObject[B](wrapperNode, id, syncObject, ownerID)
     }
 
-    private def registerSynchronizedObject[B <: AnyRef](parent: WrapperNode[_], id: Int, wrapper: B with SynchronizedObject[B], ownerID: String): WrapperNode[B] = {
+    private def registerSynchronizedObject[B <: AnyRef](parent: WrapperNode[_], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): WrapperNode[B] = {
         val path = parent.treePath :+ id
-        if (!(wrapper.getNodeInfo.nodePath sameElements path))
-            throw new IllegalWrapperRegistration(s"Could not register syncObject '${wrapper.getClass.getName}' : Wrapper node's information path mismatches from given one: ${path.mkString("/")}")
+        if (!(syncObject.getNodeInfo.nodePath sameElements path))
+            throw new IllegalWrapperRegistration(s"Could not register syncObject '${syncObject.getClass.getName}' : Wrapper node's information path mismatches from given one: ${path.mkString("/")}")
 
-        val behavior = behaviorStore.getFromClass[B](wrapper.getSuperClass)
-        if (!wrapper.isInitialized) {
-            instantiator.initializeWrapper(wrapper, SyncNodeInfo(center.family, center.cacheID, ownerID, path), behaviorStore)
+        val behavior = behaviorStore.getFromClass[B](syncObject.getSuperClass)
+        if (!syncObject.isInitialized) {
+            instantiator.initializeWrapper(syncObject, SyncNodeInfo(cache.family, cache.cacheID, ownerID, path), behaviorStore)
         }
 
-        val chip                 = ObjectChip[B](behavior, center.network, wrapper)
-        val puppeteer            = wrapper.getPuppeteer
+        scanSyncObjectFields(ownerID, syncObject)
+
+        val chip                 = ObjectChip[B](behavior, cache.network, syncObject)
+        val puppeteer            = syncObject.getPuppeteer
         val node: WrapperNode[B] = new WrapperNode[B](puppeteer, chip, this, currentIdentifier, id, parent)
         parent.addChild(node)
         node
@@ -92,25 +93,27 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new IllegalSynchronizationException("This object is already wrapped.")
 
         val parentPath      = parent.treePath
-        val wrapperBehavior = behaviorStore.getFromClass[B](obj.getClass.asInstanceOf[Class[B]])
-        val puppeteerInfo   = SyncNodeInfo(center.family, center.cacheID, ownerID, parentPath :+ id)
+        val puppeteerInfo   = SyncNodeInfo(cache.family, cache.cacheID, ownerID, parentPath :+ id)
         val (syncObject, _) = instantiator.newWrapper[B](obj, behaviorStore, puppeteerInfo, Map())
         val node            = registerSynchronizedObject[B](parent, id, syncObject, ownerID)
-        val isCurrentOwner  = ownerID == currentIdentifier
-        val engine = if (!isCurrentOwner) network.findEngine(ownerID).get else null //should not be used if isCurrentOwner = false
+        node
+    }
 
-        for (bhv <- wrapperBehavior.listField()) {
+    @inline
+    private def scanSyncObjectFields(ownerID: String, syncObject: SynchronizedObject[_]): Unit = {
+        val isCurrentOwner = ownerID == currentIdentifier
+        val engine         = if (!isCurrentOwner) Try(network.findEngine(ownerID).get).getOrElse(null) else null //should not be used if isCurrentOwner = false
+        val behavior       = behaviorStore.getFromClass(syncObject.getSuperClass)
+        for (bhv <- behavior.listField()) {
             val field      = bhv.desc.javaField
-            val fieldValue = field.get(obj)
+            val fieldValue = field.get(syncObject)
             val finalField = {
-                if (isCurrentOwner) behaviorStore.modifyFieldForLocalComingFromLocal(syncObject, fieldValue, bhv)
+                if (isCurrentOwner) behaviorStore.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
                 else behaviorStore.modifyFieldForLocalComingFromRemote(syncObject, engine, fieldValue, bhv)
             }
             ScalaUtils.setValue(syncObject, field, finalField)
         }
-        node
     }
-
 
     private def findGrandChild[B <: AnyRef](path: Array[Int]): Option[WrapperNode[B]] = {
         if (!path.headOption.contains(root.id))

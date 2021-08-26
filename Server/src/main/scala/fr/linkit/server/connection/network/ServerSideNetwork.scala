@@ -16,23 +16,25 @@ import fr.linkit.api.connection.cache.SharedCacheManager
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.engine.connection.cache.SharedCacheOriginManager
-import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCache
 import fr.linkit.engine.connection.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.server.connection.ServerConnection
 
 class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: PacketTraffic)
         extends AbstractNetwork(serverConnection) {
 
+    private lazy val globalCacheManager = new SharedCacheOriginManager("Global Cache", this, networkStore)
+
+    trunk.addCacheManager(globalCache)
+
     override def serverIdentifier: String = serverConnection.currentIdentifier
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
-        globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](this))
+        globalCache.attachToCache(0, DefaultSynchronizedObjectCache[NetworkDataTrunk](this))
                 .postObject(0, new NetworkDataTrunk, store)
     }
 
-    override protected def createGlobalCache: SharedCacheManager = {
-        new SharedCacheOriginManager("Global Cache", this, networkStore)
-    }
+    override protected def createGlobalCache: SharedCacheManager = globalCacheManager
 
     def removeEngine(identifier: String): Unit = {
         findEngine(identifier).foreach(trunk.removeEngine)

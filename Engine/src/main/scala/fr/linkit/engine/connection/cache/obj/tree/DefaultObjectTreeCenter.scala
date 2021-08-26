@@ -12,23 +12,23 @@
 
 package fr.linkit.engine.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObjectCenter
+import fr.linkit.api.connection.cache.obj.SynchronizedObjectCache
 import fr.linkit.api.connection.cache.obj.tree.{SynchronizedObjectTreeStore, SyncNode, SynchronizedObjectTree}
-import fr.linkit.engine.connection.cache.obj.{CacheRepoContent, DefaultSynchronizedObjectCenter}
-import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
+import fr.linkit.engine.connection.cache.obj.{CacheRepoContent, DefaultSynchronizedObjectCache}
+import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
 
 import scala.collection.mutable
 
-class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCenter[A]) extends SynchronizedObjectTreeStore[A] {
+class DefaultObjectTreeCenter[A <: AnyRef](cache: SynchronizedObjectCache[A]) extends SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 
     def addTree(id: Int, tree: DefaultSynchronizedObjectTree[A]): Unit = {
         if (trees.contains(id))
             throw new SynchronizedObjectException(s"A tree of id '$id' already exists.")
-        if (tree.center ne center)
-            throw new SynchronizedObjectException("Attempted to attach a tree that comes from another center of this center.")
+        if (tree.cache ne cache)
+            throw new SynchronizedObjectException("Attempted to attach a tree that comes from another cache of this cache.")
         trees.put(id, tree)
     }
 

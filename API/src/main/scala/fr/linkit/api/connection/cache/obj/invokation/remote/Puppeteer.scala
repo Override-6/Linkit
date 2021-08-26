@@ -16,7 +16,7 @@ import java.util.concurrent.ThreadLocalRandom
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCenter}
+import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.connection.network.Network
 
 /**
@@ -37,7 +37,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The object center that stores the synchronized object.
      */
-    val center: SynchronizedObjectCenter[_]
+    val cache: SynchronizedObjectCache[_]
 
     /**
      * The behavior of the synchronized object.

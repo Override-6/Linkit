@@ -117,7 +117,11 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                 //Small trick before serialisation system redesign
                 asParameter = new ParameterModifier[Network] {
                     override def forRemote(localParam: Network, invocation: LocalMethodInvocation[_], remote: Engine): Network = null
+
                     override def forLocalComingFromRemote(receivedParam: Network, invocation: LocalMethodInvocation[_], remote: Engine): Network = network
+                }
+                asField = new FieldModifier[Network] {
+                    override def forLocalComingFromRemote(receivedField: Network, containingObject: SynchronizedObject[_], remote: Engine): Network = network
                 }
             }
             behaviors += new ObjectBehaviorBuilder[DefaultEngine]() {
