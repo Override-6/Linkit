@@ -10,14 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence
+package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import java.nio.ByteBuffer
+import fr.linkit.api.connection.packet.persistence.context.TypeProfile
+import fr.linkit.engine.local.utils.ScalaUtils
 
-trait Serializer {
+import java.lang.reflect.{Field, Modifier}
 
-    val signature: Array[Byte]
+abstract class AbstractTypeProfile[T](clazz: Class[_]) extends TypeProfile[T] {
 
-    def isSameSignature(buffer: ByteBuffer): Boolean
 
 }

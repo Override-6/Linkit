@@ -151,9 +151,9 @@ object ScalaUtils {
     }
 
 
-    def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Seq[Field] = {
+    def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Array[Field] = {
         var superClass  = clazz
-        var superFields = Seq.empty[Field]
+        var superFields = Array.empty[Field]
         while (superClass != null) {
             superFields ++= superClass.getDeclaredFields
             superClass = superClass.getSuperclass

@@ -12,23 +12,20 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.api.connection.packet.persistence.v3.procedure.MiniPersistor
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
-import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
-import fr.linkit.engine.connection.packet.persistence.v3.persistor.SynchronizedObjectPersistor
+import fr.linkit.engine.connection.packet.persistence.context.{DefaultPersistenceContext, SimplePacketConfig}
+import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.ScalaUtils
 import fr.linkit.engine.test.PacketTests.testPacket
+import fr.linkit.engine.test.classes.Player
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 
-import java.io.File
 import java.nio.ByteBuffer
 import java.sql.Timestamp
 import scala.collection.mutable.ArrayBuffer
@@ -43,7 +40,7 @@ class PacketTests {
 
     @Test
     def simplePacketTest(): Unit = {
-        val f = new Timestamp(System.currentTimeMillis())
+        val f = Player(45, "Test", "Test", 78, 78)
         testPacket(Array(f, f, f))
     }
 
@@ -66,7 +63,7 @@ class PacketTests {
 
 object PacketTests {
 
-    private val serializer = new DefaultPacketSerializer(null)
+    private val serializer = new DefaultPacketSerializer(null, new DefaultPersistenceContext)
     /*serializer.context.putPersistor(new SynchronizedObjectPersistor(null))
     serializer.context.putMiniPersistor[File](new MiniPersistor[File, String] {
         override def serialize(a: File): String = {
@@ -81,15 +78,17 @@ object PacketTests {
     def testPacket(obj: Array[AnyRef]): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")
         val buff = ByteBuffer.allocate(1000)
-        serializer.serializePacket(obj, DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM"), buff, true)
+        serializer.serializePacket(obj, DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM"), buff) {
+            new SimplePacketConfig {}
+        }
         val bytes = buff.array().take(buff.position())
         buff.position(0)
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")
-        val deserial = serializer.deserializePacket(buff)
+        /*val deserial = serializer.deserializePacket(buff)
         println(s"deserialized coords = ${deserial.getCoordinates}")
         deserial.forEachObjects(packet2 => {
             println(s"deserialized packet = ${packet2}")
-        })
+        })*/
     }
 
 }

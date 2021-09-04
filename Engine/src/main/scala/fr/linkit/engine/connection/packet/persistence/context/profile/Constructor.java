@@ -10,14 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence
+package fr.linkit.engine.connection.packet.persistence.context.profile;
 
-import java.nio.ByteBuffer
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-trait Serializer {
-
-    val signature: Array[Byte]
-
-    def isSameSignature(buffer: ByteBuffer): Boolean
-
+@Target(ElementType.CONSTRUCTOR)
+@Retention(RetentionPolicy.CLASS)
+public @interface Constructor {
 }

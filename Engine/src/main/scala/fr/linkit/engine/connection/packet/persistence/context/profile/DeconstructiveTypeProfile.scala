@@ -10,14 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence
+package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import java.nio.ByteBuffer
+import fr.linkit.engine.connection.packet.persistence.context.profile.ConstructorTypeProfile.getConstructor
 
-trait Serializer {
+import java.lang.reflect.Constructor
 
-    val signature: Array[Byte]
-
-    def isSameSignature(buffer: ByteBuffer): Boolean
-
+class DeconstructiveTypeProfile[D <: Deconstructive](clazz: Class[_], constructor: Constructor[D]) extends ConstructorTypeProfile[D](clazz: Class[_], constructor, _.deconstruct()) {
+    def this(clazz: Class[_]) {
+        this(clazz, getConstructor[D](clazz))
+    }
 }

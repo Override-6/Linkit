@@ -1,5 +1,4 @@
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
-import fr.linkit.engine.connection.packet.persistence.config.PersistenceConfigurationMethods._
 import fr.linkit.engine.connection.packet.persistence.v3.persistor.{IterablePersistor, JavaCollectionPersistor, JavaMapPersistor, ScalaMapPersistor}
 
 import java.io.File

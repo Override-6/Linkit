@@ -17,6 +17,8 @@ import fr.linkit.api.connection.packet.persistence._
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator.ClassesResourceDirectory
+import fr.linkit.engine.connection.packet.persistence.context.DefaultPersistenceContext
+import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer
 import fr.linkit.engine.local.LinkitApplication
 
 import java.nio.ByteBuffer
@@ -28,7 +30,7 @@ class DefaultPacketTranslator(app: ApplicationContext) extends PacketTranslator 
         val resources      = app.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
         val compilerCenter = app.compilerCenter
         val center         = new DefaultObjectWrapperClassCenter(compilerCenter, resources)
-        new DefaultPacketSerializer(center)
+        new DefaultPacketSerializer(center, new DefaultPersistenceContext())
     }
 
     override def translate(packetInfo: TransferInfo): PacketSerializationResult = {

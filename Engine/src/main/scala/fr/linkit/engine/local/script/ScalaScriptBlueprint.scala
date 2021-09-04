@@ -13,7 +13,7 @@
 package fr.linkit.engine.local.script
 
 import fr.linkit.api.local.generation.compilation.access.CompilerType
-import fr.linkit.engine.connection.packet.persistence.config.ScriptConfigContext
+import fr.linkit.engine.connection.packet.persistence.context.script.ScriptConfigContext
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.local.language.cbp.AbstractClassBlueprint

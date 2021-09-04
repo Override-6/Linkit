@@ -10,14 +10,21 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence
+package fr.linkit.engine.connection.packet.persistence.serializor
 
-import java.nio.ByteBuffer
+import scala.collection.mutable.ListBuffer
 
-trait Serializer {
+class PacketConstantPool() {
 
-    val signature: Array[Byte]
+    private val objects = ListBuffer.empty[AnyRef]
 
-    def isSameSignature(buffer: ByteBuffer): Boolean
+    def indexOf(ref: AnyRef): Int = {
+        objects.indexOf(ref)
+    }
+
+    def add(ref: AnyRef): Unit = objects += ref
+
+    def size: Int = objects.length
 
 }
+

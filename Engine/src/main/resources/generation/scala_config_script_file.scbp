@@ -13,7 +13,6 @@
 package $ClassPackage$
 
 import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
-import fr.linkit.engine.connection.packet.persistence.config.PersistenceConfiguration
 
 class $ClassName$(context: PacketPersistenceContext) extends PersistenceConfiguration(context) {
 

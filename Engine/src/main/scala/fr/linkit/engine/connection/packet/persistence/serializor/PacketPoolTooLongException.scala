@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence
+package fr.linkit.engine.connection.packet.persistence.serializor
 
-import java.nio.ByteBuffer
+import fr.linkit.api.connection.packet.PacketException
 
-trait Serializer {
-
-    val signature: Array[Byte]
-
-    def isSameSignature(buffer: ByteBuffer): Boolean
+class PacketPoolTooLongException(msg: String) extends PacketException(msg) {
 
 }

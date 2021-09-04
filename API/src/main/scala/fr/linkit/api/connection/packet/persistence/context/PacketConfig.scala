@@ -10,14 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence
+package fr.linkit.api.connection.packet.persistence.context
 
-import java.nio.ByteBuffer
+trait PacketConfig {
 
-trait Serializer {
+    def getReferenced(reference: Int): Option[AnyRef]
 
-    val signature: Array[Byte]
+    def getReferencedCode(reference: AnyRef): Option[Int]
 
-    def isSameSignature(buffer: ByteBuffer): Boolean
+    def getProfile[T](clazz: Class[_], context: PersistenceContext): TypeProfile[T]
+
+    def useUnsafe: Boolean
+
+    def putSignature: Boolean
 
 }

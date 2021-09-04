@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence
+package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import java.nio.ByteBuffer
+trait Deconstructive {
 
-trait Serializer {
-
-    val signature: Array[Byte]
-
-    def isSameSignature(buffer: ByteBuffer): Boolean
+    def deconstruct(): Array[Any]
 
 }

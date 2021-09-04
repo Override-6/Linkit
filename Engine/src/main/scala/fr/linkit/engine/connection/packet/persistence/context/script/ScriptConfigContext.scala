@@ -1,0 +1,41 @@
+/*
+ *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ *  This code is free software; you can only use it for personal uses, studies or documentation.
+ *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ *
+ *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  questions.
+ */
+
+package fr.linkit.engine.connection.packet.persistence.context.script
+
+import fr.linkit.engine.connection.packet.persistence.context.script.ScriptConfigContext.BlacklistedLines
+import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.engine.local.script.SimpleScriptHandler.{ScriptName, ScriptPackage}
+import fr.linkit.engine.local.script.SourceScriptContext
+case class ScriptConfigContext(private val scriptCode: String,
+                               scriptName: String,
+                               override val parentLoader: ClassLoader = classOf[LinkitApplication].getClassLoader) extends SourceScriptContext(scriptName, parentLoader) {
+
+    override lazy val scriptSourceCode: String = {
+        val str = new StringBuilder(scriptCode)
+        BlacklistedLines.foreach(line => {
+            val idx = str.indexOf(line)
+            str.delete(idx, idx + line.length + 2)
+        })
+        str.toString()
+    }
+
+    override def className: String = ScriptName + scriptName
+
+    override def classPackage: String = ScriptPackage
+
+}
+
+object ScriptConfigContext {
+
+    val BlacklistedLines    = Seq("import ._")
+}

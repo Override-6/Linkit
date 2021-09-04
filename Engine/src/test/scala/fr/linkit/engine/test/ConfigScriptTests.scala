@@ -12,18 +12,14 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
 import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
-import fr.linkit.engine.connection.packet.persistence.DefaultPacketSerializer
-import fr.linkit.engine.connection.packet.persistence.config.{PersistenceConfiguration, ScriptConfigContext, ScriptConfigHandler}
+import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.local.generation.compilation.factories.ClassCompilationRequestFactory
-import fr.linkit.engine.local.script.{ScalaScriptBlueprint, ScriptExecutor, SourceScriptContext}
+import fr.linkit.engine.local.script.ScriptExecutor
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
@@ -50,15 +46,6 @@ class ConfigScriptTests {
         Mockito.when(app.compilerCenter).thenReturn(new DefaultCompilerCenter)
         LinkitApplication.setInstance(app)
         AppLogger.useVerbose = true
-    }
-
-    private val context = new DefaultPacketSerializer(null).context
-
-    @Test
-    def test(): Unit = {
-        val handler = new ScriptConfigHandler(context)
-        val script = ScriptExecutor.getOrCreateScript[PersistenceConfiguration](getClass.getResource("/default_scripts/persistence.sc"), app)(handler, app.compilerCenter)
-        script.execute()
     }
 
 }
