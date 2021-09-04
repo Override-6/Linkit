@@ -17,6 +17,7 @@ import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordina
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
+import fr.linkit.engine.connection.packet.persistence.context.SimplePacketConfig
 
 import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
@@ -24,7 +25,7 @@ import scala.reflect.{ClassTag, classTag}
 class LazyPacketDeserializationResult(override val buff: ByteBuffer,
                                       serializer: PacketSerializer) extends PacketDeserializationResult {
 
-    private lazy  val deserial                      = serializer.deserializePacket(buff)
+    private lazy  val deserial                      = serializer.deserializePacket(buff)(new SimplePacketConfig {})
     private lazy  val cache     : Array[AnyRef]     = createCache()
     override lazy val coords    : PacketCoordinates = deserial.getCoordinates
     override lazy val attributes: PacketAttributes  = extract[PacketAttributes](SimplePacketAttributes.empty)

@@ -13,27 +13,53 @@
 package fr.linkit.engine.connection.packet.persistence.serializor
 
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
+import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.nio.ByteBuffer
 
-class ObjectPoolReader(config: PacketConfig, context: PersistenceContext, buff: ByteBuffer) {
+class ObjectPoolReader(config: PacketConfig, context: PersistenceContext, val buff: ByteBuffer) {
 
-    private val objects = new Array[AnyRef](buff.getChar())
+    private val objects = new Array[Any](buff.getChar())
+    private var isInit  = false
 
-    def readPool(): Unit = {
+    def initPool(): Unit = {
+        if (isInit)
+            throw new IllegalStateException("This pool is already initialized.")
+        isInit = true
         for (i <- objects.indices) {
             if (objects(i) == null)
-                objects(i) = nextObject()
+                objects(i) = nextAny()
         }
     }
 
-    private def nextObject(): AnyRef = {
+    def getObject(idx: Int): Any = objects(idx)
+
+    private[serializor] def nextPoolConstant(): Any = {
+        buff.get() match {
+            case PoolRef => objects(buff.getChar)
+
+            case Int     => buff.getInt
+            case Byte    => buff.get
+            case Short   => buff.getShort
+            case Long    => buff.getLong
+            case Double  => buff.getDouble
+            case Float   => buff.getFloat
+            case Boolean => buff.get == 1
+            case Char    => buff.getDouble
+            case o => throw new MalFormedPacketException(s"Unknown value flag '${o}' as pool constant")
+        }
+    }
+
+    private[serializor] def nextAny(): Any = {
         buff.get() match {
             case Object => readObject()
-            case Array  => readArray()
             case String => readString()
+            case Array  => readArray()
+            case _      =>
+                buff.position(buff.position() - 1)
+                nextPoolConstant()
         }
     }
 
@@ -42,14 +68,13 @@ class ObjectPoolReader(config: PacketConfig, context: PersistenceContext, buff: 
         val clazz     = ClassMappings.getClass(classCode)
         if (clazz == null)
             throw new ClassNotMappedException(s"Class of code '$classCode' is not mapped.")
-        val content = readArray()
+        val content = ArrayPersistence.readArrayContent(this)
         val profile = config.getProfile[AnyRef](clazz, context)
         profile.newInstance(content)
     }
 
-    private def readArray(): Array[Any] = {
-        val size = buff.getInt()
-        val compType = buff.getC
+    private def readArray(): Array[_] = {
+        ArrayPersistence.readArray(this)
     }
 
     private def readString(): String = {

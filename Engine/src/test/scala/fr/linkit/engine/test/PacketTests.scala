@@ -78,17 +78,16 @@ object PacketTests {
     def testPacket(obj: Array[AnyRef]): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")
         val buff = ByteBuffer.allocate(1000)
-        serializer.serializePacket(obj, DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM"), buff) {
-            new SimplePacketConfig {}
-        }
+        val config =  new SimplePacketConfig {}
+        serializer.serializePacket(obj, DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM"), buff)(config)
         val bytes = buff.array().take(buff.position())
         buff.position(0)
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")
-        /*val deserial = serializer.deserializePacket(buff)
+        val deserial = serializer.deserializePacket(buff)(config)
         println(s"deserialized coords = ${deserial.getCoordinates}")
         deserial.forEachObjects(packet2 => {
             println(s"deserialized packet = ${packet2}")
-        })*/
+        })
     }
 
 }

@@ -18,7 +18,8 @@ import fr.linkit.api.connection.packet.persistence.PacketSerializer
 import fr.linkit.api.connection.packet.persistence.PacketSerializer.PacketDeserial
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
-import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer.{BroadcastedFlag, DedicatedFlag}
+import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
+import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer.{BroadcastedFlag, DedicatedFlag, EOP}
 
 import java.nio.ByteBuffer
 
@@ -26,19 +27,25 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
 
     override val signature: Array[Byte] = Array(12)
 
-    override def isSameSignature(buffer: ByteBuffer): Boolean = ???
+    override def isSameSignature(buffer: ByteBuffer): Boolean = {
+        val pos    = buffer.position()
+        val result = signature.forall(buffer.get.equals)
+        buffer.position(pos)
+        result
+    }
 
     override def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer)(config: PacketConfig): Unit = {
-        val writer = new ObjectPoolWriter(config, context, buffer)
         if (config.putSignature)
             buffer.put(signature)
         writeCoords(buffer, coordinates)
-        writer.writeObjects(objects)
+        val writer = new ObjectPoolWriter(config, context, buffer)
+        writer.writeRootObjects(objects)
         writer.writeHeaderSize()
         val pool = writer.getPool
         for (o <- objects) {
             buffer.putChar(pool.indexOf(o).toChar)
         }
+        buffer.put(EOP)
     }
 
     private def writeCoords(buff: ByteBuffer, coords: PacketCoordinates): Unit = coords match {
@@ -46,26 +53,75 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
             buff.put(BroadcastedFlag) //set the broadcast flag
             buff.putInt(path.length) //path length
             path.foreach(buff.putInt) //path content
-            buff.putInt(senderID.length).put(senderID.getBytes()) // senderID String
+            putString(senderID, buff) //senderID String
             buff.put((if (discardTargets) 1 else 0): Byte) //discardTargets boolean
             buff.putInt(targetIDs.length) //targetIds length
-            targetIDs.foreach(id => buff.put(id.getBytes()))
+            targetIDs.foreach(putString(_, buff)) //targetIds content
 
         case DedicatedPacketCoordinates(path, targetID, senderID) =>
             buff.put(DedicatedFlag) //set the dedicated flag
             buff.putInt(path.length) //path length
             path.foreach(buff.putInt) //path content
-            buff.putInt(targetID.length).put(targetID.getBytes()) // targetID String
-            buff.putInt(senderID.length).put(senderID.getBytes()) // senderID String
-        case _                                                    =>
+            putString(targetID, buff) // targetID String
+            putString(senderID, buff) // senderID String
+        case _                                                    => throw new UnsupportedOperationException(s"Coordinates of type '${coords.getClass.getName}' are not supported.")
     }
 
-    override def deserializePacket(buff: ByteBuffer): PacketSerializer.PacketDeserial = {
-        new PacketDeserial {
-            override def getCoordinates: PacketCoordinates = ???
-
-            override def forEachObjects(f: Any => Unit): Unit = ???
+    def readCoordinates(buff: ByteBuffer): PacketCoordinates = {
+        buff.get() match {
+            case BroadcastedFlag =>
+                val path = new Array[Int](buff.getInt) //init path array
+                for (i <- path.indices) path(i) = buff.getInt() //fill path content
+                val senderId       = getString(buff) //senderID string
+                val discardTargets = buff.get == 1 //discardTargets boolean
+                val targetIds      = new Array[String](buff.getInt) //init targetIds array
+                for (i <- targetIds.indices) targetIds(i) = getString(buff) //fill path content
+                BroadcastPacketCoordinates(path, senderId, discardTargets, targetIds)
+            case DedicatedFlag   =>
+                val path = new Array[Int](buff.getInt) //init path array
+                for (i <- path.indices) path(i) = buff.getInt() //fill path content
+                val targetID = getString(buff) //targetID string
+                val senderID = getString(buff) //senderID string
+                DedicatedPacketCoordinates(path, targetID, senderID)
+            case unknown         => throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'")
         }
+    }
+
+    private def putString(str: String, buff: ByteBuffer): Unit = {
+        buff.putInt(str.length).put(str.getBytes())
+    }
+
+    private def getString(buff: ByteBuffer): String = {
+        val size  = buff.getInt()
+        val array = new Array[Byte](size)
+        buff.get(array)
+        new String(array)
+    }
+
+    override def deserializePacket(buff: ByteBuffer)(config: PacketConfig): PacketSerializer.PacketDeserial = {
+        if (config.putSignature)
+            checkSignature(buff)
+
+        val coords = readCoordinates(buff)
+        new PacketDeserial {
+            override def getCoordinates: PacketCoordinates = coords
+
+            override def forEachObjects(f: Any => Unit): Unit = {
+                val reader = new ObjectPoolReader(config, context, buff)
+                reader.initPool()
+                var idx = buff.getChar()
+                while (idx << 8 != 0 && idx >> 8 != EOP) {
+                    f(reader.getObject(idx))
+                    idx = buff.getChar()
+                }
+            }
+        }
+    }
+
+    private def checkSignature(buff: ByteBuffer): Unit = {
+        if (!isSameSignature(buff))
+            throw new IllegalArgumentException("Signature mismatches !")
+        buff.position(buff.position() + signature.length)
     }
 
     def initNetwork(network: Network): Unit = {
@@ -78,4 +134,5 @@ object DefaultPacketSerializer {
 
     private val DedicatedFlag  : Byte = 20
     private val BroadcastedFlag: Byte = 21
+    private val EOP            : Byte = -22 //End Of Packet
 }

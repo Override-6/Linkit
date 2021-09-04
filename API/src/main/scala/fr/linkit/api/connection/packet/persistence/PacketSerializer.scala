@@ -22,7 +22,7 @@ trait PacketSerializer extends Serializer {
 
     def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer)(config: PacketConfig): Unit
 
-    def deserializePacket(buff: ByteBuffer): PacketDeserial
+    def deserializePacket(buff: ByteBuffer)(config: PacketConfig): PacketDeserial
 
 }
 
