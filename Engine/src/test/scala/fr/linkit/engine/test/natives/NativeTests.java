@@ -13,15 +13,13 @@
 package fr.linkit.engine.test.natives;
 
 import fr.linkit.engine.test.TestHelper;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public class NativeTests {
 
-    @BeforeAll
-    void init() {
+    static {
         TestHelper.initMinimalLinkit();
         System.loadLibrary("tests");
     }
