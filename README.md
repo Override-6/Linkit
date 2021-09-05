@@ -1,3 +1,4 @@
+[![wakatime](https://wakatime.com/badge/github/Override-6/Linkit.svg)](https://wakatime.com/badge/github/Override-6/Linkit)
 <center> <h1>The Linkit Framework</h1> </center>  
 
 ![Cover](RCover.png)
