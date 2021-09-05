@@ -17,16 +17,35 @@ import fr.linkit.api.local.system.AppInitialisationException
 import fr.linkit.engine.local.LinkitApplication
 
 import java.io.File
-import java.nio.file.{Files, Path, StandardOpenOption}
+import java.lang.invoke.{MethodHandles, VarHandle, VarHandles}
+import java.nio.file.{Files, Path, StandardCopyOption, StandardOpenOption}
 import java.util.zip.{ZipEntry, ZipFile}
 
-object InternalLibrariesLoader {
+private[linkit] object InternalLibrariesLoader {
 
     private val ResourceMark    = "/mapEngineFilter.txt"
-    private val LibDestination = "system.internal.libraries_dir"
-    private val InternalDestination = "system.internal_dir"
+    private val LibsDestination = "system.internal.libraries_dir"
+    private val LibraryProperty = "java.library.path"
 
     def extractAndLoad(resources: ResourceFolder, libs: Array[String]): Unit = {
+        extract(resources, libs)
+        load(resources)
+    }
+
+    private def load(resources: ResourceFolder): Unit = {
+        val libsPath = getPathProperty(resources, LibsDestination)
+        Files.list(libsPath)
+                .forEach(loadLib)
+    }
+
+    private def loadLib(path: Path): Unit = {
+        //FIXME
+        /*val paths = System.getProperty(LibraryProperty)
+        System.setProperty(LibraryProperty, paths + ";" + path)
+        System.loadLibrary(path.getFileName.toString)*/
+    }
+
+    private def extract(resources: ResourceFolder, libs: Array[String]): Unit = {
         val fileUrl        = classOf[LinkitApplication].getResource(ResourceMark)
         val path           = fileUrl.getPath
         val zipMarkerIndex = path.lastIndexOf("!")
@@ -40,23 +59,39 @@ object InternalLibrariesLoader {
         } else {
             throw AppInitialisationException("Linkit seems not to be run in a normal environment : Linkit's internal resources destination is not contained in a archive (jar, zip, tar, rar) or a folder.")
         }
-
     }
 
     private def extractFolder(resources: ResourceFolder, filePath: String, libs: Array[String]): Unit = {
         val root               = Path.of(filePath + "/natives/")
-        val extractDestination = getPathProperty(resources, LibDestination)
+        val extractDestination = getPathProperty(resources, LibsDestination)
+        Files.createDirectories(extractDestination)
         Files.list(root)
                 .filter(p => libs.contains(p.getFileName.toString))
                 .forEach { libPath =>
                     val destination = Path.of(extractDestination + "/" + libPath.getFileName)
-                    Files.copy(libPath, destination)
+                    copyFolder(libPath, destination)
                 }
+    }
+
+    private def copyFolder(from: Path, to: Path): Unit = {
+        Files.list(from)
+                .forEach(child => {
+                    val toChild = Path.of(to + "/" + child.getFileName)
+                    if (Files.isDirectory(child))
+                        copyFolder(child, toChild)
+                    else {
+                        if (Files.notExists(toChild)) {
+                            Files.createDirectories(to)
+                            Files.createFile(toChild)
+                        }
+                        Files.copy(child, toChild, StandardCopyOption.REPLACE_EXISTING)
+                    }
+                })
     }
 
     private def extractJar(resources: ResourceFolder, jarPath: String, libs: Array[String]): Unit = {
         val zipFile = new ZipFile(new File(jarPath))
-        val root    = getPathProperty(resources, LibDestination)
+        val root    = getPathProperty(resources, LibsDestination)
         Files.createDirectories(root)
         libs.foreach { lib =>
             val entry = zipFile.getEntry(lib)

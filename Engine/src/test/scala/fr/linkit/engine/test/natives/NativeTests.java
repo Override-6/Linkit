@@ -23,6 +23,7 @@ public class NativeTests {
     @BeforeAll
     void init() {
         TestHelper.initMinimalLinkit();
+        System.loadLibrary("tests");
     }
 
     @Test
