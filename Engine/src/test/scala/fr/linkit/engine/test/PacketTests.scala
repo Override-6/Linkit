@@ -27,7 +27,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 
 import java.nio.ByteBuffer
-import java.sql.Timestamp
 import scala.collection.mutable.ArrayBuffer
 
 @TestInstance(Lifecycle.PER_CLASS)

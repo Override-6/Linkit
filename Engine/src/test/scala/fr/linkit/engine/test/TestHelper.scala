@@ -19,19 +19,15 @@ import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.local.script.ScriptExecutor
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import org.junit.jupiter.api.TestInstance.Lifecycle
-import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
 import org.mockito.Mockito
 
-@TestInstance(Lifecycle.PER_CLASS)
-class ConfigScriptTests {
+object TestHelper {
+
     private var resources: ResourceFolder    = _
     private val app      : LinkitApplication = Mockito.mock(classOf[LinkitApplication])
 
-    @BeforeAll
-    def init(): Unit = {
+    def initMinimalLinkit(): Unit = {
         val config      = new ApplicationConfiguration {
             override val pluginFolder   : Option[String]             = None
             override val resourceFolder : String                     = System.getenv("LinkitHome")
@@ -44,8 +40,6 @@ class ConfigScriptTests {
         resources = LinkitApplication.prepareApplication(testVersion, config, Seq(getClass))
         Mockito.when(app.getAppResources).thenReturn(resources)
         Mockito.when(app.compilerCenter).thenReturn(new DefaultCompilerCenter)
-        LinkitApplication.setInstance(app)
         AppLogger.useVerbose = true
     }
-
 }
