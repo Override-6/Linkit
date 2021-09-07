@@ -10,25 +10,6 @@
  *  questions.
  */
 
-package fr.linkit.engine.test.natives;
+package fr.linkit.engine.connection.packet.persistence.obj
 
-import fr.linkit.engine.test.TestHelper;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-public class NativeTests {
-
-    static {
-        TestHelper.initMinimalLinkit();
-        System.loadLibrary("tests");
-    }
-
-    @Test
-    void test() {
-        makePrint("Hey !");
-    }
-
-    native void makePrint(String print);
-
-}
-
+case class InstantiatedObject[T](override val instance: T) extends InstanceObject[T]

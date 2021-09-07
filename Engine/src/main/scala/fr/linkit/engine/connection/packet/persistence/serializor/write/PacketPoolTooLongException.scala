@@ -10,21 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.serializor
+package fr.linkit.engine.connection.packet.persistence.serializor.write
 
-import scala.collection.mutable.ListBuffer
+import fr.linkit.api.connection.packet.PacketException
 
-class PacketConstantPool() {
-
-    private val objects = ListBuffer.empty[AnyRef]
-
-    def indexOf(ref: AnyRef): Int = {
-        objects.indexOf(ref)
-    }
-
-    def add(ref: AnyRef): Unit = objects += ref
-
-    def size: Int = objects.length
+class PacketPoolTooLongException(msg: String) extends PacketException(msg) {
 
 }
-

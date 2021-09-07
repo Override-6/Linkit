@@ -13,7 +13,7 @@
 package fr.linkit.api.connection.packet.persistence.context
 
 trait TypeProfile[T] {
-    def newInstance(args: Array[Any]): T
+    def completeInstance(allocatedObject: T, args: Array[Any]): T
 
     def toArray(t: T): Array[Any]
 }

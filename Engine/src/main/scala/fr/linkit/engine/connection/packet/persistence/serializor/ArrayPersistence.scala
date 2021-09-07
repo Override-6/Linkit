@@ -13,6 +13,7 @@
 package fr.linkit.engine.connection.packet.persistence.serializor
 
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.{Boolean, Byte, Char, Double, Float, Int, Long, Object, Short, String}
+import fr.linkit.engine.connection.packet.persistence.serializor.write.ObjectPoolWriter
 import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.lang
@@ -21,11 +22,44 @@ import java.nio.ByteBuffer
 
 object ArrayPersistence {
 
-    def writeArrayContent(writer: ObjectPoolWriter, array: Array[Any]): Unit = {
+    def writeArrayContent(writer: ObjectPoolWriter, array: Array[AnyRef]): Unit = {
         val buff = writer.buff
         buff.putInt(array.length)
-        for (n <- array)
-            writer.putAny(n)
+        for (n <- array.indices) {
+            writer.putPoolRef(array(n), false)
+        }
+    }
+
+    private def writePrimitiveArrayContent(writer: ObjectPoolWriter, array: Array[Any]): Unit = {
+        var i    = 0
+        val len  = array.length
+        val buff = writer.buff
+        (array: Any) match {
+            case xs: Array[Int]     => while (i < len) {
+                buff.putInt(xs(i)); i = i + 1
+            }
+            case xs: Array[Double]  => while (i < len) {
+                buff.putDouble(xs(i)); i = i + 1
+            }
+            case xs: Array[Long]    => while (i < len) {
+                buff.putLong(xs(i)); i = i + 1
+            }
+            case xs: Array[Float]   => while (i < len) {
+                buff.putFloat(xs(i)); i = i + 1
+            }
+            case xs: Array[Char]    => while (i < len) {
+                buff.putChar(xs(i)); i = i + 1
+            }
+            case xs: Array[Byte]    => while (i < len) {
+                buff.put(xs(i)); i = i + 1
+            }
+            case xs: Array[Short]   => while (i < len) {
+                buff.putShort(xs(i)); i = i + 1
+            }
+            case xs: Array[Boolean] => while (i < len) {
+                buff.put(if (xs(i)) 1: Byte else 0: Byte); i = i + 1
+            }
+        }
     }
 
     def writeArray(writer: ObjectPoolWriter, array: Array[Any]): Unit = {
@@ -33,16 +67,19 @@ object ArrayPersistence {
         val comp = array.getClass.componentType()
         if (comp.isPrimitive) {
             putPrimitiveArrayFlag(buff, comp)
-        } else if (comp eq classOf[String]) {
+            writePrimitiveArrayContent(writer, array)
+            return
+        }
+
+        if (comp eq classOf[String]) {
             buff.put(String)
         } else {
             buff.put(Object)
             val (absoluteComp, depth) = getAbsoluteCompType(array)
             buff.put(depth)
             buff.putInt(ClassMappings.codeOfClass(absoluteComp))
-
         }
-        writeArrayContent(writer, array)
+        writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled primitive array before
     }
 
     def readArray(reader: ObjectPoolReader): Array[_] = {

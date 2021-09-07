@@ -12,9 +12,11 @@
 
 package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import java.lang.reflect.Constructor
 import fr.linkit.engine.connection.packet.persistence.context.profile
 import fr.linkit.engine.connection.packet.persistence.context.profile.ConstructorTypeProfile.getConstructor
+
+import java.lang.invoke.MethodHandles
+import java.lang.reflect.Constructor
 
 class ConstructorTypeProfile[T](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends AbstractTypeProfile[T](clazz) {
 
@@ -22,14 +24,16 @@ class ConstructorTypeProfile[T](clazz: Class[_], constructor: Constructor[T], de
         this(clazz, getConstructor[T](clazz), deconstructor)
     }
 
-    override def newInstance(args: Array[Any]): T = {
-        constructor.newInstance(args: _*)
+    private val handle = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup()).unreflectConstructor(constructor)
+
+    override def completeInstance(allocatedObject: T, args: Array[Any]): T = {
+        val result = handle.bindTo(allocatedObject).invoke(args)
+        result.asInstanceOf[T]
     }
 
     override def toArray(t: T): Array[Any] = {
         deconstructor(t)
     }
-
 
 }
 

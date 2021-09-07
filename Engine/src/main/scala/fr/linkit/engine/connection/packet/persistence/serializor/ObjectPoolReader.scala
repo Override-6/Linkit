@@ -14,6 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.serializor
 
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
+import fr.linkit.engine.connection.packet.persistence.obj.{InstanceObject, InstantiatedObject, NotInstantiatedObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.local.mapping.ClassMappings
 
@@ -21,7 +22,7 @@ import java.nio.ByteBuffer
 
 class ObjectPoolReader(config: PacketConfig, context: PersistenceContext, val buff: ByteBuffer) {
 
-    private val objects = new Array[Any](buff.getChar())
+    private val objects = new Array[InstanceObject[_]](buff.getChar())
     private var isInit  = false
 
     def initPool(): Unit = {
@@ -52,35 +53,38 @@ class ObjectPoolReader(config: PacketConfig, context: PersistenceContext, val bu
         }
     }
 
-    private[serializor] def nextAny(): Any = {
+    private[serializor] def nextAny(): InstanceObject[_] = {
         buff.get() match {
             case Object => readObject()
             case String => readString()
             case Array  => readArray()
             case _      =>
                 buff.position(buff.position() - 1)
-                nextPoolConstant()
+                nextPoolConstant() match {
+                    case i: InstanceObject[_] => i
+                    case o => new InstantiatedObject[Any](o)
+                }
         }
     }
 
-    private def readObject(): AnyRef = {
+    private def readObject(): NotInstantiatedObject[AnyRef] = {
         val classCode = buff.getInt()
         val clazz     = ClassMappings.getClass(classCode)
         if (clazz == null)
             throw new ClassNotMappedException(s"Class of code '$classCode' is not mapped.")
         val content = ArrayPersistence.readArrayContent(this)
         val profile = config.getProfile[AnyRef](clazz, context)
-        profile.newInstance(content)
+        new NotInstantiatedObject[AnyRef](profile, content, clazz)
     }
 
-    private def readArray(): Array[_] = {
-        ArrayPersistence.readArray(this)
+    private def readArray(): InstantiatedObject[Array[_]] = {
+        InstantiatedObject(ArrayPersistence.readArray(this))
     }
 
-    private def readString(): String = {
+    private def readString(): InstantiatedObject[String] = {
         val size  = buff.getInt()
         val array = new Array[Byte](size)
         buff.get(array)
-        new String(array)
+        InstantiatedObject(new String(array))
     }
 }

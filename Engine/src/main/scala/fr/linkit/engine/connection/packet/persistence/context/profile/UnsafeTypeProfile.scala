@@ -12,7 +12,6 @@
 
 package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import fr.linkit.engine.connection.packet.persistence.context.profile.UnsafeTypeProfile.Unsafe
 import fr.linkit.engine.local.utils.ScalaUtils
 
 import java.lang.reflect.{Field, Modifier}
@@ -21,13 +20,12 @@ class UnsafeTypeProfile[T](clazz: Class[_]) extends AbstractTypeProfile[T](clazz
 
     private val fields: Array[Field] = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
 
-    override def newInstance(args: Array[Any]): T = {
-        val instance = Unsafe.allocateInstance(clazz)
+    override def completeInstance(instance: T, args: Array[Any]): T = {
         val fields = this.fields
         for (i <- args.indices) {
             ScalaUtils.setValue(instance, fields(i), args(i))
         }
-        instance.asInstanceOf[T]
+        instance
     }
 
     override def toArray(t: T): Array[Any] = {

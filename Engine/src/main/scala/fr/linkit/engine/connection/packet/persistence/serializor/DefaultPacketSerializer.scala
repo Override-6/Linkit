@@ -20,6 +20,7 @@ import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, Persis
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer.{BroadcastedFlag, DedicatedFlag, EOP}
+import fr.linkit.engine.connection.packet.persistence.serializor.write.ObjectPoolWriter
 
 import java.nio.ByteBuffer
 
