@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.obj
+package fr.linkit.engine.connection.packet.persistence.serializor
 
-trait InstanceObject[T] {
+import fr.linkit.api.connection.packet.PacketException
 
-    def instance: T
+class PacketPoolTooLongException(msg: String) extends PacketException(msg) {
 
 }

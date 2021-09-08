@@ -14,7 +14,6 @@ package fr.linkit.engine.connection.packet.persistence.serializor.write
 
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext, TypeProfile}
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketObjectPool._
-import fr.linkit.engine.local.utils.UnWrapper
 
 class PacketObjectPool(config: PacketConfig, context: PersistenceContext) {
 
@@ -25,7 +24,7 @@ class PacketObjectPool(config: PacketConfig, context: PersistenceContext) {
         var i = 0
         while (i <= pos && i <= Char.MaxValue) {
             val registered = objects(i)
-            if (registered != null && (registered.obj eq ref))
+            if (registered != null && (registered.obj == ref))
                 return i
             i += 1
         }
@@ -50,7 +49,7 @@ class PacketObjectPool(config: PacketConfig, context: PersistenceContext) {
 
     private def addOne(ref: AnyRef, decomposed: Array[Any], profile: TypeProfile[_]): Unit = {
         val code = config.getReferencedCode(ref)
-        val p = pos.toChar
+        val p    = pos.toChar
         if (code.isEmpty) {
             objects(pos) = PacketObject(ref, p, decomposed, profile)
         } else {
@@ -60,9 +59,13 @@ class PacketObjectPool(config: PacketConfig, context: PersistenceContext) {
     }
 
     private def addAll(objects: Array[Any]): Unit = {
-        for (i <- objects.indices) objects(i) match {
-            case subRef if UnWrapper.isPrimitiveWrapper(subRef) => //just do nothing
-            case subRef: AnyRef                                 => add(subRef)
+        var i   = 0
+        val len = objects.length
+        while (i < len) {
+            objects(i) match {
+                case subRef: AnyRef => add(subRef)
+            }
+            i += 1
         }
     }
 
@@ -80,16 +83,16 @@ object PacketObjectPool {
 
     trait PoolObject {
 
-        def obj: AnyRef
+        def obj: Any
 
         val poolIndex: Char
     }
 
-    case class ContextObject(override val obj: AnyRef,
+    case class ContextObject(override val obj: Any,
                              override val poolIndex: Char,
                              refInt: Int) extends PoolObject
 
-    case class PacketObject(override val obj: AnyRef,
+    case class PacketObject(override val obj: Any,
                             override val poolIndex: Char,
                             decomposed: Array[Any], profile: TypeProfile[_]) extends PoolObject {
 

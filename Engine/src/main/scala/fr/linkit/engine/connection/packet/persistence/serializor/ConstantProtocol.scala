@@ -29,6 +29,4 @@ object ConstantProtocol {
 
     val Object: Byte = -118
     val Array: Byte = -117
-
-
 }

@@ -19,7 +19,8 @@ import fr.linkit.api.connection.packet.persistence.PacketSerializer.PacketDeseri
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
-import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer.{BroadcastedFlag, DedicatedFlag, EOP}
+import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer.{BroadcastedFlag, DedicatedFlag}
+import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
 import fr.linkit.engine.connection.packet.persistence.serializor.write.ObjectPoolWriter
 
 import java.nio.ByteBuffer
@@ -43,10 +44,10 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
         writer.writeRootObjects(objects)
         writer.writeHeaderSize()
         val pool = writer.getPool
+        buffer.putChar(pool.size.toChar)
         for (o <- objects) {
             buffer.putChar(pool.indexOf(o).toChar)
         }
-        buffer.put(EOP)
     }
 
     private def writeCoords(buff: ByteBuffer, coords: PacketCoordinates): Unit = coords match {
@@ -110,8 +111,9 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
             override def forEachObjects(f: Any => Unit): Unit = {
                 val reader = new ObjectPoolReader(config, context, buff)
                 reader.initPool()
+                val contentSize = buff.getChar
                 var idx = buff.getChar()
-                while (idx << 8 != 0 && idx >> 8 != EOP) {
+                for (_ <- 0 to contentSize) {
                     f(reader.getObject(idx))
                     idx = buff.getChar()
                 }
@@ -133,7 +135,6 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
 
 object DefaultPacketSerializer {
 
-    private val DedicatedFlag  : Byte = 20
-    private val BroadcastedFlag: Byte = 21
-    private val EOP            : Byte = -22 //End Of Packet
+    private val DedicatedFlag  : Byte = -20
+    private val BroadcastedFlag: Byte = -21
 }

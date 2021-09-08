@@ -10,16 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.obj
+package fr.linkit.engine.connection.packet.persistence.obj.instance
 
 import fr.linkit.api.connection.packet.persistence.context.TypeProfile
-import fr.linkit.engine.connection.packet.persistence.obj.NotInstantiatedObject.Unsafe
+import fr.linkit.engine.connection.packet.persistence.obj.instance.NotInstantiatedObject.Unsafe
+import fr.linkit.engine.connection.packet.persistence.serializor.ArrayPersistence
+import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
 import fr.linkit.engine.local.utils.ScalaUtils
 
-class NotInstantiatedObject[T](profile: TypeProfile[T], args: Array[Any], clazz: Class[_]) extends InstanceObject[T] {
+class NotInstantiatedObject[T](profile: TypeProfile[T], content: Array[Char], reader: ObjectPoolReader, clazz: Class[_]) extends InstanceObject[T] {
 
-    private var isInit  : Boolean = false
-    private lazy val obj: T       = Unsafe.allocateInstance(clazz).asInstanceOf[T]
+    private var isInit: Boolean = false
+    private val obj   : T       = Unsafe.allocateInstance(clazz).asInstanceOf[T]
 
     override def instance: T = obj
 
@@ -27,18 +29,22 @@ class NotInstantiatedObject[T](profile: TypeProfile[T], args: Array[Any], clazz:
         if (isInit)
             return
 
-        val length = this.args.length
-        val args   = new Array[Any](length)
-        for (i <- 0 to length)
-            args(i) = this.args(i) match {
+        isInit = true
+        val content = this.content
+        val length  = content.length
+        val args    = new Array[Any](length)
+        var i       = 0
+        while (i < length) {
+            args(i) = reader.getObject(content(i)) match {
                 case o: NotInstantiatedObject[Any] =>
                     o.initObject()
-                    o.instance
+                    o.obj
                 case o: InstanceObject[Any]        => o.instance
                 case o                             => o
             }
+            i += 1
+        }
         profile.completeInstance(obj, args)
-        isInit = true
     }
 
 }

@@ -12,7 +12,10 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor
 
+import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
+import fr.linkit.engine.connection.packet.persistence.obj.instance.{InstanceObject, InstantiatedObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.{Boolean, Byte, Char, Double, Float, Int, Long, Object, Short, String}
+import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
 import fr.linkit.engine.connection.packet.persistence.serializor.write.ObjectPoolWriter
 import fr.linkit.engine.local.mapping.ClassMappings
 
@@ -31,34 +34,22 @@ object ArrayPersistence {
     }
 
     private def writePrimitiveArrayContent(writer: ObjectPoolWriter, array: Array[Any]): Unit = {
-        var i    = 0
         val len  = array.length
         val buff = writer.buff
         (array: Any) match {
-            case xs: Array[Int]     => while (i < len) {
-                buff.putInt(xs(i)); i = i + 1
-            }
-            case xs: Array[Double]  => while (i < len) {
-                buff.putDouble(xs(i)); i = i + 1
-            }
-            case xs: Array[Long]    => while (i < len) {
-                buff.putLong(xs(i)); i = i + 1
-            }
-            case xs: Array[Float]   => while (i < len) {
-                buff.putFloat(xs(i)); i = i + 1
-            }
-            case xs: Array[Char]    => while (i < len) {
-                buff.putChar(xs(i)); i = i + 1
-            }
-            case xs: Array[Byte]    => while (i < len) {
-                buff.put(xs(i)); i = i + 1
-            }
-            case xs: Array[Short]   => while (i < len) {
-                buff.putShort(xs(i)); i = i + 1
-            }
-            case xs: Array[Boolean] => while (i < len) {
-                buff.put(if (xs(i)) 1: Byte else 0: Byte); i = i + 1
-            }
+            case xs: Array[Int]     => buff.asIntBuffer().put(xs)
+            case xs: Array[Double]  => buff.asDoubleBuffer().put(xs)
+            case xs: Array[Long]    => buff.asLongBuffer().put(xs)
+            case xs: Array[Float]   => buff.asFloatBuffer().put(xs)
+            case xs: Array[Char]    => buff.asCharBuffer().put(xs)
+            case xs: Array[Short]   => buff.asShortBuffer().put(xs)
+            case xs: Array[Byte]    => buff.put(xs)
+            case xs: Array[Boolean] =>
+                var i = 0
+                while (i < len) {
+                    buff.put(if (xs(i)) 1: Byte else 0: Byte);
+                    i = i + 1
+                }
         }
     }
 
@@ -79,7 +70,7 @@ object ArrayPersistence {
             buff.put(depth)
             buff.putInt(ClassMappings.codeOfClass(absoluteComp))
         }
-        writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled primitive array before
+        writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled any primitive array before
     }
 
     def readArray(reader: ObjectPoolReader): Array[_] = {
@@ -88,24 +79,65 @@ object ArrayPersistence {
         val length = buff.getInt()
         kind match {
             case Object => readObjectArray(length, reader)
+            case String => readStringArray(length, reader)
             case _      => readNonObjectArray(length, kind, reader)
         }
     }
 
     private def readNonObjectArray(length: Int, kind: Int, reader: ObjectPoolReader): Array[_] = {
+        val buff            = reader.buff
         val array: Array[_] = kind match {
-            case Int     => new Array[Int](length)
-            case Byte    => new Array[Byte](length)
-            case Short   => new Array[Short](length)
-            case Long    => new Array[Long](length)
-            case Double  => new Array[Double](length)
-            case Float   => new Array[Float](length)
-            case Boolean => new Array[Boolean](length)
-            case Char    => new Array[Char](length)
-            case String  => new Array[String](length)
+            case Int     =>
+                val a = new Array[Int](length)
+                buff.asIntBuffer().get(a)
+                a
+            case Byte    =>
+                val a = new Array[Byte](length)
+                buff.get(a)
+                a
+            case Short   =>
+                val a = new Array[Short](length)
+                buff.asShortBuffer.get(a)
+                a
+            case Long    =>
+                val a = new Array[Long](length)
+                buff.asLongBuffer().get(a)
+                a
+            case Double  =>
+                val a = new Array[Double](length)
+                buff.asDoubleBuffer().get(a)
+                a
+            case Float   =>
+                val a = new Array[Float](length)
+                buff.asFloatBuffer().get(a)
+                a
+            case Boolean =>
+                val a = new Array[Boolean](length)
+                var i = 0
+                while (i < 0) {
+                    a(i) = buff.get(i) == 1
+                    i += 1
+                }
+                a
+            case Char    =>
+                val a = new Array[Char](length)
+                buff.asCharBuffer().get(a)
+                a
         }
-        readArrayContent(reader, array)
         array
+    }
+
+    private def readStringArray(length: Int, reader: ObjectPoolReader): Array[String] = {
+        val sBuff = new Array[String](length)
+        var i     = 0
+        while (i < length) {
+            sBuff(i) = reader.nextInstanceObject() match {
+                case InstantiatedObject(str: String) => str
+                case _                               => throw new MalFormedPacketException("Received non string item into string array.")
+            }
+            i += 1
+        }
+        sBuff
     }
 
     private def readObjectArray(length: Int, reader: ObjectPoolReader): Array[Any] = {
@@ -113,21 +145,27 @@ object ArrayPersistence {
         val depth = buff.get() + lang.Byte.MAX_VALUE
         val comp  = ClassMappings.getClass(buff.getInt())
         val array = buildArray(comp, depth, length)
-        readArrayContent(reader, array)
+        val oBuff = new Array[InstanceObject[_]](length)
+        readArrayContent(reader, oBuff)
+        var i = 0
+        while (i < length) {
+            array(i) = oBuff(i).instance
+            i += 1
+        }
         array
     }
 
-    def readArrayContent(reader: ObjectPoolReader): Array[Any] = {
+    def readArrayContent(reader: ObjectPoolReader): Array[InstanceObject[_]] = {
         val buff  = reader.buff
         val size  = buff.getInt()
-        val array = new Array[Any](size)
+        val array = new Array[InstanceObject[_]](size)
         readArrayContent(reader, array)
         array
     }
 
-    def readArrayContent(reader: ObjectPoolReader, buff: Array[_]): Unit = {
+    def readArrayContent(reader: ObjectPoolReader, buff: Array[InstanceObject[_]]): Unit = {
         for (n <- buff.indices)
-            buff(n) = cast(reader.nextPoolConstant())
+            buff(n) = reader.nextInstanceObject()
     }
 
     private def cast[T](a: Any): T = a.asInstanceOf[T]

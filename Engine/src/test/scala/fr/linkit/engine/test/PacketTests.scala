@@ -21,10 +21,10 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.local.utils.ScalaUtils
-import fr.linkit.engine.test.PacketTests.testPacket
+import fr.linkit.engine.test.PacketTests.{serializer, testPacket}
 import fr.linkit.engine.test.classes.Player
 import org.junit.jupiter.api.TestInstance.Lifecycle
-import org.junit.jupiter.api.{BeforeAll, Test, TestInstance}
+import org.junit.jupiter.api.{BeforeAll, RepeatedTest, Test, TestInstance}
 
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
@@ -43,8 +43,23 @@ class PacketTests {
         testPacket(Array(f, f, f))
     }
 
-    object EmptyObject {
 
+    @RepeatedTest(5)
+    def perfTests(): Unit = {
+        val f = Player(45, "Test", "Test", 78, 78)
+        val obj = Array[AnyRef](f, f, f)
+        val coords = DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM")
+        val buff   = ByteBuffer.allocate(1000)
+        val config = new SimplePacketConfig {}
+        val t0 = System.currentTimeMillis()
+        for (_ <- 0 to 1000) {
+            serializer.serializePacket(obj, coords, buff)(config)
+            buff.position(0)
+            serializer.deserializePacket(buff)(config)
+                    .forEachObjects(() => _)
+        }
+        val t1 = System.currentTimeMillis()
+        println(t1-t0)
     }
 
     @Test
@@ -63,17 +78,7 @@ class PacketTests {
 object PacketTests {
 
     private val serializer = new DefaultPacketSerializer(null, new DefaultPersistenceContext)
-    /*serializer.context.putPersistor(new SynchronizedObjectPersistor(null))
-    serializer.context.putMiniPersistor[File](new MiniPersistor[File, String] {
-        override def serialize(a: File): String = {
-            a.getAbsolutePath
-        }
 
-        override def deserialize(b: String): File =  {
-            new File(b)
-        }
-    })
-*/
     def testPacket(obj: Array[AnyRef]): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")
         val buff = ByteBuffer.allocate(1000)

@@ -13,9 +13,9 @@
 package fr.linkit.engine.connection.packet.persistence.serializor.write
 
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
-import fr.linkit.engine.connection.packet.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketObjectPool.{ContextObject, PacketObject, PoolObject}
+import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
 import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.lang
@@ -32,11 +32,14 @@ class ObjectPoolWriter(config: PacketConfig, context: PersistenceContext, val bu
         for (o <- roots) { //registering all objects, and contained objects in the constant pool.
             objects.add(o)
         }
-        for (i <- 0 until objects.size) {
+        var i   = 0
+        val len = objects.size
+        while (i < len) {
             objects(i) match {
-                case wrapper: PacketObject  => putNonPrimitive(wrapper)
+                case wrapper: PacketObject  => putAny(wrapper)
                 case wrapper: ContextObject => putContextRef(wrapper.refInt)
             }
+            i += 1
         }
     }
 
@@ -49,25 +52,34 @@ class ObjectPoolWriter(config: PacketConfig, context: PersistenceContext, val bu
 
     def getPool: PacketObjectPool = objects
 
-    /*
-        private def putAny(obj: Any): Unit = {
-            obj match {
-                case i: Int     => flag(Int).putInt(i)
-                case b: Byte    => flag(Byte).put(b)
-                case s: Short   => flag(Short).putShort(s)
-                case l: Long    => flag(Long).putLong(l)
-                case d: Double  => flag(Double).putDouble(d)
-                case f: Float   => flag(Float).putFloat(f)
-                case b: Boolean => flag(Boolean).put((if (b) 1 else 0): Byte)
-                case c: Char    => flag(Char).putChar(c)
+    /*def putRef(obj: Any): Unit = {
+        obj match {
+            case i: Int     => flag(Int).putInt(i)
+            case b: Byte    => flag(Byte).put(b)
+            case s: Short   => flag(Short).putShort(s)
+            case l: Long    => flag(Long).putLong(l)
+            case d: Double  => flag(Double).putDouble(d)
+            case f: Float   => flag(Float).putFloat(f)
+            case b: Boolean => flag(Boolean).put((if (b) 1 else 0): Byte)
+            case c: Char    => flag(Char).putChar(c)
 
-                case other: AnyRef => putNonPrimitive(other)
-            }
+            case str: String       => putString(str)
+            case array: Array[Any] => putArray(array)
+            case ref: AnyRef       => putPoolRef(ref)
         }
-    */
-    //Non primitives can be stored in the pool
-    private def putNonPrimitive(ref: PoolObject): Unit = {
+    }*/
+
+    private def putAny(ref: PoolObject): Unit = {
         ref.obj match {
+            case i: Int     => flag(Int).putInt(i)
+            case b: Byte    => flag(Byte).put(b)
+            case s: Short   => flag(Short).putShort(s)
+            case l: Long    => flag(Long).putLong(l)
+            case d: Double  => flag(Double).putDouble(d)
+            case f: Float   => flag(Float).putFloat(f)
+            case b: Boolean => flag(Boolean).put((if (b) 1 else 0): Byte)
+            case c: Char    => flag(Char).putChar(c)
+
             case str: String       => putString(str)
             case array: Array[Any] => putArray(array)
             case _                 => putObject(ref)

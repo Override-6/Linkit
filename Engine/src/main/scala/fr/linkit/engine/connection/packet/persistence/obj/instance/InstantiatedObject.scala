@@ -10,6 +10,6 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.obj
+package fr.linkit.engine.connection.packet.persistence.obj.instance
 
 case class InstantiatedObject[T](override val instance: T) extends InstanceObject[T]

@@ -16,6 +16,7 @@ import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, Persis
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
+import scala.runtime.Statics
 
 abstract class SimplePacketConfig extends PacketConfig {
 
@@ -31,6 +32,7 @@ abstract class SimplePacketConfig extends PacketConfig {
         profiles.customProfiles.getOrElse(clazz, context.getDefaultProfile[T](clazz))
                 .asInstanceOf[TypeProfile[T]]
     }
+
 
     object profiles {
 
