@@ -10,10 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.serializor.read.instance
+package fr.linkit.api.connection.packet.persistence.obj
 
-trait InstanceObject[T] {
-
-    def instance: T
-
+trait ContextObject extends PoolObject[AnyRef] {
+    val refId: Int
 }

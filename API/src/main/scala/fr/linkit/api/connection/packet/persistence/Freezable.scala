@@ -10,20 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.api.connection.packet.persistence
 
-trait PacketConfig {
+trait Freezable {
 
-    def getReferenced(reference: Int): Option[AnyRef]
+    def isFrozen: Boolean
 
-    def getReferencedCode(reference: AnyRef): Option[Int]
-
-    def getProfile[T](clazz: Class[_], context: PersistenceContext): TypeProfile[T]
-
-    def useUnsafe: Boolean
-
-    def putSignature: Boolean
-
-    def widePacket: Boolean
+    def freeze(): Unit
 
 }

@@ -10,6 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.serializor.read.instance
+package fr.linkit.api.connection.packet.persistence.obj
 
-case class InstantiatedObject[T](override val instance: T) extends InstanceObject[T]
+import fr.linkit.api.connection.packet.persistence.context.TypeProfile
+
+trait InstanceObject[T <: AnyRef] extends PoolObject[T] {
+
+    val profile      : TypeProfile[_]
+
+}

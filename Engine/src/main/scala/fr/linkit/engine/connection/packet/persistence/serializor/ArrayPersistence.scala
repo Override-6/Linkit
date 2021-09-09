@@ -12,21 +12,21 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor
 
+import fr.linkit.api.connection.packet.persistence.obj.InstanceObject
+import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
+import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
+import fr.linkit.engine.connection.packet.persistence.serializor.read.PacketReader
+import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter
+import fr.linkit.engine.local.mapping.ClassMappings
+
 import java.lang
 import java.lang.reflect.{Array => RArray}
 import java.nio.ByteBuffer
 
-import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
-import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
-import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
-import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
-import fr.linkit.engine.connection.packet.persistence.serializor.read.instance.{InstanceObject, InstantiatedObject}
-import fr.linkit.engine.connection.packet.persistence.serializor.write.ObjectPoolWriter
-import fr.linkit.engine.local.mapping.ClassMappings
-
 object ArrayPersistence {
 
-    def writeArrayContent(writer: ObjectPoolWriter, array: Array[AnyRef]): Unit = {
+    def writeArrayContent(writer: PacketWriter, array: Array[AnyRef]): Unit = {
         val buff = writer.buff
         buff.putInt(array.length)
         for (n <- array.indices) {
@@ -34,7 +34,7 @@ object ArrayPersistence {
         }
     }
 
-    def writePrimitiveArrayContent(writer: ObjectPoolWriter, array: Array[Any], from: Int, to: Int): Unit = {
+    def writePrimitiveArrayContent(writer: PacketWriter, array: Array[Any], from: Int, to: Int): Unit = {
         val len  = array.length
         val buff = writer.buff
         (array: Any) match {
@@ -54,7 +54,7 @@ object ArrayPersistence {
         }
     }
 
-    def writeArray(writer: ObjectPoolWriter, tpeChunk: PoolChunk[Class[_]], array: Array[Any]): Unit = {
+    def writeArray(writer: PacketWriter, tpeChunk: PoolChunk[Class[_]], array: Array[Any]): Unit = {
         val buff = writer.buff
         val comp = array.getClass.componentType()
         if (comp.isPrimitive) {
@@ -63,6 +63,12 @@ object ArrayPersistence {
             return
         }
 
+        writeObjectArray(array, comp, writer, tpeChunk)
+    }
+
+    @inline
+    private def writeObjectArray(array: Array[Any], comp: Class[_], writer: PacketWriter, tpeChunk: PoolChunk[Class[_]]): Unit = {
+        val buff = writer.buff
         if (comp eq classOf[String]) {
             buff.put(String)
         } else {
@@ -79,18 +85,18 @@ object ArrayPersistence {
         writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled any primitive array before
     }
 
-    def readArray(reader: ObjectPoolReader): Array[_] = {
+    def readArray(reader: PacketReader): Array[_] = {
         val buff   = reader.buff
         val kind   = buff.get()
         val length = buff.getInt()
         kind match {
             case Object => readObjectArray(length, reader)
             case String => readStringArray(length, reader)
-            case _      => readNonObjectArray(length, kind, reader)
+            case _      => readPrimitiveArray(length, kind, reader)
         }
     }
 
-    private def readNonObjectArray(length: Int, kind: Int, reader: ObjectPoolReader): Array[_] = {
+    def readPrimitiveArray(length: Int, kind: Int, reader: PacketReader): Array[_] = {
         val buff            = reader.buff
         val array: Array[_] = kind match {
             case Int     =>
@@ -133,43 +139,39 @@ object ArrayPersistence {
         array
     }
 
-    private def readStringArray(length: Int, reader: ObjectPoolReader): Array[String] = {
+    private def readStringArray(length: Int, reader: PacketReader): Array[String] = {
         val sBuff = new Array[String](length)
         var i     = 0
+        val pool  = reader.getPool
         while (i < length) {
-            sBuff(i) = reader.nextInstanceObject() match {
-                case InstantiatedObject(str: String) => str
-                case _                               => throw new MalFormedPacketException("Received non string item into string array.")
+            //TODO Optimize me
+            sBuff(i) = pool.getObject(reader.readNextGlobalRef) match {
+                case str: String => str
+                case _           => throw new MalFormedPacketException("Received non string item into string array.")
             }
             i += 1
         }
         sBuff
     }
 
-    private def readObjectArray(length: Int, reader: ObjectPoolReader): Array[Any] = {
+    private def readObjectArray(length: Int, reader: PacketReader): Array[Any] = {
         val buff  = reader.buff
         val depth = buff.get() + lang.Byte.MAX_VALUE
         val comp  = ClassMappings.getClass(buff.getInt())
         val array = buildArray(comp, depth, length)
-        val oBuff = new Array[InstanceObject[_]](length)
-        readArrayContent(reader, oBuff)
-        var i = 0
-        while (i < length) {
-            array(i) = oBuff(i).instance
-            i += 1
-        }
-        array
-    }
-
-    def readArrayContent(reader: ObjectPoolReader): Array[InstanceObject[_]] = {
-        val buff  = reader.buff
-        val size  = buff.getInt()
-        val array = new Array[InstanceObject[_]](size)
         readArrayContent(reader, array)
         array
     }
 
-    def readArrayContent(reader: ObjectPoolReader, buff: Array[InstanceObject[_]]): Unit = {
+    def readArrayContent(reader: PacketReader): Array[Any] = {
+        val buff  = reader.buff
+        val size  = buff.getInt()
+        val array = new Array[Any](size)
+        readArrayContent(reader, array)
+        array
+    }
+
+    def readArrayContent(reader: PacketReader, buff: Array[Any]): Unit = {
         for (n <- buff.indices)
             buff(n) = reader.nextInstanceObject()
     }

@@ -12,8 +12,6 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor
 
-import java.nio.ByteBuffer
-
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.PacketSerializer
@@ -21,10 +19,13 @@ import fr.linkit.api.connection.packet.persistence.PacketSerializer.PacketDeseri
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
+import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer.{BroadcastedFlag, DedicatedFlag}
-import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
-import fr.linkit.engine.connection.packet.persistence.serializor.write.ObjectPoolWriter
+import fr.linkit.engine.connection.packet.persistence.serializor.read.PacketReader
+import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter
+
+import java.nio.ByteBuffer
 
 class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: PersistenceContext) extends PacketSerializer {
 
@@ -40,13 +41,23 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
     override def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer)(config: PacketConfig): Unit = {
         if (config.putSignature)
             buffer.put(signature)
+
         writeCoords(buffer, coordinates)
-        val writer = new ObjectPoolWriter(config, context, buffer)
-        writer.writeRootObjects(objects)
-        val pool = writer.getPool
-        buffer.putChar(pool.getChunk(Object).size)
+        val writer = new PacketWriter(config, context, buffer)
+        writer.addObjects(objects)
+        writer.writePool()
+        val pool        = writer.getPool
+        val objectChunk = pool.getChunkFromFlag[AnyRef](Object)
+        writeEntries(objects, writer, objectChunk)
+    }
+
+    private def writeEntries(objects: Array[AnyRef], writer: PacketWriter, chunk: PoolChunk[AnyRef]): Unit = {
+        val objectCount = chunk.size
+        //Write the size
+        writer.putRef(objectCount)
+        //Write the content
         for (o <- objects) {
-            buffer.putChar(pool.indexOf(o).toChar)
+            writer.putRef(chunk.indexOf(o))
         }
     }
 
@@ -109,10 +120,10 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
             override def getCoordinates: PacketCoordinates = coords
 
             override def forEachObjects(f: Any => Unit): Unit = {
-                val reader = new ObjectPoolReader(config, context, buff)
+                val reader = new PacketReader(config, context, buff)
                 reader.initPool()
                 val contentSize = buff.getChar
-                var idx = buff.getChar()
+                var idx         = buff.getChar()
                 for (_ <- 0 to contentSize) {
                     f(reader.getObject(idx))
                     idx = buff.getChar()

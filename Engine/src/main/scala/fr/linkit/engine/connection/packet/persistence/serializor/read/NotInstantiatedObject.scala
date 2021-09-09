@@ -10,20 +10,22 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.serializor.read.instance
+package fr.linkit.engine.connection.packet.persistence.serializor.read
 
 import fr.linkit.api.connection.packet.persistence.context.TypeProfile
-import fr.linkit.engine.connection.packet.persistence.serializor.read.instance.NotInstantiatedObject.Unsafe
-import fr.linkit.engine.connection.packet.persistence.serializor.ArrayPersistence
-import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
+import fr.linkit.api.connection.packet.persistence.obj.InstanceObject
+import fr.linkit.engine.connection.packet.persistence.serializor.read.NotInstantiatedObject.Unsafe
 import fr.linkit.engine.local.utils.ScalaUtils
 
-class NotInstantiatedObject[T](profile: TypeProfile[T], content: Array[Char], reader: ObjectPoolReader, clazz: Class[_]) extends InstanceObject[T] {
+class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
+                                         content: Array[Int],
+                                         reader: PacketReader,
+                                         clazz: Class[_]) extends InstanceObject[T] {
 
     private var isInit: Boolean = false
     private val obj   : T       = Unsafe.allocateInstance(clazz).asInstanceOf[T]
 
-    override def instance: T = obj
+    override def value: T = obj
 
     def initObject(): Unit = {
         if (isInit)
@@ -36,11 +38,11 @@ class NotInstantiatedObject[T](profile: TypeProfile[T], content: Array[Char], re
         var i       = 0
         while (i < length) {
             args(i) = reader.getObject(content(i)) match {
-                case o: NotInstantiatedObject[Any] =>
+                case o: NotInstantiatedObject[AnyRef] =>
                     o.initObject()
                     o.obj
-                case o: InstanceObject[Any]        => o.instance
-                case o                             => o
+                case o: InstanceObject[AnyRef]        => o.value
+                case o                                => o
             }
             i += 1
         }

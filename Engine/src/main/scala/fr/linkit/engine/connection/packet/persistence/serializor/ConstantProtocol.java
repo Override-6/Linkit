@@ -18,6 +18,8 @@ public class ConstantProtocol {
     public static final byte Array = 11;
     public static final byte Object = 12;
 
+    public static final byte ChunkCount = 13;
+
     public static final byte Null = -128;
     public static final byte PoolRef = -127;
 }

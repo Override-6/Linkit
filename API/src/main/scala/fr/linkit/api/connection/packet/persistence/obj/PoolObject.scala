@@ -10,20 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.api.connection.packet.persistence.obj
 
-trait PacketConfig {
+trait PoolObject[T <: AnyRef] {
 
-    def getReferenced(reference: Int): Option[AnyRef]
+    def value: T
 
-    def getReferencedCode(reference: AnyRef): Option[Int]
-
-    def getProfile[T](clazz: Class[_], context: PersistenceContext): TypeProfile[T]
-
-    def useUnsafe: Boolean
-
-    def putSignature: Boolean
-
-    def widePacket: Boolean
-
+    val poolIndex: Int //FIXME Non Used
 }

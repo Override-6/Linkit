@@ -12,145 +12,54 @@
 
 package fr.linkit.engine.connection.packet.persistence.pool
 
-import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext, TypeProfile}
-import fr.linkit.engine.connection.packet.persistence.pool.PacketObjectPool.{ContextObject, PacketObject}
+import fr.linkit.api.connection.packet.persistence.Freezable
+import fr.linkit.api.connection.packet.persistence.obj.{ContextObject, InstanceObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 
-class PacketObjectPool(config: PacketConfig, context: PersistenceContext, sizes: Array[Char]) {
+class PacketObjectPool(sizes: Array[Int]) extends Freezable {
+
+    private var frozen = false
 
     protected val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
         // Objects types
-        new PoolChunk[Class[_]](sizes(Class)),
+        new PoolChunk[Class[_]](Class, this, sizes(Class)),
         // Context Objects identifiers
-        new PoolChunk[Int](sizes(Int)),
+        new PoolChunk[ContextObject](ContextRef, this, sizes(ContextRef)),
         // Strings
-        new PoolChunk[String](sizes(String)),
+        new PoolChunk[String](String, this, sizes(String)),
         // Primitives (excepted primitives stored into primitives arrays)
-        new PoolChunk[Int](sizes(Int)),
-        new PoolChunk[Short](sizes(Short)),
-        new PoolChunk[Long](sizes(Long)),
-        new PoolChunk[Byte](sizes(Byte)),
-        new PoolChunk[Double](sizes(Double)),
-        new PoolChunk[Float](sizes(Float)),
-        new PoolChunk[Boolean](sizes(Boolean)),
-        new PoolChunk[Char](sizes(Char)),
+        new PoolChunk[Int](Int, this, sizes(Int)),
+        new PoolChunk[Short](Short, this, sizes(Short)),
+        new PoolChunk[Long](Long, this, sizes(Long)),
+        new PoolChunk[Byte](Byte, this, sizes(Byte)),
+        new PoolChunk[Double](Double, this, sizes(Double)),
+        new PoolChunk[Float](Float, this, sizes(Float)),
+        new PoolChunk[Boolean](Boolean, this, sizes(Boolean)),
+        new PoolChunk[Char](Char, this, sizes(Char)),
         // Arrays
-        new PoolChunk[Array[_]](sizes(Array)),
+        new PoolChunk[Array[_]](Array, this, sizes(Array)),
         // Objects
-        new PoolChunk[PacketObject](sizes(Object))
+        new PoolChunk[InstanceObject[AnyRef]](Object, this, sizes(Object))
     )
 
-    def indexOf(ref: AnyRef): Int = {
-        getChunk(ref).indexOf(ref)
+    override def freeze(): Unit = {
+        frozen = true
     }
 
+    override def isFrozen: Boolean = frozen
+
     @inline
-    private def getChunk[T](idx: Byte): PoolChunk[T] = {
+    def getChunkFromFlag[T](idx: Byte): PoolChunk[T] = {
         chunks(idx).asInstanceOf[PoolChunk[T]]
     }
 
-    def getContextRefChunk: PoolChunk[ContextObject] = getChunk(ContextRef)
-
-    def getChunk[T](ref: Any): PoolChunk[T] = {
-        ref match {
-            case _: Int     => getChunk(Int)
-            case _: Byte    => getChunk(Int)
-            case _: Short   => getChunk(Int)
-            case _: Long    => getChunk(Long)
-            case _: Double  => getChunk(Double)
-            case _: Float   => getChunk(Float)
-            case _: Boolean => getChunk(Boolean)
-            case _: Char    => getChunk(Char)
-
-            case _: Class[_]   => getChunk(Class)
-            case _: String     => getChunk(String)
-            case _: Array[Any] => getChunk(Array)
-            case _             => getChunk(Object)
-        }
-    }
-
-    def indexOfClass(ref: Class[_]): Int = {
-        val chunk = getChunk[Class[_]](Class)
-        val idx   = chunk.indexOf(ref)
-        if (idx == -1) {
-            chunk.add(ref)
-            chunk.size
-        } else idx
-    }
-
-    def addObject(ref: AnyRef): Unit = {
-        if (indexOf(ref) >= 0)
-            return
-        ref match {
-            case _: String     =>
-                getChunk(String).add(ref)
-            case a: Array[Any] =>
-                getChunk(Array).add(a)
-            case _             =>
-                val profile = config.getProfile[AnyRef](ref.getClass, context)
-                val code    = config.getReferencedCode(ref)
-                if (code.isEmpty) {
-                    val decomposed = profile.toArray(ref)
-                    val objPool    = getChunk[PacketObject](Object)
-                    objPool.add(PacketObject(ref, objPool.size, getTypeRef(ref.getClass), decomposed, profile))
-                    addAll(decomposed)
-                } else {
-                    val pool = getChunk[ContextObject](ContextRef)
-                    pool.add(ContextObject(ref, pool.size, code.get))
-                }
-        }
-    }
-
-    private def getTypeRef(tpe: Class[_]): Char = {
-        val tpePool = getChunk[Class[_]](Class)
-        var idx     = tpePool.indexOf(tpe).toChar
-        if (idx == -1) {
-            idx = tpePool.size
-            tpePool.add(tpe)
-        }
-        idx
-    }
-
-    private def addAll(objects: Array[Any]): Unit = {
-        var i   = 0
-        val len = objects.length
-        while (i < len) {
-            objects(i) match {
-                case subRef: AnyRef => addObject(subRef)
-            }
-            i += 1
-        }
-    }
+    def getContextRefChunk: PoolChunk[ContextObject] = getChunkFromFlag(ContextRef)
 
     def getChunks: Array[PoolChunk[Any]] = chunks.asInstanceOf[Array[PoolChunk[Any]]]
 
 }
 
 object PacketObjectPool {
-    // The number of different types that can be serialized
-    // (based on the number of constants in ConstantProtocol, excepted Null flag)
-    val ChunkCount = 14
-
-    trait PoolObject[T] {
-
-        def value: T
-
-        val poolIndex: Char
-    }
-
-    case class ContextObject(override val value: Any,
-                             override val poolIndex: Char,
-                             refInt: Int) extends PoolObject[Any]
-
-    case class PacketObject(override val value: Any,
-                            override val poolIndex: Char,
-                            typePoolIndex: Char,
-                            decomposed: Array[Any], profile: TypeProfile[_]) extends PoolObject[Any] {
-
-        override def equals(obj: Any): Boolean = obj == this.value
-
-        override def hashCode(): Int = value.hashCode()
-    }
 
 }
 

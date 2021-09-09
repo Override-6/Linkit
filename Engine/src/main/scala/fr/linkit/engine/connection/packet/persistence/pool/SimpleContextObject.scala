@@ -10,20 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.engine.connection.packet.persistence.pool
 
-trait PacketConfig {
+import fr.linkit.api.connection.packet.persistence.obj.ContextObject
 
-    def getReferenced(reference: Int): Option[AnyRef]
-
-    def getReferencedCode(reference: AnyRef): Option[Int]
-
-    def getProfile[T](clazz: Class[_], context: PersistenceContext): TypeProfile[T]
-
-    def useUnsafe: Boolean
-
-    def putSignature: Boolean
-
-    def widePacket: Boolean
-
-}
+class SimpleContextObject(override val refId: Int,
+                          override val value: AnyRef,
+                          override val poolIndex: Int) extends ContextObject
