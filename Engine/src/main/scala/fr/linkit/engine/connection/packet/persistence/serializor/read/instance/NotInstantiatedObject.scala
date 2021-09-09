@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.obj.instance
+package fr.linkit.engine.connection.packet.persistence.serializor.read.instance
 
 import fr.linkit.api.connection.packet.persistence.context.TypeProfile
-import fr.linkit.engine.connection.packet.persistence.obj.instance.NotInstantiatedObject.Unsafe
+import fr.linkit.engine.connection.packet.persistence.serializor.read.instance.NotInstantiatedObject.Unsafe
 import fr.linkit.engine.connection.packet.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
 import fr.linkit.engine.local.utils.ScalaUtils

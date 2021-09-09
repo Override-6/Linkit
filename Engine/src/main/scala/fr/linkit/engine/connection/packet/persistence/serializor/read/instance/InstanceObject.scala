@@ -10,8 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.obj
+package fr.linkit.engine.connection.packet.persistence.serializor.read.instance
 
-class UnknownObject {
+trait InstanceObject[T] {
+
+    def instance: T
 
 }

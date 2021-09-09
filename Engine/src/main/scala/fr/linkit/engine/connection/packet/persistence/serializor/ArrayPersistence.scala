@@ -13,12 +13,11 @@
 package fr.linkit.engine.connection.packet.persistence.serializor
 
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
-import fr.linkit.engine.connection.packet.persistence.obj.instance.{InstanceObject, InstantiatedObject}
+import fr.linkit.engine.connection.packet.persistence.serializor.read.instance.{InstanceObject, InstantiatedObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.{Boolean, Byte, Char, Double, Float, Int, Long, Object, Short, String}
 import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
-import fr.linkit.engine.connection.packet.persistence.serializor.write.ObjectPoolWriter
+import fr.linkit.engine.connection.packet.persistence.serializor.write.{ObjectPoolWriter, PacketObjectPool}
 import fr.linkit.engine.local.mapping.ClassMappings
-
 import java.lang
 import java.lang.reflect.{Array => RArray}
 import java.nio.ByteBuffer
@@ -53,7 +52,7 @@ object ArrayPersistence {
         }
     }
 
-    def writeArray(writer: ObjectPoolWriter, array: Array[Any]): Unit = {
+    def writeArray(writer: ObjectPoolWriter, pool: PacketObjectPool, array: Array[Any]): Unit = {
         val buff = writer.buff
         val comp = array.getClass.componentType()
         if (comp.isPrimitive) {
@@ -68,7 +67,8 @@ object ArrayPersistence {
             buff.put(Object)
             val (absoluteComp, depth) = getAbsoluteCompType(array)
             buff.put(depth)
-            buff.putInt(ClassMappings.codeOfClass(absoluteComp))
+            val tpeIdx = pool.indexOfClass(absoluteComp)
+            buff.putChar(tpeIdx.toChar)
         }
         writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled any primitive array before
     }

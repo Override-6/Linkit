@@ -14,21 +14,36 @@ package fr.linkit.engine.connection.packet.persistence.serializor.write
 
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext, TypeProfile}
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketObjectPool._
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 
 class PacketObjectPool(config: PacketConfig, context: PersistenceContext) {
 
-    private var pos: Int = 0
-    private val objects  = new Array[PoolObject](Char.MaxValue)
+    private var totalSize: Int = 0
+    private val chunks        = new Array[PoolChunk[_]](ChunkCount)
 
     def indexOf(ref: AnyRef): Int = {
         var i = 0
         while (i <= pos && i <= Char.MaxValue) {
-            val registered = objects(i)
-            if (registered != null && (registered.obj == ref))
+            val registered = chunks(i)
+            if (registered != null && (registered.value == ref))
                 return i
             i += 1
         }
         -1
+    }
+
+    @inline
+    private def getChunk[T](idx: Int): PoolChunk[T] = {
+        chunks(idx).asInstanceOf[PoolChunk[T]]
+    }
+
+    def indexOfClass(ref: Class[_]): Int = {
+        val chunk = getChunk[Class[_]](Class)
+        val idx = chunk.indexOf(ref)
+        if (idx == -1) {
+            chunk.add(ref)
+            chunk.size
+        } else idx
     }
 
     def add(ref: AnyRef): Unit = {
@@ -47,13 +62,19 @@ class PacketObjectPool(config: PacketConfig, context: PersistenceContext) {
         }
     }
 
+    @inline private def addClass(clazz: Class[_]): Unit = {
+        chunks(pos) = ObjectType(clazz, pos.toChar)
+        pos += 1
+    }
+
     private def addOne(ref: AnyRef, decomposed: Array[Any], profile: TypeProfile[_]): Unit = {
         val code = config.getReferencedCode(ref)
         val p    = pos.toChar
         if (code.isEmpty) {
-            objects(pos) = PacketObject(ref, p, decomposed, profile)
+            addClass(ref.getClass)
+            chunks(pos) = PacketObject(ref, p, decomposed, profile)
         } else {
-            objects(pos) = ContextObject(ref, p, code.get)
+            chunks(pos) = ContextObject(ref, p, code.get)
         }
         pos += 1
     }
@@ -69,10 +90,17 @@ class PacketObjectPool(config: PacketConfig, context: PersistenceContext) {
         }
     }
 
-    def apply(i: Int): PoolObject = {
+    def getType(i: Int): Class[_] = {
+        apply(i) match {
+            case clazz: ObjectType => clazz.value
+            case _                 => throw new ClassCastException(s"Could not cast object at index ${i} to a Java Class")
+        }
+    }
+
+    def apply(i: Int): PoolObject[_] = {
         if (i >= pos)
             throw new IndexOutOfBoundsException(s"$i >= $pos")
-        objects(i)
+        chunks(i)
     }
 
     def size: Int = pos
@@ -80,25 +108,31 @@ class PacketObjectPool(config: PacketConfig, context: PersistenceContext) {
 }
 
 object PacketObjectPool {
+    // The number of different types that can be serialized
+    // (based on the number of constants in ConstantProtocol, excepted Null flag)
+    val ChunkCount = 14
+    trait PoolObject[T] {
 
-    trait PoolObject {
-
-        def obj: Any
+        def value: T
 
         val poolIndex: Char
     }
 
-    case class ContextObject(override val obj: Any,
+    case class ObjectType(override val value: Class[_],
+                          override val poolIndex: Char) extends PoolObject[Class[_]]
+
+    case class ContextObject(override val value: Any,
                              override val poolIndex: Char,
-                             refInt: Int) extends PoolObject
+                             refInt: Int) extends PoolObject[Any]
 
-    case class PacketObject(override val obj: Any,
+    case class PacketObject(override val value: Any,
                             override val poolIndex: Char,
-                            decomposed: Array[Any], profile: TypeProfile[_]) extends PoolObject {
+                            decomposed: Array[Any], profile: TypeProfile[_]) extends PoolObject[Any] {
 
-        override def equals(obj: Any): Boolean = obj == this.obj
+        override def equals(obj: Any): Boolean = obj == this.value
 
-        override def hashCode(): Int = obj.hashCode()
+        override def hashCode(): Int = value.hashCode()
     }
+
 }
 

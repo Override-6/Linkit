@@ -14,12 +14,13 @@ package fr.linkit.engine.connection.packet.persistence.serializor.read
 
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
-import fr.linkit.engine.connection.packet.persistence.obj.instance.{InstanceObject, InstantiatedObject, NotInstantiatedObject}
+import fr.linkit.engine.connection.packet.persistence.serializor.read.instance.{InstanceObject, InstantiatedObject, NotInstantiatedObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
 import fr.linkit.engine.local.mapping.ClassMappings
-
 import java.nio.ByteBuffer
+
+import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketObjectPool.ObjectType
 
 class ObjectPoolReader(config: PacketConfig, context: PersistenceContext, val buff: ByteBuffer) {
 
@@ -45,9 +46,14 @@ class ObjectPoolReader(config: PacketConfig, context: PersistenceContext, val bu
         }
     }
 
+    private def readClass(): InstantiatedObject[Class[_]] = {
+        InstantiatedObject(ClassMappings.getClass(buff.getInt))
+    }
+
     private[serializor] def nextInstanceObject(): InstanceObject[_] = {
         buff.get() match {
             case Object => readObject()
+            case Class  => readClass()
             case String => readString()
             case Array  => readArray()
 
@@ -86,12 +92,12 @@ class ObjectPoolReader(config: PacketConfig, context: PersistenceContext, val bu
         // as we return a NotInstantiatedObject, However, the pos in front
         // of the array content is kept in order to read the object content after
         val contentSize = buff.getInt
-        val content = readObjectContent(contentSize)
+        val content     = readObjectContent(contentSize)
         new NotInstantiatedObject[AnyRef](profile, content, this, clazz)
     }
 
     private def readObjectContent(length: Int): Array[Char] = {
-        var i = 0
+        var i       = 0
         val content = new Array[Char](length)
         while (i < length) {
             content(i) = buff.getChar

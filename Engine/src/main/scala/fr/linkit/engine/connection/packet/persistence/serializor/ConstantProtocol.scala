@@ -13,20 +13,22 @@
 package fr.linkit.engine.connection.packet.persistence.serializor
 
 object ConstantProtocol {
-    val ContextRef: Byte = -115
-    val PoolRef: Byte = -114
+    final val Class: Byte = 0
+    final val ContextRef: Byte = 1
+    final val PoolRef: Byte = 2
 
-    val Null: Byte = -128
-    val String: Byte = -127
-    val Int: Byte = -126
-    val Short: Byte = -125
-    val Long: Byte = -124
-    val Byte: Byte = -123
-    val Double: Byte = -122
-    val Float: Byte = -121
-    val Boolean: Byte = -120
-    val Char: Byte = -119
+    final val String: Byte = 3
+    final val Int: Byte = 4
+    final val Short: Byte = 5
+    final val Long: Byte = 6
+    final val Byte: Byte = 7
+    final val Double: Byte = 8
+    final val Float: Byte = 9
+    final val Boolean: Byte = 10
+    final val Char: Byte = 11
 
-    val Object: Byte = -118
-    val Array: Byte = -117
+    final val Array: Byte = 12
+    final val Object: Byte = 13
+
+    final val Null: Byte = -128
 }
