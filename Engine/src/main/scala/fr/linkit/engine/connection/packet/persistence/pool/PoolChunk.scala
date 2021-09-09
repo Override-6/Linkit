@@ -1,14 +1,21 @@
-package fr.linkit.engine.connection.packet.persistence.serializor.write
+package fr.linkit.engine.connection.packet.persistence.pool
 
+class PoolChunk[@specialized() T](buffLength: Char) {
 
-class PoolChunk[@specialized() T] {
-
-    private val objects = new Array[T](Char.MaxValue)
+    private val objects = new Array[T](buffLength)
     private var pos     = 0
 
+    def array: Array[T] = objects
+
+    @inline
     def add(t: T): Unit = {
         objects(pos) = t
         pos += 1
+    }
+
+    def addIfAbsent(t: T): Unit = {
+        if (indexOf(t) < 0)
+            add(t)
     }
 
     def get(i: Int): T = {

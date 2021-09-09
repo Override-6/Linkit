@@ -12,45 +12,66 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.write
 
-import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
-import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
-import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketObjectPool.{ContextObject, ObjectType, PacketObject, PoolObject}
-import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
-import fr.linkit.engine.local.mapping.ClassMappings
-import java.lang
 import java.nio.ByteBuffer
+
+import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
+import fr.linkit.engine.connection.packet.persistence.pool.{PacketObjectPool, PoolChunk}
+import fr.linkit.engine.connection.packet.persistence.serializor.ArrayPersistence
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
+import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketObjectPool.{PacketObject, PoolObject}
+import fr.linkit.engine.local.mapping.ClassMappings
 
 class ObjectPoolWriter(config: PacketConfig, context: PersistenceContext, val buff: ByteBuffer) {
 
-    val headerIndex: Int = buff.position()
-    buff.position(headerIndex + 2) //skip 2 bytes for the pool length
-    private val objects = new PacketObjectPool(config, context)
+    private val pool = new PacketObjectPool(config, context)
 
     def writeRootObjects(roots: Array[AnyRef]): Unit = {
-        val objects = this.objects
+        val pool = this.pool
         for (o <- roots) { //registering all objects, and contained objects in the constant pool.
-            objects.add(o)
+            pool.addObject(o)
         }
-        var i   = 0
-        val len = objects.size
+        var i: Byte = 0
+        val chunks  = pool.getChunks
+        //One chunk per type of data so chunk can't be over 127 as there is only 12 types that are handled
+        //see ConstantProtocol and PacketObjectPool
+        val len     = chunks.length.toByte
         while (i < len) {
-            objects(i) match {
-                case wrapper: ObjectType    => putType(wrapper)
-                case wrapper: PacketObject  => putAny(wrapper)
-                case wrapper: ContextObject => putContextRef(wrapper.refInt)
-            }
+            val chunk = chunks(i)
+            if (chunk.size > 0)
+                writeChunk(i, chunk)
             i += 1
         }
     }
 
-    def writeHeaderSize(): Unit = {
-        val size = objects.size
-        if (size > lang.Short.MAX_VALUE * 2 + 1)
-            throw new PacketPoolTooLongException(s"Packet pool size exceeds ${lang.Short.MAX_VALUE * 2 + 1}")
-        buff.putChar(headerIndex, size.toChar) //write the pool length at the starting point.
+    private def writeChunk(flag: Byte, poolChunk: PoolChunk[Any]): Unit = {
+        val size = poolChunk.size
+        //Write Chunk type and size
+        buff.put(flag)
+        buff.putChar(size)
+        //Write content
+        if (flag <= Int && flag > Char || (flag eq ContextRef)) {
+            ArrayPersistence.writePrimitiveArrayContent(this, poolChunk.array, 0, poolChunk.size)
+            return
+        }
+
+        @inline def foreach[T](@inline action: T => Unit): Unit = {
+            val items = poolChunk.array.asInstanceOf[Array[T]]
+            var i     = 0
+            while (i < size) {
+                action(items(i))
+                i += 1
+            }
+        }
+
+        flag match {
+            case Class  => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
+            case String => foreach[String](putString)
+            case Array  => foreach[Array[Any]](xs => ArrayPersistence.writeArray(this, pool.getChunk(Class), xs))
+            case Object => foreach[PacketObject](putObject)
+        }
     }
 
-    def getPool: PacketObjectPool = objects
+    def getPool: PacketObjectPool = pool
 
     /*def putRef(obj: Any): Unit = {
         obj match {
@@ -69,49 +90,13 @@ class ObjectPoolWriter(config: PacketConfig, context: PersistenceContext, val bu
         }
     }*/
 
-    private def putType(tpe: ObjectType): Unit = {
-        flag(Class).putInt(ClassMappings.codeOfClass(tpe.value))
-    }
-
-    private def putAny(ref: PoolObject[_]): Unit = {
-        ref.value match {
-            case i: Int     => flag(Int).putInt(i)
-            case b: Byte    => flag(Byte).put(b)
-            case s: Short   => flag(Short).putShort(s)
-            case l: Long    => flag(Long).putLong(l)
-            case d: Double  => flag(Double).putDouble(d)
-            case f: Float   => flag(Float).putFloat(f)
-            case b: Boolean => flag(Boolean).put((if (b) 1 else 0): Byte)
-            case c: Char    => flag(Char).putChar(c)
-
-            case str: String       => putString(str)
-            case array: Array[Any] => putArray(array)
-            case _                 => putObject(ref)
-        }
-    }
-
     private def putString(str: String): Unit = {
-        //TODO Ensure that the same charset is used at the other side
-        flag(String).putInt(str.length).put(str.getBytes())
+        buff.putInt(str.length).put(str.getBytes())
     }
 
-    def putArray(array: Array[Any]): Unit = {
-        flag(Array)
-        ArrayPersistence.writeArray(this, array)
-    }
-
-    private def putObject(poolObj: PoolObject[_]): Unit = {
-        val obj   = poolObj.value
-
-        poolObj match {
-            case c: ContextObject => putContextRef(c.refInt)
-            case p: PacketObject  =>
-                val clazz = obj.getClass
-                flag(Object)
-                val tpeIdx = objects.indexOf(clazz)
-                buff.putChar(tpeIdx.toChar)
-                ArrayPersistence.writeArrayContent(this, p.decomposed.asInstanceOf[Array[AnyRef]])
-        }
+    private def putObject(poolObj: PacketObject): Unit = {
+        buff.putChar(poolObj.typePoolIndex)
+        ArrayPersistence.writeArrayContent(this, poolObj.decomposed.asInstanceOf[Array[AnyRef]])
     }
 
     def putPoolRef(obj: PoolObject[_], putTag: Boolean): Unit = {
@@ -124,12 +109,12 @@ class ObjectPoolWriter(config: PacketConfig, context: PersistenceContext, val bu
     def putPoolRef(obj: AnyRef, putTag: Boolean): Unit = {
         if (putTag)
             buff.put(PoolRef)
-        buff.putChar(objects.indexOf(obj).toChar)
+        buff.putChar(pool.indexOf(obj).toChar)
     }
 
     private def putContextRef(id: Int): Unit = {
         buff.put(ContextRef)
-                .putInt(id)
+            .putInt(id)
     }
 
     private def flag(flag: Byte): ByteBuffer = {

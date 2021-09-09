@@ -12,6 +12,8 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.PacketSerializer
@@ -19,15 +21,14 @@ import fr.linkit.api.connection.packet.persistence.PacketSerializer.PacketDeseri
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
 import fr.linkit.engine.connection.packet.persistence.serializor.write.ObjectPoolWriter
 
-import java.nio.ByteBuffer
-
 class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: PersistenceContext) extends PacketSerializer {
 
-    override val signature: Array[Byte] = Array(12)
+    override val signature: Array[Byte] = scala.Array(12)
 
     override def isSameSignature(buffer: ByteBuffer): Boolean = {
         val pos    = buffer.position()
@@ -42,9 +43,8 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
         writeCoords(buffer, coordinates)
         val writer = new ObjectPoolWriter(config, context, buffer)
         writer.writeRootObjects(objects)
-        writer.writeHeaderSize()
         val pool = writer.getPool
-        buffer.putChar(pool.size.toChar)
+        buffer.putChar(pool.getChunk(Object).size)
         for (o <- objects) {
             buffer.putChar(pool.indexOf(o).toChar)
         }

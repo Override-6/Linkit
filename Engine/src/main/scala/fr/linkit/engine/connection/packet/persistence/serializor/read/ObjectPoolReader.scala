@@ -12,19 +12,18 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
-import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
-import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
-import fr.linkit.engine.connection.packet.persistence.serializor.read.instance.{InstanceObject, InstantiatedObject, NotInstantiatedObject}
-import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
-import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
-import fr.linkit.engine.local.mapping.ClassMappings
 import java.nio.ByteBuffer
 
-import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketObjectPool.ObjectType
+import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
+import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
+import fr.linkit.engine.connection.packet.persistence.pool.PacketObjectPool
+import fr.linkit.engine.connection.packet.persistence.serializor.read.instance.{InstanceObject, InstantiatedObject, NotInstantiatedObject}
+import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
+import fr.linkit.engine.local.mapping.ClassMappings
 
 class ObjectPoolReader(config: PacketConfig, context: PersistenceContext, val buff: ByteBuffer) {
 
-    private val objects = new Array[InstanceObject[_]](buff.getChar())
+    private val pool = new PacketObjectPool(config, context)
     private var isInit  = false
 
     def initPool(): Unit = {

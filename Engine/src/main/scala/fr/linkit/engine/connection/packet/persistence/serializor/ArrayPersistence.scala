@@ -12,15 +12,17 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor
 
-import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
-import fr.linkit.engine.connection.packet.persistence.serializor.read.instance.{InstanceObject, InstantiatedObject}
-import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.{Boolean, Byte, Char, Double, Float, Int, Long, Object, Short, String}
-import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
-import fr.linkit.engine.connection.packet.persistence.serializor.write.{ObjectPoolWriter, PacketObjectPool}
-import fr.linkit.engine.local.mapping.ClassMappings
 import java.lang
 import java.lang.reflect.{Array => RArray}
 import java.nio.ByteBuffer
+
+import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
+import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
+import fr.linkit.engine.connection.packet.persistence.serializor.read.ObjectPoolReader
+import fr.linkit.engine.connection.packet.persistence.serializor.read.instance.{InstanceObject, InstantiatedObject}
+import fr.linkit.engine.connection.packet.persistence.serializor.write.ObjectPoolWriter
+import fr.linkit.engine.local.mapping.ClassMappings
 
 object ArrayPersistence {
 
@@ -32,32 +34,32 @@ object ArrayPersistence {
         }
     }
 
-    private def writePrimitiveArrayContent(writer: ObjectPoolWriter, array: Array[Any]): Unit = {
+    def writePrimitiveArrayContent(writer: ObjectPoolWriter, array: Array[Any], from: Int, to: Int): Unit = {
         val len  = array.length
         val buff = writer.buff
         (array: Any) match {
-            case xs: Array[Int]     => buff.asIntBuffer().put(xs)
-            case xs: Array[Double]  => buff.asDoubleBuffer().put(xs)
-            case xs: Array[Long]    => buff.asLongBuffer().put(xs)
-            case xs: Array[Float]   => buff.asFloatBuffer().put(xs)
-            case xs: Array[Char]    => buff.asCharBuffer().put(xs)
-            case xs: Array[Short]   => buff.asShortBuffer().put(xs)
-            case xs: Array[Byte]    => buff.put(xs)
+            case xs: Array[Int]     => buff.asIntBuffer().put(xs, from, to)
+            case xs: Array[Double]  => buff.asDoubleBuffer().put(xs, from, to)
+            case xs: Array[Long]    => buff.asLongBuffer().put(xs, from, to)
+            case xs: Array[Float]   => buff.asFloatBuffer().put(xs, from, to)
+            case xs: Array[Char]    => buff.asCharBuffer().put(xs, from, to)
+            case xs: Array[Short]   => buff.asShortBuffer().put(xs, from, to)
+            case xs: Array[Byte]    => buff.put(xs, from, to)
             case xs: Array[Boolean] =>
-                var i = 0
-                while (i < len) {
+                var i = from
+                while (i < Math.min(len, to)) {
                     buff.put(if (xs(i)) 1: Byte else 0: Byte);
                     i = i + 1
                 }
         }
     }
 
-    def writeArray(writer: ObjectPoolWriter, pool: PacketObjectPool, array: Array[Any]): Unit = {
+    def writeArray(writer: ObjectPoolWriter, tpeChunk: PoolChunk[Class[_]], array: Array[Any]): Unit = {
         val buff = writer.buff
         val comp = array.getClass.componentType()
         if (comp.isPrimitive) {
             putPrimitiveArrayFlag(buff, comp)
-            writePrimitiveArrayContent(writer, array)
+            writePrimitiveArrayContent(writer, array, 0, array.length)
             return
         }
 
@@ -67,7 +69,11 @@ object ArrayPersistence {
             buff.put(Object)
             val (absoluteComp, depth) = getAbsoluteCompType(array)
             buff.put(depth)
-            val tpeIdx = pool.indexOfClass(absoluteComp)
+            var tpeIdx = tpeChunk.indexOf(absoluteComp)
+            if (tpeIdx == -1) {
+                tpeIdx = tpeChunk.size
+                tpeChunk.add(absoluteComp)
+            }
             buff.putChar(tpeIdx.toChar)
         }
         writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled any primitive array before
