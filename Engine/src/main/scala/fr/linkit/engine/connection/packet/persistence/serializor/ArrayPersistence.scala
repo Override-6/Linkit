@@ -12,17 +12,15 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor
 
-import java.lang
-import java.lang.reflect.{Array => RArray}
-import java.nio.ByteBuffer
-
-import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.read.PacketReader
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter
 import fr.linkit.engine.local.mapping.ClassMappings
 
+import java.lang
+import java.lang.reflect.{Array => RArray}
+import java.nio.ByteBuffer
 import scala.annotation.switch
 
 object ArrayPersistence {
@@ -30,15 +28,16 @@ object ArrayPersistence {
     def writeArrayContent(writer: PacketWriter, array: Array[AnyRef]): Unit = {
         val buff = writer.buff
         buff.putInt(array.length)
-        for (n <- array.indices) {
-            writer.putPoolRef(array(n), false)
+        for (n <- array) {
+            writer.putPoolRef(n, false)
         }
     }
 
     def writePrimitiveArrayContent(writer: PacketWriter, array: AnyRef, tpe: Byte, from: Int, to: Int): Unit = {
         val buff = writer.buff
 
-        @inline def xs[X] = array.asInstanceOf[Array[X]]
+        @inline
+        def xs[X] = array.asInstanceOf[Array[X]]
 
         (tpe: @switch) match {
             case Int     => buff.asIntBuffer().put(xs, from, to)
@@ -49,9 +48,9 @@ object ArrayPersistence {
             case Short   => buff.asShortBuffer().put(xs, from, to)
             case Byte    => buff.put(xs, from, to)
             case Boolean =>
-                var i = from
-                val x = xs
-                val len  = x.length
+                var i   = from
+                val x   = xs
+                val len = x.length
                 while (i < Math.min(len, to)) {
                     buff.put(if (x(i)) 1: Byte else 0: Byte);
                     i = i + 1
@@ -67,7 +66,6 @@ object ArrayPersistence {
             writePrimitiveArrayContent(writer, array.asInstanceOf[Array[AnyVal]], flag, 0, array.length)
             return
         }
-
         writeObjectArray(array, comp, writer, tpeChunk)
     }
 
@@ -85,7 +83,7 @@ object ArrayPersistence {
                 tpeIdx = tpeChunk.size
                 tpeChunk.add(absoluteComp)
             }
-            buff.putChar(tpeIdx.toChar)
+            writer.putRef(tpeIdx)
         }
         writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled any primitive array before
     }
@@ -95,9 +93,8 @@ object ArrayPersistence {
         val kind   = buff.get()
         val length = buff.getInt()
         kind match {
-            case Object => readObjectArray(length, reader)
-            case String => readStringArray(length, reader)
-            case _      => readPrimitiveArray(length, kind, reader)
+            case Object | String => readObjectArray(length, reader)
+            case _               => readPrimitiveArray(length, kind, reader)
         }
     }
 
@@ -144,21 +141,6 @@ object ArrayPersistence {
         array
     }
 
-    private def readStringArray(length: Int, reader: PacketReader): Array[String] = {
-        val sBuff = new Array[String](length)
-        var i     = 0
-        val pool  = reader.getPool
-        while (i < length) {
-            //TODO Optimize me
-            sBuff(i) = pool.getObject(reader.readNextGlobalRef) match {
-                case str: String => str
-                case _           => throw new MalFormedPacketException("Received non string item into string array.")
-            }
-            i += 1
-        }
-        sBuff
-    }
-
     private def readObjectArray(length: Int, reader: PacketReader): Array[Any] = {
         val buff  = reader.buff
         val depth = buff.get() + lang.Byte.MAX_VALUE
@@ -179,7 +161,7 @@ object ArrayPersistence {
     def readArrayContent(reader: PacketReader, buff: Array[Any]): Unit = {
         val pool = reader.getPool
         for (n <- buff.indices)
-            buff(n) = pool.getObject(reader.readNextGlobalRef)
+            buff(n) = pool.getAny(reader.readNextRef)
     }
 
     private def putPrimitiveArrayFlag(buff: ByteBuffer, comp: Class[_]): Byte = {

@@ -13,17 +13,16 @@
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
 import fr.linkit.api.connection.packet.persistence.context.TypeProfile
-import fr.linkit.api.connection.packet.persistence.obj.InstanceObject
+import fr.linkit.api.connection.packet.persistence.obj.{InstanceObject, PoolObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.read.NotInstantiatedObject.Unsafe
 import fr.linkit.engine.local.utils.ScalaUtils
 
 class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
                                          content: Array[Int],
-                                         pool: DeserializerPacketObjectPool,
-                                         clazz: Class[_]) extends InstanceObject[T] {
+                                         pool: DeserializerPacketObjectPool) extends InstanceObject[T] {
 
     private var isInit: Boolean = false
-    private val obj   : T       = Unsafe.allocateInstance(clazz).asInstanceOf[T]
+    private val obj   : T       = Unsafe.allocateInstance(profile.typeClass).asInstanceOf[T]
 
     override def value: T = obj
 
@@ -38,11 +37,11 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         var i       = 0
         val pool    = this.pool
         while (i < length) {
-            args(i) = pool.getObject(content(i)) match {
+            args(i) = pool.getAny(content(i)) match {
                 case o: NotInstantiatedObject[AnyRef] =>
                     o.initObject()
                     o.obj
-                case o: InstanceObject[AnyRef]        => o.value
+                case o: PoolObject[AnyRef]            => o.value
                 case o                                => o
             }
             i += 1

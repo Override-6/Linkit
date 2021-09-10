@@ -3,10 +3,11 @@ package fr.linkit.engine.connection.packet.persistence.pool
 import fr.linkit.api.connection.packet.persistence.Freezable
 import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk.BuffSteps
 
-import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-class PoolChunk[@specialized() T](val tag: Byte, freezable: Freezable, maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
+class PoolChunk[@specialized() T](val tag: Byte,
+                                  freezable: Freezable,
+                                  maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
     private var buff = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
     private var pos     = 0
@@ -14,7 +15,10 @@ class PoolChunk[@specialized() T](val tag: Byte, freezable: Freezable, maxLength
     private var frozen = false
 
     override def isFrozen: Boolean = frozen || freezable.isFrozen
-    override def freeze(): Unit = frozen = true
+    override def freeze(): Unit = {
+        frozen = true
+        pos = buff.length
+    }
 
     def array: Array[T] = buff
 

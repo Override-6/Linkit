@@ -12,14 +12,13 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
-import java.nio.ByteBuffer
-
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
 import fr.linkit.engine.connection.packet.persistence.pool.SimpleContextObject
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
 import fr.linkit.engine.local.mapping.ClassMappings
 
+import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
@@ -44,7 +43,7 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
     def getPool: DeserializerPacketObjectPool = pool
 
     @inline
-    def readNextGlobalRef: Int = {
+    def readNextRef: Int = {
         if (widePacket) buff.getInt() else buff.getChar()
     }
 
@@ -104,11 +103,9 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
     }
 
     private def readObject(): NotInstantiatedObject[AnyRef] = {
-        val classCode = buff.getInt()
-        val clazz     = ClassMappings.getClass(classCode)
-        if (clazz == null)
-            throw new ClassNotMappedException(s"Class of code '$classCode' is not mapped.")
-        val profile     = config.getProfile[AnyRef](clazz, context)
+        val classRef    = readNextRef
+        val chunk       = pool.getChunkFromFlag[Class[_]](Class)
+        val profile     = config.getProfile[AnyRef](chunk.get(classRef), context)
         // The next int is the content size,
         // we skip the array content for now
         // because we need only parse the object type
@@ -116,14 +113,14 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
         // of the array content is kept in order to read the object content after
         val contentSize = buff.getInt
         val content     = readObjectContent(contentSize)
-        new NotInstantiatedObject[AnyRef](profile, content, pool, clazz)
+        new NotInstantiatedObject[AnyRef](profile, content, pool)
     }
 
     private def readObjectContent(length: Int): Array[Int] = {
         var i       = 0
         val content = new Array[Int](length)
         while (i < length) {
-            content(i) = readNextGlobalRef
+            content(i) = readNextRef
             i += 1
         }
         content

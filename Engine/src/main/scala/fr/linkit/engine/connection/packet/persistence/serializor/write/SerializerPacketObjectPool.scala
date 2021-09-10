@@ -19,6 +19,9 @@ import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtoco
 import fr.linkit.engine.local.utils.UnWrapper
 
 class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceContext, sizes: Array[Int]) extends PacketObjectPool(sizes) {
+
+    protected val chunksPositions = new Array[Int](chunks.length)
+
     def getChunk[T](ref: Any): PoolChunk[T] = {
         ref match {
             case _: Int     => getChunkFromFlag(Int)
@@ -39,19 +42,22 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
 
     override def freeze(): Unit = {
         super.freeze()
-        var i   = 0
-        val len = globalShifts.length
+        var i   = 1
+        val len = chunksPositions.length
         while (i < len) {
             val chunkSize = chunks(i).size
-            if (i == 0)
-                globalShifts(i) = chunkSize
-            else
-                globalShifts(i) = globalShifts(i - 1) + chunkSize
+            if (i == 1) {
+                if (chunkSize != 0)
+                    chunksPositions(i) = chunks(i - 1).size + chunkSize
+            } else {
+                var c = chunksPositions(i - 1) + chunkSize
+                if (c != 0)
+                    c -= 1
+                chunksPositions(i) = c
+            }
             i += 1
         }
     }
-
-    protected val globalShifts = new Array[Int](chunks.length)
 
     /**
      * Returns the global index of the reference object, or -1 of the object is not stored into this pool.
@@ -67,7 +73,8 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
     @inline
     private def globalIdx(ref: AnyRef): Int = {
         val chunk = getChunk[AnyRef](ref)
-        chunk.indexOf(ref) + globalShifts(chunk.tag)
+        val v     = chunk.indexOf(ref) + chunksPositions(chunk.tag)
+        v
     }
 
     def addObject(ref: AnyRef): Unit = {
@@ -86,7 +93,7 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
                 getChunkFromFlag(Array).add(a)
             case _ if UnWrapper.isPrimitiveWrapper(ref) =>
                 getChunk(ref).add(ref)
-            case _ =>
+            case _                                      =>
                 val profile = config.getProfile[AnyRef](ref.getClass, context)
                 val code    = config.getReferencedCode(ref)
                 if (code.isEmpty) {

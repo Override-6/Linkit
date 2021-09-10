@@ -17,7 +17,7 @@ import fr.linkit.engine.local.utils.ScalaUtils
 
 import java.lang.reflect.{Field, Modifier}
 
-abstract class AbstractTypeProfile[T](clazz: Class[_]) extends TypeProfile[T] {
+abstract class AbstractTypeProfile[T](override val typeClass: Class[_]) extends TypeProfile[T] {
 
 
 }

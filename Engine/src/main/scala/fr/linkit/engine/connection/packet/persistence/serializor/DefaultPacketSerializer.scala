@@ -22,7 +22,7 @@ import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer.{BroadcastedFlag, DedicatedFlag}
-import fr.linkit.engine.connection.packet.persistence.serializor.read.PacketReader
+import fr.linkit.engine.connection.packet.persistence.serializor.read.{NotInstantiatedObject, PacketReader}
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter
 
 import java.nio.ByteBuffer
@@ -119,14 +119,16 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
         new PacketDeserial {
             override def getCoordinates: PacketCoordinates = coords
 
-            override def forEachObjects(f: Any => Unit): Unit = {
+            override def forEachObjects(f: AnyRef => Unit): Unit = {
                 val reader = new PacketReader(config, context, buff)
                 reader.initPool()
                 val contentSize = buff.getChar
                 var idx         = buff.getChar()
-                val pool = reader.getPool
+                val chunk = reader.getPool.getChunkFromFlag[NotInstantiatedObject[AnyRef]](Object)
                 for (_ <- 0 to contentSize) {
-                    f(pool.getObject(idx))
+                    val obj = chunk.get(idx)
+                    obj.initObject()
+                    f(obj.value)
                     idx = buff.getChar()
                 }
             }

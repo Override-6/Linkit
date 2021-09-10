@@ -42,10 +42,7 @@ class PacketObjectPool(sizes: Array[Int]) extends Freezable {
         new PoolChunk[InstanceObject[AnyRef]](Object, this, sizes(Object))
     )
 
-    override def freeze(): Unit = {
-        frozen = true
-    }
-
+    override def freeze(): Unit = frozen = true
     override def isFrozen: Boolean = frozen
 
     @inline
