@@ -15,5 +15,4 @@ package fr.linkit.engine.connection.packet.persistence.pool
 import fr.linkit.api.connection.packet.persistence.obj.ContextObject
 
 class SimpleContextObject(override val refId: Int,
-                          override val value: AnyRef,
-                          override val poolIndex: Int) extends ContextObject
+                          override val value: AnyRef) extends ContextObject

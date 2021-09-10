@@ -1,12 +1,14 @@
 package fr.linkit.engine.connection.packet.persistence.pool
 
 import fr.linkit.api.connection.packet.persistence.Freezable
+import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk.BuffSteps
 
+import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-class PoolChunk[@specialized() T](val tag: Byte, freezable: Freezable, buffLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
+class PoolChunk[@specialized() T](val tag: Byte, freezable: Freezable, maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
-    private val objects = new Array[T](buffLength)
+    private var buff = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
     private var pos     = 0
 
     private var frozen = false
@@ -14,13 +16,20 @@ class PoolChunk[@specialized() T](val tag: Byte, freezable: Freezable, buffLengt
     override def isFrozen: Boolean = frozen || freezable.isFrozen
     override def freeze(): Unit = frozen = true
 
-    def array: Array[T] = objects
+    def array: Array[T] = buff
 
     @inline
     def add(t: T): Unit = {
         if (frozen)
             throw new IllegalStateException("Could not add item in chunk: This chunk (or its pool) is frozen !")
-        objects(pos) = t
+        if (pos != 0 && pos % BuffSteps == 0) {
+            if (pos >= maxLength)
+                throw new IllegalStateException(s"Chunk size exceeds maxLength ('$maxLength')'")
+            val extendedBuff = new Array[T](Math.min(pos + BuffSteps, maxLength))
+            System.arraycopy(buff, 0, extendedBuff, 0, pos)
+            buff = extendedBuff
+        }
+        buff(pos) = t
         pos += 1
     }
 
@@ -32,13 +41,13 @@ class PoolChunk[@specialized() T](val tag: Byte, freezable: Freezable, buffLengt
     def get(i: Int): T = {
         if (i >= pos)
             throw new IndexOutOfBoundsException(s"$i >= $pos")
-        objects(i)
+        buff(i)
     }
 
     def indexOf(t: T): Int = {
         var i = 0
         while (i <= pos && i <= Char.MaxValue) {
-            val registered = objects(i)
+            val registered = buff(i)
             if (registered != null && (registered == t))
                 return i
             i += 1
@@ -47,4 +56,9 @@ class PoolChunk[@specialized() T](val tag: Byte, freezable: Freezable, buffLengt
     }
 
     def size: Int = pos
+
+}
+
+object PoolChunk {
+    private val BuffSteps = 200
 }

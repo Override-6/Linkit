@@ -16,6 +16,7 @@ import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, Persis
 import fr.linkit.api.connection.packet.persistence.obj.{ContextObject, InstanceObject}
 import fr.linkit.engine.connection.packet.persistence.pool.{PacketObjectPool, PoolChunk, SimpleContextObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.{Array, Boolean, Char, Class, ContextRef, Double, Float, Int, Long, Object, String}
+import fr.linkit.engine.local.utils.UnWrapper
 
 class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceContext, sizes: Array[Int]) extends PacketObjectPool(sizes) {
     def getChunk[T](ref: Any): PoolChunk[T] = {
@@ -50,15 +51,21 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
         }
     }
 
-    protected val globalShifts                = new Array[Int](chunks.length)
+    protected val globalShifts = new Array[Int](chunks.length)
 
     /**
      * Returns the global index of the reference object, or -1 of the object is not stored into this pool.
+     *
      * @throws IllegalArgumentException if this pool is not frozen.
      * */
     def globalIndexOf(ref: AnyRef): Int = {
         if (!isFrozen)
             throw new IllegalStateException("Could not get global Index of ref: This pool is not frozen !")
+        globalIdx(ref)
+    }
+
+    @inline
+    private def globalIdx(ref: AnyRef): Int = {
         val chunk = getChunk[AnyRef](ref)
         chunk.indexOf(ref) + globalShifts(chunk.tag)
     }
@@ -70,24 +77,26 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
     }
 
     private def addObj(ref: AnyRef): Unit = {
-        if (globalIndexOf(ref) >= 0)
+        if (globalIdx(ref) >= 0)
             return
         ref match {
-            case _: String     =>
+            case _: String                              =>
                 getChunkFromFlag(String).add(ref)
-            case a: Array[Any] =>
+            case a: Array[Any]                          =>
                 getChunkFromFlag(Array).add(a)
-            case _             =>
+            case _ if UnWrapper.isPrimitiveWrapper(ref) =>
+                getChunk(ref).add(ref)
+            case _ =>
                 val profile = config.getProfile[AnyRef](ref.getClass, context)
                 val code    = config.getReferencedCode(ref)
                 if (code.isEmpty) {
                     val decomposed = profile.toArray(ref)
                     val objPool    = getChunkFromFlag[InstanceObject[AnyRef]](Object)
-                    objPool.add(new PacketObject(ref, objPool.size, getTypeRef(ref.getClass), decomposed, profile))
+                    objPool.add(new PacketObject(ref, getTypeRef(ref.getClass), decomposed, profile))
                     addAll(decomposed)
                 } else {
                     val pool = getChunkFromFlag[ContextObject](ContextRef)
-                    pool.add(new SimpleContextObject(code.get, ref, pool.size))
+                    pool.add(new SimpleContextObject(code.get, ref))
                 }
         }
     }

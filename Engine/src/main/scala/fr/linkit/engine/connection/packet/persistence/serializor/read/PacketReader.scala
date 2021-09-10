@@ -12,13 +12,14 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
-import fr.linkit.engine.connection.packet.persistence.pool.{PacketObjectPool, SimpleContextObject}
+import fr.linkit.engine.connection.packet.persistence.pool.SimpleContextObject
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
 import fr.linkit.engine.local.mapping.ClassMappings
 
-import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
@@ -36,7 +37,7 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
             val size = sizes(i)
             if (size > 0)
                 readNextChunk(size, i)
-            i += 1
+            i = (i + 1).toByte
         }
     }
 
@@ -48,7 +49,7 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
     }
 
     private def readNextChunk(size: Int, flag: Byte): Unit = {
-        if (flag <= Int && flag > Char || (flag eq ContextRef)) {
+        if (flag >= Int && flag <= Char) {
             val chunk   = pool.getChunkFromFlag[Any](flag)
             val content = ArrayPersistence.readPrimitiveArray(size, flag, this)
             System.arraycopy(content, 0, chunk.array, 0, content.length)
@@ -71,25 +72,16 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
             case String     => collectAndUpdateChunk[String](readString())
             case Array      => collectAndUpdateChunk[Array[_]](ArrayPersistence.readArray(this))
             case Object     => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
-            case ContextRef =>
-                var i = -1
-
-                @inline
-                def n = {
-                    i += 1;
-                    i
-                }
-
-                collectAndUpdateChunk[SimpleContextObject](readContextObject(n))
+            case ContextRef => collectAndUpdateChunk[SimpleContextObject](readContextObject())
         }
     }
 
-    private def readContextObject(chunkIdx: Int): SimpleContextObject = {
+    private def readContextObject(): SimpleContextObject = {
         val id  = buff.getInt()
         val obj = config.getReferenced(id).getOrElse {
             throw new NoSuchElementException(s"Could not find contextual object of identifier '$id' in provided configuration.")
         }
-        new SimpleContextObject(id, obj, chunkIdx)
+        new SimpleContextObject(id, obj)
     }
 
     private def readClass(): Class[_] = {
@@ -117,7 +109,6 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
         if (clazz == null)
             throw new ClassNotMappedException(s"Class of code '$classCode' is not mapped.")
         val profile     = config.getProfile[AnyRef](clazz, context)
-        val pos         = buff.position()
         // The next int is the content size,
         // we skip the array content for now
         // because we need only parse the object type
@@ -125,7 +116,7 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
         // of the array content is kept in order to read the object content after
         val contentSize = buff.getInt
         val content     = readObjectContent(contentSize)
-        new NotInstantiatedObject[AnyRef](profile, content, this, clazz)
+        new NotInstantiatedObject[AnyRef](profile, content, pool, clazz)
     }
 
     private def readObjectContent(length: Int): Array[Int] = {

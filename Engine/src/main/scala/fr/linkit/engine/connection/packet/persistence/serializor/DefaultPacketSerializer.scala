@@ -124,8 +124,9 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
                 reader.initPool()
                 val contentSize = buff.getChar
                 var idx         = buff.getChar()
+                val pool = reader.getPool
                 for (_ <- 0 to contentSize) {
-                    f(reader.getObject(idx))
+                    f(pool.getObject(idx))
                     idx = buff.getChar()
                 }
             }

@@ -16,6 +16,8 @@ import fr.linkit.engine.connection.packet.persistence.pool.PacketObjectPool
 
 class DeserializerPacketObjectPool(sizes: Array[Int]) extends PacketObjectPool(sizes) {
 
+    freeze() //Deserializer can't append objects, because sizes are already defined
+
     private val globalShifts = {
         val length = chunks.length
         val array  = new Array[Int](length)
@@ -43,7 +45,7 @@ class DeserializerPacketObjectPool(sizes: Array[Int]) extends PacketObjectPool(s
         while (i < len) {
             if (shifts(i) >= globalIdx && (i == len || shifts(i + 1) >= globalIdx))
                 return i
-            i += 1
+            i = (i + (1: Byte)).toByte
         }
         i
     }

@@ -19,7 +19,7 @@ import fr.linkit.engine.local.utils.ScalaUtils
 
 class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
                                          content: Array[Int],
-                                         reader: PacketReader,
+                                         pool: DeserializerPacketObjectPool,
                                          clazz: Class[_]) extends InstanceObject[T] {
 
     private var isInit: Boolean = false
@@ -36,8 +36,9 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         val length  = content.length
         val args    = new Array[Any](length)
         var i       = 0
+        val pool    = this.pool
         while (i < length) {
-            args(i) = reader.getObject(content(i)) match {
+            args(i) = pool.getObject(content(i)) match {
                 case o: NotInstantiatedObject[AnyRef] =>
                     o.initObject()
                     o.obj

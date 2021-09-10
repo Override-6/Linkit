@@ -12,7 +12,10 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor
 
-import fr.linkit.api.connection.packet.persistence.obj.InstanceObject
+import java.lang
+import java.lang.reflect.{Array => RArray}
+import java.nio.ByteBuffer
+
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
 import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
@@ -20,9 +23,7 @@ import fr.linkit.engine.connection.packet.persistence.serializor.read.PacketRead
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter
 import fr.linkit.engine.local.mapping.ClassMappings
 
-import java.lang
-import java.lang.reflect.{Array => RArray}
-import java.nio.ByteBuffer
+import scala.annotation.switch
 
 object ArrayPersistence {
 
@@ -34,21 +35,25 @@ object ArrayPersistence {
         }
     }
 
-    def writePrimitiveArrayContent(writer: PacketWriter, array: Array[Any], from: Int, to: Int): Unit = {
-        val len  = array.length
+    def writePrimitiveArrayContent(writer: PacketWriter, array: AnyRef, tpe: Byte, from: Int, to: Int): Unit = {
         val buff = writer.buff
-        (array: Any) match {
-            case xs: Array[Int]     => buff.asIntBuffer().put(xs, from, to)
-            case xs: Array[Double]  => buff.asDoubleBuffer().put(xs, from, to)
-            case xs: Array[Long]    => buff.asLongBuffer().put(xs, from, to)
-            case xs: Array[Float]   => buff.asFloatBuffer().put(xs, from, to)
-            case xs: Array[Char]    => buff.asCharBuffer().put(xs, from, to)
-            case xs: Array[Short]   => buff.asShortBuffer().put(xs, from, to)
-            case xs: Array[Byte]    => buff.put(xs, from, to)
-            case xs: Array[Boolean] =>
+
+        @inline def xs[X] = array.asInstanceOf[Array[X]]
+
+        (tpe: @switch) match {
+            case Int     => buff.asIntBuffer().put(xs, from, to)
+            case Double  => buff.asDoubleBuffer().put(xs, from, to)
+            case Long    => buff.asLongBuffer().put(xs, from, to)
+            case Float   => buff.asFloatBuffer().put(xs, from, to)
+            case Char    => buff.asCharBuffer().put(xs[Char], from, to)
+            case Short   => buff.asShortBuffer().put(xs, from, to)
+            case Byte    => buff.put(xs, from, to)
+            case Boolean =>
                 var i = from
+                val x = xs
+                val len  = x.length
                 while (i < Math.min(len, to)) {
-                    buff.put(if (xs(i)) 1: Byte else 0: Byte);
+                    buff.put(if (x(i)) 1: Byte else 0: Byte);
                     i = i + 1
                 }
         }
@@ -58,8 +63,8 @@ object ArrayPersistence {
         val buff = writer.buff
         val comp = array.getClass.componentType()
         if (comp.isPrimitive) {
-            putPrimitiveArrayFlag(buff, comp)
-            writePrimitiveArrayContent(writer, array, 0, array.length)
+            val flag = putPrimitiveArrayFlag(buff, comp)
+            writePrimitiveArrayContent(writer, array.asInstanceOf[Array[AnyVal]], flag, 0, array.length)
             return
         }
 
@@ -172,23 +177,24 @@ object ArrayPersistence {
     }
 
     def readArrayContent(reader: PacketReader, buff: Array[Any]): Unit = {
+        val pool = reader.getPool
         for (n <- buff.indices)
-            buff(n) = reader.nextInstanceObject()
+            buff(n) = pool.getObject(reader.readNextGlobalRef)
     }
 
-    private def cast[T](a: Any): T = a.asInstanceOf[T]
-
-    private def putPrimitiveArrayFlag(buff: ByteBuffer, comp: Class[_]): Unit = {
-        comp match {
-            case c if c eq classOf[Integer]      => buff.put(Int)
-            case c if c eq classOf[lang.Byte]    => buff.put(Byte)
-            case c if c eq classOf[lang.Short]   => buff.put(Short)
-            case c if c eq classOf[lang.Long]    => buff.put(Long)
-            case c if c eq classOf[lang.Double]  => buff.put(Double)
-            case c if c eq classOf[lang.Float]   => buff.put(Float)
-            case c if c eq classOf[lang.Boolean] => buff.put(Boolean)
-            case c if c eq classOf[Character]    => buff.put(Char)
+    private def putPrimitiveArrayFlag(buff: ByteBuffer, comp: Class[_]): Byte = {
+        val flag = comp match {
+            case c if c eq classOf[Integer]      => Int
+            case c if c eq classOf[lang.Byte]    => Byte
+            case c if c eq classOf[lang.Short]   => Short
+            case c if c eq classOf[lang.Long]    => Long
+            case c if c eq classOf[lang.Double]  => Double
+            case c if c eq classOf[lang.Float]   => Float
+            case c if c eq classOf[lang.Boolean] => Boolean
+            case c if c eq classOf[Character]    => Char
         }
+        buff.put(flag)
+        flag
     }
 
     /**

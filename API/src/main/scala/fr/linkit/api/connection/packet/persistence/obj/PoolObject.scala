@@ -16,5 +16,4 @@ trait PoolObject[T <: AnyRef] {
 
     def value: T
 
-    val poolIndex: Int //FIXME Non Used
 }

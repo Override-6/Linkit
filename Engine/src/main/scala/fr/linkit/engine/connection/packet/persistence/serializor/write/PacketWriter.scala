@@ -12,22 +12,22 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.write
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.connection.packet.persistence.Freezable
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
-import fr.linkit.engine.connection.packet.persistence.pool.PacketObjectPool.{ContextObject, PacketObject}
-import fr.linkit.engine.connection.packet.persistence.pool.{SimpleContextObject, PacketObjectPool, PoolChunk}
+import fr.linkit.engine.connection.packet.persistence.pool.{PacketObjectPool, PoolChunk, SimpleContextObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter.{Sizes2B, Sizes4B}
 import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
 import fr.linkit.engine.local.mapping.ClassMappings
 
-import java.nio.ByteBuffer
 import scala.annotation.switch
 
 class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: ByteBuffer) extends Freezable {
 
     private val widePacket = config.widePacket
-    private val pool       = new PacketObjectPool(config, context, if (widePacket) Sizes4B else Sizes2B)
+    private val pool       = new SerializerPacketObjectPool(config, context, if (widePacket) Sizes4B else Sizes2B)
 
     def addObjects(roots: Array[AnyRef]): Unit = {
         val pool = this.pool
@@ -80,7 +80,7 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
                 totalSize += size
                 writeChunk(i, chunk)
             }
-            i += 1
+            i = (i + 1).toByte
         }
         if ((totalSize > scala.Char.MaxValue && !widePacket) || totalSize > scala.Int.MaxValue)
             throw new PacketPoolTooLongException(s"Packet total items size exceeded available size (total size: $totalSize, widePacket: $widePacket)")
@@ -89,8 +89,8 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
     private def writeChunk(flag: Byte, poolChunk: PoolChunk[Any]): Unit = {
         val size = poolChunk.size
         //Write content
-        if (flag <= Int && flag > Char) {
-            ArrayPersistence.writePrimitiveArrayContent(this, poolChunk.array, 0, poolChunk.size)
+        if (flag >= Int && flag < Char) {
+            ArrayPersistence.writePrimitiveArrayContent(this, poolChunk.array, flag, 0, poolChunk.size)
             return
         }
 
@@ -108,7 +108,7 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
             case Class      => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
             case String     => foreach[String](putString)
             case Array      => foreach[Array[Any]](xs => ArrayPersistence.writeArray(this, pool.getChunkFromFlag(Class), xs))
-            case ContextRef => foreach[SimpleContextObject](obj => buff.putInt(obj.refid))
+            case ContextRef => foreach[SimpleContextObject](obj => buff.putInt(obj.refId))
             case Object     => foreach[PacketObject](putObject)
         }
     }
@@ -146,7 +146,6 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
 }
 
 object PacketWriter {
-
     private val Sizes2B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Char.MaxValue)
     private val Sizes4B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Int.MaxValue)
 }
