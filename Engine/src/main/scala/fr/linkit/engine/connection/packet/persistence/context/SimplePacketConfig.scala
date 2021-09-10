@@ -66,7 +66,7 @@ abstract class SimplePacketConfig extends PacketConfig {
 
     protected var unsafeUse     = true
     protected var withSignature = true
-    protected var wide          = true
+    protected var wide          = false
 
     override def useUnsafe: Boolean = unsafeUse
 
