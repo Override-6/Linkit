@@ -12,27 +12,27 @@
 
 package fr.linkit.engine.connection.packet.persistence.context
 
-import fr.linkit.api.connection.packet.persistence.context.{PersistenceContext, TypeProfile}
-import fr.linkit.engine.connection.packet.persistence.context.profile.{Deconstructive, DeconstructiveTypeProfile, UnsafeTypeProfile}
+import fr.linkit.api.connection.packet.persistence.context.{PersistenceContext, TypePersistence}
+import fr.linkit.engine.connection.packet.persistence.context.profile.{Deconstructive, DeconstructiveTypePersistence, UnsafeTypePersistence}
 
 import scala.collection.mutable
 
 class DefaultPersistenceContext extends PersistenceContext {
 
-    private val profiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
+    private val profiles = mutable.HashMap.empty[Class[_], TypePersistence[_]]
 
-    override def getDefaultProfile[T](clazz: Class[_]): TypeProfile[T] = {
-        profiles.getOrElseUpdate(clazz, createProfileOfClass(clazz)).asInstanceOf[TypeProfile[T]]
+    override def getDefaultProfile[T](clazz: Class[_]): TypePersistence[T] = {
+        profiles.getOrElseUpdate(clazz, createProfileOfClass(clazz)).asInstanceOf[TypePersistence[T]]
     }
 
-    private def createProfileOfClass(clazz: Class[_]): TypeProfile[_ <: Any] = {
-        var profile: TypeProfile[_ <: Any] = null
+    private def createProfileOfClass(clazz: Class[_]): TypePersistence[_ <: Any] = {
+        var profile: TypePersistence[_ <: Any] = null
         try {
             if (classOf[Deconstructive].isAssignableFrom(clazz))
-                profile = new DeconstructiveTypeProfile[Deconstructive](clazz)
-            else profile = new UnsafeTypeProfile[Any](clazz)
+                profile = new DeconstructiveTypePersistence[Deconstructive](clazz)
+            else profile = new UnsafeTypePersistence[Any](clazz)
         } catch {
-            case _: NoSuchElementException => profile = new UnsafeTypeProfile[Any](clazz)
+            case _: NoSuchElementException => profile = new UnsafeTypePersistence[Any](clazz)
         }
         profile
     }

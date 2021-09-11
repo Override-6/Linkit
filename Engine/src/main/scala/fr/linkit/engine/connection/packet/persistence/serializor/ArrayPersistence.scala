@@ -12,15 +12,15 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor
 
+import fr.linkit.api.connection.packet.persistence.obj.PoolObject
 import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.read.PacketReader
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter
-import fr.linkit.engine.local.mapping.ClassMappings
 
 import java.lang
 import java.lang.reflect.{Array => RArray}
-import java.nio.ByteBuffer
+import java.nio.{ByteBuffer, IntBuffer}
 import scala.annotation.switch
 
 object ArrayPersistence {
@@ -39,14 +39,14 @@ object ArrayPersistence {
         @inline
         def xs[X] = array.asInstanceOf[Array[X]]
 
-        (tpe: @switch) match {
-            case Int     => buff.asIntBuffer().put(xs, from, to)
-            case Double  => buff.asDoubleBuffer().put(xs, from, to)
-            case Long    => buff.asLongBuffer().put(xs, from, to)
-            case Float   => buff.asFloatBuffer().put(xs, from, to)
-            case Char    => buff.asCharBuffer().put(xs[Char], from, to)
-            case Short   => buff.asShortBuffer().put(xs, from, to)
-            case Byte    => buff.put(xs, from, to)
+        val itemSize = (tpe: @switch) match {
+            case Int     => buff.asIntBuffer().put(xs, from, to); Integer.BYTES
+            case Double  => buff.asDoubleBuffer().put(xs, from, to); lang.Double.BYTES
+            case Long    => buff.asLongBuffer().put(xs, from, to); lang.Long.BYTES
+            case Float   => buff.asFloatBuffer().put(xs, from, to); lang.Float.BYTES
+            case Char    => buff.asCharBuffer().put(xs[Char], from, to); lang.Character.BYTES
+            case Short   => buff.asShortBuffer().put(xs, from, to); lang.Short.BYTES
+            case Byte    => buff.put(xs, from, to); lang.Byte.BYTES
             case Boolean =>
                 var i   = from
                 val x   = xs
@@ -55,18 +55,22 @@ object ArrayPersistence {
                     buff.put(if (x(i)) 1: Byte else 0: Byte);
                     i = i + 1
                 }
+                lang.Byte.BYTES
         }
+        buff.position(buff.position() + (to - from) * itemSize)
     }
 
-    def writeArray(writer: PacketWriter, tpeChunk: PoolChunk[Class[_]], array: Array[Any]): Unit = {
+    def writeArray(writer: PacketWriter, tpeChunk: PoolChunk[Class[_]], array: AnyRef): Unit = {
         val buff = writer.buff
         val comp = array.getClass.componentType()
         if (comp.isPrimitive) {
             val flag = putPrimitiveArrayFlag(buff, comp)
-            writePrimitiveArrayContent(writer, array.asInstanceOf[Array[AnyVal]], flag, 0, array.length)
+            val len  = RArray.getLength(array)
+            buff.putInt(len)
+            writePrimitiveArrayContent(writer, array, flag, 0, len)
             return
         }
-        writeObjectArray(array, comp, writer, tpeChunk)
+        writeObjectArray(array.asInstanceOf[Array[Any]], comp, writer, tpeChunk)
     }
 
     @inline
@@ -78,53 +82,64 @@ object ArrayPersistence {
             buff.put(Object)
             val (absoluteComp, depth) = getAbsoluteCompType(array)
             buff.put(depth)
-            var tpeIdx = tpeChunk.indexOf(absoluteComp)
-            if (tpeIdx == -1) {
-                tpeIdx = tpeChunk.size
-                tpeChunk.add(absoluteComp)
-            }
+            val tpeIdx = tpeChunk.indexOf(absoluteComp)
+            if (tpeIdx == -1)
+                throw new NoSuchElementException(s"Could not find type '${absoluteComp.getName}' in type chunk.")
             writer.putRef(tpeIdx)
         }
         writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled any primitive array before
     }
 
-    def readArray(reader: PacketReader): Array[_] = {
-        val buff   = reader.buff
-        val kind   = buff.get()
-        val length = buff.getInt()
+    private def readObjectArray(reader: PacketReader): Array[Any] = {
+        val buff     = reader.buff
+        val depth    = buff.get() + lang.Byte.MAX_VALUE
+        val tpeChunk = reader.getPool.getChunkFromFlag[Class[_]](Class)
+        val tpeIdx   = reader.readNextRef
+        val comp     = tpeChunk.get(tpeIdx)
+        val length   = buff.getInt()
+        val array    = buildArray(comp, depth, length)
+        readArrayContent(reader, array)
+        array
+    }
+
+    def readArray(reader: PacketReader): AnyRef = {
+        val buff = reader.buff
+        val kind = buff.get()
         kind match {
-            case Object | String => readObjectArray(length, reader)
-            case _               => readPrimitiveArray(length, kind, reader)
+            case Object | String => readObjectArray(reader)
+            case _               =>
+                readPrimitiveArray(kind, reader)
         }
     }
 
-    def readPrimitiveArray(length: Int, kind: Int, reader: PacketReader): Array[_] = {
-        val buff            = reader.buff
-        val array: Array[_] = kind match {
+    def readPrimitiveArray(length: Int, kind: Int, reader: PacketReader): AnyRef = {
+        val buff              = reader.buff
+        val pos               = buff.position()
+        val (array, itemSize) = kind match {
             case Int     =>
                 val a = new Array[Int](length)
                 buff.asIntBuffer().get(a)
-                a
+                (a, Integer.BYTES)
             case Byte    =>
                 val a = new Array[Byte](length)
-                buff.get(a)
-                a
+                buff.get(pos, a)
+                (a, lang.Byte.BYTES)
             case Short   =>
                 val a = new Array[Short](length)
                 buff.asShortBuffer.get(a)
-                a
+                (a, lang.Short.BYTES)
             case Long    =>
                 val a = new Array[Long](length)
                 buff.asLongBuffer().get(a)
-                a
+                (a, lang.Long.BYTES)
             case Double  =>
                 val a = new Array[Double](length)
                 buff.asDoubleBuffer().get(a)
-                a
+                (a, lang.Double.BYTES)
             case Float   =>
                 val a = new Array[Float](length)
                 buff.asFloatBuffer().get(a)
-                a
+                (a, lang.Float.BYTES)
             case Boolean =>
                 val a = new Array[Boolean](length)
                 var i = 0
@@ -132,22 +147,18 @@ object ArrayPersistence {
                     a(i) = buff.get(i) == 1
                     i += 1
                 }
-                a
+                (a, 1)
             case Char    =>
                 val a = new Array[Char](length)
                 buff.asCharBuffer().get(a)
-                a
+                (a, Character.BYTES)
         }
+        buff.position(pos + array.length * itemSize)
         array
     }
 
-    private def readObjectArray(length: Int, reader: PacketReader): Array[Any] = {
-        val buff  = reader.buff
-        val depth = buff.get() + lang.Byte.MAX_VALUE
-        val comp  = ClassMappings.getClass(buff.getInt())
-        val array = buildArray(comp, depth, length)
-        readArrayContent(reader, array)
-        array
+    def readPrimitiveArray(kind: Int, reader: PacketReader): AnyRef = {
+        readPrimitiveArray(reader.buff.getInt(), kind, reader)
     }
 
     def readArrayContent(reader: PacketReader): Array[Any] = {
@@ -161,19 +172,23 @@ object ArrayPersistence {
     def readArrayContent(reader: PacketReader, buff: Array[Any]): Unit = {
         val pool = reader.getPool
         for (n <- buff.indices)
-            buff(n) = pool.getAny(reader.readNextRef)
+            buff(n) = pool.getAny(reader.readNextRef) match {
+                case p: PoolObject[AnyRef] => p.value
+                case o => o
+            }
     }
 
     private def putPrimitiveArrayFlag(buff: ByteBuffer, comp: Class[_]): Byte = {
-        val flag = comp match {
-            case c if c eq classOf[Integer]      => Int
-            case c if c eq classOf[lang.Byte]    => Byte
-            case c if c eq classOf[lang.Short]   => Short
-            case c if c eq classOf[lang.Long]    => Long
-            case c if c eq classOf[lang.Double]  => Double
-            case c if c eq classOf[lang.Float]   => Float
-            case c if c eq classOf[lang.Boolean] => Boolean
-            case c if c eq classOf[Character]    => Char
+        val compName = comp.getName
+        val flag     = (compName: @switch) match {
+            case "int"     => Int
+            case "byte"    => Byte
+            case "short"   => Short
+            case "long"    => Long
+            case "double"  => Double
+            case "float"   => Float
+            case "boolean" => Boolean
+            case "char"    => Char
         }
         buff.put(flag)
         flag
@@ -185,7 +200,7 @@ object ArrayPersistence {
      * @return a tuple where the left index is the absolute component type of the array and the right index
      *         is an unsigned byte of the depth of the absolute component type in the array
      */
-    private def getAbsoluteCompType(array: Array[_]): (Class[_], Byte) = {
+    def getAbsoluteCompType(array: Array[_]): (Class[_], Byte) = {
         var i    : Byte     = lang.Byte.MIN_VALUE
         var clazz: Class[_] = array.getClass
         while (clazz.isArray) {
@@ -197,8 +212,10 @@ object ArrayPersistence {
 
     private def buildArray(compType: Class[_], arrayDepth: Int, arrayLength: Int): Array[Any] = {
         var finalCompType = compType
-        for (_ <- 0 until arrayDepth) {
+        var i             = 0
+        while (i < arrayDepth) {
             finalCompType = finalCompType.arrayType()
+            i = 1
         }
         RArray.newInstance(finalCompType, arrayLength).asInstanceOf[Array[Any]]
     }

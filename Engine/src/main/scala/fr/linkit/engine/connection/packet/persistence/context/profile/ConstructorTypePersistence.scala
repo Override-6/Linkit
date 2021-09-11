@@ -13,12 +13,12 @@
 package fr.linkit.engine.connection.packet.persistence.context.profile
 
 import fr.linkit.engine.connection.packet.persistence.context.profile
-import fr.linkit.engine.connection.packet.persistence.context.profile.ConstructorTypeProfile.getConstructor
+import fr.linkit.engine.connection.packet.persistence.context.profile.ConstructorTypePersistence.getConstructor
 
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Constructor
 
-class ConstructorTypeProfile[T](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends AbstractTypeProfile[T](clazz) {
+class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends AbstractTypePersistence[T](clazz) {
 
     def this(clazz: Class[_], deconstructor: T => Array[Any]) {
         this(clazz, getConstructor[T](clazz), deconstructor)
@@ -26,7 +26,7 @@ class ConstructorTypeProfile[T](clazz: Class[_], constructor: Constructor[T], de
 
     private val handle = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup()).unreflectConstructor(constructor)
 
-    override def completeInstance(allocatedObject: T, args: Array[Any]): T = {
+    override def initInstance(allocatedObject: T, args: Array[Any]): T = {
         val result = handle.bindTo(allocatedObject).invoke(args)
         result.asInstanceOf[T]
     }
@@ -37,7 +37,7 @@ class ConstructorTypeProfile[T](clazz: Class[_], constructor: Constructor[T], de
 
 }
 
-object ConstructorTypeProfile {
+object ConstructorTypePersistence {
 
     def getConstructor[T](clazz: Class[_]): Constructor[T] = {
         clazz.getConstructors

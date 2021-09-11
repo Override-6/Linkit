@@ -10,12 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.obj
+package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import fr.linkit.api.connection.packet.persistence.context.TypePersistence
+import fr.linkit.engine.connection.packet.persistence.context.profile.ConstructorTypePersistence.getConstructor
 
-trait InstanceObject[T <: AnyRef] extends PoolObject[T] {
+import java.lang.reflect.Constructor
 
-    val profile      : TypePersistence[_]
-
+class DeconstructiveTypePersistence[D <: Deconstructive](clazz: Class[_], constructor: Constructor[D]) extends ConstructorTypePersistence[D](clazz: Class[_], constructor, _.deconstruct()) {
+    def this(clazz: Class[_]) {
+        this(clazz, getConstructor[D](clazz))
+    }
 }

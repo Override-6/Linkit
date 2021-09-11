@@ -15,7 +15,8 @@ package fr.linkit.engine.connection.packet.persistence.serializor.write
 import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
 import fr.linkit.api.connection.packet.persistence.obj.{ContextObject, InstanceObject}
 import fr.linkit.engine.connection.packet.persistence.pool.{PacketObjectPool, PoolChunk, SimpleContextObject}
-import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.{Array, Boolean, Char, Class, ContextRef, Double, Float, Int, Long, Object, String}
+import fr.linkit.engine.connection.packet.persistence.serializor.ArrayPersistence
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.local.utils.UnWrapper
 
 class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceContext, sizes: Array[Int]) extends PacketObjectPool(sizes) {
@@ -25,35 +26,33 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
     def getChunk[T](ref: Any): PoolChunk[T] = {
         ref match {
             case _: Int     => getChunkFromFlag(Int)
-            case _: Byte    => getChunkFromFlag(Int)
-            case _: Short   => getChunkFromFlag(Int)
+            case _: Byte    => getChunkFromFlag(Byte)
+            case _: Short   => getChunkFromFlag(Short)
             case _: Long    => getChunkFromFlag(Long)
             case _: Double  => getChunkFromFlag(Double)
             case _: Float   => getChunkFromFlag(Float)
             case _: Boolean => getChunkFromFlag(Boolean)
             case _: Char    => getChunkFromFlag(Char)
 
-            case _: Class[_]   => getChunkFromFlag(Class)
-            case _: String     => getChunkFromFlag(String)
-            case _: Array[Any] => getChunkFromFlag(Array)
-            case _             => getChunkFromFlag(Object)
+            case _: Class[_]               => getChunkFromFlag(Class)
+            case _: String                 => getChunkFromFlag(String)
+            case _ if ref.getClass.isArray => getChunkFromFlag(Array)
+            case _                         => getChunkFromFlag(Object)
         }
     }
 
     override def freeze(): Unit = {
         super.freeze()
-        var i   = 1
-        val len = chunksPositions.length
+        var i            = 0
+        val len          = chunksPositions.length
+        var currentIndex = 0
         while (i < len) {
             val chunkSize = chunks(i).size
-            if (i == 1) {
-                if (chunkSize != 0)
-                    chunksPositions(i) = chunks(i - 1).size + chunkSize
-            } else {
-                var c = chunksPositions(i - 1) + chunkSize
-                if (c != 0)
-                    c -= 1
-                chunksPositions(i) = c
+            if (chunkSize == 0)
+                chunksPositions(i) = -1
+            else {
+                chunksPositions(i) = currentIndex
+                currentIndex += chunkSize
             }
             i += 1
         }
@@ -64,16 +63,20 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
      *
      * @throws IllegalArgumentException if this pool is not frozen.
      * */
-    def globalIndexOf(ref: AnyRef): Int = {
+    def globalPosition(ref: AnyRef): Int = {
         if (!isFrozen)
             throw new IllegalStateException("Could not get global Index of ref: This pool is not frozen !")
-        globalIdx(ref)
+        globalPos(ref)
     }
 
     @inline
-    private def globalIdx(ref: AnyRef): Int = {
+    private def globalPos(ref: AnyRef): Int = {
+        if (ref eq null)
+            return 0
         val chunk = getChunk[AnyRef](ref)
-        val v     = chunk.indexOf(ref) + chunksPositions(chunk.tag)
+        var v     = chunk.indexOf(ref) + chunksPositions(chunk.tag)
+        if (v != -1)
+            v += 1
         v
     }
 
@@ -83,14 +86,27 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
         addObj(ref)
     }
 
+    private def addArray(array: AnyRef): Unit = {
+        val comp = array.getClass.componentType()
+        getChunkFromFlag(Array).add(array)
+        if (!comp.isPrimitive) {
+            val a = array.asInstanceOf[Array[Any]] //it's an array of object
+            addObj(ArrayPersistence.getAbsoluteCompType(a)._1)
+            addAll(a)
+        }
+    }
+
     private def addObj(ref: AnyRef): Unit = {
-        if (globalIdx(ref) >= 0)
+        //just do not add null elements (automatically referenced to '0' when written)
+        if ((ref eq null) || globalPos(ref) > 0)
             return
         ref match {
             case _: String                              =>
                 getChunkFromFlag(String).add(ref)
-            case a: Array[Any]                          =>
-                getChunkFromFlag(Array).add(a)
+            case _: AnyRef if ref.getClass.isArray      =>
+                addArray(ref)
+            case cl: Class[_]                           =>
+                getChunkFromFlag(Class).add(cl)
             case _ if UnWrapper.isPrimitiveWrapper(ref) =>
                 getChunk(ref).add(ref)
             case _                                      =>

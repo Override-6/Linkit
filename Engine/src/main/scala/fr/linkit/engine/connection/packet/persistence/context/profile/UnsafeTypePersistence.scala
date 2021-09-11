@@ -16,11 +16,11 @@ import fr.linkit.engine.local.utils.ScalaUtils
 
 import java.lang.reflect.{Field, Modifier}
 
-class UnsafeTypeProfile[T](clazz: Class[_]) extends AbstractTypeProfile[T](clazz) {
+class UnsafeTypePersistence[T](clazz: Class[_]) extends AbstractTypePersistence[T](clazz) {
 
     private val fields: Array[Field] = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
 
-    override def completeInstance(instance: T, args: Array[Any]): T = {
+    override def initInstance(instance: T, args: Array[Any]): T = {
         val fields = this.fields
         for (i <- args.indices) {
             ScalaUtils.setValue(instance, fields(i), args(i))
@@ -37,7 +37,7 @@ class UnsafeTypeProfile[T](clazz: Class[_]) extends AbstractTypeProfile[T](clazz
     }
 }
 
-object UnsafeTypeProfile {
+object UnsafeTypePersistence {
 
     private val Unsafe = ScalaUtils.findUnsafe()
 }

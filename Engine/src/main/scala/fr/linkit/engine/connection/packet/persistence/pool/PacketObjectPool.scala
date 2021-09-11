@@ -36,10 +36,10 @@ class PacketObjectPool(sizes: Array[Int]) extends Freezable {
         new PoolChunk[Float](Float, this, sizes(Float)),
         new PoolChunk[Boolean](Boolean, this, sizes(Boolean)),
         new PoolChunk[Char](Char, this, sizes(Char)),
-        // Arrays
-        new PoolChunk[Array[_]](Array, this, sizes(Array)),
         // Objects
-        new PoolChunk[InstanceObject[AnyRef]](Object, this, sizes(Object))
+        new PoolChunk[InstanceObject[AnyRef]](Object, this, sizes(Object)),
+        // Arrays
+        new PoolChunk[Array[_]](Array, this, sizes(Array))
     )
 
     override def freeze(): Unit = frozen = true

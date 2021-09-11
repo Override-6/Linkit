@@ -12,48 +12,57 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
+import fr.linkit.api.connection.packet.persistence.obj.PoolObject
 import fr.linkit.engine.connection.packet.persistence.pool.PacketObjectPool
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.Object
 
 class DeserializerPacketObjectPool(sizes: Array[Int]) extends PacketObjectPool(sizes) {
 
     freeze() //Deserializer can't append objects, because sizes are already defined
     chunks.foreach(_.freeze())
 
-    private val globalShifts = {
-        val length = chunks.length
-        val array  = new Array[Int](length)
-        var i      = 1
+    private val chunksPositions = {
+        val length       = chunks.length
+        val array        = new Array[Int](length)
+        var currentIndex = 0
+        var i            = 0
         while (i < length) {
-            val chunkSize = sizes(i)
-            if (i == 1)
-                array(i) = sizes(i - 1) + chunkSize
-            else
-                array(i) = array(i - 1) + chunkSize
+            val chunkSize = chunks(i).size
+            if (chunkSize == 0)
+                array(i) = -1
+            else {
+                array(i) = currentIndex
+                currentIndex += chunkSize
+            }
             i += 1
         }
         array
     }
 
-    def getAny(globalIdx: Int): Any = {
-        val (tpe, shift) = getIdxTypeAndShift(globalIdx)
-        chunks(tpe).get(globalIdx - shift)
+    def getAny(globalPos: Int): Any = {
+        if (globalPos == 0)
+            return null
+        val (tpe, shift) = getIdxTypeAndShift(globalPos - 1)
+        chunks(tpe).get(globalPos - shift - 1)
     }
 
     private def getIdxTypeAndShift(globalIdx: Int): (Byte, Int) = {
-        val shifts = globalShifts
-        if (globalIdx < shifts(1)) {
+        val positions = chunksPositions
+        if (globalIdx < positions(1)) {
             //globalIdx is a an index into the first chunk, so it does not needs to be shifted
             return (0, 0)
         }
         var i   = 1
-        val len = shifts.length
+        val len = positions.length
         while (i < len - 1) {
-            val nextShift = shifts(i + 1)
-            if (globalIdx <= nextShift)
-                return ((i.toByte + 1).toByte, shifts(i) + 1)
+            val nextPos        = positions(i + 1)
+            val pos            = positions(i)
+            val nextCompatible = nextPos == -1 && globalIdx - pos < sizes(i)
+            if (nextCompatible || globalIdx < nextPos)
+                return (i.toByte, pos)
             i += 1
         }
-        (i.toByte, shifts(i))
+        (i.toByte, positions(i))
     }
 
 }

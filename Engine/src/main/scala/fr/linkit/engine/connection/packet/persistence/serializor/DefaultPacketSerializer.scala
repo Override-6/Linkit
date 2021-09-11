@@ -52,9 +52,8 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
     }
 
     private def writeEntries(objects: Array[AnyRef], writer: PacketWriter, chunk: PoolChunk[AnyRef]): Unit = {
-        val objectCount = chunk.size
         //Write the size
-        writer.putRef(objectCount)
+        writer.putRef(objects.length)
         //Write the content
         for (o <- objects) {
             writer.putRef(chunk.indexOf(o))
@@ -123,13 +122,11 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
                 val reader = new PacketReader(config, context, buff)
                 reader.initPool()
                 val contentSize = buff.getChar
-                var idx         = buff.getChar()
                 val chunk = reader.getPool.getChunkFromFlag[NotInstantiatedObject[AnyRef]](Object)
-                for (_ <- 0 to contentSize) {
-                    val obj = chunk.get(idx)
+                for (_ <- 0 until contentSize) {
+                    val obj = chunk.get(buff.getChar())
                     obj.initObject()
                     f(obj.value)
-                    idx = buff.getChar()
                 }
             }
         }

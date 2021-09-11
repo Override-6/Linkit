@@ -18,7 +18,7 @@ trait PacketConfig {
 
     def getReferencedCode(reference: AnyRef): Option[Int]
 
-    def getProfile[T](clazz: Class[_], context: PersistenceContext): TypeProfile[T]
+    def getProfile[T](clazz: Class[_], context: PersistenceContext): TypePersistence[T]
 
     def useUnsafe: Boolean
 

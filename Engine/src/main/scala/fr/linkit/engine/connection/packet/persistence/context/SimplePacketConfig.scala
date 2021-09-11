@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.context
 
-import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext, TypeProfile}
+import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext, TypePersistence}
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
@@ -27,16 +27,16 @@ abstract class SimplePacketConfig extends PacketConfig {
         references.refToCode.get(reference)
     }
 
-    override def getProfile[T](clazz: Class[_], context: PersistenceContext): TypeProfile[T] = {
+    override def getProfile[T](clazz: Class[_], context: PersistenceContext): TypePersistence[T] = {
         profiles.customProfiles.getOrElse(clazz, context.getDefaultProfile[T](clazz))
-                .asInstanceOf[TypeProfile[T]]
+                .asInstanceOf[TypePersistence[T]]
     }
 
     object profiles {
 
-        private[SimplePacketConfig] val customProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
+        private[SimplePacketConfig] val customProfiles = mutable.HashMap.empty[Class[_], TypePersistence[_]]
 
-        def +=[T: ClassTag](profile: TypeProfile[T]): this.type = {
+        def +=[T: ClassTag](profile: TypePersistence[T]): this.type = {
             val clazz = classTag[T].runtimeClass
             customProfiles.put(clazz, profile)
             this

@@ -14,6 +14,7 @@ class PoolChunk[@specialized() T](val tag: Byte,
 
     private var frozen = false
 
+    @inline
     override def isFrozen: Boolean = frozen || freezable.isFrozen
     override def freeze(): Unit = {
         frozen = true
@@ -22,9 +23,8 @@ class PoolChunk[@specialized() T](val tag: Byte,
 
     def array: Array[T] = buff
 
-    @inline
     def add(t: T): Unit = {
-        if (frozen)
+        if (isFrozen)
             throw new IllegalStateException("Could not add item in chunk: This chunk (or its pool) is frozen !")
         if (pos != 0 && pos % BuffSteps == 0) {
             if (pos >= maxLength)
@@ -48,9 +48,9 @@ class PoolChunk[@specialized() T](val tag: Byte,
         buff(i)
     }
 
-    def indexOf(t: T): Int = {
+    def indexOf(t: Any): Int = {
         var i = 0
-        while (i <= pos && i <= Char.MaxValue) {
+        while (i < pos && i <= Char.MaxValue) {
             val registered = buff(i)
             if (registered != null && (registered == t))
                 return i
@@ -64,5 +64,5 @@ class PoolChunk[@specialized() T](val tag: Byte,
 }
 
 object PoolChunk {
-    private val BuffSteps = 200
+    val BuffSteps = 200
 }

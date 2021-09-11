@@ -14,6 +14,6 @@ package fr.linkit.api.connection.packet.persistence.context
 
 trait PersistenceContext {
 
-    def getDefaultProfile[T](clazz: Class[_]): TypeProfile[T]
+    def getDefaultProfile[T](clazz: Class[_]): TypePersistence[T]
 
 }

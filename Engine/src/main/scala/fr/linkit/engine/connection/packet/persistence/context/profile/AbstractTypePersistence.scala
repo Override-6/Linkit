@@ -12,12 +12,12 @@
 
 package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import fr.linkit.engine.connection.packet.persistence.context.profile.ConstructorTypeProfile.getConstructor
+import fr.linkit.api.connection.packet.persistence.context.TypePersistence
+import fr.linkit.engine.local.utils.ScalaUtils
 
-import java.lang.reflect.Constructor
+import java.lang.reflect.{Field, Modifier}
 
-class DeconstructiveTypeProfile[D <: Deconstructive](clazz: Class[_], constructor: Constructor[D]) extends ConstructorTypeProfile[D](clazz: Class[_], constructor, _.deconstruct()) {
-    def this(clazz: Class[_]) {
-        this(clazz, getConstructor[D](clazz))
-    }
+abstract class AbstractTypePersistence[T](override val typeClass: Class[_]) extends TypePersistence[T] {
+
+
 }

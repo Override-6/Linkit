@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.context.profile
+package fr.linkit.api.connection.packet.persistence.context
 
-import fr.linkit.api.connection.packet.persistence.context.TypeProfile
-import fr.linkit.engine.local.utils.ScalaUtils
+trait TypePersistence[T] {
+    def initInstance(allocatedObject: T, args: Array[Any]): T
 
-import java.lang.reflect.{Field, Modifier}
-
-abstract class AbstractTypeProfile[T](override val typeClass: Class[_]) extends TypeProfile[T] {
-
-
+    def toArray(t: T): Array[Any]
 }

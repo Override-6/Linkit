@@ -12,19 +12,23 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
-import fr.linkit.api.connection.packet.persistence.context.TypeProfile
+import fr.linkit.api.connection.packet.persistence.context.TypePersistence
 import fr.linkit.api.connection.packet.persistence.obj.{InstanceObject, PoolObject}
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.Object
 import fr.linkit.engine.connection.packet.persistence.serializor.read.NotInstantiatedObject.Unsafe
-import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.local.utils.{JavaUtils, ScalaUtils}
 
-class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
+class NotInstantiatedObject[T <: AnyRef](override val profile: TypePersistence[T],
                                          content: Array[Int],
                                          pool: DeserializerPacketObjectPool) extends InstanceObject[T] {
 
     private var isInit: Boolean = false
     private val obj   : T       = Unsafe.allocateInstance(profile.typeClass).asInstanceOf[T]
+    private val objChunk        = pool.getChunkFromFlag[NotInstantiatedObject[AnyRef]](Object)
 
     override def value: T = obj
+
+    override def equals(obj: Any): Boolean = JavaUtils.sameInstance(obj, this.obj)
 
     def initObject(): Unit = {
         if (isInit)
@@ -42,11 +46,25 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
                     o.initObject()
                     o.obj
                 case o: PoolObject[AnyRef]            => o.value
-                case o                                => o
+                case o: Array[AnyRef]                 => //TODO create a NotInstantiatedArray
+                    initArray(o)
+                    o
+                case o => o
             }
             i += 1
         }
-        profile.completeInstance(obj, args)
+        profile.initInstance(obj, args)
+    }
+
+    private def initArray(array: Array[AnyRef]): Unit = {
+        var n   = 0
+        val len = array.length
+        while (n < len) {
+            val idx = objChunk.indexOf(array(n))
+            if (idx != -1)
+                objChunk.get(idx).initObject()
+            n += 1
+        }
     }
 
 }

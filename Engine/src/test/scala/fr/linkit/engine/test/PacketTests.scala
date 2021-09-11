@@ -46,7 +46,7 @@ class PacketTests {
 
     @RepeatedTest(5)
     def perfTests(): Unit = {
-        val f = Player(45, "Test", "Test", 78, 78)
+        val f = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> "GET_OR_OPEN"), RequestPacket(1, Array(IntPacket(3))))
         val obj = Array[AnyRef](f, f, f)
         val coords = DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM")
         val buff   = ByteBuffer.allocate(1000)

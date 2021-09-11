@@ -90,7 +90,7 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
         val size = poolChunk.size
         //Write content
         if (flag >= Int && flag < Char) {
-            ArrayPersistence.writePrimitiveArrayContent(this, poolChunk.array, flag, 0, poolChunk.size)
+            ArrayPersistence.writePrimitiveArrayContent(this, poolChunk.array, flag, 0, size)
             return
         }
 
@@ -107,7 +107,7 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
         (flag: @switch) match {
             case Class      => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
             case String     => foreach[String](putString)
-            case Array      => foreach[Array[Any]](xs => ArrayPersistence.writeArray(this, pool.getChunkFromFlag(Class), xs))
+            case Array      => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, pool.getChunkFromFlag(Class), xs))
             case ContextRef => foreach[SimpleContextObject](obj => buff.putInt(obj.refId))
             case Object     => foreach[PacketObject](writeObject)
         }
@@ -140,7 +140,7 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
     def putPoolRef(obj: AnyRef, putTag: Boolean): Unit = {
         if (putTag)
             buff.put(PoolRef)
-        val idx = pool.globalIndexOf(obj)
+        val idx = pool.globalPosition(obj)
         putRef(idx)
     }
 

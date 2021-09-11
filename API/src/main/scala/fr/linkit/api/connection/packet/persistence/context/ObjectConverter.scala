@@ -10,12 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.obj
+package fr.linkit.api.connection.packet.persistence.context
 
-import fr.linkit.api.connection.packet.persistence.context.TypePersistence
+trait ObjectConverter[A <: AnyRef, B] {
 
-trait InstanceObject[T <: AnyRef] extends PoolObject[T] {
+    def to(t: A): B
 
-    val profile      : TypePersistence[_]
+    def from(b: B): A
 
 }

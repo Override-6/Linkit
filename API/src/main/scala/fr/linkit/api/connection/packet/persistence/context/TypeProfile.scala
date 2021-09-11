@@ -12,9 +12,15 @@
 
 package fr.linkit.api.connection.packet.persistence.context
 
-trait TypeProfile[T] {
+trait TypeProfile[T <: AnyRef] {
     val typeClass: Class[_]
-    def completeInstance(allocatedObject: T, args: Array[Any]): T
 
-    def toArray(t: T): Array[Any]
+    def getPersistence(config: PacketConfig): TypePersistence[T]
+
+    def getPersistence(config: PacketConfig, args: Array[AnyRef]): TypePersistence[T]
+
+    def convertTo(t: T): Any
+
+    def convertFrom(any: Any): T
+
 }

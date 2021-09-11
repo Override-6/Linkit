@@ -17,6 +17,7 @@ import fr.linkit.engine.connection.packet.persistence.pool.SimpleContextObject
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
 import fr.linkit.engine.local.mapping.ClassMappings
+import java.lang.reflect.{Array => RArray}
 
 import java.nio.ByteBuffer
 import scala.annotation.switch
@@ -51,7 +52,7 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
         if (flag >= Int && flag <= Char) {
             val chunk   = pool.getChunkFromFlag[Any](flag)
             val content = ArrayPersistence.readPrimitiveArray(size, flag, this)
-            System.arraycopy(content, 0, chunk.array, 0, content.length)
+            System.arraycopy(content, 0, chunk.array, 0, RArray.getLength(content))
             return
         }
 
@@ -69,7 +70,7 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
         (flag: @switch) match {
             case Class      => collectAndUpdateChunk[Class[_]](readClass())
             case String     => collectAndUpdateChunk[String](readString())
-            case Array      => collectAndUpdateChunk[Array[_]](ArrayPersistence.readArray(this))
+            case Array      => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
             case Object     => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
             case ContextRef => collectAndUpdateChunk[SimpleContextObject](readContextObject())
         }

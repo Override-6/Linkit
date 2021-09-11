@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.write
 
-import fr.linkit.api.connection.packet.persistence.context.TypeProfile
+import fr.linkit.api.connection.packet.persistence.context.TypePersistence
 import fr.linkit.api.connection.packet.persistence.obj.InstanceObject
 
 class PacketObject(override val value: AnyRef,
                    val typePoolIndex: Int,
                    val decomposed: Array[Any],
-                   override val profile: TypeProfile[_]) extends InstanceObject[AnyRef] {
+                   override val profile: TypePersistence[_]) extends InstanceObject[AnyRef] {
 
     override def equals(obj: Any): Boolean = obj == this.value
 
