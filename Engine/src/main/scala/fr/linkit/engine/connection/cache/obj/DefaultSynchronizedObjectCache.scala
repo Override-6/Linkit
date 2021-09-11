@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperClassCenter, ObjectWrapperInstantiator}
+import fr.linkit.api.connection.cache.obj.generation.{SyncClassCenter, ObjectWrapperInstantiator}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
@@ -28,7 +28,7 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCache.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultObjectBehaviorStore}
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource, SyncObjectInstantiationHelper}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource, SyncObjectInstantiationHelper}
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InvocationPacket, ObjectPuppeteer}
 import fr.linkit.engine.connection.cache.obj.tree._
@@ -40,7 +40,7 @@ import fr.linkit.engine.local.LinkitApplication
 import scala.reflect.ClassTag
 
 final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePacketChannel,
-                                                                generator: ObjectWrapperClassCenter,
+                                                                generator: SyncClassCenter,
                                                                 override val defaultTreeViewBehavior: ObjectBehaviorStore,
                                                                 override val network: Network)
         extends AbstractSharedCache(channel) with SynchronizedObjectCache[A] {
@@ -122,7 +122,7 @@ final class DefaultSynchronizedObjectCache[A <: AnyRef] private(channel: CachePa
 
         override def newWrapper[B <: AnyRef](obj: B, store: ObjectBehaviorStore,
                                              nodeInfo: SyncNodeInfo, subWrappersInfo: Map[AnyRef, SyncNodeInfo]): (B with SynchronizedObject[B], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
-            val wrapperClass           = generator.getWrapperClass[B](obj.getClass.asInstanceOf[Class[B]])
+            val wrapperClass           = generator.getSyncClass[B](obj.getClass.asInstanceOf[Class[B]])
             val helper                 = new SyncObjectInstantiationHelper(this, store)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[B](wrapperClass, obj, subWrappersInfo)
             initializeWrapper(wrapper, nodeInfo, store)
@@ -238,7 +238,7 @@ object DefaultSynchronizedObjectCache {
         import fr.linkit.engine.local.resource.external.LocalResourceFolder._
         val context   = channel.manager.network.connection.getApp
         val resources = context.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
-        val generator = new DefaultObjectWrapperClassCenter(context.compilerCenter, resources)
+        val generator = new DefaultSyncClassCenter(context.compilerCenter, resources)
 
         new DefaultSynchronizedObjectCache[A](channel, generator, behaviors, network)
     }

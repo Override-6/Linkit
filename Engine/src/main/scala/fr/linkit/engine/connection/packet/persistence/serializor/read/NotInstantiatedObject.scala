@@ -12,13 +12,14 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
-import fr.linkit.api.connection.packet.persistence.context.TypePersistence
+import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, TypeProfile}
 import fr.linkit.api.connection.packet.persistence.obj.{InstanceObject, PoolObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.Object
 import fr.linkit.engine.connection.packet.persistence.serializor.read.NotInstantiatedObject.Unsafe
 import fr.linkit.engine.local.utils.{JavaUtils, ScalaUtils}
 
-class NotInstantiatedObject[T <: AnyRef](override val profile: TypePersistence[T],
+class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
+                                         config: PacketConfig,
                                          content: Array[Int],
                                          pool: DeserializerPacketObjectPool) extends InstanceObject[T] {
 
@@ -49,11 +50,12 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypePersistence[T
                 case o: Array[AnyRef]                 => //TODO create a NotInstantiatedArray
                     initArray(o)
                     o
-                case o => o
+                case o                                => o
             }
             i += 1
         }
-        profile.initInstance(obj, args)
+        profile.getPersistence(args).initInstance(obj, args)
+        config.informObjectReceived(obj)
     }
 
     private def initArray(array: Array[AnyRef]): Unit = {

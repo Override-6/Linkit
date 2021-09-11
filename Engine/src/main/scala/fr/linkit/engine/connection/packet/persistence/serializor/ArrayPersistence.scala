@@ -13,14 +13,13 @@
 package fr.linkit.engine.connection.packet.persistence.serializor
 
 import fr.linkit.api.connection.packet.persistence.obj.PoolObject
-import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.read.PacketReader
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter
 
 import java.lang
 import java.lang.reflect.{Array => RArray}
-import java.nio.{ByteBuffer, IntBuffer}
+import java.nio.ByteBuffer
 import scala.annotation.switch
 
 object ArrayPersistence {
@@ -60,7 +59,7 @@ object ArrayPersistence {
         buff.position(buff.position() + (to - from) * itemSize)
     }
 
-    def writeArray(writer: PacketWriter, tpeChunk: PoolChunk[Class[_]], array: AnyRef): Unit = {
+    def writeArray(writer: PacketWriter, array: AnyRef): Unit = {
         val buff = writer.buff
         val comp = array.getClass.componentType()
         if (comp.isPrimitive) {
@@ -70,11 +69,11 @@ object ArrayPersistence {
             writePrimitiveArrayContent(writer, array, flag, 0, len)
             return
         }
-        writeObjectArray(array.asInstanceOf[Array[Any]], comp, writer, tpeChunk)
+        writeObjectArray(array.asInstanceOf[Array[Any]], comp, writer)
     }
 
     @inline
-    private def writeObjectArray(array: Array[Any], comp: Class[_], writer: PacketWriter, tpeChunk: PoolChunk[Class[_]]): Unit = {
+    private def writeObjectArray(array: Array[Any], comp: Class[_], writer: PacketWriter): Unit = {
         val buff = writer.buff
         if (comp eq classOf[String]) {
             buff.put(String)
@@ -82,7 +81,7 @@ object ArrayPersistence {
             buff.put(Object)
             val (absoluteComp, depth) = getAbsoluteCompType(array)
             buff.put(depth)
-            val tpeIdx = tpeChunk.indexOf(absoluteComp)
+            val tpeIdx = writer.getPool.globalPosition(comp)
             if (tpeIdx == -1)
                 throw new NoSuchElementException(s"Could not find type '${absoluteComp.getName}' in type chunk.")
             writer.putRef(tpeIdx)
@@ -91,13 +90,11 @@ object ArrayPersistence {
     }
 
     private def readObjectArray(reader: PacketReader): Array[Any] = {
-        val buff     = reader.buff
-        val depth    = buff.get() + lang.Byte.MAX_VALUE
-        val tpeChunk = reader.getPool.getChunkFromFlag[Class[_]](Class)
-        val tpeIdx   = reader.readNextRef
-        val comp     = tpeChunk.get(tpeIdx)
-        val length   = buff.getInt()
-        val array    = buildArray(comp, depth, length)
+        val buff   = reader.buff
+        val depth  = buff.get() + lang.Byte.MAX_VALUE
+        val comp   = reader.getPool.getType(reader.readNextRef)
+        val length = buff.getInt()
+        val array  = buildArray(comp, depth, length)
         readArrayContent(reader, array)
         array
     }
@@ -174,7 +171,7 @@ object ArrayPersistence {
         for (n <- buff.indices)
             buff(n) = pool.getAny(reader.readNextRef) match {
                 case p: PoolObject[AnyRef] => p.value
-                case o => o
+                case o                     => o
             }
     }
 

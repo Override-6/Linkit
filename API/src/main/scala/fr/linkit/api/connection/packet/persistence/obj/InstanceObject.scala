@@ -12,10 +12,10 @@
 
 package fr.linkit.api.connection.packet.persistence.obj
 
-import fr.linkit.api.connection.packet.persistence.context.TypePersistence
+import fr.linkit.api.connection.packet.persistence.context.{TypePersistence, TypeProfile}
 
 trait InstanceObject[T <: AnyRef] extends PoolObject[T] {
 
-    val profile      : TypePersistence[_]
+    val profile      : TypeProfile[_]
 
 }

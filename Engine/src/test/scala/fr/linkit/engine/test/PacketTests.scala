@@ -13,14 +13,15 @@
 package fr.linkit.engine.test
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
+import fr.linkit.api.connection.packet.persistence.context.PacketConfig
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
-import fr.linkit.engine.connection.packet.persistence.context.{DefaultPersistenceContext, SimplePacketConfig}
+import fr.linkit.engine.connection.packet.persistence.context.{ImmutablePersistenceContext, SimplePacketConfig}
 import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.local.utils.{ClassMap, ScalaUtils}
 import fr.linkit.engine.test.PacketTests.{serializer, testPacket}
 import fr.linkit.engine.test.classes.Player
 import org.junit.jupiter.api.TestInstance.Lifecycle
@@ -43,23 +44,25 @@ class PacketTests {
         testPacket(Array(f, f, f))
     }
 
-
     @RepeatedTest(5)
     def perfTests(): Unit = {
-        val f = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> "GET_OR_OPEN"), RequestPacket(1, Array(IntPacket(3))))
-        val obj = Array[AnyRef](f, f, f)
+        val f      = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> "GET_OR_OPEN"), RequestPacket(1, Array(IntPacket(3))))
+        val obj    = Array[AnyRef](f, f, f)
         val coords = DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM")
         val buff   = ByteBuffer.allocate(1000)
-        val config = new SimplePacketConfig {}
-        val t0 = System.currentTimeMillis()
+        val config = new SimplePacketConfig(ImmutablePersistenceContext(new ClassMap, new ClassMap)) {
+            referenceAllObjects = true
+        }
+        val t0     = System.currentTimeMillis()
         for (_ <- 0 to 1000) {
             serializer.serializePacket(obj, coords, buff)(config)
             buff.position(0)
             serializer.deserializePacket(buff)(config)
                     .forEachObjects(() => _)
+            buff.position(0)
         }
         val t1 = System.currentTimeMillis()
-        println(t1-t0)
+        println(t1 - t0)
     }
 
     @Test
@@ -70,19 +73,26 @@ class PacketTests {
     @Test
     def complexPacketTest(): Unit = {
         val packet = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> "GET_OR_OPEN"), RequestPacket(1, Array(IntPacket(3))))
-        testPacket(Array(packet))
+        val config = new SimplePacketConfig(ImmutablePersistenceContext(new ClassMap, new ClassMap)) {
+            referenceAllObjects = true
+        }
+        testPacket(Array(packet), config)
+        testPacket(Array(packet), config)
     }
 
 }
 
 object PacketTests {
 
-    private val serializer = new DefaultPacketSerializer(null, new DefaultPersistenceContext)
+    private val serializer = new DefaultPacketSerializer(null)
 
     def testPacket(obj: Array[AnyRef]): Unit = {
+        testPacket(obj, new SimplePacketConfig(ImmutablePersistenceContext(new ClassMap, new ClassMap)) {})
+    }
+
+    def testPacket(obj: Array[AnyRef], config: PacketConfig): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")
-        val buff = ByteBuffer.allocate(1000)
-        val config =  new SimplePacketConfig {}
+        val buff   = ByteBuffer.allocate(1000)
         serializer.serializePacket(obj, DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM"), buff)(config)
         val bytes = buff.array().take(buff.position())
         buff.position(0)

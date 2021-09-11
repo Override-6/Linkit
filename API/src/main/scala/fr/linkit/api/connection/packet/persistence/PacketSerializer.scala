@@ -32,6 +32,6 @@ object PacketSerializer {
 
         def getCoordinates: PacketCoordinates
 
-        def forEachObjects(f: AnyRef => Unit): Unit
+        def forEachObjects(f: Any => Unit): Unit
     }
 }

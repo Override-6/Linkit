@@ -12,13 +12,8 @@
 
 package fr.linkit.api.connection.packet.persistence.context
 
-import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
+trait ReferencedObjectStore {
+    def getReferenced(reference: Int): Option[AnyRef]
 
-trait TypePersistence[T] {
-
-    val structure: ObjectStructure
-
-    def initInstance(allocatedObject: T, args: Array[Any]): T
-
-    def toArray(t: T): Array[Any]
+    def getReferencedCode(reference: AnyRef): Option[Int]
 }

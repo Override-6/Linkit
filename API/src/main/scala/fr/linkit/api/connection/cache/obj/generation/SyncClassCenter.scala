@@ -9,13 +9,13 @@ import scala.reflect.{ClassTag, classTag}
 /**
  * This class generates a class that extends
  * */
-trait ObjectWrapperClassCenter {
+trait SyncClassCenter {
 
-    def getWrapperClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]]
+    def getSyncClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]]
 
-    def getWrapperClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]]
+    def getSyncClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]]
 
-    def getClass[S: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getWrapperClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
+    def getSyncClassFromTpe[S: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getSyncClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
     def preGenerateClasses(descriptions: List[SyncObjectSuperclassDescription[_]]): Unit
 

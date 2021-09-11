@@ -12,8 +12,12 @@
 
 package fr.linkit.api.connection.packet.persistence.context
 
+import java.lang.reflect.Constructor
+
 trait PersistenceContext {
 
-    def getDefaultProfile[T](clazz: Class[_]): TypePersistence[T]
+    def findConstructor[T](clazz: Class[_]): Option[Constructor[T]]
+
+    def findDeconstructor[T](clazz: Class[_]): Option[Deconstructor[T]]
 
 }

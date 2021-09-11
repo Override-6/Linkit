@@ -10,14 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.context.profile
+package fr.linkit.engine.connection.packet.persistence.context.profile.persistence
 
-import fr.linkit.engine.connection.packet.persistence.context.profile.ConstructorTypePersistence.getConstructor
+import fr.linkit.api.connection.packet.persistence.context.TypePersistence
 
-import java.lang.reflect.Constructor
+abstract class AbstractTypePersistence[T]() extends TypePersistence[T] {
 
-class DeconstructiveTypePersistence[D <: Deconstructive](clazz: Class[_], constructor: Constructor[D]) extends ConstructorTypePersistence[D](clazz: Class[_], constructor, _.deconstruct()) {
-    def this(clazz: Class[_]) {
-        this(clazz, getConstructor[D](clazz))
-    }
+
 }

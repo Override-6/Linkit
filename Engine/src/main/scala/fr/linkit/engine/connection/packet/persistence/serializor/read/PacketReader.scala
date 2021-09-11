@@ -12,18 +12,19 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
-import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
+import fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
+import fr.linkit.api.connection.packet.persistence.context.PacketConfig
 import fr.linkit.engine.connection.packet.persistence.pool.SimpleContextObject
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
 import fr.linkit.engine.local.mapping.ClassMappings
-import java.lang.reflect.{Array => RArray}
 
+import java.lang.reflect.{Array => RArray}
 import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
-class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: ByteBuffer) {
+class PacketReader(config: PacketConfig, center: SyncClassCenter, val buff: ByteBuffer) {
 
     private val (widePacket: Boolean, sizes, pool) = preReadPool()
     private var isInit                             = false
@@ -68,11 +69,12 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
         }
 
         (flag: @switch) match {
-            case Class      => collectAndUpdateChunk[Class[_]](readClass())
-            case String     => collectAndUpdateChunk[String](readString())
-            case Array      => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
-            case Object     => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
-            case ContextRef => collectAndUpdateChunk[SimpleContextObject](readContextObject())
+            case Class          => collectAndUpdateChunk[Class[_]](readClass())
+            case GeneratedClass => collectAndUpdateChunk[Class[_]](center.getSyncClass(readClass())) //would compile the class if it is not
+            case String         => collectAndUpdateChunk[String](readString())
+            case Array          => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
+            case Object         => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
+            case ContextRef     => collectAndUpdateChunk[SimpleContextObject](readContextObject())
         }
     }
 
@@ -105,8 +107,7 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
 
     private def readObject(): NotInstantiatedObject[AnyRef] = {
         val classRef    = readNextRef
-        val chunk       = pool.getChunkFromFlag[Class[_]](Class)
-        val profile     = config.getProfile[AnyRef](chunk.get(classRef), context)
+        val profile     = config.getProfile[AnyRef](pool.getType(classRef))
         // The next int is the content size,
         // we skip the array content for now
         // because we need only parse the object type
@@ -114,7 +115,7 @@ class PacketReader(config: PacketConfig, context: PersistenceContext, val buff: 
         // of the array content is kept in order to read the object content after
         val contentSize = buff.getInt
         val content     = readObjectContent(contentSize)
-        new NotInstantiatedObject[AnyRef](profile, content, pool)
+        new NotInstantiatedObject[AnyRef](profile, config, content, pool)
     }
 
     private def readObjectContent(length: Int): Array[Int] = {

@@ -15,4 +15,11 @@ package fr.linkit.engine.connection.packet.persistence.pool
 import fr.linkit.api.connection.packet.persistence.obj.ContextObject
 
 class SimpleContextObject(override val refId: Int,
-                          override val value: AnyRef) extends ContextObject
+                          override val value: AnyRef) extends ContextObject {
+
+    override def equals(obj: Any): Boolean = {
+        obj match {
+            case ref: AnyRef => (ref eq value) || (ref eq this)
+        }
+    }
+}

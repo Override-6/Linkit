@@ -15,9 +15,9 @@ package fr.linkit.api.connection.packet.persistence.context
 trait TypeProfile[T <: AnyRef] {
     val typeClass: Class[_]
 
-    def getPersistence(config: PacketConfig): TypePersistence[T]
+    def getDefaultPersistence(t: T): TypePersistence[T]
 
-    def getPersistence(config: PacketConfig, args: Array[AnyRef]): TypePersistence[T]
+    def getPersistence(args: Array[Any]): TypePersistence[T]
 
     def convertTo(t: T): Any
 

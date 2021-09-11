@@ -10,15 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.context.profile
+package fr.linkit.engine.connection.packet.persistence.context.profile.persistence
 
+import fr.linkit.engine.connection.packet.persistence.context.ClassObjectStructure
 import fr.linkit.engine.local.utils.ScalaUtils
 
-import java.lang.reflect.{Field, Modifier}
+import java.lang.reflect.Field
 
-class UnsafeTypePersistence[T](clazz: Class[_]) extends AbstractTypePersistence[T](clazz) {
+class UnsafeTypePersistence[T](clazz: Class[_]) extends AbstractTypePersistence[T]() {
 
-    private val fields: Array[Field] = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
+    override val structure: ClassObjectStructure = ClassObjectStructure(clazz)
+    private val fields: Array[Field] = structure.fields
 
     override def initInstance(instance: T, args: Array[Any]): T = {
         val fields = this.fields

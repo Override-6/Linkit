@@ -39,6 +39,11 @@ class DeserializerPacketObjectPool(sizes: Array[Int]) extends PacketObjectPool(s
         array
     }
 
+    def getType(globalPos: Int): Class[_] = {
+        getAny(globalPos + 1).asInstanceOf[Class[_]]
+    }
+
+    @inline
     def getAny(globalPos: Int): Any = {
         if (globalPos == 0)
             return null

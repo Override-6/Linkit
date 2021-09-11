@@ -18,7 +18,8 @@ import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordina
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
-import fr.linkit.engine.connection.packet.persistence.context.SimplePacketConfig
+import fr.linkit.engine.connection.packet.persistence.context.{ImmutablePersistenceContext, SimplePacketConfig}
+import fr.linkit.engine.local.utils.ClassMap
 
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
@@ -38,7 +39,7 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
         }
         val content = packetBuff.toArray[AnyRef]
         serializer.serializePacket(content, coords, buff) {
-            new SimplePacketConfig {
+            new SimplePacketConfig(ImmutablePersistenceContext(new ClassMap, new ClassMap)) {
 
             }
         }

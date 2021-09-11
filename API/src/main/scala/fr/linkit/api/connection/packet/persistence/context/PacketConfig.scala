@@ -12,18 +12,18 @@
 
 package fr.linkit.api.connection.packet.persistence.context
 
-trait PacketConfig {
+trait PacketConfig extends ReferencedObjectStore {
 
-    def getReferenced(reference: Int): Option[AnyRef]
+    def informObjectReceived(obj: AnyRef): Unit
 
-    def getReferencedCode(reference: AnyRef): Option[Int]
+    def informObjectSent(obj: AnyRef): Unit
 
-    def getProfile[T](clazz: Class[_], context: PersistenceContext): TypePersistence[T]
+    def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T]
 
-    def useUnsafe: Boolean
+    def widePacket: Boolean
 
     def putSignature: Boolean
 
-    def widePacket: Boolean
+    def useUnsafe: Boolean
 
 }

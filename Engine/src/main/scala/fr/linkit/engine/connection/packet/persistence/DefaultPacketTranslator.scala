@@ -15,11 +15,12 @@ package fr.linkit.engine.connection.packet.persistence
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence._
 import fr.linkit.api.local.ApplicationContext
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator.ClassesResourceDirectory
-import fr.linkit.engine.connection.packet.persistence.context.DefaultPersistenceContext
+import fr.linkit.engine.connection.packet.persistence.context.ImmutablePersistenceContext
 import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer
 import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.engine.local.utils.ClassMap
 
 import java.nio.ByteBuffer
 
@@ -29,8 +30,8 @@ class DefaultPacketTranslator(app: ApplicationContext) extends PacketTranslator 
         import fr.linkit.engine.local.resource.external.LocalResourceFolder._
         val resources      = app.getAppResources.getOrOpenThenRepresent[SyncObjectClassResource](ClassesResourceDirectory)
         val compilerCenter = app.compilerCenter
-        val center         = new DefaultObjectWrapperClassCenter(compilerCenter, resources)
-        new DefaultPacketSerializer(center, new DefaultPersistenceContext())
+        val center         = new DefaultSyncClassCenter(compilerCenter, resources)
+        new DefaultPacketSerializer(center)
     }
 
     override def translate(packetInfo: TransferInfo): PacketSerializationResult = {
@@ -38,7 +39,7 @@ class DefaultPacketTranslator(app: ApplicationContext) extends PacketTranslator 
     }
 
     override def translate(buff: ByteBuffer): PacketDeserializationResult = {
-        new LazyPacketDeserializationResult(buff, serializer)
+        new LazyPacketDeserializationResult(buff, serializer, null)
     }
 
     override def getSerializer: PacketSerializer = serializer

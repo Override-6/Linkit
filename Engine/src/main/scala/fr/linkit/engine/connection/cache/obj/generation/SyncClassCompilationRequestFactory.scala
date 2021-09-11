@@ -17,7 +17,7 @@ import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescri
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.api.local.generation.compilation.CompilationRequest
 import fr.linkit.engine.connection.cache.obj.generation.SyncClassCompilationRequestFactory.DefaultClassBlueprint
-import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaSyncClassBlueprint
+import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaClassBlueprint
 import fr.linkit.engine.connection.cache.obj.generation.rectifier.ClassRectifier
 import fr.linkit.engine.local.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.local.mapping.ClassMappings
@@ -39,5 +39,5 @@ class SyncClassCompilationRequestFactory extends ClassCompilationRequestFactory[
 
 object SyncClassCompilationRequestFactory {
 
-    private val DefaultClassBlueprint = new ScalaSyncClassBlueprint(getClass.getResourceAsStream("/generation/sync_object.scbp"))
+    private val DefaultClassBlueprint = new ScalaClassBlueprint(getClass.getResourceAsStream("/generation/sync_object.scbp"))
 }

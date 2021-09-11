@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.context.profile;
+package fr.linkit.api.connection.packet.persistence.context
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+trait Deconstructive {
 
-@Target(ElementType.CONSTRUCTOR)
-@Retention(RetentionPolicy.CLASS)
-public @interface Constructor {
+    def deconstruct(): Array[Any]
+
 }

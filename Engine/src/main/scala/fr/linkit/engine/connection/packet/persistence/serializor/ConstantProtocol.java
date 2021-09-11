@@ -1,24 +1,33 @@
 package fr.linkit.engine.connection.packet.persistence.serializor;
 
+import fr.linkit.api.connection.cache.obj.SynchronizedObject;
+
 public class ConstantProtocol {
 
-    public static final byte Class = 0;
-    public static final byte ContextRef = 1;
+    private static byte i = 0;
+    public static final byte Class = i++;
+    public static final byte GeneratedClass = i++;
+    public static final byte ContextRef = i++;
 
-    public static final byte String = 2;
-    public static final byte Int = 3;
-    public static final byte Short = 4;
-    public static final byte Long = 5;
-    public static final byte Byte = 6;
-    public static final byte Double = 7;
-    public static final byte Float = 8;
-    public static final byte Boolean = 9;
-    public static final byte Char = 10;
+    public static final byte String = i++;
+    public static final byte Int = i++;
+    public static final byte Short = i++;
+    public static final byte Long = i++;
+    public static final byte Byte = i++;
+    public static final byte Double = i++;
+    public static final byte Float = i++;
+    public static final byte Boolean = i++;
+    public static final byte Char = i++;
 
-    public static final byte Object = 11;
-    public static final byte Array = 12;
+    public static final byte Object = i++;
+    public static final byte Array = i++;
 
-    public static final byte ChunkCount = 13;
+    public static final byte ChunkCount = i;
 
     public static final byte PoolRef = -127;
+
+    public static boolean isClassGenerated(Class<?> clazz) {
+        //TODO Use another insterface that SynchronizedObject or use an annotation (@Generated) that stands at runtime
+        return SynchronizedObject.class.isAssignableFrom(clazz);
+    }
 }

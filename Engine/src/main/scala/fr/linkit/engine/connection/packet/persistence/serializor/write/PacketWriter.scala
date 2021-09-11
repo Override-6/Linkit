@@ -12,22 +12,21 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.write
 
-import java.nio.ByteBuffer
-
 import fr.linkit.api.connection.packet.persistence.Freezable
-import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
-import fr.linkit.engine.connection.packet.persistence.pool.{PacketObjectPool, PoolChunk, SimpleContextObject}
+import fr.linkit.api.connection.packet.persistence.context.PacketConfig
+import fr.linkit.engine.connection.packet.persistence.pool.{PoolChunk, SimpleContextObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter.{Sizes2B, Sizes4B}
 import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}
 import fr.linkit.engine.local.mapping.ClassMappings
 
+import java.nio.ByteBuffer
 import scala.annotation.switch
 
-class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: ByteBuffer) extends Freezable {
+class PacketWriter(config: PacketConfig, val buff: ByteBuffer) extends Freezable {
 
     private val widePacket = config.widePacket
-    private val pool       = new SerializerPacketObjectPool(config, context, if (widePacket) Sizes4B else Sizes2B)
+    private val pool       = new SerializerPacketObjectPool(config, if (widePacket) Sizes4B else Sizes2B)
 
     def addObjects(roots: Array[AnyRef]): Unit = {
         val pool = this.pool
@@ -105,15 +104,15 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
         }
 
         (flag: @switch) match {
-            case Class      => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
-            case String     => foreach[String](putString)
-            case Array      => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, pool.getChunkFromFlag(Class), xs))
-            case ContextRef => foreach[SimpleContextObject](obj => buff.putInt(obj.refId))
-            case Object     => foreach[PacketObject](writeObject)
+            case Class | GeneratedClass => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
+            case String                 => foreach[String](putString)
+            case Array                  => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
+            case ContextRef             => foreach[SimpleContextObject](obj => buff.putInt(obj.refId))
+            case Object                 => foreach[PacketObject](writeObject)
         }
     }
 
-    def getPool: PacketObjectPool = pool
+    def getPool: SerializerPacketObjectPool = pool
 
     private def putString(str: String): Unit = {
         buff.putInt(str.length).put(str.getBytes())
@@ -121,6 +120,7 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
 
     private def writeObject(poolObj: PacketObject): Unit = {
         putRef(poolObj.typePoolIndex)
+        config.informObjectSent(poolObj.value)
         ArrayPersistence.writeArrayContent(this, poolObj.decomposed.asInstanceOf[Array[AnyRef]])
     }
 
@@ -147,6 +147,7 @@ class PacketWriter(config: PacketConfig, context: PersistenceContext, val buff: 
 }
 
 object PacketWriter {
+
     private val Sizes2B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Char.MaxValue)
     private val Sizes4B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Int.MaxValue)
 }

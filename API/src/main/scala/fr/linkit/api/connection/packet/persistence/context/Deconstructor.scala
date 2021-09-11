@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.context.profile
+package fr.linkit.api.connection.packet.persistence.context
 
-import fr.linkit.api.connection.packet.persistence.context.TypePersistence
-import fr.linkit.engine.local.utils.ScalaUtils
+trait Deconstructor[T] {
 
-import java.lang.reflect.{Field, Modifier}
-
-abstract class AbstractTypePersistence[T](override val typeClass: Class[_]) extends TypePersistence[T] {
-
+    def deconstruct(t: T): Array[Any]
 
 }

@@ -13,31 +13,35 @@
 package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.description.SyncObjectSuperclassDescription
-import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter
+import fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
 import fr.linkit.api.connection.cache.obj.{InvalidPuppetDefException, SynchronizedObject}
 import fr.linkit.api.local.generation.compilation.CompilerCenter
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
 import fr.linkit.engine.local.mapping.ClassMappings
 
-class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends ObjectWrapperClassCenter {
+class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassResource) extends SyncClassCenter {
 
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val requestFactory                  = new SyncClassCompilationRequestFactory
 
-    override def getWrapperClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]] = {
-        getWrapperClass[S](SimpleSyncObjectSuperClassDescription[S](clazz))
+    override def getSyncClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]] = {
+        getSyncClass[S](SimpleSyncObjectSuperClassDescription[S](clazz))
     }
 
-    override def getWrapperClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = {
+    override def getSyncClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = {
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is abstract.")
         if (clazz.isArray)
             throw new InvalidPuppetDefException("Provided class is an Array.")
-        val opt = resources
-                .findClass[S](clazz)
+        getOrGenClass[S](desc)
+    }
 
+    private def getOrGenClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = desc.clazz.synchronized {
+        val clazz = desc.clazz
+        val opt   = resources
+                .findClass[S](clazz)
         if (opt.isDefined)
             opt.get
         else {
@@ -78,6 +82,6 @@ class DefaultObjectWrapperClassCenter(center: CompilerCenter, resources: SyncObj
     }
 }
 
-object DefaultObjectWrapperClassCenter {
+object DefaultSyncClassCenter {
 
 }

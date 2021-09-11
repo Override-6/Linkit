@@ -10,15 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.api.connection.packet.persistence.obj
 
-import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
+trait ObjectStructure {
 
-trait TypePersistence[T] {
+    def isAssignable(args: Array[Class[_]]): Boolean
 
-    val structure: ObjectStructure
+    def isAssignable(args: Array[Any]): Boolean
 
-    def initInstance(allocatedObject: T, args: Array[Any]): T
 
-    def toArray(t: T): Array[Any]
 }

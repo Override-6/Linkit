@@ -12,22 +12,21 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor
 
-import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter
+import fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.PacketSerializer
 import fr.linkit.api.connection.packet.persistence.PacketSerializer.PacketDeserial
-import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
+import fr.linkit.api.connection.packet.persistence.context.PacketConfig
+import fr.linkit.api.connection.packet.persistence.obj.PoolObject
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
-import fr.linkit.engine.connection.packet.persistence.pool.PoolChunk
-import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.connection.packet.persistence.serializor.read.{NotInstantiatedObject, PacketReader}
-import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter
+import fr.linkit.engine.connection.packet.persistence.serializor.write.{PacketWriter, SerializerPacketObjectPool}
 
 import java.nio.ByteBuffer
 
-class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: PersistenceContext) extends PacketSerializer {
+class DefaultPacketSerializer(center: SyncClassCenter) extends PacketSerializer {
 
     override val signature: Array[Byte] = scala.Array(12)
 
@@ -43,20 +42,22 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
             buffer.put(signature)
 
         writeCoords(buffer, coordinates)
-        val writer = new PacketWriter(config, context, buffer)
+        val writer = new PacketWriter(config, buffer)
         writer.addObjects(objects)
         writer.writePool()
         val pool        = writer.getPool
-        val objectChunk = pool.getChunkFromFlag[AnyRef](Object)
-        writeEntries(objects, writer, objectChunk)
+        writeEntries(objects, writer, pool)
     }
 
-    private def writeEntries(objects: Array[AnyRef], writer: PacketWriter, chunk: PoolChunk[AnyRef]): Unit = {
+    private def writeEntries(objects: Array[AnyRef], writer: PacketWriter,
+                             pool: SerializerPacketObjectPool): Unit = {
         //Write the size
         writer.putRef(objects.length)
         //Write the content
+
         for (o <- objects) {
-            writer.putRef(chunk.indexOf(o))
+            val idx = pool.globalPosition(o)
+            writer.putRef(idx)
         }
     }
 
@@ -118,15 +119,20 @@ class DefaultPacketSerializer(center: ObjectWrapperClassCenter, context: Persist
         new PacketDeserial {
             override def getCoordinates: PacketCoordinates = coords
 
-            override def forEachObjects(f: AnyRef => Unit): Unit = {
-                val reader = new PacketReader(config, context, buff)
+            override def forEachObjects(f: Any => Unit): Unit = {
+                val reader = new PacketReader(config, center, buff)
                 reader.initPool()
                 val contentSize = buff.getChar
-                val chunk = reader.getPool.getChunkFromFlag[NotInstantiatedObject[AnyRef]](Object)
+                val pool = reader.getPool
                 for (_ <- 0 until contentSize) {
-                    val obj = chunk.get(buff.getChar())
-                    obj.initObject()
-                    f(obj.value)
+                    val obj = pool.getAny(reader.readNextRef) match {
+                        case o: NotInstantiatedObject[AnyRef] =>
+                            o.initObject()
+                            o.value
+                        case o: PoolObject[AnyRef] => o.value
+                        case o => o
+                    }
+                    f(obj)
                 }
             }
         }

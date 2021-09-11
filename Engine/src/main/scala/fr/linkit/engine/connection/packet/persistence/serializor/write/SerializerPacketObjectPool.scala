@@ -12,14 +12,15 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.write
 
-import fr.linkit.api.connection.packet.persistence.context.{PacketConfig, PersistenceContext}
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.packet.persistence.context.PacketConfig
 import fr.linkit.api.connection.packet.persistence.obj.{ContextObject, InstanceObject}
 import fr.linkit.engine.connection.packet.persistence.pool.{PacketObjectPool, PoolChunk, SimpleContextObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.local.utils.UnWrapper
 
-class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceContext, sizes: Array[Int]) extends PacketObjectPool(sizes) {
+class SerializerPacketObjectPool(config: PacketConfig, sizes: Array[Int]) extends PacketObjectPool(sizes) {
 
     protected val chunksPositions = new Array[Int](chunks.length)
 
@@ -74,10 +75,14 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
         if (ref eq null)
             return 0
         val chunk = getChunk[AnyRef](ref)
-        var v     = chunk.indexOf(ref) + chunksPositions(chunk.tag)
-        if (v != -1)
-            v += 1
-        v
+        val tag   = chunk.tag
+        var idx   = chunk.indexOf(ref) + chunksPositions(chunk.tag)
+        if (idx > -1)
+            idx += 1
+        else if (tag == Object) { //it may be a referenced object
+            idx = getChunkFromFlag(ContextRef).indexOf(ref) + chunksPositions(ContextRef) + 1
+        }
+        idx
     }
 
     def addObject(ref: AnyRef): Unit = {
@@ -96,6 +101,11 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
         }
     }
 
+    private def addType(cl: Class[_]): Unit = {
+        val chunk = if (isClassGenerated(cl)) GeneratedClass else Class
+        getChunkFromFlag(chunk).add(cl)
+    }
+
     private def addObj(ref: AnyRef): Unit = {
         //just do not add null elements (automatically referenced to '0' when written)
         if ((ref eq null) || globalPos(ref) > 0)
@@ -106,15 +116,16 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
             case _: AnyRef if ref.getClass.isArray      =>
                 addArray(ref)
             case cl: Class[_]                           =>
-                getChunkFromFlag(Class).add(cl)
+                addType(cl)
             case _ if UnWrapper.isPrimitiveWrapper(ref) =>
                 getChunk(ref).add(ref)
             case _                                      =>
-                val profile = config.getProfile[AnyRef](ref.getClass, context)
+                val profile = config.getProfile[AnyRef](ref.getClass)
                 val code    = config.getReferencedCode(ref)
                 if (code.isEmpty) {
-                    val decomposed = profile.toArray(ref)
-                    val objPool    = getChunkFromFlag[InstanceObject[AnyRef]](Object)
+                    val persistence = profile.getDefaultPersistence(ref)
+                    val decomposed  = persistence.toArray(ref)
+                    val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
                     objPool.add(new PacketObject(ref, getTypeRef(ref.getClass), decomposed, profile))
                     addAll(decomposed)
                 } else {
@@ -125,7 +136,7 @@ class SerializerPacketObjectPool(config: PacketConfig, context: PersistenceConte
     }
 
     private def getTypeRef(tpe: Class[_]): Int = {
-        val tpePool = getChunkFromFlag[Class[_]](Class)
+        val tpePool = getChunkFromFlag[Class[_]](if (isClassGenerated(tpe)) GeneratedClass else Class)
         var idx     = tpePool.indexOf(tpe)
         if (idx == -1) {
             idx = tpePool.size

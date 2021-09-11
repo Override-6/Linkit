@@ -28,7 +28,7 @@ import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultObjectBehavior, DefaultObjectBehaviorStore}
 import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource, SyncObjectInstantiationHelper}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource, SyncObjectInstantiationHelper}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.ObjectPuppeteer
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
@@ -161,12 +161,12 @@ class ResourcesAndClassGenerationTests {
     private object TestWrapperInstantiator extends ObjectWrapperInstantiator {
 
         private val resource  = resources.getOrOpenThenRepresent[SyncObjectClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
-        private val generator = new DefaultObjectWrapperClassCenter(new DefaultCompilerCenter, resource)
+        private val generator = new DefaultSyncClassCenter(new DefaultCompilerCenter, resource)
 
         override def newWrapper[A <: AnyRef](obj: A, store: ObjectBehaviorStore, puppeteerInfo: SyncNodeInfo, subWrappers: Map[AnyRef, SyncNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
             val cl                     = obj.getClass.asInstanceOf[Class[A]]
             val behaviorDesc           = store.getFromClass[A](cl)
-            val puppetClass            = generator.getWrapperClass[A](SimpleSyncObjectSuperClassDescription[A](cl))
+            val puppetClass            = generator.getSyncClass[A](SimpleSyncObjectSuperClassDescription[A](cl))
             val pup                    = new ObjectPuppeteer[A](null, null, puppeteerInfo, behaviorDesc)
             val helper                 = new SyncObjectInstantiationHelper(this, store)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[A](puppetClass, obj, Map())
