@@ -24,11 +24,10 @@ import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
-import fr.linkit.engine.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull
+
 import java.net.Socket
 import java.nio.ByteBuffer
-
 import scala.reflect.ClassTag
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
@@ -123,28 +122,8 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         if (!alive)
             return
 
-        AppLogger.vWarn(s"HANDLING PACKET $packet, $attributes, $coordinates")
-
-        packet match {
-            case systemPacket: SystemPacket => handleSystemOrder(systemPacket)
-            case _: Packet                  =>
-                serverTraffic.processInjection(packet, attributes, coordinates)
-        }
-    }
-
-    private def handleSystemOrder(packet: SystemPacket): Unit = {
-        val orderType = packet.order
-        import fr.linkit.engine.local.system.SystemOrder._
-        orderType match {
-            case CLIENT_CLOSE => runLater(shutdown())
-            case SERVER_CLOSE => server.shutdown()
-
-            case _ =>
-                val msg = s"Could not complete order '$orderType', can't be handled by a server or unknown order"
-                AppLogger.error(msg)
-            //UnexpectedPacketException(s"Could not complete order '$orderType', can't be handled by a server or unknown order")
-            //.printStackTrace(getConsoleErr)
-        }
+        //AppLogger.vWarn(s"HANDLING PACKET $packet, $attributes, $coordinates")
+        serverTraffic.processInjection(packet, attributes, coordinates)
     }
 
     override def getApp: ApplicationContext = server.getApp

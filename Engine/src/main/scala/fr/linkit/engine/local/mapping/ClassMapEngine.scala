@@ -13,10 +13,10 @@
 package fr.linkit.engine.local.mapping
 
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.api.local.system.fsa.{FileAdapter, FileSystemAdapter}
 import org.jetbrains.annotations.Nullable
 
 import java.io.InputStream
+import java.nio.file.{Files, Path}
 import java.security.CodeSource
 import java.util.zip.ZipFile
 
@@ -30,39 +30,38 @@ object ClassMapEngine {
 
     val DefaultFilter = new MapEngineFilters(getClass.getResourceAsStream("/mapEngineFilter.txt"))
 
-    def mapAllSources(fsa: FileSystemAdapter, sources: (CodeSource, ClassLoader)*): Unit = {
+    def mapAllSources(sources: (CodeSource, ClassLoader)*): Unit = {
         sources.foreach(pair => {
             val source      = pair._1
             val classLoader = pair._2
             val url         = source.getLocation
-            val root        = fsa.getAdapter(url.toURI)
-            val rootPath    = root.getAbsolutePath
-            AppLogger.debug(s"Mapping source $rootPath...")
+            val root        = Path.of(url.toURI)
+            AppLogger.debug(s"Mapping source $root...")
             ClassMappings.addClassPath(source)
 
-            mapDirectory(fsa, rootPath, root, classLoader, EmptyFilter)
+            mapDirectory(root.toString, classLoader, root, EmptyFilter)
         })
     }
 
-    def mapAllSourcesOfClasses(fsa: FileSystemAdapter, classes: Seq[Class[_]]): Unit = {
+    def mapAllSourcesOfClasses(classes: Seq[Class[_]]): Unit = {
         val sources = classes.map(cl => (cl.getProtectionDomain.getCodeSource, cl.getClassLoader)).distinct
-        mapAllSources(fsa, sources: _*)
+        mapAllSources(sources: _*)
     }
 
-    def mapJDK(fsa: FileSystemAdapter): Unit = {
+    def mapJDK(): Unit = {
         val jdkRoot = System.getProperty("java.home")
-        val adapter = fsa.getAdapter(jdkRoot)
-        AppLogger.debug(s"Mapping JDK ($adapter)...")
-        mapDir(fsa, adapter, getClass.getClassLoader, DefaultFilter)
+        val path    = Path.of(jdkRoot)
+        AppLogger.debug(s"Mapping JDK ($path)...")
+        mapDir(path, getClass.getClassLoader, DefaultFilter)
         AppLogger.debug("JDK Mapping done, classes were mapped in packages : ")
         DefaultFilter.filters.foreach(filter => {
             AppLogger.debug(s"\t${filter.line}")
         })
     }
 
-    def mapDir(fsa: FileSystemAdapter, directory: FileAdapter,
+    def mapDir(directory: Path,
                classLoader: ClassLoader, filters: MapEngineFilters = DefaultFilter): Unit = {
-        mapDirectory(fsa, directory.getAbsolutePath, directory, classLoader, filters)
+        mapDirectory(directory.toString, classLoader, directory, filters)
     }
 
     def mapPrimitives(): Unit = {
@@ -79,18 +78,18 @@ object ClassMapEngine {
         ).foreach(ClassMappings.putClass)
     }
 
-    private def isZipFile(directory: FileAdapter): Boolean = {
-        val path = directory.getAbsolutePath.toLowerCase
-        ZipFileExtensions.exists(zipExtension => path.endsWith(zipExtension))
+    private def isZipFile(path: Path): Boolean = {
+        val pathLow = path.toString.toLowerCase
+        ZipFileExtensions.exists(zipExtension => pathLow.endsWith(zipExtension))
     }
 
-    private def mapDirectory(fsa: FileSystemAdapter, root: String,
-                             directory: FileAdapter, classLoader: ClassLoader,
+    private def mapDirectory(root: String, classLoader: ClassLoader,
+                             directory: Path,
                              filters: MapEngineFilters): Unit = {
         if (isZipFile(directory)) {
-            val dirPath  = directory.getAbsolutePath
-            val isInJMod = dirPath.endsWith(".jmod")
-            val jarFile  = new ZipFile(dirPath)
+            val pathString = directory.toString
+            val isInJMod   = pathString.endsWith(".jmod")
+            val jarFile    = new ZipFile(pathString)
             jarFile.entries()
                     .asIterator()
                     .forEachRemaining(entry => {
@@ -101,13 +100,13 @@ object ClassMapEngine {
             jarFile.close()
             return
         }
-        fsa.list(directory).foreach(adapter => {
-            if (adapter.isDirectory) {
-                mapDirectory(fsa, root, adapter, classLoader, filters)
-            } else if (isZipFile(adapter)) {
-                mapDirectory(fsa, root, adapter, classLoader, filters)
+        Files.list(directory).forEach(path => {
+            if (Files.isDirectory(path)) {
+                mapDirectory(root, classLoader, path, filters)
+            } else if (isZipFile(path)) {
+                mapDirectory(root, classLoader, path, filters)
             } else {
-                mapPath(root.length + 1, classLoader, adapter.getAbsolutePath, filters)
+                mapPath(root.length + 1, classLoader, path.toString, filters)
             }
         })
     }

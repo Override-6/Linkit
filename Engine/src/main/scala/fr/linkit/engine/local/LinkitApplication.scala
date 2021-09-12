@@ -182,12 +182,10 @@ object LinkitApplication {
         appResources
     }
 
-    def mapEnvironment(fsa: FileSystemAdapter, otherSources: Seq[Class[_]]): Unit = {
+    def mapEnvironment(otherSources: Seq[Class[_]]): Unit = {
         ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
         ClassMapEngine.mapJDK(fsa)
         ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources)
-        LocalFileSystemAdapters.Nio.clearAdapters()
-        LocalFileSystemAdapters.Io.clearAdapters()
     }
 
     private def prepareAppResources(configuration: ApplicationConfiguration): ResourceFolder = {
