@@ -115,24 +115,28 @@ class SerializerPacketObjectPool(config: PacketConfig, sizes: Array[Int]) extend
             case _ if UnWrapper.isPrimitiveWrapper(ref) =>
                 getChunk(ref).add(ref)
             case _                                      =>
-                val profile = config.getProfile[AnyRef](ref.getClass)
-                val code    = config.getReferencedCode(ref)
-                addTypeOfIfAbsent(ref)
-                if (code.isEmpty) {
-                    val persistence = profile.getDefaultPersistence(ref)
-                    val decomposed  = persistence.toArray(ref)
-                    val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
-                    objPool.add(new PacketObject(ref, decomposed, profile))
-                    addAll(decomposed)
-                } else {
-                    val pool = getChunkFromFlag[ContextObject](ContextRef)
-                    pool.add(new SimpleContextObject(code.get, ref))
-                }
+                addObj0(ref)
+        }
+    }
+
+    private def addObj0(ref: AnyRef): Unit = {
+        val profile = config.getProfile[AnyRef](ref.getClass)
+        val code    = config.getReferencedCode(ref)
+        addTypeOfIfAbsent(ref)
+        if (code.isEmpty) {
+            val persistence = profile.getPersistence(ref)
+            val decomposed  = persistence.toArray(ref)
+            val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
+            objPool.add(new PacketObject(ref, decomposed, profile))
+            addAll(decomposed)
+        } else {
+            val pool = getChunkFromFlag[ContextObject](ContextRef)
+            pool.add(new SimpleContextObject(code.get, ref))
         }
     }
 
     private def addTypeOfIfAbsent(ref: AnyRef): Unit = ref match {
-        case sync: SynchronizedObject[_] => getChunkFromFlag(GeneratedClass).addIfAbsent(sync.getSuperClass)
+        case sync: SynchronizedObject[_] => getChunkFromFlag(SyncClass).addIfAbsent(sync.getSuperClass)
         case _                           => getChunkFromFlag(Class).addIfAbsent(ref.getClass)
     }
 

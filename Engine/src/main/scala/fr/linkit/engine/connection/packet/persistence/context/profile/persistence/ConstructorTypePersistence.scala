@@ -12,16 +12,16 @@
 
 package fr.linkit.engine.connection.packet.persistence.context.profile.persistence
 
-import fr.linkit.api.connection.packet.persistence.context.Deconstructor
+import fr.linkit.api.connection.packet.persistence.context.{Deconstructor, TypePersistence}
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
 import fr.linkit.engine.connection.packet.persistence.context
-import fr.linkit.engine.connection.packet.persistence.context.ClassObjectStructure
 import fr.linkit.engine.connection.packet.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
+import fr.linkit.engine.connection.packet.persistence.context.structure.ClassObjectStructure
 
 import java.lang.invoke.MethodHandles
 import java.lang.reflect.Constructor
 
-class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends AbstractTypePersistence[T]() {
+class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T], deconstructor: T => Array[Any]) extends TypePersistence[T]() {
 
     def this(clazz: Class[_], deconstructor: Deconstructor[T]) {
         this(clazz, getConstructor[T](clazz), deconstructor.deconstruct(_))

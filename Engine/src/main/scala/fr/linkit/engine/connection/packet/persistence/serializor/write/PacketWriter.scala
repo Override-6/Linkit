@@ -105,8 +105,8 @@ class PacketWriter(config: PacketConfig, val buff: ByteBuffer) extends Freezable
         }
 
         (flag: @switch) match {
-            case Class | GeneratedClass => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
-            case String                 => foreach[String](putString)
+            case Class | SyncClass => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
+            case String            => foreach[String](putString)
             case Array                  => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
             case ContextRef             => foreach[SimpleContextObject](obj => buff.putInt(obj.refId))
             case Object                 => foreach[PacketObject](writeObject)
@@ -156,7 +156,7 @@ class PacketWriter(config: PacketConfig, val buff: ByteBuffer) extends Freezable
 
     private def putGeneratedTypeRef(clazz: Class[_]): Unit = {
         val size = pool.getChunkFromFlag(Class).size
-        val idx  = pool.getChunkFromFlag(GeneratedClass).indexOf(clazz) + size
+        val idx  = pool.getChunkFromFlag(SyncClass).indexOf(clazz) + size
         putRef(idx)
     }
 

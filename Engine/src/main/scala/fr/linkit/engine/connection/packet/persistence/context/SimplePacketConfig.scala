@@ -18,21 +18,33 @@ import fr.linkit.engine.connection.packet.persistence.context.profile.persistenc
 import fr.linkit.engine.local.utils.ClassMap
 
 import scala.collection.mutable
-import scala.reflect.{ClassTag, classTag}
 
-abstract class SimplePacketConfig(persistenceConfig: PersistenceContext) extends PacketConfig {
+class SimplePacketConfig private[context](context: PersistenceContext,
+                                          customProfiles: ClassMap[TypeProfile[_]],
+                                          referenceStore: WeakReferencedObjectStore,
+                                          unsafeUse: Boolean, withSignature: Boolean,
+                                          referenceAllObjects: Boolean, wide: Boolean) extends PacketConfig {
+
+    private val defaultProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
 
     override def getReferenced(reference: Int): Option[AnyRef] = {
-        references.codeToRef.get(reference)
+        referenceStore.getReferenced(reference)
     }
 
     override def getReferencedCode(reference: AnyRef): Option[Int] = {
-        references.refToCode.get(reference)
+        referenceStore.getReferencedCode(reference)
     }
 
     override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-        profiles.customProfiles.getOrElse(clazz, newDefaultProfile[T](clazz))
-                .asInstanceOf[TypeProfile[T]]
+        val profile = defaultProfiles.get(clazz)
+        if (profile.isEmpty) {
+            return customProfiles.getOrElse(clazz, {
+                val default = newDefaultProfile[T](clazz)
+                defaultProfiles.put(clazz, default)
+                default
+            }).asInstanceOf[TypeProfile[T]]
+        }
+        profile.get.asInstanceOf[TypeProfile[T]]
     }
 
     override def informObjectReceived(obj: AnyRef): Unit = {
@@ -45,18 +57,18 @@ abstract class SimplePacketConfig(persistenceConfig: PersistenceContext) extends
 
     @inline
     private def informObject(obj: AnyRef): Unit = {
-        if (referenceAllObjects) references += obj
+        if (referenceAllObjects) referenceStore += obj
     }
 
     def newDefaultProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-        val constructor                     = persistenceConfig.findConstructor[T](clazz)
+        val constructor                     = context.findConstructor[T](clazz)
         val persistence: TypePersistence[T] = {
             if (classOf[Deconstructive].isAssignableFrom(clazz)) {
                 constructor.fold(new DeconstructiveTypePersistence[T with Deconstructive](clazz)) {
                     ctr => new DeconstructiveTypePersistence[T with Deconstructive](clazz, ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructive]])
                 }
             }.asInstanceOf[TypePersistence[T]] else {
-                val deconstructor = persistenceConfig.findDeconstructor[T](clazz)
+                val deconstructor = context.findDeconstructor[T](clazz)
                 constructor.fold(getSafestTypeProfileOfAnyClass[T](clazz, deconstructor)) { ctr =>
                     if (deconstructor.isEmpty) {
                         if (!unsafeUse)
@@ -68,7 +80,7 @@ abstract class SimplePacketConfig(persistenceConfig: PersistenceContext) extends
                 }
             }
         }
-        new SimpleTypeProfile[T](clazz, Array(persistence), new ClassMap[ObjectConverter[T, Any]])
+        new SimpleTypeProfile[T](clazz, Array(persistence), new ClassMap[ObjectConverter[_ <: T, Any]])
     }
 
     private def getSafestTypeProfileOfAnyClass[T <: AnyRef](clazz: Class[_], deconstructor: Option[Deconstructor[T]]): TypePersistence[T] = {
@@ -81,47 +93,9 @@ abstract class SimplePacketConfig(persistenceConfig: PersistenceContext) extends
         new ConstructorTypePersistence[T](clazz, constructor.get, deconstructor.get)
     }
 
-    object profiles {
-
-        private[SimplePacketConfig] val customProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
-
-        def +=[T <: AnyRef: ClassTag](profile: TypeProfile[T]): this.type = {
-            val clazz = classTag[T].runtimeClass
-            customProfiles.put(clazz, profile)
-            this
-        }
-    }
-
-    object references {
-
-        private[SimplePacketConfig] val codeToRef = mutable.WeakHashMap.empty[Int, AnyRef]
-        private[SimplePacketConfig] val refToCode = mutable.WeakHashMap.empty[AnyRef, Int]
-
-        def ++=(refs: AnyRef*): this.type = {
-            refs.foreach(+=)
-            this
-        }
-
-        def +=(anyRef: AnyRef): this.type = {
-            +=(anyRef.hashCode(), anyRef)
-        }
-
-        def +=(code: Int, anyRef: AnyRef): this.type = {
-            codeToRef.put(code, anyRef)
-            refToCode.put(anyRef, code)
-            this
-        }
-    }
-
-    protected var unsafeUse           = true
-    protected var withSignature       = true
-    protected var referenceAllObjects = false
-    protected var wide                = false
-
-    override def useUnsafe: Boolean = unsafeUse
+    override def widePacket: Boolean = wide
 
     override def putSignature: Boolean = withSignature
 
-    override def widePacket: Boolean = wide
-
+    override def useUnsafe: Boolean = unsafeUse
 }

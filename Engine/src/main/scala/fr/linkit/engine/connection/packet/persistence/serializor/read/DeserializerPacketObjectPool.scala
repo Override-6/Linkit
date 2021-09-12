@@ -41,7 +41,7 @@ class DeserializerPacketObjectPool(sizes: Array[Int]) extends PacketObjectPool(s
     def getType(globalPos: Int): Class[_] = {
         var tpeChunk = getChunkFromFlag[Class[_]](Class)
         if (globalPos > tpeChunk.size)
-            tpeChunk = getChunkFromFlag[Class[_]](GeneratedClass)
+            tpeChunk = getChunkFromFlag[Class[_]](SyncClass)
         tpeChunk.get(globalPos)
     }
 

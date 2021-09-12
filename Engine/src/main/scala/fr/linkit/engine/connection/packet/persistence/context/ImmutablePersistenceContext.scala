@@ -33,7 +33,6 @@ class ImmutablePersistenceContext private(constructors: ClassMap[Constructor[_]]
 }
 
 object ImmutablePersistenceContext {
-
     def apply(constructors: ClassMap[Constructor[_]], deconstructor: ClassMap[Deconstructor[_]]): ImmutablePersistenceContext = {
         new ImmutablePersistenceContext(new ClassMap(constructors), new ClassMap(deconstructor))
     }

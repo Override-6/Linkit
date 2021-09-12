@@ -13,14 +13,14 @@
 package fr.linkit.engine.connection.packet.persistence.context.profile
 
 import fr.linkit.api.connection.packet.persistence.context.{ObjectConverter, TypePersistence, TypeProfile}
-import fr.linkit.engine.connection.packet.persistence.context.ClassObjectStructure
+import fr.linkit.engine.connection.packet.persistence.context.structure.ClassObjectStructure
 import fr.linkit.engine.local.utils.ClassMap
 
 class SimpleTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                                      persists: Array[TypePersistence[T]],
-                                     convertors: ClassMap[ObjectConverter[T, Any]]) extends TypeProfile[T] {
+                                     convertors: ClassMap[ObjectConverter[_ <: T, Any]]) extends TypeProfile[T] {
 
-    override def getDefaultPersistence(t: T): TypePersistence[T] = {
+    override def getPersistence(t: T): TypePersistence[T] = {
         val structure = ClassObjectStructure(t.getClass)
         var i         = 0
         while (i < persists.length) {
@@ -29,7 +29,7 @@ class SimpleTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                 return persistence
             i += 1
         }
-        throw new NoSuchElementException(s"Could not find type persistence matching object ${t}.")
+        throw new NoSuchElementException(s"Could not find type persistence matching object ${t} (of class ${t.getClass.getName}.")
     }
 
     override def getPersistence(args: Array[Any]): TypePersistence[T] = {
@@ -45,10 +45,11 @@ class SimpleTypeProfile[T <: AnyRef](override val typeClass: Class[_],
     }
 
     override def convertTo(t: T): Any = {
+        def cast[X]: X = t.asInstanceOf[X]
         val clazz = t.getClass
         convertors.get(clazz)
                 .getOrElse(throw new NoSuchElementException(s"Could not find converter for converting '${clazz.getName}' to Any"))
-                .to(t)
+                .to(cast)
     }
 
     override def convertFrom(any: Any): T = {

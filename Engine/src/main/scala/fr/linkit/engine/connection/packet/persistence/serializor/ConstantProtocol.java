@@ -6,7 +6,7 @@ public class ConstantProtocol {
 
     private static byte i = 0;
     public static final byte Class = i++;
-    public static final byte GeneratedClass = i++;
+    public static final byte SyncClass = i++;
     public static final byte ContextRef = i++;
 
     public static final byte String = i++;

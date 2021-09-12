@@ -15,7 +15,7 @@ package fr.linkit.api.connection.packet.persistence.context
 trait TypeProfile[T <: AnyRef] {
     val typeClass: Class[_]
 
-    def getDefaultPersistence(t: T): TypePersistence[T]
+    def getPersistence(t: T): TypePersistence[T]
 
     def getPersistence(args: Array[Any]): TypePersistence[T]
 

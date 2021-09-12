@@ -69,12 +69,12 @@ class PacketReader(config: PacketConfig, center: SyncClassCenter, val buff: Byte
         }
 
         (flag: @switch) match {
-            case Class          => collectAndUpdateChunk[Class[_]](readClass())
-            case GeneratedClass => collectAndUpdateChunk[Class[_]](center.getSyncClass(readClass())) //would compile the class if it is not
-            case String         => collectAndUpdateChunk[String](readString())
-            case Array          => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
-            case Object         => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
-            case ContextRef     => collectAndUpdateChunk[SimpleContextObject](readContextObject())
+            case Class      => collectAndUpdateChunk[Class[_]](readClass())
+            case SyncClass  => collectAndUpdateChunk[Class[_]](center.getSyncClass(readClass())) //would compile the class if it is not
+            case String     => collectAndUpdateChunk[String](readString())
+            case Array      => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
+            case Object     => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
+            case ContextRef => collectAndUpdateChunk[SimpleContextObject](readContextObject())
         }
     }
 

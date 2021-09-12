@@ -10,21 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.context
+package fr.linkit.engine.connection.packet.persistence.context.structure
 
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
-import fr.linkit.engine.local.utils.{ScalaUtils, UnWrapper}
+import fr.linkit.engine.local.utils.UnWrapper
 
-import java.lang.reflect.{Field, Modifier}
-import scala.collection.mutable
+abstract class ArrayObjectStructure() extends ObjectStructure {
 
-class ClassObjectStructure private(objectClass: Class[_]) extends ObjectStructure {
-
-    val fields: Array[Field] = ScalaUtils.retrieveAllFields(objectClass).filterNot(f => Modifier.isTransient(f.getModifiers))
-    private val fieldTypes = fields.map(_.getType)
+    val types: Array[Class[_]]
 
     override def isAssignable(fields: Array[Class[_]]): Boolean = {
-        val structureFields = fieldTypes
+        val structureFields = types
         if (fields.length != structureFields.length)
             return false
         var i = 0
@@ -37,14 +33,14 @@ class ClassObjectStructure private(objectClass: Class[_]) extends ObjectStructur
     }
 
     override def isAssignable(fieldsValues: Array[Any]): Boolean = {
-        if (fieldsValues.length != fieldTypes.length)
+        if (fieldsValues.length != types.length)
             return false
         var i = 0
-        while (i < fieldTypes.length) {
+        while (i < types.length) {
             val value = fieldsValues(i)
             if (value != null) {
                 val clazz = UnWrapper.getPrimitiveClass(value) //would convert the value's class to it's primitive class if the value is a primitive wrapper
-                if (!fieldTypes(i).isAssignableFrom(clazz))
+                if (!types(i).isAssignableFrom(clazz))
                     return false
             }
             i += 1
@@ -53,16 +49,13 @@ class ClassObjectStructure private(objectClass: Class[_]) extends ObjectStructur
     }
 
     override def equals(other: Any): Boolean = other match {
-        case that: ClassObjectStructure => (that eq this) || isAssignable(that.fieldTypes)
+        case that: ClassObjectStructure => (that eq this) || isAssignable(that.types)
         case _                          => false
     }
+    
 }
 
-object ClassObjectStructure {
+object ArrayObjectStructure {
 
-    private val cache = new mutable.HashMap[Class[_], ClassObjectStructure]()
-
-    def apply(objectClass: Class[_]): ClassObjectStructure = {
-        cache.getOrElseUpdate(objectClass, new ClassObjectStructure(objectClass))
-    }
+    def apply: ObjectStructureBuilder = new ObjectStructureBuilder()
 }

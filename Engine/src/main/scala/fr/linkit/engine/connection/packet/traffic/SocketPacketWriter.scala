@@ -47,14 +47,14 @@ class SocketPacketWriter(socket: DynamicSocket,
 
             BroadcastPacketCoordinates(path, currentIdentifier, false, targetIDs.filter(_ != currentIdentifier))
         }
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet)
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, null)
 
         choreographer.add(transferInfo)(result => socket.write(result.buff))
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit = {
         val coords       = BroadcastPacketCoordinates(path, currentIdentifier, true, discardedIDs)
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet)
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, null)
 
         if (!discardedIDs.contains(currentIdentifier))
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(coords.path, currentIdentifier, currentIdentifier))
