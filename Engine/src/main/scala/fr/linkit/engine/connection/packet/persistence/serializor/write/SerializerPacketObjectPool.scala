@@ -101,11 +101,6 @@ class SerializerPacketObjectPool(config: PacketConfig, sizes: Array[Int]) extend
         }
     }
 
-    private def addType(cl: Class[_]): Unit = {
-        val chunk = if (isClassGenerated(cl)) GeneratedClass else Class
-        getChunkFromFlag(chunk).add(cl)
-    }
-
     private def addObj(ref: AnyRef): Unit = {
         //just do not add null elements (automatically referenced to '0' when written)
         if ((ref eq null) || globalPos(ref) > 0)
@@ -115,18 +110,19 @@ class SerializerPacketObjectPool(config: PacketConfig, sizes: Array[Int]) extend
                 getChunkFromFlag(String).add(ref)
             case _: AnyRef if ref.getClass.isArray      =>
                 addArray(ref)
-            case cl: Class[_]                           =>
-                addType(cl)
+            case _: Class[_]                            =>
+                getChunkFromFlag(Class).add(ref)
             case _ if UnWrapper.isPrimitiveWrapper(ref) =>
                 getChunk(ref).add(ref)
             case _                                      =>
                 val profile = config.getProfile[AnyRef](ref.getClass)
                 val code    = config.getReferencedCode(ref)
+                addTypeOfIfAbsent(ref)
                 if (code.isEmpty) {
                     val persistence = profile.getDefaultPersistence(ref)
                     val decomposed  = persistence.toArray(ref)
                     val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)
-                    objPool.add(new PacketObject(ref, getTypeRef(ref.getClass), decomposed, profile))
+                    objPool.add(new PacketObject(ref, decomposed, profile))
                     addAll(decomposed)
                 } else {
                     val pool = getChunkFromFlag[ContextObject](ContextRef)
@@ -135,14 +131,9 @@ class SerializerPacketObjectPool(config: PacketConfig, sizes: Array[Int]) extend
         }
     }
 
-    private def getTypeRef(tpe: Class[_]): Int = {
-        val tpePool = getChunkFromFlag[Class[_]](if (isClassGenerated(tpe)) GeneratedClass else Class)
-        var idx     = tpePool.indexOf(tpe)
-        if (idx == -1) {
-            idx = tpePool.size
-            tpePool.add(tpe)
-        }
-        idx
+    private def addTypeOfIfAbsent(ref: AnyRef): Unit = ref match {
+        case sync: SynchronizedObject[_] => getChunkFromFlag(GeneratedClass).addIfAbsent(sync.getSuperClass)
+        case _                           => getChunkFromFlag(Class).addIfAbsent(ref.getClass)
     }
 
     private def addAll(objects: Array[Any]): Unit = {

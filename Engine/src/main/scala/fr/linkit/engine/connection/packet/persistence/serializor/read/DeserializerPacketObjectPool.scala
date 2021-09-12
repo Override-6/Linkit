@@ -12,9 +12,8 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
-import fr.linkit.api.connection.packet.persistence.obj.PoolObject
 import fr.linkit.engine.connection.packet.persistence.pool.PacketObjectPool
-import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.Object
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 
 class DeserializerPacketObjectPool(sizes: Array[Int]) extends PacketObjectPool(sizes) {
 
@@ -40,7 +39,10 @@ class DeserializerPacketObjectPool(sizes: Array[Int]) extends PacketObjectPool(s
     }
 
     def getType(globalPos: Int): Class[_] = {
-        getAny(globalPos + 1).asInstanceOf[Class[_]]
+        var tpeChunk = getChunkFromFlag[Class[_]](Class)
+        if (globalPos > tpeChunk.size)
+            tpeChunk = getChunkFromFlag[Class[_]](GeneratedClass)
+        tpeChunk.get(globalPos)
     }
 
     @inline

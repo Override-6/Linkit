@@ -23,7 +23,7 @@ class PacketObjectPool(sizes: Array[Int]) extends Freezable {
     protected val chunks: Array[PoolChunk[_]] = scala.Array[PoolChunk[_]](
         // Objects types
         new PoolChunk[Class[_]](Class, this, sizes(Class)),
-        new PoolChunk[Class[_]](Class, this, sizes(Class)),
+        new PoolChunk[Class[_]](GeneratedClass, this, sizes(GeneratedClass)),
         // Context Objects identifiers
         new PoolChunk[ContextObject](ContextRef, this, sizes(ContextRef)),
         // Strings

@@ -16,7 +16,6 @@ import fr.linkit.api.connection.packet.persistence.context.TypeProfile
 import fr.linkit.api.connection.packet.persistence.obj.InstanceObject
 
 class PacketObject(override val value: AnyRef,
-                   val typePoolIndex: Int,
                    val decomposed: Array[Any],
                    override val profile: TypeProfile[_]) extends InstanceObject[AnyRef] {
 

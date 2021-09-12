@@ -14,10 +14,11 @@ package fr.linkit.engine.connection.packet.persistence.context
 
 import fr.linkit.api.connection.packet.persistence.context.{Deconstructor, PersistenceContext}
 import fr.linkit.engine.local.utils.ClassMap
+
 import java.lang.reflect.Constructor
 
 class ImmutablePersistenceContext private(constructors: ClassMap[Constructor[_]],
-                                  deconstructor: ClassMap[Constructor[_]]) extends PersistenceContext {
+                                          deconstructor: ClassMap[Deconstructor[_]]) extends PersistenceContext {
 
     override def findConstructor[T](clazz: Class[_]): Option[java.lang.reflect.Constructor[T]] = {
         constructors.get(clazz)
@@ -33,7 +34,7 @@ class ImmutablePersistenceContext private(constructors: ClassMap[Constructor[_]]
 
 object ImmutablePersistenceContext {
 
-    def apply(constructors: ClassMap[Constructor[_]], deconstructor: ClassMap[Constructor[_]]): ImmutablePersistenceContext = {
+    def apply(constructors: ClassMap[Constructor[_]], deconstructor: ClassMap[Deconstructor[_]]): ImmutablePersistenceContext = {
         new ImmutablePersistenceContext(new ClassMap(constructors), new ClassMap(deconstructor))
     }
 }

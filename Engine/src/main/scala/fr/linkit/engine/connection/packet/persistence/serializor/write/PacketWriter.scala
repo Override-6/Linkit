@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.serializor.write
 
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.packet.persistence.Freezable
 import fr.linkit.api.connection.packet.persistence.context.PacketConfig
 import fr.linkit.engine.connection.packet.persistence.pool.{PoolChunk, SimpleContextObject}
@@ -119,7 +120,7 @@ class PacketWriter(config: PacketConfig, val buff: ByteBuffer) extends Freezable
     }
 
     private def writeObject(poolObj: PacketObject): Unit = {
-        putRef(poolObj.typePoolIndex)
+        putTypeRef(poolObj.value)
         config.informObjectSent(poolObj.value)
         ArrayPersistence.writeArrayContent(this, poolObj.decomposed.asInstanceOf[Array[AnyRef]])
     }
@@ -137,10 +138,25 @@ class PacketWriter(config: PacketConfig, val buff: ByteBuffer) extends Freezable
     }
 
     @inline
-    def putPoolRef(obj: AnyRef, putTag: Boolean): Unit = {
-        if (putTag)
-            buff.put(PoolRef)
+    def putPoolRef(obj: AnyRef): Unit = {
         val idx = pool.globalPosition(obj)
+        putRef(idx)
+    }
+
+    def putTypeRef(obj: AnyRef): Unit = {
+        obj match {
+            case sync: SynchronizedObject[_] => putGeneratedTypeRef(sync.getSuperClass)
+            case _                           => putTypeRef(obj.getClass)
+        }
+    }
+
+    def putTypeRef(tpe: Class[_]): Unit = {
+        putRef(pool.getChunkFromFlag(Class).indexOf(tpe))
+    }
+
+    private def putGeneratedTypeRef(clazz: Class[_]): Unit = {
+        val size = pool.getChunkFromFlag(Class).size
+        val idx  = pool.getChunkFromFlag(GeneratedClass).indexOf(clazz) + size
         putRef(idx)
     }
 

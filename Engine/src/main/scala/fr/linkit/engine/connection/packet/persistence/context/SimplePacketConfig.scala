@@ -83,9 +83,9 @@ abstract class SimplePacketConfig(persistenceConfig: PersistenceContext) extends
 
     object profiles {
 
-        private[SimplePacketConfig] val customProfiles = mutable.HashMap.empty[Class[_], TypePersistence[_]]
+        private[SimplePacketConfig] val customProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
 
-        def +=[T: ClassTag](profile: TypePersistence[T]): this.type = {
+        def +=[T <: AnyRef: ClassTag](profile: TypeProfile[T]): this.type = {
             val clazz = classTag[T].runtimeClass
             customProfiles.put(clazz, profile)
             this
@@ -113,7 +113,7 @@ abstract class SimplePacketConfig(persistenceConfig: PersistenceContext) extends
         }
     }
 
-    protected var unsafeUse     = true
+    protected var unsafeUse           = true
     protected var withSignature       = true
     protected var referenceAllObjects = false
     protected var wide                = false

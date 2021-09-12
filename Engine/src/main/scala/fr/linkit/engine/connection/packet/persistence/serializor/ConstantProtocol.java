@@ -24,10 +24,4 @@ public class ConstantProtocol {
 
     public static final byte ChunkCount = i;
 
-    public static final byte PoolRef = -127;
-
-    public static boolean isClassGenerated(Class<?> clazz) {
-        //TODO Use another insterface that SynchronizedObject or use an annotation (@Generated) that stands at runtime
-        return SynchronizedObject.class.isAssignableFrom(clazz);
-    }
 }
