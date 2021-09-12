@@ -114,7 +114,7 @@ class ServerConnection(applicationContext: ServerApplication,
             return
         }
         val broadcast = BroadcastPacketCoordinates(path, sender, true, discarded)
-        val result    = translator.translate(SimpleTransferInfo(broadcast, attributes, packet))
+        val result    = translator.translate(SimpleTransferInfo(broadcast, attributes, packet, null))
         connectionsManager.broadcastPacket(result, discarded: _*)
         if (!discarded.contains(currentIdentifier)) {
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(path, currentIdentifier, sender))
