@@ -22,20 +22,18 @@ import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPac
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
 import fr.linkit.engine.connection.packet.traffic.DynamicSocket
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.system.Rules
-import fr.linkit.engine.local.system.event.DefaultEventNotifier
 import fr.linkit.engine.local.utils.NumberSerializer.serializeInt
 import fr.linkit.server.connection.network.ServerSideNetwork
 import fr.linkit.server.connection.packet.ServerPacketTraffic
 import fr.linkit.server.local.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
-import java.net.{ServerSocket, SocketException}
 
+import java.net.{ServerSocket, SocketException}
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
@@ -49,7 +47,6 @@ class ServerConnection(applicationContext: ServerApplication,
     private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
     override val traffic           : PacketTraffic              = new ServerPacketTraffic(this)
-    override val eventNotifier     : EventNotifier              = new DefaultEventNotifier
     private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
     override val network           : Network                    = sideNetwork
 

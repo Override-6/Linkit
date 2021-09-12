@@ -14,14 +14,13 @@ package fr.linkit.engine.local.resource.external
 
 import fr.linkit.api.local.resource.external._
 import fr.linkit.api.local.resource.{ResourceListener, ResourcesMaintainer}
-import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.engine.local.resource.base.AbstractResource
 import org.jetbrains.annotations.NotNull
 
-import java.nio.file.FileSystemException
+import java.nio.file.{FileSystemException, Files, Path}
 import java.util.zip.Adler32
 
-class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) extends AbstractResource(parent, adapter) with ResourceFile with LocalResource {
+class LocalResourceFile(@NotNull parent: ResourceFolder, path: Path) extends AbstractResource(parent, path) with ResourceFile with LocalResource {
 
     protected val entry = new DefaultResourceEntry[ResourceFile](this)
 
@@ -29,9 +28,7 @@ class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) e
 
     override def getChecksum: Long = try {
         val crc32 = new Adler32()
-        val in    = adapter.newInputStream()
-        crc32.update(in.readAllBytes())
-        in.close()
+        crc32.update(Files.readAllBytes(path))
         crc32.getValue
     } catch {
         case _: FileSystemException => 0L
@@ -39,16 +36,19 @@ class LocalResourceFile(@NotNull parent: ResourceFolder, adapter: FileAdapter) e
 
     override protected def getMaintainer: ResourcesMaintainer = parent.getMaintainer
 
-    override def createOnDisk(): Unit = getAdapter.createAsFile()
+    override def createOnDisk(): Unit = {
+        Files.createDirectories(path.getParent)
+        Files.createFile(path)
+    }
 
     override def close(): Unit = entry.close()
 }
 
 object LocalResourceFile extends ResourceFactory[LocalResourceFile] {
 
-    override def apply(adapter: FileAdapter, listener: ResourceListener, parent: ResourceFolder): LocalResourceFile = {
-        apply(parent, adapter)
+    override def apply(path: Path, listener: ResourceListener, parent: ResourceFolder): LocalResourceFile = {
+        apply(parent, path)
     }
 
-    def apply(parent: ResourceFolder, adapter: FileAdapter): LocalResourceFile = new LocalResourceFile(parent, adapter)
+    def apply(parent: ResourceFolder, path: Path): LocalResourceFile = new LocalResourceFile(parent, path)
 }

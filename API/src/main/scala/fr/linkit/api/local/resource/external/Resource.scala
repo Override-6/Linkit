@@ -13,8 +13,9 @@
 package fr.linkit.api.local.resource.external
 
 import fr.linkit.api.local.system.Versions
-import fr.linkit.api.local.system.fsa.FileAdapter
 import org.jetbrains.annotations.{NotNull, Nullable}
+
+import java.nio.file.Path
 
 /**
  * An external resource is considered as external as long as it is not stored into an archived file.
@@ -49,7 +50,7 @@ trait Resource extends AutoCloseable {
     /**
      * @return The file adapter that represent this resource on the os's File System
      * */
-    def getAdapter: FileAdapter
+    def getPath: Path
 
     /**
      * @return The current checksum of this resource.

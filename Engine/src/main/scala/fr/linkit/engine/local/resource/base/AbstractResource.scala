@@ -15,13 +15,14 @@ package fr.linkit.engine.local.resource.base
 import fr.linkit.api.local.resource.ResourcesMaintainer
 import fr.linkit.api.local.resource.external.{Resource, ResourceFolder}
 import fr.linkit.api.local.system.Versions
-import fr.linkit.api.local.system.fsa.FileAdapter
 import fr.linkit.engine.local.system.{DynamicVersions, StaticVersions}
 import org.jetbrains.annotations.Nullable
 
-abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileAdapter) extends Resource {
+import java.nio.file.Path
 
-    override     val name: String = adapter.getName
+abstract class AbstractResource(@Nullable parent: ResourceFolder, path: Path) extends Resource {
+
+    override     val name: String = path.getFileName.toString
     private lazy val lastModified = getMaintainer.getLastModified(name)
 
     protected def getMaintainer: ResourcesMaintainer
@@ -43,7 +44,7 @@ abstract class AbstractResource(@Nullable parent: ResourceFolder, adapter: FileA
         lastParent
     }
 
-    override def getAdapter: FileAdapter = adapter
+    override def getPath: Path = path
 
     override def getChecksum: Long
 

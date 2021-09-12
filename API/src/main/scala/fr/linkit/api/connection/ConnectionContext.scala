@@ -17,8 +17,6 @@ import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.traffic.{PacketInjectableStore, PacketTraffic}
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{ProcrastinatorControl, workerExecution}
-import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system.event.EventNotifier
 
 trait ConnectionContext extends PacketInjectableStore with ProcrastinatorControl {
 
@@ -34,7 +32,6 @@ trait ConnectionContext extends PacketInjectableStore with ProcrastinatorControl
 
     def network: Network
 
-    def eventNotifier: EventNotifier
 
     @workerExecution
     def shutdown(): Unit

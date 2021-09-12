@@ -12,9 +12,11 @@
 
 package fr.linkit.api.local.resource.external
 
+import java.nio.file.Files
+
 trait LocalResource extends Resource {
 
-    if (getAdapter.notExists)
+    if (Files.notExists(getPath))
         createOnDisk()
 
     def createOnDisk(): Unit
