@@ -12,9 +12,10 @@
 
 package fr.linkit.engine.connection.packet.persistence.context
 
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.packet.persistence.context._
-import fr.linkit.engine.connection.packet.persistence.context.profile.SimpleTypeProfile
-import fr.linkit.engine.connection.packet.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, UnsafeTypePersistence}
+import fr.linkit.engine.connection.packet.persistence.context.profile.DefaultTypeProfile
+import fr.linkit.engine.connection.packet.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
 import fr.linkit.engine.local.utils.ClassMap
 
 import scala.collection.mutable
@@ -39,9 +40,15 @@ class SimplePacketConfig private[context](context: PersistenceContext,
         val profile = defaultProfiles.get(clazz)
         if (profile.isEmpty) {
             return customProfiles.getOrElse(clazz, {
-                val default = newDefaultProfile[T](clazz)
-                defaultProfiles.put(clazz, default)
-                default
+                val default: DefaultTypeProfile[T]  = newDefaultProfile[T](clazz)
+                if (isSyncClass(clazz)) {
+                    @inline def cast[X](any: AnyRef): X= any.asInstanceOf[X]
+                    val syncDefault = newSynchronizedObjectDefaultProfile[Nothing](clazz, cast(default))
+                    defaultProfiles.put(clazz, syncDefault)
+                } else {
+                    defaultProfiles.put(clazz, default)
+                    default
+                }
             }).asInstanceOf[TypeProfile[T]]
         }
         profile.get.asInstanceOf[TypeProfile[T]]
@@ -60,8 +67,14 @@ class SimplePacketConfig private[context](context: PersistenceContext,
         if (referenceAllObjects) referenceStore += obj
     }
 
-    def newDefaultProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-        val constructor                     = context.findConstructor[T](clazz)
+    private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: DefaultTypeProfile[T]): DefaultTypeProfile[T] = {
+        val network                                                            = context.getNetwork
+        val persistences: Array[TypePersistence[T]] = profile.persists.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
+        new DefaultTypeProfile[T](clazz, profile, persistences, profile.convertors)
+    }
+
+    protected def newDefaultProfile[T <: AnyRef](clazz: Class[_]): DefaultTypeProfile[T] = {
+        val constructor                          = context.findConstructor[T](clazz)
         val persistence: TypePersistence[T] = {
             if (classOf[Deconstructive].isAssignableFrom(clazz)) {
                 constructor.fold(new DeconstructiveTypePersistence[T with Deconstructive](clazz)) {
@@ -80,7 +93,13 @@ class SimplePacketConfig private[context](context: PersistenceContext,
                 }
             }
         }
-        new SimpleTypeProfile[T](clazz, Array(persistence), new ClassMap[ObjectConverter[_ <: T, Any]])
+        //No (null) parent: No declared profile has been found for the class, and declared profiles automatically handles implementations.
+        new DefaultTypeProfile[T](clazz, null, Array(persistence), new ClassMap[ObjectConverter[_ <: T, Any]])
+    }
+
+    @inline
+    def isSyncClass(clazz: Class[_]): Boolean = {
+        classOf[SynchronizedObject[_]].isAssignableFrom(clazz)
     }
 
     private def getSafestTypeProfileOfAnyClass[T <: AnyRef](clazz: Class[_], deconstructor: Option[Deconstructor[T]]): TypePersistence[T] = {

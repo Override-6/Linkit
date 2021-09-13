@@ -14,8 +14,8 @@ package fr.linkit.engine.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObjectCache
 import fr.linkit.api.connection.cache.obj.tree.{SynchronizedObjectTreeStore, SyncNode, SynchronizedObjectTree}
-import fr.linkit.engine.connection.cache.obj.{CacheRepoContent, DefaultSynchronizedObjectCache}
-import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCache.ObjectTreeProfile
+import fr.linkit.engine.connection.cache.obj.{CacheRepoContent, DefaultSynchronizedObjectCenter}
+import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
 
 import scala.collection.mutable

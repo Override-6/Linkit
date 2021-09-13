@@ -12,8 +12,6 @@
 
 package fr.linkit.engine.test.classes
 
-import scala.collection.WithFilter
-
 class ExtendsScalaClass extends ScalaClass {
 
 }

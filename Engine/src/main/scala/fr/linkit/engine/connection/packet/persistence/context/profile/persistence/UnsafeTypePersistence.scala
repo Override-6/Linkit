@@ -13,7 +13,6 @@
 package fr.linkit.engine.connection.packet.persistence.context.profile.persistence
 
 import fr.linkit.api.connection.packet.persistence.context.TypePersistence
-import fr.linkit.engine.connection.packet.persistence.context.profile.persistence.UnsafeTypePersistence.Unsafe
 import fr.linkit.engine.connection.packet.persistence.context.structure.ClassObjectStructure
 import fr.linkit.engine.local.utils.ScalaUtils
 
@@ -22,14 +21,13 @@ import java.lang.reflect.Field
 class UnsafeTypePersistence[T](clazz: Class[_]) extends TypePersistence[T]() {
 
     override val structure: ClassObjectStructure = ClassObjectStructure(clazz)
-    private val fields: Array[Field] = structure.fields
+    private  val fields   : Array[Field]         = structure.fields
 
-    override def initInstance(instance: T, args: Array[Any]): T = {
+    override def initInstance(instance: T, args: Array[Any]): Unit = {
         val fields = this.fields
         for (i <- args.indices) {
             ScalaUtils.setValue(instance, fields(i), args(i))
         }
-        instance
     }
 
     override def toArray(t: T): Array[Any] = {

@@ -12,9 +12,13 @@
 
 package fr.linkit.api.connection.packet.persistence.context
 
+import fr.linkit.api.connection.network.Network
+
 import java.lang.reflect.Constructor
 
 trait PersistenceContext {
+
+    def getNetwork: Network
 
     def findConstructor[T](clazz: Class[_]): Option[Constructor[T]]
 

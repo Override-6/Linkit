@@ -10,20 +10,6 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.engine.connection.packet.persistence
 
-trait TypeProfile[T <: AnyRef] {
-
-    val declaredParent: TypeProfile[_ >: T]
-
-    val typeClass: Class[_]
-
-    def getPersistence(t: T): TypePersistence[T]
-
-    def getPersistence(args: Array[Any]): TypePersistence[T]
-
-    def convertTo(t: T): Any
-
-    def convertFrom(any: Any): T
-
-}
+class UnexpectedObjectException(msg: String) extends MalFormedPacketException(msg: String)

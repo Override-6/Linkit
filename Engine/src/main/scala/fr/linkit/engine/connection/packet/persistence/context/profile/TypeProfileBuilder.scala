@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import fr.linkit.api.connection.packet.persistence.context.{ObjectConverter, TypePersistence, TypeProfile}
+import fr.linkit.api.connection.packet.persistence.context._
 import fr.linkit.engine.local.utils.ClassMap
 
 import scala.collection.mutable.ListBuffer
@@ -28,7 +28,7 @@ class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
         this
     }
 
-    def setTConverter[B](converter: ObjectConverter[T, B]): this.type = {
+    def setTConverter[B <: Any](converter: ObjectConverter[T, B]): this.type = {
         convertors.put(tag.runtimeClass, converter)
         this
     }
@@ -40,6 +40,8 @@ class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
             override def from(b: B): T = fFrom(b)
         })
     }
+
+
 
     def setSubTConverter[S <: T : ClassTag, B](converter: ObjectConverter[S, B]): this.type = {
         setSubTConverter0(converter)
@@ -60,16 +62,17 @@ class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
     }
 
 
-    def build(): TypeProfile[T] = {
-        new SimpleTypeProfile[T](tag.runtimeClass, persistors.toArray, convertors.asInstanceOf[ClassMap[ObjectConverter[_ <: T, Any]]])
+    def build(store: TypeProfileStore): TypeProfile[T] = {
+        val clazz = tag.runtimeClass
+        val parentProfile = if (clazz eq classOf[Object]) null else store.getProfile[T](clazz.getSuperclass)
+        new DefaultTypeProfile[T](clazz, parentProfile, persistors.toArray, convertors.asInstanceOf[ClassMap[ObjectConverter[_ <: T, Any]]])
     }
-
 
 }
 
 object TypeProfileBuilder {
     @inline
-    implicit def autoBuild[T <: AnyRef](builder: TypeProfileBuilder[T]): TypeProfile[T] = {
-        builder.build()
+    implicit def autoBuild[T <: AnyRef](store: TypeProfileStore, builder: TypeProfileBuilder[T]): TypeProfile[T] = {
+        builder.build(store)
     }
 }

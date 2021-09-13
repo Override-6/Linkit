@@ -22,7 +22,7 @@ import java.io.Serializable;
 
 /**
  * This interface depicts a synchronized object. <br>
- * SynchronizedObject classes are dynamically generated and extends the class {@link T}
+ * SynchronizedObject classes are dynamically generated and extends the class {@link T} <br>
  * Handwritten classes may not implement this interface.
  * @see fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
  * @see fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator

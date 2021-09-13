@@ -35,9 +35,8 @@ class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T]
 
     private val handle = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup()).unreflectConstructor(constructor)
 
-    override def initInstance(allocatedObject: T, args: Array[Any]): T = {
+    override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
         val result = handle.bindTo(allocatedObject).invoke(args)
-        result.asInstanceOf[T]
     }
 
     override def toArray(t: T): Array[Any] = {

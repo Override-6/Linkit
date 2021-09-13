@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.context
 
+import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.context.{Deconstructor, PersistenceContext}
 import fr.linkit.engine.local.utils.ClassMap
 
@@ -30,6 +31,15 @@ class ImmutablePersistenceContext private(constructors: ClassMap[Constructor[_]]
                 .asInstanceOf[Option[Deconstructor[T]]]
     }
 
+    private var network: Network = _
+
+    def initNetwork(network: Network): Unit = {
+        if (this.network != null)
+            throw new IllegalStateException("Network already initialized !")
+        this.network = network
+    }
+
+    override def getNetwork: Network = network
 }
 
 object ImmutablePersistenceContext {

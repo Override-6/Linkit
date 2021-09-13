@@ -14,11 +14,11 @@ package fr.linkit.api.connection.packet.persistence.context
 
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
 
-trait TypePersistence[T] {
+trait TypePersistence[-T] {
 
     val structure: ObjectStructure
 
-    def initInstance(allocatedObject: T, args: Array[Any]): T
+    def initInstance(allocatedObject: T, args: Array[Any]): Unit
 
     def toArray(t: T): Array[Any]
 }

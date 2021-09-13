@@ -12,11 +12,9 @@
 
 package fr.linkit.engine.test
 
-import java.util
-
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.behavior.annotation.FieldControl
-import fr.linkit.api.connection.cache.obj.behavior.{ObjectBehavior, ObjectBehaviorStore}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
@@ -40,6 +38,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
 
+import java.util
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.reflect.runtime.universe.TypeTag
 
@@ -144,6 +143,7 @@ class ResourcesAndClassGenerationTests {
         obj.add(7, 2)
         obj.add(new Vector2(7, 2))
         println(s"obj = ${obj}")
+        PacketTests.testPacket(Array(obj))
     }
 
     def forObject[A <: AnyRef : TypeTag](obj: A, tree: ObjectBehaviorStore = new DefaultObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory)): A with SynchronizedObject[A] = {

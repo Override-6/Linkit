@@ -16,9 +16,10 @@ import fr.linkit.api.connection.packet.persistence.context.{ObjectConverter, Typ
 import fr.linkit.engine.connection.packet.persistence.context.structure.ClassObjectStructure
 import fr.linkit.engine.local.utils.ClassMap
 
-class SimpleTypeProfile[T <: AnyRef](override val typeClass: Class[_],
-                                     persists: Array[TypePersistence[T]],
-                                     convertors: ClassMap[ObjectConverter[_ <: T, Any]]) extends TypeProfile[T] {
+class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
+                                      override val declaredParent: TypeProfile[_ >: T],
+                                      private[context] val persists: Array[TypePersistence[T]],
+                                      private[context] val convertors: ClassMap[ObjectConverter[_ <: T, Any]]) extends TypeProfile[T] {
 
     override def getPersistence(t: T): TypePersistence[T] = {
         val structure = ClassObjectStructure(t.getClass)
@@ -29,7 +30,10 @@ class SimpleTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                 return persistence
             i += 1
         }
-        throw new NoSuchElementException(s"Could not find type persistence matching object ${t} (of class ${t.getClass.getName}.")
+        if (declaredParent ne null)
+            declaredParent.getPersistence(t)
+        else
+            throw new NoSuchElementException(s"Could not find type persistence matching object ${t} (of class ${t.getClass.getName}.")
     }
 
     override def getPersistence(args: Array[Any]): TypePersistence[T] = {
@@ -41,11 +45,15 @@ class SimpleTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                 return persist
             i += 1
         }
-        throw new NoSuchElementException(s"No Type Persistence matching with object structure array '${args.mkString("(", ", ", ")")}' has been found")
+        if (declaredParent ne null)
+            declaredParent.getPersistence(args)
+        else
+            throw new NoSuchElementException(s"No Type Persistence matching with object structure array '${args.mkString("(", ", ", ")")}' has been found")
     }
 
     override def convertTo(t: T): Any = {
         def cast[X]: X = t.asInstanceOf[X]
+
         val clazz = t.getClass
         convertors.get(clazz)
                 .getOrElse(throw new NoSuchElementException(s"Could not find converter for converting '${clazz.getName}' to Any"))

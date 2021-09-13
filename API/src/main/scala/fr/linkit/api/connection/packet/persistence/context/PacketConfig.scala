@@ -12,13 +12,11 @@
 
 package fr.linkit.api.connection.packet.persistence.context
 
-trait PacketConfig extends ReferencedObjectStore {
+trait PacketConfig extends ReferencedObjectStore with TypeProfileStore {
 
     def informObjectReceived(obj: AnyRef): Unit
 
     def informObjectSent(obj: AnyRef): Unit
-
-    def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T]
 
     def widePacket: Boolean
 

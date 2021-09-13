@@ -18,7 +18,7 @@ import fr.linkit.engine.connection.packet.traffic.{ChannelScopes, SocketPacketTr
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.utils.PerformanceMeter
 import org.junit.jupiter.api.TestInstance.Lifecycle
-import org.junit.jupiter.api.{Assertions, RepeatedTest, Test, TestInstance}
+import org.junit.jupiter.api.{Assertions, Test, TestInstance}
 
 @TestInstance(Lifecycle.PER_CLASS)
 class PacketInjectionPerformanceTest {

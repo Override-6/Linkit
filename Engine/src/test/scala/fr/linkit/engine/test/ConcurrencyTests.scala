@@ -21,8 +21,6 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.junit.jupiter.api.function.Executable
 
-import java.util.concurrent.locks.LockSupport
-
 @TestInstance(Lifecycle.PER_CLASS)
 class ConcurrencyTests {
 

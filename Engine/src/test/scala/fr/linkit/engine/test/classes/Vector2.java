@@ -17,9 +17,6 @@
 package fr.linkit.engine.test.classes;
 
 
-
-import fr.linkit.engine.test.classes.Vector;
-
 import java.io.Serializable;
 
 /** Encapsulates a 2D vector. Allows chaining methods by returning a reference to itself

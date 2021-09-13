@@ -16,7 +16,6 @@ import fr.linkit.api.connection.packet.persistence.context._
 import fr.linkit.engine.connection.packet.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.local.utils.ClassMap
 
-import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 class PacketConfigBuilder {
@@ -32,11 +31,11 @@ class PacketConfigBuilder {
 
     object profiles {
 
-        private[PacketConfigBuilder] val customProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
+        private[PacketConfigBuilder] val customProfiles = new ClassMap[TypeProfileBuilder[_ <: AnyRef]]()
 
-        def +=[T <: AnyRef : ClassTag](profile: TypeProfile[T]): this.type = {
+        def +=[T <: AnyRef : ClassTag](builder: TypeProfileBuilder[T]): this.type = {
             val clazz = classTag[T].runtimeClass
-            customProfiles.put(clazz, profile)
+            customProfiles.put(clazz, builder)
             this
         }
     }
@@ -50,7 +49,12 @@ class PacketConfigBuilder {
     }
 
     def addPersistence[T <: AnyRef : ClassTag](persistence: TypePersistence[T]): this.type = {
-        persistors.put(classTag[T].runtimeClass, persistence)
+        val clazz = classTag[T].runtimeClass
+        if (persistence eq null) {
+            persistors.remove(clazz)
+        } else {
+            persistors.put(clazz, persistence)
+        }
         this
     }
 
@@ -67,7 +71,12 @@ class PacketConfigBuilder {
     }
 
     private def setTConverter0[T <: AnyRef : ClassTag, B](converter: ObjectConverter[T, B]): this.type = {
-        converters.put(classTag[T].runtimeClass, converter)
+        val clazz = classTag[T].runtimeClass
+        if (converter eq null) {
+            converters.remove(clazz)
+        } else {
+            converters.put(clazz, converter)
+        }
         this
     }
 
@@ -77,24 +86,51 @@ class PacketConfigBuilder {
     }
 
     private def collectProfiles(): ClassMap[TypeProfile[_]] = {
-        val map = profiles.customProfiles.toMap
+        val map = profiles.customProfiles
+
         def cast[X](a: Any): X = a.asInstanceOf[X]
-        val otherProfiles = mutable.HashMap.empty[Class[_], TypeProfileBuilder[_ <: AnyRef]]
+
+        //noinspection TypeAnnotation
+        val tempStore = new TypeProfileStore {
+            val cache = new ClassMap[TypeProfile[_]]()
+            override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
+                cache(clazz).asInstanceOf[TypeProfile[T]]
+            }
+        }
+
         persistors.foreachEntry((clazz, persistence) => {
-            otherProfiles.getOrElseUpdate(clazz, new TypeProfileBuilder[AnyRef]())
+            map.getOrElseUpdate(clazz, new TypeProfileBuilder[AnyRef]())
                     .addPersistence(cast(persistence))
         })
         converters.foreachEntry((clazz, converter) => {
-            otherProfiles.getOrElseUpdate(clazz, new TypeProfileBuilder[AnyRef]())
+            map.getOrElseUpdate(clazz, new TypeProfileBuilder[AnyRef]())
                     .setTConverter(cast(converter))
         })
-        val finalMap = otherProfiles.view.mapValues(_.build()).toMap ++ map
+        val finalMap = map.toSeq
+                .sortBy(pair => getClassHierarchicalDepth(pair._1))//sorting from Object class to most "far away from Object" classes
+                .map(pair => {
+                    val clazz = pair._1
+                    val profile = pair._2.build(tempStore)
+                    tempStore.cache.put(clazz, profile)
+                    (clazz, profile)
+                }).toMap
         new ClassMap[TypeProfile[_]](finalMap)
+    }
+
+    private def getClassHierarchicalDepth(clazz: Class[_]): Int = {
+        var cl = clazz
+        var depth = 0
+        while (cl ne null) {
+            cl = cl.getSuperclass
+            depth += 1
+        }
+        depth
     }
 
 }
 
 object PacketConfigBuilder {
+
     implicit def autoBuild(context: PersistenceContext, builder: PacketConfigBuilder): PacketConfig = {
         builder.build(context)
     }
