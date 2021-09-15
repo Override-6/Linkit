@@ -13,9 +13,9 @@
 package fr.linkit.engine.local.generation.compilation.resource
 
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
+import fr.linkit.api.local.generation.resource.ClassFolderResource
 import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.resource.representation.{FolderRepresentation, ResourceRepresentationFactory}
-import fr.linkit.engine.connection.cache.obj.generation.{SyncObjectInstantiationHelper, adaptClassName}
+import fr.linkit.api.local.resource.representation.ResourceRepresentationFactory
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.mapping.ClassMappings
 
@@ -23,12 +23,12 @@ import java.io.File
 import java.nio.file.{Files, Path}
 import scala.collection.mutable
 
-class ClassFolderResource[C](override val resource: ResourceFolder) extends FolderRepresentation {
+class CachedClassFolderResource[C](override val resource: ResourceFolder) extends ClassFolderResource[C] {
 
     private val folderPath       = Path.of(resource.getAdapter.getAbsolutePath)
     private val generatedClasses = mutable.Map.empty[String, Class[_ <: C]]
 
-    def findClass[S](className: String, loader: ClassLoader): Option[Class[S with C]] = {
+    override def findClass[S](className: String, loader: ClassLoader): Option[Class[S with C]] = {
         generatedClasses.getOrElse(className, {
             val wrapperClassPath = folderPath.resolve(className.replace('.', File.separatorChar) + ".class")
             if (Files.notExists(wrapperClassPath))
@@ -50,8 +50,9 @@ class ClassFolderResource[C](override val resource: ResourceFolder) extends Fold
 
 }
 
-object ClassFolderResource {
-    implicit def factory[A]: ResourceRepresentationFactory[ClassFolderResource[A], ResourceFolder] = {
-        new ClassFolderResource[A](_)
+object CachedClassFolderResource {
+
+    implicit def factory[A]: ResourceRepresentationFactory[CachedClassFolderResource[A], ResourceFolder] = {
+        new CachedClassFolderResource[A](_)
     }
 }

@@ -12,8 +12,9 @@
 
 package fr.linkit.engine.local.script
 
+import fr.linkit.api.local.generation.resource.ClassFolderResource
+import fr.linkit.api.local.script.{ScriptFile, ScriptHandler, ScriptInstantiator}
 import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.generation.compilation.resource.ClassFolderResource
 
 import java.io.InputStream
 
@@ -21,9 +22,11 @@ abstract class LinkitScriptHandler[S <: ScriptFile] extends ScriptHandler[S] {
 
     override def scriptClassBlueprint: InputStream = classOf[LinkitApplication].getResourceAsStream(scriptClassBlueprintResourcePath)
 
-    override def findScript(scriptName: String, classes: ClassFolderResource[ScriptFile]): Option[S] = {
+    override def findScript(scriptName: String, classes: ClassFolderResource[ScriptFile]): Option[ScriptInstantiator[S]] = {
         val scriptClassName = classPackage + '.' + className + scriptName
-        classes.findClass[S](scriptClassName, classOf[LinkitApplication].getClassLoader).map(newScript)
+        classes.findClass[S](scriptClassName, classOf[LinkitApplication].getClassLoader).map { clazz =>
+            newScript(clazz, _)
+        }
     }
 
     protected val className: String

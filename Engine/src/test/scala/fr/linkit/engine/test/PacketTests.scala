@@ -13,7 +13,7 @@
 package fr.linkit.engine.test
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.api.connection.packet.persistence.context.PacketConfig
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.persistence.context.{ImmutablePersistenceContext, PacketConfigBuilder}
@@ -93,7 +93,7 @@ object PacketTests {
         testPacket(obj, new PacketConfigBuilder().build(ImmutablePersistenceContext(new ClassMap, new ClassMap)))
     }
 
-    def testPacket(obj: Array[AnyRef], config: PacketConfig): Unit = {
+    def testPacket(obj: Array[AnyRef], config: PersistenceConfig): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")
         val buff   = ByteBuffer.allocate(1000)
         serializer.serializePacket(obj, DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM"), buff)(config)

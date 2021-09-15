@@ -20,11 +20,11 @@ import fr.linkit.engine.local.utils.ClassMap
 
 import scala.collection.mutable
 
-class SimplePacketConfig private[context](context: PersistenceContext,
-                                          customProfiles: ClassMap[TypeProfile[_]],
-                                          referenceStore: WeakReferencedObjectStore,
-                                          unsafeUse: Boolean, withSignature: Boolean,
-                                          referenceAllObjects: Boolean, wide: Boolean) extends PacketConfig {
+class SimplePersistenceConfig private[context](context: PersistenceContext,
+                                               customProfiles: ClassMap[TypeProfile[_]],
+                                               referenceStore: WeakReferencedObjectStore,
+                                               unsafeUse: Boolean, withSignature: Boolean,
+                                               referenceAllObjects: Boolean, wide: Boolean) extends PersistenceConfig {
 
     private val defaultProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
 

@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.packet.persistence.serializor.read
 
 import fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
-import fr.linkit.api.connection.packet.persistence.context.PacketConfig
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.engine.connection.packet.persistence.pool.SimpleContextObject
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
@@ -24,7 +24,7 @@ import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
-class PacketReader(config: PacketConfig, center: SyncClassCenter, val buff: ByteBuffer) {
+class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff: ByteBuffer) {
 
     private val (widePacket: Boolean, sizes, pool) = preReadPool()
     private var isInit                             = false

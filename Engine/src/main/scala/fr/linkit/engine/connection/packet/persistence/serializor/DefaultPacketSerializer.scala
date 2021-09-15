@@ -16,7 +16,7 @@ import fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.PacketSerializer
 import fr.linkit.api.connection.packet.persistence.PacketSerializer.PacketDeserial
-import fr.linkit.api.connection.packet.persistence.context.PacketConfig
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.persistence.obj.PoolObject
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.engine.connection.packet.persistence.MalFormedPacketException
@@ -37,7 +37,7 @@ class DefaultPacketSerializer(center: SyncClassCenter) extends PacketSerializer 
         result
     }
 
-    override def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer)(config: PacketConfig): Unit = {
+    override def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer)(config: PersistenceConfig): Unit = {
         if (config.putSignature)
             buffer.put(signature)
 
@@ -111,7 +111,7 @@ class DefaultPacketSerializer(center: SyncClassCenter) extends PacketSerializer 
         new String(array)
     }
 
-    override def deserializePacket(buff: ByteBuffer)(config: PacketConfig): PacketSerializer.PacketDeserial = {
+    override def deserializePacket(buff: ByteBuffer)(config: PersistenceConfig): PacketSerializer.PacketDeserial = {
         if (config.putSignature)
             checkSignature(buff)
 

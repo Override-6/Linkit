@@ -80,9 +80,9 @@ class PacketConfigBuilder {
         this
     }
 
-    def build(context: PersistenceContext): PacketConfig = {
+    def build(context: PersistenceContext): PersistenceConfig = {
         val profiles = collectProfiles()
-        new SimplePacketConfig(context, profiles, referenceStore, unsafeUse, withSignature, referenceAllObjects, wide)
+        new SimplePersistenceConfig(context, profiles, referenceStore, unsafeUse, withSignature, referenceAllObjects, wide)
     }
 
     private def collectProfiles(): ClassMap[TypeProfile[_]] = {
@@ -131,7 +131,7 @@ class PacketConfigBuilder {
 
 object PacketConfigBuilder {
 
-    implicit def autoBuild(context: PersistenceContext, builder: PacketConfigBuilder): PacketConfig = {
+    implicit def autoBuild(context: PersistenceContext, builder: PacketConfigBuilder): PersistenceConfig = {
         builder.build(context)
     }
 }

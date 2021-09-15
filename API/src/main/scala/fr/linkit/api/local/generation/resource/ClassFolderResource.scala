@@ -10,11 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.script
+package fr.linkit.api.local.generation.resource
 
-import fr.linkit.api.local.generation.compilation.CompilationContext
+import fr.linkit.api.local.resource.representation.FolderRepresentation
 
-trait ScriptContext extends CompilationContext {
+trait ClassFolderResource[C] extends FolderRepresentation {
 
-    def scriptSourceCode: String
+    def findClass[S](className: String, loader: ClassLoader): Option[Class[S with C]]
 }

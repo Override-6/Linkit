@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package $ClassPackage$
+package fr.linkit.api.local.script
 
-import fr.linkit.api.local.script.ScriptFile
+trait ScriptFile {
 
-class $ClassName$($ScriptArguments$) extends $ScriptClass$ {
-
-    override def execute(): Unit = {
-        $ScriptCode$
-    }
+    def execute(): Unit
 
 }

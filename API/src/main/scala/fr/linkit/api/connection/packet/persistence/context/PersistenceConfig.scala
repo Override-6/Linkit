@@ -10,10 +10,18 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.script
+package fr.linkit.api.connection.packet.persistence.context
 
-trait ScriptFile {
+trait PersistenceConfig extends ReferencedObjectStore with TypeProfileStore {
 
-    def execute(): Unit
+    def informObjectReceived(obj: AnyRef): Unit
+
+    def informObjectSent(obj: AnyRef): Unit
+
+    def widePacket: Boolean
+
+    def putSignature: Boolean
+
+    def useUnsafe: Boolean
 
 }

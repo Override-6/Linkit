@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.serializor.write
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.packet.persistence.Freezable
-import fr.linkit.api.connection.packet.persistence.context.PacketConfig
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.engine.connection.packet.persistence.pool.{PoolChunk, SimpleContextObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.connection.packet.persistence.serializor.write.PacketWriter.{Sizes2B, Sizes4B}
@@ -24,7 +24,7 @@ import fr.linkit.engine.local.mapping.ClassMappings
 import java.nio.ByteBuffer
 import scala.annotation.switch
 
-class PacketWriter(config: PacketConfig, val buff: ByteBuffer) extends Freezable {
+class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Freezable {
 
     private val widePacket = config.widePacket
     private val pool       = new SerializerPacketObjectPool(config, if (widePacket) Sizes4B else Sizes2B)

@@ -13,17 +13,17 @@
 package fr.linkit.engine.local.script
 
 import fr.linkit.api.local.generation.compilation.access.CompilerType
-import fr.linkit.engine.connection.packet.persistence.context.script.ScriptConfigContext
-import fr.linkit.engine.local.LinkitApplication
+import fr.linkit.api.local.script.ScriptContext
 import fr.linkit.engine.local.generation.compilation.access.CommonCompilerTypes
 import fr.linkit.engine.local.language.cbp.AbstractClassBlueprint
 
 import java.io.InputStream
 
-class ScalaScriptBlueprint(bpIn: InputStream) extends AbstractClassBlueprint[ScriptConfigContext](bpIn) {
+class ScalaScriptBlueprint(bpIn: InputStream) extends AbstractClassBlueprint[ScriptContext](bpIn) {
 
     override val compilerType: CompilerType   = CommonCompilerTypes.Scalac
     override val rootScope   : RootValueScope = new RootValueScope {
         bindValue("ScriptCode" ~> (_.scriptSourceCode))
+        bindValue("ScriptArguments" ~> (_.scriptArguments.map(p => s"${p._1}: ${p._2.getName}").mkString(", ")))
     }
 }

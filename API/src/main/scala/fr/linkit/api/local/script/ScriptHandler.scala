@@ -10,9 +10,9 @@
  *  questions.
  */
 
-package fr.linkit.engine.local.script
+package fr.linkit.api.local.script
 
-import fr.linkit.engine.local.generation.compilation.resource.ClassFolderResource
+import fr.linkit.api.local.generation.resource.ClassFolderResource
 
 import java.io.InputStream
 
@@ -20,10 +20,10 @@ trait ScriptHandler[S <: ScriptFile] {
 
     def scriptClassBlueprint: InputStream
 
-    def findScript(name: String, classes: ClassFolderResource[ScriptFile]): Option[S]
+    def findScript(name: String, classes: ClassFolderResource[ScriptFile]): Option[ScriptInstantiator[S]]
 
-    def newScript(clazz: Class[_ <: S]): S
+    def newScript(clazz: Class[_ <: S], scriptArguments: Any*): S
 
-    def newScriptContext(scriptSourceCode: String, scriptName: String, scriptClassLoader: ClassLoader): ScriptContext
+    def newScriptContext(scriptSourceCode: String, scriptName: String, additionalArguments: Map[String, Class[_]], scriptClassLoader: ClassLoader): ScriptContext
 
 }

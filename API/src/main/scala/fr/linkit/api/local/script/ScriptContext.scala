@@ -10,14 +10,16 @@
  *  questions.
  */
 
-package $ClassPackage$
+package fr.linkit.api.local.script
 
-import fr.linkit.api.local.script.ScriptFile
+import fr.linkit.api.local.generation.compilation.CompilationContext
 
-class $ClassName$($ScriptArguments$) extends $ScriptClass$ {
+trait ScriptContext extends CompilationContext {
 
-    override def execute(): Unit = {
-        $ScriptCode$
-    }
+    val scriptSourceCode: String
+
+    val scriptArguments: Map[String, Class[_]]
+
+    val scriptSuperClass: Class[_ <: ScriptFile]
 
 }

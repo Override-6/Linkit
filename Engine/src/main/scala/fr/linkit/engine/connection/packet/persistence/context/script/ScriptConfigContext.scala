@@ -12,21 +12,32 @@
 
 package fr.linkit.engine.connection.packet.persistence.context.script
 
-import fr.linkit.engine.connection.packet.persistence.context.script.ScriptConfigContext.BlacklistedLines
+import fr.linkit.api.connection.packet.traffic.PacketTraffic
+import fr.linkit.api.local.script.{ScriptContext, ScriptFile}
+import fr.linkit.engine.connection.packet.persistence.context.script.ScriptConfigContext.{DefaultScriptConfigParameter, EndOfIdeContext}
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.script.SimpleScriptHandler.{ScriptName, ScriptPackage}
-import fr.linkit.engine.local.script.SourceScriptContext
+
 case class ScriptConfigContext(private val scriptCode: String,
                                scriptName: String,
-                               override val parentLoader: ClassLoader = classOf[LinkitApplication].getClassLoader) extends SourceScriptContext(scriptName, parentLoader) {
+                               override val scriptSuperClass: Class[_ <: ScriptFile],
+                               parameters: Map[String, Class[_]],
+                               override val parentLoader: ClassLoader = classOf[LinkitApplication].getClassLoader)
+        extends ScriptContext {
 
-    override lazy val scriptSourceCode: String = {
-        val str = new StringBuilder(scriptCode)
-        BlacklistedLines.foreach(line => {
-            val idx = str.indexOf(line)
-            str.delete(idx, idx + line.length + 2)
-        })
-        str.toString()
+    override      val scriptArguments : Map[String, Class[_]] = parameters ++ DefaultScriptConfigParameter
+    override lazy val scriptSourceCode: String                = {
+        val builder        = new StringBuilder(scriptCode)
+        val lines          = scriptCode.split('\n')
+        val scriptStartIdx = lines.indexWhere(str => str.toLowerCase.replace("\\s+", "").startsWith(EndOfIdeContext))
+        if (scriptStartIdx != -1) {
+            var c = -1
+            builder.dropWhile(char => (char == '\n') && {
+                c += 1
+                c
+            } == scriptStartIdx)
+        }
+        builder.toString()
     }
 
     override def className: String = ScriptName + scriptName
@@ -37,5 +48,10 @@ case class ScriptConfigContext(private val scriptCode: String,
 
 object ScriptConfigContext {
 
-    val BlacklistedLines    = Seq("import ._")
+    final val DefaultScriptConfigParameter = Map(
+        "app" -> classOf[LinkitApplication],
+        "traffic" -> classOf[PacketTraffic]
+    )
+    final val LineComment                  = "//"
+    final val EndOfIdeContext              = "EndOfIDEContext".toLowerCase
 }
