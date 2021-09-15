@@ -17,7 +17,6 @@ import fr.linkit.api.local.system.AppInitialisationException
 import fr.linkit.engine.local.LinkitApplication
 
 import java.io.File
-import java.lang.invoke.{MethodHandles, VarHandle, VarHandles}
 import java.nio.file.{Files, Path, StandardCopyOption, StandardOpenOption}
 import java.util.zip.{ZipEntry, ZipFile}
 
@@ -47,7 +46,7 @@ private[linkit] object InternalLibrariesLoader {
 
     private def extract(resources: ResourceFolder, libs: Array[String]): Unit = {
         val fileUrl        = classOf[LinkitApplication].getResource(ResourceMark)
-        val path           = fileUrl.getPath
+        val path           = fileUrl.getPath.drop(6) //Removes "file:/" header
         val zipMarkerIndex = path.lastIndexOf("!")
         if (zipMarkerIndex > 0) {
             extractJar(resources, path.take(zipMarkerIndex), libs)
@@ -90,7 +89,7 @@ private[linkit] object InternalLibrariesLoader {
     }
 
     private def extractJar(resources: ResourceFolder, jarPath: String, libs: Array[String]): Unit = {
-        val zipFile = new ZipFile(new File(jarPath))
+        val zipFile = new ZipFile(jarPath + "!/natives/")
         val root    = getPathProperty(resources, LibsDestination)
         Files.createDirectories(root)
         libs.foreach { lib =>
@@ -107,9 +106,9 @@ private[linkit] object InternalLibrariesLoader {
             val entryName = entry.getName
             if (entryName.startsWith(dirName)) {
                 val path = Path.of(destination.toString + '/' + entryName)
-                if (entry.isDirectory) {
-                    exportDirEntry(file, entry, path)
-                } else {
+                /*if (entry.isDirectory) {
+                    exportDirEntry(file, entry, path)*/
+                if (!entry.isDirectory) {
                     val in = file.getInputStream(dirZip)
                     Files.write(path, in.readAllBytes(), StandardOpenOption.CREATE)
                 }

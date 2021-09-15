@@ -69,7 +69,7 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
                     case array: Array[AnyRef] => scanArray(array)
                     case _: String            =>
                     case _                    =>
-                        scanObject(field.get(instanceField), originValue, false)
+                        scanObject(ScalaUtils.getValue(instance, field).asInstanceOf[AnyRef], originValue, false)
                 }
             }
         }

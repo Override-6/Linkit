@@ -18,7 +18,7 @@ import fr.linkit.engine.local.utils.ClassMap
 
 import scala.reflect.{ClassTag, classTag}
 
-class PacketConfigBuilder {
+class PersistenceConfigBuilder {
 
     private val persistors     = new ClassMap[TypePersistence[_ <: AnyRef]]
     private val converters     = new ClassMap[ObjectConverter[_ <: AnyRef, _]]
@@ -31,7 +31,7 @@ class PacketConfigBuilder {
 
     object profiles {
 
-        private[PacketConfigBuilder] val customProfiles = new ClassMap[TypeProfileBuilder[_ <: AnyRef]]()
+        private[PersistenceConfigBuilder] val customProfiles = new ClassMap[TypeProfileBuilder[_ <: AnyRef]]()
 
         def +=[T <: AnyRef : ClassTag](builder: TypeProfileBuilder[T]): this.type = {
             val clazz = classTag[T].runtimeClass
@@ -129,9 +129,9 @@ class PacketConfigBuilder {
 
 }
 
-object PacketConfigBuilder {
+object PersistenceConfigBuilder {
 
-    implicit def autoBuild(context: PersistenceContext, builder: PacketConfigBuilder): PersistenceConfig = {
+    implicit def autoBuild(context: PersistenceContext, builder: PersistenceConfigBuilder): PersistenceConfig = {
         builder.build(context)
     }
 }

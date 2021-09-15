@@ -18,6 +18,4 @@ import fr.linkit.server.connection.network.ServerSideNetwork
 case class ExternalConnectionSessionInfo(server: ServerConnection,
                                          manager: ExternalConnectionsManager,
                                          network: ServerSideNetwork,
-                                         readThread: PacketReaderThread) {
-
-}
+                                         readThread: PacketReaderThread)

@@ -17,6 +17,7 @@ import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
 import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.local.ApplicationContext
@@ -34,24 +35,25 @@ import fr.linkit.server.connection.packet.ServerPacketTraffic
 import fr.linkit.server.local.config.{AmbiguityStrategy, ServerConnectionConfiguration}
 import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
-import java.net.{ServerSocket, SocketException}
 
+import java.net.{ServerSocket, SocketException}
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 
 class ServerConnection(applicationContext: ServerApplication,
                        val configuration: ServerConnectionConfiguration) extends CentralConnection {
 
-    override val currentIdentifier : String                     = configuration.identifier
-    override val translator        : PacketTranslator           = configuration.translatorFactory(applicationContext)
-    override val port              : Int                        = configuration.port
-    private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
-    private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
-    private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    override val traffic           : PacketTraffic              = new ServerPacketTraffic(this, configuration.defaultPersistenceConfig)
-    override val eventNotifier     : EventNotifier              = new DefaultEventNotifier
-    private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
-    override val network           : Network                    = sideNetwork
+    override val currentIdentifier       : String                     = configuration.identifier
+    override val translator              : PacketTranslator           = configuration.translatorFactory(applicationContext)
+    override val port                    : Int                        = configuration.port
+    override val defaultPersistenceConfig: PersistenceConfig          = configuration.defaultPersistenceConfig
+    private  val workerPool              : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
+    private  val serverSocket            : ServerSocket               = new ServerSocket(configuration.port)
+    private  val connectionsManager      : ExternalConnectionsManager = new ExternalConnectionsManager(this)
+    override val traffic                 : PacketTraffic              = new ServerPacketTraffic(this, configuration.defaultPersistenceConfig)
+    override val eventNotifier           : EventNotifier              = new DefaultEventNotifier
+    private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
+    override val network                 : Network                    = sideNetwork
 
     @volatile private var alive = false
 
@@ -92,13 +94,13 @@ class ServerConnection(applicationContext: ServerApplication,
 
     override def isAlive: Boolean = alive
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
-        traffic.getInjectable(injectableID, factory, scopeFactory)
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+        traffic.getInjectable(injectableID, config, factory, scopeFactory)
     }
 
     override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
 
-    override def createStore(id: Int): PacketInjectableStore = traffic.createStore(id)
+    override def createStore(id: Int, config: PersistenceConfig): PacketInjectableStore = traffic.createStore(id, config)
 
     override def getConnection(identifier: String): Option[ServerExternalConnection] = Option(connectionsManager.getConnection(identifier))
 

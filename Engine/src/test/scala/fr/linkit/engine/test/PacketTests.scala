@@ -16,7 +16,7 @@ import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
 import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
-import fr.linkit.engine.connection.packet.persistence.context.{ImmutablePersistenceContext, PacketConfigBuilder}
+import fr.linkit.engine.connection.packet.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
 import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer
 import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
 import fr.linkit.engine.local.LinkitApplication
@@ -41,7 +41,7 @@ class PacketTests {
     @Test
     def simplePacketTest(): Unit = {
         val f = new File("/test.txt")
-        val config = new PacketConfigBuilder() {
+        val config = new PersistenceConfigBuilder() {
             setTNewConverter[File, String](_.toString)(new File(_))
         }.build(ImmutablePersistenceContext(new ClassMap, new ClassMap))
         testPacket(Array(f, f, f), config)
@@ -53,7 +53,7 @@ class PacketTests {
         val obj    = Array[AnyRef](f, f, f)
         val coords = DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM")
         val buff   = ByteBuffer.allocate(1000)
-        val config = new PacketConfigBuilder() {
+        val config = new PersistenceConfigBuilder() {
             setTNewConverter[File, String](_.toString)(new File(_))
         }.build(ImmutablePersistenceContext(new ClassMap, new ClassMap))
         val t0     = System.currentTimeMillis()
@@ -76,7 +76,7 @@ class PacketTests {
     @Test
     def complexPacketTest(): Unit = {
         val packet = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> "GET_OR_OPEN"), RequestPacket(1, Array(IntPacket(3))))
-        val config = new PacketConfigBuilder() {
+        val config = new PersistenceConfigBuilder() {
             setTNewConverter[File, String](_.toString)(new File(_))
         }.build(ImmutablePersistenceContext(new ClassMap, new ClassMap))
         testPacket(Array(packet), config)
@@ -90,7 +90,7 @@ object PacketTests {
     private val serializer = new DefaultPacketSerializer(null)
 
     def testPacket(obj: Array[AnyRef]): Unit = {
-        testPacket(obj, new PacketConfigBuilder().build(ImmutablePersistenceContext(new ClassMap, new ClassMap)))
+        testPacket(obj, new PersistenceConfigBuilder().build(ImmutablePersistenceContext(new ClassMap, new ClassMap)))
     }
 
     def testPacket(obj: Array[AnyRef], config: PersistenceConfig): Unit = {

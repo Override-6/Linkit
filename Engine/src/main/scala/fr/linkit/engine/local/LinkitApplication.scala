@@ -176,8 +176,8 @@ object LinkitApplication {
                     res
                 }
         properties.load(propertiesResources.getAdapter.newInputStream())
-        AppLogger.info("Loading Native Libraries...")
-        InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
+//        AppLogger.info("Loading Native Libraries...")
+ //       InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
 
         isPrepared = true
         appResources

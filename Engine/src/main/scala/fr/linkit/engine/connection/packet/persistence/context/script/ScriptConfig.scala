@@ -14,11 +14,11 @@ package fr.linkit.engine.connection.packet.persistence.context.script
 
 import fr.linkit.api.connection.packet.persistence.context.{ObjectConverter, PersistenceConfig, PersistenceContext, TypePersistence}
 import fr.linkit.api.local.script.ScriptFile
-import fr.linkit.engine.connection.packet.persistence.context.PacketConfigBuilder
+import fr.linkit.engine.connection.packet.persistence.context.PersistenceConfigBuilder
 
 import scala.reflect.ClassTag
 
-abstract class ScriptConfig extends PacketConfigBuilder with ScriptFile {
+abstract class ScriptConfig extends PersistenceConfigBuilder with ScriptFile {
 
 }
 

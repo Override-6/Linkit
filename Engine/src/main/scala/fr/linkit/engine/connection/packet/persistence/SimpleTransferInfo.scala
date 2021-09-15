@@ -19,7 +19,7 @@ import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordina
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
-import fr.linkit.engine.connection.packet.persistence.context.{ImmutablePersistenceContext, PacketConfigBuilder, SimplePersistenceConfig}
+import fr.linkit.engine.connection.packet.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.local.utils.ClassMap
 
 import java.io.File

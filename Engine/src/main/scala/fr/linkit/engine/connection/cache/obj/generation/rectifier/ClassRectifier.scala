@@ -33,7 +33,9 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: 
     fixAllMethods()
 
     lazy val rectifiedClass: (Array[Byte], Class[SynchronizedObject[_]]) = {
-        (ctClass.toBytecode, ctClass.toClass(classLoader, null).asInstanceOf[Class[SynchronizedObject[_]]])
+        val bc = ctClass.toBytecode
+
+        (bc, classLoader.defineClass(bc, ctClass.getName).asInstanceOf[Class[SynchronizedObject[_]]])
     }
 
     private def fixAllMethods(): Unit = {
