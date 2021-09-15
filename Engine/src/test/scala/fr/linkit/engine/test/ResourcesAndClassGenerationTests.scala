@@ -12,11 +12,9 @@
 
 package fr.linkit.engine.test
 
-import java.util
-
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.behavior.annotation.FieldControl
-import fr.linkit.api.connection.cache.obj.behavior.{ObjectBehavior, ObjectBehaviorStore}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
@@ -28,7 +26,7 @@ import fr.linkit.api.local.system.security.ApplicationSecurityManager
 import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultObjectBehavior, DefaultObjectBehaviorStore}
 import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource, SyncObjectInstantiationHelper}
+import fr.linkit.engine.connection.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource, SyncObjectInstantiationHelper}
 import fr.linkit.engine.connection.cache.obj.invokation.remote.ObjectPuppeteer
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
@@ -40,6 +38,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
 
+import java.util
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.reflect.runtime.universe.TypeTag
 
@@ -115,16 +114,10 @@ class ResourcesAndClassGenerationTests {
     }
 
     private class TestClass {
+
         @FieldControl()
         private val test: String = "salut"
     }
-
-    /*class FakeSynchronizedObjectPersistor extends SynchronizedObjectPersistor(null) {
-        override protected def initialiseWrapper(detachedWrapper: SynchronizedObjectPersistor.DetachedWrapper): SynchronizedObject[_] = {
-            println("Faking wrapper...")
-            forObject(detachedWrapper.detached)
-        }
-    }*/
 
     @Test
     @Order(3)
@@ -144,6 +137,7 @@ class ResourcesAndClassGenerationTests {
         obj.add(7, 2)
         obj.add(new Vector2(7, 2))
         println(s"obj = ${obj}")
+        PacketTests.testPacket(Array(obj))
     }
 
     def forObject[A <: AnyRef : TypeTag](obj: A, tree: ObjectBehaviorStore = new DefaultObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory)): A with SynchronizedObject[A] = {
@@ -161,12 +155,12 @@ class ResourcesAndClassGenerationTests {
     private object TestWrapperInstantiator extends ObjectWrapperInstantiator {
 
         private val resource  = resources.getOrOpenThenRepresent[SyncObjectClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
-        private val generator = new DefaultObjectWrapperClassCenter(new DefaultCompilerCenter, resource)
+        private val generator = new DefaultSyncClassCenter(new DefaultCompilerCenter, resource)
 
         override def newWrapper[A <: AnyRef](obj: A, store: ObjectBehaviorStore, puppeteerInfo: SyncNodeInfo, subWrappers: Map[AnyRef, SyncNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
             val cl                     = obj.getClass.asInstanceOf[Class[A]]
             val behaviorDesc           = store.getFromClass[A](cl)
-            val puppetClass            = generator.getWrapperClass[A](SimpleSyncObjectSuperClassDescription[A](cl))
+            val puppetClass            = generator.getSyncClass[A](SimpleSyncObjectSuperClassDescription[A](cl))
             val pup                    = new ObjectPuppeteer[A](null, null, puppeteerInfo, behaviorDesc)
             val helper                 = new SyncObjectInstantiationHelper(this, store)
             val (wrapper, subWrappers) = helper.instantiateFromOrigin[A](puppetClass, obj, Map())
@@ -174,7 +168,9 @@ class ResourcesAndClassGenerationTests {
             (wrapper, subWrappers)
         }
 
-        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo,  store: ObjectBehaviorStore): Unit = ???
+        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit = {
+            ???
+        }
     }
 
 }

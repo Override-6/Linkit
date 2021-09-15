@@ -13,9 +13,9 @@
 package fr.linkit.engine.test.classes
 
 import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule.BROADCAST
+import fr.linkit.api.connection.cache.obj.behavior.annotation.{MethodControl => MC}
 
 import scala.annotation.meta.setter
-import fr.linkit.api.connection.cache.obj.behavior.annotation.{MethodControl => MC}
 
 case class Player(@(MC@setter)(BROADCAST) id: Int,
                   @(MC@setter)(BROADCAST) owner: String,

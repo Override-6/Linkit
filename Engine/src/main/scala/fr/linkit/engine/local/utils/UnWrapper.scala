@@ -24,6 +24,20 @@ object UnWrapper {
         }
     }
 
+    def getPrimitiveClass(any: Any): Class[_] = {
+        any match {
+            case _: Integer      => Integer.TYPE
+            case _: lang.Byte    => lang.Byte.TYPE
+            case _: lang.Short   => lang.Short.TYPE
+            case _: lang.Long    => lang.Long.TYPE
+            case _: lang.Double  => lang.Double.TYPE
+            case _: lang.Float   => lang.Float.TYPE
+            case _: lang.Boolean => lang.Boolean.TYPE
+            case _: Character    => Character.TYPE
+            case o => o.getClass
+        }
+    }
+
     @inline
     def isPrimitiveWrapper(obj: Any): Boolean = {
         obj.isInstanceOf[Number] || obj.isInstanceOf[lang.Boolean] || obj.isInstanceOf[Character]

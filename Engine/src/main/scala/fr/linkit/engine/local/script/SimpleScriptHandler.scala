@@ -12,24 +12,39 @@
 
 package fr.linkit.engine.local.script
 
-import fr.linkit.engine.local.script.SimpleScriptHandler.{ScriptName, ScriptPackage}
+import fr.linkit.api.local.script.{ScriptContext, ScriptFile}
+import fr.linkit.engine.local.script.SimpleScriptHandler.{CBResourcePath, ScriptName, ScriptPackage}
 
-class SimpleScriptHandler extends LinkitScriptHandler[ScriptFile] {
+class SimpleScriptHandler[S <: ScriptFile] extends LinkitScriptHandler[S] {
 
-    override val scriptClassBlueprintResourcePath: String = "/generation/scala_script_file.scbp"
+    override val scriptClassBlueprintResourcePath: String = CBResourcePath
 
-    override def newScript(clazz: Class[_ <: ScriptFile]): ScriptFile = clazz.getConstructor().newInstance()
+    override def newScript(clazz: Class[_ <: S], args: Any*): S = {
+        clazz.getDeclaredConstructors.head.newInstance(args: _*)
+                .asInstanceOf[S]
+    }
 
     override protected val className   : String = ScriptName
     override protected val classPackage: String = ScriptPackage
 
-    override def newScriptContext(scriptSourceCode: String, scriptName: String, scriptClassLoader: ClassLoader): ScriptContext = {
-        SourceScriptContext(scriptSourceCode, scriptName, scriptClassLoader)
+    override def newScriptContext(scriptSourceCode: String, scriptName: String, additionalArguments: Map[String, Class[_]], scriptClassLoader: ClassLoader): ScriptContext = {
+        new ScriptContext {
+            override val scriptSourceCode: String                 = scriptSourceCode
+            override val scriptArguments : Map[String, Class[_]]  = additionalArguments
+            override val scriptSuperClass: Class[_ <: ScriptFile] = classOf[ScriptFile]
+
+            override def className: String = ScriptName
+
+            override def classPackage: String = ScriptPackage
+
+            override def parentLoader: ClassLoader = scriptClassLoader
+        }
     }
 }
 
 object SimpleScriptHandler {
 
-    val ScriptPackage = "gen.scala.script"
-    val ScriptName    = "ScalaScript_"
+    final val CBResourcePath = "/generation/scala_script_file.scbp"
+    final val ScriptPackage  = "gen.scala.script"
+    final val ScriptName     = "ScalaScript"
 }

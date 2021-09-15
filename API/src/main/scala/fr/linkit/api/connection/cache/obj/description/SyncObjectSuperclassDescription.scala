@@ -19,7 +19,7 @@ import scala.reflect.runtime.universe.Type
 /**
  * The description of the super class of a generated [[fr.linkit.api.connection.cache.obj.SynchronizedObject]] class.
  * @see [[fr.linkit.api.connection.cache.obj.SynchronizedObject]]
- * @see [[fr.linkit.api.connection.cache.obj.generation.ObjectWrapperClassCenter]]
+ * @see [[fr.linkit.api.connection.cache.obj.generation.SyncClassCenter]]
  * @see [[fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator]]
  * */
 trait SyncObjectSuperclassDescription[A] extends CompilationContext {

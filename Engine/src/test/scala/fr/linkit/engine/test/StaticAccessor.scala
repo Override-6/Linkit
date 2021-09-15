@@ -12,6 +12,8 @@
 
 package fr.linkit.engine.test
 
+import scala.language.experimental.macros
+
 class StaticAccessor {
 
     def compute(clazz: Class[_]): Any = macro MacroTestsMacros.macroCompute

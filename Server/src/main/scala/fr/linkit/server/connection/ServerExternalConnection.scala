@@ -15,6 +15,7 @@ package fr.linkit.server.connection
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
@@ -26,22 +27,23 @@ import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
 import fr.linkit.engine.local.system.SystemPacket
 import org.jetbrains.annotations.NotNull
+
 import java.net.Socket
 import java.nio.ByteBuffer
-
 import scala.reflect.ClassTag
 
 class ServerExternalConnection private(val session: ExternalConnectionSession) extends ExternalConnection {
 
     import session._
 
-    override val currentIdentifier: String           = server.currentIdentifier
-    override val traffic          : PacketTraffic    = server.traffic
-    override val translator       : PacketTranslator = server.translator
-    override val eventNotifier    : EventNotifier    = server.eventNotifier
-    override val network          : Network          = session.network
-    override val port             : Int              = server.port
-    override val boundIdentifier  : String           = session.boundIdentifier
+    override val currentIdentifier       : String            = server.currentIdentifier
+    override val traffic                 : PacketTraffic     = server.traffic
+    override val translator              : PacketTranslator  = server.translator
+    override val eventNotifier           : EventNotifier     = server.eventNotifier
+    override val network                 : Network           = session.network
+    override val port                    : Int               = server.port
+    override val boundIdentifier         : String            = session.boundIdentifier
+    override val defaultPersistenceConfig: PersistenceConfig = server.defaultPersistenceConfig
 
     @volatile private var alive = false
 
@@ -61,13 +63,13 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     override def isAlive: Boolean = alive
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
-        traffic.getInjectable(injectableID, factory, scopeFactory)
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+        traffic.getInjectable(injectableID, config, factory, scopeFactory)
     }
 
     override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
 
-    override def createStore(id: Int): PacketInjectableStore = traffic.createStore(id)
+    override def createStore(id: Int, config: PersistenceConfig): PacketInjectableStore = traffic.createStore(id, config)
 
     override def getState: ExternalConnectionState = session.getSocketState
 
@@ -97,7 +99,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     def sendPacket(packet: Packet, attributes: PacketAttributes, path: Array[Int]): Unit = {
         runLater {
             val coords       = DedicatedPacketCoordinates(path, boundIdentifier, server.currentIdentifier)
-            val transferInfo = SimpleTransferInfo(coords, attributes, packet)
+            val transferInfo = SimpleTransferInfo(coords, attributes, packet, null)
             val result       = translator.translate(transferInfo)
             session.send(result)
         }

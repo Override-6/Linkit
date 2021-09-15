@@ -15,9 +15,9 @@ package fr.linkit.engine.connection.cache.obj.generation
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.resource.representation.ResourceRepresentationFactory
-import fr.linkit.engine.local.generation.compilation.resource.ClassFolderResource
+import fr.linkit.engine.local.generation.compilation.resource.CachedClassFolderResource
 
-class SyncObjectClassResource(resource: ResourceFolder) extends ClassFolderResource[SynchronizedObject[Any]](resource) {
+class SyncObjectClassResource(resource: ResourceFolder) extends CachedClassFolderResource[SynchronizedObject[Any]](resource) {
 
     def findClass[S](wrappedClass: Class[_]): Option[Class[S with SynchronizedObject[S]]] = {
         findClass[S](wrappedClass.getName, wrappedClass.getClassLoader).asInstanceOf[Option[Class[S with SynchronizedObject[S]]]]

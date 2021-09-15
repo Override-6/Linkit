@@ -47,8 +47,8 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
 
         def scanObject(instanceField: AnyRef, originField: AnyRef, root: Boolean): Unit = {
             if (depth >= MaxScanDepth ||
-                originField == null ||
-                UnWrapper.isPrimitiveWrapper(instanceField))
+                    originField == null ||
+                    UnWrapper.isPrimitiveWrapper(instanceField))
                 return
             scanAllFields(instanceField, originField, root)
         }
@@ -69,7 +69,7 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
                     case array: Array[AnyRef] => scanArray(array)
                     case _: String            =>
                     case _                    =>
-                        scanObject(field.get(instanceField), originValue, false)
+                        scanObject(ScalaUtils.getValue(instance, field).asInstanceOf[AnyRef], originValue, false)
                 }
             }
         }
@@ -115,9 +115,9 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
         scanObject(instance, origin, true)
 
         wrapperClass.getDeclaredFields
-            .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isFinal(f.getModifiers))
-            .tapEach(_.setAccessible(true))
-            .foreach(_.set(instance, null))
+                .filterNot(f => Modifier.isStatic(f.getModifiers) || Modifier.isFinal(f.getModifiers))
+                .tapEach(_.setAccessible(true))
+                .foreach(_.set(instance, null))
         (instance, subWrappersInstantiated.toMap)
     }
 
@@ -140,7 +140,7 @@ object SyncObjectInstantiationHelper {
                 case array: Array[AnyRef]                 => java.util.Arrays.copyOf(array, array.length).map(getClonedInstance)
                 case str: String                          => str
                 case o if UnWrapper.isPrimitiveWrapper(o) => o
-                case hidden if hidden.getClass.isHidden   => data
+                case _ if data.getClass.isHidden          => data
                 case enum if enum.getClass.isEnum         => enum
                 case syncObj: SynchronizedObject[_]       => syncObj
 

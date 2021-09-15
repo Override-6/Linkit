@@ -13,10 +13,9 @@
 package fr.linkit.server.connection
 
 import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketTransferResult}
+import fr.linkit.api.connection.packet.persistence.PacketTransferResult
 import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
-import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
 import org.jetbrains.annotations.Nullable

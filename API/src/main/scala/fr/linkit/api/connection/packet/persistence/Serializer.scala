@@ -18,10 +18,6 @@ trait Serializer {
 
     val signature: Array[Byte]
 
-    def serialize(objects: Array[AnyRef], buffer: ByteBuffer, withSignature: Boolean): Unit
-
     def isSameSignature(buffer: ByteBuffer): Boolean
-
-    def deserialize(buffer: ByteBuffer)(f: Any => Unit): Unit
 
 }

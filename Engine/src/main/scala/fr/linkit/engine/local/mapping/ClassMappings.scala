@@ -51,9 +51,16 @@ object ClassMappings {
 
     def isRegistered(hashCode: Int): Boolean = classes.contains(hashCode)
 
-    def isRegistered(clazz: Class[_]): Boolean = isRegistered(clazz.getName)
+    @inline def isRegistered(clazz: Class[_]): Boolean = isRegistered(clazz.getName)
 
-    def isRegistered(className: String): Boolean = classes.contains(className.hashCode)
+    @inline def isRegistered(className: String): Boolean = classes.contains(className.hashCode)
+
+    @inline def codeOfClass(clazz: Class[_]): Int = {
+        val name = clazz.getName
+        if (!classes.contains(name.hashCode))
+            putClass(clazz)
+        name.hashCode
+    }
 
     private def mapPrimitives(): Map[Int, Class[_]] = {
         import java.{lang => l}

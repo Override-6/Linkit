@@ -20,7 +20,7 @@ import fr.linkit.engine.local.language.cbp.AbstractClassBlueprint
 
 import java.io.InputStream
 
-class ScalaSyncClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncObjectSuperclassDescription[_]](in) {
+class ScalaClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncObjectSuperclassDescription[_]](in) {
 
     override val compilerType: CompilerType = CommonCompilerTypes.Scalac
 

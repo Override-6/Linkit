@@ -12,9 +12,9 @@
 
 package $ClassPackage$
 
-import fr.linkit.engine.local.script.ScriptFile
+import fr.linkit.api.local.script.ScriptFile
 
-class $ClassName$() extends ScriptFile {
+class $ClassName$($ScriptArguments$) extends $ScriptClass$ {
 
     override def execute(): Unit = {
         $ScriptCode$

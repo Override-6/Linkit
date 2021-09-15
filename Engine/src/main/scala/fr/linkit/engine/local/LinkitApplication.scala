@@ -20,18 +20,15 @@ import fr.linkit.api.local.resource.external.{LocalFolder, ResourceFolder}
 import fr.linkit.api.local.system.config.ApplicationConfiguration
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.{ApiConstants, AppException, AppLogger, Version}
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultObjectWrapperClassCenter, SyncObjectClassResource}
-import fr.linkit.engine.local.LinkitApplication.{getProperty, setInstance}
+import fr.linkit.engine.local.LinkitApplication.setInstance
 import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.local.mapping.ClassMapEngine
 import fr.linkit.engine.local.plugin.LinkitPluginManager
 import fr.linkit.engine.local.resource.external.{LocalResourceFactories, LocalResourceFile, LocalResourceFolder}
 import fr.linkit.engine.local.resource.{ResourceFolderMaintainer, SimpleResourceListener}
-import fr.linkit.engine.local.system.EngineConstants
+import fr.linkit.engine.local.system.{EngineConstants, InternalLibrariesLoader}
 import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.system.fsa.io.{IOFileAdapter, IOFileSystemAdapter}
-import fr.linkit.engine.local.system.fsa.nio.{NIOFileAdapter, NIOFileSystemAdapter}
 
 import java.nio.file.Path
 import java.util.{Objects, Properties}
@@ -121,6 +118,7 @@ object LinkitApplication {
 
     private val AppPropertiesName     = "app.properties"
     private val AppDefaultsProperties = "/app_defaults.properties"
+    private val LibrariesNames        = Array("tests")
 
     private val properties          : Properties        = new Properties()
     @volatile private var instance  : LinkitApplication = _
@@ -131,11 +129,13 @@ object LinkitApplication {
         if (this.instance != null)
             throw new IllegalAccessException("Only one LinkitApplication per JVM process is permitted.")
         if (!isPrepared)
-            throw new IllegalStateException("Application must be prepared before any launch. Please use LinkitApplication.prepareApplication.")
+            throw new IllegalStateException("LinkitApplication must be prepared before any launch. Please use LinkitApplication.prepareApplication.")
         this.instance = instance
     }
 
-    def getProperty(name: String): String = properties.getProperty(name)
+    def getProperty(name: String): String = {
+        properties.getProperty(name)
+    }
 
     def getHomePath(path: String): Path = {
         Path.of(instance.getAppResources.getAdapter.getPath + '/' + path)
@@ -164,8 +164,7 @@ object LinkitApplication {
         AppLogger.info(s"\tImplementation Version | ${implVersion}")
         AppLogger.info(s"\tCurrent JDK Version    | ${System.getProperty("java.version")}")
 
-        AppLogger.info("Mapping classes, this task may take a time.")
-
+        AppLogger.info("Mapping classes...")
         mapEnvironment(configuration.fsAdapter, otherSources)
 
         val appResources        = prepareAppResources(configuration)
@@ -177,12 +176,15 @@ object LinkitApplication {
                     res
                 }
         properties.load(propertiesResources.getAdapter.newInputStream())
+//        AppLogger.info("Loading Native Libraries...")
+ //       InternalLibrariesLoader.extractAndLoad(appResources, LibrariesNames)
 
         isPrepared = true
         appResources
     }
 
     def mapEnvironment(fsa: FileSystemAdapter, otherSources: Seq[Class[_]]): Unit = {
+
         ClassMapEngine.mapAllSourcesOfClasses(fsa, Seq(getClass, ClassMapEngine.getClass, Predef.getClass, classOf[ApplicationContext]))
         ClassMapEngine.mapJDK(fsa)
         ClassMapEngine.mapAllSourcesOfClasses(fsa, otherSources)

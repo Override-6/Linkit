@@ -12,19 +12,22 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketSerializer}
 import fr.linkit.api.connection.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.SimplePacketAttributes
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
+import fr.linkit.engine.connection.packet.persistence.context.SimplePersistenceConfig
 
 import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
 
 class LazyPacketDeserializationResult(override val buff: ByteBuffer,
-                                      serializer: PacketSerializer) extends PacketDeserializationResult {
+                                      serializer: PacketSerializer,
+                                      config: PersistenceConfig) extends PacketDeserializationResult {
 
-    private lazy  val deserial                      = serializer.deserializePacket(buff)
+    private lazy  val deserial                      = serializer.deserializePacket(buff)(config)
     private lazy  val cache     : Array[AnyRef]     = createCache()
     override lazy val coords    : PacketCoordinates = deserial.getCoordinates
     override lazy val attributes: PacketAttributes  = extract[PacketAttributes](SimplePacketAttributes.empty)

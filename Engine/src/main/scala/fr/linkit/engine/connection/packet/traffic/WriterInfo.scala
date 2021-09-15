@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 
-case class WriterInfo(traffic: PacketTraffic, path: Array[Int])
+case class WriterInfo(traffic: PacketTraffic, persistenceConfig: PersistenceConfig, path: Array[Int])

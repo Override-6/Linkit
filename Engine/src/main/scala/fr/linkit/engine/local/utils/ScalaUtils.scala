@@ -14,11 +14,13 @@ package fr.linkit.engine.local.utils
 
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
+import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.{Boolean, Byte, Char, Double, Float, Int, Long, Short}
 import sun.misc.Unsafe
 
 import java.io.File
 import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
 import java.nio.ByteBuffer
+import scala.annotation.switch
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
 
@@ -67,6 +69,26 @@ object ScalaUtils {
             case array: Array[Any] => deepToString(array)
             case any               => any.toString
         }
+    }
+
+    def getValue(instance: Any, field: Field): Any = {
+        val clazz = field.getType
+        val offset = TheUnsafe.objectFieldOffset(field)
+        if (clazz.isPrimitive) {
+            (clazz.getName: @switch) match {
+                case "int"     => TheUnsafe.getInt(instance, offset)
+                case "byte"    => TheUnsafe.getByte(instance, offset)
+                case "short"   => TheUnsafe.getShort(instance, offset)
+                case "long"    => TheUnsafe.getLong(instance, offset)
+                case "double"  => TheUnsafe.getDouble(instance, offset)
+                case "float"   => TheUnsafe.getFloat(instance, offset)
+                case "boolean" => TheUnsafe.getBoolean(instance, offset)
+                case "char"    => TheUnsafe.getChar(instance, offset)
+            }
+        } else {
+            TheUnsafe.getObject(instance, offset)
+        }
+
     }
 
     def setValue(instance: Any, field: Field, value: Any): Unit = {
@@ -150,10 +172,9 @@ object ScalaUtils {
         instance
     }
 
-
-    def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Seq[Field] = {
+    def retrieveAllFields(clazz: Class[_], accessible: Boolean = true): Array[Field] = {
         var superClass  = clazz
-        var superFields = Seq.empty[Field]
+        var superFields = Array.empty[Field]
         while (superClass != null) {
             superFields ++= superClass.getDeclaredFields
             superClass = superClass.getSuperclass
