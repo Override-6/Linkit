@@ -12,6 +12,7 @@
 
 package fr.linkit.client.local.config
 
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.local.system.config.schematic.{AppSchematic, EmptySchematic}
 import fr.linkit.api.local.system.fsa.FileSystemAdapter
 import fr.linkit.api.local.system.security.ApplicationSecurityManager
@@ -23,17 +24,16 @@ abstract class ClientApplicationConfigBuilder {
     private final val enableEventHandling: Boolean = false //still in development
 
     val resourcesFolder: String
-    var loadSchematic        : AppSchematic[ClientApplication] = new EmptySchematic()
-    var nWorkerThreadFunction: Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 threads for application.
-    var pluginFolder         : Option[String]                  = Some("/Plugins")
-    var fsAdapter            : FileSystemAdapter               = LocalFileSystemAdapters.Nio
-    var securityManager      : ApplicationSecurityManager      = ApplicationSecurityManager.none
+    var loadSchematic           : AppSchematic[ClientApplication] = new EmptySchematic()
+    var nWorkerThreadFunction   : Int => Int                      = _ * 2 + 2 //2 threads per external connection + 2 threads for application.
+    var pluginFolder            : Option[String]                  = Some("/Plugins")
+    var fsAdapter               : FileSystemAdapter               = LocalFileSystemAdapters.Nio
+    var securityManager         : ApplicationSecurityManager      = ApplicationSecurityManager.none
 
     def buildConfig(): ClientApplicationConfiguration = {
         val builder = this
         new ClientApplicationConfiguration {
             override val loadSchematic        : AppSchematic[ClientApplication] = builder.loadSchematic
-            override val enableEventHandling  : Boolean                         = builder.enableEventHandling
             override val nWorkerThreadFunction: Int => Int                      = builder.nWorkerThreadFunction
             override val pluginFolder         : Option[String]                  = builder.pluginFolder
             override val resourceFolder       : String                          = builder.resourcesFolder

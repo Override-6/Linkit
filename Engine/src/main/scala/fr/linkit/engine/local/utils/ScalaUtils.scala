@@ -88,7 +88,10 @@ object ScalaUtils {
         } else {
             TheUnsafe.getObject(instance, offset)
         }
+    }
 
+    def getValueAnyRef(instance: Any, field: Field): AnyRef = {
+        getValue(instance, field).asInstanceOf[AnyRef]
     }
 
     def setValue(instance: Any, field: Field, value: Any): Unit = {

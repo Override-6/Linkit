@@ -16,6 +16,7 @@ import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.persistence.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
@@ -43,23 +44,24 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     init()
 
-    override val currentIdentifier: String            = configuration.identifier
-    override val port             : Int               = configuration.remoteAddress.getPort
-    override val translator       : PacketTranslator  = session.translator
-    override val eventNotifier    : EventNotifier     = session.eventNotifier
-    override val traffic          : PacketTraffic     = session.traffic
-    override val boundIdentifier  : String            = serverIdentifier
-    private  val sideNetwork      : ClientSideNetwork = new ClientSideNetwork(this)
-    override val network          : Network           = sideNetwork
-    @volatile private var alive                       = true
+    override val currentIdentifier       : String            = configuration.identifier
+    override val port                    : Int               = configuration.remoteAddress.getPort
+    override val translator              : PacketTranslator  = session.translator
+    override val eventNotifier           : EventNotifier     = session.eventNotifier
+    override val traffic                 : PacketTraffic     = session.traffic
+    override val boundIdentifier         : String            = serverIdentifier
+    override val defaultPersistenceConfig: PersistenceConfig = configuration.defaultPersistenceConfig
+    private  val sideNetwork             : ClientSideNetwork = new ClientSideNetwork(this)
+    override val network                 : Network           = sideNetwork
+    @volatile private var alive                              = true
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
-        traffic.getInjectable(injectableID, factory, scopeFactory)
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+        traffic.getInjectable(injectableID, config, factory, scopeFactory)
     }
 
     override def findStore(id: Int): Option[PacketInjectableStore] = traffic.findStore(id)
 
-    override def createStore(id: Int): PacketInjectableStore = traffic.createStore(id)
+    override def createStore(id: Int, config: PersistenceConfig): PacketInjectableStore = traffic.createStore(id, config)
 
     override def runLater(@workerExecution task: => Unit): Unit = appContext.runLater(task)
 

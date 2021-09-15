@@ -47,7 +47,7 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
 
         def scanObject(instanceField: AnyRef, originField: AnyRef, root: Boolean): Unit = {
             if (depth >= MaxScanDepth ||
-                    originField == null ||
+                    originField == null || instanceField == null ||
                     UnWrapper.isPrimitiveWrapper(instanceField))
                 return
             scanAllFields(instanceField, originField, root)
@@ -69,7 +69,7 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
                     case array: Array[AnyRef] => scanArray(array)
                     case _: String            =>
                     case _                    =>
-                        scanObject(ScalaUtils.getValue(instance, field).asInstanceOf[AnyRef], originValue, false)
+                        scanObject(ScalaUtils.getValue(instanceField, field).asInstanceOf[AnyRef], originValue, false)
                 }
             }
         }
@@ -77,10 +77,10 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
         def scanAllFields(instance: Any, origin: Any, root: Boolean): Unit = {
             depth += 1
             val classUsed = if (instance.isInstanceOf[SynchronizedObject[_]]) origin.getClass else instance.getClass
-            retrieveAllFields(classUsed).foreach(field => /*if (!Modifier.isTransient(field.getModifiers))*/ {
+            retrieveAllFields(classUsed).foreach(field => if (!field.getDeclaringClass.isHidden) {
                 try {
                     var isWrapper   = false
-                    var originValue = field.get(origin)
+                    var originValue = ScalaUtils.getValueAnyRef(origin, field)
                     if (trustedSubWrapper.contains(Identity(originValue))) {
                         originValue = asWrapper(originValue)
                         isWrapper = true

@@ -14,7 +14,9 @@ package fr.linkit.engine.local.utils
 
 case class Identity[A](obj: A) {
 
-    override def hashCode(): Int = System.identityHashCode(obj)
+    override def hashCode(): Int = {
+        System.identityHashCode(obj)
+    }
 
     override def equals(obj: Any): Boolean = obj match {
         case id: Identity[A] => JavaUtils.sameInstance(id.obj, this.obj) //got an error "the result type of an implicit conversion must be more specific than AnyRef" if i put "obj eq this.obj"

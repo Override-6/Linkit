@@ -13,19 +13,22 @@
 package fr.linkit.client.local.config
 
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
+import fr.linkit.engine.connection.packet.persistence.context.{EmptyPersistenceContext, PersistenceConfigBuilder}
 
 import java.net.{InetSocketAddress, Socket}
 
 abstract class ClientConnectionConfigBuilder {
 
-    var reconnectionMillis: Int                                    = 5000
-    var socketFactory     : InetSocketAddress => Socket            = s => new Socket(s.getAddress, s.getPort)
-    var configName        : String                                 = "simple-config"
-    var hasher            : BytesHasher                            = BytesHasher.inactive
-    var translatorFactory : ApplicationContext => PacketTranslator = new DefaultPacketTranslator(_)
+    var reconnectionMillis      : Int                                    = 5000
+    var socketFactory           : InetSocketAddress => Socket            = s => new Socket(s.getAddress, s.getPort)
+    var configName              : String                                 = "simple-config"
+    var hasher                  : BytesHasher                            = BytesHasher.inactive
+    var translatorFactory       : ApplicationContext => PacketTranslator = new DefaultPacketTranslator(_)
+    var defaultPersistenceConfig: PersistenceConfig                      = new PersistenceConfigBuilder().build(EmptyPersistenceContext)
     val identifier   : String
     val remoteAddress: InetSocketAddress
 
@@ -35,13 +38,14 @@ abstract class ClientConnectionConfigBuilder {
     def buildConfig(): ClientConnectionConfiguration = {
         val builder = this
         new ClientConnectionConfiguration {
-            override val reconnectionMillis: Int                         = builder.reconnectionMillis
-            override val socketFactory     : InetSocketAddress => Socket = builder.socketFactory
-            override val remoteAddress     : InetSocketAddress           = builder.remoteAddress
-            override val configName        : String                      = builder.configName
-            override val identifier        : String                      = builder.identifier
-            override val hasher            : BytesHasher                 = builder.hasher
-            override val translatorFactory : ApplicationContext => PacketTranslator            = builder.translatorFactory
+            override val reconnectionMillis      : Int                                    = builder.reconnectionMillis
+            override val socketFactory           : InetSocketAddress => Socket            = builder.socketFactory
+            override val remoteAddress           : InetSocketAddress                      = builder.remoteAddress
+            override val configName              : String                                 = builder.configName
+            override val identifier              : String                                 = builder.identifier
+            override val hasher                  : BytesHasher                            = builder.hasher
+            override val translatorFactory       : ApplicationContext => PacketTranslator = builder.translatorFactory
+            override val defaultPersistenceConfig: PersistenceConfig                      = builder.defaultPersistenceConfig
         }: ClientConnectionConfiguration
     }
 
