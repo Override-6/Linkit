@@ -13,8 +13,9 @@
 package fr.linkit.engine.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.channel.ChannelScope
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.packet.traffic.injection.{PacketInjection, PacketInjectionController}
+import fr.linkit.api.connection.packet.traffic.injection.PacketInjectionController
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
 
 import java.io.Closeable
@@ -22,12 +23,13 @@ import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 class SimplePacketInjectableStore(traffic: PacketTraffic,
+                                  override val defaultPersistenceConfig: PersistenceConfig,
                                   override val path: Array[Int]) extends PacketInjectableStore with JustifiedCloseable with TrafficPresence {
 
     private val presences       = mutable.HashMap.empty[Int, TrafficPresence]
     private var closed: Boolean = false
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): C = {
+    override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): C = {
         val childPath = path :+ id
 
         val presenceOpt = presences.get(id)
@@ -41,7 +43,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
             }
         }
 
-        val scope = scopeFactory(traffic.newWriter(childPath))
+        val scope = scopeFactory(traffic.newWriter(childPath, config))
         completeCreation(id, scope, factory)
     }
 
@@ -84,10 +86,10 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         case _                                  => None
     }
 
-    override def createStore(id: Int): PacketInjectableStore = {
+    override def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore = {
         if (presences.contains(id))
             throw new ConflictException(s"PacketInjectableStore already created at ${path.mkString("/")}/$id")
-        val store = new SimplePacketInjectableStore(traffic, path :+ id)
+        val store = new SimplePacketInjectableStore(traffic, persistenceConfig, path :+ id)
         presences.put(id, store)
         store
     }

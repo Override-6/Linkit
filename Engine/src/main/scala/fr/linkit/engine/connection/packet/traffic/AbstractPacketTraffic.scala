@@ -14,24 +14,25 @@ package fr.linkit.engine.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjectionController
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
-import fr.linkit.api.local.concurrency.ProcrastinatorControl
-import fr.linkit.api.local.system.{AppLogger, ClosedException, Reason}
+import fr.linkit.api.local.system.{ClosedException, Reason}
 import fr.linkit.engine.connection.packet.SimplePacketBundle
 import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjectionContainer
 
 import scala.reflect.ClassTag
 
-abstract class AbstractPacketTraffic(override val currentIdentifier: String, procrastinator: ProcrastinatorControl) extends PacketTraffic {
+abstract class AbstractPacketTraffic(override val currentIdentifier: String,
+                                     override val defaultPersistenceConfig: PersistenceConfig) extends PacketTraffic {
 
     @volatile private var closed     = false
-    protected val rootStore          = new SimplePacketInjectableStore(this, Array.empty)
+    protected val rootStore          = new SimplePacketInjectableStore(this, defaultPersistenceConfig, Array.empty)
     private   val injectionContainer = new ParallelInjectionContainer()
 
-    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
-        rootStore.getInjectable[C](injectableID, factory, scopeFactory)
+    override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+        rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)
     }
 
     override def close(reason: Reason): Unit = {
@@ -56,13 +57,17 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
         processInjection0(injection)
     }
 
+    override def newWriter(path: Array[Int]): PacketWriter = {
+        newWriter(path, defaultPersistenceConfig)
+    }
+
     private def processInjection0(injection: PacketInjectionController): Unit = {
         injection.synchronized {
             if (injection.isProcessing) {
                 //If a thread is already processing the injection, don't do it with this thread.
                 return
             }
-            injection.markAsProcessing
+            injection.markAsProcessing()
         }
         //AppLogger.debug(s"Injection is not processing : injection.isProcessing = ${injection.isProcessing}")
         makeProcess(injection)
@@ -77,5 +82,5 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String, pro
 
     override def findStore(id: Int): Option[PacketInjectableStore] = rootStore.findStore(id)
 
-    override def createStore(id: Int): PacketInjectableStore = rootStore.createStore(id)
+    override def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore = rootStore.createStore(id, persistenceConfig)
 }

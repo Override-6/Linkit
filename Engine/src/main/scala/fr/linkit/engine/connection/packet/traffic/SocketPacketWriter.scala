@@ -25,6 +25,7 @@ class SocketPacketWriter(socket: DynamicSocket,
     override val serverIdentifier : String        = traffic.serverIdentifier
     override val currentIdentifier: String        = traffic.currentIdentifier
     override val path             : Array[Int]    = writerInfo.path
+    private  val persistenceConfig                           = writerInfo.persistenceConfig
 
     override def writePacket(packet: Packet, targetIDs: Array[String]): Unit = {
         writePacket(packet, SimplePacketAttributes.empty, targetIDs)
@@ -47,14 +48,14 @@ class SocketPacketWriter(socket: DynamicSocket,
 
             BroadcastPacketCoordinates(path, currentIdentifier, false, targetIDs.filter(_ != currentIdentifier))
         }
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet, null)
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig)
 
         choreographer.add(transferInfo)(result => socket.write(result.buff))
     }
 
     override def writeBroadcastPacket(packet: Packet, attributes: PacketAttributes, discardedIDs: Array[String]): Unit = {
         val coords       = BroadcastPacketCoordinates(path, currentIdentifier, true, discardedIDs)
-        val transferInfo = SimpleTransferInfo(coords, attributes, packet, null)
+        val transferInfo = SimpleTransferInfo(coords, attributes, packet, persistenceConfig)
 
         if (!discardedIDs.contains(currentIdentifier))
             traffic.processInjection(packet, attributes, DedicatedPacketCoordinates(coords.path, currentIdentifier, currentIdentifier))

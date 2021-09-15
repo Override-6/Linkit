@@ -13,6 +13,7 @@
 package fr.linkit.api.connection.packet.traffic
 
 import fr.linkit.api.connection.ConnectionContext
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.{DedicatedPacketBundle, DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.local.concurrency.workerExecution
 import fr.linkit.api.local.system.JustifiedCloseable
@@ -32,6 +33,8 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
     def processInjection(bundle: PacketBundle): Unit
 
     def newWriter(path: Array[Int]): PacketWriter
+
+    def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter
 
 }
 

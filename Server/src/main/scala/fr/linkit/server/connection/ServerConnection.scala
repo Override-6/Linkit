@@ -48,7 +48,7 @@ class ServerConnection(applicationContext: ServerApplication,
     private  val workerPool        : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
     private  val serverSocket      : ServerSocket               = new ServerSocket(configuration.port)
     private  val connectionsManager: ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    override val traffic           : PacketTraffic              = new ServerPacketTraffic(this)
+    override val traffic           : PacketTraffic              = new ServerPacketTraffic(this, configuration.defaultPersistenceConfig)
     override val eventNotifier     : EventNotifier              = new DefaultEventNotifier
     private  val sideNetwork       : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
     override val network           : Network                    = sideNetwork

@@ -14,10 +14,13 @@ package fr.linkit.api.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.connection.packet.channel.{ChannelScope, PacketChannel}
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 
 import scala.reflect.ClassTag
 
 trait PacketInjectableStore {
+
+    val defaultPersistenceConfig: PersistenceConfig
 
     /**
      * retrieves or create (and register) a [[PacketInjectable]] depending on the requested id and scope
@@ -29,14 +32,24 @@ trait PacketInjectableStore {
      * @see [[ChannelScope]]
      * @see [[PacketChannel]]
      * */
-    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
+        getInjectable[C](injectableID, defaultPersistenceConfig, factory, scopeFactory)
+    }
 
     def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): C = {
-        getInjectable[C](injectableID, factory, scopeFactory)
+        getInjectable[C](injectableID, defaultPersistenceConfig, factory,  scopeFactory)
+    }
+
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C
+
+    def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, scopeFactory: ScopeFactory[_ <: ChannelScope])(implicit factory: PacketInjectableFactory[C]): C = {
+        getInjectable[C](injectableID, config, factory, scopeFactory)
     }
 
     def findStore(id: Int): Option[PacketInjectableStore]
 
-    def createStore(id: Int): PacketInjectableStore
+    def createStore(id: Int): PacketInjectableStore = createStore(id, defaultPersistenceConfig)
+
+    def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore
 
 }

@@ -14,8 +14,6 @@ package fr.linkit.server.test
 
 import fr.linkit.api.local.plugin.Plugin
 import fr.linkit.api.local.system.AppLogger
-import fr.linkit.plugin.controller.ControllerExtension
-import fr.linkit.plugin.debug.DebugPlugin
 import fr.linkit.server.ServerApplication
 import fr.linkit.server.local.config.schematic.ScalaServerAppSchematic
 import fr.linkit.server.local.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}

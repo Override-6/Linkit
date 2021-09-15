@@ -114,16 +114,10 @@ class ResourcesAndClassGenerationTests {
     }
 
     private class TestClass {
+
         @FieldControl()
         private val test: String = "salut"
     }
-
-    /*class FakeSynchronizedObjectPersistor extends SynchronizedObjectPersistor(null) {
-        override protected def initialiseWrapper(detachedWrapper: SynchronizedObjectPersistor.DetachedWrapper): SynchronizedObject[_] = {
-            println("Faking wrapper...")
-            forObject(detachedWrapper.detached)
-        }
-    }*/
 
     @Test
     @Order(3)
@@ -174,7 +168,9 @@ class ResourcesAndClassGenerationTests {
             (wrapper, subWrappers)
         }
 
-        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo,  store: ObjectBehaviorStore): Unit = ???
+        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit = {
+            ???
+        }
     }
 
 }
