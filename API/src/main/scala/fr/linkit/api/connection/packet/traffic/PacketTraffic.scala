@@ -36,6 +36,8 @@ trait PacketTraffic extends JustifiedCloseable with PacketInjectableStore {
 
     def newWriter(path: Array[Int], persistenceConfig: PersistenceConfig): PacketWriter
 
+    def getPersistenceConfig(path: Array[Int]): PersistenceConfig
+
 }
 
 object PacketTraffic {

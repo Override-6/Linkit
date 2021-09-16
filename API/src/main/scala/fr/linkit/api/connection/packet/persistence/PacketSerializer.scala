@@ -12,17 +12,17 @@
 
 package fr.linkit.api.connection.packet.persistence
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.connection.packet.PacketCoordinates
 import fr.linkit.api.connection.packet.persistence.PacketSerializer.PacketDeserial
 import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
-
-import java.nio.ByteBuffer
 
 trait PacketSerializer extends Serializer {
 
     def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer)(config: PersistenceConfig): Unit
 
-    def deserializePacket(buff: ByteBuffer)(config: PersistenceConfig): PacketDeserial
+    def deserializePacket(buff: ByteBuffer): PacketDeserial
 
 }
 
@@ -32,6 +32,7 @@ object PacketSerializer {
 
         def getCoordinates: PacketCoordinates
 
-        def forEachObjects(f: Any => Unit): Unit
+        def forEachObjects(config: PersistenceConfig)(f: Any => Unit): Unit
     }
+
 }

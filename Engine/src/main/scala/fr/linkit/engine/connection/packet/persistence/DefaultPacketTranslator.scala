@@ -12,17 +12,16 @@
 
 package fr.linkit.engine.connection.packet.persistence
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence._
+import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator.ClassesResourceDirectory
-import fr.linkit.engine.connection.packet.persistence.context.ImmutablePersistenceContext
 import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer
 import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.utils.ClassMap
-
-import java.nio.ByteBuffer
 
 class DefaultPacketTranslator(app: ApplicationContext) extends PacketTranslator {
 
@@ -38,8 +37,11 @@ class DefaultPacketTranslator(app: ApplicationContext) extends PacketTranslator 
         new LazyPacketSerializationResult(packetInfo, serializer)
     }
 
-    override def translate(buff: ByteBuffer): PacketDeserializationResult = {
-        new LazyPacketDeserializationResult(buff, serializer, null)
+    override def translate(traffic: PacketTraffic, buff: ByteBuffer): PacketDeserializationResult = {
+        val deserial = serializer.deserializePacket(buff)
+        val path     = deserial.getCoordinates.path
+        val config   = traffic.getPersistenceConfig(path)
+        new LazyPacketDeserializationResult(buff, deserial, config)
     }
 
     override def getSerializer: PacketSerializer = serializer

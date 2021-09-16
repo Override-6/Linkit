@@ -12,15 +12,16 @@
 
 package fr.linkit.api.connection.packet.persistence
 
-import fr.linkit.api.connection.network.Network
-
 import java.nio.ByteBuffer
+
+import fr.linkit.api.connection.network.Network
+import fr.linkit.api.connection.packet.traffic.PacketTraffic
 
 trait PacketTranslator {
 
     def translate(packetInfo: TransferInfo): PacketSerializationResult
 
-    def translate(buff: ByteBuffer): PacketDeserializationResult
+    def translate(traffic: PacketTraffic, buff: ByteBuffer): PacketDeserializationResult
 
     def initNetwork(network: Network): Unit
 

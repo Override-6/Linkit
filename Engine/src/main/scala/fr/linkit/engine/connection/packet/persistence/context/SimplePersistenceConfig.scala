@@ -23,7 +23,7 @@ import scala.collection.mutable
 class SimplePersistenceConfig private[context](context: PersistenceContext,
                                                customProfiles: ClassMap[TypeProfile[_]],
                                                referenceStore: WeakReferencedObjectStore,
-                                               unsafeUse: Boolean, withSignature: Boolean,
+                                               unsafeUse: Boolean,
                                                referenceAllObjects: Boolean, wide: Boolean) extends PersistenceConfig {
 
     private val defaultProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
@@ -113,8 +113,6 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
     }
 
     override def widePacket: Boolean = wide
-
-    override def putSignature: Boolean = withSignature
 
     override def useUnsafe: Boolean = unsafeUse
 }

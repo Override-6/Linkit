@@ -20,8 +20,6 @@ trait PersistenceConfig extends ReferencedObjectStore with TypeProfileStore {
 
     def widePacket: Boolean
 
-    def putSignature: Boolean
-
     def useUnsafe: Boolean
 
 }

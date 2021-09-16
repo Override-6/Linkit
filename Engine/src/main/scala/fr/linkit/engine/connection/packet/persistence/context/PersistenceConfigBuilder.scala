@@ -25,7 +25,6 @@ class PersistenceConfigBuilder {
     private val referenceStore = new WeakReferencedObjectStore
 
     protected var unsafeUse           = true
-    protected var withSignature       = true
     protected var referenceAllObjects = false
     protected var wide                = false
 
@@ -82,7 +81,7 @@ class PersistenceConfigBuilder {
 
     def build(context: PersistenceContext): PersistenceConfig = {
         val profiles = collectProfiles()
-        new SimplePersistenceConfig(context, profiles, referenceStore, unsafeUse, withSignature, referenceAllObjects, wide)
+        new SimplePersistenceConfig(context, profiles, referenceStore, unsafeUse, referenceAllObjects, wide)
     }
 
     private def collectProfiles(): ClassMap[TypeProfile[_]] = {

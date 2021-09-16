@@ -35,6 +35,8 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)
     }
 
+    override def getPersistenceConfig(path: Array[Int]): PersistenceConfig = rootStore.getPersistenceConfig(path)
+
     override def close(reason: Reason): Unit = {
         rootStore.close()
         closed = true

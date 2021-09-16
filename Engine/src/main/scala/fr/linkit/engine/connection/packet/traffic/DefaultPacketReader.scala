@@ -47,7 +47,7 @@ class DefaultPacketReader(socket: DynamicSocket,
         buff.put(NumberSerializer.serializeInt(nextLength))
         buff.put(bytes)
         buff.position(4)
-        val result = translator.translate(buff)
+        val result = translator.translate(null, buff)
         callback(result)
     }
 }

@@ -17,8 +17,9 @@ import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjectionController
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
-
 import java.io.Closeable
+
+import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
@@ -26,7 +27,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
                                   override val defaultPersistenceConfig: PersistenceConfig,
                                   override val path: Array[Int]) extends PacketInjectableStore with JustifiedCloseable with TrafficPresence {
 
-    private val presences       = mutable.HashMap.empty[Int, TrafficPresence]
+    private val presences       = mutable.HashMap.empty[Int, (TrafficPresence, PersistenceConfig)]
     private var closed: Boolean = false
 
     override def getInjectable[C <: PacketInjectable : ClassTag](id: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ChannelScope.ScopeFactory[_ <: ChannelScope]): C = {
@@ -35,7 +36,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         val presenceOpt = presences.get(id)
         if (presenceOpt.isDefined) {
             val clazz    = classTag[C].runtimeClass
-            val presence = presenceOpt.get
+            val presence = presenceOpt.get._1
             presence match {
                 case injectable: C if injectable.getClass eq clazz => return injectable
                 case _                                             =>
@@ -44,28 +45,47 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         }
 
         val scope = scopeFactory(traffic.newWriter(childPath, config))
-        completeCreation(id, scope, factory)
+        completeCreation(id, config, scope, factory)
     }
 
     @inline
-    private def completeCreation[C <: PacketInjectable](id: Int, scope: ChannelScope, factory: PacketInjectableFactory[C]): C = {
+    private def completeCreation[C <: PacketInjectable](id: Int, config: PersistenceConfig, scope: ChannelScope, factory: PacketInjectableFactory[C]): C = {
         val injectable = factory.createNew(this, scope)
-        presences.put(id, injectable)
+        presences.put(id, (injectable, config))
         injectable
     }
 
-    def inject(injection: PacketInjectionController): Unit = {
+    def getPersistenceConfig(path: Array[Int]): PersistenceConfig = {
+        getPersistenceConfig(path, 0)
+    }
 
-        def fail(): Nothing = {
-            val path = injection.injectablePath
-            throw new NoSuchTrafficPresenceException(s"Could not find TrafficPresence at path ${path.mkString("/")}.")
+    @tailrec
+    private def getPersistenceConfig(path: Array[Int], pos: Int): PersistenceConfig = {
+        val len = path.length
+        if (pos > len) {
+            return failPresence(path)
         }
+        presences.get(path(pos)) match {
+            case None                     => defaultPersistenceConfig
+            case Some((presence, config)) => presence match {
+                case _: PacketInjectable                => config
+                case store: SimplePacketInjectableStore =>
+                    if (pos - len == 1) config //no more sub item in path: the targeted presence is the store.
+                    else store.getPersistenceConfig(path, pos + 1) //else, path iteration is not complete, continue.
+            }
+        }
+    }
 
+    private def failPresence(path: Array[Int]): Nothing = {
+        throw new NoSuchTrafficPresenceException(s"Could not find TrafficPresence at path ${path.mkString("/")}.")
+    }
+
+    def inject(injection: PacketInjectionController): Unit = {
         if (!injection.haveMoreIdentifier)
-            fail()
+            failPresence(injection.injectablePath)
         presences.get(injection.nextIdentifier) match {
-            case None        => fail()
-            case Some(value) => value match {
+            case None        => failPresence(injection.injectablePath)
+            case Some(value) => value._1 match {
                 case injectable: PacketInjectable       => injection.process(injectable)
                 case store: SimplePacketInjectableStore => store.inject(injection)
             }
@@ -74,23 +94,23 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
 
     override def close(cause: Reason): Unit = {
         presences.values.foreach {
-            case closeable: JustifiedCloseable => closeable.close(return)
-            case closeable: Closeable          => closeable
-            case _                             => //not closeable ? don't close.
+            case (closeable: JustifiedCloseable, _) => closeable.close(return)
+            case (closeable: Closeable, _)          => closeable
+            case _                                  => //not closeable ? don't close.
         }
         closed = true
     }
 
     override def findStore(id: Int): Option[PacketInjectableStore] = presences.get(id).flatMap {
-        case store: SimplePacketInjectableStore => Some(store)
-        case _                                  => None
+        case (store: SimplePacketInjectableStore, _) => Some(store)
+        case _                                       => None
     }
 
     override def createStore(id: Int, persistenceConfig: PersistenceConfig): PacketInjectableStore = {
         if (presences.contains(id))
             throw new ConflictException(s"PacketInjectableStore already created at ${path.mkString("/")}/$id")
         val store = new SimplePacketInjectableStore(traffic, persistenceConfig, path :+ id)
-        presences.put(id, store)
+        presences.put(id, (store, persistenceConfig))
         store
     }
 

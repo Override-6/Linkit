@@ -14,6 +14,7 @@ package fr.linkit.server.local.config
 
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
+import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
@@ -33,20 +34,20 @@ abstract class ServerConnectionConfigBuilder {
     val port      : Int
 
     //Can't be configurable for now
-    val translatorFactory: ApplicationContext => PacketTranslator = new DefaultPacketTranslator(_)
+    val translatorFactory: (ApplicationContext) => PacketTranslator = new DefaultPacketTranslator(_)
 
     def build(): ServerConnectionConfiguration = {
         val builder = this
         new ServerConnectionConfiguration {
-            override val maxConnection              : Int                                    = builder.maxConnection
-            override val nWorkerThreadFunction      : Int => Int                             = builder.nWorkerThreadFunction
-            override val configName                 : String                                 = builder.configName
-            override val identifier                 : String                                 = builder.identifier
-            override val port                       : Int                                    = builder.port
-            override val hasher                     : BytesHasher                            = builder.hasher
-            override val translatorFactory          : ApplicationContext => PacketTranslator = builder.translatorFactory
-            override val identifierAmbiguityStrategy: AmbiguityStrategy                      = builder.identifierAmbiguityStrategy
-            override val defaultPersistenceConfig   : PersistenceConfig                      = builder.defaultPersistenceConfig
+            override val maxConnection              : Int                                      = builder.maxConnection
+            override val nWorkerThreadFunction      : Int => Int                               = builder.nWorkerThreadFunction
+            override val configName                 : String                                   = builder.configName
+            override val identifier                 : String                                   = builder.identifier
+            override val port                       : Int                                      = builder.port
+            override val hasher                     : BytesHasher                              = builder.hasher
+            override val translatorFactory          : (ApplicationContext) => PacketTranslator = builder.translatorFactory
+            override val identifierAmbiguityStrategy: AmbiguityStrategy                        = builder.identifierAmbiguityStrategy
+            override val defaultPersistenceConfig   : PersistenceConfig                        = builder.defaultPersistenceConfig
         }
     }
 

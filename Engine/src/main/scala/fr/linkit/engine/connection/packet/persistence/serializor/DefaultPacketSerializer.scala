@@ -38,14 +38,13 @@ class DefaultPacketSerializer(center: SyncClassCenter) extends PacketSerializer 
     }
 
     override def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer)(config: PersistenceConfig): Unit = {
-        if (config.putSignature)
-            buffer.put(signature)
+        buffer.put(signature)
 
         writeCoords(buffer, coordinates)
         val writer = new PacketWriter(config, buffer)
         writer.addObjects(objects)
         writer.writePool()
-        val pool        = writer.getPool
+        val pool = writer.getPool
         writeEntries(objects, writer, pool)
     }
 
@@ -111,26 +110,25 @@ class DefaultPacketSerializer(center: SyncClassCenter) extends PacketSerializer 
         new String(array)
     }
 
-    override def deserializePacket(buff: ByteBuffer)(config: PersistenceConfig): PacketSerializer.PacketDeserial = {
-        if (config.putSignature)
-            checkSignature(buff)
+    override def deserializePacket(buff: ByteBuffer): PacketSerializer.PacketDeserial = {
+        checkSignature(buff)
 
         val coords = readCoordinates(buff)
         new PacketDeserial {
             override def getCoordinates: PacketCoordinates = coords
 
-            override def forEachObjects(f: Any => Unit): Unit = {
+            override def forEachObjects(config: PersistenceConfig)(f: Any => Unit): Unit = {
                 val reader = new PacketReader(config, center, buff)
                 reader.initPool()
                 val contentSize = buff.getChar
-                val pool = reader.getPool
+                val pool        = reader.getPool
                 for (_ <- 0 until contentSize) {
                     val obj = pool.getAny(reader.readNextRef) match {
                         case o: NotInstantiatedObject[AnyRef] =>
                             o.initObject()
                             o.value
-                        case o: PoolObject[AnyRef] => o.value
-                        case o => o
+                        case o: PoolObject[AnyRef]            => o.value
+                        case o                                => o
                     }
                     f(obj)
                 }

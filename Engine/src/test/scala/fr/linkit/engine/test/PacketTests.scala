@@ -60,8 +60,8 @@ class PacketTests {
         for (_ <- 0 to 1000) {
             serializer.serializePacket(obj, coords, buff)(config)
             buff.position(0)
-            serializer.deserializePacket(buff)(config)
-                    .forEachObjects(() => _)
+            serializer.deserializePacket(buff)
+                    .forEachObjects(config)(() => _)
             buff.position(0)
         }
         val t1 = System.currentTimeMillis()
@@ -100,9 +100,9 @@ object PacketTests {
         val bytes = buff.array().take(buff.position())
         buff.position(0)
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")
-        val deserial = serializer.deserializePacket(buff)(config)
+        val deserial = serializer.deserializePacket(buff)
         println(s"deserialized coords = ${deserial.getCoordinates}")
-        deserial.forEachObjects(packet2 => {
+        deserial.forEachObjects(config)(packet2 => {
             println(s"deserialized packet = ${packet2}")
         })
     }

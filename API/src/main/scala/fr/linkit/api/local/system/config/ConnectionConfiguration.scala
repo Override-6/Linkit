@@ -14,6 +14,7 @@ package fr.linkit.api.local.system.config
 
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
+import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.system.security.BytesHasher
 
@@ -25,7 +26,7 @@ trait ConnectionConfiguration {
 
     val hasher: BytesHasher
 
-    val translatorFactory: ApplicationContext => PacketTranslator
+    val translatorFactory: (ApplicationContext) => PacketTranslator
 
     val defaultPersistenceConfig: PersistenceConfig
 

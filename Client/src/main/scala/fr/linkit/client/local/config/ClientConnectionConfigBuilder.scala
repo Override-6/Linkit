@@ -12,23 +12,24 @@
 
 package fr.linkit.client.local.config
 
+import java.net.{InetSocketAddress, Socket}
+
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
+import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
 import fr.linkit.engine.connection.packet.persistence.context.{EmptyPersistenceContext, PersistenceConfigBuilder}
 
-import java.net.{InetSocketAddress, Socket}
-
 abstract class ClientConnectionConfigBuilder {
 
-    var reconnectionMillis      : Int                                    = 5000
-    var socketFactory           : InetSocketAddress => Socket            = s => new Socket(s.getAddress, s.getPort)
-    var configName              : String                                 = "simple-config"
-    var hasher                  : BytesHasher                            = BytesHasher.inactive
-    var translatorFactory       : ApplicationContext => PacketTranslator = new DefaultPacketTranslator(_)
-    var defaultPersistenceConfig: PersistenceConfig                      = new PersistenceConfigBuilder().build(EmptyPersistenceContext)
+    var reconnectionMillis      : Int                                      = 5000
+    var socketFactory           : InetSocketAddress => Socket              = s => new Socket(s.getAddress, s.getPort)
+    var configName              : String                                   = "simple-config"
+    var hasher                  : BytesHasher                              = BytesHasher.inactive
+    var translatorFactory       : (ApplicationContext) => PacketTranslator = new DefaultPacketTranslator(_)
+    var defaultPersistenceConfig: PersistenceConfig                        = new PersistenceConfigBuilder().build(EmptyPersistenceContext)
     val identifier   : String
     val remoteAddress: InetSocketAddress
 
