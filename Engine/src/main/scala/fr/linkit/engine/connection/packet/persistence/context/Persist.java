@@ -10,22 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.engine.connection.packet.persistence.context;
 
-import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.packet.traffic.PacketTraffic
-import fr.linkit.api.local.ApplicationContext
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-import java.lang.reflect.Constructor
-
-trait PersistenceContext {
-
-    val traffic: PacketTraffic
-
-    def getNetwork: Network
-
-    def findConstructor[T](clazz: Class[_]): Option[Constructor[T]]
-
-    def findDeconstructor[T](clazz: Class[_]): Option[Deconstructor[T]]
-
+@Target(ElementType.CONSTRUCTOR)
+@Retention(RetentionPolicy.CLASS)
+public @interface Persist {
 }

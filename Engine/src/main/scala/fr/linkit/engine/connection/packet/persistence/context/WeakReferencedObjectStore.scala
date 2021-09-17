@@ -12,11 +12,11 @@
 
 package fr.linkit.engine.connection.packet.persistence.context
 
-import fr.linkit.api.connection.packet.persistence.context.ReferencedObjectStore
+import fr.linkit.api.connection.packet.persistence.context.MutableReferencedObjectStore
 
 import scala.collection.mutable
 
-class WeakReferencedObjectStore() extends ReferencedObjectStore {
+class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
 
     private val codeToRef = mutable.WeakHashMap.empty[Int, AnyRef]
     private val refToCode = mutable.WeakHashMap.empty[AnyRef, Int]
@@ -29,18 +29,36 @@ class WeakReferencedObjectStore() extends ReferencedObjectStore {
         refToCode.get(reference)
     }
 
-    def ++=(refs: AnyRef*): this.type = {
+    override def ++=(refs: Map[Int, AnyRef]): this.type = {
+        refs.foreachEntry((id, ref) => +=(id, ref))
+        this
+    }
+
+    override def ++=(refs: AnyRef*): this.type = {
         refs.foreach(+=)
         this
     }
 
-    def +=(anyRef: AnyRef): this.type = {
-        +=(anyRef.hashCode(), anyRef)
+    def ++=(other: WeakReferencedObjectStore): this.type = {
+        ++=(other.codeToRef)
+        this
     }
 
-    def +=(code: Int, anyRef: AnyRef): this.type = {
+    override def +=(anyRef: AnyRef): this.type = {
+        if (anyRef eq null)
+            -=(anyRef)
+        else
+            +=(anyRef.hashCode(), anyRef)
+    }
+
+    override def +=(code: Int, anyRef: AnyRef): this.type = {
         codeToRef.put(code, anyRef)
         refToCode.put(anyRef, code)
+        this
+    }
+
+    override def -=(ref: AnyRef): this.type = {
+        (refToCode remove ref).fold()(codeToRef.remove)
         this
     }
 }

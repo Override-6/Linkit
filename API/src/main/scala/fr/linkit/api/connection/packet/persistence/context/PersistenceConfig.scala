@@ -12,7 +12,9 @@
 
 package fr.linkit.api.connection.packet.persistence.context
 
-trait PersistenceConfig extends ReferencedObjectStore with TypeProfileStore {
+trait PersistenceConfig extends TypeProfileStore {
+
+    def getReferenceStore: MutableReferencedObjectStore
 
     def informObjectReceived(obj: AnyRef): Unit
 

@@ -13,12 +13,15 @@
 package fr.linkit.engine.connection.packet.persistence.context
 
 import fr.linkit.api.connection.packet.persistence.context._
+import fr.linkit.api.connection.packet.traffic.PacketTraffic
+import fr.linkit.engine.connection.packet.persistence.context.PersistenceConfigBuilder.fromScript
 import fr.linkit.engine.connection.packet.persistence.context.profile.TypeProfileBuilder
+import fr.linkit.engine.connection.packet.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.local.script.ScriptExecutor
 import fr.linkit.engine.local.utils.ClassMap
 
+import java.net.URL
 import scala.reflect.{ClassTag, classTag}
-import scala.sys.process.processInternal.InputStream
 
 class PersistenceConfigBuilder {
 
@@ -30,6 +33,11 @@ class PersistenceConfigBuilder {
     protected var referenceAllObjects = false
     protected var wide                = false
 
+    def this(other: PersistenceConfigBuilder) {
+        this()
+        transfer(other)
+    }
+
     object profiles {
 
         private[PersistenceConfigBuilder] val customProfiles = new ClassMap[TypeProfileBuilder[_ <: AnyRef]]()
@@ -39,6 +47,17 @@ class PersistenceConfigBuilder {
             customProfiles.put(clazz, builder)
             this
         }
+    }
+
+    def transfer(other: PersistenceConfigBuilder): this.type = {
+        persistors ++= other.persistors
+        converters ++= other.converters
+        referenceStore ++= other.referenceStore
+        unsafeUse = other.unsafeUse
+        referenceAllObjects = other.referenceAllObjects
+        wide = other.wide
+        profiles.customProfiles ++= other.profiles.customProfiles
+        this
     }
 
     def putContextReference(ref: AnyRef): Unit = {
@@ -83,6 +102,7 @@ class PersistenceConfigBuilder {
 
     def build(context: PersistenceContext): PersistenceConfig = {
         val profiles = collectProfiles()
+        transfer(fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), context.traffic))
         new SimplePersistenceConfig(context, profiles, referenceStore, unsafeUse, referenceAllObjects, wide)
     }
 
@@ -94,6 +114,7 @@ class PersistenceConfigBuilder {
         //noinspection TypeAnnotation
         val tempStore = new TypeProfileStore {
             val cache = new ClassMap[TypeProfile[_]]()
+
             override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
                 cache(clazz).asInstanceOf[TypeProfile[T]]
             }
@@ -108,9 +129,9 @@ class PersistenceConfigBuilder {
                     .setTConverter(cast(converter))
         })
         val finalMap = map.toSeq
-                .sortBy(pair => getClassHierarchicalDepth(pair._1))//sorting from Object class to most "far away from Object" classes
+                .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
                 .map(pair => {
-                    val clazz = pair._1
+                    val clazz   = pair._1
                     val profile = pair._2.build(tempStore)
                     tempStore.cache.put(clazz, profile)
                     (clazz, profile)
@@ -119,7 +140,7 @@ class PersistenceConfigBuilder {
     }
 
     private def getClassHierarchicalDepth(clazz: Class[_]): Int = {
-        var cl = clazz
+        var cl    = clazz
         var depth = 0
         while (cl ne null) {
             cl = cl.getSuperclass
@@ -134,6 +155,14 @@ object PersistenceConfigBuilder {
 
     implicit def autoBuild(context: PersistenceContext, builder: PersistenceConfigBuilder): PersistenceConfig = {
         builder.build(context)
+    }
+
+    def fromScript(url: URL, traffic: PacketTraffic): PersistenceConfigBuilder = {
+        val application = traffic.application
+        val script      = ScriptExecutor.getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
+                .newScript(application, traffic)
+        script.execute()
+        script
     }
 
 }

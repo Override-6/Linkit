@@ -24,7 +24,7 @@ import org.junit.jupiter.api.{Assertions, Test, TestInstance}
 class PacketInjectionPerformanceTest {
 
     private val workerPool  = new BusyWorkerPool(4, "TestPool")
-    private val traffic     = new SocketPacketTraffic(null, null, null, "test", "test")
+    private val traffic     = new SocketPacketTraffic(null, null, null, null, "test", "test")
     private val testChannel = traffic.createStore(0)
             .createStore(1)
             .createStore(2)

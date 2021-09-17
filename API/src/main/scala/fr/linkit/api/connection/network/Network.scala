@@ -14,6 +14,7 @@ package fr.linkit.api.connection.network
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.cache.SharedCacheManager
+import fr.linkit.api.connection.packet.persistence.context.MutableReferencedObjectStore
 
 import java.sql.Timestamp
 
@@ -22,6 +23,8 @@ trait Network {
     val connectionEngine: Engine
 
     val connection: ConnectionContext
+
+    val refStore: MutableReferencedObjectStore
 
     def globalCache: SharedCacheManager
 

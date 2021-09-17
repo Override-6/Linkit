@@ -12,8 +12,6 @@
 
 package fr.linkit.engine.local.script
 
-import fr.linkit.api.local.system.AppException
-
-class ScriptCompileException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
+class ScriptCompileException(msg: String, cause: Throwable = null) extends ScriptException(msg, cause) {
 
 }

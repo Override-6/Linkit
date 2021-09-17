@@ -28,21 +28,17 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
 
     private val defaultProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
 
-    override def getReferenced(reference: Int): Option[AnyRef] = {
-        referenceStore.getReferenced(reference)
-    }
-
-    override def getReferencedCode(reference: AnyRef): Option[Int] = {
-        referenceStore.getReferencedCode(reference)
-    }
+    override def getReferenceStore: MutableReferencedObjectStore = referenceStore
 
     override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
         val profile = defaultProfiles.get(clazz)
         if (profile.isEmpty) {
             return customProfiles.getOrElse(clazz, {
-                val default: DefaultTypeProfile[T]  = newDefaultProfile[T](clazz)
+                val default: DefaultTypeProfile[T] = newDefaultProfile[T](clazz)
                 if (isSyncClass(clazz)) {
-                    @inline def cast[X](any: AnyRef): X= any.asInstanceOf[X]
+                    @inline
+                    def cast[X](any: AnyRef): X = any.asInstanceOf[X]
+
                     val syncDefault = newSynchronizedObjectDefaultProfile[Nothing](clazz, cast(default))
                     defaultProfiles.put(clazz, syncDefault)
                 } else {
@@ -68,13 +64,13 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
     }
 
     private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: DefaultTypeProfile[T]): DefaultTypeProfile[T] = {
-        val network                                                            = context.getNetwork
+        val network                                 = context.getNetwork
         val persistences: Array[TypePersistence[T]] = profile.persists.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
         new DefaultTypeProfile[T](clazz, profile, persistences, profile.convertors)
     }
 
     protected def newDefaultProfile[T <: AnyRef](clazz: Class[_]): DefaultTypeProfile[T] = {
-        val constructor                          = context.findConstructor[T](clazz)
+        val constructor                     = context.findConstructor[T](clazz)
         val persistence: TypePersistence[T] = {
             if (classOf[Deconstructive].isAssignableFrom(clazz)) {
                 constructor.fold(new DeconstructiveTypePersistence[T with Deconstructive](clazz)) {

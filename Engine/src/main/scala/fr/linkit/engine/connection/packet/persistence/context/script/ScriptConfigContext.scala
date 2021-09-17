@@ -14,9 +14,9 @@ package fr.linkit.engine.connection.packet.persistence.context.script
 
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.script.{ScriptContext, ScriptFile}
-import fr.linkit.engine.connection.packet.persistence.context.script.ScriptConfigContext.{DefaultScriptConfigParameter, EndOfIdeContext}
+import fr.linkit.engine.connection.packet.persistence.context.script.ScriptConfigContext.{DefaultScriptConfigParameter, EndOfContext, LineComment, StartOfContext}
 import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.script.SimpleScriptHandler.{ScriptName, ScriptPackage}
+import fr.linkit.engine.local.script.ScriptException
 
 case class ScriptConfigContext(private val scriptCode: String,
                                scriptName: String,
@@ -27,22 +27,39 @@ case class ScriptConfigContext(private val scriptCode: String,
 
     override      val scriptArguments : Map[String, Class[_]] = parameters ++ DefaultScriptConfigParameter
     override lazy val scriptSourceCode: String                = {
-        val builder        = new StringBuilder(scriptCode)
-        val lines          = scriptCode.split('\n')
-        val scriptStartIdx = lines.indexWhere(str => str.toLowerCase.replace("\\s+", "").startsWith(EndOfIdeContext))
-        if (scriptStartIdx != -1) {
-            var c = -1
-            builder.dropWhile(char => (char == '\n') && {
-                c += 1
-                c
-            } == scriptStartIdx)
+        val builder = new StringBuilder(scriptCode)
+        val lines   = scriptCode.split('\n')
+
+        def idxOfLineStartThatContains(searched: String): Int = {
+            var total = 0
+            for (str <- lines) {
+                total += str.length
+                val formattedLine = str.toLowerCase.replace(" ", "")
+                if (formattedLine.startsWith(searched))
+                    return total
+            }
+            -1
+        }
+
+        val contextStartIdx = idxOfLineStartThatContains(LineComment + StartOfContext)
+        val contextEndIdx   = idxOfLineStartThatContains(LineComment + EndOfContext)
+        if (contextStartIdx != -1 && contextEndIdx != -1) {
+
+            if (contextStartIdx > contextEndIdx) {
+                throw new ScriptException("Configuration script 'Ide context comment controllers' are illogical : ide context start comment is after ide context end comment.")
+            }
+            builder.delete(contextStartIdx, contextEndIdx)
         }
         builder.toString()
     }
 
-    override def className: String = ScriptName + scriptName
+    override def className: String = {
+        ScriptPersistenceConfigHandler.className + scriptName
+    }
 
-    override def classPackage: String = ScriptPackage
+    override def classPackage: String = {
+        ScriptPersistenceConfigHandler.classPackage
+    }
 
 }
 
@@ -53,5 +70,6 @@ object ScriptConfigContext {
         "traffic" -> classOf[PacketTraffic]
     )
     final val LineComment                  = "//"
-    final val EndOfIdeContext              = "EndOfIDEContext".toLowerCase
+    final val EndOfContext                 = "EndOfContext".toLowerCase
+    final val StartOfContext               = "StartOfContext".toLowerCase
 }

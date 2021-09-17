@@ -29,8 +29,8 @@ case class ClientConnectionSession(socket: DynamicSocket,
     val configuration    : ClientConnectionConfiguration = info.configuration
     val currentIdentifier: String                        = configuration.identifier
     val translator       : PacketTranslator              = info.translator
-    val serverIdentifier                                 = info.serverIdentifier
-    val traffic          : SocketPacketTraffic           = new SocketPacketTraffic(socket, translator, configuration.defaultPersistenceConfig, currentIdentifier, serverIdentifier)
+    val serverIdentifier : String                        = info.serverIdentifier
+    val traffic          : SocketPacketTraffic           = new SocketPacketTraffic(socket, translator, configuration.defaultPersistenceConfigScript, appContext, currentIdentifier, serverIdentifier)
     val packetReader     : DefaultPacketReader           = new DefaultPacketReader(socket, appContext, traffic, translator)
     val readThread       : PacketReaderThread            = new PacketReaderThread(packetReader, serverIdentifier)
     val eventNotifier    : EventNotifier                 = new DefaultEventNotifier

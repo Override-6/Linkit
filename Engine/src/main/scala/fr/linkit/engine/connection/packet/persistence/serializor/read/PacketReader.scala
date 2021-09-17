@@ -26,6 +26,7 @@ import scala.reflect.ClassTag
 
 class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff: ByteBuffer) {
 
+    private val refStore                           = config.getReferenceStore
     private val (widePacket: Boolean, sizes, pool) = preReadPool()
     private var isInit                             = false
 
@@ -80,7 +81,7 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
 
     private def readContextObject(): SimpleContextObject = {
         val id  = buff.getInt()
-        val obj = config.getReferenced(id).getOrElse {
+        val obj = refStore.getReferenced(id).getOrElse {
             throw new NoSuchElementException(s"Could not find contextual object of identifier '$id' in provided configuration.")
         }
         new SimpleContextObject(id, obj)

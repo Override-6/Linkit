@@ -18,6 +18,8 @@ import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.system.security.BytesHasher
 
+import java.net.URL
+
 trait ConnectionConfiguration {
 
     val configName: String
@@ -26,8 +28,8 @@ trait ConnectionConfiguration {
 
     val hasher: BytesHasher
 
-    val translatorFactory: (ApplicationContext) => PacketTranslator
+    val translatorFactory: ApplicationContext => PacketTranslator
 
-    val defaultPersistenceConfig: PersistenceConfig
+    val defaultPersistenceConfigScript: Option[URL]
 
 }

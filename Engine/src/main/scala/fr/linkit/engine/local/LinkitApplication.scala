@@ -97,18 +97,10 @@ abstract class LinkitApplication(configuration: ApplicationConfiguration, appRes
             case None       => null
         }
 
-        /*import LocalResourceFolder._
-        val resource  = appResources.getOrOpenThenRepresent[SyncObjectClassResource](getProperty("compilation.working_dir.classes"))
-        val generator = new SynchronizedObjectClassGenerator(compilerCenter, resource)
-        generator.preGenerateClasses(
-            Seq(classOf[NIOFileAdapter], classOf[NIOFileSystemAdapter], classOf[IOFileAdapter], classOf[IOFileSystemAdapter])
-        )*/
-
-
         if (pluginFolder != null) {
-            val pluginCount = pluginManager.loadAll(pluginFolder).length
+          /*  val pluginCount = pluginManager.loadAll(pluginFolder).length
             configuration.fsAdapter.getAdapter(pluginFolder)
-            AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")
+            AppLogger.trace(s"Loaded $pluginCount plugins from main plugin folder $pluginFolder")*/
         }
     }
 

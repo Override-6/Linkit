@@ -22,6 +22,7 @@ import fr.linkit.api.connection.cache.{CacheManagerAlreadyDeclaredException, Sha
 import fr.linkit.api.connection.network.{Engine, Network}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.connection.packet.persistence.context.MutableReferencedObjectStore
 import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
@@ -34,7 +35,8 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestP
 
 import java.sql.Timestamp
 
-abstract class AbstractNetwork(override val connection: ConnectionContext) extends Network { network =>
+abstract class AbstractNetwork(override val connection: ConnectionContext,
+                               override val refStore: MutableReferencedObjectStore) extends Network { network =>
 
     protected val networkStore    : PacketInjectableStore = connection.createStore(0)
     private   val cacheManagerChannel                     = networkStore.getInjectable(1, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
@@ -93,6 +95,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
         ExecutorEngine.setCurrentEngine(connectionEngine)
         connection.translator.initNetwork(this)
         cacheManagerChannel.addRequestListener(handleRequest)
+        refStore += this
     }
 
     private def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {
@@ -113,17 +116,6 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
                     }
                 }
             }
-            behaviors += new ObjectBehaviorBuilder[Network]() {
-                //Small trick before serialisation system redesign
-                asParameter = new ParameterModifier[Network] {
-                    override def forRemote(localParam: Network, invocation: LocalMethodInvocation[_], remote: Engine): Network = null
-
-                    override def forLocalComingFromRemote(receivedParam: Network, invocation: LocalMethodInvocation[_], remote: Engine): Network = network
-                }
-                asField = new FieldModifier[Network] {
-                    override def forLocalComingFromRemote(receivedField: Network, containingObject: SynchronizedObject[_], remote: Engine): Network = network
-                }
-            }
             behaviors += new ObjectBehaviorBuilder[DefaultEngine]() {
                 asField = new FieldModifier[DefaultEngine] {
                     override def forLocalComingFromRemote(receivedField: DefaultEngine, containingObject: SynchronizedObject[_], remote: Engine): DefaultEngine = {
@@ -134,4 +126,8 @@ abstract class AbstractNetwork(override val connection: ConnectionContext) exten
             }
         }.build
     }
+}
+
+object AbstractNetwork {
+    final val GlobalCacheID = "Global Cache"
 }

@@ -25,7 +25,7 @@ abstract class LinkitScriptHandler[S <: ScriptFile] extends ScriptHandler[S] {
     override def findScript(scriptName: String, classes: ClassFolderResource[ScriptFile]): Option[ScriptInstantiator[S]] = {
         val scriptClassName = classPackage + '.' + className + scriptName
         classes.findClass[S](scriptClassName, classOf[LinkitApplication].getClassLoader).map { clazz =>
-            newScript(clazz, _)
+            newScript(clazz, _: _*)
         }
     }
 

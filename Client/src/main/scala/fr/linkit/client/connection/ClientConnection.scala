@@ -29,7 +29,6 @@ import fr.linkit.client.connection.network.ClientSideNetwork
 import fr.linkit.client.local.config.ClientConnectionConfiguration
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.connection.packet.traffic.DynamicSocket
-import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.system.Rules
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
@@ -49,8 +48,8 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     override val eventNotifier           : EventNotifier     = session.eventNotifier
     override val traffic                 : PacketTraffic     = session.traffic
     override val boundIdentifier         : String            = serverIdentifier
-    override val defaultPersistenceConfig: PersistenceConfig = configuration.defaultPersistenceConfig
-    private  val sideNetwork             : ClientSideNetwork = new ClientSideNetwork(this)
+    override val defaultPersistenceConfig: PersistenceConfig = traffic.defaultPersistenceConfig
+    private  val sideNetwork             : ClientSideNetwork = new ClientSideNetwork(this, defaultPersistenceConfig.getReferenceStore)
     override val network                 : Network           = sideNetwork
     @volatile private var alive                              = true
 

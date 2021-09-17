@@ -23,6 +23,7 @@ import fr.linkit.engine.local.utils.UnWrapper
 class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) extends PacketObjectPool(sizes) {
 
     protected val chunksPositions = new Array[Int](chunks.length)
+    protected   val refStore        = config.getReferenceStore
 
     def getChunk[T](ref: Any): PoolChunk[T] = {
         ref match {
@@ -121,7 +122,7 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
 
     private def addObj0(ref: AnyRef): Unit = {
         val profile = config.getProfile[AnyRef](ref.getClass)
-        val code    = config.getReferencedCode(ref)
+        val code    = refStore.getReferencedCode(ref)
         addTypeOfIfAbsent(ref)
         if (code.isEmpty) {
             val persistence = profile.getPersistence(ref)

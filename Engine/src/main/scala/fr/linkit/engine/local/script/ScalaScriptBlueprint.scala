@@ -25,5 +25,6 @@ class ScalaScriptBlueprint(bpIn: InputStream) extends AbstractClassBlueprint[Scr
     override val rootScope   : RootValueScope = new RootValueScope {
         bindValue("ScriptCode" ~> (_.scriptSourceCode))
         bindValue("ScriptArguments" ~> (_.scriptArguments.map(p => s"${p._1}: ${p._2.getName}").mkString(", ")))
+        bindValue("ScriptClass" ~> (_.scriptSuperClass.getName))
     }
 }

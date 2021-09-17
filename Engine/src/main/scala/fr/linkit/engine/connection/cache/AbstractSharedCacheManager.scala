@@ -30,21 +30,23 @@ import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 abstract class AbstractSharedCacheManager(override val family: String,
-                                          @transient override val network: Network,
-                                          @transient store: PacketInjectableStore) extends SharedCacheManager {
+                                          override val network: Network,
+                                          store: PacketInjectableStore) extends SharedCacheManager {
 
     println(s"New SharedCacheManager created ! $family")
-    @transient protected val channel          : SimpleRequestPacketChannel = store.getInjectable(0, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
-    @transient protected val broadcastScope   : ChannelScope               = prepareScope(ChannelScopes.broadcast)
-    @transient private   val traffic                                       = network.connection.traffic
-    protected            val currentIdentifier: String                     = network.connection.currentIdentifier
+    protected val channel          : SimpleRequestPacketChannel = store.getInjectable(family.hashCode - 5, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
+    protected val broadcastScope   : ChannelScope               = prepareScope(ChannelScopes.broadcast)
+    private   val traffic                                       = network.connection.traffic
+    protected val currentIdentifier: String                     = network.connection.currentIdentifier
+
+    postInit()
 
     override def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchBehavior): A = {
         LocalCachesStore
                 .findCache[A](cacheID)
                 .getOrElse {
                     preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
-                    val channel     = traffic.getInjectable(cacheID + channelIdentifiersShift, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
+                    val channel     = store.getInjectable(cacheID, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
                     val sharedCache = factory.createNew(channel)
                     LocalCachesStore.store(cacheID, sharedCache, channel)
 
@@ -149,9 +151,18 @@ abstract class AbstractSharedCacheManager(override val family: String,
         AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
-    channel.addRequestListener(handleRequest)
-    val channelIdentifiersShift: Int = family.hashCode + 8882 //TODO Redesign packet handling and make a system where the identifier is an array if ints
 
+    private def postInit(): Unit = {
+        val refStore = network.refStore
+        val shift    = family.hashCode
+        refStore ++= Map(
+            shift + 1 -> channel,
+            shift + 2 -> broadcastScope,
+            shift + 3 -> traffic,
+            shift + 4 -> store
+        )
+        channel.addRequestListener(handleRequest)
+    }
 }
 
 object AbstractSharedCacheManager {

@@ -10,22 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.engine.local.script
 
-import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.packet.traffic.PacketTraffic
-import fr.linkit.api.local.ApplicationContext
+import fr.linkit.api.local.system.AppException
 
-import java.lang.reflect.Constructor
-
-trait PersistenceContext {
-
-    val traffic: PacketTraffic
-
-    def getNetwork: Network
-
-    def findConstructor[T](clazz: Class[_]): Option[Constructor[T]]
-
-    def findDeconstructor[T](clazz: Class[_]): Option[Deconstructor[T]]
+class ScriptException(msg: String, cause: Throwable = null) extends AppException(msg, cause) {
 
 }

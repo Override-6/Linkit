@@ -14,11 +14,16 @@ package fr.linkit.server.connection.packet
 
 import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.traffic.PacketWriter
+import fr.linkit.api.local.ApplicationContext
 import fr.linkit.engine.connection.packet.traffic.{AbstractPacketTraffic, WriterInfo}
 import fr.linkit.server.connection.ServerConnection
 
+import java.net.URL
+
 class ServerPacketTraffic(override val connection: ServerConnection,
-                          defaultPersistenceConfig: PersistenceConfig) extends AbstractPacketTraffic(connection.currentIdentifier, defaultPersistenceConfig) {
+                          defaultPersistenceConfigScript: Option[URL]) extends AbstractPacketTraffic(connection.currentIdentifier, defaultPersistenceConfigScript) {
+
+    override def application: ApplicationContext = connection.getApp
 
     override val currentIdentifier: String = connection.currentIdentifier
     override val serverIdentifier : String = currentIdentifier

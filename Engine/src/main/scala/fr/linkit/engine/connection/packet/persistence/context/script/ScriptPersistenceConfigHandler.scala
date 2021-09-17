@@ -13,22 +13,14 @@
 package fr.linkit.engine.connection.packet.persistence.context.script
 
 import fr.linkit.api.local.script.ScriptContext
-import fr.linkit.engine.connection.packet.persistence.context.script.ScriptPersistenceConfigHandler.ScriptPackage
 import fr.linkit.engine.local.script.SimpleScriptHandler
-import fr.linkit.engine.local.script.SimpleScriptHandler.ScriptName
+import fr.linkit.engine.local.script.SimpleScriptHandler.{ScriptName, ScriptPackage}
 
-class ScriptPersistenceConfigHandler extends SimpleScriptHandler[ScriptConfig] {
-
-    override protected val className   : String = ScriptName
-    override protected val classPackage: String = ScriptPackage
+object ScriptPersistenceConfigHandler extends SimpleScriptHandler[PersistenceScriptConfig] {
+    override val className   : String = "ScalaPersistenceConfigScript_"
+    override val classPackage: String = "gen.scala.persistence.config.script"
 
     override def newScriptContext(scriptSourceCode: String, scriptName: String, additionalArguments: Map[String, Class[_]], scriptClassLoader: ClassLoader): ScriptContext = {
-        new ScriptConfigContext(scriptSourceCode, scriptName, classOf[ScriptConfig], additionalArguments, scriptClassLoader)
+        new ScriptConfigContext(scriptSourceCode, scriptName, classOf[PersistenceScriptConfig], additionalArguments, scriptClassLoader)
     }
-}
-
-object ScriptPersistenceConfigHandler {
-
-    final val ScriptPackage = "gen.scala.persistence.config.script"
-    final val ScriptName    = "ScalaPersistenceConfigScript_"
 }

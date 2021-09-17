@@ -20,12 +20,21 @@ import fr.linkit.api.connection.packet.traffic.injection.PacketInjectionControll
 import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
 import fr.linkit.api.local.system.{ClosedException, Reason}
 import fr.linkit.engine.connection.packet.SimplePacketBundle
+import fr.linkit.engine.connection.packet.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
 import fr.linkit.engine.connection.packet.traffic.injection.ParallelInjectionContainer
+import fr.linkit.engine.local.utils.ClassMap
 
+import java.net.URL
 import scala.reflect.ClassTag
 
 abstract class AbstractPacketTraffic(override val currentIdentifier: String,
-                                     override val defaultPersistenceConfig: PersistenceConfig) extends PacketTraffic {
+                                     defaultPersistenceConfigUrl: Option[URL]) extends PacketTraffic {
+
+    override val defaultPersistenceConfig: PersistenceConfig = {
+        val context = ImmutablePersistenceContext(this, new ClassMap(), new ClassMap())
+        val builder = defaultPersistenceConfigUrl.fold(new PersistenceConfigBuilder())(PersistenceConfigBuilder.fromScript(_, this))
+        builder.build(context)
+    }
 
     @volatile private var closed     = false
     protected val rootStore          = new SimplePacketInjectableStore(this, defaultPersistenceConfig, Array.empty)

@@ -15,6 +15,7 @@ package fr.linkit.engine.connection.packet.persistence.context.profile.persisten
 import fr.linkit.api.connection.packet.persistence.context.{Deconstructor, TypePersistence}
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
 import fr.linkit.engine.connection.packet.persistence.context
+import fr.linkit.engine.connection.packet.persistence.context.Persist
 import fr.linkit.engine.connection.packet.persistence.context.profile.persistence.ConstructorTypePersistence.getConstructor
 import fr.linkit.engine.connection.packet.persistence.context.structure.ClassObjectStructure
 
@@ -36,7 +37,7 @@ class ConstructorTypePersistence[T](clazz: Class[_], constructor: Constructor[T]
     private val handle = MethodHandles.privateLookupIn(clazz, MethodHandles.lookup()).unreflectConstructor(constructor)
 
     override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
-        val result = handle.bindTo(allocatedObject).invoke(args)
+       handle.bindTo(allocatedObject).invoke(args)
     }
 
     override def toArray(t: T): Array[Any] = {
@@ -56,7 +57,7 @@ object ConstructorTypePersistence {
 
     def findConstructor[T](clazz: Class[_]): Option[Constructor[T]] = {
         val opt = clazz.getDeclaredConstructors
-                .find(_.isAnnotationPresent(classOf[context.Constructor]))
+                .find(_.isAnnotationPresent(classOf[Persist]))
                 .asInstanceOf[Option[Constructor[T]]]
         if (opt.isDefined)
             opt.get.setAccessible(true)

@@ -30,8 +30,8 @@ import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestP
 import scala.util.control.Breaks.{break, breakable}
 
 final class SharedCacheOriginManager(family: String,
-                                     @transient network: Network,
-                                     @transient store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, store) {
+                                     network: Network,
+                                     store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, store) {
 
     override val ownerID: String = network.connection.currentIdentifier
 

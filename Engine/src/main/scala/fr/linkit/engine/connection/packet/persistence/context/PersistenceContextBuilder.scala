@@ -13,6 +13,7 @@
 package fr.linkit.engine.connection.packet.persistence.context
 
 import fr.linkit.api.connection.packet.persistence.context.{Deconstructor, PersistenceContext}
+import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.engine.local.utils.ClassMap
 
 import java.lang.reflect.Constructor
@@ -29,6 +30,6 @@ abstract class PersistenceContextBuilder {
         deconstructorMap.put(clazz, deconstructor)
     }
 
-    def build: PersistenceContext = ImmutablePersistenceContext(constructorMap, deconstructorMap)
+    def build(traffic: PacketTraffic): PersistenceContext = ImmutablePersistenceContext(traffic, constructorMap, deconstructorMap)
 
 }

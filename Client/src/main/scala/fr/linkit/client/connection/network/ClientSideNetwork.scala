@@ -13,14 +13,15 @@
 package fr.linkit.client.connection.network
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.cache.{CacheSearchBehavior, NoSuchCacheException, SharedCacheManager}
-import fr.linkit.api.connection.network.Updatable
+import fr.linkit.api.connection.cache.{CacheSearchBehavior, SharedCacheManager}
+import fr.linkit.api.connection.packet.persistence.context.MutableReferencedObjectStore
 import fr.linkit.client.connection.ClientConnection
-import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
+import fr.linkit.engine.connection.cache.SharedCacheDistantManager
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.connection.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.connection.network.{AbstractNetwork, NetworkDataTrunk}
 
-class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(connection) {
+class ClientSideNetwork(connection: ClientConnection, refStore: MutableReferencedObjectStore) extends AbstractNetwork(connection, refStore) {
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
         globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](store, this), CacheSearchBehavior.GET_OR_CRASH)
@@ -31,7 +32,7 @@ class ClientSideNetwork(connection: ClientConnection) extends AbstractNetwork(co
     }
 
     override protected def createGlobalCache: SharedCacheManager = {
-        new SharedCacheDistantManager("Global Cache", serverIdentifier, this, networkStore)
+        new SharedCacheDistantManager(GlobalCacheID, serverIdentifier, this, networkStore.createStore(GlobalCacheID.hashCode))
     }
 
     override def serverIdentifier: String = connection.boundIdentifier

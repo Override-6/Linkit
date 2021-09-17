@@ -16,13 +16,17 @@ import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.traffic.PacketWriter
+import fr.linkit.api.local.ApplicationContext
 import fr.linkit.engine.connection.packet.persistence.PacketSerializationChoreographer
+
+import java.net.URL
 
 class SocketPacketTraffic(socket: DynamicSocket,
                           translator: PacketTranslator,
-                          defaultPersistenceConfig: PersistenceConfig,
+                          defaultPersistenceConfigScript: Option[URL],
+                          override val application: ApplicationContext,
                           override val currentIdentifier: String,
-                          override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, defaultPersistenceConfig) {
+                          override val serverIdentifier: String) extends AbstractPacketTraffic(currentIdentifier, defaultPersistenceConfigScript) {
 
     private val choreographer                  = new PacketSerializationChoreographer(translator)
     private var connection0: ConnectionContext = _

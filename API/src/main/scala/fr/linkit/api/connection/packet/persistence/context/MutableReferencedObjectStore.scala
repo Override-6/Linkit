@@ -12,20 +12,15 @@
 
 package fr.linkit.api.connection.packet.persistence.context
 
-import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.packet.traffic.PacketTraffic
-import fr.linkit.api.local.ApplicationContext
+trait MutableReferencedObjectStore extends ReferencedObjectStore {
 
-import java.lang.reflect.Constructor
+    def ++=(refs: AnyRef*): this.type
 
-trait PersistenceContext {
+    def ++=(refs: Map[Int, AnyRef]): this.type
 
-    val traffic: PacketTraffic
+    def +=(anyRef: AnyRef): this.type
 
-    def getNetwork: Network
+    def +=(code: Int, anyRef: AnyRef): this.type
 
-    def findConstructor[T](clazz: Class[_]): Option[Constructor[T]]
-
-    def findDeconstructor[T](clazz: Class[_]): Option[Deconstructor[T]]
-
+    def -=(ref: AnyRef): this.type
 }
