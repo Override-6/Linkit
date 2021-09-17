@@ -12,6 +12,8 @@
 
 package fr.linkit.client.connection
 
+import java.nio.ByteBuffer
+
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.channel.ChannelScope
@@ -171,7 +173,7 @@ object ClientConnection {
         socket.write(welcomePacket)
 
         //Ensuring that the server has accepted this connection based on the previously sent welcome packet.
-        packetReader.nextPacket(assertAccepted(socket, packetReader))
+        assertAccepted(socket, packetReader)(socket.read(1))
 
         //Instantiating connection instances...
         var connection: ClientConnection = null
@@ -195,7 +197,7 @@ object ClientConnection {
             AppLogger.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
         })
 
-        //The server couldn't send the packet.
+        //The server did not send the packet.
         if (connection == null)
             throw new ConnectionInitialisationException("Couldn't receive server identifier's packet. The connection have no choice to abort this initialization.")
         //return the connection instance
@@ -205,10 +207,9 @@ object ClientConnection {
     /*
     * Reading Welcome Packet
     * */
-    private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(result: PacketTransferResult): Unit = {
-        val buff   = result.buff
-        val header = buff.get
-        if (buff.capacity() != 5 || (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused))
+    private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(buff: Array[Byte]): Unit = {
+        val header = buff.head
+        if (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused)
             throw new ConnectionInitialisationException(s"Received unexpected welcome packet verdict format (received: ${ScalaUtils.toPresentableString(buff)}")
 
         val isAccepted = header == Rules.ConnectionAccepted

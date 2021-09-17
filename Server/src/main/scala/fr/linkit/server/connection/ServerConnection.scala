@@ -286,13 +286,13 @@ class ServerConnection(applicationContext: ServerApplication,
     }
 
     private[connection] def sendAuthorisedConnection(socket: DynamicSocket): Unit = {
-        socket.write(serializeInt(1) ++ Array(Rules.ConnectionAccepted))
+        socket.write(Array(Rules.ConnectionAccepted))
         val bytes = currentIdentifier.getBytes()
         socket.write(serializeInt(bytes.length) ++ bytes)
     }
 
     private[connection] def sendRefusedConnection(socket: DynamicSocket, message: String): Unit = {
-        socket.write(serializeInt(1) ++ Array(Rules.ConnectionRefused))
+        socket.write(Array(Rules.ConnectionRefused))
         val bytes = message.getBytes()
         socket.write(serializeInt(bytes.length) ++ bytes)
     }
