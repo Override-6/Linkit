@@ -107,9 +107,9 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
         (flag: @switch) match {
             case Class | SyncClass => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
             case String            => foreach[String](putString)
-            case Array                  => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
-            case ContextRef             => foreach[SimpleContextObject](obj => buff.putInt(obj.refId))
-            case Object                 => foreach[PacketObject](writeObject)
+            case Array             => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
+            case ContextRef        => foreach[SimpleContextObject](obj => buff.putInt(obj.refId))
+            case Object            => foreach[PacketObject](writeObject)
         }
     }
 

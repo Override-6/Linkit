@@ -39,8 +39,8 @@ abstract class ArrayObjectStructure() extends ObjectStructure {
         while (i < types.length) {
             val value = fieldsValues(i)
             if (value != null) {
-                val clazz = UnWrapper.getPrimitiveClass(value) //would convert the value's class to it's primitive class if the value is a primitive wrapper
-                if (!types(i).isAssignableFrom(clazz))
+                val tpe = types(i)
+                if (!(tpe.isAssignableFrom(value.getClass) || tpe.isAssignableFrom(UnWrapper.getPrimitiveClass(value))))
                     return false
             }
             i += 1

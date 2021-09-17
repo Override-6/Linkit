@@ -55,7 +55,7 @@ class DeserializerPacketObjectPool(sizes: Array[Int]) extends PacketObjectPool(s
 
     private def getIdxTypeAndShift(globalIdx: Int): (Byte, Int) = {
         val positions = chunksPositions
-        if (globalIdx < positions(1)) {
+        if (globalIdx < chunks(0).size) {
             //globalIdx is a an index into the first chunk, so it does not needs to be shifted
             return (0, 0)
         }

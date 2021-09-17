@@ -17,21 +17,22 @@ import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.local.system.event.EventNotifier
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.local.config.ClientConnectionConfiguration
-import fr.linkit.engine.connection.packet.traffic.{ChannelScopes, DynamicSocket, SocketPacketTraffic}
+import fr.linkit.engine.connection.packet.traffic.{ChannelScopes, DefaultPacketReader, DynamicSocket, SocketPacketTraffic}
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.system.SystemPacketChannel
 import fr.linkit.engine.local.system.event.DefaultEventNotifier
 
 case class ClientConnectionSession(socket: DynamicSocket,
-                                   info: ClientConnectionSessionInfo,
-                                   serverIdentifier: String,
-                                   translator: PacketTranslator) {
+                                   info: ClientConnectionSessionInfo) {
 
     val appContext       : ClientApplication             = info.appContext
     val configuration    : ClientConnectionConfiguration = info.configuration
-    val readThread       : PacketReaderThread            = info.readThread
     val currentIdentifier: String                        = configuration.identifier
+    val translator       : PacketTranslator              = info.translator
+    val serverIdentifier                                 = info.serverIdentifier
     val traffic          : SocketPacketTraffic           = new SocketPacketTraffic(socket, translator, configuration.defaultPersistenceConfig, currentIdentifier, serverIdentifier)
+    val packetReader     : DefaultPacketReader           = new DefaultPacketReader(socket, appContext, traffic, translator)
+    val readThread       : PacketReaderThread            = new PacketReaderThread(packetReader, serverIdentifier)
     val eventNotifier    : EventNotifier                 = new DefaultEventNotifier
     val systemChannel    : SystemPacketChannel           = traffic.getInjectable(SystemChannelID, SystemPacketChannel, ChannelScopes.discardCurrent)
 

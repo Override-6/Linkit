@@ -62,7 +62,7 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
     @tailrec
     private def getPersistenceConfig(path: Array[Int], pos: Int): PersistenceConfig = {
         val len = path.length
-        if (pos > len) {
+        if (pos >= len) {
             return failPresence(path)
         }
         presences.get(path(pos)) match {

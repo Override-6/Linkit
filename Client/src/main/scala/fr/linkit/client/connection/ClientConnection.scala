@@ -12,26 +12,23 @@
 
 package fr.linkit.client.connection
 
-import java.nio.ByteBuffer
-
 import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
 import fr.linkit.api.connection.packet._
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
-import fr.linkit.api.connection.packet.persistence.{PacketTransferResult, PacketTranslator}
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.local.ApplicationContext
 import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.connection.network.ClientSideNetwork
 import fr.linkit.client.local.config.ClientConnectionConfiguration
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.engine.connection.packet.traffic.{DefaultPacketReader, DynamicSocket}
+import fr.linkit.engine.connection.packet.traffic.DynamicSocket
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 import fr.linkit.engine.local.system.Rules
 import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
@@ -155,8 +152,7 @@ object ClientConnection {
              configuration: ClientConnectionConfiguration): ClientConnection = {
 
         //Initializing values that will be used for packet transactions during the initialization.
-        val translator   = configuration.translatorFactory(context)
-        val packetReader = new DefaultPacketReader(socket, BytesHasher.inactive, context, translator)
+        val translator = configuration.translatorFactory(context)
 
         //WelcomePacket informational fields
         val identifier          = configuration.identifier
@@ -173,52 +169,38 @@ object ClientConnection {
         socket.write(welcomePacket)
 
         //Ensuring that the server has accepted this connection based on the previously sent welcome packet.
-        assertAccepted(socket, packetReader)(socket.read(1))
+        assertAccepted(socket, socket.read(1))
 
-        //Instantiating connection instances...
-        var connection: ClientConnection = null
+        //The contains the server identifier bytes' string
+        val buff             = socket.read(socket.readInt())
+        val serverIdentifier = new String(buff)
+        socket.identifier = serverIdentifier
 
-        //Server should send a packet which provides its identifier.
-        //This packet concludes phase 1 of connection's initialization.
-        packetReader.nextPacketSync(result => {
-            //The contains the server identifier bytes' string
-            val buff             = result.buff
-            val serverIdentifier = new String(buff.array().drop(4))
-            socket.identifier = serverIdentifier
-
-            //Constructing connection instance session
-            AppLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
-            val readThread  = new PacketReaderThread(packetReader, serverIdentifier)
-            val sessionInfo = ClientConnectionSessionInfo(context, configuration, readThread)
-            val session     = ClientConnectionSession(socket, sessionInfo, serverIdentifier, translator)
-            //Constructing connection instance...
-            //Stage 2 will be completed into ClientConnection constructor.
-            connection = new ClientConnection(session)
-            AppLogger.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
-        })
-
-        //The server did not send the packet.
-        if (connection == null)
-            throw new ConnectionInitialisationException("Couldn't receive server identifier's packet. The connection have no choice to abort this initialization.")
-        //return the connection instance
+        //Constructing connection instance session
+        AppLogger.info(s"${identifier}: Stage 1 completed : Connection seems able to support this server configuration.")
+        val sessionInfo = ClientConnectionSessionInfo(context, configuration, serverIdentifier, translator)
+        val session     = ClientConnectionSession(socket, sessionInfo)
+        //Constructing connection instance...
+        //Stage 2 will be completed into ClientConnection constructor.
+        val connection  = new ClientConnection(session)
+        AppLogger.info(s"$identifier: Stage 3 completed : ClientSideNetwork and Connection instances created.")
         connection
     }
 
     /*
     * Reading Welcome Packet
     * */
-    private def assertAccepted(socket: DynamicSocket, reader: PacketReader)(buff: Array[Byte]): Unit = {
+    private def assertAccepted(socket: DynamicSocket, buff: Array[Byte]): Unit = {
         val header = buff.head
         if (header != Rules.ConnectionAccepted && header != Rules.ConnectionRefused)
             throw new ConnectionInitialisationException(s"Received unexpected welcome packet verdict format (received: ${ScalaUtils.toPresentableString(buff)}")
 
         val isAccepted = header == Rules.ConnectionAccepted
         if (!isAccepted) {
-            reader.nextPacket(result => {
-                val msg        = ScalaUtils.toPresentableString(result.buff)
-                val serverPort = socket.remoteSocketAddress().getPort
-                throw new ConnectionInitialisationException(s"Server (port: $serverPort) refused connection: $msg")
-            })
+            val buff       = socket.read(socket.readInt())
+            val msg        = ScalaUtils.toPresentableString(buff)
+            val serverPort = socket.remoteSocketAddress().getPort
+            throw new ConnectionInitialisationException(s"Server (port: $serverPort) refused connection: $msg")
         }
     }
 

@@ -18,6 +18,7 @@ import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.api.local.system.AppLogger
+import fr.linkit.engine.connection.packet.fundamental.EmptyPacket.EmptyPacket
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.fundamental.{EmptyPacket, RefPacket}
@@ -63,7 +64,7 @@ final class SharedCacheDistantManager(family: String,
             .submit()
             .nextResponse
             .nextPacket[Packet] match {
-            case EmptyPacket =>
+            case e: EmptyPacket =>
             // OK, the cache is not open or is open and the given cacheType
             // is assignable and was accepted by the AttachHandler of the owner's cache handler.
             case StringPacket(msg: String) =>

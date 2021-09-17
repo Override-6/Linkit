@@ -12,12 +12,14 @@
 
 package fr.linkit.client.connection
 
+import fr.linkit.api.connection.packet.persistence.PacketTranslator
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.local.config.ClientConnectionConfiguration
 import fr.linkit.engine.local.concurrency.PacketReaderThread
 
 case class ClientConnectionSessionInfo(appContext: ClientApplication,
                                        configuration: ClientConnectionConfiguration,
-                                       readThread: PacketReaderThread) {
+                                       serverIdentifier: String,
+                                       translator: PacketTranslator) {
 
 }

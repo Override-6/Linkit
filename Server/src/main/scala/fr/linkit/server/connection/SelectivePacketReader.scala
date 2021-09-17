@@ -28,7 +28,7 @@ class SelectivePacketReader(socket: DynamicSocket,
                             boundIdentifier: String) extends PacketReader {
 
     private val configuration    = server.configuration
-    private val simpleReader     = new DefaultPacketReader(socket, configuration.hasher, server, server.translator)
+    private val simpleReader     = new DefaultPacketReader(socket, server, server.traffic, server.translator)
     private val serverIdentifier = server.currentIdentifier
 
     override def nextPacket(@workerExecution callback: (PacketDeserializationResult) => Unit): Unit = {

@@ -13,17 +13,16 @@
 package fr.linkit.engine.connection.packet.traffic
 
 import fr.linkit.api.connection.packet.persistence.{PacketDeserializationResult, PacketTranslator}
-import fr.linkit.api.connection.packet.traffic.PacketReader
+import fr.linkit.api.connection.packet.traffic.{PacketReader, PacketTraffic}
 import fr.linkit.api.local.concurrency.{ProcrastinatorControl, workerExecution}
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.api.local.system.security.BytesHasher
 import fr.linkit.engine.local.utils.NumberSerializer
-
 import java.nio.ByteBuffer
 
 class DefaultPacketReader(socket: DynamicSocket,
-                          hasher: BytesHasher,
                           procrastinator: ProcrastinatorControl,
+                          traffic: PacketTraffic,
                           translator: PacketTranslator) extends PacketReader {
 
     /**
@@ -40,14 +39,14 @@ class DefaultPacketReader(socket: DynamicSocket,
             return
         }
 
-        val bytes = hasher.deHashBytes(socket.read(nextLength))
+        val bytes = socket.read(nextLength)
         //NETWORK-DEBUG-MARK
         AppLogger.logDownload(socket.boundIdentifier, bytes)
         val buff = ByteBuffer.allocate(bytes.length + 4)
         buff.put(NumberSerializer.serializeInt(nextLength))
         buff.put(bytes)
         buff.position(4)
-        val result = translator.translate(null, buff)
+        val result = translator.translate(traffic, buff)
         callback(result)
     }
 }

@@ -14,9 +14,11 @@ package fr.linkit.engine.connection.packet.persistence.context
 
 import fr.linkit.api.connection.packet.persistence.context._
 import fr.linkit.engine.connection.packet.persistence.context.profile.TypeProfileBuilder
+import fr.linkit.engine.local.script.ScriptExecutor
 import fr.linkit.engine.local.utils.ClassMap
 
 import scala.reflect.{ClassTag, classTag}
+import scala.sys.process.processInternal.InputStream
 
 class PersistenceConfigBuilder {
 
@@ -133,5 +135,6 @@ object PersistenceConfigBuilder {
     implicit def autoBuild(context: PersistenceContext, builder: PersistenceConfigBuilder): PersistenceConfig = {
         builder.build(context)
     }
+
 }
 
