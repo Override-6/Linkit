@@ -77,11 +77,11 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
             return 0
         val chunk = getChunk[AnyRef](ref)
         val tag   = chunk.tag
-        var idx   = chunk.indexOf(ref) + chunksPositions(chunk.tag)
+        var idx   = chunk.indexOf(ref)
         if (idx > -1)
-            idx += 1
+            idx += chunksPositions(chunk.tag) + 1
         else if (tag == Object) { //it may be a referenced object
-            idx = getChunkFromFlag(ContextRef).indexOf(ref) + chunksPositions(ContextRef) + 1
+            idx = chunks(ContextRef).indexOf(ref) + chunksPositions(ContextRef) + 1
         }
         idx
     }
@@ -123,8 +123,8 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
     private def addObj0(ref: AnyRef): Unit = {
         val profile = config.getProfile[AnyRef](ref.getClass)
         val code    = refStore.getReferencedCode(ref)
-        addTypeOfIfAbsent(ref)
         if (code.isEmpty) {
+            addTypeOfIfAbsent(ref)
             val persistence = profile.getPersistence(ref)
             val decomposed  = persistence.toArray(ref)
             val objPool     = getChunkFromFlag[InstanceObject[AnyRef]](Object)

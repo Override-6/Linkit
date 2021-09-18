@@ -40,7 +40,7 @@ class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
     }
 
     def ++=(other: WeakReferencedObjectStore): this.type = {
-        ++=(other.codeToRef)
+        ++=(other.codeToRef.toMap: Map[Int, AnyRef])
         this
     }
 

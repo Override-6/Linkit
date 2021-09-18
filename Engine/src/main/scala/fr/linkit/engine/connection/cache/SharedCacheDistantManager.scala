@@ -20,7 +20,7 @@ import fr.linkit.api.connection.packet.persistence.context.Deconstructive
 import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket.EmptyPacket
-import fr.linkit.engine.connection.packet.fundamental.RefPacket
+import fr.linkit.engine.connection.packet.fundamental.{EmptyPacket, RefPacket}
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.persistence.context.Persist
@@ -68,7 +68,7 @@ final class SharedCacheDistantManager @Persist()(family: String,
                 .submit()
                 .nextResponse
                 .nextPacket[Packet] match {
-            case e: EmptyPacket =>
+            case EmptyPacket =>
             // OK, the cache is not open or is open and the given cacheType
             // is assignable and was accepted by the AttachHandler of the owner's cache handler.
             case StringPacket(msg: String) =>
@@ -84,7 +84,7 @@ final class SharedCacheDistantManager @Persist()(family: String,
         println(s"HANDLING REQUEST $requestBundle")
         val msg =
             s"""This request can't be processed by this engine.
-               | The request must be performed to the engine that hosts the manager.
+               | The request must be send to the engine that hosts the manager.
                | (Current Identifier = $currentIdentifier, host identifier = $ownerID)""".stripMargin
         response.putAttribute("errorMsg", msg)
         response.submit()

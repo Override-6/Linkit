@@ -130,13 +130,13 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     }
 
     private def handlePacket(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit = {
-        packet match {
+        //packet match {
             //case system: SystemPacket => handleSystemPacket(system, coordinates)
-            case _: Packet =>
+        //    case _: Packet =>
                 //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
                 traffic.processInjection(packet, attributes, coordinates)
             //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
-        }
+       // }
     }
 
     override def getApp: ApplicationContext = appContext

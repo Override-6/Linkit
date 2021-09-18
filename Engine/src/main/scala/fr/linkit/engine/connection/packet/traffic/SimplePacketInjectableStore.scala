@@ -84,11 +84,11 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         if (!injection.haveMoreIdentifier)
             failPresence(injection.injectablePath)
         presences.get(injection.nextIdentifier) match {
-            case None        => failPresence(injection.injectablePath)
             case Some(value) => value._1 match {
                 case injectable: PacketInjectable       => injection.process(injectable)
                 case store: SimplePacketInjectableStore => store.inject(injection)
             }
+            case None        => failPresence(injection.injectablePath)
         }
     }
 

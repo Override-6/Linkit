@@ -48,7 +48,7 @@ object ArrayPersistence {
             case Byte    => buff.put(xs, from, to); lang.Byte.BYTES
             case Boolean =>
                 var i   = from
-                val x   = xs
+                val x   = xs[Boolean]
                 val len = x.length
                 while (i < Math.min(len, to)) {
                     buff.put(if (x(i)) 1: Byte else 0: Byte)
@@ -81,7 +81,7 @@ object ArrayPersistence {
             buff.put(Object)
             val (absoluteComp, depth) = getAbsoluteCompType(array)
             buff.put(depth)
-            writer.putTypeRef(comp)
+            writer.putTypeRef(absoluteComp)
         }
         writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled any primitive array before
     }
