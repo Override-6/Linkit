@@ -158,8 +158,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
         refStore ++= Map(
             shift + 1 -> channel,
             shift + 2 -> broadcastScope,
-            shift + 3 -> traffic,
-            shift + 4 -> store
+            shift + 3 -> store
         )
         channel.addRequestListener(handleRequest)
     }

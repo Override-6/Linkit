@@ -45,7 +45,7 @@ class PacketTests {
     def simplePacketTest(): Unit = {
         val f = new File("/test.txt")
         val config = new PersistenceConfigBuilder() {
-            setTNewConverter[File, String](_.toString)(new File(_))
+            setTConverter[File, String](_.toString)(new File(_))
         }.build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap))
         testPacket(Array(f, f, f), config)
     }
@@ -57,7 +57,7 @@ class PacketTests {
         val coords = DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM")
         val buff   = ByteBuffer.allocate(1000)
         val config = new PersistenceConfigBuilder() {
-            setTNewConverter[File, String](_.toString)(new File(_))
+            setTConverter[File, String](_.toString)(new File(_))
         }.build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap))
         val t0     = System.currentTimeMillis()
         for (_ <- 0 to 1000) {
@@ -80,7 +80,7 @@ class PacketTests {
     def complexPacketTest(): Unit = {
         val packet = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache"), RequestPacket(1, Array(ObjectPacket((0,classOf[SynchronizedObjectCache[_]])))))
         val config = new PersistenceConfigBuilder() {
-            setTNewConverter[File, String](_.toString)(new File(_))
+            setTConverter[File, String](_.toString)(new File(_))
         }.build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap))
         testPacket(Array(packet), config)
         testPacket(Array(packet), config)

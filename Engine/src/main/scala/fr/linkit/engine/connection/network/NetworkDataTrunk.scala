@@ -23,14 +23,16 @@ import java.sql.Timestamp
 import scala.collection.mutable
 
 //FIXME OriginManagers and DistantManagers
-class NetworkDataTrunk {
+class NetworkDataTrunk(network: Network) {
 
     private val engines = mutable.HashMap.empty[String, Engine]
     private val caches  = mutable.HashMap.empty[String, SharedCacheManager]
     val startUpDate: Timestamp = new Timestamp(System.currentTimeMillis())
 
+    def toData: NetworkDataBundle = NetworkDataBundle(engines.keys.toArray, caches.keys.toArray, startUpDate, network)
+
     @MethodControl(value = BROADCAST, innerInvocations = true)
-    def newEngine(network: Network, engineIdentifier: String): Engine = {
+    def newEngine(engineIdentifier: String): Engine = {
         if (engines.contains(engineIdentifier))
             throw new IllegalArgumentException("This engine already exists !")
         val current = ExecutorEngine.currentEngine
@@ -66,5 +68,10 @@ class NetworkDataTrunk {
         engines.put(engine.identifier, engine)
         engine
     }
+
+
+}
+
+object NetworkDataTrunk {
 
 }

@@ -12,14 +12,13 @@
 
 package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import fr.linkit.api.connection.packet.persistence.context.{ObjectConverter, TypePersistence, TypeProfile}
+import fr.linkit.api.connection.packet.persistence.context.{TypePersistence, TypeProfile}
 import fr.linkit.engine.connection.packet.persistence.context.structure.ClassObjectStructure
 import fr.linkit.engine.local.utils.ClassMap
 
 class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                                       override val declaredParent: TypeProfile[_ >: T],
-                                      private[context] val persists: Array[TypePersistence[T]],
-                                      private[context] val convertors: ClassMap[ObjectConverter[_ <: T, Any]]) extends TypeProfile[T] {
+                                      private[context] val persists: Array[TypePersistence[T]]) extends TypeProfile[T] {
 
     override def getPersistence(t: T): TypePersistence[T] = {
         val structure = ClassObjectStructure(t.getClass)
@@ -49,21 +48,5 @@ class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
             declaredParent.getPersistence(args)
         else
             throw new NoSuchElementException(s"No Type Persistence matching with object structure array '${args.mkString("(", ", ", ")")}' has been found")
-    }
-
-    override def convertTo(t: T): Any = {
-        def cast[X]: X = t.asInstanceOf[X]
-
-        val clazz = t.getClass
-        convertors.get(clazz)
-                .getOrElse(throw new NoSuchElementException(s"Could not find converter for converting '${clazz.getName}' to Any"))
-                .to(cast)
-    }
-
-    override def convertFrom(any: Any): T = {
-        val clazz = any.getClass
-        convertors.get(clazz)
-                .getOrElse(throw new NoSuchElementException(s"Could not find converter for converting '${clazz.getName}' to '${typeClass.getName}'"))
-                .from(any)
     }
 }

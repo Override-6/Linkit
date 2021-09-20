@@ -1,5 +1,6 @@
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.ApplicationContext
+import fr.linkit.engine.connection.network.{NetworkDataBundle, NetworkDataTrunk}
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 import fr.linkit.engine.connection.packet.persistence.context.PersistenceConfigBuilder
 
@@ -21,7 +22,9 @@ putContextReference(0, None)
 putContextReference(1, EmptyPacket)
 putContextReference(2, Nil)
 putContextReference(3, app)
-putContextReference(4, connection)
-setTNewConverter[File, String](_.getAbsolutePath)(new File(_))
-setTNewConverter[Date, Long](_.getTime)(new Date(_))
-setTNewConverter[Timestamp, Long](_.getTime)(new Timestamp(_))
+putContextReference(4, traffic)
+putContextReference(5, connection)
+//setTConverter[NetworkDataTrunk, NetworkDataBundle](null, null)
+setTConverter[File, String](_.getAbsolutePath)(new File(_))
+setTConverter[Date, Long](_.getTime)(new Date(_))
+setTConverter[Timestamp, Long](_.getTime)(new Timestamp(_))

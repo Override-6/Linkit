@@ -66,7 +66,7 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
     private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: DefaultTypeProfile[T]): DefaultTypeProfile[T] = {
         val network                                 = context.getNetwork
         val persistences: Array[TypePersistence[T]] = profile.persists.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
-        new DefaultTypeProfile[T](clazz, profile, persistences, profile.convertors)
+        new DefaultTypeProfile[T](clazz, profile, persistences)
     }
 
     protected def newDefaultProfile[T <: AnyRef](clazz: Class[_]): DefaultTypeProfile[T] = {
@@ -90,7 +90,7 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
             }
         }
         //No (null) parent: No declared profile has been found for the class, and declared profiles automatically handles implementations.
-        new DefaultTypeProfile[T](clazz, null, Array(persistence), new ClassMap[ObjectConverter[_ <: T, Any]])
+        new DefaultTypeProfile[T](clazz, null, Array(persistence))
     }
 
     @inline

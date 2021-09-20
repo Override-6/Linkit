@@ -58,7 +58,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         if (isRegistered(id))
             throw new ObjectAlreadyPostedException(s"Another object with id '$id' figures in the repo's list.")
 
-        val objClone = SyncObjectInstantiationHelper.deepClone(obj)
+        val objClone = SyncObjectInstantiationHelper.deepClone(obj, network.refStore)
         val tree     = createNewTree(id, currentIdentifier, objClone, Map(), behavior)
         //Indicate that a new object has been posted.
         channel.makeRequest(ChannelScopes.discardCurrent)

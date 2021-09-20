@@ -13,12 +13,14 @@
 package fr.linkit.engine.connection.packet.persistence.context
 
 import fr.linkit.api.connection.packet.persistence.context._
+import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.engine.connection.packet.persistence.context.PersistenceConfigBuilder.fromScript
 import fr.linkit.engine.connection.packet.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.connection.packet.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
+import fr.linkit.engine.connection.packet.persistence.context.structure.ArrayObjectStructure
 import fr.linkit.engine.local.script.ScriptExecutor
-import fr.linkit.engine.local.utils.ClassMap
+import fr.linkit.engine.local.utils.{ClassMap, ScalaUtils}
 
 import java.net.URL
 import scala.reflect.{ClassTag, classTag}
@@ -26,7 +28,6 @@ import scala.reflect.{ClassTag, classTag}
 class PersistenceConfigBuilder {
 
     private val persistors     = new ClassMap[TypePersistence[_ <: AnyRef]]
-    private val converters     = new ClassMap[ObjectConverter[_ <: AnyRef, _]]
     private val referenceStore = new WeakReferencedObjectStore
 
     protected var unsafeUse           = true
@@ -51,12 +52,30 @@ class PersistenceConfigBuilder {
 
     def transfer(other: PersistenceConfigBuilder): this.type = {
         persistors ++= other.persistors
-        converters ++= other.converters
         referenceStore ++= other.referenceStore
         unsafeUse = other.unsafeUse
         referenceAllObjects = other.referenceAllObjects
         wide = other.wide
         profiles.customProfiles ++= other.profiles.customProfiles
+        this
+    }
+
+    def setTConverter[A <: AnyRef: ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A): this.type = {
+        val clazz = classTag[B].runtimeClass
+        val persistor = new TypePersistence[A] {
+            override val structure: ObjectStructure = new ArrayObjectStructure {
+                override val types: Array[Class[_]] = Array(clazz)
+            }
+
+            override def initInstance(allocatedObject: A, args: Array[Any]): Unit = {
+                args.head match {
+                    case t: B => ScalaUtils.pasteAllFields(allocatedObject, fFrom(t))
+                }
+            }
+
+            override def toArray(t: A): Array[Any] = Array(fTo(t))
+        }
+        persistors put (classTag[A].runtimeClass, persistor)
         this
     }
 
@@ -74,28 +93,6 @@ class PersistenceConfigBuilder {
             persistors.remove(clazz)
         } else {
             persistors.put(clazz, persistence)
-        }
-        this
-    }
-
-    def setTConverter[T <: AnyRef : ClassTag, B](converter: ObjectConverter[T, B]): this.type = {
-        setTConverter0[T, B](converter)
-    }
-
-    def setTNewConverter[T <: AnyRef : ClassTag, B](fTo: T => B)(fFrom: B => T): this.type = {
-        setTConverter0[T, B](new ObjectConverter[T, B] {
-            override def to(t: T): B = fTo(t)
-
-            override def from(b: B): T = fFrom(b)
-        })
-    }
-
-    private def setTConverter0[T <: AnyRef : ClassTag, B](converter: ObjectConverter[T, B]): this.type = {
-        val clazz = classTag[T].runtimeClass
-        if (converter eq null) {
-            converters.remove(clazz)
-        } else {
-            converters.put(clazz, converter)
         }
         this
     }
@@ -123,10 +120,6 @@ class PersistenceConfigBuilder {
         persistors.foreachEntry((clazz, persistence) => {
             map.getOrElseUpdate(clazz, new TypeProfileBuilder[AnyRef]())
                     .addPersistence(cast(persistence))
-        })
-        converters.foreachEntry((clazz, converter) => {
-            map.getOrElseUpdate(clazz, new TypeProfileBuilder[AnyRef]())
-                    .setTConverter(cast(converter))
         })
         val finalMap = map.toSeq
                 .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
@@ -159,7 +152,8 @@ object PersistenceConfigBuilder {
 
     def fromScript(url: URL, traffic: PacketTraffic): PersistenceConfigBuilder = {
         val application = traffic.application
-        val script      = ScriptExecutor.getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
+        val script      = ScriptExecutor
+                .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
                 .newScript(application, traffic)
         script.execute()
         script

@@ -12,10 +12,11 @@
 
 package fr.linkit.engine.connection.cache.obj.generation
 
-import fr.linkit.api.connection.cache.obj.{SyncObjectDetachException, SynchronizedObject}
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
+import fr.linkit.api.connection.cache.obj.{SyncObjectDetachException, SynchronizedObject}
+import fr.linkit.api.connection.packet.persistence.context.ReferencedObjectStore
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper.MaxScanDepth
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllFields}
 import fr.linkit.engine.local.utils.{Identity, JavaUtils, ScalaUtils, UnWrapper}
@@ -127,7 +128,7 @@ object SyncObjectInstantiationHelper {
 
     val MaxScanDepth: Int = 10
 
-    def deepClone[A](origin: A): A = {
+    def deepClone[A](origin: A, store: ReferencedObjectStore): A = {
         val checkedItems = mutable.HashMap.empty[Identity[Any], Any]
         var depth: Int   = 0
 
@@ -135,14 +136,15 @@ object SyncObjectInstantiationHelper {
             if (depth > MaxScanDepth)
                 return data
             data match {
-                case null                                 => null
-                case None | Nil                           => data //TODO Remove the deepClone method because it was made for instantiateFromOrigin and only duplicate fields that hosts a synchronized object
-                case array: Array[AnyRef]                 => java.util.Arrays.copyOf(array, array.length).map(getClonedInstance)
-                case str: String                          => str
-                case o if UnWrapper.isPrimitiveWrapper(o) => o
-                case _ if data.getClass.isHidden          => data
-                case enum if enum.getClass.isEnum         => enum
-                case syncObj: SynchronizedObject[_]       => syncObj
+                case null                                                        => null
+                case None | Nil                                                  => data //TODO Remove the deepClone method because it was made for instantiateFromOrigin and only duplicate fields that hosts a synchronized object
+                case array: Array[AnyRef]                                        => java.util.Arrays.copyOf(array, array.length).map(getClonedInstance)
+                case str: String                                                 => str
+                case o if UnWrapper.isPrimitiveWrapper(o)                        => o
+                case _ if data.getClass.isHidden                                 => data
+                case enum if enum.getClass.isEnum                                => enum
+                case syncObj: SynchronizedObject[_]                              => syncObj
+                case stored: AnyRef if store.getReferencedCode(stored).isDefined => stored
 
                 //The method will be removed, made this awful match list in order to complete a project test
                 case _: Class[_]    => data
@@ -186,9 +188,9 @@ object SyncObjectInstantiationHelper {
         clone
     }
 
-    def detachedWrapperClone[A <: AnyRef](origin: SynchronizedObject[A]): (A, Map[AnyRef, SynchronizedObject[_]]) = {
+    def detachedWrapperClone[A <: AnyRef](origin: SynchronizedObject[A], store: ReferencedObjectStore): (A, Map[AnyRef, SynchronizedObject[_]]) = {
         try {
-            detachedWrapperClone0(deepClone(origin))
+            detachedWrapperClone0(deepClone(origin, store))
         } catch {
             case NonFatal(e) => throw new SyncObjectDetachException(s"Could not detach origin: $origin. ", e)
         }

@@ -13,7 +13,7 @@
 package fr.linkit.engine.connection.packet.persistence.serializor.write
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
+import fr.linkit.api.connection.packet.persistence.context.{MutableReferencedObjectStore, PersistenceConfig}
 import fr.linkit.api.connection.packet.persistence.obj.{ContextObject, InstanceObject}
 import fr.linkit.engine.connection.packet.persistence.pool.{PacketObjectPool, PoolChunk, SimpleContextObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ArrayPersistence
@@ -22,8 +22,8 @@ import fr.linkit.engine.local.utils.UnWrapper
 
 class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) extends PacketObjectPool(sizes) {
 
-    protected val chunksPositions = new Array[Int](chunks.length)
-    protected   val refStore        = config.getReferenceStore
+    protected val chunksPositions                          = new Array[Int](chunks.length)
+    protected   val refStore: MutableReferencedObjectStore = config.getReferenceStore
 
     def getChunk[T](ref: Any): PoolChunk[T] = {
         ref match {

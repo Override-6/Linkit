@@ -18,22 +18,24 @@ import fr.linkit.api.connection.cache.{CacheContent, CacheOpenException, CacheSe
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.{RequestPacketBundle, Submitter}
+import fr.linkit.api.connection.packet.persistence.context.Deconstructive
 import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.connection.cache.AbstractSharedCacheManager.SystemCacheRange
 import fr.linkit.engine.connection.packet.UnexpectedPacketException
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.connection.packet.fundamental.{EmptyPacket, RefPacket}
-import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
+import fr.linkit.engine.connection.packet.persistence.context.Persist
 
 import scala.util.control.Breaks.{break, breakable}
 
-final class SharedCacheOriginManager(family: String,
-                                     network: Network,
-                                     store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, store) {
+final class SharedCacheOriginManager @Persist()(family: String,
+                                                network: Network,
+                                                store: PacketInjectableStore) extends AbstractSharedCacheManager(family, network, store) with Deconstructive {
 
     override val ownerID: String = network.connection.currentIdentifier
+
+    override def deconstruct(): Array[Any] = Array(family, network, store)
 
     override def handleRequest(requestBundle: RequestPacketBundle): Unit = {
         val coords        = requestBundle.coords
@@ -110,7 +112,7 @@ final class SharedCacheOriginManager(family: String,
 
         def failRequest(msg: String): Nothing = {
             response.addPacket(StringPacket(msg))
-                .submit()
+                    .submit()
             break
         }
 
@@ -137,23 +139,24 @@ final class SharedCacheOriginManager(family: String,
         }
 
         LocalCachesStore.getCache(cacheID)
-            .fold(handleContentNotAvailable()) { storedCache =>
-                val content       = storedCache.getContent
-                val isSystemCache = SystemCacheRange contains cacheID
-                storedCache.channel.getHandler match {
-                    case Some(_) if isSystemCache                    => sendContent(content)
-                    case None                                        => sendContent(content) //There is no handler, the engine is by default accepted.
-                    case Some(handler: ContentHandler[CacheContent]) =>
+                .fold(handleContentNotAvailable()) { storedCache =>
+                    val content       = storedCache.getContent
+                    val isSystemCache = SystemCacheRange contains cacheID
+                    storedCache.channel.getHandler match {
+                        case Some(_) if isSystemCache                    => sendContent(content)
+                        case None                                        => sendContent(content) //There is no handler, the engine is by default accepted.
+                        case Some(handler: ContentHandler[CacheContent]) =>
 
-                        val engine = network.findEngine(senderID).getOrElse {
-                            failRequest(s"Engine not found: $senderID. (manager engine: $currentIdentifier)")
-                        }
-                        if (handler.canAccessToContent(engine)) {
-                            sendContent(content)
-                        } else {
-                            failRequest(s"Engine $engine can't access to content of cache '$cacheID'.")
-                        }
+                            val engine = network.findEngine(senderID).getOrElse {
+                                failRequest(s"Engine not found: $senderID. (manager engine: $currentIdentifier)")
+                            }
+                            if (handler.canAccessToContent(engine)) {
+                                sendContent(content)
+                            } else {
+                                failRequest(s"Engine $engine can't access to content of cache '$cacheID'.")
+                            }
+                    }
                 }
-            }
     }
+
 }

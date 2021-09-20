@@ -46,7 +46,9 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
         }
     }
 
-    override def toArray(t: T): Array[Any] = objectPersistence.toArray(t)
+    override def toArray(t: T): Array[Any] = {
+        objectPersistence.toArray(t)
+    }
 
     private def findCache(info: SyncNodeInfo): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
         val family = info.cacheFamily

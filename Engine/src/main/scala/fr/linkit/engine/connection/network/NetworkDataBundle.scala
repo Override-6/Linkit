@@ -10,16 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.engine.connection.network
 
-import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
+import fr.linkit.api.connection.network.Network
 
-trait TypePersistence[-T] {
+import java.sql.Timestamp
 
-    val structure: ObjectStructure
-
-    def initInstance(allocatedObject: T, args: Array[Any]): Unit
-    //def initInstance(args: Array[Any]): T
-
-    def toArray(t: T): Array[Any]
-}
+case class NetworkDataBundle(engines: Array[String], caches: Array[String], startUpDate: Timestamp, network: Network)

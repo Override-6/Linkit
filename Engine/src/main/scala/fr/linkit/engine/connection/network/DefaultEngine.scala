@@ -21,10 +21,10 @@ import fr.linkit.engine.local.system.StaticVersions
 import java.sql.Timestamp
 
 class DefaultEngine(override val identifier: String,
-                    @transient override val cache: SharedCacheManager) extends Engine {
+                    override val cache: SharedCacheManager) extends Engine {
 
-    @transient override val network       : Network        = cache.network
-    override            val staticAccessor: StaticAccessor = null
+    override val network       : Network        = cache.network
+    override val staticAccessor: StaticAccessor = null
 
     override val versions: Versions = StaticVersions.currentVersions
 

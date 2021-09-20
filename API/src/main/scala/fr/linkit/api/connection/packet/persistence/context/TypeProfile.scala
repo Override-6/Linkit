@@ -22,8 +22,4 @@ trait TypeProfile[T <: AnyRef] {
 
     def getPersistence(args: Array[Any]): TypePersistence[T]
 
-    def convertTo(t: T): Any
-
-    def convertFrom(any: Any): T
-
 }

@@ -14,19 +14,23 @@ package fr.linkit.engine.connection.packet.persistence.context
 
 import fr.linkit.api.connection.packet.persistence.context.MutableReferencedObjectStore
 
-import scala.collection.mutable
+import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
+import java.util
+import java.util.Map.Entry
 
 class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
 
-    private val codeToRef = mutable.WeakHashMap.empty[Int, AnyRef]
-    private val refToCode = mutable.WeakHashMap.empty[AnyRef, Int]
+    private val codeToRef = new util.HashMap[Int, WeakReference[AnyRef]]()
+    private val refToCode = new util.WeakHashMap[AnyRef, Int]()
 
     override def getReferenced(reference: Int): Option[AnyRef] = {
-        codeToRef.get(reference)
+        val referenced = codeToRef.get(reference)
+        if (referenced eq null) None
+        else Some(referenced.get())
     }
 
     override def getReferencedCode(reference: AnyRef): Option[Int] = {
-        refToCode.get(reference)
+        Option(refToCode.get(reference))
     }
 
     override def ++=(refs: Map[Int, AnyRef]): this.type = {
@@ -40,7 +44,11 @@ class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
     }
 
     def ++=(other: WeakReferencedObjectStore): this.type = {
-        ++=(other.codeToRef.toMap: Map[Int, AnyRef])
+        ++=(other.codeToRef
+                .entrySet()
+                .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
+                .map(p => (p.getKey, p.getValue.get()))
+                .toMap)
         this
     }
 
@@ -52,13 +60,29 @@ class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
     }
 
     override def +=(code: Int, anyRef: AnyRef): this.type = {
-        codeToRef.put(code, anyRef)
-        refToCode.put(anyRef, code)
+        if (refToCode.put(anyRef, code) != null) {
+            throw new ObjectAlreadyReferencedException(s"Object $anyRef is already referenced with identifier '${codeToRef.get(code)}'.")
+        }
+        codeToRef.put(code, newWeakReference(anyRef))
         this
     }
 
+    private def newWeakReference(ref: AnyRef): WeakReference[AnyRef] = {
+        new WeakReference[AnyRef](ref, eventQueue)
+    }
+
     override def -=(ref: AnyRef): this.type = {
-        (refToCode remove ref).fold()(codeToRef.remove)
+        val code = refToCode.remove(ref)
+        if (code != null) {
+            codeToRef.remove(code)
+        }
         this
+    }
+
+    private val eventQueue = new ReferenceQueue[AnyRef]() {
+        override def poll(): Reference[_ <: AnyRef] = {
+            val code = refToCode.get(super.poll())
+            codeToRef.remove(code)
+        }
     }
 }

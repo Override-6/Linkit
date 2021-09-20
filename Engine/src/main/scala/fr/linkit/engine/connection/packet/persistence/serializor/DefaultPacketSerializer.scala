@@ -60,6 +60,32 @@ class DefaultPacketSerializer(center: SyncClassCenter) extends PacketSerializer 
         }
     }
 
+    override def deserializePacket(buff: ByteBuffer): PacketSerializer.PacketDeserial = {
+        checkSignature(buff)
+
+        val coords = readCoordinates(buff)
+        new PacketDeserial {
+            override def getCoordinates: PacketCoordinates = coords
+
+            override def forEachObjects(config: PersistenceConfig)(f: Any => Unit): Unit = {
+                val reader = new PacketReader(config, center, buff)
+                reader.initPool()
+                val contentSize = buff.getChar
+                val pool        = reader.getPool
+                for (_ <- 0 until contentSize) {
+                    val obj = pool.getAny(reader.readNextRef) match {
+                        case o: NotInstantiatedObject[AnyRef] =>
+                            o.initObject()
+                            o.value
+                        case o: PoolObject[AnyRef]            => o.value
+                        case o                                => o
+                    }
+                    f(obj)
+                }
+            }
+        }
+    }
+
     private def writeCoords(buff: ByteBuffer, coords: PacketCoordinates): Unit = coords match {
         case BroadcastPacketCoordinates(path, senderID, discardTargets, targetIDs) =>
             buff.put(BroadcastedFlag) //set the broadcast flag
@@ -79,7 +105,7 @@ class DefaultPacketSerializer(center: SyncClassCenter) extends PacketSerializer 
         case _                                                    => throw new UnsupportedOperationException(s"Coordinates of type '${coords.getClass.getName}' are not supported.")
     }
 
-    def readCoordinates(buff: ByteBuffer): PacketCoordinates = {
+    private def readCoordinates(buff: ByteBuffer): PacketCoordinates = {
         buff.get() match {
             case BroadcastedFlag =>
                 val path = new Array[Int](buff.getInt) //init path array
@@ -108,32 +134,6 @@ class DefaultPacketSerializer(center: SyncClassCenter) extends PacketSerializer 
         val array = new Array[Byte](size)
         buff.get(array)
         new String(array)
-    }
-
-    override def deserializePacket(buff: ByteBuffer): PacketSerializer.PacketDeserial = {
-        checkSignature(buff)
-
-        val coords = readCoordinates(buff)
-        new PacketDeserial {
-            override def getCoordinates: PacketCoordinates = coords
-
-            override def forEachObjects(config: PersistenceConfig)(f: Any => Unit): Unit = {
-                val reader = new PacketReader(config, center, buff)
-                reader.initPool()
-                val contentSize = buff.getChar
-                val pool        = reader.getPool
-                for (_ <- 0 until contentSize) {
-                    val obj = pool.getAny(reader.readNextRef) match {
-                        case o: NotInstantiatedObject[AnyRef] =>
-                            o.initObject()
-                            o.value
-                        case o: PoolObject[AnyRef]            => o.value
-                        case o                                => o
-                    }
-                    f(obj)
-                }
-            }
-        }
     }
 
     private def checkSignature(buff: ByteBuffer): Unit = {

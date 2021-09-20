@@ -54,7 +54,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
     override def detachedClone: A = {
-        SyncObjectInstantiationHelper.detachedWrapperClone(this)._1
+        SyncObjectInstantiationHelper.detachedWrapperClone(this, puppeteer.cache.network.refStore)._1
     }
 
     override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]

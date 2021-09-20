@@ -10,12 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.engine.connection.packet.persistence.context
 
-trait ObjectConverter[A <: AnyRef, B] {
+import fr.linkit.api.connection.packet.PacketException
 
-    def to(t: A): B
-
-    def from(b: B): A
+class ObjectAlreadyReferencedException(msg: String) extends PacketException(msg){
 
 }

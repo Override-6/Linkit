@@ -38,12 +38,13 @@ import java.sql.Timestamp
 abstract class AbstractNetwork(override val connection: ConnectionContext,
                                override val refStore: MutableReferencedObjectStore) extends Network { network =>
 
+    refStore += (10, this)
     protected val networkStore    : PacketInjectableStore = connection.createStore(0)
     private   val cacheManagerChannel                     = networkStore.getInjectable(1, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
     private   val currentIdentifier                       = connection.currentIdentifier
     override  val globalCache     : SharedCacheManager    = createGlobalCache
     protected val trunk           : NetworkDataTrunk      = retrieveDataTrunk(getEngineStoreBehaviors)
-    override  val connectionEngine: Engine                = trunk.newEngine(this, currentIdentifier)
+    override  val connectionEngine: Engine                = trunk.newEngine(currentIdentifier)
     postInit()
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
@@ -95,7 +96,6 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
         ExecutorEngine.setCurrentEngine(connectionEngine)
         connection.translator.initNetwork(this)
         cacheManagerChannel.addRequestListener(handleRequest)
-        refStore += this
     }
 
     private def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {

@@ -19,7 +19,9 @@ class PacketObject(override val value: AnyRef,
                    val decomposed: Array[Any],
                    override val profile: TypeProfile[_]) extends InstanceObject[AnyRef] {
 
-    override def equals(obj: Any): Boolean = obj == this.value
+    override def equals(obj: Any): Boolean = obj == value
 
     override def hashCode(): Int = value.hashCode()
+
+    override def toString: String = value.toString
 }

@@ -13,8 +13,8 @@
 package fr.linkit.engine.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObjectCache
-import fr.linkit.api.connection.cache.obj.tree.{SynchronizedObjectTreeStore, SyncNode, SynchronizedObjectTree}
-import fr.linkit.engine.connection.cache.obj.{CacheRepoContent, DefaultSynchronizedObjectCenter}
+import fr.linkit.api.connection.cache.obj.tree.{SynchronizedObjectTree, SynchronizedObjectTreeStore}
+import fr.linkit.engine.connection.cache.obj.CacheRepoContent
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
 
@@ -23,6 +23,7 @@ import scala.collection.mutable
 class DefaultObjectTreeCenter[A <: AnyRef](cache: SynchronizedObjectCache[A]) extends SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
+    private val store = cache.network.refStore
 
     def addTree(id: Int, tree: DefaultSynchronizedObjectTree[A]): Unit = {
         if (trees.contains(id))
@@ -42,10 +43,10 @@ class DefaultObjectTreeCenter[A <: AnyRef](cache: SynchronizedObjectCache[A]) ex
 
     override def snapshotContent: CacheRepoContent[A] = {
         def toProfile(tree: SynchronizedObjectTree[_ <: A]): ObjectTreeProfile[A] = {
-            val node = tree.rootNode
-            val syncObject = node.synchronizedObject
-            val (detached, subWrappers) = SyncObjectInstantiationHelper.detachedWrapperClone(syncObject)
-            val subWrappersInfo = subWrappers.map(pair => (pair._1, pair._2.getNodeInfo))
+            val node                    = tree.rootNode
+            val syncObject              = node.synchronizedObject
+            val (detached, subWrappers) = SyncObjectInstantiationHelper.detachedWrapperClone(syncObject, store)
+            val subWrappersInfo         = subWrappers.map(pair => (pair._1, pair._2.getNodeInfo))
             ObjectTreeProfile[A](tree.id, detached, node.ownerID, subWrappersInfo)
         }
 

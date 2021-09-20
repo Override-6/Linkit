@@ -13,7 +13,9 @@
 package fr.linkit.engine.connection.packet.persistence.context.profile
 
 import fr.linkit.api.connection.packet.persistence.context._
-import fr.linkit.engine.local.utils.ClassMap
+import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
+import fr.linkit.engine.connection.packet.persistence.context.structure.ArrayObjectStructure
+import fr.linkit.engine.local.utils.{ClassMap, ScalaUtils}
 
 import scala.collection.mutable.ListBuffer
 import scala.reflect.{ClassTag, classTag}
@@ -21,43 +23,29 @@ import scala.reflect.{ClassTag, classTag}
 class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
 
     private val persistors = ListBuffer.empty[TypePersistence[T]]
-    private val convertors = new ClassMap[ObjectConverter[_ <: T, _]]
 
     def addPersistence(persistence: TypePersistence[T]): this.type = {
         persistors += persistence
         this
     }
 
-    def setTConverter[B <: Any](converter: ObjectConverter[T, B]): this.type = {
-        convertors.put(tag.runtimeClass, converter)
-        this
-    }
 
-    def setTNewConverter[B](fTo: T => B)(fFrom: B => T): this.type = {
-        setTConverter[B](new ObjectConverter[T, B] {
-            override def to(t: T): B = fTo(t)
+    def setTConverter[B : ClassTag](fTo: T => B)(fFrom: B => T): this.type = {
+        val clazz = classTag[B].runtimeClass
+        val persistor = new TypePersistence[T] {
+            override val structure: ObjectStructure = new ArrayObjectStructure {
+                override val types: Array[Class[_]] = Array(clazz)
+            }
 
-            override def from(b: B): T = fFrom(b)
-        })
-    }
+            override def initInstance(allocatedObject: T, args: Array[Any]): Unit = {
+                args.head match {
+                    case t: B => ScalaUtils.pasteAllFields(allocatedObject, fFrom(t))
+                }
+            }
 
-
-
-    def setSubTConverter[S <: T : ClassTag, B](converter: ObjectConverter[S, B]): this.type = {
-        setSubTConverter0(converter)
-    }
-
-    def setSubTConverter[S <: T : ClassTag, B](fTo: S => B)(fFrom: B => S): this.type = {
-        setSubTConverter0[S, B](new ObjectConverter[S, B] {
-            override def to(t: S): B = fTo(t)
-
-            override def from(b: B): S = fFrom(b)
-        })
-        this
-    }
-
-    private def setSubTConverter0[S <: T : ClassTag, B](converter: ObjectConverter[S, B]): this.type = {
-        convertors.put(classTag[S].runtimeClass, converter)
+            override def toArray(t: T): Array[Any] = Array(fTo(t))
+        }
+        persistors += persistor
         this
     }
 
@@ -65,7 +53,7 @@ class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
     def build(store: TypeProfileStore): TypeProfile[T] = {
         val clazz = tag.runtimeClass
         val parentProfile = if (clazz eq classOf[Object]) null else store.getProfile[T](clazz.getSuperclass)
-        new DefaultTypeProfile[T](clazz, parentProfile, persistors.toArray, convertors.asInstanceOf[ClassMap[ObjectConverter[_ <: T, Any]]])
+        new DefaultTypeProfile[T](clazz, parentProfile, persistors.toArray)
     }
 
 }

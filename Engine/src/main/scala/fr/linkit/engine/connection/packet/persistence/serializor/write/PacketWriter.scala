@@ -120,8 +120,9 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
     }
 
     private def writeObject(poolObj: PacketObject): Unit = {
-        putTypeRef(poolObj.value)
-        config.informObjectSent(poolObj.value)
+        val value = poolObj.value
+        putTypeRef(value)
+        config.informObjectSent(value)
         ArrayPersistence.writeArrayContent(this, poolObj.decomposed.asInstanceOf[Array[AnyRef]])
     }
 

@@ -51,7 +51,7 @@ object ConstructorTypePersistence {
     def getConstructor[T](clazz: Class[_]): Constructor[T] = {
         findConstructor(clazz)
                 .getOrElse {
-                    throw new NoSuchElementException(s"No Constructor is annotated for $clazz, please specify a constructor or annotate one using @Constructor")
+                    throw new NoSuchElementException(s"No Constructor is annotated for $clazz, please specify a constructor or annotate one using @${classOf[Persist].getSimpleName}")
                 }.asInstanceOf[Constructor[T]]
     }
 
