@@ -12,14 +12,14 @@
 
 package fr.linkit.engine.local.utils
 
-import fr.linkit.api.connection.packet.Packet
-import fr.linkit.engine.connection.packet.UnexpectedPacketException
-import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.{Boolean, Byte, Char, Double, Float, Int, Long, Short}
-import sun.misc.Unsafe
-
 import java.io.File
 import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
 import java.nio.ByteBuffer
+
+import fr.linkit.api.connection.packet.Packet
+import fr.linkit.engine.connection.packet.UnexpectedPacketException
+import sun.misc.Unsafe
+
 import scala.annotation.switch
 import scala.reflect.{ClassTag, classTag}
 import scala.util.control.NonFatal
@@ -96,9 +96,9 @@ object ScalaUtils {
 
     def setValue(instance: Any, field: Field, value: Any): Unit = {
         val fieldOffset = TheUnsafe.objectFieldOffset(field)
-        import UnWrapper.unwrap
-
         import java.lang
+
+        import UnWrapper.unwrap
 
         if (value == null) {
             if (!Modifier.isFinal(field.getModifiers))

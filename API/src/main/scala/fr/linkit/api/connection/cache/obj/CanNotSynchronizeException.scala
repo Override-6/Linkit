@@ -12,6 +12,6 @@
 
 package fr.linkit.api.connection.cache.obj
 
-class IllegalSynchronizationException(msg: String) extends SyncObjectException(msg) {
+class CanNotSynchronizeException(msg: String) extends SyncObjectException(msg) {
 
 }

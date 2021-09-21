@@ -98,8 +98,8 @@ class PersistenceConfigBuilder {
     }
 
     def build(context: PersistenceContext): PersistenceConfig = {
-        val profiles = collectProfiles()
         transfer(fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), context.traffic))
+        val profiles = collectProfiles()
         new SimplePersistenceConfig(context, profiles, referenceStore, unsafeUse, referenceAllObjects, wide)
     }
 

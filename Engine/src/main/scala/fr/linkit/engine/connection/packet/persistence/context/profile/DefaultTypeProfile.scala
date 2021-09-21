@@ -21,14 +21,8 @@ class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
                                       private[context] val persists: Array[TypePersistence[T]]) extends TypeProfile[T] {
 
     override def getPersistence(t: T): TypePersistence[T] = {
-        val structure = ClassObjectStructure(t.getClass)
-        var i         = 0
-        while (i < persists.length) {
-            val persistence = persists(i)
-            if (persistence.structure.equals(structure))
-                return persistence
-            i += 1
-        }
+        return persists.head
+        //TODO Choose between other compatible persistence (if an error occured or...)
         if (declaredParent ne null)
             declaredParent.getPersistence(t)
         else

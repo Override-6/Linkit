@@ -41,15 +41,19 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: 
 
     private def addAllConstructors(): Unit = {
         superClass.getDeclaredConstructors.foreach(constructor => if (!Modifier.isPrivate(constructor.getModifiers)) {
-            val params        = constructor.getParameterTypes
-            val ctConstructor = new CtConstructor(Array.empty, ctClass)
-            params.foreach(param => ctConstructor.addParameter(pool.get(param.getName)))
-            ctConstructor.setBody(
-                s"""
-                   |super(${params.indices.map(i => s"$$${i + 1}").mkString(",")});
-                   |""".stripMargin)
-            ctClass.addConstructor(ctConstructor)
+            if (constructor.getParameterCount > 0)
+                addConstructor(constructor.getParameterTypes)
         })
+    }
+
+    private def addConstructor(params: Array[Class[_]]): Unit = {
+        val ctConstructor = new CtConstructor(Array.empty, ctClass)
+        params.foreach(param => ctConstructor.addParameter(pool.get(param.getName)))
+        ctConstructor.setBody(
+            s"""
+               |super(${params.indices.map(i => s"$$${i + 1}").mkString(",")});
+               |""".stripMargin)
+        ctClass.addConstructor(ctConstructor)
     }
 
     private def fixAllMethods(): Unit = {

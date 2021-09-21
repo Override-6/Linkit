@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.generation.{SyncClassCenter, ObjectWrapperInstantiator}
+import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperInstantiator, SyncClassCenter}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
@@ -23,7 +23,6 @@ import fr.linkit.api.connection.cache.{SharedCache, SharedCacheFactory}
 import fr.linkit.api.connection.network.{Engine, Network}
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
-import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.AbstractSharedCache
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
@@ -43,14 +42,18 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                                                                  generator: SyncClassCenter,
                                                                  override val defaultTreeViewBehavior: ObjectBehaviorStore,
                                                                  override val network: Network)
-        extends AbstractSharedCache(channel) with SynchronizedObjectCache[A] {
+    extends AbstractSharedCache(channel) with SynchronizedObjectCache[A] {
 
-    private  val currentIdentifier                          = channel.traffic.connection.currentIdentifier
-    override val treeCenter    : DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this)
+    private  val currentIdentifier                      = channel.traffic.connection.currentIdentifier
+    override val treeCenter: DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this)
     channel.setHandler(CenterHandler)
 
     override def postObject(id: Int, obj: A): A with SynchronizedObject[A] = {
         postObject(id, obj, defaultTreeViewBehavior)
+    }
+
+    override def postObject(id: Int, creator: SyncInstanceCreator[A]): A with SynchronizedObject[A] = {
+
     }
 
     override def postObject(id: Int, obj: A, behavior: ObjectBehaviorStore): A with SynchronizedObject[A] = {
@@ -62,10 +65,10 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         val tree     = createNewTree(id, currentIdentifier, objClone, Map(), behavior)
         //Indicate that a new object has been posted.
         channel.makeRequest(ChannelScopes.discardCurrent)
-                .addPacket(ObjectPacket(ObjectTreeProfile(id, obj, currentIdentifier, Map())))
-                .putAllAttributes(this)
-                .submit()
-                .detach()
+            .addPacket(ObjectPacket(ObjectTreeProfile(id, obj, currentIdentifier, Map())))
+            .putAllAttributes(this)
+            .submit()
+            .detach()
         val wrapperNode = tree.getRoot
         wrapperNode.setPresentOnNetwork()
         wrapperNode.synchronizedObject
@@ -81,58 +84,57 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
 
     private def ensureNotWrapped(any: Any): Unit = {
         if (any.isInstanceOf[SynchronizedObject[_]])
-            throw new IllegalSynchronizationException("This object is already wrapped.")
+            throw new CanNotSynchronizeException("This object is already wrapped.")
     }
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
         treeCenter
-                .findTree(path.head)
-                .flatMap(tree => {
-                    if (path.length == 1)
-                        Some(tree.rootNode)
-                    else
-                        tree.findNode[A](path)
-                })
+            .findTree(path.head)
+            .flatMap(tree => {
+                if (path.length == 1)
+                    Some(tree.rootNode)
+                else
+                    tree.findNode[A](path)
+            })
     }
 
-    private def createNewTree(id: Int, rootObjectOwner: String, rootObject: A, subWrappersInfo: Map[AnyRef, SyncNodeInfo], behaviorTree: ObjectBehaviorStore = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
+    private def createNewTree(id: Int, rootObjectOwner: String, creator: SyncInstanceCreator[A], subWrappersInfo: Map[AnyRef, SyncNodeInfo], behaviorTree: ObjectBehaviorStore = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
         val puppeteerInfo       = SyncNodeInfo(family, cacheID, rootObjectOwner, Array(id))
-        val rootBehavior        = behaviorTree.getFromClass[A](rootObject.getClass)
-        val (root, subWrappers) = DefaultInstantiator.newWrapper[A](rootObject, behaviorTree, puppeteerInfo, subWrappersInfo)
+        val rootBehavior        = behaviorTree.getFromClass[A](creator.tpeClass)
+        val (root, subWrappers) = DefaultInstantiator.newWrapper[A](creator, behaviorTree, puppeteerInfo, subWrappersInfo)
         val chip                = ObjectChip[A](rootBehavior, network, root)
         val rootNode            = new RootWrapperNode[A](root.getPuppeteer, chip, _, currentIdentifier, id)
         val tree                = new DefaultSynchronizedObjectTree[A](currentIdentifier, id, DefaultInstantiator, this, behaviorTree)(rootNode)
         treeCenter.addTree(id, tree)
 
         subWrappers.toSeq
-                .sortBy(pair => pair._2.getNodeInfo.nodePath.length)
-                .foreach(pair => {
-                    val wrapper    = pair._2
-                    val info       = wrapper.getNodeInfo
-                    val path       = info.nodePath
-                    val parentPath = path.dropRight(1)
-                    val id         = path.last
-                    tree.registerSynchronizedObject(parentPath, id, wrapper, info.owner)
-                })
+            .sortBy(pair => pair._2.getNodeInfo.nodePath.length)
+            .foreach(pair => {
+                val wrapper    = pair._2
+                val info       = wrapper.getNodeInfo
+                val path       = info.nodePath
+                val parentPath = path.dropRight(1)
+                val id         = path.last
+                tree.registerSynchronizedObject(parentPath, id, wrapper, info.owner)
+            })
 
         tree
     }
 
     private object DefaultInstantiator extends ObjectWrapperInstantiator {
 
-        override def newWrapper[B <: AnyRef](obj: B, store: ObjectBehaviorStore,
+        override def newWrapper[B <: AnyRef](creator: SyncInstanceCreator[B], store: ObjectBehaviorStore,
                                              nodeInfo: SyncNodeInfo, subWrappersInfo: Map[AnyRef, SyncNodeInfo]): (B with SynchronizedObject[B], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
-            val wrapperClass           = generator.getSyncClass[B](obj.getClass.asInstanceOf[Class[B]])
-            val helper                 = new SyncObjectInstantiationHelper(this, store)
-            val (wrapper, subWrappers) = helper.instantiateFromOrigin[B](wrapperClass, obj, subWrappersInfo)
-            initializeWrapper(wrapper, nodeInfo, store)
-            (wrapper, subWrappers)
+            val syncClass = generator.getSyncClass[B](creator.tpeClass.asInstanceOf[Class[B]])
+            val wrapper   = creator.newInstance(syncClass)
+            initializeSyncObject(wrapper, nodeInfo, store)
+            (wrapper, Map.empty[AnyRef, SynchronizedObject[AnyRef]])
         }
 
-        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit = {
-            val behavior               = store.getFromClass[B](wrapper.getSuperClass)
+        override def initializeSyncObject[B <: AnyRef](syncObject: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit = {
+            val behavior  = store.getFromClass[B](syncObject.getSuperClass)
             val puppeteer = new ObjectPuppeteer[B](channel, DefaultSynchronizedObjectCenter.this, nodeInfo, behavior)
-            wrapper.initPuppeteer(puppeteer, store)
+            syncObject.initPuppeteer(puppeteer, store)
         }
 
     }

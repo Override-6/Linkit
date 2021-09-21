@@ -58,4 +58,8 @@ abstract class ArrayObjectStructure() extends ObjectStructure {
 object ArrayObjectStructure {
 
     def apply: ObjectStructureBuilder = new ObjectStructureBuilder()
+
+    def apply(types: Array[Class[_]]): ArrayObjectStructure = new ArrayObjectStructure {
+        override val types: Array[Class[_]] = types
+    }
 }

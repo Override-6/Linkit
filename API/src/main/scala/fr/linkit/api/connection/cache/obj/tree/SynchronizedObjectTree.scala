@@ -2,7 +2,7 @@ package fr.linkit.api.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCache}
-import fr.linkit.api.connection.cache.obj.IllegalSynchronizationException
+import fr.linkit.api.connection.cache.obj.CanNotSynchronizeException
 
 
 trait SynchronizedObjectTree[A <: AnyRef] {
@@ -41,9 +41,9 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      *
      * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[SyncNode]]
      *
-     * @throws IllegalSynchronizationException if the object is already synchronized.
-     * @throws IllegalArgumentException        if the given parent does not belongs to this tree.
-     * @throws NoSuchSyncNodeException         if the parent's path could not be found.
+     * @throws CanNotSynchronizeException if the object is already synchronized.
+     * @throws IllegalArgumentException   if the given parent does not belongs to this tree.
+     * @throws NoSuchSyncNodeException    if the parent's path could not be found.
      * @param parent  the parent of the synchronized object that will be inserted.
      * @param id      the identifier of the created node
      * @param obj     the object that will be converted to a synchronized object. (The given object may be corrupted)
@@ -58,9 +58,9 @@ trait SynchronizedObjectTree[A <: AnyRef] {
      *
      * Inserts an object in the tree, transforms it into a synchronized object, and wraps the resulting object in a [[SyncNode]]
      *
-     * @throws IllegalSynchronizationException if the object is already synchronized.
-     * @throws IllegalArgumentException        if the given parent is does not belongs to this tree.
-     * @throws NoSuchSyncNodeException         if the parent's path could not be found.
+     * @throws CanNotSynchronizeException if the object is already synchronized.
+     * @throws IllegalArgumentException   if the given parent is does not belongs to this tree.
+     * @throws NoSuchSyncNodeException    if the parent's path could not be found.
      * @param parentPath the parent's path of the synchronized object that will be inserted.
      * @param id         the identifier of the created node
      * @param obj        the object that will be converted to a synchronized object. (The given object may be corrupted)

@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj.tree.node
 import fr.linkit.api.connection.cache.obj.invokation.local.Chip
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
-import fr.linkit.api.connection.cache.obj.{IllegalSynchronizationException, SynchronizedObject}
+import fr.linkit.api.connection.cache.obj.{CanNotSynchronizeException, SynchronizedObject}
 import fr.linkit.api.connection.packet.channel.request.Submitter
 import fr.linkit.engine.connection.cache.obj.RMIExceptionString
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
@@ -51,7 +51,7 @@ class WrapperNode[A <: AnyRef](override val puppeteer: Puppeteer[A], //Remote in
 
     def addChild(node: WrapperNode[_]): Unit = {
         if (node.parent ne this)
-            throw new IllegalSynchronizationException("Attempted to add a child to this node with a different parent of this node.")
+            throw new CanNotSynchronizeException("Attempted to add a child to this node with a different parent of this node.")
         if (members.contains(node.id))
             throw new IllegalStateException(s"Puppet already exists at ${puppeteer.nodeInfo.nodePath.mkString("/") + s"/$id"}")
         members.put(node.id, node)

@@ -168,7 +168,7 @@ class ResourcesAndClassGenerationTests {
             (wrapper, subWrappers)
         }
 
-        override def initializeWrapper[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit = {
+        override def initializeSyncObject[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit = {
             ???
         }
     }

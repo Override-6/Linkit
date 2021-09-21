@@ -216,7 +216,7 @@ object ArrayPersistence {
         var i             = 0
         while (i < arrayDepth) {
             finalCompType = finalCompType.arrayType()
-            i = 1
+            i += 1
         }
         RArray.newInstance(finalCompType, arrayLength).asInstanceOf[Array[Any]]
     }

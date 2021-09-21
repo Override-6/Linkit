@@ -42,15 +42,15 @@ trait SynchronizedObjectCache[A <: AnyRef] extends PacketAttributesPresence with
      *      The inner objects can be synchronized fields, synchronized method parameters and return values of the object.<br>
      *      If a field, a parameter or whatever contains sub synchronized objects, other nodes will be set as their child.
      *      Here is an example :
-     *      {{{
-     *      SyncNode[A] (id: 12, path: 12) :
-     *                 -> Field SyncNode[B] (id: 78, path: 12/78) :
-     *                          -> Field SyncNode[BC]               (id: 7, path: 12/78/7)
-     *                          -> Method Return Value SyncNode[BD] (id: 8, path: 12/78/8)
-     *                 -> Field SyncNode[C] (id: 8, path: 12/8)   :
-     *                          -> Method Parameter SyncNode[CA] (id: 9, path: 12/8/9)
-     *                 -> Method Parameter SyncNode[E] (id: 9, path: 12/9)
-     *      }}}
+     *{{{
+     *SyncNode[A] (id: 12, path: 12) :
+     *           -> Field SyncNode[B] (id: 78, path: 12/78) :
+     *                    -> Field SyncNode[BC]               (id: 7, path: 12/78/7)
+     *                    -> Method Return Value SyncNode[BD] (id: 8, path: 12/78/8)
+     *           -> Field SyncNode[C] (id: 8, path: 12/8)   :
+     *                    -> Method Parameter SyncNode[CA] (id: 9, path: 12/8/9)
+     *           -> Method Parameter SyncNode[E] (id: 9, path: 12/9)
+     *}}}
      *      Each node contains an ID, the path is an array of ids from the root's id to the node id
      * @see [[fr.linkit.api.connection.cache.obj.tree.SyncNode]]
      * @see [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]]
@@ -68,14 +68,18 @@ trait SynchronizedObjectCache[A <: AnyRef] extends PacketAttributesPresence with
      * posts an object in the cache.
      * The behavior of the object and sub objects will depends on the [[defaultTreeViewBehavior]]
  *
-     * @throws IllegalSynchronizationException If the given object is a synchronized object.
-     *                                         (No matters if the object is handled by this cache or not)
+     * @throws CanNotSynchronizeException If the given object is a synchronized object.
+     *                                    (No matters if the object is handled by this cache or not)
      * @param id the identifier of the root object
      * @param obj the object to synchronize.
      * @return the synchronized object.
      * */
-    @throws[IllegalSynchronizationException]("If the given object is a synchronized object.")
+    @throws[CanNotSynchronizeException]("If the given object is a synchronized object.")
+    @deprecated("Must deeply clone the object, overuse of Unsafes. + very slow")
     def postObject(id: Int, obj: A): A with SynchronizedObject[A]
+
+    @throws[CanNotSynchronizeException]("If the given object is a synchronized object.")
+    def postObject(id: Int, creator: SyncInstanceCreator[A]): A with SynchronizedObject[A]
 
     /**
      * @param id the identifier of the root object
