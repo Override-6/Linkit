@@ -17,9 +17,9 @@ import fr.linkit.api.connection.cache.obj.description.{MethodDescription, SyncOb
 import fr.linkit.api.connection.cache.obj.generation.GeneratedClassLoader
 import fr.linkit.engine.connection.cache.obj.generation.rectifier.ClassRectifier.{StringToPrimitiveID, SuperMethodModifiers}
 import javassist.bytecode.MethodInfo
-import javassist.{ClassPool, CtClass, CtMethod, LoaderClassPath}
-
+import javassist.{ClassPool, CtClass, CtConstructor, CtMethod, LoaderClassPath}
 import java.lang.reflect.{Method, Modifier}
+
 import scala.collection.mutable.ListBuffer
 
 class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
@@ -28,14 +28,28 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: 
     pool.appendClassPath(new LoaderClassPath(classLoader))
     private val ctClass = pool.get(puppetClassName)
 
-    //removeAllSuperClassFinalFlags()
     ctClass.setSuperclass(pool.get(superClass.getName))
     fixAllMethods()
+    addAllConstructors()
+
 
     lazy val rectifiedClass: (Array[Byte], Class[SynchronizedObject[_]]) = {
         val bc = ctClass.toBytecode
 
         (bc, classLoader.defineClass(bc, ctClass.getName).asInstanceOf[Class[SynchronizedObject[_]]])
+    }
+
+    private def addAllConstructors(): Unit = {
+        superClass.getDeclaredConstructors.foreach(constructor => if (!Modifier.isPrivate(constructor.getModifiers)) {
+            val params        = constructor.getParameterTypes
+            val ctConstructor = new CtConstructor(Array.empty, ctClass)
+            params.foreach(param => ctConstructor.addParameter(pool.get(param.getName)))
+            ctConstructor.setBody(
+                s"""
+                   |super(${params.indices.map(i => s"$$${i + 1}").mkString(",")});
+                   |""".stripMargin)
+            ctClass.addConstructor(ctConstructor)
+        })
     }
 
     private def fixAllMethods(): Unit = {
@@ -76,15 +90,15 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: 
         val methodDesc       = getMethodDescriptor(javaMethod)
         val anonFunPrefix    = s"$$anonfun$$${javaMethod.getName}$$"
         val filtered         = ctClass.getDeclaredMethods
-                .filter(_.getName.startsWith(anonFunPrefix))
-                .filterNot(_.getName.endsWith("adapted"))
+            .filter(_.getName.startsWith(anonFunPrefix))
+            .filterNot(_.getName.endsWith("adapted"))
         val method           = filtered
-                .find { x =>
-                    val params = x.getParameterTypes.drop(1).dropRight(1)
-                    val desc   = getMethodDescriptor(params, methodReturnType)
-                    desc == methodDesc
-                }
-                .get
+            .find { x =>
+                val params = x.getParameterTypes.drop(1).dropRight(1)
+                val desc   = getMethodDescriptor(params, methodReturnType)
+                desc == methodDesc
+            }
+            .get
         method
     }
 
@@ -152,7 +166,7 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: 
             sb.append(typeStringClass(clazz))
         }
         sb.append(')')
-                .append(typeStringClass(returnType))
+            .append(typeStringClass(returnType))
         sb.toString()
     }
 
@@ -163,7 +177,7 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: 
             sb.append(typeStringCtClass(clazz))
         }
         sb.append(')')
-                .append(typeStringClass(returnType))
+            .append(typeStringClass(returnType))
         sb.toString()
     }
 
@@ -177,8 +191,8 @@ class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: 
                 cl = clazz.getComponentType
             }
             sb.append("L")
-                    .append(cl.getName.replace(".", "/"))
-                    .append(";")
+                .append(cl.getName.replace(".", "/"))
+                .append(";")
             sb.toString()
         })
     }

@@ -13,6 +13,7 @@
 package fr.linkit.api.connection.cache
 
 import fr.linkit.api.connection.network.{Network, Updatable}
+import fr.linkit.api.connection.packet.traffic.TrafficPresence
 
 import scala.reflect.ClassTag
 
@@ -22,7 +23,7 @@ import scala.reflect.ClassTag
  * For example, you can synchronise a list between engine A and engine B, in which each modification will be send to the other engine
  * in order to have the same list with the same items in the same orders.
  * */
-trait SharedCacheManager extends Updatable {
+trait SharedCacheManager extends Updatable with TrafficPresence {
 
     /**
      * Each Cache manager have a family string, it's in fact the identifier of the cache manager.

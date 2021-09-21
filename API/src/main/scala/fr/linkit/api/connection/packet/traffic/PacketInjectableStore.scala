@@ -18,7 +18,7 @@ import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 
 import scala.reflect.ClassTag
 
-trait PacketInjectableStore {
+trait PacketInjectableStore extends TrafficPresence {
 
     val defaultPersistenceConfig: PersistenceConfig
 

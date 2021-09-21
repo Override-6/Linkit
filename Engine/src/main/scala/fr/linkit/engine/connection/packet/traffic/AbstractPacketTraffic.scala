@@ -36,9 +36,10 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
         builder.build(context)
     }
 
-    @volatile private var closed     = false
-    protected val rootStore          = new SimplePacketInjectableStore(this, defaultPersistenceConfig, Array.empty)
-    private   val injectionContainer = new ParallelInjectionContainer()
+    @volatile private var closed          = false
+    override  val trafficPath: Array[Int] = Array.empty
+    protected val rootStore               = new SimplePacketInjectableStore(this, defaultPersistenceConfig, trafficPath)
+    private   val injectionContainer      = new ParallelInjectionContainer()
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)

@@ -51,7 +51,7 @@ class PacketInjectionPerformanceTest {
     }
 
     private def testNPacket(n: Int): Unit = {
-        println(s"Path is ${testChannel.path.mkString("/")}.")
+        println(s"Path is ${testChannel.trafficPath.mkString("/")}.")
         val meter = new PerformanceMeter()
         workerPool.runLater {
             try {

@@ -14,6 +14,6 @@ package fr.linkit.api.connection.packet.traffic
 
 trait TrafficPresence {
 
-    val path: Array[Int]
+    val trafficPath: Array[Int]
 
 }

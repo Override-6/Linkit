@@ -57,7 +57,7 @@ object AnnotationBasedMemberBehaviorFactory extends MemberBehaviorFactory {
     }
 
     override def genFieldBehavior(desc: FieldDescription): FieldBehavior[AnyRef] = {
-        val control        = Option(desc.javaField.getAnnotation(classOf[FieldControl]))
+        val control        = Option(desc.javaField.getAnnotation(classOf[Synchronized]))
         val isSynchronized = control.isDefined
         SyncFieldBehavior(desc, isSynchronized, null)
     }

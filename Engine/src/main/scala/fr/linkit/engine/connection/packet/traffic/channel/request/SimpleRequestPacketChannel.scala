@@ -75,7 +75,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
     }
 
     override def makeRequest(scope: ChannelScope): Submitter[ResponseHolder] = {
-        if (!(scope.writer.path sameElements path))
+        if (!(scope.writer.path sameElements trafficPath))
             throw new IllegalArgumentException("Scope is not set on the same injectable id of this packet channel.")
         val requestID = nextRequestID
         //TODO Make an adaptive queue that make non WorkerPool threads wait and worker pools change task when polling.

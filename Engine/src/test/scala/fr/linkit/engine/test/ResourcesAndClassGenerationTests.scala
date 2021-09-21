@@ -14,7 +14,7 @@ package fr.linkit.engine.test
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.behavior.annotation.FieldControl
+import fr.linkit.api.connection.cache.obj.behavior.annotation.{Synchronized}
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
@@ -37,8 +37,8 @@ import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
-
 import java.util
+
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.reflect.runtime.universe.TypeTag
 
@@ -115,7 +115,7 @@ class ResourcesAndClassGenerationTests {
 
     private class TestClass {
 
-        @FieldControl()
+        @Synchronized()
         private val test: String = "salut"
     }
 

@@ -54,8 +54,8 @@ class ServerConnection(applicationContext: ServerApplication,
     override val eventNotifier           : EventNotifier              = new DefaultEventNotifier
     private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
     override val network                 : Network                    = sideNetwork
-
-    @volatile private var alive = false
+    override val trafficPath             : Array[Int]                 = traffic.trafficPath
+    @volatile private var alive                                       = false
 
     override def getApp: ApplicationContext = applicationContext
 

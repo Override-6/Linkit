@@ -44,8 +44,8 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     override val port                    : Int               = server.port
     override val boundIdentifier         : String            = session.boundIdentifier
     override val defaultPersistenceConfig: PersistenceConfig = server.defaultPersistenceConfig
-
-    @volatile private var alive = false
+    override val trafficPath             : Array[Int]        = server.trafficPath
+    @volatile private var alive                              = false
 
     override def shutdown(): Unit = {
         WorkerPools.ensureCurrentIsWorker()

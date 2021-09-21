@@ -51,6 +51,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     override val defaultPersistenceConfig: PersistenceConfig = traffic.defaultPersistenceConfig
     private  val sideNetwork             : ClientSideNetwork = new ClientSideNetwork(this, defaultPersistenceConfig.getReferenceStore)
     override val network                 : Network           = sideNetwork
+    override val trafficPath             : Array[Int]        = traffic.trafficPath
     @volatile private var alive                              = true
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
@@ -131,15 +132,16 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
 
     private def handlePacket(packet: Packet, attributes: PacketAttributes, coordinates: DedicatedPacketCoordinates): Unit = {
         //packet match {
-            //case system: SystemPacket => handleSystemPacket(system, coordinates)
+        //case system: SystemPacket => handleSystemPacket(system, coordinates)
         //    case _: Packet =>
-                //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
-                traffic.processInjection(packet, attributes, coordinates)
-            //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
-       // }
+        //println(s"START OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
+        traffic.processInjection(packet, attributes, coordinates)
+        //println(s"ENT OF INJECTION ($packet, $coordinates, $number) - ${Thread.currentThread()}")
+        // }
     }
 
     override def getApp: ApplicationContext = appContext
+
 }
 
 object ClientConnection {

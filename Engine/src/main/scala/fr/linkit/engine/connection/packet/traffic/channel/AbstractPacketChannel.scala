@@ -30,9 +30,9 @@ abstract class AbstractPacketChannel(override val store: PacketInjectableStore,
     //protected but not recommended to use for implementations.
     //it could occurs of unexpected behaviors by the user.
     protected val writer : PacketWriter  = scope.writer
-    override  val ownerID: String        = writer.serverIdentifier
-    override  val path   : Array[Int]    = writer.path
-    override  val traffic: PacketTraffic = writer.traffic
+    override  val ownerID    : String        = writer.serverIdentifier
+    override  val trafficPath: Array[Int]    = writer.path
+    override  val traffic    : PacketTraffic = writer.traffic
     private   val storedBundles          = mutable.HashSet.empty[ChannelPacketBundle]
 
     @volatile private var closed = true
