@@ -32,7 +32,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient private         var currentIdentifier: String                  = _
     @transient private         var ownerID          : String                  = _
 
-    protected final var puppeteerDescription: SyncNodeInfo = _
+    protected var puppeteerDescription: SyncNodeInfo = _
 
     def wrappedClass: Class[_]
 

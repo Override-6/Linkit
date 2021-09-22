@@ -15,7 +15,6 @@ package fr.linkit.engine.connection.packet.persistence.serializor.read
 import fr.linkit.api.connection.packet.persistence.context.{PersistenceConfig, TypeProfile}
 import fr.linkit.api.connection.packet.persistence.obj.{InstanceObject, PoolObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ConstantProtocol.Object
-import fr.linkit.engine.connection.packet.persistence.serializor.read.NotInstantiatedObject.Unsafe
 import fr.linkit.engine.local.utils.{JavaUtils, ScalaUtils}
 
 class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],

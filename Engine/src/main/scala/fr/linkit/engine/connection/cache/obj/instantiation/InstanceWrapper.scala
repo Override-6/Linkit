@@ -1,6 +1,7 @@
 package fr.linkit.engine.connection.cache.obj.instantiation
 
-import fr.linkit.api.connection.cache.obj.{SyncInstanceGetter, SynchronizedObject}
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceGetter
 
 class InstanceWrapper[T](obj: T with SynchronizedObject[T]) extends SyncInstanceGetter[T] {
     override val tpeClass: Class[_] = obj.getSuperClass

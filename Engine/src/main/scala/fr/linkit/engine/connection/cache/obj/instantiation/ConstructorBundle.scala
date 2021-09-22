@@ -2,7 +2,8 @@ package fr.linkit.engine.connection.cache.obj.instantiation
 
 import java.lang.reflect.{Constructor, Modifier}
 
-import fr.linkit.api.connection.cache.obj.{SyncInstanceGetter, SynchronizedObject}
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceGetter
 import fr.linkit.engine.connection.packet.persistence.context.structure.ArrayObjectStructure
 
 import scala.reflect.{ClassTag, classTag}
@@ -18,11 +19,13 @@ class ConstructorBundle[T](constructor: Constructor[T], arguments: Array[Any]) e
 
 object ConstructorBundle {
 
+
     def apply[T: ClassTag](params: Any*): ConstructorBundle[T] = {
         val clazz        = classTag[T].runtimeClass
         val objectsArray = params.toArray
         for (constructor <- clazz.getDeclaredConstructors) {
-            val constructorStructure = ArrayObjectStructure(constructor.getParameterTypes)
+            val params               = constructor.getParameterTypes
+            val constructorStructure = ArrayObjectStructure(params)
             if (constructorStructure.isAssignable(objectsArray)) {
                 val mods = constructor.getModifiers
                 if (Modifier.isPrivate(mods) || Modifier.isProtected(mods))

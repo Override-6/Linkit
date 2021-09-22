@@ -1,4 +1,6 @@
-package fr.linkit.api.connection.cache.obj
+package fr.linkit.api.connection.cache.obj.instantiation
+
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 
 trait SyncInstanceGetter[T] {
 

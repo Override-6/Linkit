@@ -14,6 +14,7 @@ package fr.linkit.api.connection.cache.obj
 
 import fr.linkit.api.connection.cache.SharedCache
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
+import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceGetter
 import fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTreeStore
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.PacketAttributesPresence
@@ -112,7 +113,10 @@ trait SynchronizedObjectCache[A <: AnyRef] extends PacketAttributesPresence with
      * @param id     the identifier if the object that must be retrieved or posted if no object was posted before.
      * @param orPost the supplier that will create the object if it needs to be posted.
      * */
-    def getOrPost(id: Int)(orPost: => A): A = findObject(id).getOrElse(syncObject(id, orPost))
+    @deprecated("Must deeply clone the object, overuse of Unsafes. + very slow")
+    def getOrSynchronizeObject(id: Int)(orPost: => A): A = findObject(id).getOrElse(syncObject(id, orPost))
+
+    def getOrSynchronizeCreated(id: Int)(orCreate: => SyncInstanceGetter[A]): A = findObject(id).getOrElse(syncObject(id, orCreate))
 
     /**
      * @param id the object's identifier.

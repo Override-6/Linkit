@@ -107,9 +107,10 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
 
         def asWrapper(obj: AnyRef): AnyRef = {
             subWrappersInstantiated.getOrElseUpdate(obj, {
-                val (subWrapper, subSubWrappersInfo) = wrapperFactory.newWrapper(obj, behaviorTree, trustedSubWrapper(Identity(obj)), subWrappers - obj)
-                subWrappersInstantiated ++= subSubWrappersInfo
-                subWrapper
+                //val (subWrapper, subSubWrappersInfo) = wrapperFactory.newWrapper(obj, behaviorTree, trustedSubWrapper(Identity(obj)), subWrappers - obj)
+                //subWrappersInstantiated ++= subSubWrappersInfo
+                //subWrapper
+                ???
             })
         }
 

@@ -16,6 +16,7 @@ import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperInstantiator, SyncClassCenter}
+import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceGetter
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
@@ -175,9 +176,9 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                         case _                                  =>
                             throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedSyncNode[_]].getSimpleName} in order to handle a member rmi request.")
                     }
-                case ObjectPacket(ObjectTreeProfile(treeID, rootObject: A with SynchronizedObject[A], owner, subWrappers)) =>
+                case ObjectPacket(ObjectTreeProfile(treeID, rootObject: Any with SynchronizedObject[Any], owner, subWrappers)) =>
                     if (!isRegistered(treeID)) {
-                        val tree = createNewTree(treeID, owner, new InstanceWrapper[A](rootObject), subWrappers, defaultTreeViewBehavior)
+                        val tree = createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]), subWrappers, defaultTreeViewBehavior)
                         tree.getRoot.setPresentOnNetwork()
                     }
             }
