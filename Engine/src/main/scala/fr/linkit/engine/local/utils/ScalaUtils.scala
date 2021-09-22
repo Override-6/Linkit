@@ -168,6 +168,7 @@ object ScalaUtils {
                 })
     }
 
+    @inline
     def allocate[A](clazz: Class[_]): A = {
         if (clazz == null)
             throw new NullPointerException

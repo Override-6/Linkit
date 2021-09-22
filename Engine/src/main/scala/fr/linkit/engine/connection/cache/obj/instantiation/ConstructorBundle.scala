@@ -1,15 +1,17 @@
-package fr.linkit.engine.connection.cache.obj
+package fr.linkit.engine.connection.cache.obj.instantiation
 
 import java.lang.reflect.{Constructor, Modifier}
 
-import fr.linkit.api.connection.cache.obj.{SyncInstanceCreator, SynchronizedObject}
+import fr.linkit.api.connection.cache.obj.{SyncInstanceGetter, SynchronizedObject}
 import fr.linkit.engine.connection.packet.persistence.context.structure.ArrayObjectStructure
 
 import scala.reflect.{ClassTag, classTag}
 
-class ConstructorBundle[T](constructor: Constructor[T], arguments: Array[Any]) extends SyncInstanceCreator[T] {
-    override def newInstance(clazz: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {
-        clazz.getDeclaredConstructor(constructor.getParameterTypes: _*)
+class ConstructorBundle[T](constructor: Constructor[T], arguments: Array[Any]) extends SyncInstanceGetter[T] {
+    override val tpeClass: Class[_] = constructor.getDeclaringClass
+
+    override def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {
+        syncClass.getDeclaredConstructor(constructor.getParameterTypes: _*)
             .newInstance(arguments: _*)
     }
 }

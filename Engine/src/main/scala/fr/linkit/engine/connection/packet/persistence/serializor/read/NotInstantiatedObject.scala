@@ -24,7 +24,7 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
                                          pool: DeserializerPacketObjectPool) extends InstanceObject[T] {
 
     private var isInit: Boolean = false
-    private val obj   : T       = Unsafe.allocateInstance(profile.typeClass).asInstanceOf[T]
+    private val obj   : T       = ScalaUtils.allocate[T](profile.typeClass)
     private val objChunk        = pool.getChunkFromFlag[NotInstantiatedObject[AnyRef]](Object)
 
     override def value: T = obj
@@ -69,9 +69,4 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         }
     }
 
-}
-
-object NotInstantiatedObject {
-
-    private val Unsafe = ScalaUtils.findUnsafe()
 }

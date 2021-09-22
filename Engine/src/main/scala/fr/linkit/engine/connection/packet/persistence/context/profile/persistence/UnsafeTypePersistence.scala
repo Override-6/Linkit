@@ -38,8 +38,3 @@ class UnsafeTypePersistence[T](clazz: Class[_]) extends TypePersistence[T]() {
         buff
     }
 }
-
-object UnsafeTypePersistence {
-
-    private val Unsafe = ScalaUtils.findUnsafe()
-}

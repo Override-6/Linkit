@@ -19,7 +19,6 @@ trait TypePersistence[-T] {
     val structure: ObjectStructure
 
     def initInstance(allocatedObject: T, args: Array[Any]): Unit
-    //def initInstance(args: Array[Any]): T
 
     def toArray(t: T): Array[Any]
 }

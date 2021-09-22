@@ -30,7 +30,7 @@ class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: Pa
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
         globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](this))
-                .postObject(0, new NetworkDataTrunk(this), store)
+                .syncObject(0, new NetworkDataTrunk(this), store)
     }
 
     override protected def createGlobalCache: SharedCacheManager = {
