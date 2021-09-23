@@ -71,7 +71,7 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
 
         (flag: @switch) match {
             case Class      => collectAndUpdateChunk[Class[_]](readClass())
-            case SyncClass  => collectAndUpdateChunk[Class[_]](center.getSyncClass(readClass())) //would compile the class if it is not
+            case SyncClass  => collectAndUpdateChunk[Class[_]](center.getSyncClass(readClass())) //would compile the class if was not
             case String     => collectAndUpdateChunk[String](readString())
             case Array      => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
             case Object     => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
@@ -108,12 +108,8 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
 
     private def readObject(): NotInstantiatedObject[AnyRef] = {
         val classRef    = readNextRef
-        val profile     = config.getProfile[AnyRef](pool.getType(classRef))
-        // The next int is the content size,
-        // we skip the array content for now
-        // because we need only parse the object type
-        // as we return a NotInstantiatedObject, However, the pos in front
-        // of the array content is kept in order to read the object content after
+        val clazz       = pool.getType(classRef)
+        val profile     = config.getProfile[AnyRef](clazz)
         val contentSize = buff.getInt
         val content     = readObjectContent(contentSize)
         new NotInstantiatedObject[AnyRef](profile, config, content, pool)

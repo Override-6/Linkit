@@ -4,10 +4,6 @@ import fr.linkit.engine.connection.network.{NetworkDataBundle, NetworkDataTrunk}
 import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
 import fr.linkit.engine.connection.packet.persistence.context.PersistenceConfigBuilder
 
-import java.io.File
-import java.sql.Timestamp
-import java.util.Date
-
 //Start Of Context
 val builder: PersistenceConfigBuilder = null
 val app    : ApplicationContext       = null
@@ -25,6 +21,6 @@ putContextReference(3, app)
 putContextReference(4, traffic)
 putContextReference(5, connection)
 setTConverter[NetworkDataTrunk, NetworkDataBundle](_.toBundle)(NetworkDataTrunk.fromData)
-setTConverter[File, String](_.getAbsolutePath)(new File(_))
-setTConverter[Date, Long](_.getTime)(new Date(_))
-setTConverter[Timestamp, Long](_.getTime)(new Timestamp(_))
+//setTConverter[File, String](_.getAbsolutePath)(new File(_))
+//setTConverter[Date, Long](_.getTime)(new Date(_))
+//setTConverter[Timestamp, Long](_.getTime)(new Timestamp(_))

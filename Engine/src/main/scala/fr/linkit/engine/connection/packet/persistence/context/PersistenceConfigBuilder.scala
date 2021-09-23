@@ -22,6 +22,7 @@ import fr.linkit.engine.connection.packet.persistence.context.structure.ArrayObj
 import fr.linkit.engine.local.script.ScriptExecutor
 import fr.linkit.engine.local.utils.{ClassMap, ScalaUtils}
 
+import java.lang.reflect.Modifier
 import java.net.URL
 import scala.reflect.{ClassTag, classTag}
 
@@ -63,13 +64,16 @@ class PersistenceConfigBuilder {
     def setTConverter[A <: AnyRef: ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A): this.type = {
         val clazz = classTag[B].runtimeClass
         val persistor = new TypePersistence[A] {
+            private val fields = ScalaUtils.retrieveAllFields(clazz).filter(f => Modifier.isTransient(f.getModifiers))
             override val structure: ObjectStructure = new ArrayObjectStructure {
                 override val types: Array[Class[_]] = Array(clazz)
             }
 
             override def initInstance(allocatedObject: A, args: Array[Any]): Unit = {
                 args.head match {
-                    case t: B => ScalaUtils.pasteAllFields(allocatedObject, fFrom(t))
+                    case t: B =>
+                        val from = fFrom(t)
+                        fields.foreach(f => ScalaUtils.setValue(allocatedObject, f, ScalaUtils.getValue(from, f)))
                 }
             }
 

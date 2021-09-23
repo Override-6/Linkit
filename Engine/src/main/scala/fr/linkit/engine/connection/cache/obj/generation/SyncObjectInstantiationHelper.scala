@@ -13,17 +13,15 @@
 package fr.linkit.engine.connection.cache.obj.generation
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.{SyncObjectDetachException, SynchronizedObject}
 import fr.linkit.api.connection.packet.persistence.context.ReferencedObjectStore
-import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper.MaxScanDepth
 import fr.linkit.engine.local.utils.ScalaUtils.{allocate, retrieveAllFields}
 import fr.linkit.engine.local.utils.{Identity, JavaUtils, ScalaUtils, UnWrapper}
 import sun.misc.Unsafe
 
 import java.lang.ref.Cleaner
-import java.lang.reflect.{Field, Modifier}
+import java.lang.reflect.Field
 import java.nio.Buffer
 import java.nio.file.WatchKey
 import scala.collection.mutable
@@ -31,7 +29,7 @@ import scala.util.control.NonFatal
 
 //TODO Factorise this class and optimize it.
 class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, behaviorTree: ObjectBehaviorStore) {
-
+/*
     def instantiateFromOrigin[A <: AnyRef](wrapperClass: Class[A with SynchronizedObject[A]],
                                            origin: A,
                                            subWrappers: Map[AnyRef, SyncNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
@@ -121,7 +119,7 @@ class SyncObjectInstantiationHelper(wrapperFactory: ObjectWrapperInstantiator, b
                 .tapEach(_.setAccessible(true))
                 .foreach(_.set(instance, null))
         (instance, subWrappersInstantiated.toMap)
-    }
+    }*/
 
 }
 

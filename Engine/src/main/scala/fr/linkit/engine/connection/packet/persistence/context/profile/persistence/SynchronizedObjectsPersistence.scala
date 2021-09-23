@@ -28,7 +28,7 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
 
     override def initInstance(syncObj: T, args: Array[Any]): Unit = {
         objectPersistence.initInstance(syncObj, args)
-        val info   = syncObj.getNodeInfo
+        val info   = args.last.asInstanceOf[SyncNodeInfo]
         val path   = info.nodePath
         val center = findCache(info)
                 .getOrElse {
@@ -47,7 +47,7 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
     }
 
     override def toArray(t: T): Array[Any] = {
-        objectPersistence.toArray(t)
+        objectPersistence.toArray(t) ++ t.getNodeInfo
     }
 
     private def findCache(info: SyncNodeInfo): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {

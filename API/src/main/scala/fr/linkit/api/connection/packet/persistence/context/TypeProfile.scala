@@ -22,4 +22,5 @@ trait TypeProfile[T <: AnyRef] {
 
     def getPersistence(args: Array[Any]): TypePersistence[T]
 
+    def getPersistences: Array[TypePersistence[T]]
 }

@@ -72,13 +72,16 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
     override def declareNewCacheManager(family: String): SharedCacheManager = {
         if (trunk.findCache(family).isDefined)
             throw new CacheManagerAlreadyDeclaredException(s"Cache of family $family is already opened.")
-        AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
-        val store   = networkStore.createStore(family.hashCode)
-        val manager = new SharedCacheOriginManager(family, this, store)
 
+        val manager = newCacheManager(family)
         trunk.addCacheManager(manager)
-        //channel.injectStoredBundles()
         manager
+    }
+
+    private[network] def newCacheManager(family: String): SharedCacheManager = {
+        AppLogger.vDebug(s"$currentTasksId <> ${connection.currentIdentifier}: --> CREATING NEW SHARED CACHE MANAGER <$family>")
+        val store = networkStore.createStore(family.hashCode)
+        new SharedCacheOriginManager(family, this, store)
     }
 
     protected def retrieveDataTrunk(behaviors: ObjectBehaviorStore): NetworkDataTrunk
@@ -129,5 +132,6 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
 }
 
 object AbstractNetwork {
+
     final val GlobalCacheID = "Global Cache"
 }

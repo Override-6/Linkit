@@ -5,7 +5,7 @@ import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{CanNotSynchronizeException, SynchronizedObject, SynchronizedObjectCache}
-import fr.linkit.engine.connection.cache.obj.instantiation.ObjectTypeReplacer
+import fr.linkit.engine.connection.cache.obj.instantiation.ContentSwitcher
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.tree.node.{IllegalWrapperNodeException, RootWrapperNode, WrapperNode}
 import fr.linkit.engine.local.utils.ScalaUtils
@@ -93,10 +93,10 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         if (obj.isInstanceOf[SynchronizedObject[_]])
             throw new CanNotSynchronizeException("This object is already wrapped.")
 
-        val parentPath      = parent.treePath
-        val puppeteerInfo   = SyncNodeInfo(cache.family, cache.cacheID, ownerID, parentPath :+ id)
-        val (syncObject, _) = instantiator.newWrapper[B](new ObjectTypeReplacer(obj), behaviorStore, puppeteerInfo, Map())
-        val node            = registerSynchronizedObject[B](parent, id, syncObject, ownerID)
+        val parentPath    = parent.treePath
+        val puppeteerInfo = SyncNodeInfo(cache.family, cache.cacheID, ownerID, parentPath :+ id)
+        val syncObject    = instantiator.newWrapper[B](new ContentSwitcher[B](obj), behaviorStore, puppeteerInfo)
+        val node          = registerSynchronizedObject[B](parent, id, syncObject, ownerID)
         node
     }
 

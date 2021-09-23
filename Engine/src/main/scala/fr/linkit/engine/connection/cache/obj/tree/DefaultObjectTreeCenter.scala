@@ -23,7 +23,6 @@ import scala.collection.mutable
 class DefaultObjectTreeCenter[A <: AnyRef](cache: SynchronizedObjectCache[A]) extends SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
-    private val store = cache.network.refStore
 
     def addTree(id: Int, tree: DefaultSynchronizedObjectTree[A]): Unit = {
         if (trees.contains(id))
@@ -42,12 +41,10 @@ class DefaultObjectTreeCenter[A <: AnyRef](cache: SynchronizedObjectCache[A]) ex
     }
 
     override def snapshotContent: CacheRepoContent[A] = {
-        def toProfile(tree: SynchronizedObjectTree[_ <: A]): ObjectTreeProfile[A] = {
+        def toProfile(tree: SynchronizedObjectTree[A]): ObjectTreeProfile[A] = {
             val node                    = tree.rootNode
             val syncObject              = node.synchronizedObject
-            val (detached, subWrappers) = SyncObjectInstantiationHelper.detachedWrapperClone(syncObject, store)
-            val subWrappersInfo         = subWrappers.map(pair => (pair._1, pair._2.getNodeInfo))
-            ObjectTreeProfile[A](tree.id, detached, node.ownerID, subWrappersInfo)
+            ObjectTreeProfile[A](tree.id, syncObject, node.ownerID)
         }
 
         val array = trees.values.map(toProfile).toArray

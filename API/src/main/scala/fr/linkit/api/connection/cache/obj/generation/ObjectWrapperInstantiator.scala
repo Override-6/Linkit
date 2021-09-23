@@ -7,7 +7,7 @@ import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceGetter
 
 trait ObjectWrapperInstantiator {
 
-    def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A], store: ObjectBehaviorStore, puppeteerInfo: SyncNodeInfo, subWrappers: Map[AnyRef, SyncNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]])
+    def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A], store: ObjectBehaviorStore, puppeteerInfo: SyncNodeInfo): A with SynchronizedObject[A]
 
     def initializeSyncObject[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit
 

@@ -164,7 +164,7 @@ object ScalaUtils {
     def pasteAllFields[A](instance: A, data: A): Unit = {
         retrieveAllFields(data.getClass)
                 .foreach(field => {
-                    ScalaUtils.setValue(instance, field, field.get(data))
+                    ScalaUtils.setValue(instance, field, ScalaUtils.getValue(data, field))
                 })
     }
 

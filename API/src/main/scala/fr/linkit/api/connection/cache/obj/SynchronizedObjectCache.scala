@@ -77,9 +77,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends PacketAttributesPresence with
      * @param obj the object to synchronize.
      * @return the synchronized object.
      * */
-    @throws[CanNotSynchronizeException]("If the given object is a synchronized object.")
-    @deprecated("Must deeply clone the object, overuse of Unsafes. + very slow")
-    def syncObject(id: Int, obj: A): A with SynchronizedObject[A]
+    def syncObject(id: Int, creator: SyncInstanceGetter[A]): A with SynchronizedObject[A]
 
     /**
      * @param id       the identifier of the root object
@@ -87,16 +85,6 @@ trait SynchronizedObjectCache[A <: AnyRef] extends PacketAttributesPresence with
      * @param behavior the behavior tree of the object and its inner objects
      * @return the synchronized object.
      * */
-    @throws[CanNotSynchronizeException]("If the given object is a synchronized object.")
-    @deprecated("Must deeply clone the object, overuse of Unsafes. + very slow")
-    def syncObject(id: Int, obj: A, behavior: ObjectBehaviorStore): A with SynchronizedObject[A]
-
-    def syncObjectAndReplaceType(id: Int, obj: A): Unit
-
-    def syncObjectAndReplaceType(id: Int, obj: A, behavior: ObjectBehaviorStore): Unit
-
-    def syncObject(id: Int, creator: SyncInstanceGetter[A]): A with SynchronizedObject[A]
-
     def syncObject(id: Int, creator: SyncInstanceGetter[A], behavior: ObjectBehaviorStore): A with SynchronizedObject[A]
 
     /**
@@ -107,16 +95,7 @@ trait SynchronizedObjectCache[A <: AnyRef] extends PacketAttributesPresence with
      */
     def findObject(id: Int): Option[A with SynchronizedObject[A]]
 
-    /**
-     * Tries to retrieve an object of the given id, or post it with the required id instead.
-     *
-     * @param id     the identifier if the object that must be retrieved or posted if no object was posted before.
-     * @param orPost the supplier that will create the object if it needs to be posted.
-     * */
-    @deprecated("Must deeply clone the object, overuse of Unsafes. + very slow")
-    def getOrSynchronizeObject(id: Int)(orPost: => A): A = findObject(id).getOrElse(syncObject(id, orPost))
-
-    def getOrSynchronizeCreated(id: Int)(orCreate: => SyncInstanceGetter[A]): A = findObject(id).getOrElse(syncObject(id, orCreate))
+    def getOrSynchronize(id: Int)(or: => SyncInstanceGetter[A]): A = findObject(id).getOrElse(syncObject(id, or))
 
     /**
      * @param id the object's identifier.

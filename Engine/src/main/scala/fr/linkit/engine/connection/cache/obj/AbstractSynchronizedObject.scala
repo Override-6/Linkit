@@ -24,15 +24,14 @@ import fr.linkit.engine.connection.cache.obj.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    @transient final protected var puppeteer        : Puppeteer[A]            = _
-    @transient final protected var behavior         : ObjectBehavior[A]       = _
-    @transient final protected var choreographer    : InvocationChoreographer = _
-    @transient final protected var store            : ObjectBehaviorStore     = _
+    @transient final protected var puppeteer           : Puppeteer[A]            = _
+    @transient final protected var behavior            : ObjectBehavior[A]       = _
+    @transient final protected var choreographer       : InvocationChoreographer = _
+    @transient final protected var store               : ObjectBehaviorStore     = _
     //fast cache for handleCall
-    @transient private         var currentIdentifier: String                  = _
-    @transient private         var ownerID          : String                  = _
-
-    protected var puppeteerDescription: SyncNodeInfo = _
+    @transient private         var currentIdentifier   : String                  = _
+    @transient private         var ownerID: String = _
+    @transient protected       var nodeInfo: SyncNodeInfo            = _
 
     def wrappedClass: Class[_]
 
@@ -41,7 +40,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             throw new SyncObjectAlreadyInitialisedException(s"This puppet is already initialized ! ($puppeteer)")
         this.store = store
         this.puppeteer = puppeteer
-        this.puppeteerDescription = puppeteer.nodeInfo
+        this.nodeInfo = puppeteer.nodeInfo
         this.behavior = puppeteer.wrapperBehavior
         this.puppeteer.init(asAutoWrapped)
         this.choreographer = new InvocationChoreographer()
@@ -69,7 +68,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getBehavior: ObjectBehavior[A] = behavior
 
-    override def getNodeInfo: SyncNodeInfo = puppeteerDescription
+    override def getNodeInfo: SyncNodeInfo = nodeInfo
 
     private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
         var i              = -1

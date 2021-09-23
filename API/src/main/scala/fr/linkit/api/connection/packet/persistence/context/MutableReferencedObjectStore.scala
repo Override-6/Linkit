@@ -18,6 +18,8 @@ trait MutableReferencedObjectStore extends ReferencedObjectStore {
 
     def ++=(refs: Map[Int, AnyRef]): this.type
 
+    def putAllNotContained(refs: Map[Int, AnyRef]): this.type
+
     def +=(anyRef: AnyRef): this.type
 
     def +=(code: Int, anyRef: AnyRef): this.type

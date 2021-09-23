@@ -12,8 +12,6 @@
 
 package fr.linkit.engine.test
 
-import java.util
-
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.behavior.annotation.Synchronized
@@ -30,7 +28,7 @@ import fr.linkit.api.local.system.{AppLogger, Version}
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultObjectBehavior, DefaultObjectBehaviorStore}
 import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
 import fr.linkit.engine.connection.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
-import fr.linkit.engine.connection.cache.obj.instantiation.ObjectTypeReplacer
+import fr.linkit.engine.connection.cache.obj.instantiation.ContentSwitcher
 import fr.linkit.engine.connection.cache.obj.invokation.remote.ObjectPuppeteer
 import fr.linkit.engine.local.LinkitApplication
 import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
@@ -42,6 +40,7 @@ import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.mockito.Mockito
 
+import java.util
 import scala.collection.mutable.{ArrayBuffer, ListBuffer}
 import scala.reflect.runtime.universe.TypeTag
 
@@ -147,7 +146,7 @@ class ResourcesAndClassGenerationTests {
         Assertions.assertNotNull(resources)
 
         val info         = SyncNodeInfo("", 8, "", Array(1))
-        val (wrapper, _) = TestWrapperInstantiator.newWrapper[A](new ObjectTypeReplacer[A](obj), tree, info, Map())
+        val wrapper = TestWrapperInstantiator.newWrapper[A](new ContentSwitcher[A](obj), tree, info)
         wrapper.getChoreographer.forceLocalInvocation {
             println(s"wrapper = ${wrapper}")
             println(s"wrapper.getWrappedClass = ${wrapper.getSuperClass}")
@@ -161,12 +160,11 @@ class ResourcesAndClassGenerationTests {
         private val generator = new DefaultSyncClassCenter(new DefaultCompilerCenter, resource)
 
 
-        override def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A], store: ObjectBehaviorStore, puppeteerInfo: SyncNodeInfo, subWrappers: Map[AnyRef, SyncNodeInfo]): (A with SynchronizedObject[A], Map[AnyRef, SynchronizedObject[AnyRef]]) = {
+        override def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A], store: ObjectBehaviorStore, puppeteerInfo: SyncNodeInfo): A with SynchronizedObject[A] = {
             val cl           = creator.tpeClass
-            val behaviorDesc = store.getFromClass[A](cl)
             val syncClass    = generator.getSyncClass[A](SimpleSyncObjectSuperClassDescription[A](cl))
             val syncObject   = creator.getInstance(syncClass)
-            (syncObject, Map())
+            syncObject
         }
 
         override def initializeSyncObject[B <: AnyRef](syncObject: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit = {

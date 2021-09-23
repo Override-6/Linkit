@@ -38,6 +38,10 @@ class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
         this
     }
 
+    override def putAllNotContained(refs: Map[Int, AnyRef]): WeakReferencedObjectStore.this.type = {
+        ++=(refs.filterNot(p => refToCode.containsKey(p._2)))
+    }
+
     override def ++=(refs: AnyRef*): this.type = {
         refs.foreach(+=)
         this

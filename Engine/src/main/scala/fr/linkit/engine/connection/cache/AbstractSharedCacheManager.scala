@@ -36,7 +36,6 @@ abstract class AbstractSharedCacheManager(override val family: String,
     println(s"New SharedCacheManager created ! $family")
     protected val channel          : SimpleRequestPacketChannel = store.getInjectable(family.hashCode - 5, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
     protected val broadcastScope   : ChannelScope               = prepareScope(ChannelScopes.broadcast)
-    private   val traffic                                       = network.connection.traffic
     protected val currentIdentifier: String                     = network.connection.currentIdentifier
     override  val trafficPath      : Array[Int]                 = store.trafficPath
 
@@ -156,7 +155,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
     private def postInit(): Unit = {
         val refStore = network.refStore
         val shift    = family.hashCode
-        refStore ++= Map(
+        refStore putAllNotContained Map(
             shift + 1 -> channel,
             shift + 2 -> broadcastScope,
             shift + 3 -> store

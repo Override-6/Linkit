@@ -31,23 +31,16 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
     override def getReferenceStore: MutableReferencedObjectStore = referenceStore
 
     override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-        val profile = defaultProfiles.get(clazz)
-        if (profile.isEmpty) {
-            return customProfiles.getOrElse(clazz, {
-                val default: DefaultTypeProfile[T] = newDefaultProfile[T](clazz)
-                if (isSyncClass(clazz)) {
-                    @inline
-                    def cast[X](any: AnyRef): X = any.asInstanceOf[X]
-
-                    val syncDefault = newSynchronizedObjectDefaultProfile[Nothing](clazz, cast(default))
-                    defaultProfiles.put(clazz, syncDefault)
-                } else {
-                    defaultProfiles.put(clazz, default)
-                    default
-                }
-            }).asInstanceOf[TypeProfile[T]]
+        var profile = defaultProfiles.get(clazz).orNull
+        if (profile == null) {
+            profile = customProfiles.getOrElseUpdate(clazz, newDefaultProfile[T](clazz))
+            if (isSyncClass(clazz)) {
+                @inline
+                def cast[X](a: Any) = a.asInstanceOf[X]
+                profile = newSynchronizedObjectDefaultProfile(clazz, cast(profile))
+            }
         }
-        profile.get.asInstanceOf[TypeProfile[T]]
+        profile.asInstanceOf[TypeProfile[T]]
     }
 
     override def informObjectReceived(obj: AnyRef): Unit = {
@@ -63,13 +56,13 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
         if (referenceAllObjects) referenceStore += obj
     }
 
-    private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: DefaultTypeProfile[T]): DefaultTypeProfile[T] = {
+    private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: TypeProfile[T]): DefaultTypeProfile[T] = {
         val network                                 = context.getNetwork
-        val persistences: Array[TypePersistence[T]] = profile.persists.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
+        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
         new DefaultTypeProfile[T](clazz, profile, persistences)
     }
 
-    protected def newDefaultProfile[T <: AnyRef](clazz: Class[_]): DefaultTypeProfile[T] = {
+    protected def newDefaultProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
         val constructor                     = context.findConstructor[T](clazz)
         val persistence: TypePersistence[T] = {
             if (classOf[Deconstructive].isAssignableFrom(clazz)) {

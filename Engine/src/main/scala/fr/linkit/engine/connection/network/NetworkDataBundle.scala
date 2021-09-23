@@ -17,4 +17,4 @@ import java.sql.Timestamp
 
 import fr.linkit.engine.connection.network.NetworkDataTrunk.CacheManagerInfo
 
-case class NetworkDataBundle(engines: Array[String], caches: Array[CacheManagerInfo], startUpDate: Timestamp, network: Network)
+case class NetworkDataBundle(engines: Array[String], caches: Array[CacheManagerInfo], startUpDate: Timestamp, network: AbstractNetwork)

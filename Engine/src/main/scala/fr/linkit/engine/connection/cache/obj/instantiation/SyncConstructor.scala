@@ -8,7 +8,7 @@ import fr.linkit.engine.connection.packet.persistence.context.structure.ArrayObj
 
 import scala.reflect.{ClassTag, classTag}
 
-class ConstructorBundle[T](constructor: Constructor[T], arguments: Array[Any]) extends SyncInstanceGetter[T] {
+class SyncConstructor[T](constructor: Constructor[T], arguments: Array[Any]) extends SyncInstanceGetter[T] {
     override val tpeClass: Class[_] = constructor.getDeclaringClass
 
     override def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {
@@ -17,10 +17,10 @@ class ConstructorBundle[T](constructor: Constructor[T], arguments: Array[Any]) e
     }
 }
 
-object ConstructorBundle {
+object SyncConstructor {
 
 
-    def apply[T: ClassTag](params: Any*): ConstructorBundle[T] = {
+    def apply[T: ClassTag](params: Any*): SyncConstructor[T] = {
         val clazz        = classTag[T].runtimeClass
         val objectsArray = params.toArray
         for (constructor <- clazz.getDeclaredConstructors) {
@@ -30,7 +30,7 @@ object ConstructorBundle {
                 val mods = constructor.getModifiers
                 if (Modifier.isPrivate(mods) || Modifier.isProtected(mods))
                     throw new IllegalArgumentException("Provided method objects structure matches a non public constructor")
-                return new ConstructorBundle[T](constructor.asInstanceOf[Constructor[T]], objectsArray)
+                return new SyncConstructor[T](constructor.asInstanceOf[Constructor[T]], objectsArray)
             }
 
         }

@@ -101,8 +101,12 @@ object ArrayPersistence {
         val buff = reader.buff
         val kind = buff.get()
         kind match {
-            case Object | String => readObjectArray(reader)
-            case _               => readPrimitiveArray(kind, reader)
+            case Object => readObjectArray(reader)
+            case String =>
+                val array = new Array[String](buff.getInt())
+                readArrayContent(reader, array)
+                array
+            case _      => readPrimitiveArray(kind, reader)
         }
     }
 
@@ -163,16 +167,20 @@ object ArrayPersistence {
         array
     }
 
-    def readArrayContent(reader: PacketReader, buff: Array[Any]): Unit = {
+    def readArrayContent(reader: PacketReader, buff: Array[_]): Unit = {
         val pool = reader.getPool
         var n    = 0
         while (n < buff.length) {
             val globalIdx = reader.readNextRef
             val any       = pool.getAny(globalIdx)
+
+            @inline
+            def cast[X](a: Any) = a.asInstanceOf[X]
+
             if (any != null) {
                 buff(n) = any match {
-                    case p: PoolObject[AnyRef] => p.value
-                    case o                     => o
+                    case p: PoolObject[_] => cast(p.value)
+                    case o                => cast(o)
                 }
             }
             n += 1
