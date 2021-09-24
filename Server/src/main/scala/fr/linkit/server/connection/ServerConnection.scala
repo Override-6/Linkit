@@ -49,10 +49,11 @@ class ServerConnection(applicationContext: ServerApplication,
     private  val workerPool              : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
     private  val serverSocket            : ServerSocket               = new ServerSocket(configuration.port)
     private  val connectionsManager      : ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    override val traffic                 : PacketTraffic              = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
+    private  val serverTraffic                                        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
+    override val traffic                 : PacketTraffic              = serverTraffic
     override val defaultPersistenceConfig: PersistenceConfig          = traffic.defaultPersistenceConfig
     override val eventNotifier           : EventNotifier              = new DefaultEventNotifier
-    private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(this)(traffic)
+    private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(this, Array(serverTraffic.context))(traffic)
     override val network                 : Network                    = sideNetwork
     override val trafficPath             : Array[Int]                 = traffic.trafficPath
     @volatile private var alive                                       = false

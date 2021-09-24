@@ -142,10 +142,6 @@ class DefaultPacketSerializer(center: SyncClassCenter) extends PacketSerializer 
         buff.position(buff.position() + signature.length)
     }
 
-    def initNetwork(network: Network): Unit = {
-
-    }
-
 }
 
 object DefaultPacketSerializer {

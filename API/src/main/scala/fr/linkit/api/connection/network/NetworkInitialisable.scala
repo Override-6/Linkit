@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package $ClassPackage$
+package fr.linkit.api.connection.network
 
-import fr.linkit.api.connection.packet.persistence.v3.PacketPersistenceContext
+trait NetworkInitialisable {
 
-class $ClassName$(context: PacketPersistenceContext) extends PersistenceConfiguration(context) {
-
-    override def execute(): Unit = {
-        $ScriptCode$
-    }
+    def initNetwork(network: Network): Unit
 
 }

@@ -19,7 +19,9 @@ import fr.linkit.api.connection.cache.obj.tree.NoSuchSyncNodeException
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.context.TypePersistence
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
+import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.connection.cache.obj.tree.NoSuchObjectTreeException
 import fr.linkit.engine.connection.packet.persistence.UnexpectedObjectException
 import fr.linkit.engine.connection.packet.persistence.context.structure.SyncObjectStructure
 
@@ -35,15 +37,18 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
                 .getOrElse {
                     throwNoSuchCacheException(info, Some(syncObj.getSuperClass))
                 }
-        val tree   = center.treeCenter.findTreeInternal(path.head).getOrElse {
-            throw new NoSuchSyncNodeException(s"No Object Tree found of id ${path.head}") //TODO Replace with NoSuchObjectTreeException
+        val treeOpt   = center.treeCenter.findTreeInternal(path.head)
+        if (treeOpt.isEmpty) {
+            AppLogger.error(s"No Object Tree found of id ${path.head}")
+            return
         }
+        val tree = treeOpt.get
 
         val nodeOpt = tree.findNode(path)
         if (nodeOpt.isEmpty) {
             tree.registerSynchronizedObject(path.dropRight(1), path.last, syncObj, info.owner).synchronizedObject
         } else if (nodeOpt.get.synchronizedObject ne syncObj) {
-            throw new UnexpectedObjectException(s"Synchronized object already exists at path ${path.mkString("/")}")
+            AppLogger.error(s"Synchronized object already exists at path ${path.mkString("/")}")
         }
     }
 

@@ -65,7 +65,7 @@ class PersistenceConfigBuilder {
     def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A): this.type = {
         val clazz     = classTag[B].runtimeClass
         val persistor = new TypePersistence[A] {
-            private  val fields                     = ScalaUtils.retrieveAllFields(clazz).filter(f => Modifier.isTransient(f.getModifiers))
+            private  val fields                     = ScalaUtils.retrieveAllFields(clazz).filterNot(f => Modifier.isTransient(f.getModifiers))
             override val structure: ObjectStructure = new ArrayObjectStructure {
                 override val types: Array[Class[_]] = Array(clazz)
             }
@@ -74,7 +74,10 @@ class PersistenceConfigBuilder {
                 args.head match {
                     case t: B =>
                         val from = fFrom(t)
-                        fields.foreach(f => ScalaUtils.setValue(allocatedObject, f, ScalaUtils.getValue(from, f)))
+                        fields.foreach(f => {
+                            val value = ScalaUtils.getValue(from, f)
+                            ScalaUtils.setValue(allocatedObject, f, value)
+                        })
                 }
             }
 

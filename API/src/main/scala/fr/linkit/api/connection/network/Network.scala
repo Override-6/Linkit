@@ -24,7 +24,7 @@ trait Network {
 
     val connection: ConnectionContext
 
-    val refStore: MutableReferencedObjectStore
+    val rootRefStore: MutableReferencedObjectStore
 
     def globalCache: SharedCacheManager
 

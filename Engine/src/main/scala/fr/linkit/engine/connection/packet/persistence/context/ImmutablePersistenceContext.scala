@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.context
 
-import fr.linkit.api.connection.network.Network
+import fr.linkit.api.connection.network.{Network, NetworkInitialisable}
 import fr.linkit.api.connection.packet.persistence.context.{Deconstructor, PersistenceContext}
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.api.local.ApplicationContext
@@ -22,7 +22,7 @@ import java.lang.reflect.Constructor
 
 class ImmutablePersistenceContext private(override val traffic: PacketTraffic,
                                           constructors: ClassMap[Constructor[_]],
-                                          deconstructor: ClassMap[Deconstructor[_]]) extends PersistenceContext {
+                                          deconstructor: ClassMap[Deconstructor[_]]) extends PersistenceContext with NetworkInitialisable {
 
 
     override def findConstructor[T](clazz: Class[_]): Option[java.lang.reflect.Constructor[T]] = {
@@ -37,7 +37,7 @@ class ImmutablePersistenceContext private(override val traffic: PacketTraffic,
 
     private var network: Network = _
 
-    def initNetwork(network: Network): Unit = {
+    override def initNetwork(network: Network): Unit = {
         if (this.network != null)
             throw new IllegalStateException("Network already initialized !")
         this.network = network

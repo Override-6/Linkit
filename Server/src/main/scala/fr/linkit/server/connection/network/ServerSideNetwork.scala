@@ -14,6 +14,7 @@ package fr.linkit.server.connection.network
 
 import fr.linkit.api.connection.cache.SharedCacheManager
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
+import fr.linkit.api.connection.network.NetworkInitialisable
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
 import fr.linkit.engine.connection.cache.SharedCacheOriginManager
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
@@ -22,8 +23,8 @@ import fr.linkit.engine.connection.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.connection.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.server.connection.ServerConnection
 
-class ServerSideNetwork(serverConnection: ServerConnection)(implicit traffic: PacketTraffic)
-        extends AbstractNetwork(serverConnection, traffic.defaultPersistenceConfig.getReferenceStore) {
+class ServerSideNetwork(serverConnection: ServerConnection, privilegedInitialisables: Array[NetworkInitialisable])(implicit traffic: PacketTraffic)
+        extends AbstractNetwork(serverConnection, traffic.defaultPersistenceConfig.getReferenceStore, privilegedInitialisables) {
 
     trunk.addCacheManager(globalCache)
 

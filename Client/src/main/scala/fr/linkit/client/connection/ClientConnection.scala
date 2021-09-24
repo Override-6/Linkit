@@ -49,7 +49,7 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     override val traffic                 : PacketTraffic     = session.traffic
     override val boundIdentifier         : String            = serverIdentifier
     override val defaultPersistenceConfig: PersistenceConfig = traffic.defaultPersistenceConfig
-    private  val sideNetwork             : ClientSideNetwork = new ClientSideNetwork(this, defaultPersistenceConfig.getReferenceStore)
+    private  val sideNetwork             : ClientSideNetwork = new ClientSideNetwork(this, defaultPersistenceConfig.getReferenceStore, Array(session.traffic.context))
     override val network                 : Network           = sideNetwork
     override val trafficPath             : Array[Int]        = traffic.trafficPath
     @volatile private var alive                              = true
@@ -126,7 +126,6 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
             socket.write(welcomePacket) //The welcome packet will let the server continue its socket handling
             systemChannel.nextPacket[BooleanPacket]
             sideNetwork.connectionEngine.update()
-            translator.initNetwork(network)
         }
     }
 

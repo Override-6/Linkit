@@ -153,7 +153,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
 
     private def postInit(): Unit = {
-        val refStore = network.refStore
+        val refStore = network.rootRefStore
         val shift    = family.hashCode
         refStore putAllNotContained Map(
             shift + 1 -> channel,

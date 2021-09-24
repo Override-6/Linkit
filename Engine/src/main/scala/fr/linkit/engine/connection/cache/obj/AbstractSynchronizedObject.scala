@@ -24,14 +24,14 @@ import fr.linkit.engine.connection.cache.obj.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    @transient final protected var puppeteer           : Puppeteer[A]            = _
-    @transient final protected var behavior            : ObjectBehavior[A]       = _
-    @transient final protected var choreographer       : InvocationChoreographer = _
-    @transient final protected var store               : ObjectBehaviorStore     = _
+    @transient final protected var puppeteer        : Puppeteer[A]            = _
+    @transient final protected var behavior         : ObjectBehavior[A]       = _
+    @transient final protected var choreographer    : InvocationChoreographer = _
+    @transient final protected var store            : ObjectBehaviorStore     = _
     //fast cache for handleCall
-    @transient private         var currentIdentifier   : String                  = _
-    @transient private         var ownerID: String = _
-    @transient protected       var nodeInfo: SyncNodeInfo            = _
+    @transient private         var currentIdentifier: String                  = _
+    @transient private         var ownerID          : String                  = _
+    @transient protected       var nodeInfo         : SyncNodeInfo            = _
 
     def wrappedClass: Class[_]
 
@@ -53,7 +53,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
     override def detachedClone: A = {
-        SyncObjectInstantiationHelper.detachedWrapperClone(this, puppeteer.cache.network.refStore)._1
+        SyncObjectInstantiationHelper.detachedWrapperClone(this, puppeteer.cache.network.rootRefStore)._1
     }
 
     override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
@@ -86,8 +86,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     }
 
     protected def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
-        //if (!isInitialized) //May be here only during tests
-        //    return superCall(args).asInstanceOf[R]
+        if (!isInitialized)
+            return superCall(args).asInstanceOf[R]
         val methodBhv        = behavior.getMethodBehavior(id).get
         val synchronizedArgs = synchronizedParams(methodBhv, args)
         //println(s"Method name = ${methodBehavior.desc.javaMethod.getName}")

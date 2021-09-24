@@ -38,10 +38,10 @@ public enum BasicInvocationRule implements RemoteInvocationRule {
                 .setDesiredOwnerEngineReturn();
     }),
     /**
-     * The invocation will be performed by every remote machines, excluding the current machine.
+     * The invocation will be performed on every remote machines, excluding the current machine.
      * The return value of the invocation will come from the machine that owns the original object.
-     * If the current machine owns the object, the invocation will still be performed, and the return value of the method
-     * will be taken from the local invocation result
+     * However, If the current machine owns the object, the invocation will still be performed,
+     * and the return value of the method will be taken from the local invocation result
      */
     NOT_CURRENT(((agreement) -> {
         agreement.discardCurrent()

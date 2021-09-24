@@ -35,6 +35,12 @@ trait Engine extends Updatable {
 
     def toString: String
 
+    def isRootReferenceSet(refId: Int): Boolean
+
+    def findRootReferenceType(refId: Int): Option[Class[_]]
+
+    def findRootReference[T](refId: Int): Option[T]
+
     /*
     * connection.accessor
     * */

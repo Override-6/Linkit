@@ -46,8 +46,6 @@ class DefaultPacketTranslator(app: ApplicationContext) extends PacketTranslator 
 
     override def getSerializer: PacketSerializer = serializer
 
-    override def initNetwork(network: Network): Unit = serializer.initNetwork(network)
-
     override val signature: Array[Byte] = serializer.signature
 
 }

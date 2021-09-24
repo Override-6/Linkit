@@ -19,9 +19,7 @@ import fr.linkit.api.connection.cache.obj.behavior.member.field.FieldModifier
 import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.ParameterModifier
 import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
 import fr.linkit.api.connection.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
-import fr.linkit.api.connection.network.{Engine, Network}
-import fr.linkit.api.connection.packet.Packet
-import fr.linkit.api.connection.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.connection.network.{Engine, Network, NetworkInitialisable}
 import fr.linkit.api.connection.packet.persistence.context.MutableReferencedObjectStore
 import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
@@ -29,23 +27,24 @@ import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder, ObjectBehaviorStoreBuilder}
 import fr.linkit.engine.connection.cache.obj.invokation.ExecutorEngine
 import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
-import fr.linkit.engine.connection.packet.UnexpectedPacketException
+import fr.linkit.engine.connection.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 import java.sql.Timestamp
 
 abstract class AbstractNetwork(override val connection: ConnectionContext,
-                               override val refStore: MutableReferencedObjectStore) extends Network { network =>
+                               override val rootRefStore: MutableReferencedObjectStore,
+                               privilegedInitialisables: Array[NetworkInitialisable]) extends Network { network =>
 
-    refStore += (10, this)
+    rootRefStore += (10, this)
+    privilegedInitialisables.foreach(_.initNetwork(this))
     protected val networkStore    : PacketInjectableStore = connection.createStore(0)
-    private   val cacheManagerChannel                     = networkStore.getInjectable(1, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
     private   val currentIdentifier                       = connection.currentIdentifier
     override  val globalCache     : SharedCacheManager    = createGlobalCache
     protected val trunk           : NetworkDataTrunk      = retrieveDataTrunk(getEngineStoreBehaviors)
     override  val connectionEngine: Engine                = trunk.newEngine(currentIdentifier)
-    postInit()
+    runContract()
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
         throw new NoSuchElementException("Server Engine not found.")
@@ -62,6 +61,8 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
     override def isConnected(identifier: String): Boolean = findEngine(identifier).isDefined
 
     override def findCacheManager(family: String): Option[SharedCacheManager] = {
+        if (family == GlobalCacheID)
+            return Some(globalCache)
         trunk.findCache(family)
     }
 
@@ -88,17 +89,15 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
 
     protected def createGlobalCache: SharedCacheManager
 
-    protected def handleRequest(bundle: RequestPacketBundle): Unit = {
+    /*protected def handleRequest(bundle: RequestPacketBundle): Unit = {
         bundle.packet.nextPacket[Packet] match {
-            case other =>
-                throw UnexpectedPacketException(s"Unknown request '$other'.")
+            case other => throw UnexpectedPacketException(s"Unknown request '$other'.")
         }
-    }
+    }*/
 
-    private def postInit(): Unit = {
+    private def runContract(): Unit = {
         ExecutorEngine.setCurrentEngine(connectionEngine)
-        connection.translator.initNetwork(this)
-        cacheManagerChannel.addRequestListener(handleRequest)
+        //cacheManagerChannel.addRequestListener(handleRequest)
     }
 
     private def transformToDistant(cache: SharedCacheOriginManager): SharedCacheDistantManager = {

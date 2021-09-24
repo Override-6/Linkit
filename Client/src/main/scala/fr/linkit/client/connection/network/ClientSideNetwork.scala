@@ -14,6 +14,7 @@ package fr.linkit.client.connection.network
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.{CacheSearchBehavior, SharedCacheManager}
+import fr.linkit.api.connection.network.NetworkInitialisable
 import fr.linkit.api.connection.packet.persistence.context.MutableReferencedObjectStore
 import fr.linkit.client.connection.ClientConnection
 import fr.linkit.engine.connection.cache.SharedCacheDistantManager
@@ -21,14 +22,17 @@ import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.connection.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.connection.network.{AbstractNetwork, NetworkDataTrunk}
 
-class ClientSideNetwork(connection: ClientConnection, refStore: MutableReferencedObjectStore) extends AbstractNetwork(connection, refStore) {
+class ClientSideNetwork(connection: ClientConnection,
+                        refStore: MutableReferencedObjectStore,
+                        privilegedInitialisables: Array[NetworkInitialisable]) extends AbstractNetwork(connection, refStore, privilegedInitialisables) {
 
     override protected def retrieveDataTrunk(store: ObjectBehaviorStore): NetworkDataTrunk = {
-        globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](store, this), CacheSearchBehavior.GET_OR_CRASH)
+        val trunk = globalCache.attachToCache(0, DefaultSynchronizedObjectCenter[NetworkDataTrunk](store, this), CacheSearchBehavior.GET_OR_CRASH)
                 .findObject(0)
                 .getOrElse {
                     throw new NoSuchElementException("Engine Store not found.")
                 }
+        trunk
     }
 
     override protected def createGlobalCache: SharedCacheManager = {

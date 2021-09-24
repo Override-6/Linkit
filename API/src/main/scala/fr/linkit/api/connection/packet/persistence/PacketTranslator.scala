@@ -23,8 +23,6 @@ trait PacketTranslator {
 
     def translate(traffic: PacketTraffic, buff: ByteBuffer): PacketDeserializationResult
 
-    def initNetwork(network: Network): Unit
-
     def getSerializer: PacketSerializer
 
     val signature: Array[Byte]
