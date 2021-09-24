@@ -21,10 +21,11 @@ import fr.linkit.api.connection.packet.persistence.context.TypePersistence
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.connection.packet.persistence.UnexpectedObjectException
+import fr.linkit.engine.connection.packet.persistence.context.structure.SyncObjectStructure
 
 class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersistence: TypePersistence[T], network: Network) extends TypePersistence[T] {
 
-    override val structure: ObjectStructure = objectPersistence.structure
+    override val structure: ObjectStructure = new SyncObjectStructure(objectPersistence.structure)
 
     override def initInstance(syncObj: T, args: Array[Any]): Unit = {
         objectPersistence.initInstance(syncObj, args)
@@ -47,7 +48,7 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
     }
 
     override def toArray(t: T): Array[Any] = {
-        objectPersistence.toArray(t) ++ t.getNodeInfo
+        (objectPersistence.toArray(t): Array[Any]) :+ (t.getNodeInfo: Any)
     }
 
     private def findCache(info: SyncNodeInfo): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {

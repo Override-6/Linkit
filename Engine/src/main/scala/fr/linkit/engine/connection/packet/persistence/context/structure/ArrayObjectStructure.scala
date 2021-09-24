@@ -19,12 +19,14 @@ abstract class ArrayObjectStructure() extends ObjectStructure {
 
     val types: Array[Class[_]]
 
-    override def isAssignable(fields: Array[Class[_]]): Boolean = {
+    override def isAssignable(fields: Array[Class[_]], from: Int, to: Int): Boolean = {
         val structureFields = types
-        if (fields.length != structureFields.length)
+        if (fields.length != to)
             return false
-        var i = 0
-        while (i < structureFields.length) {
+        if (to > structureFields.length)
+            throw new ArrayIndexOutOfBoundsException(s"to > array length. ($to > ${fields.length})")
+        var i = from
+        while (i < to) {
             if (!structureFields(i).isAssignableFrom(fields(i)))
                 return false
             i += 1
@@ -32,11 +34,12 @@ abstract class ArrayObjectStructure() extends ObjectStructure {
         true
     }
 
-    override def isAssignable(fieldsValues: Array[Any]): Boolean = {
-        if (fieldsValues.length != types.length)
-            return false
-        var i = 0
-        while (i < types.length) {
+    override def isAssignable(fieldsValues: Array[Any], from: Int, to: Int): Boolean = {
+        val len = fieldsValues.length
+        var i = from
+        if (to > len)
+            throw new ArrayIndexOutOfBoundsException(s"to > array length. ($to > ${len})")
+        while (i < to) {
             val value = fieldsValues(i)
             if (value != null) {
                 val tpe = types(i)

@@ -52,8 +52,7 @@ class TypeProfileBuilder[T <: AnyRef](implicit tag: ClassTag[T]) {
 
     def build(store: TypeProfileStore): TypeProfile[T] = {
         val clazz = tag.runtimeClass
-        val parentProfile = if (clazz eq classOf[Object]) null else store.getProfile[T](clazz.getSuperclass)
-        new DefaultTypeProfile[T](clazz, parentProfile, persistors.toArray)
+        new DefaultTypeProfile[T](clazz, store, persistors.toArray)
     }
 
 }

@@ -12,13 +12,15 @@
 
 package fr.linkit.engine.connection.packet.persistence.context.profile
 
-import fr.linkit.api.connection.packet.persistence.context.{TypePersistence, TypeProfile}
-import fr.linkit.engine.connection.packet.persistence.context.structure.ClassObjectStructure
-import fr.linkit.engine.local.utils.ClassMap
+import fr.linkit.api.connection.packet.persistence.context.{TypePersistence, TypeProfile, TypeProfileStore}
 
 class DefaultTypeProfile[T <: AnyRef](override val typeClass: Class[_],
-                                      override val declaredParent: TypeProfile[_ >: T],
+                                      store: TypeProfileStore,
                                       private[context] val persists: Array[TypePersistence[T]]) extends TypeProfile[T] {
+
+    private lazy val declaredParent: TypeProfile[_ >: T] = {
+        if (typeClass eq classOf[Object]) null else store.getProfile[T](typeClass.getSuperclass)
+    }
 
     override def getPersistences: Array[TypePersistence[T]] = persists
 

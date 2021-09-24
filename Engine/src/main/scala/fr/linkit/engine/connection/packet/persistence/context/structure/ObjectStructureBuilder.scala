@@ -21,7 +21,7 @@ class ObjectStructureBuilder {
     private val types = ListBuffer.empty[Class[_]]
 
     def >(cl: Class[_]): this.type = {
-        types.insert(0, cl)
+        types += cl
         this
     }
 

@@ -12,6 +12,9 @@
 
 package fr.linkit.engine.connection.packet.persistence.context
 
+import java.lang.reflect.Modifier
+import java.net.URL
+
 import fr.linkit.api.connection.packet.persistence.context._
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
 import fr.linkit.api.connection.packet.traffic.PacketTraffic
@@ -22,8 +25,6 @@ import fr.linkit.engine.connection.packet.persistence.context.structure.ArrayObj
 import fr.linkit.engine.local.script.ScriptExecutor
 import fr.linkit.engine.local.utils.{ClassMap, ScalaUtils}
 
-import java.lang.reflect.Modifier
-import java.net.URL
 import scala.reflect.{ClassTag, classTag}
 
 class PersistenceConfigBuilder {
@@ -61,10 +62,10 @@ class PersistenceConfigBuilder {
         this
     }
 
-    def setTConverter[A <: AnyRef: ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A): this.type = {
-        val clazz = classTag[B].runtimeClass
+    def setTConverter[A <: AnyRef : ClassTag, B: ClassTag](fTo: A => B)(fFrom: B => A): this.type = {
+        val clazz     = classTag[B].runtimeClass
         val persistor = new TypePersistence[A] {
-            private val fields = ScalaUtils.retrieveAllFields(clazz).filter(f => Modifier.isTransient(f.getModifiers))
+            private  val fields                     = ScalaUtils.retrieveAllFields(clazz).filter(f => Modifier.isTransient(f.getModifiers))
             override val structure: ObjectStructure = new ArrayObjectStructure {
                 override val types: Array[Class[_]] = Array(clazz)
             }
@@ -79,7 +80,7 @@ class PersistenceConfigBuilder {
 
             override def toArray(t: A): Array[Any] = Array(fTo(t))
         }
-        persistors put (classTag[A].runtimeClass, persistor)
+        persistors put(classTag[A].runtimeClass, persistor)
         this
     }
 
@@ -103,36 +104,35 @@ class PersistenceConfigBuilder {
 
     def build(context: PersistenceContext): PersistenceConfig = {
         transfer(fromScript(getClass.getResource("/default_scripts/persistence_minimal.sc"), context.traffic))
-        val profiles = collectProfiles()
-        new SimplePersistenceConfig(context, profiles, referenceStore, unsafeUse, referenceAllObjects, wide)
+        var config: PersistenceConfig = null
+        val store                     = new TypeProfileStore {
+            override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
+                if (config eq null)
+                    throw new IllegalStateException("config not initialized")
+                config.getProfile[T](clazz)
+            }
+        }
+        val profiles                  = collectProfiles(store)
+        config = new SimplePersistenceConfig(context, profiles, referenceStore, unsafeUse, referenceAllObjects, wide)
+        config
     }
 
-    private def collectProfiles(): ClassMap[TypeProfile[_]] = {
+    private def collectProfiles(store: TypeProfileStore): ClassMap[TypeProfile[_]] = {
         val map = profiles.customProfiles
 
         def cast[X](a: Any): X = a.asInstanceOf[X]
 
-        //noinspection TypeAnnotation
-        val tempStore = new TypeProfileStore {
-            val cache = new ClassMap[TypeProfile[_]]()
-
-            override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-                cache(clazz).asInstanceOf[TypeProfile[T]]
-            }
-        }
-
         persistors.foreachEntry((clazz, persistence) => {
-            map.getOrElseUpdate(clazz, new TypeProfileBuilder[AnyRef]())
-                    .addPersistence(cast(persistence))
+            map.getOrElseUpdate(clazz, new TypeProfileBuilder()(ClassTag(clazz)))
+                .addPersistence(cast(persistence))
         })
         val finalMap = map.toSeq
-                .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
-                .map(pair => {
-                    val clazz   = pair._1
-                    val profile = pair._2.build(tempStore)
-                    tempStore.cache.put(clazz, profile)
-                    (clazz, profile)
-                }).toMap
+            .sortBy(pair => getClassHierarchicalDepth(pair._1)) //sorting from Object class to most "far away from Object" classes
+            .map(pair => {
+                val clazz   = pair._1
+                val profile = pair._2.build(store)
+                (clazz, profile)
+            }).toMap
         new ClassMap[TypeProfile[_]](finalMap)
     }
 
@@ -157,8 +157,8 @@ object PersistenceConfigBuilder {
     def fromScript(url: URL, traffic: PacketTraffic): PersistenceConfigBuilder = {
         val application = traffic.application
         val script      = ScriptExecutor
-                .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
-                .newScript(application, traffic)
+            .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)
+            .newScript(application, traffic)
         script.execute()
         script
     }

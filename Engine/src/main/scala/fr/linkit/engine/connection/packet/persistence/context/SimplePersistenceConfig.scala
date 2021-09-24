@@ -32,13 +32,18 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
 
     override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
         var profile = defaultProfiles.get(clazz).orNull
-        if (profile == null) {
-            profile = customProfiles.getOrElseUpdate(clazz, newDefaultProfile[T](clazz))
-            if (isSyncClass(clazz)) {
-                @inline
-                def cast[X](a: Any) = a.asInstanceOf[X]
-                profile = newSynchronizedObjectDefaultProfile(clazz, cast(profile))
-            }
+        val defaultProfileNull = profile == null
+        if (defaultProfileNull) {
+            profile = customProfiles.getOrElse(clazz, newDefaultProfile[T](clazz))
+        }
+        if (isSyncClass(clazz)) {
+            @inline
+            def cast[X](a: Any) = a.asInstanceOf[X]
+
+            profile = newSynchronizedObjectDefaultProfile(clazz, cast(profile))
+        }
+        if (defaultProfileNull) {
+            defaultProfiles.put(clazz, profile)
         }
         profile.asInstanceOf[TypeProfile[T]]
     }
@@ -59,31 +64,32 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
     private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: TypeProfile[T]): DefaultTypeProfile[T] = {
         val network                                 = context.getNetwork
         val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
-        new DefaultTypeProfile[T](clazz, profile, persistences)
+        new DefaultTypeProfile[T](clazz, this, persistences)
     }
 
     protected def newDefaultProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-        val constructor                     = context.findConstructor[T](clazz)
+        val nonSyncClass                    = if (isSyncClass(clazz)) clazz.getSuperclass else clazz
+        val constructor                     = context.findConstructor[T](nonSyncClass)
         val persistence: TypePersistence[T] = {
-            if (classOf[Deconstructive].isAssignableFrom(clazz)) {
-                constructor.fold(new DeconstructiveTypePersistence[T with Deconstructive](clazz)) {
-                    ctr => new DeconstructiveTypePersistence[T with Deconstructive](clazz, ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructive]])
+            if (classOf[Deconstructive].isAssignableFrom(nonSyncClass)) {
+                constructor.fold(new DeconstructiveTypePersistence[T with Deconstructive](nonSyncClass)) {
+                    ctr => new DeconstructiveTypePersistence[T with Deconstructive](nonSyncClass, ctr.asInstanceOf[java.lang.reflect.Constructor[T with Deconstructive]])
                 }
             }.asInstanceOf[TypePersistence[T]] else {
-                val deconstructor = context.findDeconstructor[T](clazz)
-                constructor.fold(getSafestTypeProfileOfAnyClass[T](clazz, deconstructor)) { ctr =>
+                val deconstructor = context.findDeconstructor[T](nonSyncClass)
+                constructor.fold(getSafestTypeProfileOfAnyClass[T](nonSyncClass, deconstructor)) { ctr =>
                     if (deconstructor.isEmpty) {
                         if (!unsafeUse)
-                            throw new NoSuchElementException(s"Could not find constructor: A Deconstructor must be set for the class '${clazz.getName}' in order to create a safe TypePersistence.")
-                        new UnsafeTypePersistence[T](clazz)
+                            throw new NoSuchElementException(s"Could not find constructor: A Deconstructor must be set for the class '${nonSyncClass.getName}' in order to create a safe TypePersistence.")
+                        new UnsafeTypePersistence[T](nonSyncClass)
                     } else {
-                        new ConstructorTypePersistence[T](clazz, ctr, deconstructor.get)
+                        new ConstructorTypePersistence[T](nonSyncClass, ctr, deconstructor.get)
                     }
                 }
             }
         }
         //No (null) parent: No declared profile has been found for the class, and declared profiles automatically handles implementations.
-        new DefaultTypeProfile[T](clazz, null, Array(persistence))
+        new DefaultTypeProfile[T](nonSyncClass, null, Array(persistence))
     }
 
     @inline

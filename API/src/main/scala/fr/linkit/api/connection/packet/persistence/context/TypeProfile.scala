@@ -14,7 +14,6 @@ package fr.linkit.api.connection.packet.persistence.context
 
 trait TypeProfile[T <: AnyRef] {
 
-    val declaredParent: TypeProfile[_ >: T]
 
     val typeClass: Class[_]
 

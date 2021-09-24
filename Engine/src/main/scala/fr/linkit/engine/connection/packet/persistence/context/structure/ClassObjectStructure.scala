@@ -22,7 +22,6 @@ class ClassObjectStructure private(objectClass: Class[_]) extends ArrayObjectStr
     val fields: Array[Field] = ScalaUtils.retrieveAllFields(objectClass).filterNot(f => Modifier.isTransient(f.getModifiers))
     override val types: Array[Class[_]] = fields.map(_.getType)
 
-
 }
 object ClassObjectStructure {
 

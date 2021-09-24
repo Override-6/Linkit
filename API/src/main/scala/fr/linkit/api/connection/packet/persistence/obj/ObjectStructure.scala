@@ -14,9 +14,13 @@ package fr.linkit.api.connection.packet.persistence.obj
 
 trait ObjectStructure {
 
-    def isAssignable(args: Array[Class[_]]): Boolean
+    def isAssignable(args: Array[Class[_]], from: Int, to: Int): Boolean
 
-    def isAssignable(args: Array[Any]): Boolean
+    def isAssignable(args: Array[Class[_]]): Boolean = isAssignable(args, 0, args.length)
+
+    def isAssignable(args: Array[Any]): Boolean = isAssignable(args, 0, args.length)
+
+    def isAssignable(args: Array[Any], from: Int, to: Int): Boolean
 
 
 }
