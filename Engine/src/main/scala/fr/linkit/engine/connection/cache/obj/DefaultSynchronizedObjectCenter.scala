@@ -87,12 +87,13 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
     }
 
     private def createNewTree(id: Int, rootObjectOwner: String, creator: SyncInstanceGetter[A], behaviorTree: ObjectBehaviorStore = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
-        val puppeteerInfo = SyncNodeInfo(family, cacheID, rootObjectOwner, Array(id))
+        val nodeInfo = SyncNodeInfo(family, cacheID, rootObjectOwner, Array(id))
         val rootBehavior  = behaviorTree.getFromClass[A](creator.tpeClass)
-        val root          = DefaultInstantiator.newWrapper[A](creator, behaviorTree, puppeteerInfo)
+        val root          = DefaultInstantiator.newWrapper[A](creator, behaviorTree, nodeInfo)
         val chip          = ObjectChip[A](rootBehavior, network, root)
         val rootNode      = new RootWrapperNode[A](root.getPuppeteer, chip, _, currentIdentifier, id)
         val tree          = new DefaultSynchronizedObjectTree[A](currentIdentifier, id, DefaultInstantiator, this, behaviorTree)(rootNode)
+        network.rootRefStore += (nodeInfo.hashCode(), tree.getRoot.synchronizedObject)
         treeCenter.addTree(id, tree)
 /*
         subWrappers.toSeq

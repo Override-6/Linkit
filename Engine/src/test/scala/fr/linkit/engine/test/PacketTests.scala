@@ -51,6 +51,7 @@ class PacketTests {
     }
 
     @RepeatedTest(50)
+    @Test
     def perfTests(): Unit = {
         val f      = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache", "behavior" -> "GET_OR_OPEN"), RequestPacket(1, Array(IntPacket(3))))
         val obj    = Array[AnyRef](f, f, f)
@@ -89,6 +90,12 @@ class PacketTests {
 }
 
 object PacketTests {
+
+    def main(args: Array[String]): Unit = {
+        val t = new PacketTests()
+        for (_ <- 0 to 50)
+            t.perfTests()
+    }
 
     private val serializer = new DefaultPacketSerializer(null)
 

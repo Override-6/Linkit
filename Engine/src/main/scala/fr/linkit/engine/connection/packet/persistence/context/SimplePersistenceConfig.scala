@@ -35,15 +35,13 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
         val defaultProfileNull = profile == null
         if (defaultProfileNull) {
             profile = customProfiles.getOrElse(clazz, newDefaultProfile[T](clazz))
+            defaultProfiles.put(clazz, profile)
         }
         if (isSyncClass(clazz)) {
             @inline
             def cast[X](a: Any) = a.asInstanceOf[X]
 
             profile = newSynchronizedObjectDefaultProfile(clazz, cast(profile))
-        }
-        if (defaultProfileNull) {
-            defaultProfiles.put(clazz, profile)
         }
         profile.asInstanceOf[TypeProfile[T]]
     }
@@ -63,7 +61,7 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
 
     private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: TypeProfile[T]): DefaultTypeProfile[T] = {
         val network                                 = context.getNetwork
-        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
+        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](referenceStore, persist, network))
         new DefaultTypeProfile[T](clazz, this, persistences)
     }
 
@@ -88,8 +86,7 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
                 }
             }
         }
-        //No (null) parent: No declared profile has been found for the class, and declared profiles automatically handles implementations.
-        new DefaultTypeProfile[T](nonSyncClass, null, Array(persistence))
+        new DefaultTypeProfile[T](nonSyncClass, this, Array(persistence))
     }
 
     @inline

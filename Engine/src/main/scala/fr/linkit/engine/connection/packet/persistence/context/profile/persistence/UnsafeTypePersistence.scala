@@ -25,7 +25,7 @@ class UnsafeTypePersistence[T](clazz: Class[_]) extends TypePersistence[T]() {
 
     override def initInstance(instance: T, args: Array[Any]): Unit = {
         val fields = this.fields
-        for (i <- args.indices) {
+        for (i <- fields.indices) {
             ScalaUtils.setValue(instance, fields(i), args(i))
         }
     }

@@ -82,6 +82,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         val chip                 = ObjectChip[B](behavior, cache.network, syncObject)
         val puppeteer            = syncObject.getPuppeteer
         val node: WrapperNode[B] = new WrapperNode[B](puppeteer, chip, this, currentIdentifier, id, parent)
+        val nodeInfo = puppeteer.nodeInfo
+        network.rootRefStore += (nodeInfo.hashCode(), syncObject)
         parent.addChild(node)
         node
     }

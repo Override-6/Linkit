@@ -14,12 +14,13 @@ package fr.linkit.engine.connection.packet.persistence.serializor.write
 
 import fr.linkit.api.connection.packet.persistence.context.TypeProfile
 import fr.linkit.api.connection.packet.persistence.obj.InstanceObject
+import fr.linkit.engine.local.utils.JavaUtils
 
 class PacketObject(override val value: AnyRef,
                    val decomposed: Array[Any],
                    override val profile: TypeProfile[_]) extends InstanceObject[AnyRef] {
 
-    override def equals(obj: Any): Boolean = obj == value
+    override def equals(obj: Any): Boolean = JavaUtils.sameInstance(obj, value)
 
     override def hashCode(): Int = value.hashCode()
 

@@ -10,12 +10,13 @@ class PoolChunk[@specialized() T](val tag: Byte,
                                   maxLength: Int)(implicit cTag: ClassTag[T]) extends Freezable {
 
     private var buff = new Array[T](if (maxLength < BuffSteps) maxLength else BuffSteps)
-    private var pos     = 0
+    private var pos  = 0
 
     private var frozen = false
 
     @inline
     override def isFrozen: Boolean = frozen || freezable.isFrozen
+
     override def freeze(): Unit = {
         frozen = true
         pos = buff.length
@@ -50,9 +51,8 @@ class PoolChunk[@specialized() T](val tag: Byte,
 
     def indexOf(t: Any): Int = {
         var i = 0
-        while (i < pos && i <= Char.MaxValue) {
-            val registered = buff(i)
-            if (registered != null && (registered == t))
+        while (i < pos) {
+            if (buff(i) == t)
                 return i
             i += 1
         }
@@ -64,5 +64,6 @@ class PoolChunk[@specialized() T](val tag: Byte,
 }
 
 object PoolChunk {
+
     val BuffSteps = 200
 }

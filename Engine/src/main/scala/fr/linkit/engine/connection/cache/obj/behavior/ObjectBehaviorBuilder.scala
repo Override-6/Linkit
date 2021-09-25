@@ -100,10 +100,13 @@ abstract class ObjectBehaviorBuilder[T <: AnyRef] private(val classDesc: SyncObj
     private def extractParams(control: MethodControl, desc: MethodDescription): Array[ParameterBehavior[AnyRef]] = {
         val javaMethod = desc.method
         val defaults   = AnnotationBasedMemberBehaviorFactory.getSynchronizedParams(javaMethod)
-        control.paramMap.foreachEntry((argName, argControl) => {
+        control.paramNameMap.foreachEntry((argName, argControl) => {
             val i = defaults.indexWhere(_.getName == argName)
             if (i > 0) defaults(i) = new MethodParameterBehavior[AnyRef](defaults(i).param, argControl.isActivated, argControl)
             else throw new IllegalArgumentException(s"Unknown parameter '$argName' for method ${javaMethod.getName}")
+        })
+        control.paramPosMap.foreachEntry((argIdx, argControl) => {
+            defaults(argIdx) = new MethodParameterBehavior[AnyRef](defaults(argIdx).param, argControl.isActivated, argControl)
         })
         defaults
     }
@@ -144,10 +147,15 @@ object ObjectBehaviorBuilder {
                         val innerInvocations: Boolean = false,
                         @Nullable val procrastinator: Procrastinator = null) {
 
-        private[ObjectBehaviorBuilder] val paramMap = mutable.HashMap.empty[String, ParameterControl[AnyRef]]
+        private[ObjectBehaviorBuilder] val paramNameMap = mutable.HashMap.empty[String, ParameterControl[AnyRef]]
+        private[ObjectBehaviorBuilder] val paramPosMap = mutable.HashMap.empty[Int, ParameterControl[AnyRef]]
 
         def arg[P](argName: String)(configure: ParameterControl[P]): Unit = {
-            paramMap.put(argName, configure.asInstanceOf[ParameterControl[AnyRef]])
+            paramNameMap.put(argName, configure.asInstanceOf[ParameterControl[AnyRef]])
+        }
+
+        def arg[P](index: Int)(configure: ParameterControl[P]): Unit = {
+            paramPosMap.put(index, configure.asInstanceOf[ParameterControl[AnyRef]])
         }
     }
 

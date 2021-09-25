@@ -100,7 +100,8 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
             override val methodBehavior : InternalMethodBehavior = methodBhv
 
             override def callSuper(): R = {
-                performSuperCall[R](!methodBhv.innerInvocations, superCall(modifiedParamsForLocal(methodBhv, synchronizedArgs)))
+                val params = modifiedParamsForLocal(methodBhv, synchronizedArgs)
+                performSuperCall[R](!methodBhv.innerInvocations, superCall(params))
             }
         }
 

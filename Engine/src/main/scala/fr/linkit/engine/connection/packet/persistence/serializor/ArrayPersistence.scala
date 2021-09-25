@@ -38,6 +38,7 @@ object ArrayPersistence {
         @inline
         def xs[X] = array.asInstanceOf[Array[X]]
 
+        val pos      = buff.position()
         val itemSize = (tpe: @switch) match {
             case Int     => buff.asIntBuffer().put(xs, from, to); Integer.BYTES
             case Double  => buff.asDoubleBuffer().put(xs, from, to); lang.Double.BYTES
@@ -52,11 +53,11 @@ object ArrayPersistence {
                 val lim = Math.min(x.length, to)
                 while (i < lim) {
                     buff.put(if (x(i)) 1: Byte else 0: Byte)
-                    i = i + 1
+                    i += 1
                 }
                 lang.Byte.BYTES
         }
-        buff.position(buff.position() + (to - from) * itemSize)
+        buff.position(pos + (to - from) * itemSize)
     }
 
     def writeArray(writer: PacketWriter, array: AnyRef): Unit = {
@@ -142,7 +143,7 @@ object ArrayPersistence {
                 val a = new Array[Boolean](length)
                 var i = 0
                 while (i < length) {
-                    a(i) = buff.get(i) == 1
+                    a(i) = buff.get() == 1
                     i += 1
                 }
                 (a, 1)
@@ -151,7 +152,7 @@ object ArrayPersistence {
                 buff.asCharBuffer().get(a)
                 (a, Character.BYTES)
         }
-        buff.position(pos + array.length * itemSize)
+        buff.position(pos + length * itemSize)
         array
     }
 

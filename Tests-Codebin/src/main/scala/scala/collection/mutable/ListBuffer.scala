@@ -38,8 +38,8 @@ import scala.runtime.Statics.releaseFence
  */
 @SerialVersionUID(-8428291952499836345L)
 class ListBuffer[A]
-    extends AbstractBuffer[A]
-        with SeqOps[A, ListBuffer, ListBuffer[A]]
+    extends mutable.AbstractBuffer[A]
+        with mutable.SeqOps[A, ListBuffer, ListBuffer[A]]
         with StrictOptimizedSeqOps[A, ListBuffer, ListBuffer[A]]
         with ReusableBuilder[A, immutable.List[A]]
         with IterableFactoryDefaults[A, ListBuffer]

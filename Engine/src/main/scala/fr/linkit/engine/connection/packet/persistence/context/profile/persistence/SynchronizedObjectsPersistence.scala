@@ -15,35 +15,32 @@ package fr.linkit.engine.connection.packet.persistence.context.profile.persisten
 import fr.linkit.api.connection.cache.NoSuchCacheException
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.tree.NoSuchSyncNodeException
 import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.packet.persistence.context.TypePersistence
+import fr.linkit.api.connection.packet.persistence.context.{MutableReferencedObjectStore, TypePersistence}
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
-import fr.linkit.engine.connection.cache.obj.tree.NoSuchObjectTreeException
-import fr.linkit.engine.connection.packet.persistence.UnexpectedObjectException
 import fr.linkit.engine.connection.packet.persistence.context.structure.SyncObjectStructure
 
-class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersistence: TypePersistence[T], network: Network) extends TypePersistence[T] {
+class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](refStore: MutableReferencedObjectStore, objectPersistence: TypePersistence[T], network: Network) extends TypePersistence[T] {
 
     override val structure: ObjectStructure = new SyncObjectStructure(objectPersistence.structure)
 
     override def initInstance(syncObj: T, args: Array[Any]): Unit = {
         objectPersistence.initInstance(syncObj, args)
-        val info   = args.last.asInstanceOf[SyncNodeInfo]
-        val path   = info.nodePath
-        val center = findCache(info)
+        val info = args.last.asInstanceOf[SyncNodeInfo]
+        val path = info.nodePath
+        refStore += (info.hashCode(), syncObj)
+        val center  = findCache(info)
                 .getOrElse {
                     throwNoSuchCacheException(info, Some(syncObj.getSuperClass))
                 }
-        val treeOpt   = center.treeCenter.findTreeInternal(path.head)
+        val treeOpt = center.treeCenter.findTreeInternal(path.head)
         if (treeOpt.isEmpty) {
             AppLogger.error(s"No Object Tree found of id ${path.head}")
             return
         }
-        val tree = treeOpt.get
-
+        val tree    = treeOpt.get
         val nodeOpt = tree.findNode(path)
         if (nodeOpt.isEmpty) {
             tree.registerSynchronizedObject(path.dropRight(1), path.last, syncObj, info.owner).synchronizedObject

@@ -35,13 +35,13 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
             throw new IllegalStateException("This pool is already initialized.")
         isInit = true
         var i: Byte = 0
-        println(s"Read chunks : ${buff.array().mkString(", ")}")
+        //println(s"Read chunks : ${buff.array().mkString(", ")}")
         while (i < ChunkCount) {
             val size = sizes(i)
             if (size > 0) {
-                println(s"Read chunk. pos of ${i} = ${buff.position()}")
+                //println(s"Read chunk. pos of ${i} = ${buff.position()}")
                 readNextChunk(size, i)
-                println(s"End Read chunk. end pos of ${i} = ${buff.position()}")
+                //println(s"End Read chunk. end pos of ${i} = ${buff.position()}")
             }
             i = (i + 1).toByte
         }
@@ -68,9 +68,9 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
             val chunk = pool.getChunkFromFlag[Any](flag)
             val array = chunk.array
             while (i < size) {
-                println(s"reading item (type: $flag, pos: ${buff.position()}")
+                //println(s"reading item (type: $flag, pos: ${buff.position()}")
                 val item: T = action
-                println(s"Item read ! (type: $flag, pos: ${buff.position()}")
+                //println(s"Item read ! (type: $flag, pos: ${buff.position()}")
                 array(i) = item
                 i += 1
             }

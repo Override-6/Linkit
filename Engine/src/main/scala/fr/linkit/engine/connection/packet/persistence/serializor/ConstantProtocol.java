@@ -3,7 +3,7 @@ package fr.linkit.engine.connection.packet.persistence.serializor;
 public class ConstantProtocol {
 
     private static byte i = 0;
-    public static final byte Class = i++;
+    public static final byte Class = i++; //0
     public static final byte SyncClass = i++;
     public static final byte ContextRef = i++; //2
 

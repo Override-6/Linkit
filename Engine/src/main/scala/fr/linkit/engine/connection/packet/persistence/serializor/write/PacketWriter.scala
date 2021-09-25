@@ -60,7 +60,7 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
 
     @inline
     private def writeChunks(): Unit = {
-        println(s"Write chunks : ${buff.array().mkString(", ")}")
+        //println(s"Write chunks : ${buff.array().mkString(", ")}")
         val pos     = buff.position()
         val refSize = if (widePacket) 4 else 2
         buff.position(pos + ChunkCount * refSize)
@@ -79,9 +79,9 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
             if (size > 0) {
                 putRef(pos + i * refSize, size)
                 totalSize += size
-                println(s"Write chunk. pos of ${chunk.tag} = ${buff.position()}")
+                //println(s"Write chunk. pos of ${chunk.tag} = ${buff.position()}")
                 writeChunk(i, chunk)
-                println(s"End Write chunk. end pos of ${chunk.tag} = ${buff.position()}")
+                //println(s"End Write chunk. end pos of ${chunk.tag} = ${buff.position()}")
             }
             i = (i + 1).toByte
         }
@@ -103,9 +103,9 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
             var i     = 0
             while (i < size) {
                 val item = items(i)
-                println(s"Writing item $item (pos: ${buff.position()})")
+                //println(s"Writing item $item (pos: ${buff.position()})")
                 action(item)
-                println(s"Item Written! (pos: ${buff.position()})")
+                //println(s"Item Written! (pos: ${buff.position()})")
                 i += 1
             }
         }
@@ -176,7 +176,6 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
 }
 
 object PacketWriter {
-
     private val Sizes2B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Char.MaxValue)
     private val Sizes4B = new Array[Int](ChunkCount).mapInPlace(_ => scala.Int.MaxValue)
 }
