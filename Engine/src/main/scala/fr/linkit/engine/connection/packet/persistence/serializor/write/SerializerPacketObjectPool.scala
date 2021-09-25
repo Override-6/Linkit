@@ -22,8 +22,8 @@ import fr.linkit.engine.local.utils.UnWrapper
 
 class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) extends PacketObjectPool(sizes) {
 
-    protected val chunksPositions                        = new Array[Int](chunks.length)
-    protected val refStore: MutableReferencedObjectStore = config.getReferenceStore
+    protected final val chunksPositions                        = new Array[Int](chunks.length)
+    protected final val refStore: MutableReferencedObjectStore = config.getReferenceStore
 
     def getChunk[T](ref: Any): PoolChunk[T] = {
         //TODO this method can be optimized
@@ -107,7 +107,7 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
 
     private def addObj(ref: AnyRef): Unit = {
         //just do not add null elements (automatically referenced to '0' when written)
-        if ((ref eq null) || globalPos(ref) > 0)
+        if ((ref eq null) || getChunk(ref).indexOf(ref) > 0)
             return
         ref match {
             case _: String                              =>
