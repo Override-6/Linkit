@@ -158,6 +158,8 @@ object PersistenceConfigBuilder {
     }
 
     def fromScript(url: URL, traffic: PacketTraffic): PersistenceConfigBuilder = {
+        if (traffic == null) //TODO remove me, only for tests
+            return new PersistenceConfigBuilder()
         val application = traffic.application
         val script      = ScriptExecutor
             .getOrCreateScript[PersistenceScriptConfig](url, application)(ScriptPersistenceConfigHandler)

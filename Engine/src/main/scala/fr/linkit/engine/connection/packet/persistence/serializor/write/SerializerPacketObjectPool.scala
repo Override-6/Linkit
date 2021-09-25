@@ -22,11 +22,14 @@ import fr.linkit.engine.local.utils.UnWrapper
 
 class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) extends PacketObjectPool(sizes) {
 
-    protected val chunksPositions                          = new Array[Int](chunks.length)
-    protected   val refStore: MutableReferencedObjectStore = config.getReferenceStore
+    protected val chunksPositions                        = new Array[Int](chunks.length)
+    protected val refStore: MutableReferencedObjectStore = config.getReferenceStore
 
     def getChunk[T](ref: Any): PoolChunk[T] = {
+        //TODO this method can be optimized
         ref match {
+            case _: Class[_] => getChunkFromFlag(Class)
+
             case _: Int     => getChunkFromFlag(Int)
             case _: Byte    => getChunkFromFlag(Byte)
             case _: Short   => getChunkFromFlag(Short)
@@ -36,9 +39,9 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
             case _: Boolean => getChunkFromFlag(Boolean)
             case _: Char    => getChunkFromFlag(Char)
 
-            case _: Class[_]               => getChunkFromFlag(Class)
             case _: String                 => getChunkFromFlag(String)
             case _ if ref.getClass.isArray => getChunkFromFlag(Array)
+            case _: Enum[_]                => getChunkFromFlag(Enum)
             case _                         => getChunkFromFlag(Object)
         }
     }
@@ -111,6 +114,9 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
                 getChunkFromFlag(String).add(ref)
             case _: AnyRef if ref.getClass.isArray      =>
                 addArray(ref)
+            case _: Enum[_]                             =>
+                addTypeOfIfAbsent(ref)
+                getChunkFromFlag(Enum).add(ref)
             case _: Class[_]                            =>
                 getChunkFromFlag(Class).add(ref)
             case _ if UnWrapper.isPrimitiveWrapper(ref) =>

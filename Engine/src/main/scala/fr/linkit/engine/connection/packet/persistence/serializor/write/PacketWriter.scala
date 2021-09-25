@@ -60,6 +60,7 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
 
     @inline
     private def writeChunks(): Unit = {
+        println(s"Write chunks : ${buff.array().mkString(", ")}")
         val pos     = buff.position()
         val refSize = if (widePacket) 4 else 2
         buff.position(pos + ChunkCount * refSize)
@@ -78,7 +79,9 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
             if (size > 0) {
                 putRef(pos + i * refSize, size)
                 totalSize += size
+                println(s"Write chunk. pos of ${chunk.tag} = ${buff.position()}")
                 writeChunk(i, chunk)
+                println(s"End Write chunk. end pos of ${chunk.tag} = ${buff.position()}")
             }
             i = (i + 1).toByte
         }
@@ -99,7 +102,10 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
             val items = poolChunk.array.asInstanceOf[Array[T]]
             var i     = 0
             while (i < size) {
-                action(items(i))
+                val item = items(i)
+                println(s"Writing item $item (pos: ${buff.position()})")
+                action(item)
+                println(s"Item Written! (pos: ${buff.position()})")
                 i += 1
             }
         }
@@ -107,6 +113,7 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
         (flag: @switch) match {
             case Class | SyncClass => foreach[Class[_]](cl => buff.putInt(ClassMappings.codeOfClass(cl)))
             case String            => foreach[String](putString)
+            case Enum              => foreach[Enum[_]](putEnum)
             case Array             => foreach[AnyRef](xs => ArrayPersistence.writeArray(this, xs))
             case ContextRef        => foreach[SimpleContextObject](obj => buff.putInt(obj.refId))
             case Object            => foreach[PacketObject](writeObject)
@@ -114,6 +121,11 @@ class PacketWriter(config: PersistenceConfig, val buff: ByteBuffer) extends Free
     }
 
     def getPool: SerializerPacketObjectPool = pool
+
+    private def putEnum(enum: Enum[_]): Unit = {
+        putTypeRef(`enum`.getClass)
+        putString(enum.name())
+    }
 
     private def putString(str: String): Unit = {
         buff.putInt(str.length).put(str.getBytes())

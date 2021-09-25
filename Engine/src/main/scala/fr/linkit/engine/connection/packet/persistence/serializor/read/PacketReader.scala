@@ -35,10 +35,14 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
             throw new IllegalStateException("This pool is already initialized.")
         isInit = true
         var i: Byte = 0
+        println(s"Read chunks : ${buff.array().mkString(", ")}")
         while (i < ChunkCount) {
             val size = sizes(i)
-            if (size > 0)
+            if (size > 0) {
+                println(s"Read chunk. pos of ${i} = ${buff.position()}")
                 readNextChunk(size, i)
+                println(s"End Read chunk. end pos of ${i} = ${buff.position()}")
+            }
             i = (i + 1).toByte
         }
     }
@@ -64,7 +68,10 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
             val chunk = pool.getChunkFromFlag[Any](flag)
             val array = chunk.array
             while (i < size) {
-                array(i) = action
+                println(s"reading item (type: $flag, pos: ${buff.position()}")
+                val item: T = action
+                println(s"Item read ! (type: $flag, pos: ${buff.position()}")
+                array(i) = item
                 i += 1
             }
         }
@@ -72,6 +79,7 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
         (flag: @switch) match {
             case Class      => collectAndUpdateChunk[Class[_]](readClass())
             case SyncClass  => collectAndUpdateChunk[Class[_]](center.getSyncClass(readClass())) //would compile the class if was not
+            case Enum       => collectAndUpdateChunk[Enum[_]](readEnum())
             case String     => collectAndUpdateChunk[String](readString())
             case Array      => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
             case Object     => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
@@ -93,6 +101,12 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
         if (clazz == null)
             throw new ClassNotMappedException(s"No class is bound to code $code")
         clazz
+    }
+
+    private def readEnum[T <: Enum[T]](): Enum[T] = {
+        val tpe  = pool.getType(readNextRef)
+        val name = readString()
+        java.lang.Enum.valueOf[T](tpe.asInstanceOf[Class[T]], name)
     }
 
     private def preReadPool(): (Boolean, Array[Int], DeserializerPacketObjectPool) = {

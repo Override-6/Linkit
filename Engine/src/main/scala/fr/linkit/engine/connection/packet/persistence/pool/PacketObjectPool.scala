@@ -38,6 +38,7 @@ class PacketObjectPool(sizes: Array[Int]) extends Freezable {
         new PoolChunk[Boolean](Boolean, this, sizes(Boolean)),
         new PoolChunk[Char](Char, this, sizes(Char)),
         // Objects
+        new PoolChunk[Enum[_]](Enum, this, sizes(Enum)),
         new PoolChunk[InstanceObject[AnyRef]](Object, this, sizes(Object)),
         // Arrays
         new PoolChunk[Array[_]](Array, this, sizes(Array))

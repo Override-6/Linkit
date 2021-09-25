@@ -49,8 +49,8 @@ object ArrayPersistence {
             case Boolean =>
                 var i   = from
                 val x   = xs[Boolean]
-                val len = x.length
-                while (i < Math.min(len, to)) {
+                val lim = Math.min(x.length, to)
+                while (i < lim) {
                     buff.put(if (x(i)) 1: Byte else 0: Byte)
                     i = i + 1
                 }
@@ -113,7 +113,7 @@ object ArrayPersistence {
     def readPrimitiveArray(length: Int, kind: Int, reader: PacketReader): AnyRef = {
         val buff              = reader.buff
         val pos               = buff.position()
-        val (array, itemSize) = kind match {
+        val (array, itemSize) = (kind: @switch) match {
             case Int     =>
                 val a = new Array[Int](length)
                 buff.asIntBuffer().get(a)
@@ -141,7 +141,7 @@ object ArrayPersistence {
             case Boolean =>
                 val a = new Array[Boolean](length)
                 var i = 0
-                while (i < 0) {
+                while (i < length) {
                     a(i) = buff.get(i) == 1
                     i += 1
                 }

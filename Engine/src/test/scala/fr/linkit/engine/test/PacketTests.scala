@@ -78,7 +78,7 @@ class PacketTests {
 
     @Test
     def complexPacketTest(): Unit = {
-        val packet = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache"), RequestPacket(1, Array(ObjectPacket((0,classOf[SynchronizedObjectCache[_]])))))
+        val packet = ArrayBuffer(DedicatedPacketCoordinates(Array.empty, "TestServer1", "s1"), SimplePacketAttributes("family" -> "Global Cache"), RequestPacket(1, Array(ObjectPacket((-65610, 18965131615655L, 478.215414D, 7854.42145F, true, false)))))
         val config = new PersistenceConfigBuilder() {
             setTConverter[File, String](_.toString)(new File(_))
         }.build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap))

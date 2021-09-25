@@ -14,10 +14,11 @@ public class ConstantProtocol {
     public static final byte Byte = i++; //7
     public static final byte Double = i++;
     public static final byte Float = i++;
-    public static final byte Boolean = i++;
+    public static final byte Boolean = i++; //10
     public static final byte Char = i++; //11
 
-    public static final byte Object = i++; //12
+    public static final byte Enum = i++; //12
+    public static final byte Object = i++; //13
     public static final byte Array = i++;
 
     public static final byte ChunkCount = i;

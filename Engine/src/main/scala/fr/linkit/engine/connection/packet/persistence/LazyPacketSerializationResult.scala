@@ -28,7 +28,7 @@ case class LazyPacketSerializationResult(info: TransferInfo,
     override val packet: Packet = info.packet
 
     override lazy val buff: ByteBuffer = {
-        val buff = ByteBuffer.allocateDirect(10000)
+        val buff = ByteBuffer.allocate(10000)
         buff.position(4)
         info.makeSerial(serializer, buff)
         val length = NumberSerializer.serializeInt(buff.position() - 4)
