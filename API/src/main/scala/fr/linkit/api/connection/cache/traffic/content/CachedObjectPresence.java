@@ -10,8 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.collection;
+package fr.linkit.api.connection.cache.traffic.content;
 
-public enum CollectionModification {
-    SET, CLEAR, REMOVE, ADD
+public enum CachedObjectPresence {
+
+    NEVER_ASKED,
+    PRESENT,
+    NOT_PRESENT
+
 }

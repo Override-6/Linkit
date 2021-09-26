@@ -12,12 +12,12 @@
 
 package fr.linkit.api.connection.cache.obj.invokation.remote
 
-import java.util.concurrent.ThreadLocalRandom
-
+import fr.linkit.api.connection.cache.obj.SynchronizedObjectCache
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
-import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCache}
+import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation
 import fr.linkit.api.connection.network.Network
+
+import java.util.concurrent.ThreadLocalRandom
 
 /**
  * The puppeteer of a SynchronizedObject creates all RMI requests and handles the results.
@@ -27,12 +27,11 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The synchronized object's node informations.
      */
-    val nodeInfo: SyncNodeInfo
+    val nodeLocation: SyncNodeLocation
     /**
      * The engine's identifier that have created the synchronized object
      * */
-    val ownerID: String = nodeInfo.owner
-
+    val ownerID: String = nodeLocation.owner
 
     /**
      * The object center that stores the synchronized object.
@@ -42,7 +41,7 @@ trait Puppeteer[S <: AnyRef] {
     /**
      * The behavior of the synchronized object.
      * */
-    val wrapperBehavior: ObjectBehavior[S]
+    val objectBehavior: ObjectBehavior[S]
 
     /**
      * The identifier of the current engine.
@@ -53,11 +52,6 @@ trait Puppeteer[S <: AnyRef] {
      * @return true if the current engine have created the synchronized object.
      * */
     def isCurrentEngineOwner: Boolean = currentIdentifier == ownerID
-
-    /**
-     * @return the synchronized object.
-     * */
-    def getSynchronizedObject: S with SynchronizedObject[S]
 
     /**
      * Send an RMI invocation based on the given agreement and invocation and waits for any result (return value or exception)
@@ -81,7 +75,7 @@ trait Puppeteer[S <: AnyRef] {
     //TODO make this and "init" for internal use only
     def synchronizedObj(obj: AnyRef, id: Int = ThreadLocalRandom.current().nextInt()): AnyRef
 
-    def init(wrapper: S with SynchronizedObject[S]): Unit
+    //def init(syncObject: S with SynchronizedObject[S]): Unit
 
     trait RMIDispatcher {
         def broadcast(args: Array[Any]): Unit

@@ -23,6 +23,8 @@ trait SyncNode[A <: AnyRef] {
         buff.toArray.reverse
     }
 
+    val location: SyncNodeLocation
+
     /**
      * The tree in which this node is stored.
      */
@@ -54,7 +56,7 @@ trait SyncNode[A <: AnyRef] {
     /**
      * The synchronized object.
      */
-    val synchronizedObject: A with SynchronizedObject[A] = puppeteer.getSynchronizedObject
+    val synchronizedObject: A with SynchronizedObject[A]
 
     /**
      * This node's parent (null if this node is a root node)

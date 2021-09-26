@@ -8,11 +8,6 @@ import fr.linkit.api.connection.cache.obj.CanNotSynchronizeException
 trait SynchronizedObjectTree[A <: AnyRef] {
 
     /**
-     * The center of the tree
-     */
-    val cache: SynchronizedObjectCache[A]
-
-    /**
      * This tree's identifier (rootNode.id == this.id)
      */
     val id: Int

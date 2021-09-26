@@ -14,12 +14,11 @@ package fr.linkit.engine.connection.cache.obj.invokation.remote
 
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
+import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.channel.request.{RequestPacketChannel, ResponseHolder}
-import fr.linkit.api.local.concurrency.ProcrastinatorControl
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.RMIExceptionString
 import fr.linkit.engine.connection.packet.fundamental.RefPacket
@@ -29,19 +28,16 @@ import org.jetbrains.annotations.Nullable
 
 class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                                    override val cache: SynchronizedObjectCache[_],
-                                   override val nodeInfo: SyncNodeInfo,
-                                   val wrapperBehavior: ObjectBehavior[S]) extends Puppeteer[S] {
+                                   override val nodeLocation: SyncNodeLocation,
+                                   val objectBehavior: ObjectBehavior[S]) extends Puppeteer[S] {
 
-    private      val traffic                                         = channel.traffic
-    override     val network          : Network                      = cache.network
-    override     val currentIdentifier: String                       = traffic.currentIdentifier
-    private lazy val tree                                            = cache.treeCenter.findTree(nodeInfo.nodePath.head).get
-    private      val writer                                          = traffic.newWriter(channel.trafficPath)
-    private var puppetWrapper         : S with SynchronizedObject[S] = _
+    private lazy val tree                       = cache.treeCenter.findTree(nodeLocation.nodePath.head).get
+    override     val network          : Network = cache.network
+    private      val traffic                    = channel.traffic
+    override     val currentIdentifier: String  = traffic.currentIdentifier
+    private      val writer                     = traffic.newWriter(channel.trafficPath)
 
     override def isCurrentEngineOwner: Boolean = ownerID == currentIdentifier
-
-    override def getSynchronizedObject: S with SynchronizedObject[S] = puppetWrapper
 
     override def sendInvokeAndWaitResult[R](invocation: DispatchableRemoteMethodInvocation[R]): R = {
         val agreement = invocation.agreement
@@ -82,24 +78,17 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             throw new IllegalAccessException("agreement may not perform remote invocation")
 
         //procrastinator.runLater {
-            val bhv      = invocation.methodBehavior
-            val methodId = bhv.desc.methodId
+        val bhv      = invocation.methodBehavior
+        val methodId = bhv.desc.methodId
 
-            val scope      = new AgreementScope(writer, network, agreement)
-            val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
-            invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
+        val scope      = new AgreementScope(writer, network, agreement)
+        val dispatcher = new ObjectRMIDispatcher(scope, methodId, null)
+        invocation.dispatchRMI(dispatcher.asInstanceOf[Puppeteer[AnyRef]#RMIDispatcher])
         //}
     }
 
-    override def init(wrapper: S with SynchronizedObject[S]): Unit = {
-        if (this.puppetWrapper != null) {
-            throw new IllegalStateException("This Puppeteer already controls a puppet instance !")
-        }
-        this.puppetWrapper = wrapper
-    }
-
     override def synchronizedObj(obj: AnyRef, id: Int): AnyRef with SynchronizedObject[AnyRef] = {
-        val currentPath = nodeInfo.nodePath
+        val currentPath = nodeLocation.nodePath
         tree.insertObject(currentPath, id, obj, currentIdentifier).synchronizedObject
     }
 
@@ -109,6 +98,14 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             handleResponseHolder(makeRequest(scope, args))
         }
 
+        private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
+            channel.makeRequest(scope)
+                    .addPacket(InvocationPacket(nodeLocation.nodePath, methodID, args, returnEngine))
+                    .submit()
+        }
+
+        protected def handleResponseHolder(holder: ResponseHolder): Unit = holder.detach()
+
         override def foreachEngines(action: String => Array[Any]): Unit = {
             scope.foreachAcceptedEngines(engineID => {
                 if (engineID != returnEngine && engineID != currentIdentifier) //return engine is processed at last, don't send a request to the curernt engine
@@ -117,14 +114,6 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
             if (returnEngine != null && returnEngine != currentIdentifier)
                 handleResponseHolder(makeRequest(ChannelScopes.include(returnEngine)(writer), action(returnEngine)))
         }
-
-        private def makeRequest(scope: ChannelScope, args: Array[Any]): ResponseHolder = {
-            channel.makeRequest(scope)
-                    .addPacket(InvocationPacket(nodeInfo.nodePath, methodID, args, returnEngine))
-                    .submit()
-        }
-
-        protected def handleResponseHolder(holder: ResponseHolder): Unit = holder.detach()
     }
 
 }

@@ -12,12 +12,7 @@
 
 package fr.linkit.engine.connection.cache.obj.tree.node
 
-import fr.linkit.api.connection.cache.obj.invokation.local.Chip
-import fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree
-import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
-
-class RootWrapperNode[A <: AnyRef](puppeteer: Puppeteer[A], chip: Chip[A], tree: SynchronizedObjectTree[_], platformIdentifier: String, id: Int)
-        extends WrapperNode[A](puppeteer, chip, tree, platformIdentifier, id, null) {
+class RootObjectSyncNode[A <: AnyRef](data: ObjectNodeData[A]) extends ObjectSyncNode[A](null, data) {
 
     private var isPresentOnNetwork = false
 
@@ -26,6 +21,5 @@ class RootWrapperNode[A <: AnyRef](puppeteer: Puppeteer[A], chip: Chip[A], tree:
     def setPresentOnNetwork(): Unit = {
         isPresentOnNetwork = true
     }
-
 
 }

@@ -10,10 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.cache.map;
+package fr.linkit.api.connection.cache.reference
 
-public enum MapModification {
+trait ReferencedObjectsCache {
 
-    CLEAR, PUT, REMOVE
+
 
 }

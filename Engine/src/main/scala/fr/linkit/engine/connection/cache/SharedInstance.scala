@@ -79,7 +79,7 @@ class SharedInstance[A <: Serializable : ClassTag] private(channel: CachePacketC
             }
         }
 
-        override def setContent(content: CacheInstanceContent[A]): Unit = {
+        override def initializeContent(content: CacheInstanceContent[A]): Unit = {
             value = Option(content.value)
         }
 

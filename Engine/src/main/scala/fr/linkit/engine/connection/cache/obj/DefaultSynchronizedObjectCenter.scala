@@ -14,10 +14,9 @@ package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperInstantiator, SyncClassCenter}
 import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceGetter
-import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode}
+import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeLocation}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
 import fr.linkit.api.connection.cache.{SharedCache, SharedCacheFactory}
@@ -33,8 +32,9 @@ import fr.linkit.engine.connection.cache.obj.instantiation.InstanceWrapper
 import fr.linkit.engine.connection.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.connection.cache.obj.invokation.remote.{InvocationPacket, ObjectPuppeteer}
 import fr.linkit.engine.connection.cache.obj.tree._
-import fr.linkit.engine.connection.cache.obj.tree.node.{RootWrapperNode, TrafficInterestedSyncNode}
+import fr.linkit.engine.connection.cache.obj.tree.node._
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.local.LinkitApplication
 
@@ -44,10 +44,10 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                                                                  generator: SyncClassCenter,
                                                                  override val defaultTreeViewBehavior: ObjectBehaviorStore,
                                                                  override val network: Network)
-        extends AbstractSharedCache(channel) with SynchronizedObjectCache[A] {
+        extends AbstractSharedCache(channel) with SynchronizedObjectCache[A] with SyncNodeDataFactory {
 
-    private  val currentIdentifier                      = channel.traffic.connection.currentIdentifier
     override val treeCenter: DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this)
+    private  val currentIdentifier                      = channel.traffic.connection.currentIdentifier
     channel.setHandler(CenterHandler)
 
     override def syncObject(id: Int, creator: SyncInstanceGetter[A]): A with SynchronizedObject[A] = {
@@ -67,12 +67,67 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         wrapperNode.synchronizedObject
     }
 
+    private def createNewTree(id: Int, rootObjectOwner: String, creator: SyncInstanceGetter[A], behaviorTree: ObjectBehaviorStore = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
+        val nodeLocation = SyncNodeLocation(family, cacheID, rootObjectOwner, Array(id))
+        val rootBehavior = behaviorTree.getFromClass[A](creator.tpeClass)
+        val root         = DefaultInstantiator.newWrapper[A](creator)
+        val chip         = ObjectChip[A](rootBehavior, network, root)
+        val puppeteer    = new ObjectPuppeteer[A](channel, this, nodeLocation, rootBehavior)
+        val rootNode     = (tree: DefaultSynchronizedObjectTree[A]) => {
+            val data = new ObjectNodeData[A](puppeteer, chip, tree, nodeLocation, root, currentIdentifier)
+            new RootObjectSyncNode[A](data)
+        }
+        val tree         = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, id, DefaultInstantiator, this, behaviorTree)(rootNode)
+        treeCenter.addTree(id, tree)
+        /*
+                subWrappers.toSeq
+                        .sortBy(pair => pair._2.location.nodePath.length)
+                        .foreach(pair => {
+                            val wrapper    = pair._2
+                            val info       = wrapper.location
+                            val path       = info.nodePath
+                            val parentPath = path.dropRight(1)
+                            val id         = path.last
+                            tree.registerSynchronizedObject(parentPath, id, wrapper, info.owner)
+                        })*/
+
+        tree
+    }
+
+    override def newData[B <: AnyRef](parent: ObjectSyncNode[_],
+                                      id: Int,
+                                      syncObject: B with SynchronizedObject[B],
+                                      ownerID: String): ObjectNodeData[B] = {
+        val tree          = parent.tree
+        val path          = parent.treePath :+ id
+        val behaviorStore = tree.behaviorStore
+        val behavior      = behaviorStore.getFromClass[B](syncObject.getSuperClass)
+        val chip          = ObjectChip[B](behavior, network, syncObject)
+        val nodeLocation  = SyncNodeLocation(family, cacheID, ownerID, path)
+        val puppeteer     = new ObjectPuppeteer[B](channel, this, nodeLocation, behavior)
+        new ObjectNodeData[B](puppeteer, chip, tree, nodeLocation, syncObject, currentIdentifier)
+    }
+
     override def findObject(id: Int): Option[A with SynchronizedObject[A]] = {
         treeCenter.findTree(id).map(_.rootNode.synchronizedObject)
     }
 
-    override def isRegistered(id: Int): Boolean = {
-        treeCenter.findTree(id).isDefined
+    def isObjectPresent(location: SyncNodeLocation): Boolean = {
+        (location.cacheID == cacheID) && location.cacheFamily == family && {
+            val path = location.nodePath
+            treeCenter.findTree(path.head).exists(_.findNode(path).isDefined)
+        }
+    }
+
+    private def handleInvocationPacket(ip: InvocationPacket, bundle: RequestPacketBundle): Unit = {
+        val path     = ip.path
+        val node     = findNode(path)
+        val senderID = bundle.coords.senderID
+        node.fold(AppLogger.error(s"Could not find rootObject node at path ${path.mkString("/")}")) {
+            case node: TrafficInterestedSyncNode[_] => node.handlePacket(ip, senderID, bundle.responseSubmitter)
+            case _                                  =>
+                throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedSyncNode[_]].getSimpleName} in order to handle a member rmi request.")
+        }
     }
 
     private def findNode(path: Array[Int]): Option[SyncNode[A]] = {
@@ -86,44 +141,22 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                 })
     }
 
-    private def createNewTree(id: Int, rootObjectOwner: String, creator: SyncInstanceGetter[A], behaviorTree: ObjectBehaviorStore = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
-        val nodeInfo = SyncNodeInfo(family, cacheID, rootObjectOwner, Array(id))
-        val rootBehavior  = behaviorTree.getFromClass[A](creator.tpeClass)
-        val root          = DefaultInstantiator.newWrapper[A](creator, behaviorTree, nodeInfo)
-        val chip          = ObjectChip[A](rootBehavior, network, root)
-        val rootNode      = new RootWrapperNode[A](root.getPuppeteer, chip, _, currentIdentifier, id)
-        val tree          = new DefaultSynchronizedObjectTree[A](currentIdentifier, id, DefaultInstantiator, this, behaviorTree)(rootNode)
-        network.rootRefStore += (nodeInfo.hashCode(), tree.getRoot.synchronizedObject)
-        treeCenter.addTree(id, tree)
-/*
-        subWrappers.toSeq
-                .sortBy(pair => pair._2.getNodeInfo.nodePath.length)
-                .foreach(pair => {
-                    val wrapper    = pair._2
-                    val info       = wrapper.getNodeInfo
-                    val path       = info.nodePath
-                    val parentPath = path.dropRight(1)
-                    val id         = path.last
-                    tree.registerSynchronizedObject(parentPath, id, wrapper, info.owner)
-                })*/
+    private def handleRootObjectPacket(treeID: Int, rootObject: Any with SynchronizedObject[Any], owner: String): Unit = {
+        if (!isRegistered(treeID)) {
+            val tree = createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]), defaultTreeViewBehavior)
+            tree.getRoot.setPresentOnNetwork()
+        }
+    }
 
-        tree
+    override def isRegistered(id: Int): Boolean = {
+        treeCenter.findTree(id).isDefined
     }
 
     private object DefaultInstantiator extends ObjectWrapperInstantiator {
 
-        override def newWrapper[B <: AnyRef](creator: SyncInstanceGetter[B], store: ObjectBehaviorStore,
-                                             nodeInfo: SyncNodeInfo): B with SynchronizedObject[B] = {
+        override def newWrapper[B <: AnyRef](creator: SyncInstanceGetter[B]): B with SynchronizedObject[B] = {
             val syncClass = generator.getSyncClass[B](creator.tpeClass.asInstanceOf[Class[B]])
-            val wrapper   = creator.getInstance(syncClass)
-            initializeSyncObject(wrapper, nodeInfo, store)
-            wrapper
-        }
-
-        override def initializeSyncObject[B <: AnyRef](syncObject: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit = {
-            val behavior  = store.getFromClass[B](syncObject.getSuperClass)
-            val puppeteer = new ObjectPuppeteer[B](channel, DefaultSynchronizedObjectCenter.this, nodeInfo, behavior)
-            syncObject.initPuppeteer(puppeteer, store)
+            creator.getInstance(syncClass)
         }
 
     }
@@ -134,24 +167,19 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
             //AppLogger.debug(s"Processing bundle : ${bundle}")
             val response = bundle.packet
             response.nextPacket[Packet] match {
-                case ip: InvocationPacket                                                                         =>
-                    val path     = ip.path
-                    val node     = findNode(path)
-                    val senderID = bundle.coords.senderID
-                    node.fold(AppLogger.error(s"Could not find rootObject node at path ${path.mkString("/")}")) {
-                        case node: TrafficInterestedSyncNode[_] => node.handlePacket(ip, senderID, bundle.responseSubmitter)
-                        case _                                  =>
-                            throw new BadRMIRequestException(s"Targeted node MUST extends ${classOf[TrafficInterestedSyncNode[_]].getSimpleName} in order to handle a member rmi request.")
-                    }
+                case ip: InvocationPacket                     =>
+                    handleInvocationPacket(ip, bundle)
+                case ObjectPacket(location: SyncNodeLocation) =>
+                    bundle.responseSubmitter
+                            .addPacket(BooleanPacket(isObjectPresent(location)))
+                            .submit()
+
                 case ObjectPacket(ObjectTreeProfile(treeID, rootObject: Any with SynchronizedObject[Any], owner)) =>
-                    if (!isRegistered(treeID)) {
-                        val tree = createNewTree(treeID, owner, new InstanceWrapper[A](rootObject.asInstanceOf[A with SynchronizedObject[A]]), defaultTreeViewBehavior)
-                        tree.getRoot.setPresentOnNetwork()
-                    }
+                    handleRootObjectPacket(treeID, rootObject, owner)
             }
         }
 
-        override def setContent(content: CacheRepoContent[A]): Unit = {
+        override def initializeContent(content: CacheRepoContent[A]): Unit = {
             if (content.array.isEmpty)
                 return
             val array = content.array
@@ -205,6 +233,12 @@ object DefaultSynchronizedObjectCenter {
         apply[A](treeView)
     }
 
+    def apply[A <: AnyRef : ClassTag](store: ObjectBehaviorStore): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
+        channel => {
+            apply[A](channel, store, channel.traffic.connection.network)
+        }
+    }
+
     private[linkit] def apply[A <: AnyRef : ClassTag](network: Network): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
         channel => {
             val treeView = new DefaultObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory)
@@ -215,12 +249,6 @@ object DefaultSynchronizedObjectCenter {
     private[linkit] def apply[A <: AnyRef : ClassTag](store: ObjectBehaviorStore, network: Network): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
         channel => {
             apply[A](channel, store, network)
-        }
-    }
-
-    def apply[A <: AnyRef : ClassTag](store: ObjectBehaviorStore): SharedCacheFactory[SynchronizedObjectCache[A] with SharedCache] = {
-        channel => {
-            apply[A](channel, store, channel.traffic.connection.network)
         }
     }
 

@@ -27,7 +27,7 @@ trait ContentHandler[C <: CacheContent] extends CacheHandler {
      * Sets the local content
      * @param content the content that must be set.
      * */
-    def setContent(content: C): Unit
+    def initializeContent(content: C): Unit
 
     /**
      * @return C the local content of this cache.
@@ -39,5 +39,4 @@ trait ContentHandler[C <: CacheContent] extends CacheHandler {
      * @return true if the engine can access to the content, false instead
      * */
     def canAccessToContent(engine: Engine): Boolean = true
-
 }

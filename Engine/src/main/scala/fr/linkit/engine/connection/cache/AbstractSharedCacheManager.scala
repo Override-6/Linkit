@@ -56,7 +56,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
                 if (baseContent != null) {
                     channel.getHandler.foreach {
-                        case e: ContentHandler[CacheContent] => e.setContent(baseContent)
+                        case e: ContentHandler[CacheContent] => e.initializeContent(baseContent)
                         case _                               => //Simply don't set the content
                     }
                 }

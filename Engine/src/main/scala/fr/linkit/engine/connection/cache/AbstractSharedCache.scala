@@ -33,7 +33,7 @@ abstract class AbstractSharedCache(channel: CachePacketChannel) extends Abstract
         //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
         if (handler.isDefined) {
             handler.get match { //TODO ensure that the content cache is the expected type.
-                case c: ContentHandler[CacheContent] => c.setContent(content)
+                case c: ContentHandler[CacheContent] => c.initializeContent(content)
                 case _                               => //simply do nothing
             }
         }

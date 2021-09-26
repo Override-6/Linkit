@@ -12,23 +12,22 @@
 
 package fr.linkit.engine.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObjectCache
 import fr.linkit.api.connection.cache.obj.tree.{SynchronizedObjectTree, SynchronizedObjectTreeStore}
 import fr.linkit.engine.connection.cache.obj.CacheRepoContent
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
-import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
+import fr.linkit.engine.connection.cache.obj.tree.node.SyncNodeDataFactory
 
 import scala.collection.mutable
 
-class DefaultObjectTreeCenter[A <: AnyRef](cache: SynchronizedObjectCache[A]) extends SynchronizedObjectTreeStore[A] {
+class DefaultObjectTreeCenter[A <: AnyRef](dataFactory: SyncNodeDataFactory) extends SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 
     def addTree(id: Int, tree: DefaultSynchronizedObjectTree[A]): Unit = {
         if (trees.contains(id))
             throw new SynchronizedObjectException(s"A tree of id '$id' already exists.")
-        if (tree.cache ne cache)
-            throw new SynchronizedObjectException("Attempted to attach a tree that comes from another cache of this cache.")
+        if (tree.dataFactory ne dataFactory)
+            throw new SynchronizedObjectException("Attempted to attach a tree that comes from an unknown cache.")
         trees.put(id, tree)
     }
 
@@ -42,8 +41,8 @@ class DefaultObjectTreeCenter[A <: AnyRef](cache: SynchronizedObjectCache[A]) ex
 
     override def snapshotContent: CacheRepoContent[A] = {
         def toProfile(tree: SynchronizedObjectTree[A]): ObjectTreeProfile[A] = {
-            val node                    = tree.rootNode
-            val syncObject              = node.synchronizedObject
+            val node       = tree.rootNode
+            val syncObject = node.synchronizedObject
             ObjectTreeProfile[A](tree.id, syncObject, node.ownerID)
         }
 

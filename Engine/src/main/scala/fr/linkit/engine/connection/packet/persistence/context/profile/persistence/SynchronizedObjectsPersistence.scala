@@ -14,7 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.context.profile.persisten
 
 import fr.linkit.api.connection.cache.NoSuchCacheException
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
+import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.context.{MutableReferencedObjectStore, TypePersistence}
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
@@ -28,7 +28,7 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](refStore: Mutab
 
     override def initInstance(syncObj: T, args: Array[Any]): Unit = {
         objectPersistence.initInstance(syncObj, args)
-        val info = args.last.asInstanceOf[SyncNodeInfo]
+        val info = args.last.asInstanceOf[SyncNodeLocation]
         val path = info.nodePath
         refStore += (info.hashCode(), syncObj)
         val center  = findCache(info)
@@ -50,16 +50,16 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](refStore: Mutab
     }
 
     override def toArray(t: T): Array[Any] = {
-        (objectPersistence.toArray(t): Array[Any]) :+ (t.getNodeInfo: Any)
+        (objectPersistence.toArray(t): Array[Any]) :+ (t.getLocation: Any)
     }
 
-    private def findCache(info: SyncNodeInfo): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
+    private def findCache(info: SyncNodeLocation): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
         val family = info.cacheFamily
         network.findCacheManager(family)
                 .map(_.getCacheInStore[DefaultSynchronizedObjectCenter[AnyRef]](info.cacheID))
     }
 
-    private def throwNoSuchCacheException(info: SyncNodeInfo, wrappedClass: Option[Class[_]]): Nothing = {
+    private def throwNoSuchCacheException(info: SyncNodeLocation, wrappedClass: Option[Class[_]]): Nothing = {
         throw new NoSuchCacheException(s"Could not find object tree of id ${info.nodePath.head} in synchronized object cache id ${info.cacheID} from cache manager ${info.cacheFamily} " +
                 s": could not properly deserialize and synchronize Wrapper object of class \"${wrappedClass.map(_.getName).getOrElse("(Unknown Wrapped class)")}\".")
     }

@@ -14,16 +14,17 @@ package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj.behavior.member.method.{InternalMethodBehavior, MethodBehavior}
 import fr.linkit.api.connection.cache.obj.behavior.{ObjectBehavior, ObjectBehaviorStore}
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
 import fr.linkit.api.connection.cache.obj.invokation.local.CallableLocalMethodInvocation
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
+import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SyncNodeLocation}
 import fr.linkit.api.connection.cache.obj.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
 import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
 import fr.linkit.engine.connection.cache.obj.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
+    @transient final protected var location         : SyncNodeLocation        = _
     @transient final protected var puppeteer        : Puppeteer[A]            = _
     @transient final protected var behavior         : ObjectBehavior[A]       = _
     @transient final protected var choreographer    : InvocationChoreographer = _
@@ -31,24 +32,21 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     //fast cache for handleCall
     @transient private         var currentIdentifier: String                  = _
     @transient private         var ownerID          : String                  = _
-    @transient protected       var nodeInfo         : SyncNodeInfo            = _
 
     def wrappedClass: Class[_]
 
-    override def initPuppeteer(puppeteer: Puppeteer[A], store: ObjectBehaviorStore): Unit = {
+    override def initialize(node: SyncNode[A]): Unit = {
         if (this.puppeteer != null)
-            throw new SyncObjectAlreadyInitialisedException(s"This puppet is already initialized ! ($puppeteer)")
+            throw new SyncObjectAlreadyInitialisedException(s"This puppet is already initialized !")
+        val puppeteer = node.puppeteer
         this.store = store
-        this.puppeteer = puppeteer
-        this.nodeInfo = puppeteer.nodeInfo
-        this.behavior = puppeteer.wrapperBehavior
-        this.puppeteer.init(asAutoWrapped)
+        this.puppeteer = node.puppeteer
+        this.location = node.location
+        this.behavior = puppeteer.objectBehavior
         this.choreographer = new InvocationChoreographer()
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
     }
-
-    @inline override def isInitialized: Boolean = puppeteer != null
 
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
@@ -56,9 +54,11 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         SyncObjectInstantiationHelper.detachedWrapperClone(this, puppeteer.cache.network.rootRefStore)._1
     }
 
+    override def getLocation: SyncNodeLocation = location
+
     override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
 
-    override def asWrapped(): A = asAutoWrapped
+    override def asWrapped(): A = asAutoSync
 
     override def getChoreographer: InvocationChoreographer = choreographer
 
@@ -68,22 +68,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getBehavior: ObjectBehavior[A] = behavior
 
-    override def getNodeInfo: SyncNodeInfo = nodeInfo
-
-    private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
-        var i              = -1
-        val paramBehaviors = bhv.parameterBehaviors
-        val pup            = puppeteer
-        objects.map(param => {
-            i += 1
-            val behavior = paramBehaviors(i)
-            param match {
-                case sync: SynchronizedObject[_]            => sync
-                case anyRef: AnyRef if behavior.isActivated => pup.synchronizedObj(anyRef)
-                case other                                  => other
-            }
-        })
-    }
+    private def asAutoSync: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
 
     protected def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         if (!isInitialized)
@@ -108,6 +93,23 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         methodBhv.handler.handleRMI[R](localInvocation)
     }
 
+    @inline override def isInitialized: Boolean = puppeteer != null
+
+    private def synchronizedParams(bhv: MethodBehavior, objects: Array[Any]): Array[Any] = {
+        var i              = -1
+        val paramBehaviors = bhv.parameterBehaviors
+        val pup            = puppeteer
+        objects.map(param => {
+            i += 1
+            val behavior = paramBehaviors(i)
+            param match {
+                case sync: SynchronizedObject[_]            => sync
+                case anyRef: AnyRef if behavior.isActivated => pup.synchronizedObj(anyRef)
+                case other                                  => other
+            }
+        })
+    }
+
     private def modifiedParamsForLocal(bhv: MethodBehavior, args: Array[Any]): Array[Any] = {
         var i              = -1
         val paramBehaviors = bhv.parameterBehaviors
@@ -117,8 +119,6 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
                 store.modifyParameterForLocalComingFromLocal(args, ref, paramBehaviors(i))
         }
     }
-
-    private def asAutoWrapped: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
 
     @inline private def performSuperCall[R](forceLocal: Boolean, @inline superCall: => Any): R = {
         if (forceLocal) choreographer.forceLocalInvocation[R] {

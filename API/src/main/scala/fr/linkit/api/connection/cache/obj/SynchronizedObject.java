@@ -12,11 +12,13 @@
 
 package fr.linkit.api.connection.cache.obj;
 
-import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore;
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo;
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior;
+import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore;
+import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation;
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer;
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer;
+import fr.linkit.api.connection.cache.obj.tree.SyncNode;
+import fr.linkit.api.connection.cache.traffic.content.ObjectPresence;
 
 import java.io.Serializable;
 
@@ -24,34 +26,30 @@ import java.io.Serializable;
  * This interface depicts a synchronized object. <br>
  * SynchronizedObject classes are dynamically generated and extends the class {@link T} <br>
  * Handwritten classes may not implement this interface.
+ *
  * @see fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
  * @see fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
- * */
-public interface SynchronizedObject<T> extends Serializable {
+ */
+public interface SynchronizedObject<T> extends ObjectPresence<SyncNodeLocation>, Serializable {
 
     /**
      * Initialize the puppeteer of the synchronized object.
+     *
      * @throws SyncObjectAlreadyInitialisedException if this object is already initialized.
-     * */
-    void initPuppeteer(Puppeteer<T> puppeteer, ObjectBehaviorStore store); //TODO pass in internal
+     */
+    void initialize(SyncNode<T> node); //TODO pass in internal
 
     /**
      * @return The used {@link Puppeteer} of this object.
      * @see Puppeteer
-     * */
+     */
     Puppeteer<T> getPuppeteer();
 
     /**
      * @return the behavior of this object
      * @see ObjectBehavior
-     * */
+     */
     ObjectBehavior<T> getBehavior();
-
-    /**
-     * @return the information of the node of this object.
-     * @see SyncNodeInfo
-     * */
-    SyncNodeInfo getNodeInfo();
 
     /**
      * @return the invocation choreographer of this object
@@ -63,13 +61,14 @@ public interface SynchronizedObject<T> extends Serializable {
 
     /**
      * Note: a synchronized object is always initialized if it was retrieved normally.
+     *
      * @return true if the object is initialized.
      */
     boolean isInitialized();
 
     /**
      * @return true if the engine that created this synchronized object is the current engine.
-     * */
+     */
     boolean isOwnedByCurrent();
 
     /**
@@ -81,16 +80,17 @@ public interface SynchronizedObject<T> extends Serializable {
     /**
      * Creates a clone of this object as T (not {@code T extends SynchronizedObject<T>}), in which all fields are also detached. <br>
      * Note: The returned object is not affected by any changes made on this object
-     * @deprecated Unsafe, Very slow and some field within a "depth" may not be correctly detached. Can throw many exception.
-     * @throws SyncObjectDetachException if something went wrong during the detachment.
+     *
      * @return the detached clone
-     * */
+     * @throws SyncObjectDetachException if something went wrong during the detachment.
+     * @deprecated Unsafe, Very slow and some field within a "depth" may not be correctly detached. Can throw many exception.
+     */
     @Deprecated()
     T detachedClone() throws SyncObjectDetachException;
 
     /**
      * @return this class's super class.
-     * */
+     */
     Class<T> getSuperClass();
 
 }

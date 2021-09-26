@@ -15,10 +15,10 @@ package fr.linkit.engine.test
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.behavior.annotation.Synchronized
-import fr.linkit.api.connection.cache.obj.description.SyncNodeInfo
 import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
 import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceGetter
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
+import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation
 import fr.linkit.api.local.generation.TypeVariableTranslator
 import fr.linkit.api.local.resource.external.ResourceFolder
 import fr.linkit.api.local.system.config.ApplicationConfiguration
@@ -145,8 +145,8 @@ class ResourcesAndClassGenerationTests {
     def forObject[A <: AnyRef : TypeTag](obj: A, tree: ObjectBehaviorStore = new DefaultObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory)): A with SynchronizedObject[A] = {
         Assertions.assertNotNull(resources)
 
-        val info         = SyncNodeInfo("", 8, "", Array(1))
-        val wrapper = TestWrapperInstantiator.newWrapper[A](new ContentSwitcher[A](obj), tree, info)
+        val info         = SyncNodeLocation("", 8, "", Array(1))
+        val wrapper = TestWrapperInstantiator.newWrapper[A](new ContentSwitcher[A](obj))
         wrapper.getChoreographer.forceLocalInvocation {
             println(s"wrapper = ${wrapper}")
             println(s"wrapper.getWrappedClass = ${wrapper.getSuperClass}")
@@ -160,17 +160,13 @@ class ResourcesAndClassGenerationTests {
         private val generator = new DefaultSyncClassCenter(new DefaultCompilerCenter, resource)
 
 
-        override def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A], store: ObjectBehaviorStore, puppeteerInfo: SyncNodeInfo): A with SynchronizedObject[A] = {
+        override def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A]): A with SynchronizedObject[A] = {
             val cl           = creator.tpeClass
             val syncClass    = generator.getSyncClass[A](SimpleSyncObjectSuperClassDescription[A](cl))
             val syncObject   = creator.getInstance(syncClass)
             syncObject
         }
 
-        override def initializeSyncObject[B <: AnyRef](syncObject: SynchronizedObject[B], nodeInfo: SyncNodeInfo, store: ObjectBehaviorStore): Unit = {
-            val pup          = new ObjectPuppeteer[B](null, null, nodeInfo, store.getFromClass(syncObject.getSuperClass))
-            syncObject.initPuppeteer(pup, store)
-        }
     }
 
 }
