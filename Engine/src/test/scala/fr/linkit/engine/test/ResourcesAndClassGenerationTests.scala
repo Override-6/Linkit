@@ -15,8 +15,7 @@ package fr.linkit.engine.test
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.behavior.annotation.Synchronized
-import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
-import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceGetter
+import fr.linkit.api.connection.cache.obj.instantiation.{SyncInstanceInstantiator, SyncInstanceGetter}
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
 import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation
 import fr.linkit.api.local.generation.TypeVariableTranslator
@@ -154,7 +153,7 @@ class ResourcesAndClassGenerationTests {
         wrapper
     }
 
-    private object TestWrapperInstantiator extends ObjectWrapperInstantiator {
+    private object TestWrapperInstantiator extends SyncInstanceInstantiator {
 
         private val resource  = resources.getOrOpenThenRepresent[SyncObjectClassResource](LinkitApplication.getProperty("compilation.working_dir.classes"))
         private val generator = new DefaultSyncClassCenter(new DefaultCompilerCenter, resource)

@@ -10,12 +10,21 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.traffic.content
+package fr.linkit.engine.local.generation.compilation
 
-trait ObjectPresence[L] {
+object RuntimeClassOperations {
 
-    def getPresenceOnNetwork: ObjectNetworkPresence
-
-    def getLocation: L
+    def prepareClass(clazz: Class[_]): Unit = {
+        clazz.getFields
+        clazz.getDeclaredFields
+        clazz.getMethods
+        clazz.getDeclaredMethods
+        clazz.getSimpleName
+        clazz.getName
+        clazz.getAnnotations
+        clazz.getDeclaredAnnotations
+        clazz.getConstructors
+        clazz.getDeclaredConstructors
+    }
 
 }

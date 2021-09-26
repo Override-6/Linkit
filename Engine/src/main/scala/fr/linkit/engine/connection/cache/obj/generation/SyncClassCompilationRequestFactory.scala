@@ -19,6 +19,7 @@ import fr.linkit.api.local.generation.compilation.CompilationRequest
 import fr.linkit.engine.connection.cache.obj.generation.SyncClassCompilationRequestFactory.DefaultClassBlueprint
 import fr.linkit.engine.connection.cache.obj.generation.bp.ScalaClassBlueprint
 import fr.linkit.engine.connection.cache.obj.generation.rectifier.ClassRectifier
+import fr.linkit.engine.local.generation.compilation.RuntimeClassOperations
 import fr.linkit.engine.local.generation.compilation.factories.ClassCompilationRequestFactory
 import fr.linkit.engine.local.mapping.ClassMappings
 
@@ -31,7 +32,7 @@ class SyncClassCompilationRequestFactory extends ClassCompilationRequestFactory[
         val (byteCode, wrapperClass) = new ClassRectifier(context, className, loader, context.clazz).rectifiedClass
         val wrapperClassFile         = req.classDir.resolve(className.replace(".", File.separator) + ".class")
         Files.write(wrapperClassFile, byteCode)
-        SyncObjectInstantiationHelper.prepareClass(wrapperClass)
+        RuntimeClassOperations.prepareClass(wrapperClass)
         ClassMappings.putClass(wrapperClass)
         wrapperClass
     }

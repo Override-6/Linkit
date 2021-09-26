@@ -14,8 +14,8 @@ package fr.linkit.engine.connection.cache.obj
 
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.generation.{ObjectWrapperInstantiator, SyncClassCenter}
-import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceGetter
+import fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
+import fr.linkit.api.connection.cache.obj.instantiation.{SyncInstanceInstantiator, SyncInstanceGetter}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeLocation}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
@@ -152,7 +152,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         treeCenter.findTree(id).isDefined
     }
 
-    private object DefaultInstantiator extends ObjectWrapperInstantiator {
+    private object DefaultInstantiator extends SyncInstanceInstantiator {
 
         override def newWrapper[B <: AnyRef](creator: SyncInstanceGetter[B]): B with SynchronizedObject[B] = {
             val syncClass = generator.getSyncClass[B](creator.tpeClass.asInstanceOf[Class[B]])

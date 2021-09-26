@@ -10,12 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.traffic.content
+package fr.linkit.api.connection.cache.obj.instantiation
 
-trait ObjectPresence[L] {
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
 
-    def getPresenceOnNetwork: ObjectNetworkPresence
+trait SyncInstanceInstantiator {
 
-    def getLocation: L
+    def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A]): A with SynchronizedObject[A]
+
+    //def initializeSyncObject[B <: AnyRef](wrapper: SynchronizedObject[B], nodeInfo: SyncNodeLocation, store: ObjectBehaviorStore): Unit
 
 }

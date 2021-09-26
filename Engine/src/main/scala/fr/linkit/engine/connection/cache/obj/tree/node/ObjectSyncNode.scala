@@ -16,6 +16,7 @@ import fr.linkit.api.connection.cache.obj.invokation.local.Chip
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeLocation, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{CanNotSynchronizeException, SynchronizedObject}
+import fr.linkit.api.connection.cache.traffic.content.ObjectNetworkPresence
 import fr.linkit.api.connection.packet.channel.request.Submitter
 import fr.linkit.engine.connection.cache.obj.RMIExceptionString
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
@@ -51,8 +52,10 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
      * This set stores every engine where this object is synchronized.
      * */
     private   val presences                                        = mutable.HashSet[String](ownerID, currentIdentifier)
+    override val objectPresence: ObjectNetworkPresence = null
 
     synchronizedObject.initialize(this)
+
 
     def addChild(node: ObjectSyncNode[_]): Unit = {
         if (node.parent ne this)

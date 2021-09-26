@@ -12,6 +12,7 @@
 
 package fr.linkit.api.connection.cache.obj.description
 
+import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.local.generation.compilation.CompilationContext
 
 import scala.reflect.runtime.universe.Type
@@ -20,7 +21,7 @@ import scala.reflect.runtime.universe.Type
  * The description of the super class of a generated [[fr.linkit.api.connection.cache.obj.SynchronizedObject]] class.
  * @see [[fr.linkit.api.connection.cache.obj.SynchronizedObject]]
  * @see [[fr.linkit.api.connection.cache.obj.generation.SyncClassCenter]]
- * @see [[fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator]]
+ * @see [[SyncInstanceInstantiator]]
  * */
 trait SyncObjectSuperclassDescription[A] extends CompilationContext {
 

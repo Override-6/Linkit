@@ -14,6 +14,7 @@ package fr.linkit.api.connection.cache.obj;
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior;
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore;
+import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceInstantiator;
 import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation;
 import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer;
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer;
@@ -28,7 +29,7 @@ import java.io.Serializable;
  * Handwritten classes may not implement this interface.
  *
  * @see fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
- * @see fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
+ * @see SyncInstanceInstantiator
  */
 public interface SynchronizedObject<T> extends ObjectPresence<SyncNodeLocation>, Serializable {
 
@@ -76,17 +77,6 @@ public interface SynchronizedObject<T> extends ObjectPresence<SyncNodeLocation>,
      * (this has been done to avoid useless casts)
      */
     T asWrapped();
-
-    /**
-     * Creates a clone of this object as T (not {@code T extends SynchronizedObject<T>}), in which all fields are also detached. <br>
-     * Note: The returned object is not affected by any changes made on this object
-     *
-     * @return the detached clone
-     * @throws SyncObjectDetachException if something went wrong during the detachment.
-     * @deprecated Unsafe, Very slow and some field within a "depth" may not be correctly detached. Can throw many exception.
-     */
-    @Deprecated()
-    T detachedClone() throws SyncObjectDetachException;
 
     /**
      * @return this class's super class.

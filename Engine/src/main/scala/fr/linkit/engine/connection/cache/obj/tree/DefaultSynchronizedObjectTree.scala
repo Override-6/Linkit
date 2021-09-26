@@ -1,7 +1,7 @@
 package fr.linkit.engine.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.generation.ObjectWrapperInstantiator
+import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{CanNotSynchronizeException, SynchronizedObject}
 import fr.linkit.api.connection.network.Network
@@ -13,14 +13,14 @@ import scala.util.Try
 
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
                                                                network: Network,
-                                                               val instantiator: ObjectWrapperInstantiator,
+                                                               val instantiator: SyncInstanceInstantiator,
                                                                val dataFactory: SyncNodeDataFactory,
                                                                override val id: Int,
                                                                override val behaviorStore: ObjectBehaviorStore) extends SynchronizedObjectTree[A] {
 
     private var root: RootObjectSyncNode[A] = _
 
-    def this(currentIdentifier: String, network: Network, id: Int, instantiator: ObjectWrapperInstantiator, dataFactory: SyncNodeDataFactory, behaviorTree: ObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectSyncNode[A]) = {
+    def this(currentIdentifier: String, network: Network, id: Int, instantiator: SyncInstanceInstantiator, dataFactory: SyncNodeDataFactory, behaviorTree: ObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectSyncNode[A]) = {
         this(currentIdentifier, network, instantiator, dataFactory, id, behaviorTree)
         val root = rootSupplier(this)
         if (root.tree ne this)
@@ -90,7 +90,7 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
     }
 
     private def initSynchronizedObject[B <: AnyRef](parent: ObjectSyncNode[_], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): ObjectSyncNode[B] = {
-        if (!syncObject.isInitialized)
+        if (syncObject.isInitialized)
             throw new IllegalSyncObjectRegistration(s"Could not register syncObject '${syncObject.getClass.getName}' : Object already initialized.")
 
         val data = dataFactory.newData(parent, id, syncObject, ownerID)

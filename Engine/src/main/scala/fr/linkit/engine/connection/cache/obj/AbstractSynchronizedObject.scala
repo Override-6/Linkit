@@ -19,7 +19,7 @@ import fr.linkit.api.connection.cache.obj.invokation.local.CallableLocalMethodIn
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SyncNodeLocation}
 import fr.linkit.api.connection.cache.obj.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
-import fr.linkit.engine.connection.cache.obj.generation.SyncObjectInstantiationHelper
+import fr.linkit.api.connection.cache.traffic.content.ObjectNetworkPresence
 import fr.linkit.engine.connection.cache.obj.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
@@ -29,6 +29,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient final protected var behavior         : ObjectBehavior[A]       = _
     @transient final protected var choreographer    : InvocationChoreographer = _
     @transient final protected var store            : ObjectBehaviorStore     = _
+    @transient private         var presenceOnNetwork: ObjectNetworkPresence   = _
     //fast cache for handleCall
     @transient private         var currentIdentifier: String                  = _
     @transient private         var ownerID          : String                  = _
@@ -39,20 +40,19 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         if (this.puppeteer != null)
             throw new SyncObjectAlreadyInitialisedException(s"This puppet is already initialized !")
         val puppeteer = node.puppeteer
-        this.store = store
+        this.store = node.tree.behaviorStore
         this.puppeteer = node.puppeteer
         this.location = node.location
         this.behavior = puppeteer.objectBehavior
         this.choreographer = new InvocationChoreographer()
+        this.presenceOnNetwork = node.objectPresence
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
     }
 
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
-    override def detachedClone: A = {
-        SyncObjectInstantiationHelper.detachedWrapperClone(this, puppeteer.cache.network.rootRefStore)._1
-    }
+    override def getPresenceOnNetwork: ObjectNetworkPresence = presenceOnNetwork
 
     override def getLocation: SyncNodeLocation = location
 
