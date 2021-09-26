@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.cache.traffic.content;
 
-public enum CachedObjectPresence {
+public enum ObjectPresenceType {
 
     NEVER_ASKED,
     PRESENT,

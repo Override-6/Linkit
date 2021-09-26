@@ -21,9 +21,14 @@ trait SubmitterPacket extends Packet {
     @throws[NoSuchElementException]("If this method is called more times than packet array's length" + this)
     def nextPacket[P <: Packet : ClassTag]: P
 
+    def nextPacket[P <: Packet : ClassTag](packet: P => Unit): this.type = {
+        packet(nextPacket[P])
+        this
+    }
+
     def nextPacket: Packet = nextPacket[Packet]
 
-    def foreach(action: Packet => Unit): Unit
+    def foreach(action: Packet => Unit): this.type
 
     def getAttributes: PacketAttributes
 

@@ -104,12 +104,12 @@ class ObjectPuppeteer[S <: AnyRef](channel: RequestPacketChannel,
                     .submit()
         }
 
-        protected def handleResponseHolder(holder: ResponseHolder): Unit = holder.detach()
+        protected def handleResponseHolder(holder: ResponseHolder): Unit = ()
 
         override def foreachEngines(action: String => Array[Any]): Unit = {
             scope.foreachAcceptedEngines(engineID => {
                 if (engineID != returnEngine && engineID != currentIdentifier) //return engine is processed at last, don't send a request to the curernt engine
-                    makeRequest(ChannelScopes.include(engineID)(writer), action(engineID)).detach()
+                    makeRequest(ChannelScopes.include(engineID)(writer), action(engineID))
             })
             if (returnEngine != null && returnEngine != currentIdentifier)
                 handleResponseHolder(makeRequest(ChannelScopes.include(returnEngine)(writer), action(returnEngine)))

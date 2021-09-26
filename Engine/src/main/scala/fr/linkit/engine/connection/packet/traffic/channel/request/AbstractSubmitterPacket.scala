@@ -39,8 +39,9 @@ sealed abstract class AbstractSubmitterPacket(id: Int, packets: Array[Packet]) e
         ensurePacketType[P](packet)
     }
 
-    override def foreach(action: Packet => Unit): Unit = {
+    override def foreach(action: Packet => Unit): this.type = {
         packets.foreach(action)
+        this
     }
 
     override def getAttributes: PacketAttributes = attributes

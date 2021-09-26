@@ -100,6 +100,8 @@ object ChannelScopes {
 
     def discards(discarded: String*): ScopeFactory[BroadcastScope] = BroadcastScope(_, Array(discarded: _*))
 
-    def include(authorised: String*): ScopeFactory[RetainerScope] = RetainerScope(_, Array(authorised: _*))
+    def include(authorised: String*): ScopeFactory[RetainerScope] = {
+        RetainerScope(_, Array(authorised: _*))
+    }
 
 }

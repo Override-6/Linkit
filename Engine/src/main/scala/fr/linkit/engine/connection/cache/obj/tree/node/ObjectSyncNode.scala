@@ -52,10 +52,9 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
      * This set stores every engine where this object is synchronized.
      * */
     private   val presences                                        = mutable.HashSet[String](ownerID, currentIdentifier)
-    override val objectPresence: ObjectNetworkPresence = null
+    override  val objectPresence    : ObjectNetworkPresence        = null
 
     synchronizedObject.initialize(this)
-
 
     def addChild(node: ObjectSyncNode[_]): Unit = {
         if (node.parent ne this)

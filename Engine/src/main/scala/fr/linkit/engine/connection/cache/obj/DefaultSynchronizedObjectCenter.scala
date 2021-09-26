@@ -15,7 +15,7 @@ package fr.linkit.engine.connection.cache.obj
 import fr.linkit.api.connection.cache.obj._
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
-import fr.linkit.api.connection.cache.obj.instantiation.{SyncInstanceInstantiator, SyncInstanceGetter}
+import fr.linkit.api.connection.cache.obj.instantiation.{SyncInstanceGetter, SyncInstanceInstantiator}
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeLocation}
 import fr.linkit.api.connection.cache.traffic.CachePacketChannel
 import fr.linkit.api.connection.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
@@ -46,7 +46,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                                                                  override val network: Network)
         extends AbstractSharedCache(channel) with SynchronizedObjectCache[A] with SyncNodeDataFactory {
 
-    override val treeCenter: DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this)
+    override val treeCenter: DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this, channel)
     private  val currentIdentifier                      = channel.traffic.connection.currentIdentifier
     channel.setHandler(CenterHandler)
 
@@ -60,7 +60,6 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                 .addPacket(ObjectPacket(ObjectTreeProfile(id, tree.getRoot.synchronizedObject, currentIdentifier)))
                 .putAllAttributes(this)
                 .submit()
-                .detach()
         //Indicate that a new object has been posted.
         val wrapperNode = tree.getRoot
         wrapperNode.setPresentOnNetwork()
@@ -77,20 +76,8 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
             val data = new ObjectNodeData[A](puppeteer, chip, tree, nodeLocation, root, currentIdentifier)
             new RootObjectSyncNode[A](data)
         }
-        val tree         = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, id, DefaultInstantiator, this, behaviorTree)(rootNode)
+        val tree         = new DefaultSynchronizedObjectTree[A](currentIdentifier, network, treeCenter, id, DefaultInstantiator, this, behaviorTree)(rootNode)
         treeCenter.addTree(id, tree)
-        /*
-                subWrappers.toSeq
-                        .sortBy(pair => pair._2.location.nodePath.length)
-                        .foreach(pair => {
-                            val wrapper    = pair._2
-                            val info       = wrapper.location
-                            val path       = info.nodePath
-                            val parentPath = path.dropRight(1)
-                            val id         = path.last
-                            tree.registerSynchronizedObject(parentPath, id, wrapper, info.owner)
-                        })*/
-
         tree
     }
 

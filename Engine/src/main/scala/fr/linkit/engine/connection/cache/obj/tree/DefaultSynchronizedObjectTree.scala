@@ -2,8 +2,9 @@ package fr.linkit.engine.connection.cache.obj.tree
 
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceInstantiator
-import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SynchronizedObjectTree}
+import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeLocation, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{CanNotSynchronizeException, SynchronizedObject}
+import fr.linkit.api.connection.cache.traffic.content.NetworkPresenceHandler
 import fr.linkit.api.connection.network.Network
 import fr.linkit.engine.connection.cache.obj.instantiation.ContentSwitcher
 import fr.linkit.engine.connection.cache.obj.tree.node.{IllegalWrapperNodeException, ObjectSyncNode, RootObjectSyncNode, SyncNodeDataFactory}
@@ -13,6 +14,7 @@ import scala.util.Try
 
 final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier: String,
                                                                network: Network,
+                                                               presenceHandler: NetworkPresenceHandler[SyncNodeLocation],
                                                                val instantiator: SyncInstanceInstantiator,
                                                                val dataFactory: SyncNodeDataFactory,
                                                                override val id: Int,
@@ -20,8 +22,14 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
 
     private var root: RootObjectSyncNode[A] = _
 
-    def this(currentIdentifier: String, network: Network, id: Int, instantiator: SyncInstanceInstantiator, dataFactory: SyncNodeDataFactory, behaviorTree: ObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectSyncNode[A]) = {
-        this(currentIdentifier, network, instantiator, dataFactory, id, behaviorTree)
+    def this(currentIdentifier: String,
+             network: Network,
+             presenceHandler: NetworkPresenceHandler[SyncNodeLocation],
+             id: Int,
+             instantiator: SyncInstanceInstantiator,
+             dataFactory: SyncNodeDataFactory,
+             behaviorTree: ObjectBehaviorStore)(rootSupplier: DefaultSynchronizedObjectTree[A] => RootObjectSyncNode[A]) = {
+        this(currentIdentifier, network, presenceHandler, instantiator, dataFactory, id, behaviorTree)
         val root = rootSupplier(this)
         if (root.tree ne this)
             throw new IllegalWrapperNodeException("Root node's tree != this")
@@ -84,8 +92,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
         if (obj.isInstanceOf[SynchronizedObject[_]])
             throw new CanNotSynchronizeException("This object is already wrapped.")
 
-        val syncObject    = instantiator.newWrapper[B](new ContentSwitcher[B](obj))
-        val node          = initSynchronizedObject[B](parent, id, syncObject, ownerID)
+        val syncObject = instantiator.newWrapper[B](new ContentSwitcher[B](obj))
+        val node       = initSynchronizedObject[B](parent, id, syncObject, ownerID)
         node
     }
 
@@ -94,8 +102,8 @@ final class DefaultSynchronizedObjectTree[A <: AnyRef] private(currentIdentifier
             throw new IllegalSyncObjectRegistration(s"Could not register syncObject '${syncObject.getClass.getName}' : Object already initialized.")
 
         val data = dataFactory.newData(parent, id, syncObject, ownerID)
-        val node: ObjectSyncNode[B] = new ObjectSyncNode[B](parent, data)
-        //network.rootRefStore += (nodeInfo.hashCode(), syncObject)
+        val node = new ObjectSyncNode[B](parent, data)
+        presenceHandler.registerLocation(node.location)
         parent.addChild(node)
 
         scanSyncObjectFields(ownerID, syncObject)

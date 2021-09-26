@@ -39,5 +39,4 @@ abstract class ServerAppSchematic extends AppSchematic[ServerApplication] {
             }
         }
     }
-
 }

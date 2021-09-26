@@ -39,4 +39,5 @@ trait ContentHandler[C <: CacheContent] extends CacheHandler {
      * @return true if the engine can access to the content, false instead
      * */
     def canAccessToContent(engine: Engine): Boolean = true
+
 }

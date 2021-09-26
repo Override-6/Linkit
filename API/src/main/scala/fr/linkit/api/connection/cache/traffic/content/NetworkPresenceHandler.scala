@@ -10,19 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.channel.request
+package fr.linkit.api.connection.cache.traffic.content
 
-trait ResponseHolder {
+trait NetworkPresenceHandler[L] {
 
-    val id: Int
+    def isPresentOnEngine(engineId: String, location: L): Boolean
 
-    def addOnResponseReceived(callback: SubmitterPacket => Unit): Unit
+    def registerLocation(location: L): Unit
 
-    def nextResponse: SubmitterPacket
-
-    def nextResponse(response: SubmitterPacket => Unit): this.type = {
-        response(nextResponse)
-        this
-    }
+    def unregisterLocation(location: L): Unit
 
 }

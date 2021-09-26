@@ -24,13 +24,14 @@ import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.AbstractPacketChannel
 import fr.linkit.engine.local.utils.ConsumerContainer
 
+import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
 import java.util
 import java.util.NoSuchElementException
 import java.util.concurrent.LinkedBlockingQueue
 
 class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) with RequestPacketChannel {
 
-    private val requestHolders         = new util.LinkedHashMap[Int, SimpleResponseHolder]()
+    private val requestHolders         = new util.LinkedHashMap[Int, WeakReference[SimpleResponseHolder]]()
     private val requestConsumers       = ConsumerContainer[DefaultRequestChannelPacketBundle]()
     @volatile private var requestCount = 0
 
@@ -58,7 +59,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
 
                 val responseID = response.id
                 Option(requestHolders.get(responseID)) match {
-                    case Some(request)                     => request.pushResponse(response)
+                    case Some(request)                     => request.get().pushResponse(response)
                     case None if responseID > requestCount =>
                         throw new NoSuchElementException(s"(${Thread.currentThread().getName}) Response.id not found (${response.id}) ($requestHolders)")
                     case _                                 =>
@@ -89,11 +90,13 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
     }
 
     private[request] def addRequestHolder(holder: SimpleResponseHolder): Unit = {
-        requestHolders.put(holder.id, holder)
+        requestHolders.put(holder.id, new WeakReference[SimpleResponseHolder](holder, eventQueue))
     }
 
-    private[request] def removeRequestHolder(holder: SimpleResponseHolder): Unit = {
-        requestHolders remove holder.id
+    private val eventQueue: ReferenceQueue[SimpleResponseHolder] = new ReferenceQueue[SimpleResponseHolder]() {
+        override def poll(): Reference[SimpleResponseHolder] = {
+            requestHolders.remove(super.poll().get().id)
+        }
     }
 
 }

@@ -14,10 +14,6 @@ package fr.linkit.api.connection.cache.traffic.content
 
 trait ObjectNetworkPresence {
 
-    def getPresenceFor(engineId: String): CachedObjectPresence
-
-    def setPresent(): Unit
-
-    def setAbsent(): Unit
+    def getPresenceFor(engineId: String): ObjectPresenceType
 
 }

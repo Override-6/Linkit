@@ -55,7 +55,6 @@ class SharedInstance[A <: Serializable : ClassTag] private(channel: CachePacketC
         channel.makeRequest(ChannelScopes.broadcast)
                 .addPacket(ObjectPacket(value.orNull))
                 .submit()
-                .detach()
         this
     }
 

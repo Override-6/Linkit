@@ -36,8 +36,6 @@ case class SimpleResponseHolder(override val id: Int,
         responseConsumer += callback
     }
 
-    override def detach(): Unit = handler.removeRequestHolder(this)
-
     private[request] def pushResponse(response: AbstractSubmitterPacket): Unit = {
         AppLogger.vError(s"$currentTasksId <> ADDING RESPONSE $response FOR REQUEST $this")
         queue.add(response)
