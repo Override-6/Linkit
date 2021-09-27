@@ -12,16 +12,16 @@
 
 package fr.linkit.engine.connection.cache.obj.tree
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObjectCache
 import fr.linkit.api.connection.cache.obj.tree.{SyncNodeLocation, SynchronizedObjectTree, SynchronizedObjectTreeStore}
+import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjectCache}
 import fr.linkit.api.connection.packet.channel.request.RequestPacketChannel
 import fr.linkit.engine.connection.cache.obj.CacheRepoContent
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
-import fr.linkit.engine.connection.cache.traffic.presence.AbstractNetworkPresenceHandler
+import fr.linkit.engine.connection.reference.presence.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 
-class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], channel: RequestPacketChannel) extends AbstractNetworkPresenceHandler[SyncNodeLocation](channel) with SynchronizedObjectTreeStore[A] {
+class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], channel: RequestPacketChannel) extends AbstractNetworkPresenceHandler[SynchronizedObject[_], SyncNodeLocation](channel) with SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 

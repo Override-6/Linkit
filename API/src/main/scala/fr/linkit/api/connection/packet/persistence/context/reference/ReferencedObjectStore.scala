@@ -10,19 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.api.connection.packet.persistence.context.reference
 
-trait MutableReferencedObjectStore extends ReferencedObjectStore {
+trait ReferencedObjectStore {
 
-    def ++=(refs: AnyRef*): this.type
+    def getReferenced(reference: Int): Option[AnyRef]
 
-    def ++=(refs: Map[Int, AnyRef]): this.type
-
-    def putAllNotContained(refs: Map[Int, AnyRef]): this.type
-
-    def +=(anyRef: AnyRef): this.type
-
-    def +=(code: Int, anyRef: AnyRef): this.type
-
-    def -=(ref: AnyRef): this.type
+    def getReferencedCode(reference: AnyRef): Option[Int]
 }

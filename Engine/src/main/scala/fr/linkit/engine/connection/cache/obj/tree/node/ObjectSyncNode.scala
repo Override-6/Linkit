@@ -16,8 +16,8 @@ import fr.linkit.api.connection.cache.obj.invokation.local.Chip
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeLocation, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{CanNotSynchronizeException, SynchronizedObject}
-import fr.linkit.api.connection.cache.traffic.content.ObjectNetworkPresence
 import fr.linkit.api.connection.packet.channel.request.Submitter
+import fr.linkit.api.connection.reference.presence.ObjectNetworkPresence
 import fr.linkit.engine.connection.cache.obj.RMIExceptionString
 import fr.linkit.engine.connection.cache.obj.invokation.remote.InvocationPacket
 import fr.linkit.engine.connection.packet.UnexpectedPacketException

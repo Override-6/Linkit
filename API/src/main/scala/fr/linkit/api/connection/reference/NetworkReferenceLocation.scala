@@ -10,12 +10,8 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.traffic.content
+package fr.linkit.api.connection.reference
 
-trait ObjectPresence[L] {
-
-    def getPresenceOnNetwork: ObjectNetworkPresence
-
-    def getLocation: L
+trait NetworkReferenceLocation[+R <: AnyRef] {
 
 }

@@ -13,7 +13,8 @@
 package fr.linkit.engine.connection.packet.persistence.serializor.write
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.packet.persistence.context.{MutableReferencedObjectStore, PersistenceConfig}
+import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
+import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
 import fr.linkit.api.connection.packet.persistence.obj.{ContextObject, InstanceObject}
 import fr.linkit.engine.connection.packet.persistence.pool.{PacketObjectPool, PoolChunk, SimpleContextObject}
 import fr.linkit.engine.connection.packet.persistence.serializor.ArrayPersistence

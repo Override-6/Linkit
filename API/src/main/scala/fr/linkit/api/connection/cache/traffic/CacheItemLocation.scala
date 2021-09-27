@@ -10,12 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.traffic.content;
+package fr.linkit.api.connection.cache.traffic
 
-public enum ObjectPresenceType {
+import fr.linkit.api.connection.reference.NetworkReferenceLocation
 
-    NEVER_ASKED,
-    PRESENT,
-    NOT_PRESENT
+trait CacheItemLocation[+R <: AnyRef] extends NetworkReferenceLocation[R] {
+
+    val cacheFamily: String
+    val cacheID    : Int
 
 }

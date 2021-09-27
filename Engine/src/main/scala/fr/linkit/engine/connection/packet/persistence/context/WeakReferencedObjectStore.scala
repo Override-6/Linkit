@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.connection.packet.persistence.context
 
-import fr.linkit.api.connection.packet.persistence.context.MutableReferencedObjectStore
+import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
 
 import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
 import java.util

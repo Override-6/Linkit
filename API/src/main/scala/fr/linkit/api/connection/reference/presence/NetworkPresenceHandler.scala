@@ -10,10 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.api.connection.reference.presence
 
-trait ReferencedObjectStore {
-    def getReferenced(reference: Int): Option[AnyRef]
+import fr.linkit.api.connection.reference.NetworkReferenceLocation
 
-    def getReferencedCode(reference: AnyRef): Option[Int]
+trait NetworkPresenceHandler[L <: NetworkReferenceLocation[_]] {
+
+    def registerLocation(location: L): Unit
+
+    def unregisterLocation(location: L): Unit
+
 }

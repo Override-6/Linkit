@@ -4,8 +4,8 @@ import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.connection.cache.obj.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeLocation, SynchronizedObjectTree}
 import fr.linkit.api.connection.cache.obj.{CanNotSynchronizeException, SynchronizedObject}
-import fr.linkit.api.connection.cache.traffic.content.NetworkPresenceHandler
 import fr.linkit.api.connection.network.Network
+import fr.linkit.api.connection.reference.presence.NetworkPresenceHandler
 import fr.linkit.engine.connection.cache.obj.instantiation.ContentSwitcher
 import fr.linkit.engine.connection.cache.obj.tree.node.{IllegalWrapperNodeException, ObjectSyncNode, RootObjectSyncNode, SyncNodeDataFactory}
 import fr.linkit.engine.local.utils.ScalaUtils

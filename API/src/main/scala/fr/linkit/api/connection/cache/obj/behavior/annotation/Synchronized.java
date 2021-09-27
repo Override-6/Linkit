@@ -12,8 +12,6 @@
 
 package fr.linkit.api.connection.cache.obj.behavior.annotation;
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;

@@ -10,20 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.packet.persistence.context
+package fr.linkit.api.connection.reference.presence
 
-import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
+import fr.linkit.api.connection.reference.NetworkReferenceLocation
 
-trait PersistenceConfig extends TypeProfileStore {
-
-    def getReferenceStore: MutableReferencedObjectStore
-
-    def informObjectReceived(obj: AnyRef): Unit
-
-    def informObjectSent(obj: AnyRef): Unit
-
-    def widePacket: Boolean
-
-    def useUnsafe: Boolean
+trait ObjectPresence[L <: NetworkReferenceLocation[ObjectPresence[L]]] {
 
 }

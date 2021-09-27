@@ -19,7 +19,7 @@ import fr.linkit.api.connection.cache.obj.invokation.local.CallableLocalMethodIn
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
 import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SyncNodeLocation}
 import fr.linkit.api.connection.cache.obj.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
-import fr.linkit.api.connection.cache.traffic.content.ObjectNetworkPresence
+import fr.linkit.api.connection.reference.presence.ObjectNetworkPresence
 import fr.linkit.engine.connection.cache.obj.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {

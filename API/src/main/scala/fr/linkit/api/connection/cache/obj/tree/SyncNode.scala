@@ -3,7 +3,7 @@ package fr.linkit.api.connection.cache.obj.tree
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.invokation.local.Chip
 import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
-import fr.linkit.api.connection.cache.traffic.content.ObjectNetworkPresence
+import fr.linkit.api.connection.reference.presence.ObjectNetworkPresence
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable.ListBuffer

@@ -10,10 +10,19 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.traffic.content
+package fr.linkit.api.connection.packet.persistence.context.reference
 
-trait ObjectNetworkPresence {
+trait MutableReferencedObjectStore extends ReferencedObjectStore {
 
-    def getPresenceFor(engineId: String): ObjectPresenceType
+    def ++=(refs: AnyRef*): this.type
 
+    def ++=(refs: Map[Int, AnyRef]): this.type
+
+    def putAllNotContained(refs: Map[Int, AnyRef]): this.type
+
+    def +=(anyRef: AnyRef): this.type
+
+    def +=(code: Int, anyRef: AnyRef): this.type
+
+    def -=(ref: AnyRef): this.type
 }

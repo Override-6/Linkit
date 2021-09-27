@@ -15,7 +15,7 @@ package fr.linkit.client.connection.network
 import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
 import fr.linkit.api.connection.cache.{CacheSearchBehavior, SharedCacheManager}
 import fr.linkit.api.connection.network.NetworkInitialisable
-import fr.linkit.api.connection.packet.persistence.context.MutableReferencedObjectStore
+import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
 import fr.linkit.client.connection.ClientConnection
 import fr.linkit.engine.connection.cache.SharedCacheDistantManager
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter

@@ -10,10 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.reference
+package fr.linkit.api.connection.reference
 
-trait ReferencedObjectsCache {
+trait ObjectManagerLinker {
 
+    def getObject[R <: AnyRef](location: NetworkReferenceLocation[R]): R
 
+    def getLocation[R <: AnyRef](ref: R): NetworkReferenceLocation[R]
 
 }

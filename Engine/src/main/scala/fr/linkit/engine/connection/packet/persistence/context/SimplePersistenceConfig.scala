@@ -14,6 +14,7 @@ package fr.linkit.engine.connection.packet.persistence.context
 
 import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.packet.persistence.context._
+import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
 import fr.linkit.engine.connection.packet.persistence.context.profile.DefaultTypeProfile
 import fr.linkit.engine.connection.packet.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
 import fr.linkit.engine.local.utils.ClassMap

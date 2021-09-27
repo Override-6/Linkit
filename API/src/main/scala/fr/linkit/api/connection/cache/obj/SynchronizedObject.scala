@@ -10,77 +10,73 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.obj;
+package fr.linkit.api.connection.cache.obj
 
-import fr.linkit.api.connection.cache.obj.behavior.ObjectBehavior;
-import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore;
-import fr.linkit.api.connection.cache.obj.instantiation.SyncInstanceInstantiator;
-import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation;
-import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer;
-import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer;
-import fr.linkit.api.connection.cache.obj.tree.SyncNode;
-import fr.linkit.api.connection.cache.traffic.content.ObjectPresence;
+import fr.linkit.api.connection.cache.obj.behavior.{ObjectBehavior, ObjectBehaviorStore}
+import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
+import fr.linkit.api.connection.cache.obj.invokation.remote.Puppeteer
+import fr.linkit.api.connection.cache.obj.tree.{SyncNode, SyncNodeLocation}
+import fr.linkit.api.connection.reference.presence.ObjectPresence
 
-import java.io.Serializable;
+import java.io.Serializable
 
 /**
  * This interface depicts a synchronized object. <br>
- * SynchronizedObject classes are dynamically generated and extends the class {@link T} <br>
+ * SynchronizedObject classes are dynamically generated and extends the class [[T]] <br>
  * Handwritten classes may not implement this interface.
  *
  * @see fr.linkit.api.connection.cache.obj.generation.SyncClassCenter
  * @see SyncInstanceInstantiator
  */
-public interface SynchronizedObject<T> extends ObjectPresence<SyncNodeLocation>, Serializable {
+trait SynchronizedObject[T <: AnyRef] extends ObjectPresence[SyncNodeLocation] with Serializable {
 
     /**
      * Initialize the puppeteer of the synchronized object.
      *
      * @throws SyncObjectAlreadyInitialisedException if this object is already initialized.
      */
-    void initialize(SyncNode<T> node); //TODO pass in internal
+    def initialize(node: SyncNode[T]): Unit //TODO pass in internal
 
     /**
-     * @return The used {@link Puppeteer} of this object.
+     * @return The used [[Puppeteer]] of this object.
      * @see Puppeteer
      */
-    Puppeteer<T> getPuppeteer();
+    def getPuppeteer: Puppeteer[T]
 
     /**
      * @return the behavior of this object
      * @see ObjectBehavior
      */
-    ObjectBehavior<T> getBehavior();
+    def getBehavior: ObjectBehavior[T]
 
     /**
      * @return the invocation choreographer of this object
      * @see InvocationChoreographer
      */
-    InvocationChoreographer getChoreographer();
+    def getChoreographer: InvocationChoreographer
 
-    ObjectBehaviorStore getStore();
+    def getStore: ObjectBehaviorStore
 
     /**
      * Note: a synchronized object is always initialized if it was retrieved normally.
      *
      * @return true if the object is initialized.
      */
-    boolean isInitialized();
+    def isInitialized: Boolean
 
     /**
      * @return true if the engine that created this synchronized object is the current engine.
      */
-    boolean isOwnedByCurrent();
+    def isOwnedByCurrent: Boolean
 
     /**
      * @return self, as a SynchronizedObject implementation must extend T, the return value must be this object.
      * (this has been done to avoid useless casts)
      */
-    T asWrapped();
+    def asWrapped: T
 
     /**
      * @return this class's super class.
      */
-    Class<T> getSuperClass();
-
+    def getSuperClass: Class[T]
 }

@@ -12,6 +12,9 @@
 
 package fr.linkit.api.connection.cache.obj.tree
 
+import fr.linkit.api.connection.cache.obj.SynchronizedObject
+import fr.linkit.api.connection.cache.traffic.CacheItemLocation
+
 /**
  * All the information that allows to retrieve the synchronized object node.
  * @param cacheFamily the cache family of the object cache's manager.
@@ -19,9 +22,7 @@ package fr.linkit.api.connection.cache.obj.tree
  * @param owner the owner of the object (the engine's identifier that created the object)
  * @param nodePath the path of the object's node in its [[fr.linkit.api.connection.cache.obj.tree.SynchronizedObjectTree]]
  */
-case class SyncNodeLocation(cacheFamily: String,
-                            cacheID: Int,
+case class SyncNodeLocation(override val cacheFamily: String,
+                            override val cacheID: Int,
                             owner: String,
-                            nodePath: Array[Int]) {
-
-}
+                            nodePath: Array[Int]) extends CacheItemLocation[SynchronizedObject[_]]

@@ -10,14 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.api.connection.cache.traffic.content
+package fr.linkit.api.connection.reference
 
-trait NetworkPresenceHandler[L] {
+trait ObjectManager[R <: AnyRef, L <: NetworkReferenceLocation[R]] {
+
+    def findLocation(obj: R): Option[L]
+
+    def findObject(location: L): Option[R]
 
     def isPresentOnEngine(engineId: String, location: L): Boolean
-
-    def registerLocation(location: L): Unit
-
-    def unregisterLocation(location: L): Unit
-
 }
