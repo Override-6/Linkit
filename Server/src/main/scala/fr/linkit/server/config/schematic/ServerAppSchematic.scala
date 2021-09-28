@@ -10,13 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.server.local.config.schematic
+package fr.linkit.server.config.schematic
 
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.api.local.system.config.ApplicationInstantiationException
-import fr.linkit.api.local.system.config.schematic.AppSchematic
+import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.application.config.ApplicationInstantiationException
+import fr.linkit.api.application.config.schematic.AppSchematic
 import fr.linkit.server.ServerApplication
-import fr.linkit.server.local.config.ServerConnectionConfiguration
+import fr.linkit.server.config.ServerConnectionConfiguration
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal

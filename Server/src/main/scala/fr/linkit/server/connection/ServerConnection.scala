@@ -12,28 +12,30 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.CentralConnection
-import fr.linkit.api.connection.network.Network
-import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.persistence.PacketTranslator
-import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
-import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
-import fr.linkit.api.connection.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
-import fr.linkit.engine.connection.packet.traffic.DynamicSocket
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.local.system.Rules
-import fr.linkit.engine.local.system.event.DefaultEventNotifier
-import fr.linkit.engine.local.utils.NumberSerializer.serializeInt
-import fr.linkit.server.connection.network.ServerSideNetwork
-import fr.linkit.server.connection.packet.ServerPacketTraffic
-import fr.linkit.server.local.config.{AmbiguityStrategy, ServerConnectionConfiguration}
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.application.connection.CentralConnection
+import fr.linkit.api.application.network.Network
+import fr.linkit.api.application.packet.channel.ChannelScope
+import fr.linkit.api.application.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.application.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
+import fr.linkit.api.application.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
+import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.event.EventNotifier
+import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
+import fr.linkit.engine.application.packet.traffic.DynamicSocket
+import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.internal.system.Rules
+import fr.linkit.engine.internal.system.event.DefaultEventNotifier
+import fr.linkit.engine.internal.utils.NumberSerializer.serializeInt
+import fr.linkit.server.local.config.AmbiguityStrategy
 import fr.linkit.server.{ServerApplication, ServerException}
+import fr.linkit.server.application.ServerException
+import fr.linkit.server.config.ServerConnectionConfiguration
+import fr.linkit.server.connection.packet.ServerPacketTraffic
+import fr.linkit.server.network.ServerSideNetwork
 import org.jetbrains.annotations.Nullable
 
 import java.net.{ServerSocket, SocketException}
@@ -264,7 +266,7 @@ class ServerConnection(applicationContext: ServerApplication,
         AppLogger.trace(s"Connection '$identifier' conflicts with socket $socket. Applying Ambiguity Strategy '$strategy'...")
 
         val rejectMsg = s"Another relay point with id '$identifier' is currently connected on the targeted network."
-        import AmbiguityStrategy._
+        import fr.linkit.server.config.AmbiguityStrategy._
         configuration.identifierAmbiguityStrategy match {
             case CLOSE_SERVER =>
                 sendRefusedConnection(socket, rejectMsg + " Consequences: Closing Server...")

@@ -10,12 +10,16 @@
  *  questions.
  */
 
-package fr.linkit.server.connection
+package fr.linkit.server.config.schematic
 
-import fr.linkit.engine.internal.concurrency.PacketReaderThread
-import fr.linkit.server.network.ServerSideNetwork
+import fr.linkit.server.config.ServerConnectionConfiguration
 
-case class ExternalConnectionSessionInfo(server: ServerConnection,
-                                         manager: ExternalConnectionsManager,
-                                         network: ServerSideNetwork,
-                                         readThread: PacketReaderThread)
+class JavaServerAppSchematic extends ServerAppSchematic {
+
+    override val name: String = "default-schematic"
+
+    def addConfig(serverConfig: ServerConnectionConfiguration): this.type = {
+        serverConfigs += serverConfig
+        this
+    }
+}

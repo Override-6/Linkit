@@ -10,13 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.server.local.config;
+package fr.linkit.client.config
 
-public enum AmbiguityStrategy {
+import fr.linkit.api.application.config.schematic.AppSchematic
+import fr.linkit.api.application.config.{ApplicationConfiguration, ExtendedConfiguration}
+import fr.linkit.client.ClientApplication
+import org.jetbrains.annotations.NotNull
 
-    REJECT_NEW,
-    REPLACE,
-    DISCONNECT_BOTH,
-    CLOSE_SERVER //panic
+trait ClientApplicationConfiguration extends ApplicationConfiguration with ExtendedConfiguration {
+
+    @NotNull val loadSchematic: AppSchematic[ClientApplication]
 
 }

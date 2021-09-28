@@ -12,18 +12,17 @@
 
 package fr.linkit.server
 
-import fr.linkit.api.connection.{ConnectionInitialisationException, NoSuchConnectionException}
-import fr.linkit.api.local.concurrency.{WorkerPools, workerExecution}
-import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system
-import fr.linkit.api.local.system._
-import fr.linkit.api.local.system.config.ApplicationInstantiationException
-import fr.linkit.api.local.system.security.ConnectionSecurityException
-import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.local.system.{EngineConstants, Rules, StaticVersions}
-import fr.linkit.server.ServerApplication.Version
-import fr.linkit.server.local.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
+import fr.linkit.api.application.config.ApplicationInstantiationException
+import fr.linkit.api.application.connection.{ConnectionInitialisationException, NoSuchConnectionException}
+import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.internal.concurrency.{WorkerPools, workerExecution}
+import fr.linkit.api.internal.system
+import fr.linkit.api.internal.system._
+import fr.linkit.api.internal.system.security.ConnectionSecurityException
+import fr.linkit.engine.internal.LinkitApplication
+import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.internal.system.{EngineConstants, Rules}
+import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerApplicationConfiguration, ServerConnectionConfiguration}
 import fr.linkit.server.connection.ServerConnection
 
 import scala.collection.mutable

@@ -48,7 +48,7 @@ class DefaultEngine(override val identifier: String,
 
     @MethodControl(BasicInvocationRule.ONLY_OWNER)
     override def findRootReference[T](refId: Int): Option[T] = {
-        rootRefStore.getReferenced(refId).asInstanceOf[Option[T]]
+        ???//rootRefStore.getReferenced(refId).asInstanceOf[Option[T]]
     }
 
     override def getConnectionState: ExternalConnectionState = connectionState

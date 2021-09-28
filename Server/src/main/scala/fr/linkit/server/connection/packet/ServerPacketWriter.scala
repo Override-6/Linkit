@@ -12,11 +12,11 @@
 
 package fr.linkit.server.connection.packet
 
-import fr.linkit.api.connection.NoSuchConnectionException
-import fr.linkit.api.connection.packet.traffic.{PacketTraffic, PacketWriter}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.engine.connection.packet.SimplePacketAttributes
-import fr.linkit.engine.connection.packet.traffic.WriterInfo
+import fr.linkit.api.application.connection.NoSuchConnectionException
+import fr.linkit.api.application.packet.traffic.{PacketTraffic, PacketWriter}
+import fr.linkit.api.application.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.engine.application.packet.SimplePacketAttributes
+import fr.linkit.engine.application.packet.traffic.WriterInfo
 import fr.linkit.server.connection.ServerConnection
 
 class ServerPacketWriter(serverConnection: ServerConnection, info: WriterInfo) extends PacketWriter {

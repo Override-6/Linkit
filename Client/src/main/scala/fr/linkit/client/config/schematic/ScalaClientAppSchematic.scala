@@ -10,16 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.server.local.config.schematic
+package fr.linkit.client.config.schematic
 
-import fr.linkit.server.local.config.ServerConnectionConfiguration
+import fr.linkit.client.config.ClientConnectionConfiguration
 
-class JavaServerAppSchematic extends ServerAppSchematic {
+abstract class ScalaClientAppSchematic extends ClientAppSchematic {
 
     override val name: String = "default-schematic"
 
-    def addConfig(serverConfig: ServerConnectionConfiguration): this.type = {
-        serverConfigs += serverConfig
-        this
+    protected object clients {
+
+        def +=(serverConfig: ClientConnectionConfiguration): Unit = serverConfigs += serverConfig
     }
+
 }

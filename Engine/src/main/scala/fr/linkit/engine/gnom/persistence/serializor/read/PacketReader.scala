@@ -12,6 +12,7 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.read
 
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.engine.gnom.persistence.pool.SimpleContextObject
@@ -78,7 +79,7 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
 
         (flag: @switch) match {
             case Class      => collectAndUpdateChunk[Class[_]](readClass())
-            case SyncClass  => collectAndUpdateChunk[Class[_]](center.getSyncClass(readClass())) //would compile the class if was not
+            case SyncClass  => collectAndUpdateChunk[Class[AnyRef with SynchronizedObject[AnyRef]]](center.getSyncClass(readClass())) //would compile the class if was not
             case Enum       => collectAndUpdateChunk[Enum[_]](readEnum())
             case String     => collectAndUpdateChunk[String](readString())
             case Array      => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
@@ -88,11 +89,12 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
     }
 
     private def readContextObject(): SimpleContextObject = {
-        val id  = buff.getInt()
-        val obj = refStore.getReferenced(id).getOrElse {
+        /*val id  = buff.getInt()
+        val obj = refStore.findObject(id).getOrElse {
             throw new NoSuchElementException(s"Could not find contextual object of identifier '$id' in provided configuration.")
         }
-        new SimpleContextObject(id, obj)
+        new SimpleContextObject(id, obj)*/
+        ???
     }
 
     private def readClass(): Class[_] = {

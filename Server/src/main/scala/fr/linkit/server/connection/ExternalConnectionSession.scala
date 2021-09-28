@@ -12,16 +12,16 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.network.{Engine, ExternalConnectionState}
-import fr.linkit.api.connection.packet.persistence.PacketSerializationResult
-import fr.linkit.api.connection.packet.traffic.PacketTraffic
-import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
-import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
-import fr.linkit.engine.connection.packet.traffic.ChannelScopes
-import fr.linkit.engine.local.concurrency.PacketReaderThread
-import fr.linkit.engine.local.system.SystemPacketChannel
-import fr.linkit.server.connection.network.ServerSideNetwork
+import fr.linkit.api.application.network.{Engine, ExternalConnectionState}
+import fr.linkit.api.gnom.persistence.PacketSerializationResult
+import fr.linkit.api.application.packet.traffic.PacketTraffic
+import fr.linkit.api.application.packet.traffic.PacketTraffic.SystemChannelID
+import fr.linkit.api.internal.concurrency.workerExecution
+import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
+import fr.linkit.engine.application.packet.traffic.ChannelScopes
+import fr.linkit.engine.internal.concurrency.PacketReaderThread
+import fr.linkit.engine.internal.system.SystemPacketChannel
+import fr.linkit.server.network.ServerSideNetwork
 
 import java.net.Socket
 import java.nio.ByteBuffer

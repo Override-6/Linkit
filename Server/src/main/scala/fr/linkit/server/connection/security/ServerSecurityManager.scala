@@ -12,9 +12,9 @@
 
 package fr.linkit.server.connection.security
 
-import fr.linkit.api.connection.ConnectionContext
-import fr.linkit.api.local.system.config.ConnectionConfiguration
-import fr.linkit.api.local.system.security.{ApplicationSecurityManager, BytesHasher}
+import fr.linkit.api.application.connection.ConnectionContext
+import fr.linkit.api.application.config.ConnectionConfiguration
+import fr.linkit.api.internal.system.security.{ApplicationSecurityManager, BytesHasher}
 
 trait ServerSecurityManager extends ApplicationSecurityManager {
 

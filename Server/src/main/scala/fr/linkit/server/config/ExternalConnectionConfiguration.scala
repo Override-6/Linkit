@@ -10,14 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.client.local.config
+package fr.linkit.server.config
 
-import fr.linkit.api.local.system.config.ExternalConnectionConfiguration
+import fr.linkit.api.application.config.ConnectionConfiguration
 
-import java.net.{InetSocketAddress, Socket}
+trait ExternalConnectionConfiguration extends ConnectionConfiguration {
 
-trait ClientConnectionConfiguration extends ExternalConnectionConfiguration {
-
-    val reconnectionMillis: Int //time to reconnect in ms
-    val socketFactory     : InetSocketAddress => Socket
 }

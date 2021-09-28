@@ -11,11 +11,11 @@ import scala.reflect.{ClassTag, classTag}
  * */
 trait SyncClassCenter {
 
-    def getSyncClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]]
+    def getSyncClass[S <: AnyRef](clazz: Class[_]): Class[S with SynchronizedObject[S]]
 
-    def getSyncClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]]
+    def getSyncClassFromDesc[S<: AnyRef](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]]
 
-    def getSyncClassFromTpe[S: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getSyncClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
+    def getSyncClassFromTpe[S<: AnyRef: universe.TypeTag : ClassTag]: Class[S with SynchronizedObject[S]] = getSyncClass[S](classTag[S].runtimeClass.asInstanceOf[Class[S]])
 
     def preGenerateClasses(descriptions: List[SyncObjectSuperclassDescription[_]]): Unit
 

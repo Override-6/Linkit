@@ -66,7 +66,7 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], c
     override def findObject(location: SyncNodeLocation): Option[SynchronizedObject[_]] = {
         if (location.cacheFamily == center.family && location.cacheID == center.cacheID) {
             val path = location.nodePath
-            return trees.get(path.head).flatMap(_.findNode(path).map(_.synchronizedObject))
+            return trees.get(path.head).flatMap(_.findNode[AnyRef](path).map(_.synchronizedObject))
         }
         None
     }

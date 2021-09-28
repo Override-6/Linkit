@@ -17,7 +17,7 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
 
     override def findLocation(ref: AnyRef): Option[Int] = {
         val found = refToCode.get(ref)
-        if (((found: AnyRef) eq null) && parent != null)
+        if ((found == null) && parent != null)
             return parent.findLocation(ref)
         Option(found)
     }
@@ -25,7 +25,7 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
     override def findObject(location: ReferencedObjectLocation): Option[AnyRef] = {
         val code = location.refCode
         val found = codeToRef.get(code)
-        if (((found: AnyRef) eq null) && parent != null)
+        if (found == null && parent != null)
             return parent.findObject(location)
         Option(found)
     }
@@ -61,7 +61,7 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
     }
 
     override def +=(code: Int, anyRef: AnyRef): this.type = {
-        if ((refToCode.put(anyRef, code): AnyRef) ne null) {
+        if (refToCode.put(anyRef, code) == null) {
             throw new ObjectAlreadyReferencedException(s"Object $anyRef is already referenced with identifier '${codeToRef.get(code)}'.")
         }
         codeToRef.put(code, newWeakReference(anyRef))
@@ -74,7 +74,7 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
 
     override def -=(ref: AnyRef): this.type = {
         val code = refToCode.remove(ref)
-        if ((code: AnyRef) ne null) {
+        if (code == null) {
             codeToRef.remove(code)
         }
         this

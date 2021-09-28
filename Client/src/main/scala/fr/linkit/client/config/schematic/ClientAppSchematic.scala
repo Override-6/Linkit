@@ -10,12 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.client.local.config.schematic
+package fr.linkit.client.config.schematic
 
-import fr.linkit.api.local.system.config.ApplicationInstantiationException
-import fr.linkit.api.local.system.config.schematic.AppSchematic
+import fr.linkit.api.application.config.ApplicationInstantiationException
+import fr.linkit.api.application.config.schematic.AppSchematic
 import fr.linkit.client.ClientApplication
-import fr.linkit.client.local.config.ClientConnectionConfiguration
+import fr.linkit.client.config.ClientConnectionConfiguration
 
 import scala.collection.mutable.ListBuffer
 import scala.util.control.NonFatal

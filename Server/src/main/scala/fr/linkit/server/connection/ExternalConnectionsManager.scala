@@ -12,11 +12,12 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.api.connection.packet.persistence.PacketTransferResult
-import fr.linkit.api.connection.{ConnectionException, NoSuchConnectionException}
-import fr.linkit.api.local.system.{AppLogger, JustifiedCloseable, Reason}
-import fr.linkit.engine.local.concurrency.PacketReaderThread
+import fr.linkit.api.application.packet.DedicatedPacketCoordinates
+import fr.linkit.api.gnom.persistence.PacketTransferResult
+import fr.linkit.api.application.NoSuchConnectionException
+import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnectionException}
+import fr.linkit.api.internal.system.{AppLogger, JustifiedCloseable, Reason}
+import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException
 import org.jetbrains.annotations.Nullable
 

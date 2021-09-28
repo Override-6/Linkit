@@ -10,17 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.server.local.config
+package fr.linkit.server.config
 
-import fr.linkit.api.local.system.config.ApplicationConfiguration
-import fr.linkit.api.local.system.config.schematic.AppSchematic
-import fr.linkit.server.ServerApplication
-import org.jetbrains.annotations.NotNull
+import fr.linkit.api.application.config.{ConnectionConfiguration, ExtendedConfiguration}
 
-trait ServerApplicationConfiguration extends ApplicationConfiguration {
+trait ServerConnectionConfiguration extends ConnectionConfiguration with ExtendedConfiguration {
 
-    val mainPoolThreadCount: Int
-
-    @NotNull var loadSchematic: AppSchematic[ServerApplication]
-
+    val maxConnection              : Int
+    val port                       : Int
+    val identifierAmbiguityStrategy: AmbiguityStrategy
 }

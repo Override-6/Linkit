@@ -161,7 +161,7 @@ class ResourcesAndClassGenerationTests {
 
         override def newWrapper[A <: AnyRef](creator: SyncInstanceGetter[A]): A with SynchronizedObject[A] = {
             val cl           = creator.tpeClass
-            val syncClass    = generator.getSyncClass[A](SimpleSyncObjectSuperClassDescription[A](cl))
+            val syncClass    = generator.getSyncClassFromDesc[A](SimpleSyncObjectSuperClassDescription[A](cl))
             val syncObject   = creator.getInstance(syncClass)
             syncObject
         }

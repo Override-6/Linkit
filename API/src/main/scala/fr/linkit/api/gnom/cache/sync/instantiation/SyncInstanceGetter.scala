@@ -2,7 +2,7 @@ package fr.linkit.api.gnom.cache.sync.instantiation
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 
-trait SyncInstanceGetter[T] {
+trait SyncInstanceGetter[T<: AnyRef] {
 
     val tpeClass: Class[_]
 

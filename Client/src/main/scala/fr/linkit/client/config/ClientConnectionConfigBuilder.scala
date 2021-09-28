@@ -10,12 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.client.local.config
+package fr.linkit.client.config
 
-import fr.linkit.api.connection.packet.persistence.PacketTranslator
-import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.system.security.BytesHasher
-import fr.linkit.engine.connection.packet.persistence.DefaultPacketTranslator
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.internal.system.security.BytesHasher
+import fr.linkit.engine.gnom.persistence.DefaultPacketTranslator
 
 import java.net.{InetSocketAddress, Socket, URL}
 

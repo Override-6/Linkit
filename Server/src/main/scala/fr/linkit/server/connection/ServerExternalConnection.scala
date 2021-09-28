@@ -12,20 +12,20 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
-import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
-import fr.linkit.api.connection.packet.persistence.{PacketSerializationResult, PacketTranslator}
-import fr.linkit.api.connection.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
-import fr.linkit.api.connection.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.connection.{ConnectionException, ExternalConnection}
-import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, workerExecution}
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.api.local.system.event.EventNotifier
-import fr.linkit.engine.connection.packet.persistence.SimpleTransferInfo
-import fr.linkit.engine.local.system.SystemPacket
+import fr.linkit.api.application.network.{ExternalConnectionState, Network}
+import fr.linkit.api.application.packet.channel.ChannelScope
+import fr.linkit.api.application.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.gnom.persistence.{PacketSerializationResult, PacketTranslator}
+import fr.linkit.api.application.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
+import fr.linkit.api.application.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.application.{ApplicationContext, ExternalConnection}
+import fr.linkit.api.application.connection.ExternalConnection
+import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
+import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.event.EventNotifier
+import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
+import fr.linkit.engine.internal.system.SystemPacket
 import org.jetbrains.annotations.NotNull
 
 import java.net.Socket
@@ -137,7 +137,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
 
     private def handleSystemOrder(packet: SystemPacket): Unit = {
         val orderType = packet.order
-        import fr.linkit.engine.local.system.SystemOrder._
+        import fr.linkit.engine.internal.system.SystemOrder._
         orderType match {
             case CLIENT_CLOSE => runLater(shutdown())
             case SERVER_CLOSE => server.shutdown()

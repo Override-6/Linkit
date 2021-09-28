@@ -129,7 +129,7 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
 
     private def addObj0(ref: AnyRef): Unit = {
         val profile = config.getProfile[AnyRef](ref.getClass)
-        val code    = refStore.getReferencedCode(ref)
+        val code    = refStore.findLocation(ref)
         if (code.isEmpty) {
             addTypeOfIfAbsent(ref)
             val persistence = profile.getPersistence(ref)

@@ -14,7 +14,6 @@ package fr.linkit.engine.gnom.persistence.context
 
 import java.lang.reflect.Modifier
 import java.net.URL
-
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.application.packet.traffic.PacketTraffic
@@ -22,6 +21,7 @@ import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder.fromSc
 import fr.linkit.engine.gnom.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.gnom.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
+import fr.linkit.engine.gnom.reference.WeakReferencedObjectStore
 import fr.linkit.engine.internal.script.ScriptExecutor
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 
@@ -30,7 +30,7 @@ import scala.reflect.{ClassTag, classTag}
 class PersistenceConfigBuilder {
 
     private val persistors     = new ClassMap[TypePersistence[_ <: AnyRef]]
-    private val referenceStore = new WeakReferencedObjectStore
+    private val referenceStore = new WeakReferencedObjectStore(null)
 
     protected var unsafeUse           = true
     protected var referenceAllObjects = false

@@ -10,15 +10,14 @@
  *  questions.
  */
 
-package fr.linkit.client.local.config
+package fr.linkit.client.config
 
-import fr.linkit.api.local.system.config.schematic.AppSchematic
-import fr.linkit.api.local.system.config.{ApplicationConfiguration, ExtendedConfiguration}
-import fr.linkit.client.ClientApplication
-import org.jetbrains.annotations.NotNull
+import fr.linkit.api.application.config.ExternalConnectionConfiguration
 
-trait ClientApplicationConfiguration extends ApplicationConfiguration with ExtendedConfiguration {
+import java.net.{InetSocketAddress, Socket}
 
-    @NotNull val loadSchematic: AppSchematic[ClientApplication]
+trait ClientConnectionConfiguration extends ExternalConnectionConfiguration {
 
+    val reconnectionMillis: Int //time to reconnect in ms
+    val socketFactory     : InetSocketAddress => Socket
 }

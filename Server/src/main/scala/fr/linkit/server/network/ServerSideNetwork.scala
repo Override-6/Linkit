@@ -10,17 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.server.connection.network
+package fr.linkit.server.network
 
-import fr.linkit.api.connection.cache.SharedCacheManager
-import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.network.NetworkInitialisable
-import fr.linkit.api.connection.packet.traffic.PacketTraffic
-import fr.linkit.engine.connection.cache.SharedCacheOriginManager
-import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
-import fr.linkit.engine.connection.cache.obj.instantiation.SyncConstructor
-import fr.linkit.engine.connection.network.AbstractNetwork.GlobalCacheID
-import fr.linkit.engine.connection.network.{AbstractNetwork, NetworkDataTrunk}
+import fr.linkit.api.gnom.cache.SharedCacheManager
+import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
+import fr.linkit.api.application.network.NetworkInitialisable
+import fr.linkit.api.application.packet.traffic.PacketTraffic
+import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
+import fr.linkit.engine.gnom.cache.obj.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.gnom.cache.obj.instantiation.SyncConstructor
+import fr.linkit.engine.application.network.AbstractNetwork.GlobalCacheID
+import fr.linkit.engine.application.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.server.connection.ServerConnection
 
 class ServerSideNetwork(serverConnection: ServerConnection, privilegedInitialisables: Array[NetworkInitialisable])(implicit traffic: PacketTraffic)

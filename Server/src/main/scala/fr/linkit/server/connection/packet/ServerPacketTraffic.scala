@@ -12,10 +12,10 @@
 
 package fr.linkit.server.connection.packet
 
-import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
-import fr.linkit.api.connection.packet.traffic.PacketWriter
-import fr.linkit.api.local.ApplicationContext
-import fr.linkit.engine.connection.packet.traffic.{AbstractPacketTraffic, WriterInfo}
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.application.packet.traffic.PacketWriter
+import fr.linkit.engine.application.packet.traffic.{AbstractPacketTraffic, WriterInfo}
 import fr.linkit.server.connection.ServerConnection
 
 import java.net.URL

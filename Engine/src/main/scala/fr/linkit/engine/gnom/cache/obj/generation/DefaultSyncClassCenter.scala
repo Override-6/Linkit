@@ -26,10 +26,10 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     val requestFactory                  = new SyncClassCompilationRequestFactory
 
     override def getSyncClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]] = {
-        getSyncClass[S](SimpleSyncObjectSuperClassDescription[S](clazz))
+        getSyncClassFromDesc[S](SimpleSyncObjectSuperClassDescription[S](clazz))
     }
 
-    override def getSyncClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = {
+    override def getSyncClassFromDesc[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = {
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is abstract.")

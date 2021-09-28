@@ -10,13 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.server.local.config
+package fr.linkit.api.gnom.reference
 
-import fr.linkit.api.local.system.config.{ConnectionConfiguration, ExtendedConfiguration}
+trait ObjectManager[R <: AnyRef, L <: NetworkReferenceLocation[R]] {
 
-trait ServerConnectionConfiguration extends ConnectionConfiguration with ExtendedConfiguration {
+    def findLocation(obj: R): Option[L]
 
-    val maxConnection              : Int
-    val port                       : Int
-    val identifierAmbiguityStrategy: AmbiguityStrategy
+    def findObject(location: L): Option[R]
+
+    def isPresentOnEngine(engineId: String, location: L): Boolean
 }

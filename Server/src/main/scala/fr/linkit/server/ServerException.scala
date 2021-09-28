@@ -12,7 +12,7 @@
 
 package fr.linkit.server
 
-import fr.linkit.api.connection.ConnectionException
+import fr.linkit.api.application.connection.ConnectionException
 import fr.linkit.server.connection.ServerConnection
 import org.jetbrains.annotations.NotNull
 

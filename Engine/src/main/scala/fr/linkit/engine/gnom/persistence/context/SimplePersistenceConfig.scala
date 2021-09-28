@@ -17,6 +17,7 @@ import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
 import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
+import fr.linkit.engine.gnom.reference.WeakReferencedObjectStore
 import fr.linkit.engine.internal.utils.ClassMap
 
 import scala.collection.mutable

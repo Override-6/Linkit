@@ -10,13 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.server.local.config
+package fr.linkit.server.config
 
-import fr.linkit.api.local.system.config.ApplicationInstantiationException
-import fr.linkit.api.local.system.config.schematic.{AppSchematic, EmptySchematic}
-import fr.linkit.api.local.system.fsa.FileSystemAdapter
-import fr.linkit.api.local.system.security.ApplicationSecurityManager
-import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.api.application.config.ApplicationInstantiationException
+import fr.linkit.api.application.config.schematic.{AppSchematic, EmptySchematic}
+import fr.linkit.api.internal.system.fsa.FileSystemAdapter
+import fr.linkit.api.internal.system.security.ApplicationSecurityManager
+import fr.linkit.engine.internal.system.fsa.LocalFileSystemAdapters
 import fr.linkit.server.ServerApplication
 import org.jetbrains.annotations.{NotNull, Nullable}
 

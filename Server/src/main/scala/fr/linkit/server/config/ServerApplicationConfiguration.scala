@@ -10,17 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.server.local.config.schematic
+package fr.linkit.server.config
 
-import fr.linkit.server.local.config.ServerConnectionConfiguration
+import fr.linkit.api.application.config.ApplicationConfiguration
+import fr.linkit.api.application.config.schematic.AppSchematic
+import fr.linkit.server.ServerApplication
+import org.jetbrains.annotations.NotNull
 
-abstract class ScalaServerAppSchematic extends ServerAppSchematic {
+trait ServerApplicationConfiguration extends ApplicationConfiguration {
 
-    override val name: String = "default-schematic"
+    val mainPoolThreadCount: Int
 
-    protected object servers {
-
-        def +=(serverConfig: ServerConnectionConfiguration): Unit = serverConfigs += serverConfig
-    }
+    @NotNull var loadSchematic: AppSchematic[ServerApplication]
 
 }

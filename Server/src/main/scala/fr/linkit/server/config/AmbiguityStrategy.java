@@ -10,17 +10,13 @@
  *  questions.
  */
 
-package fr.linkit.client.local.config.schematic
+package fr.linkit.server.config;
 
-import fr.linkit.client.local.config.ClientConnectionConfiguration
+public enum AmbiguityStrategy {
 
-abstract class ScalaClientAppSchematic extends ClientAppSchematic {
-
-    override val name: String = "default-schematic"
-
-    protected object clients {
-
-        def +=(serverConfig: ClientConnectionConfiguration): Unit = serverConfigs += serverConfig
-    }
+    REJECT_NEW,
+    REPLACE,
+    DISCONNECT_BOTH,
+    CLOSE_SERVER //panic
 
 }
