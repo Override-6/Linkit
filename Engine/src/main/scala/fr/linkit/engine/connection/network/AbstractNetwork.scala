@@ -20,7 +20,6 @@ import fr.linkit.api.connection.cache.obj.behavior.member.method.parameter.Param
 import fr.linkit.api.connection.cache.obj.invokation.local.LocalMethodInvocation
 import fr.linkit.api.connection.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.connection.network.{Engine, Network, NetworkInitialisable}
-import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
 import fr.linkit.api.connection.packet.traffic.PacketInjectableStore
 import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.local.system.AppLogger
@@ -30,8 +29,9 @@ import fr.linkit.engine.connection.cache.{SharedCacheDistantManager, SharedCache
 import fr.linkit.engine.connection.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
 import fr.linkit.engine.connection.packet.traffic.channel.request.SimpleRequestPacketChannel
-
 import java.sql.Timestamp
+
+import fr.linkit.api.connection.reference.MutableReferencedObjectStore
 
 abstract class AbstractNetwork(override val connection: ConnectionContext,
                                override val rootRefStore: MutableReferencedObjectStore,

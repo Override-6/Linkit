@@ -30,6 +30,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
     @transient final protected var choreographer    : InvocationChoreographer = _
     @transient final protected var store            : ObjectBehaviorStore     = _
     @transient private         var presenceOnNetwork: ObjectNetworkPresence   = _
+    @transient private         var node             : SyncNode[A]             = _
     //fast cache for handleCall
     @transient private         var currentIdentifier: String                  = _
     @transient private         var ownerID          : String                  = _
@@ -44,21 +45,20 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
         this.puppeteer = node.puppeteer
         this.location = node.location
         this.behavior = puppeteer.objectBehavior
-        this.choreographer = new InvocationChoreographer()
         this.presenceOnNetwork = node.objectPresence
         this.currentIdentifier = puppeteer.currentIdentifier
         this.ownerID = puppeteer.ownerID
+        this.node = node
+        this.choreographer = new InvocationChoreographer()
     }
 
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
-    override def getPresenceOnNetwork: ObjectNetworkPresence = presenceOnNetwork
+    override def networkPresence: ObjectNetworkPresence = presenceOnNetwork
 
     override def getLocation: SyncNodeLocation = location
 
     override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
-
-    override def asWrapped(): A = asAutoSync
 
     override def getChoreographer: InvocationChoreographer = choreographer
 
@@ -68,7 +68,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     override def getBehavior: ObjectBehavior[A] = behavior
 
-    private def asAutoSync: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
+    //private def asAutoSync: A with SynchronizedObject[A] = this.asInstanceOf[A with SynchronizedObject[A]]
 
     protected def handleCall[R](id: Int)(args: Array[Any])(superCall: Array[Any] => Any = null): R = {
         if (!isInitialized)

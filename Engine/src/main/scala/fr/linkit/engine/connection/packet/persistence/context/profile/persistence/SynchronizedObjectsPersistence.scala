@@ -17,8 +17,8 @@ import fr.linkit.api.connection.cache.obj.SynchronizedObject
 import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation
 import fr.linkit.api.connection.network.Network
 import fr.linkit.api.connection.packet.persistence.context.TypePersistence
-import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
 import fr.linkit.api.connection.packet.persistence.obj.ObjectStructure
+import fr.linkit.api.connection.reference.MutableReferencedObjectStore
 import fr.linkit.api.local.system.AppLogger
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.connection.packet.persistence.context.structure.SyncObjectStructure

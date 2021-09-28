@@ -14,9 +14,9 @@ package fr.linkit.api.connection.network
 
 import fr.linkit.api.connection.ConnectionContext
 import fr.linkit.api.connection.cache.SharedCacheManager
-import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
-
 import java.sql.Timestamp
+
+import fr.linkit.api.connection.reference.MutableReferencedObjectStore
 
 trait Network {
 

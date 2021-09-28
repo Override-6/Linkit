@@ -15,10 +15,11 @@ package fr.linkit.engine.connection.reference.presence
 import fr.linkit.api.connection.reference.NetworkReferenceLocation
 import fr.linkit.api.connection.reference.presence.ObjectPresenceType._
 import fr.linkit.api.connection.reference.presence.{ObjectNetworkPresence, ObjectPresenceType}
+import fr.linkit.engine.connection.reference.NetworkObjectManager
 
 import scala.collection.mutable
 
-class InternalNetworkPresence[R <: AnyRef, L <: NetworkReferenceLocation[R]](handler: AbstractNetworkPresenceHandler[R, L], val location: L) extends ObjectNetworkPresence {
+class InternalNetworkPresence[R <: AnyRef, L <: NetworkReferenceLocation[R]](handler: NetworkObjectManager[R, L], val location: L) extends ObjectNetworkPresence {
 
     private val presences        = mutable.HashMap.empty[String, ObjectPresenceType]
     private var present: Boolean = false

@@ -18,5 +18,4 @@ trait SyncNodeDataFactory {
 
     def newData[B <: AnyRef](parent: ObjectSyncNode[_], id: Int, syncObject: B with SynchronizedObject[B], ownerID: String): ObjectNodeData[B]
 
-
 }

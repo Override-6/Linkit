@@ -10,10 +10,12 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.packet.persistence.context
+package fr.linkit.api.connection.reference
 
-import fr.linkit.api.connection.packet.PacketException
+trait ObjectManagersLinker {
 
-class ObjectAlreadyReferencedException(msg: String) extends PacketException(msg){
+    def getObject[R <: AnyRef](location: NetworkReferenceLocation[R]): R
+
+    def getLocation[R <: AnyRef](ref: R): NetworkReferenceLocation[R]
 
 }

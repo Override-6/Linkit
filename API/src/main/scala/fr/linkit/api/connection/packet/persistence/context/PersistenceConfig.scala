@@ -12,7 +12,7 @@
 
 package fr.linkit.api.connection.packet.persistence.context
 
-import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
+import fr.linkit.api.connection.reference.MutableReferencedObjectStore
 
 trait PersistenceConfig extends TypeProfileStore {
 

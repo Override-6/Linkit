@@ -70,12 +70,6 @@ trait SynchronizedObject[T <: AnyRef] extends ObjectPresence[SyncNodeLocation] w
     def isOwnedByCurrent: Boolean
 
     /**
-     * @return self, as a SynchronizedObject implementation must extend T, the return value must be this object.
-     * (this has been done to avoid useless casts)
-     */
-    def asWrapped: T
-
-    /**
      * @return this class's super class.
      */
     def getSuperClass: Class[T]

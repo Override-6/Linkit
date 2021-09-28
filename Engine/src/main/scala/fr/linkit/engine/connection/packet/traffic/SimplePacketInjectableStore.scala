@@ -12,20 +12,21 @@
 
 package fr.linkit.engine.connection.packet.traffic
 
+import java.io.Closeable
+
 import fr.linkit.api.connection.packet.channel.ChannelScope
 import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
 import fr.linkit.api.connection.packet.traffic._
 import fr.linkit.api.connection.packet.traffic.injection.PacketInjectionController
 import fr.linkit.api.local.system.{JustifiedCloseable, Reason}
-import java.io.Closeable
 
-import scala.annotation.tailrec
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
 
 class SimplePacketInjectableStore(traffic: PacketTraffic,
                                   override val defaultPersistenceConfig: PersistenceConfig,
-                                  override val trafficPath: Array[Int]) extends PacketInjectableStore with JustifiedCloseable with TrafficPresence {
+                                  override val trafficPath: Array[Int])
+    extends PacketInjectableStore with InternalPacketInjectableStore with JustifiedCloseable with TrafficPresence {
 
     private val presences       = mutable.HashMap.empty[Int, (TrafficPresence, PersistenceConfig)]
     private var closed: Boolean = false
@@ -55,12 +56,11 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         injectable
     }
 
-    def getPersistenceConfig(path: Array[Int]): PersistenceConfig = {
+    override def getPersistenceConfig(path: Array[Int]): PersistenceConfig = {
         getPersistenceConfig(path, 0)
     }
 
-    @tailrec
-    private def getPersistenceConfig(path: Array[Int], pos: Int): PersistenceConfig = {
+    override protected def getPersistenceConfig(path: Array[Int], pos: Int): PersistenceConfig = {
         val len = path.length
         if (pos >= len) {
             return failPresence(path)
@@ -68,8 +68,8 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         presences.get(path(pos)) match {
             case None                     => defaultPersistenceConfig
             case Some((presence, config)) => presence match {
-                case _: PacketInjectable                => config
-                case store: SimplePacketInjectableStore =>
+                case _: PacketInjectable                  => config
+                case store: InternalPacketInjectableStore =>
                     if (pos - len == 1) config //no more sub item in path: the targeted presence is the store.
                     else store.getPersistenceConfig(path, pos + 1) //else, path iteration is not complete, continue.
             }
@@ -80,13 +80,13 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         throw new NoSuchTrafficPresenceException(s"Could not find TrafficPresence at path ${path.mkString("/")}.")
     }
 
-    def inject(injection: PacketInjectionController): Unit = {
+    override def inject(injection: PacketInjectionController): Unit = {
         if (!injection.haveMoreIdentifier)
             failPresence(injection.injectablePath)
         presences.get(injection.nextIdentifier) match {
             case Some(value) => value._1 match {
-                case injectable: PacketInjectable       => injection.process(injectable)
-                case store: SimplePacketInjectableStore => store.inject(injection)
+                case injectable: PacketInjectable         => injection.process(injectable)
+                case store: InternalPacketInjectableStore => store.inject(injection)
             }
             case None        => failPresence(injection.injectablePath)
         }

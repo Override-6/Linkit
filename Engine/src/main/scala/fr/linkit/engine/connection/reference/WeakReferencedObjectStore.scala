@@ -1,36 +1,33 @@
-/*
- *  Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
- *  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- *
- *  This code is free software; you can only use it for personal uses, studies or documentation.
- *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
- *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
- *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
- *  questions.
- */
-
-package fr.linkit.engine.connection.packet.persistence.context
-
-import fr.linkit.api.connection.packet.persistence.context.reference.MutableReferencedObjectStore
+package fr.linkit.engine.connection.reference
 
 import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
 import java.util
 import java.util.Map.Entry
 
-class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
+import fr.linkit.api.connection.reference.{MutableReferencedObjectStore, ReferencedObjectLocation}
+
+class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends MutableReferencedObjectStore {
 
     private val codeToRef = new util.HashMap[Int, WeakReference[AnyRef]]()
     private val refToCode = new util.WeakHashMap[AnyRef, Int]()
 
-    override def getReferenced(reference: Int): Option[AnyRef] = {
-        val referenced = codeToRef.get(reference)
-        if (referenced eq null) None
-        else Some(referenced.get())
+    override def isPresent(l: Int): Boolean = {
+        (parent != null && parent.isPresent(l)) || codeToRef.containsKey(l)
     }
 
-    override def getReferencedCode(reference: AnyRef): Option[Int] = {
-        Option(refToCode.get(reference))
+    override def findLocation(ref: AnyRef): Option[Int] = {
+        val found = refToCode.get(ref)
+        if (((found: AnyRef) eq null) && parent != null)
+            return parent.findLocation(ref)
+        Option(found)
+    }
+
+    override def findObject(location: ReferencedObjectLocation): Option[AnyRef] = {
+        val code = location.refCode
+        val found = codeToRef.get(code)
+        if (((found: AnyRef) eq null) && parent != null)
+            return parent.findObject(location)
+        Option(found)
     }
 
     override def ++=(refs: Map[Int, AnyRef]): this.type = {
@@ -38,7 +35,7 @@ class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
         this
     }
 
-    override def putAllNotContained(refs: Map[Int, AnyRef]): WeakReferencedObjectStore.this.type = {
+    override def putAllNotContained(refs: Map[Int, AnyRef]): this.type = {
         ++=(refs.filterNot(p => refToCode.containsKey(p._2)))
     }
 
@@ -49,10 +46,10 @@ class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
 
     def ++=(other: WeakReferencedObjectStore): this.type = {
         ++=(other.codeToRef
-                .entrySet()
-                .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
-                .map(p => (p.getKey, p.getValue.get()))
-                .toMap)
+            .entrySet()
+            .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
+            .map(p => (p.getKey, p.getValue.get()))
+            .toMap)
         this
     }
 
@@ -64,7 +61,7 @@ class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
     }
 
     override def +=(code: Int, anyRef: AnyRef): this.type = {
-        if (refToCode.put(anyRef, code) != null) {
+        if ((refToCode.put(anyRef, code): AnyRef) ne null) {
             throw new ObjectAlreadyReferencedException(s"Object $anyRef is already referenced with identifier '${codeToRef.get(code)}'.")
         }
         codeToRef.put(code, newWeakReference(anyRef))
@@ -77,7 +74,7 @@ class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
 
     override def -=(ref: AnyRef): this.type = {
         val code = refToCode.remove(ref)
-        if (code != null) {
+        if ((code: AnyRef) ne null) {
             codeToRef.remove(code)
         }
         this
@@ -89,4 +86,5 @@ class WeakReferencedObjectStore() extends MutableReferencedObjectStore {
             codeToRef.remove(code)
         }
     }
+
 }

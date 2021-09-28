@@ -16,4 +16,8 @@ import fr.linkit.api.connection.reference.NetworkReferenceLocation
 
 trait ObjectPresence[L <: NetworkReferenceLocation[ObjectPresence[L]]] {
 
+    def networkPresence: ObjectNetworkPresence
+
+    def getLocation: L
+
 }

@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.engine.connection.reference.presence
+package fr.linkit.engine.connection.reference
 
 import fr.linkit.api.connection.packet.Packet
 import fr.linkit.api.connection.packet.channel.request.{RequestPacketBundle, RequestPacketChannel}
@@ -20,10 +20,11 @@ import fr.linkit.api.connection.reference.{NetworkReferenceLocation, ObjectManag
 import fr.linkit.engine.connection.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.connection.packet.traffic.ChannelScopes
+import fr.linkit.engine.connection.reference.presence.{ExternalNetworkPresence, InternalNetworkPresence}
 
 import scala.collection.mutable
 
-abstract class AbstractNetworkPresenceHandler[R <: AnyRef, L <: NetworkReferenceLocation[R]](channel: RequestPacketChannel)
+abstract class NetworkObjectManager[R <: AnyRef, L <: NetworkReferenceLocation[R]](channel: RequestPacketChannel)
         extends NetworkPresenceHandler[L] with ObjectManager[R, L] {
 
     private val externalPresences = mutable.HashMap.empty[L, ExternalNetworkPresence[R, L]]

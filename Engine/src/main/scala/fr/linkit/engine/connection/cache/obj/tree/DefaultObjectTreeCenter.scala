@@ -17,11 +17,11 @@ import fr.linkit.api.connection.cache.obj.{SynchronizedObject, SynchronizedObjec
 import fr.linkit.api.connection.packet.channel.request.RequestPacketChannel
 import fr.linkit.engine.connection.cache.obj.CacheRepoContent
 import fr.linkit.engine.connection.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
-import fr.linkit.engine.connection.reference.presence.AbstractNetworkPresenceHandler
+import fr.linkit.engine.connection.reference.NetworkObjectManager
 
 import scala.collection.mutable
 
-class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], channel: RequestPacketChannel) extends AbstractNetworkPresenceHandler[SynchronizedObject[_], SyncNodeLocation](channel) with SynchronizedObjectTreeStore[A] {
+class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], channel: RequestPacketChannel) extends NetworkObjectManager[SynchronizedObject[_], SyncNodeLocation](channel) with SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 
@@ -57,5 +57,17 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], c
 
     def findTreeInternal(id: Int): Option[DefaultSynchronizedObjectTree[A]] = {
         trees.get(id)
+    }
+
+    override def findLocation(obj: SynchronizedObject[_]): Option[SyncNodeLocation] = {
+        Some(obj.getLocation)
+    }
+
+    override def findObject(location: SyncNodeLocation): Option[SynchronizedObject[_]] = {
+        if (location.cacheFamily == center.family && location.cacheID == center.cacheID) {
+            val path = location.nodePath
+            return trees.get(path.head).flatMap(_.findNode(path).map(_.synchronizedObject))
+        }
+        None
     }
 }
