@@ -1,8 +1,8 @@
-import fr.linkit.api.connection.packet.traffic.PacketTraffic
-import fr.linkit.api.local.ApplicationContext
-import fr.linkit.engine.connection.network.{NetworkDataBundle, NetworkDataTrunk}
-import fr.linkit.engine.connection.packet.fundamental.EmptyPacket
-import fr.linkit.engine.connection.packet.persistence.context.PersistenceConfigBuilder
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.application.packet.traffic.PacketTraffic
+import fr.linkit.engine.application.network.{NetworkDataBundle, NetworkDataTrunk}
+import fr.linkit.engine.application.packet.fundamental.EmptyPacket
+import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
 
 //Start Of Context
 val builder: PersistenceConfigBuilder = null

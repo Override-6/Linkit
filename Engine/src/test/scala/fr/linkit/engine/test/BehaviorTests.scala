@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.engine.connection.cache.obj.invokation.SimpleRMIRulesAgreementBuilder
+import fr.linkit.engine.gnom.cache.obj.invokation.SimpleRMIRulesAgreementBuilder
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Assertions, Test, TestInstance}
 

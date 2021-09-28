@@ -12,18 +12,19 @@
 
 package fr.linkit.client
 
-import fr.linkit.api.connection.{ConnectionContext, ConnectionInitialisationException, ExternalConnection}
-import fr.linkit.api.local.concurrency.workerExecution
-import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system
-import fr.linkit.api.local.system._
-import fr.linkit.api.local.system.config.ApplicationInstantiationException
+import fr.linkit.api.application.ExternalConnection
+import fr.linkit.api.application.connection.{ConnectionContext, ConnectionInitialisationException, ExternalConnection}
+import fr.linkit.api.internal.concurrency.workerExecution
+import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.internal.system
+import fr.linkit.api.internal.system._
+import fr.linkit.api.application.config.ApplicationInstantiationException
 import fr.linkit.client.ClientApplication.Version
-import fr.linkit.client.local.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
+import fr.linkit.client.config.{ClientApplicationConfiguration, ClientConnectionConfiguration}
 import fr.linkit.client.connection.{ClientConnection, ClientDynamicSocket}
-import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
-import fr.linkit.engine.local.system.{EngineConstants, Rules, StaticVersions}
+import fr.linkit.engine.internal.LinkitApplication
+import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.internal.system.{EngineConstants, Rules, StaticVersions}
 
 import scala.collection.mutable
 import scala.util.control.NonFatal

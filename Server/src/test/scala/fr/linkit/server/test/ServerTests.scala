@@ -24,16 +24,18 @@ package fr.linkit.server.test
  *  questions.
  */
 
-import fr.linkit.api.local.plugin.Plugin
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.application.plugin.Plugin
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.test.HierarchyRaiserOrderer
 import fr.linkit.api.test.TestUtils._
 import fr.linkit.engine.test.EngineTests
 import fr.linkit.plugin.controller.ControllerExtension
 import fr.linkit.plugin.debug.DebugPlugin
 import fr.linkit.server.ServerApplication
-import fr.linkit.server.local.config.schematic.ScalaServerAppSchematic
-import fr.linkit.server.local.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
+import fr.linkit.server.application.config.ServerApplicationConfigBuilder
+import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
+import fr.linkit.server.config.schematic.ScalaServerAppSchematic
+import fr.linkit.server.local.config.ServerApplicationConfigBuilder
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 

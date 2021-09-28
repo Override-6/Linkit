@@ -12,9 +12,9 @@
 
 package fr.linkit.client.connection
 
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.client.connection.ClientDynamicSocket.UnsetIdentifier
-import fr.linkit.engine.connection.packet.traffic.DynamicSocket
+import fr.linkit.engine.application.packet.traffic.DynamicSocket
 
 import java.io._
 import java.net.{ConnectException, InetSocketAddress, Socket, SocketException}

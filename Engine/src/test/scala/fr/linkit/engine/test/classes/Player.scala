@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.test.classes
 
-import fr.linkit.api.connection.cache.obj.behavior.annotation.BasicInvocationRule.BROADCAST
-import fr.linkit.api.connection.cache.obj.behavior.annotation.{MethodControl => MC}
+import fr.linkit.api.gnom.cache.sync.behavior.annotation.BasicInvocationRule.BROADCAST
+import fr.linkit.api.gnom.cache.sync.behavior.annotation.{MethodControl => MC}
 
 import scala.annotation.meta.setter
 

@@ -12,24 +12,24 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.packet.DedicatedPacketCoordinates
-import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
-import fr.linkit.engine.connection.packet.SimplePacketAttributes
-import fr.linkit.engine.connection.packet.fundamental.ValPacket.IntPacket
-import fr.linkit.engine.connection.packet.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
-import fr.linkit.engine.connection.packet.persistence.serializor.DefaultPacketSerializer
-import fr.linkit.engine.connection.packet.traffic.channel.request.RequestPacket
-import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
-import fr.linkit.engine.local.utils.{ClassMap, ScalaUtils}
+import fr.linkit.api.application.packet.DedicatedPacketCoordinates
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.engine.application.packet.SimplePacketAttributes
+import fr.linkit.engine.application.packet.fundamental.ValPacket.IntPacket
+import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
+import fr.linkit.engine.gnom.persistence.serializor.DefaultPacketSerializer
+import fr.linkit.engine.application.packet.traffic.channel.request.RequestPacket
+import fr.linkit.engine.internal.LinkitApplication
+import fr.linkit.engine.internal.system.fsa.LocalFileSystemAdapters
+import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
 import fr.linkit.engine.test.PacketTests.{serializer, testPacket}
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{BeforeAll, RepeatedTest, Test, TestInstance}
 import java.io.File
 import java.nio.ByteBuffer
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObjectCache
-import fr.linkit.engine.connection.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
+import fr.linkit.engine.application.packet.fundamental.RefPacket.ObjectPacket
 
 import scala.collection.mutable.ArrayBuffer
 

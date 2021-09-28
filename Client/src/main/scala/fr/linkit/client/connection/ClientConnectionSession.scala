@@ -12,15 +12,15 @@
 
 package fr.linkit.client.connection
 
-import fr.linkit.api.connection.packet.persistence.PacketTranslator
-import fr.linkit.api.connection.packet.traffic.PacketTraffic.SystemChannelID
-import fr.linkit.api.local.system.event.EventNotifier
+import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.application.packet.traffic.PacketTraffic.SystemChannelID
+import fr.linkit.api.internal.system.event.EventNotifier
 import fr.linkit.client.ClientApplication
-import fr.linkit.client.local.config.ClientConnectionConfiguration
-import fr.linkit.engine.connection.packet.traffic.{ChannelScopes, DefaultPacketReader, DynamicSocket, SocketPacketTraffic}
-import fr.linkit.engine.local.concurrency.PacketReaderThread
-import fr.linkit.engine.local.system.SystemPacketChannel
-import fr.linkit.engine.local.system.event.DefaultEventNotifier
+import fr.linkit.client.config.ClientConnectionConfiguration
+import fr.linkit.engine.application.packet.traffic.{ChannelScopes, DefaultPacketReader, DynamicSocket, SocketPacketTraffic}
+import fr.linkit.engine.internal.concurrency.PacketReaderThread
+import fr.linkit.engine.internal.system.SystemPacketChannel
+import fr.linkit.engine.internal.system.event.DefaultEventNotifier
 
 case class ClientConnectionSession(socket: DynamicSocket,
                                    info: ClientConnectionSessionInfo) {

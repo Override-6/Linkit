@@ -12,11 +12,12 @@
 
 package fr.linkit.client.test
 
-import fr.linkit.api.local.plugin.Plugin
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.application.plugin.Plugin
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.client.ClientApplication
-import fr.linkit.client.local.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
-import fr.linkit.client.local.config.schematic.ScalaClientAppSchematic
+import fr.linkit.client.config.{ClientApplicationConfigBuilder, ClientConnectionConfigBuilder}
+import fr.linkit.client.config.schematic.ScalaClientAppSchematic
+import fr.linkit.client.local.config.ClientConnectionConfigBuilder
 import fr.linkit.plugin.controller.ControllerExtension
 import fr.linkit.plugin.debug.DebugPlugin
 import org.jetbrains.annotations.NotNull

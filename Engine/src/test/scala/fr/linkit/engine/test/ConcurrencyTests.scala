@@ -12,11 +12,11 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.local.concurrency.WorkerPools
-import fr.linkit.api.local.concurrency.WorkerPools.currentTasksId
-import fr.linkit.api.local.system.AppLogger
+import fr.linkit.api.internal.concurrency.WorkerPools
+import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
+import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.test.TestUtils._
-import fr.linkit.engine.local.concurrency.pool.BusyWorkerPool
+import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 import org.junit.jupiter.api.function.Executable

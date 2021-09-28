@@ -1,6 +1,6 @@
 package fr.linkit.engine.test
 
-import fr.linkit.engine.local.utils.ScalaUtils
+import fr.linkit.engine.internal.utils.ScalaUtils
 import org.junit.jupiter.api.Test
 //import org.openjdk.jol.vm.VM
 

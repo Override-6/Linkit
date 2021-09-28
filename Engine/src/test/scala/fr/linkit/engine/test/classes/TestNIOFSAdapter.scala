@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test.classes
 
-import fr.linkit.engine.local.system.fsa.nio.NIOFileSystemAdapter
+import fr.linkit.engine.internal.system.fsa.nio.NIOFileSystemAdapter
 
 class TestNIOFSAdapter extends NIOFileSystemAdapter(null) {
 

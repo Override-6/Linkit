@@ -12,8 +12,8 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.ConnectionContext
-import fr.linkit.api.local.ApplicationContext
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.application.connection.ConnectionContext
 
 /*@RunWith(classOf[JUnitPlatform])*/
 //@TestInstance(Lifecycle.PER_CLASS)

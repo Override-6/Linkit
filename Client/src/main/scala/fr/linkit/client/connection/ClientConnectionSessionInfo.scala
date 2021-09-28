@@ -12,10 +12,10 @@
 
 package fr.linkit.client.connection
 
-import fr.linkit.api.connection.packet.persistence.PacketTranslator
+import fr.linkit.api.gnom.persistence.PacketTranslator
 import fr.linkit.client.ClientApplication
-import fr.linkit.client.local.config.ClientConnectionConfiguration
-import fr.linkit.engine.local.concurrency.PacketReaderThread
+import fr.linkit.client.config.ClientConnectionConfiguration
+import fr.linkit.engine.internal.concurrency.PacketReaderThread
 
 case class ClientConnectionSessionInfo(appContext: ClientApplication,
                                        configuration: ClientConnectionConfiguration,

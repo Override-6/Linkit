@@ -12,27 +12,27 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.connection.cache.obj.SynchronizedObject
-import fr.linkit.api.connection.cache.obj.behavior.ObjectBehaviorStore
-import fr.linkit.api.connection.cache.obj.behavior.annotation.Synchronized
-import fr.linkit.api.connection.cache.obj.instantiation.{SyncInstanceInstantiator, SyncInstanceGetter}
-import fr.linkit.api.connection.cache.obj.invokation.InvocationChoreographer
-import fr.linkit.api.connection.cache.obj.tree.SyncNodeLocation
-import fr.linkit.api.local.generation.TypeVariableTranslator
-import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system.config.ApplicationConfiguration
-import fr.linkit.api.local.system.fsa.FileSystemAdapter
-import fr.linkit.api.local.system.security.ApplicationSecurityManager
-import fr.linkit.api.local.system.{AppLogger, Version}
-import fr.linkit.engine.connection.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultObjectBehavior, DefaultObjectBehaviorStore}
-import fr.linkit.engine.connection.cache.obj.description.SimpleSyncObjectSuperClassDescription
-import fr.linkit.engine.connection.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
-import fr.linkit.engine.connection.cache.obj.instantiation.ContentSwitcher
-import fr.linkit.engine.connection.cache.obj.invokation.remote.ObjectPuppeteer
-import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.local.resource.external.LocalResourceFolder._
-import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
+import fr.linkit.api.gnom.cache.sync.behavior.annotation.Synchronized
+import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceInstantiator, SyncInstanceGetter}
+import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
+import fr.linkit.api.gnom.cache.sync.tree.SyncNodeLocation
+import fr.linkit.api.internal.generation.TypeVariableTranslator
+import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.config.ApplicationConfiguration
+import fr.linkit.api.internal.system.fsa.FileSystemAdapter
+import fr.linkit.api.internal.system.security.ApplicationSecurityManager
+import fr.linkit.api.internal.system.{AppLogger, Version}
+import fr.linkit.engine.gnom.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultObjectBehavior, DefaultObjectBehaviorStore}
+import fr.linkit.engine.gnom.cache.obj.description.SimpleSyncObjectSuperClassDescription
+import fr.linkit.engine.gnom.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
+import fr.linkit.engine.gnom.cache.obj.instantiation.ContentSwitcher
+import fr.linkit.engine.gnom.cache.obj.invokation.remote.ObjectPuppeteer
+import fr.linkit.engine.internal.LinkitApplication
+import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
+import fr.linkit.engine.application.resource.external.LocalResourceFolder._
+import fr.linkit.engine.internal.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.test.classes.{Player, ScalaClass, Vector2}
 import org.junit.jupiter.api.MethodOrderer.OrderAnnotation
 import org.junit.jupiter.api.TestInstance.Lifecycle

@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.local.resource.external.{ResourceFile, ResourceFolder}
+import fr.linkit.api.application.resource.external.{ResourceFile, ResourceFolder}
 import fr.linkit.engine.test.ScalaReflectionTests.{B, TestClass}
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Test, TestInstance}

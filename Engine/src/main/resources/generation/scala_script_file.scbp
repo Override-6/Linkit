@@ -12,7 +12,7 @@
 
 package $ClassPackage$
 
-import fr.linkit.api.local.script.ScriptFile
+import fr.linkit.api.internal.script.ScriptFile
 
 class $ClassName$($ScriptArguments$) extends $ScriptClass$ {
 

@@ -12,14 +12,14 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.local.resource.external.ResourceFolder
-import fr.linkit.api.local.system.config.ApplicationConfiguration
-import fr.linkit.api.local.system.fsa.FileSystemAdapter
-import fr.linkit.api.local.system.security.ApplicationSecurityManager
-import fr.linkit.api.local.system.{AppLogger, Version}
-import fr.linkit.engine.local.LinkitApplication
-import fr.linkit.engine.local.generation.compilation.access.DefaultCompilerCenter
-import fr.linkit.engine.local.system.fsa.LocalFileSystemAdapters
+import fr.linkit.api.application.resource.external.ResourceFolder
+import fr.linkit.api.application.config.ApplicationConfiguration
+import fr.linkit.api.internal.system.fsa.FileSystemAdapter
+import fr.linkit.api.internal.system.security.ApplicationSecurityManager
+import fr.linkit.api.internal.system.{AppLogger, Version}
+import fr.linkit.engine.internal.LinkitApplication
+import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
+import fr.linkit.engine.internal.system.fsa.LocalFileSystemAdapters
 import org.mockito.Mockito
 
 object TestHelper {

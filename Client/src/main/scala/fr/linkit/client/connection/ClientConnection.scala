@@ -12,25 +12,25 @@
 
 package fr.linkit.client.connection
 
-import fr.linkit.api.connection.network.{ExternalConnectionState, Network}
-import fr.linkit.api.connection.packet._
-import fr.linkit.api.connection.packet.channel.ChannelScope
-import fr.linkit.api.connection.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.connection.packet.persistence.PacketTranslator
-import fr.linkit.api.connection.packet.persistence.context.PersistenceConfig
-import fr.linkit.api.connection.packet.traffic._
-import fr.linkit.api.connection.{ConnectionInitialisationException, ExternalConnection}
-import fr.linkit.api.local.ApplicationContext
-import fr.linkit.api.local.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
-import fr.linkit.api.local.system.AppLogger
-import fr.linkit.api.local.system.event.EventNotifier
+import fr.linkit.api.application.network.{ExternalConnectionState, Network}
+import fr.linkit.api.application.packet._
+import fr.linkit.api.application.packet.channel.ChannelScope
+import fr.linkit.api.application.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.application.packet.traffic._
+import fr.linkit.api.application.{ApplicationContext, ExternalConnection}
+import fr.linkit.api.application.connection.{ConnectionInitialisationException, ExternalConnection}
+import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
+import fr.linkit.api.internal.system.AppLogger
+import fr.linkit.api.internal.system.event.EventNotifier
 import fr.linkit.client.ClientApplication
-import fr.linkit.client.connection.network.ClientSideNetwork
-import fr.linkit.client.local.config.ClientConnectionConfiguration
-import fr.linkit.engine.connection.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.engine.connection.packet.traffic.DynamicSocket
-import fr.linkit.engine.local.system.Rules
-import fr.linkit.engine.local.utils.{NumberSerializer, ScalaUtils}
+import fr.linkit.client.config.ClientConnectionConfiguration
+import fr.linkit.client.network.ClientSideNetwork
+import fr.linkit.engine.application.packet.fundamental.ValPacket.BooleanPacket
+import fr.linkit.engine.application.packet.traffic.DynamicSocket
+import fr.linkit.engine.internal.system.Rules
+import fr.linkit.engine.internal.utils.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
 
 import scala.reflect.ClassTag
