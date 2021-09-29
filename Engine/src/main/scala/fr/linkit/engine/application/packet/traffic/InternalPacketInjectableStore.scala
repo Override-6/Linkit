@@ -6,7 +6,7 @@ import fr.linkit.api.application.packet.traffic.injection.PacketInjectionControl
 trait InternalPacketInjectableStore {
 
     def getPersistenceConfig(path: Array[Int]): PersistenceConfig
-//
+
     protected def getPersistenceConfig(path: Array[Int], pos: Int): PersistenceConfig
 
     def inject(injection: PacketInjectionController): Unit
