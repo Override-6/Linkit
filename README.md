@@ -5,8 +5,6 @@
  A Framework to easily synchronise and link (remote) JVM processes between them.  
 
 ## This readme is currently being rewritten
-**WARNING :** for now, this framework should be used only for trusted networks, a security update that adds permissions will be sooner available, and JVM versions under 11 will not be supported.
-
 **The README is more of a messy tutorial than an actual introduction to the project.**  
 **Take a look at the [wiki](https://github.com/Override-6/Linkit/wiki/Introducing-Linkit) for an introduction to the Linkit Framework : https://github.com/Override-6/Linkit/wiki/Introducing-Linkit**
 
