@@ -4,8 +4,6 @@
  An Autonomous Framework to easily synchronise and link (remote) JVM processes between them.  
 
 ## This readme is currently being rewritten
-**WARNING :** for now, this framework should be used only for trusted networks, a security update that adds permissions will be sooner available, and JVM versions under 11 will not be supported.
-
  
 ## Features
 ### Network
