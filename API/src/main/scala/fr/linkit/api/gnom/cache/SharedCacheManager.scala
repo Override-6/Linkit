@@ -12,7 +12,7 @@
 
 package fr.linkit.api.gnom.cache
 
-import fr.linkit.api.application.network.{Network, Updatable}
+import fr.linkit.api.gnom.network.{Network, Updatable}
 import fr.linkit.api.gnom.packet.traffic.TrafficPresence
 
 import scala.reflect.ClassTag
@@ -27,12 +27,12 @@ trait SharedCacheManager extends Updatable with TrafficPresence {
 
     /**
      * Each Cache manager have a family string, it's in fact the identifier of the cache manager.
-     * For example, in the [[Network]], each [[fr.linkit.api.application.network.Engine]] have a SharedCacheManager instance
+     * For example, in the [[Network]], each [[fr.linkit.api.gnom.network.Engine]] have a SharedCacheManager instance
      * where the family string value is equals to the engine's identifier.
      * */
     val family : String
     /**
-     * The [[fr.linkit.api.application.network.Engine]] identifier that owns this cache.
+     * The [[fr.linkit.api.gnom.network.Engine]] identifier that owns this cache.
      * The engine owner controls who can attach to a [[SharedCache]] and who can create a [[SharedCache]]
      * */
     val ownerID: String

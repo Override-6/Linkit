@@ -62,7 +62,7 @@ class PacketTests {
         }.build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap))
         val t0     = System.currentTimeMillis()
         for (_ <- 0 to 1000) {
-            serializer.serializePacket(obj, coords, buff)(config)
+            serializer.serializeObjects(obj, coords, buff)(config)
             buff.position(0)
             serializer.deserializePacket(buff)
                     .forEachObjects(config)(() => _)
@@ -106,7 +106,7 @@ object PacketTests {
     def testPacket(obj: Array[AnyRef], config: PersistenceConfig): Unit = {
         println(s"Serializing packets ${obj.mkString("Array(", ", ", ")")}...")
         val buff   = ByteBuffer.allocate(1000)
-        serializer.serializePacket(obj, DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM"), buff)(config)
+        serializer.serializeObjects(obj, DedicatedPacketCoordinates(Array.empty, "SALAM", "SALAM"), buff)(config)
         val bytes = buff.array().take(buff.position())
         buff.position(0)
         println(s"bytes = ${ScalaUtils.toPresentableString(bytes)} (size: ${bytes.length})")

@@ -12,7 +12,7 @@
 
 package fr.linkit.api.application.connection
 
-import fr.linkit.api.application.network.ExternalConnectionState
+import fr.linkit.api.gnom.network.ExternalConnectionState
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 
 trait ExternalConnection extends ConnectionContext {

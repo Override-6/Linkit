@@ -14,26 +14,21 @@ package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.context._
-import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
 import fr.linkit.engine.gnom.persistence.context.profile.DefaultTypeProfile
 import fr.linkit.engine.gnom.persistence.context.profile.persistence.{ConstructorTypePersistence, DeconstructiveTypePersistence, SynchronizedObjectsPersistence, UnsafeTypePersistence}
-import fr.linkit.engine.gnom.reference.WeakReferencedObjectStore
 import fr.linkit.engine.internal.utils.ClassMap
 
 import scala.collection.mutable
 
 class SimplePersistenceConfig private[context](context: PersistenceContext,
                                                customProfiles: ClassMap[TypeProfile[_]],
-                                               referenceStore: WeakReferencedObjectStore,
-                                               unsafeUse: Boolean,
-                                               referenceAllObjects: Boolean, wide: Boolean) extends PersistenceConfig {
+                                               storeAllReceivedObjects: Boolean,
+                                               unsafeUse: Boolean, wide: Boolean) extends PersistenceConfig {
 
     private val defaultProfiles = mutable.HashMap.empty[Class[_], TypeProfile[_]]
 
-    override def getReferenceStore: MutableReferencedObjectStore = referenceStore
-
     override def getProfile[T <: AnyRef](clazz: Class[_]): TypeProfile[T] = {
-        var profile = defaultProfiles.get(clazz).orNull
+        var profile            = defaultProfiles.get(clazz).orNull
         val defaultProfileNull = profile == null
         if (defaultProfileNull) {
             profile = customProfiles.getOrElse(clazz, newDefaultProfile[T](clazz))
@@ -48,22 +43,9 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
         profile.asInstanceOf[TypeProfile[T]]
     }
 
-    override def informObjectReceived(obj: AnyRef): Unit = {
-        informObject(obj)
-    }
-
-    override def informObjectSent(obj: AnyRef): Unit = {
-        informObject(obj)
-    }
-
-    @inline
-    private def informObject(obj: AnyRef): Unit = {
-        if (referenceAllObjects) referenceStore += obj
-    }
-
     private def newSynchronizedObjectDefaultProfile[T <: SynchronizedObject[T]](clazz: Class[_], profile: TypeProfile[T]): DefaultTypeProfile[T] = {
         val network                                 = context.getNetwork
-        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](referenceStore, persist, network))
+        val persistences: Array[TypePersistence[T]] = profile.getPersistences.map(persist => new SynchronizedObjectsPersistence[T](persist, network))
         new DefaultTypeProfile[T](clazz, this, persistences)
     }
 
@@ -92,7 +74,7 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
     }
 
     @inline
-    def isSyncClass(clazz: Class[_]): Boolean = {
+    private def isSyncClass(clazz: Class[_]): Boolean = {
         classOf[SynchronizedObject[_]].isAssignableFrom(clazz)
     }
 
@@ -105,6 +87,8 @@ class SimplePersistenceConfig private[context](context: PersistenceContext,
         }
         new ConstructorTypePersistence[T](clazz, constructor.get, deconstructor.get)
     }
+
+    override def referenceAllReceivedObjects: Boolean = storeAllReceivedObjects
 
     override def widePacket: Boolean = wide
 

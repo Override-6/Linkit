@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence.context.profile.persistence
 import fr.linkit.api.gnom.cache.NoSuchCacheException
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.tree.SyncNodeLocation
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence.context.TypePersistence
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
@@ -23,7 +23,7 @@ import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.obj.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.gnom.persistence.context.structure.SyncObjectStructure
 
-class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](refStore: MutableReferencedObjectStore, objectPersistence: TypePersistence[T], network: Network) extends TypePersistence[T] {
+class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersistence: TypePersistence[T], network: Network) extends TypePersistence[T] {
 
     override val structure: ObjectStructure = new SyncObjectStructure(objectPersistence.structure)
 
@@ -31,7 +31,6 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](refStore: Mutab
         objectPersistence.initInstance(syncObj, args)
         val info = args.last.asInstanceOf[SyncNodeLocation]
         val path = info.nodePath
-        refStore += (info.hashCode(), syncObj)
         val center  = findCache(info)
                 .getOrElse {
                     throwNoSuchCacheException(info, Some(syncObj.getSuperClass))

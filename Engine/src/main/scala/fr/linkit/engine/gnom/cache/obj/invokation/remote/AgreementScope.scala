@@ -13,7 +13,7 @@
 package fr.linkit.engine.gnom.cache.obj.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync.behavior.RMIRulesAgreement
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic.PacketWriter

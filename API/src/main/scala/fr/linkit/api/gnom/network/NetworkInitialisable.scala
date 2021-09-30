@@ -10,8 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.api.gnom.persistence.obj
+package fr.linkit.api.gnom.network
 
-trait ContextObject extends PoolObject[AnyRef] {
-    val refId: Int
+trait NetworkInitialisable {
+
+    def initNetwork(network: Network): Unit
+
 }

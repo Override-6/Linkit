@@ -13,7 +13,7 @@
 package fr.linkit.api.gnom.cache.traffic.handler
 
 import fr.linkit.api.gnom.cache.CacheContent
-import fr.linkit.api.application.network.Engine
+import fr.linkit.api.gnom.network.Engine
 
 /**
  * Handles the local content of the cache instance. <br>

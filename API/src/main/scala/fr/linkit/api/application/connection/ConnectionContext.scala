@@ -13,7 +13,7 @@
 package fr.linkit.api.application.connection
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectableStore, PacketTraffic}
 import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.internal.concurrency.{ProcrastinatorControl, workerExecution}

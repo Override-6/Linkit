@@ -14,7 +14,7 @@ package fr.linkit.server.connection
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.CentralConnection
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.persistence.ObjectTranslator

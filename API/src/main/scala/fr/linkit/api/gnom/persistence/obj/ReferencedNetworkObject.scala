@@ -10,24 +10,15 @@
  *  questions.
  */
 
-package fr.linkit.api.application.network
+package fr.linkit.api.gnom.persistence.obj
 
-import fr.linkit.api.application.network.StaticAccessor.StaticAccess
+import fr.linkit.api.gnom.reference.NetworkReferenceLocation
 
-trait StaticAccessor {
+trait ReferencedNetworkObject extends PoolObject[AnyRef] {
 
-    val engine: Engine
-
-    def get[T](clazz: Class[T]): StaticAccess[T]
-}
-
-object StaticAccessor {
-
-    trait StaticAccess[T] {
-        val clazz: Class[T]
-
-        def newInstance(args: Any*): T
-
-        def invoke[R](methodName: String, args: Any*): R
-    }
+    /**
+     * The [[NetworkReferenceLocation]] index in the object pool.
+     * */
+    val locationIdx: Int
+    val location   : NetworkReferenceLocation
 }

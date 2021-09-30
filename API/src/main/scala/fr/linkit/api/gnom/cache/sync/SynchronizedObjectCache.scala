@@ -16,7 +16,7 @@ import fr.linkit.api.gnom.cache.SharedCache
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceGetter
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTreeStore
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.PacketAttributesPresence
 
 /**

@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import fr.linkit.api.application.network.ExternalConnectionState
+import fr.linkit.api.gnom.network.ExternalConnectionState
 import fr.linkit.api.internal.concurrency.packetWorkerExecution
 import fr.linkit.api.internal.system._
 import fr.linkit.engine.internal.utils.{ConsumerContainer, NumberSerializer}

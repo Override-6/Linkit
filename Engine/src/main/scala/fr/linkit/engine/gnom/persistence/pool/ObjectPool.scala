@@ -13,10 +13,10 @@
 package fr.linkit.engine.gnom.persistence.pool
 
 import fr.linkit.api.gnom.persistence.Freezable
-import fr.linkit.api.gnom.persistence.obj.{ContextObject, InstanceObject}
+import fr.linkit.api.gnom.persistence.obj.{ReferencedNetworkObject, InstanceObject}
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 
-class PacketObjectPool(sizes: Array[Int]) extends Freezable {
+class ObjectPool(sizes: Array[Int]) extends Freezable {
 
     private var frozen = false
 
@@ -24,8 +24,6 @@ class PacketObjectPool(sizes: Array[Int]) extends Freezable {
         // Objects types
         new PoolChunk[Class[_]](Class, this, sizes(Class)),
         new PoolChunk[Class[_]](SyncClass, this, sizes(SyncClass)),
-        // Context Objects identifiers
-        new PoolChunk[ContextObject](ContextRef, this, sizes(ContextRef)),
         // Strings
         new PoolChunk[String](String, this, sizes(String)),
         // Primitives (excepted primitives stored into primitives arrays)
@@ -40,6 +38,8 @@ class PacketObjectPool(sizes: Array[Int]) extends Freezable {
         // Objects
         new PoolChunk[Enum[_]](Enum, this, sizes(Enum)),
         new PoolChunk[InstanceObject[AnyRef]](Object, this, sizes(Object)),
+        // Context Objects Locations
+        new PoolChunk[ReferencedNetworkObject](RNO, this, sizes(RNO)),
         // Arrays
         new PoolChunk[Array[_]](Array, this, sizes(Array))
     )
@@ -53,13 +53,13 @@ class PacketObjectPool(sizes: Array[Int]) extends Freezable {
         chunks(idx).asInstanceOf[PoolChunk[T]]
     }
 
-    def getContextRefChunk: PoolChunk[ContextObject] = getChunkFromFlag(ContextRef)
+    def getContextRefChunk: PoolChunk[ReferencedNetworkObject] = getChunkFromFlag(RNO)
 
     def getChunks: Array[PoolChunk[Any]] = chunks.asInstanceOf[Array[PoolChunk[Any]]]
 
 }
 
-object PacketObjectPool {
+object ObjectPool {
 
 }
 

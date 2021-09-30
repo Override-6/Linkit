@@ -24,7 +24,7 @@ import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkPresence, Intern
 
 import scala.collection.mutable
 
-abstract class NetworkObjectManager[R <: AnyRef, L <: NetworkReferenceLocation[R]](channel: RequestPacketChannel)
+abstract class NetworkObjectManager[R <: AnyRef, L <: NetworkReferenceLocation](channel: RequestPacketChannel)
         extends NetworkPresenceHandler[L] with ObjectManager[R, L] {
 
     private val externalPresences = mutable.HashMap.empty[L, ExternalNetworkPresence[R, L]]

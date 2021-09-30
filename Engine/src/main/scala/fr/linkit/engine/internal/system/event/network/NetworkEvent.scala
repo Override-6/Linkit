@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.internal.system.event.network
 
-import fr.linkit.api.application.network.Engine
+import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.internal.system.event.{Event, EventHook}
 
 trait NetworkEvent extends Event[NetworkEventHooks, NetworkEventListener] {

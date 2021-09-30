@@ -14,7 +14,7 @@ package fr.linkit.api.gnom.cache.traffic
 
 import fr.linkit.api.gnom.reference.NetworkReferenceLocation
 
-trait CacheItemLocation[+R <: AnyRef] extends NetworkReferenceLocation[R] {
+trait CacheItemLocation[+R <: AnyRef] extends NetworkReferenceLocation {
 
     val cacheFamily: String
     val cacheID    : Int

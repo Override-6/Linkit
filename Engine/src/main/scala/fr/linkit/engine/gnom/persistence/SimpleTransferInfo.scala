@@ -41,6 +41,6 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
             AppLogger.debug(s"$currentTasksId <> Making simple serialize $coords, $packetBuff...")
         }
         val content = packetBuff.toArray[AnyRef]
-        serializer.serializePacket(content, coords, buff)(config)
+        serializer.serializeObjects(content, coords, buff)(config)
     }
 }

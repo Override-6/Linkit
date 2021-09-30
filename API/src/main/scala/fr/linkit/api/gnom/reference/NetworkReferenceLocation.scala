@@ -1,6 +1,3 @@
 package fr.linkit.api.gnom.reference
 
-trait NetworkReferenceLocation[+R] {
-
-
-}
+trait NetworkReferenceLocation

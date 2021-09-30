@@ -12,7 +12,7 @@
 
 package fr.linkit.api.gnom.reference
 
-trait ObjectManager[R <: AnyRef, L <: NetworkReferenceLocation[R]] {
+trait ObjectManager[R <: AnyRef, L <: NetworkReferenceLocation] {
 
     def findLocation(obj: R): Option[L]
 

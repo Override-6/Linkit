@@ -21,7 +21,8 @@ import fr.linkit.engine.gnom.reference.NetworkObjectManager
 
 import scala.collection.mutable
 
-class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], channel: RequestPacketChannel) extends NetworkObjectManager[SynchronizedObject[_], SyncNodeLocation](channel) with SynchronizedObjectTreeStore[A] {
+class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], channel: RequestPacketChannel)
+        extends NetworkObjectManager[SynchronizedObject[_], SyncNodeLocation](channel) with SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 

@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.read
 
-import fr.linkit.engine.gnom.persistence.pool.PacketObjectPool
+import fr.linkit.engine.gnom.persistence.pool.ObjectPool
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 
-class DeserializerPacketObjectPool(sizes: Array[Int]) extends PacketObjectPool(sizes) {
+class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {
 
     freeze() //Deserializer can't append objects, because sizes are already defined
     chunks.foreach(_.freeze())

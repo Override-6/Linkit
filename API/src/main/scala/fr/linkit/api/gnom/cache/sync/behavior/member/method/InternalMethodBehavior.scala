@@ -3,7 +3,7 @@ package fr.linkit.api.gnom.cache.sync.behavior.member.method
 import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehaviorStore, RMIRulesAgreement, RMIRulesAgreementBuilder}
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 
 trait InternalMethodBehavior extends MethodBehavior {
 

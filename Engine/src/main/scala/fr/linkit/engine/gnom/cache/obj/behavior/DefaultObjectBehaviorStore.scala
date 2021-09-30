@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterB
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue.ReturnValueBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehaviorStore, ObjectBehavior}
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
-import fr.linkit.api.application.network.Engine
+import fr.linkit.api.gnom.network.Engine
 import fr.linkit.engine.gnom.cache.obj.description.SimpleSyncObjectSuperClassDescription
 
 import scala.collection.mutable

@@ -14,7 +14,7 @@ package fr.linkit.api.gnom.persistence
 
 import java.nio.ByteBuffer
 
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 
 trait ObjectTranslator {

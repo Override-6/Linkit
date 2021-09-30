@@ -12,10 +12,12 @@
 
 package fr.linkit.engine.gnom.persistence.pool
 
-import fr.linkit.api.gnom.persistence.obj.ContextObject
+import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
+import fr.linkit.api.gnom.reference.NetworkReferenceLocation
 
-class SimpleContextObject(override val refId: Int,
-                          override val value: AnyRef) extends ContextObject {
+class SimpleReferencedNetworkObject(override val locationIdx: Int,
+                                    override val location: NetworkReferenceLocation,
+                                    override val value: AnyRef) extends ReferencedNetworkObject {
 
     override def equals(obj: Any): Boolean = {
         obj match {

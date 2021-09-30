@@ -19,7 +19,7 @@ import fr.linkit.engine.gnom.reference.NetworkObjectManager
 
 import scala.collection.mutable
 
-class ExternalNetworkPresence[R <: AnyRef, L <: NetworkReferenceLocation[R]](handler: NetworkObjectManager[R, L], val location: L)
+class ExternalNetworkPresence[R <: AnyRef, L <: NetworkReferenceLocation](handler: NetworkObjectManager[R, L], val location: L)
         extends ObjectNetworkPresence {
 
     private val presences = mutable.HashMap.empty[String, ObjectPresenceType]
@@ -36,5 +36,4 @@ class ExternalNetworkPresence[R <: AnyRef, L <: NetworkReferenceLocation[R]](han
     def onObjectSet(engineId: String): Unit = presences(engineId) = PRESENT
 
     def onObjectRemoved(engineId: String): Unit = presences(engineId) = NOT_PRESENT
-
 }

@@ -10,10 +10,11 @@
  *  questions.
  */
 
-package fr.linkit.api.application.network
+package fr.linkit.engine.gnom.network
 
-trait NetworkInitialisable {
+import fr.linkit.api.gnom.network.Network
+import java.sql.Timestamp
 
-    def initNetwork(network: Network): Unit
+import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
 
-}
+case class NetworkDataBundle(engines: Array[String], caches: Array[CacheManagerInfo], startUpDate: Timestamp, network: AbstractNetwork)

@@ -20,7 +20,7 @@ import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, Sy
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
 import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheFactory}
-import fr.linkit.api.application.network.{Engine, Network}
+import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.internal.system.AppLogger

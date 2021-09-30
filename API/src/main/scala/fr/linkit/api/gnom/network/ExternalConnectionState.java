@@ -10,11 +10,10 @@
  *  questions.
  */
 
-package fr.linkit.engine.application.network
+package fr.linkit.api.gnom.network;
 
-import fr.linkit.api.application.network.Network
-import java.sql.Timestamp
+public enum ExternalConnectionState {
 
-import fr.linkit.engine.application.network.NetworkDataTrunk.CacheManagerInfo
+    CONNECTED, DISCONNECTED, CONNECTING, CLOSED
 
-case class NetworkDataBundle(engines: Array[String], caches: Array[CacheManagerInfo], startUpDate: Timestamp, network: AbstractNetwork)
+}

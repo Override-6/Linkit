@@ -12,7 +12,7 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.application.network.{ExternalConnectionState, Network}
+import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig

@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.application.network
+package fr.linkit.api.gnom.network
 
 trait Updatable {
 

@@ -6,7 +6,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.returnvalue.ReturnValueBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
-import fr.linkit.api.application.network.Engine
+import fr.linkit.api.gnom.network.Engine
 
 import scala.reflect.ClassTag
 import scala.reflect.runtime.universe._

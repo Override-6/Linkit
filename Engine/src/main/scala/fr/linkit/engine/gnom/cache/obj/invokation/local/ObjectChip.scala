@@ -16,7 +16,7 @@ import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.MethodBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.local.{Chip, LocalMethodInvocation}
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.internal.concurrency.WorkerPools
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.obj.invokation.local.ObjectChip.NoResult

@@ -6,7 +6,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.{RMIRulesAgreement, RMIRulesAgreem
 import fr.linkit.api.gnom.cache.sync.description.MethodDescription
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.{MethodInvocationHandler, Puppeteer}
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.internal.concurrency.Procrastinator
 import org.jetbrains.annotations.Nullable
 

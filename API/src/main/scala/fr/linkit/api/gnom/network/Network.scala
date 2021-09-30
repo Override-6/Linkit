@@ -10,7 +10,7 @@
  *  questions.
  */
 
-package fr.linkit.api.application.network
+package fr.linkit.api.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager

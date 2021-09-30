@@ -14,7 +14,7 @@ package fr.linkit.api.gnom.reference.presence
 
 import fr.linkit.api.gnom.reference.NetworkReferenceLocation
 
-trait NetworkPresenceHandler[L <: NetworkReferenceLocation[_]] {
+trait NetworkPresenceHandler[L <: NetworkReferenceLocation] {
 
     def registerLocation(location: L): Unit
 

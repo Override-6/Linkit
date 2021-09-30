@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache
 import fr.linkit.api.gnom.cache._
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.ContentHandler
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle

@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.gnom.cache.obj.invokation
 
-import fr.linkit.api.application.network.Engine
+import fr.linkit.api.gnom.network.Engine
 
 object ExecutorEngine {
 

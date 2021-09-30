@@ -12,7 +12,7 @@
 
 package fr.linkit.api.gnom.cache
 
-import fr.linkit.api.application.network.Updatable
+import fr.linkit.api.gnom.network.Updatable
 
 /**
  * The shared cache trait that depicts the information a cache must contain

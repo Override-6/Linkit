@@ -1,7 +1,7 @@
 package fr.linkit.api.gnom.cache.sync.behavior.member.field
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.application.network.Engine
+import fr.linkit.api.gnom.network.Engine
 
 trait FieldModifier[F] {
 

@@ -12,15 +12,10 @@
 
 package fr.linkit.api.gnom.persistence
 
-import java.nio.ByteBuffer
-
-import fr.linkit.api.gnom.packet.PacketCoordinates
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-
 trait ObjectPersistence extends Serializer {
 
-    def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer)(config: PersistenceConfig): Unit
+    def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit
 
-    def deserializePacket(buff: ByteBuffer, coordinates: PacketCoordinates)(forEachObjects: AnyRef => Unit): Unit
+    def deserializeObjects(bundle: PersistenceBundle)(forEachObjects: AnyRef => Unit): Unit
 
 }

@@ -10,10 +10,24 @@
  *  questions.
  */
 
-package fr.linkit.api.application.network;
+package fr.linkit.api.gnom.network
 
-public enum ExternalConnectionState {
+import fr.linkit.api.gnom.network.StaticAccessor.StaticAccess
 
-    CONNECTED, DISCONNECTED, CONNECTING, CLOSED
+trait StaticAccessor {
 
+    val engine: Engine
+
+    def get[T](clazz: Class[T]): StaticAccess[T]
+}
+
+object StaticAccessor {
+
+    trait StaticAccess[T] {
+        val clazz: Class[T]
+
+        def newInstance(args: Any*): T
+
+        def invoke[R](methodName: String, args: Any*): R
+    }
 }

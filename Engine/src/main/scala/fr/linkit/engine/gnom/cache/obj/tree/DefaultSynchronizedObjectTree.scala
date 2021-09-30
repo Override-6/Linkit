@@ -4,7 +4,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceInstantiator
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeLocation, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
 import fr.linkit.engine.gnom.cache.obj.instantiation.ContentSwitcher
 import fr.linkit.engine.gnom.cache.obj.tree.node.{IllegalWrapperNodeException, ObjectSyncNode, RootObjectSyncNode, SyncNodeDataFactory}

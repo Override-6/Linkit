@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache
 import fr.linkit.api.gnom.cache.CacheSearchBehavior.{GET_OR_CRASH, GET_OR_OPEN, GET_OR_WAIT}
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, ContentHandler}
 import fr.linkit.api.gnom.cache.{CacheContent, CacheOpenException, CacheSearchBehavior}
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, Submitter}
 import fr.linkit.api.gnom.persistence.context.Deconstructive

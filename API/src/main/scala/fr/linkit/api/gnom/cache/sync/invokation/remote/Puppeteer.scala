@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync.invokation.remote
 import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior
 import fr.linkit.api.gnom.cache.sync.tree.SyncNodeLocation
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 
 import java.util.concurrent.ThreadLocalRandom
 

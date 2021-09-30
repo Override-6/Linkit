@@ -24,7 +24,7 @@ import scala.annotation.switch
 
 object ArrayPersistence {
 
-    def writeArrayContent(writer: PacketWriter, array: Array[AnyRef]): Unit = {
+    def writeArrayContent(writer: PacketWriter, array: Array[Any]): Unit = {
         val buff = writer.buff
         buff.putInt(array.length)
         for (n <- array) {
@@ -84,7 +84,7 @@ object ArrayPersistence {
             buff.put(depth)
             writer.putTypeRef(absoluteComp)
         }
-        writeArrayContent(writer, array.asInstanceOf[Array[AnyRef]]) //we handled any primitive array before
+        writeArrayContent(writer, array)
     }
 
     private def readObjectArray(reader: PacketReader): Array[Any] = {

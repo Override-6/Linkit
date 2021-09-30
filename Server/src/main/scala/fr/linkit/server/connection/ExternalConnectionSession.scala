@@ -12,7 +12,7 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.application.network.{Engine, ExternalConnectionState}
+import fr.linkit.api.gnom.network.{Engine, ExternalConnectionState}
 import fr.linkit.api.gnom.persistence.ObjectSerializationResult
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic.SystemChannelID

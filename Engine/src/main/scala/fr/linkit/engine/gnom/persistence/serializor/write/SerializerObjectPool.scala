@@ -13,23 +13,26 @@
 package fr.linkit.engine.gnom.persistence.serializor.write
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.obj.{ContextObject, InstanceObject}
-import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
-import fr.linkit.engine.gnom.persistence.pool.{PacketObjectPool, PoolChunk, SimpleContextObject}
+import fr.linkit.api.gnom.persistence.PersistenceBundle
+import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
+import fr.linkit.api.gnom.reference.NetworkReferenceLocation
+import fr.linkit.engine.gnom.persistence.pool.{ObjectPool, PoolChunk, SimpleReferencedNetworkObject}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.internal.utils.UnWrapper
 
-class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) extends PacketObjectPool(sizes) {
+class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends ObjectPool(sizes) {
 
-    protected final val chunksPositions                        = new Array[Int](chunks.length)
-    protected final val refStore: MutableReferencedObjectStore = config.getReferenceStore
+    private         val config          = bundle.config
+    private         val coordinates     = bundle.coordinates
+    private         val gnol            = bundle.gnol
+    protected final val chunksPositions = new Array[Int](chunks.length)
 
     def getChunk[T](ref: Any): PoolChunk[T] = {
         //TODO this method can be optimized
         ref match {
-            case _: Class[_] => getChunkFromFlag(Class)
+            case c: Class[_] if isSyncClass(c) => getChunkFromFlag(SyncClass)
+            case _: Class[_]                   => getChunkFromFlag(Class)
 
             case _: Int     => getChunkFromFlag(Int)
             case _: Byte    => getChunkFromFlag(Byte)
@@ -69,23 +72,28 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
      *
      * @throws IllegalArgumentException if this pool is not frozen.
      * */
-    def globalPosition(ref: AnyRef): Int = {
+    def globalPosition(ref: Any): Int = {
         if (!isFrozen)
             throw new IllegalStateException("Could not get global Index of ref: This pool is not frozen !")
         globalPos(ref)
     }
 
     @inline
-    private def globalPos(ref: AnyRef): Int = {
-        if (ref eq null)
+    private def isSyncClass(clazz: Class[_]): Boolean = {
+        classOf[SynchronizedObject[_]].isAssignableFrom(clazz)
+    }
+
+    @inline
+    private def globalPos(ref: Any): Int = {
+        if (ref == null)
             return 0
-        val chunk = getChunk[AnyRef](ref)
+        val chunk = getChunk[Any](ref)
         val tag   = chunk.tag
         var idx   = chunk.indexOf(ref)
         if (idx > -1)
             idx += chunksPositions(chunk.tag) + 1
         else if (tag == Object) { //it may be a referenced object
-            idx = chunks(ContextRef).indexOf(ref) + chunksPositions(ContextRef) + 1
+            idx = chunks(RNO).indexOf(ref) + chunksPositions(RNO) + 1
         }
         idx
     }
@@ -129,8 +137,8 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
 
     private def addObj0(ref: AnyRef): Unit = {
         val profile = config.getProfile[AnyRef](ref.getClass)
-        val code    = refStore.findLocation(ref)
-        if (code.isEmpty) {
+        val nrlOpt  = gnol.findObjectLocation[NetworkReferenceLocation](coordinates, ref)
+        if (nrlOpt.isEmpty) {
             addTypeOfIfAbsent(ref)
             val persistence = profile.getPersistence(ref)
             val decomposed  = persistence.toArray(ref)
@@ -138,8 +146,11 @@ class SerializerPacketObjectPool(config: PersistenceConfig, sizes: Array[Int]) e
             objPool.add(new PacketObject(ref, decomposed, profile))
             addAll(decomposed)
         } else {
-            val pool = getChunkFromFlag[ContextObject](ContextRef)
-            pool.add(new SimpleContextObject(code.get, ref))
+            val pool = getChunkFromFlag[ReferencedNetworkObject](RNO)
+            val nrl  = nrlOpt.get
+            addObj(nrl)
+            val rno = new SimpleReferencedNetworkObject(globalPos(nrl), nrl, ref)
+            pool.add(rno)
         }
     }
 

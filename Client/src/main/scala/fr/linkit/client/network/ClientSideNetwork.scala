@@ -14,13 +14,13 @@ package fr.linkit.client.network
 
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.{CacheSearchBehavior, SharedCacheManager}
-import fr.linkit.api.application.network.NetworkInitialisable
+import fr.linkit.api.gnom.network.NetworkInitialisable
 import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
 import fr.linkit.client.connection.ClientConnection
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.cache.obj.DefaultSynchronizedObjectCenter
-import fr.linkit.engine.application.network.AbstractNetwork.GlobalCacheID
-import fr.linkit.engine.application.network.{AbstractNetwork, NetworkDataTrunk}
+import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
+import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 
 class ClientSideNetwork(connection: ClientConnection,
                         refStore: MutableReferencedObjectStore,

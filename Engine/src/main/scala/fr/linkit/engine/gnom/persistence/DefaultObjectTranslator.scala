@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence
 import fr.linkit.api.application.ApplicationContext
 
 import java.nio.ByteBuffer
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence._
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.engine.gnom.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource}

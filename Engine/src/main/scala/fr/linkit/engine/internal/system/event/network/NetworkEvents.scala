@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.internal.system.event.network
 
-import fr.linkit.api.application.network.{ExternalConnectionState, Engine}
+import fr.linkit.api.gnom.network.{ExternalConnectionState, Engine}
 
 object NetworkEvents {
 

@@ -10,17 +10,17 @@
  *  questions.
  */
 
-package fr.linkit.engine.application.network
+package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.BasicInvocationRule._
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.{MethodControl, Synchronized}
-import fr.linkit.api.application.network.Engine
+import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
 import fr.linkit.engine.gnom.cache.obj.invokation.ExecutorEngine
-import fr.linkit.engine.application.network.NetworkDataTrunk.CacheManagerInfo
+import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
 
 import java.sql.Timestamp
 import scala.collection.mutable

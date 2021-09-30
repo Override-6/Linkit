@@ -14,8 +14,11 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.engine.gnom.persistence.pool.SimpleContextObject
+import fr.linkit.api.gnom.persistence.PersistenceBundle
+import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
+import fr.linkit.api.gnom.reference.NetworkReferenceLocation
+import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
+import fr.linkit.engine.gnom.persistence.pool.SimpleReferencedNetworkObject
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
 import fr.linkit.engine.internal.mapping.ClassMappings
@@ -25,9 +28,12 @@ import java.nio.ByteBuffer
 import scala.annotation.switch
 import scala.reflect.ClassTag
 
-class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff: ByteBuffer) {
+class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
 
-    private val refStore                           = config.getReferenceStore
+    val buff: ByteBuffer = bundle.buff
+    private val gnol                               = bundle.gnol
+    private val config                             = bundle.config
+    private val coordinates                        = bundle.coordinates
     private val (widePacket: Boolean, sizes, pool) = preReadPool()
     private var isInit                             = false
 
@@ -48,7 +54,7 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
         }
     }
 
-    def getPool: DeserializerPacketObjectPool = pool
+    def getPool: DeserializerObjectPool = pool
 
     @inline
     def readNextRef: Int = {
@@ -78,23 +84,26 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
         }
 
         (flag: @switch) match {
-            case Class      => collectAndUpdateChunk[Class[_]](readClass())
-            case SyncClass  => collectAndUpdateChunk[Class[AnyRef with SynchronizedObject[AnyRef]]](center.getSyncClass(readClass())) //would compile the class if was not
-            case Enum       => collectAndUpdateChunk[Enum[_]](readEnum())
-            case String     => collectAndUpdateChunk[String](readString())
-            case Array      => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
-            case Object     => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
-            case ContextRef => collectAndUpdateChunk[SimpleContextObject](readContextObject())
+            case Class     => collectAndUpdateChunk[Class[_]](readClass())
+            case SyncClass => collectAndUpdateChunk[Class[AnyRef with SynchronizedObject[AnyRef]]](center.getSyncClass(readClass())) //would compile the class if was not
+            case Enum      => collectAndUpdateChunk[Enum[_]](readEnum())
+            case String    => collectAndUpdateChunk[String](readString())
+            case Array     => collectAndUpdateChunk[AnyRef](ArrayPersistence.readArray(this))
+            case Object    => collectAndUpdateChunk[NotInstantiatedObject[_]](readObject())
+            case RNO       => collectAndUpdateChunk[ReferencedNetworkObject](readContextObject())
         }
     }
 
-    private def readContextObject(): SimpleContextObject = {
-        /*val id  = buff.getInt()
-        val obj = refStore.findObject(id).getOrElse {
-            throw new NoSuchElementException(s"Could not find contextual object of identifier '$id' in provided configuration.")
+    private def readContextObject(): ReferencedNetworkObject = {
+        val poolLoc  = buff.getInt()
+        val location = pool.getAny(poolLoc) match {
+            case l: NetworkReferenceLocation => l
+            case o => throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
         }
-        new SimpleContextObject(id, obj)*/
-        ???
+        val obj      = gnol.findObject(coordinates, location).getOrElse {
+            throw new NoSuchElementException(s"Could not find contextual object of identifier '$poolLoc' in provided configuration.")
+        }
+        new SimpleReferencedNetworkObject(poolLoc, location, obj)
     }
 
     private def readClass(): Class[_] = {
@@ -111,7 +120,7 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
         java.lang.Enum.valueOf[T](tpe.asInstanceOf[Class[T]], name)
     }
 
-    private def preReadPool(): (Boolean, Array[Int], DeserializerPacketObjectPool) = {
+    private def preReadPool(): (Boolean, Array[Int], DeserializerObjectPool) = {
         val widePacket = buff.get() == 1
         val sizes      = new Array[Int](ChunkCount)
         var i          = 0
@@ -119,7 +128,7 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
             sizes(i) = if (widePacket) buff.getInt() else buff.getChar()
             i += 1
         }
-        (widePacket, sizes, new DeserializerPacketObjectPool(sizes))
+        (widePacket, sizes, new DeserializerObjectPool(sizes))
     }
 
     private def readObject(): NotInstantiatedObject[AnyRef] = {
@@ -128,7 +137,7 @@ class PacketReader(config: PersistenceConfig, center: SyncClassCenter, val buff:
         val profile     = config.getProfile[AnyRef](clazz)
         val contentSize = buff.getInt
         val content     = readObjectContent(contentSize)
-        new NotInstantiatedObject[AnyRef](profile, config, content, pool)
+        new NotInstantiatedObject[AnyRef](profile, gnol, content, pool)
     }
 
     private def readObjectContent(length: Int): Array[Int] = {

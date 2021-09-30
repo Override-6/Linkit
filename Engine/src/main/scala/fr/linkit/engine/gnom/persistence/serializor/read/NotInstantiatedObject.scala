@@ -12,28 +12,30 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.read
 
-import fr.linkit.api.gnom.persistence.context.{PersistenceConfig, TypeProfile}
+import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject}
+import fr.linkit.api.gnom.reference.{NetworkObjectsLinker, NetworkReferenceLocation}
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol.Object
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 
 class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
-                                         config: PersistenceConfig,
+                                         gnol: NetworkObjectsLinker,
                                          content: Array[Int],
-                                         pool: DeserializerPacketObjectPool) extends InstanceObject[T] {
+                                         pool: DeserializerObjectPool) extends InstanceObject[T] {
 
     private var isInit: Boolean = false
     private val obj   : T       = ScalaUtils.allocate[T](profile.typeClass)
     private val objChunk        = pool.getChunkFromFlag[NotInstantiatedObject[AnyRef]](Object)
 
-    override def value: T = obj
+    override def value: T = {
+        if (!isInit)
+            initObject()
+        obj
+    }
 
     override def equals(obj: Any): Boolean = JavaUtils.sameInstance(obj, this.obj)
 
-    def initObject(): Unit = {
-        if (isInit)
-            return
-
+    private def initObject(): Unit = {
         isInit = true
         val content = this.content
         val length  = content.length
@@ -42,19 +44,16 @@ class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
         val pool    = this.pool
         while (i < length) {
             args(i) = pool.getAny(content(i)) match {
-                case o: NotInstantiatedObject[AnyRef] =>
-                    o.initObject()
-                    o.obj
-                case o: PoolObject[AnyRef]            => o.value
-                case o: Array[AnyRef]                 => //TODO create a NotInstantiatedArray
+                case o: PoolObject[AnyRef] => o.value
+                case o: Array[AnyRef]      =>
                     initArray(o)
                     o
-                case o                                => o
+                case o                     => o
             }
             i += 1
         }
         profile.getPersistence(args).initInstance(obj, args)
-        config.informObjectReceived(obj)
+        //config.informObjectReceived(obj)
     }
 
     private def initArray(array: Array[AnyRef]): Unit = {

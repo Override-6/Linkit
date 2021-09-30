@@ -13,16 +13,13 @@
 package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.application.network.Network
-import fr.linkit.api.gnom.persistence.ObjectPersistence
-import fr.linkit.api.gnom.persistence.ObjectPersistence.PacketDeserial
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.obj.PoolObject
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
+import fr.linkit.api.gnom.persistence.obj.PoolObject
+import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
 import fr.linkit.engine.gnom.persistence.MalFormedPacketException
 import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence.{BroadcastedFlag, DedicatedFlag}
 import fr.linkit.engine.gnom.persistence.serializor.read.{NotInstantiatedObject, PacketReader}
-import fr.linkit.engine.gnom.persistence.serializor.write.{PacketWriter, SerializerPacketObjectPool}
+import fr.linkit.engine.gnom.persistence.serializor.write.{PacketWriter, SerializerObjectPool}
 
 import java.nio.ByteBuffer
 
@@ -37,10 +34,10 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         result
     }
 
-    override def serializePacket(objects: Array[AnyRef], coordinates: PacketCoordinates, buffer: ByteBuffer)(config: PersistenceConfig): Unit = {
+    override def serializeObjects(objects: Array[AnyRef])(bundle: PersistenceBundle): Unit = {
+        val buffer = bundle.buff
         buffer.put(signature.toArray)
-
-        val writer = new PacketWriter(config, buffer)
+        val writer = new PacketWriter(bundle)
         writer.addObjects(objects)
         writer.writePool()
         val pool = writer.getPool
@@ -48,7 +45,7 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
     }
 
     private def writeEntries(objects: Array[AnyRef], writer: PacketWriter,
-                             pool: SerializerPacketObjectPool): Unit = {
+                             pool: SerializerObjectPool): Unit = {
         //Write the size
         writer.putRef(objects.length)
         //Write the content
@@ -59,29 +56,20 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         }
     }
 
-    override def deserializePacket(buff: ByteBuffer): ObjectPersistence.PacketDeserial = {
+    override def deserializeObjects(bundle: PersistenceBundle)(forEachObjects: AnyRef => Unit): Unit = {
+        val buff = bundle.buff
         checkSignature(buff)
 
-        val coords = readCoordinates(buff)
-        new PacketDeserial {
-            override def getCoordinates: PacketCoordinates = coords
-
-            override def forEachObjects(config: PersistenceConfig)(f: Any => Unit): Unit = {
-                val reader = new PacketReader(config, center, buff)
-                reader.initPool()
-                val contentSize = buff.getChar
-                val pool        = reader.getPool
-                for (_ <- 0 until contentSize) {
-                    val obj = pool.getAny(reader.readNextRef) match {
-                        case o: NotInstantiatedObject[AnyRef] =>
-                            o.initObject()
-                            o.value
-                        case o: PoolObject[AnyRef]            => o.value
-                        case o                                => o
-                    }
-                    f(obj)
-                }
+        val reader = new PacketReader(bundle, center)
+        reader.initPool()
+        val contentSize = buff.getChar
+        val pool        = reader.getPool
+        for (_ <- 0 until contentSize) {
+            val obj = pool.getAny(reader.readNextRef) match {
+                case o: PoolObject[AnyRef]            => o.value
+                case o: AnyRef                        => o
             }
+            forEachObjects(obj)
         }
     }
 

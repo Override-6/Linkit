@@ -13,7 +13,7 @@
 package fr.linkit.engine.gnom.cache
 
 import fr.linkit.api.gnom.cache.{CacheContent, CacheNotAcceptedException, CacheOpenException, CacheSearchBehavior}
-import fr.linkit.api.application.network.Network
+import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.persistence.context.Deconstructive

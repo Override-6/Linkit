@@ -12,7 +12,7 @@
 
 package fr.linkit.api.gnom.cache.traffic.handler
 
-import fr.linkit.api.application.network.Engine
+import fr.linkit.api.gnom.network.Engine
 
 /**
  * An handler that can get events when an engine attach or detach from the handled cache

@@ -13,7 +13,7 @@
 package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.application.network.{Network, NetworkInitialisable}
+import fr.linkit.api.gnom.network.{Network, NetworkInitialisable}
 import fr.linkit.api.gnom.persistence.context.{Deconstructor, PersistenceContext}
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.engine.internal.utils.ClassMap

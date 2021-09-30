@@ -1,6 +1,6 @@
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
-import fr.linkit.engine.application.network.{NetworkDataBundle, NetworkDataTrunk}
+import fr.linkit.engine.gnom.network.{NetworkDataBundle, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder
 

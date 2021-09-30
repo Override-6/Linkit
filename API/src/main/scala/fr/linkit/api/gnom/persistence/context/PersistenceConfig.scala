@@ -12,18 +12,12 @@
 
 package fr.linkit.api.gnom.persistence.context
 
-import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
-
 trait PersistenceConfig extends TypeProfileStore {
-
-    def getReferenceStore: MutableReferencedObjectStore
-
-    def informObjectReceived(obj: AnyRef): Unit
-
-    def informObjectSent(obj: AnyRef): Unit
 
     def widePacket: Boolean
 
     def useUnsafe: Boolean
+
+    def referenceAllReceivedObjects: Boolean
 
 }
