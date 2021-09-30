@@ -13,7 +13,7 @@
 package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.application.network.{Network, Updatable}
-import fr.linkit.api.application.packet.traffic.TrafficPresence
+import fr.linkit.api.gnom.packet.traffic.TrafficPresence
 
 import scala.reflect.ClassTag
 

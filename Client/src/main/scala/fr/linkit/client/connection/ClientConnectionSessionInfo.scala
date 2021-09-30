@@ -12,7 +12,7 @@
 
 package fr.linkit.client.connection
 
-import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
@@ -20,6 +20,6 @@ import fr.linkit.engine.internal.concurrency.PacketReaderThread
 case class ClientConnectionSessionInfo(appContext: ClientApplication,
                                        configuration: ClientConnectionConfiguration,
                                        serverIdentifier: String,
-                                       translator: PacketTranslator) {
+                                       translator: ObjectTranslator) {
 
 }

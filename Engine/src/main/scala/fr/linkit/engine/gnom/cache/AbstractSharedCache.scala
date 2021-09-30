@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.cache
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.ContentHandler
 import fr.linkit.api.gnom.cache.{CacheContent, SharedCache}
-import fr.linkit.engine.application.packet.AbstractAttributesPresence
+import fr.linkit.engine.gnom.packet.AbstractAttributesPresence
 
 abstract class AbstractSharedCache(channel: CachePacketChannel) extends AbstractAttributesPresence with SharedCache {
 

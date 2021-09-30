@@ -12,8 +12,8 @@
 
 package fr.linkit.api.application.plugin.fragment
 
-import fr.linkit.api.application.packet.PacketBundle
-import fr.linkit.api.application.packet.traffic.PacketSender
+import fr.linkit.api.gnom.packet.PacketBundle
+import fr.linkit.api.gnom.packet.traffic.PacketSender
 import org.jetbrains.annotations.NotNull
 
 trait RemoteFragment extends PluginFragment {

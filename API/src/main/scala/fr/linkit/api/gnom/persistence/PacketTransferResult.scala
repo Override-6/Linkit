@@ -12,7 +12,7 @@
 
 package fr.linkit.api.gnom.persistence
 
-import fr.linkit.api.application.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
 
 import java.nio.ByteBuffer
 

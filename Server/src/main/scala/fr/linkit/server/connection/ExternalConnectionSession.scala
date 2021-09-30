@@ -13,12 +13,12 @@
 package fr.linkit.server.connection
 
 import fr.linkit.api.application.network.{Engine, ExternalConnectionState}
-import fr.linkit.api.gnom.persistence.PacketSerializationResult
-import fr.linkit.api.application.packet.traffic.PacketTraffic
-import fr.linkit.api.application.packet.traffic.PacketTraffic.SystemChannelID
+import fr.linkit.api.gnom.persistence.ObjectSerializationResult
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic.SystemChannelID
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.{JustifiedCloseable, Reason}
-import fr.linkit.engine.application.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.engine.internal.system.SystemPacketChannel
 import fr.linkit.server.network.ServerSideNetwork
@@ -47,7 +47,7 @@ case class ExternalConnectionSession private(boundIdentifier: String,
 
     def getSocketState: ExternalConnectionState = socket.getState
 
-    def send(result: PacketSerializationResult): Unit = {
+    def send(result: ObjectSerializationResult): Unit = {
         socket.write(result.buff)
     }
 

@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.gnom.cache.obj.invokation.remote
 
-import fr.linkit.api.application.packet.Packet
+import fr.linkit.api.gnom.packet.Packet
 
 case class InvocationPacket(path: Array[Int], methodID: Int, params: Array[Any], expectedEngineIDReturn: String) extends Packet {
 

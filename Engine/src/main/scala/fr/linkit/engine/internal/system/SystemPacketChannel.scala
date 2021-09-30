@@ -12,10 +12,10 @@
 
 package fr.linkit.engine.internal.system
 
-import fr.linkit.api.application.packet.channel.{ChannelScope, PacketChannel}
-import fr.linkit.api.application.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
+import fr.linkit.api.gnom.packet.channel.{ChannelScope, PacketChannel}
+import fr.linkit.api.gnom.packet.traffic.{PacketInjectableFactory, PacketInjectableStore}
 import fr.linkit.api.internal.system.Reason
-import fr.linkit.engine.application.packet.traffic.channel.SyncPacketChannel
+import fr.linkit.engine.gnom.packet.traffic.channel.SyncPacketChannel
 
 class SystemPacketChannel(store: PacketInjectableStore, scope: ChannelScope)
     extends SyncPacketChannel(store, scope, true) {

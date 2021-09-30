@@ -13,7 +13,7 @@
 package fr.linkit.engine.gnom.persistence.context
 
 import fr.linkit.api.gnom.persistence.context.{Deconstructor, PersistenceContext}
-import fr.linkit.api.application.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.engine.internal.utils.ClassMap
 
 import java.lang.reflect.Constructor

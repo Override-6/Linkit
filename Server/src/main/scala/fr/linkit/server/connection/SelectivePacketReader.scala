@@ -12,12 +12,12 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.gnom.persistence.PacketDeserializationResult
-import fr.linkit.api.application.packet.traffic.PacketReader
-import fr.linkit.api.application.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
+import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
+import fr.linkit.api.gnom.packet.traffic.PacketReader
+import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates}
 import fr.linkit.api.internal.concurrency.workerExecution
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.application.packet.traffic.{DefaultPacketReader, DynamicSocket, SocketClosedException}
+import fr.linkit.engine.gnom.packet.traffic.{DefaultPacketReader, DynamicSocket, SocketClosedException}
 
 import java.net.SocketException
 import scala.util.control.NonFatal
@@ -31,7 +31,7 @@ class SelectivePacketReader(socket: DynamicSocket,
     private val simpleReader     = new DefaultPacketReader(socket, server, server.traffic, server.translator)
     private val serverIdentifier = server.currentIdentifier
 
-    override def nextPacket(@workerExecution callback: (PacketDeserializationResult) => Unit): Unit = {
+    override def nextPacket(@workerExecution callback: (ObjectDeserializationResult) => Unit): Unit = {
         try {
             nextConcernedPacket(callback)
         } catch {
@@ -40,7 +40,7 @@ class SelectivePacketReader(socket: DynamicSocket,
         }
     }
 
-    private def nextConcernedPacket(callback: PacketDeserializationResult => Unit): Unit = try {
+    private def nextConcernedPacket(callback: ObjectDeserializationResult => Unit): Unit = try {
         simpleReader.nextPacket(result => {
             handleDeserialResult(result, callback)
         })
@@ -49,7 +49,7 @@ class SelectivePacketReader(socket: DynamicSocket,
         case NonFatal(e)              => e.printStackTrace()
     }
 
-    private def handleDeserialResult(result: PacketDeserializationResult, callback: PacketDeserializationResult => Unit): Unit = {
+    private def handleDeserialResult(result: ObjectDeserializationResult, callback: ObjectDeserializationResult => Unit): Unit = {
 
         result.coords match {
             case dedicated: DedicatedPacketCoordinates =>

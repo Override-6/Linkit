@@ -16,7 +16,7 @@ import java.lang.reflect.Modifier
 import java.net.URL
 import fr.linkit.api.gnom.persistence.context._
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
-import fr.linkit.api.application.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.engine.gnom.persistence.context.PersistenceConfigBuilder.fromScript
 import fr.linkit.engine.gnom.persistence.context.profile.TypeProfileBuilder
 import fr.linkit.engine.gnom.persistence.context.script.{PersistenceScriptConfig, ScriptPersistenceConfigHandler}

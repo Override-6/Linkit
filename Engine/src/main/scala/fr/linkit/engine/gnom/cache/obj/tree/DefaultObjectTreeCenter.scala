@@ -14,7 +14,7 @@ package fr.linkit.engine.gnom.cache.obj.tree
 
 import fr.linkit.api.gnom.cache.sync.tree.{SyncNodeLocation, SynchronizedObjectTree, SynchronizedObjectTreeStore}
 import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
-import fr.linkit.api.application.packet.channel.request.RequestPacketChannel
+import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
 import fr.linkit.engine.gnom.cache.obj.CacheRepoContent
 import fr.linkit.engine.gnom.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.gnom.reference.NetworkObjectManager

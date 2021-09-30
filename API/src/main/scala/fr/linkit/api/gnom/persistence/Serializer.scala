@@ -16,7 +16,7 @@ import java.nio.ByteBuffer
 
 trait Serializer {
 
-    val signature: Array[Byte]
+    val signature: Seq[Byte]
 
     def isSameSignature(buffer: ByteBuffer): Boolean
 

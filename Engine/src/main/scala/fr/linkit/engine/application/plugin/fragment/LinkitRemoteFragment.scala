@@ -12,9 +12,9 @@
 
 package fr.linkit.engine.application.plugin.fragment
 
-import fr.linkit.api.application.packet.traffic.PacketSender
+import fr.linkit.api.gnom.packet.traffic.PacketSender
 import fr.linkit.api.application.plugin.fragment.RemoteFragment
-import fr.linkit.engine.application.packet.traffic.channel.AsyncPacketChannel
+import fr.linkit.engine.gnom.packet.traffic.channel.AsyncPacketChannel
 import org.jetbrains.annotations.NotNull
 
 abstract class LinkitRemoteFragment extends LinkitPluginFragment with RemoteFragment {

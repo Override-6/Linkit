@@ -12,7 +12,7 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.api.application.packet.DedicatedPacketCoordinates
+import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.persistence.PacketTransferResult
 import fr.linkit.api.application.NoSuchConnectionException
 import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnectionException}

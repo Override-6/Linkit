@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.gnom.persistence
 
-import fr.linkit.api.application.packet.PacketException
+import fr.linkit.api.gnom.packet.PacketException
 
 import java.nio.ByteBuffer
 

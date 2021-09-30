@@ -14,11 +14,11 @@ package fr.linkit.engine.gnom.persistence
 
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.{PacketSerializer, TransferInfo}
-import fr.linkit.api.application.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.api.gnom.persistence.{ObjectPersistence, TransferInfo}
+import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.application.packet.fundamental.EmptyPacket
+import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
 import fr.linkit.engine.internal.utils.ClassMap
 
@@ -31,7 +31,7 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
                               override val packet: Packet,
                               config: PersistenceConfig) extends TransferInfo {
 
-    override def makeSerial(serializer: PacketSerializer, buff: ByteBuffer): Unit = {
+    override def makeSerial(serializer: ObjectPersistence, buff: ByteBuffer): Unit = {
         val packetBuff = ArrayBuffer.empty[AnyRef]
         if (attributes.nonEmpty)
             packetBuff += attributes

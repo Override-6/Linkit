@@ -1,15 +1,15 @@
 package fr.linkit.engine.gnom.persistence
 
-import fr.linkit.api.gnom.persistence.{PacketSerializationResult, PacketTranslator, TransferInfo}
+import fr.linkit.api.gnom.persistence.{ObjectSerializationResult, ObjectTranslator, TransferInfo}
 import fr.linkit.engine.gnom.persistence.PacketSerializationChoreographer.MappedQueues
 
 import scala.collection.mutable
 
-class PacketSerializationChoreographer(translator: PacketTranslator) {
+class PacketSerializationChoreographer(translator: ObjectTranslator) {
 
     private val serialQueue = new MappedQueues[TransferInfo]()
 
-    def add(transferInfo: TransferInfo)(onResultAvailable: PacketSerializationResult => Unit): Unit = {
+    def add(transferInfo: TransferInfo)(onResultAvailable: ObjectSerializationResult => Unit): Unit = {
         val coords = transferInfo.coords
         serialQueue.enqueue(coords.path, transferInfo)(info => onResultAvailable(translator.translate(info)))
     }

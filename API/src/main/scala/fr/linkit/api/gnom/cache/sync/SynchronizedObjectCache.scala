@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceGetter
 import fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTreeStore
 import fr.linkit.api.application.network.Network
-import fr.linkit.api.application.packet.PacketAttributesPresence
+import fr.linkit.api.gnom.packet.PacketAttributesPresence
 
 /**
  * The main class of the Synchronized object system.<br>

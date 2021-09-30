@@ -13,7 +13,7 @@
 package fr.linkit.api.application.config
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.internal.system.security.BytesHasher
 
 import java.net.URL
@@ -26,7 +26,7 @@ trait ConnectionConfiguration {
 
     val hasher: BytesHasher
 
-    val translatorFactory: ApplicationContext => PacketTranslator
+    val translatorFactory: ApplicationContext => ObjectTranslator
 
     val defaultPersistenceConfigScript: Option[URL]
 

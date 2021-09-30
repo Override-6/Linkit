@@ -14,17 +14,17 @@ package fr.linkit.engine.gnom.cache
 
 import fr.linkit.api.gnom.cache.{CacheContent, CacheNotAcceptedException, CacheOpenException, CacheSearchBehavior}
 import fr.linkit.api.application.network.Network
-import fr.linkit.api.application.packet.Packet
-import fr.linkit.api.application.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.gnom.packet.Packet
+import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.persistence.context.Deconstructive
-import fr.linkit.api.application.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.application.packet.fundamental.EmptyPacket.EmptyPacket
-import fr.linkit.engine.application.packet.fundamental.{EmptyPacket, RefPacket}
-import fr.linkit.engine.application.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
-import fr.linkit.engine.application.packet.fundamental.ValPacket.IntPacket
+import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket.EmptyPacket
+import fr.linkit.engine.gnom.packet.fundamental.{EmptyPacket, RefPacket}
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket.{ObjectPacket, StringPacket}
+import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.persistence.context.Persist
-import fr.linkit.engine.application.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 
 final class SharedCacheDistantManager @Persist()(family: String,
                                                  override val ownerID: String,

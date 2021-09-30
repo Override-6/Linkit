@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.internal.system
 
-import fr.linkit.api.application.packet.Packet
+import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.internal.system.Reason
 
 case class SystemPacket private(order: SystemOrder,

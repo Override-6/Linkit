@@ -15,13 +15,13 @@ package fr.linkit.engine.gnom.cache
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{CacheHandler, ContentHandler}
 import fr.linkit.api.gnom.cache.{CacheContent, SharedCacheFactory}
-import fr.linkit.api.application.packet.Packet
-import fr.linkit.api.application.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.gnom.packet.Packet
+import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.SharedInstance.CacheInstanceContent
-import fr.linkit.engine.application.packet.UnexpectedPacketException
-import fr.linkit.engine.application.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.engine.application.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.UnexpectedPacketException
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.utils.{ConsumerContainer, JavaUtils}
 
 import scala.reflect.ClassTag

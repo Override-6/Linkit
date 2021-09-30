@@ -12,9 +12,9 @@
 
 package fr.linkit.engine.internal.system.event.packet
 
-import fr.linkit.api.gnom.persistence.{PacketSerializationResult, Serializer}
-import fr.linkit.api.application.packet.traffic.PacketInjectable
-import fr.linkit.api.application.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
+import fr.linkit.api.gnom.persistence.{ObjectSerializationResult, Serializer}
+import fr.linkit.api.gnom.packet.traffic.PacketInjectable
+import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketCoordinates}
 
 object PacketEvents {
 
@@ -71,7 +71,7 @@ object PacketEvents {
         }
     }
 
-    def packetWritten(result: PacketSerializationResult): PacketWrittenEvent = {
+    def packetWritten(result: ObjectSerializationResult): PacketWrittenEvent = {
         //TODO PacketWrittenEvent(result.packet, result.coords, result.getSerializer().getClass, result.rawBytes)
         null
     }

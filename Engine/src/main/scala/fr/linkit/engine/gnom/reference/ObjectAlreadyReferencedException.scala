@@ -12,6 +12,6 @@
 
 package fr.linkit.engine.gnom.reference
 
-import fr.linkit.api.application.packet.PacketException
+import fr.linkit.api.gnom.packet.PacketException
 
 class ObjectAlreadyReferencedException(msg: String) extends PacketException(msg)

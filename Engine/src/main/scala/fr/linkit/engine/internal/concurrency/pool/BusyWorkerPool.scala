@@ -29,7 +29,7 @@ import scala.util.control.NonFatal
  * <h2> Problem </h2>
  * <p>
  * Let's say that we have a pool of 3 threads that handle deserialization and packet injections. <br>
- * (see [[fr.linkit.api.application.packet.traffic.PacketInjectable]] for further details about injection)
+ * (see [[fr.linkit.api.gnom.packet.traffic.PacketInjectable]] for further details about injection)
  * Then suddenly, for a reason that can often appear, every threads of the pool are waiting to receipt another packet.<br>
  * The waited packet will effectively be downloaded by the [[PacketReaderThread]],
  * but it could not be deserialized and injected because all the thread are currently waiting for an injection.<br>

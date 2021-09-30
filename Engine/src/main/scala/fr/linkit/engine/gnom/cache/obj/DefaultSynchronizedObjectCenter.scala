@@ -21,8 +21,8 @@ import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
 import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheFactory}
 import fr.linkit.api.application.network.{Engine, Network}
-import fr.linkit.api.application.packet.Packet
-import fr.linkit.api.application.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.gnom.packet.Packet
+import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.obj.DefaultSynchronizedObjectCenter.ObjectTreeProfile
@@ -33,9 +33,9 @@ import fr.linkit.engine.gnom.cache.obj.invokation.local.ObjectChip
 import fr.linkit.engine.gnom.cache.obj.invokation.remote.{InvocationPacket, ObjectPuppeteer}
 import fr.linkit.engine.gnom.cache.obj.tree._
 import fr.linkit.engine.gnom.cache.obj.tree.node._
-import fr.linkit.engine.application.packet.fundamental.RefPacket.ObjectPacket
-import fr.linkit.engine.application.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.engine.application.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.LinkitApplication
 
 import scala.reflect.ClassTag

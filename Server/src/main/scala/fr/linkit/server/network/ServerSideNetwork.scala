@@ -15,7 +15,7 @@ package fr.linkit.server.network
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.application.network.NetworkInitialisable
-import fr.linkit.api.application.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
 import fr.linkit.engine.gnom.cache.obj.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.gnom.cache.obj.instantiation.SyncConstructor

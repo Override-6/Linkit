@@ -13,7 +13,7 @@
 package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
-import fr.linkit.api.application.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 
 /**
  * Used by the [[SharedCacheManager]] to create a [[SharedCache]] of type [[A]]

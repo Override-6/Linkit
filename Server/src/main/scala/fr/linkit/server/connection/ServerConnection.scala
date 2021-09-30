@@ -15,17 +15,17 @@ package fr.linkit.server.connection
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.connection.CentralConnection
 import fr.linkit.api.application.network.Network
-import fr.linkit.api.application.packet.channel.ChannelScope
-import fr.linkit.api.application.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.gnom.packet.channel.ChannelScope
+import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.application.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
-import fr.linkit.api.application.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.gnom.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
+import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.internal.system.event.EventNotifier
 import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
-import fr.linkit.engine.application.packet.traffic.DynamicSocket
+import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.system.event.DefaultEventNotifier
@@ -45,9 +45,9 @@ import scala.util.control.NonFatal
 class ServerConnection(applicationContext: ServerApplication,
                        val configuration: ServerConnectionConfiguration) extends CentralConnection {
 
-    override val currentIdentifier       : String                     = configuration.identifier
-    override val translator              : PacketTranslator           = configuration.translatorFactory(applicationContext)
-    override val port                    : Int                        = configuration.port
+    override val currentIdentifier       : String           = configuration.identifier
+    override val translator              : ObjectTranslator = configuration.translatorFactory(applicationContext)
+    override val port                    : Int              = configuration.port
     private  val workerPool              : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
     private  val serverSocket            : ServerSocket               = new ServerSocket(configuration.port)
     private  val connectionsManager      : ExternalConnectionsManager = new ExternalConnectionsManager(this)

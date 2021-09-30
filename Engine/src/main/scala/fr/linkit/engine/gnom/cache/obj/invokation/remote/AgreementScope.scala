@@ -14,12 +14,12 @@ package fr.linkit.engine.gnom.cache.obj.invokation.remote
 
 import fr.linkit.api.gnom.cache.sync.behavior.RMIRulesAgreement
 import fr.linkit.api.application.network.Network
-import fr.linkit.api.application.packet.channel.ChannelScope
-import fr.linkit.api.application.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.application.packet.traffic.PacketWriter
-import fr.linkit.api.application.packet.{Packet, PacketAttributes}
+import fr.linkit.api.gnom.packet.channel.ChannelScope
+import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.gnom.packet.traffic.PacketWriter
+import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
 import fr.linkit.engine.gnom.cache.obj.invokation.SimpleRMIRulesAgreement
-import fr.linkit.engine.application.packet.{AbstractAttributesPresence, SimplePacketAttributes}
+import fr.linkit.engine.gnom.packet.{AbstractAttributesPresence, SimplePacketAttributes}
 
 class AgreementScope(override val writer: PacketWriter, network: Network, agreement: RMIRulesAgreement) extends AbstractAttributesPresence with ChannelScope {
 

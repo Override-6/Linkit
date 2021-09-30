@@ -12,7 +12,7 @@
 
 package fr.linkit.server.connection
 
-import fr.linkit.engine.application.packet.traffic.DynamicSocket
+import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 
 import java.io._
 import java.net.Socket

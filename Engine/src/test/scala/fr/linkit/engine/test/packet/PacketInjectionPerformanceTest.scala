@@ -12,9 +12,9 @@
 
 package fr.linkit.engine.test.packet
 
-import fr.linkit.engine.application.packet.fundamental.ValPacket.IntPacket
-import fr.linkit.engine.application.packet.traffic.channel.SyncAsyncPacketChannel
-import fr.linkit.engine.application.packet.traffic.{ChannelScopes, SocketPacketTraffic}
+import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
+import fr.linkit.engine.gnom.packet.traffic.channel.SyncAsyncPacketChannel
+import fr.linkit.engine.gnom.packet.traffic.{ChannelScopes, SocketPacketTraffic}
 import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.internal.utils.PerformanceMeter
 import org.junit.jupiter.api.TestInstance.Lifecycle

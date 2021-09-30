@@ -13,12 +13,12 @@
 package fr.linkit.server.connection
 
 import fr.linkit.api.application.network.{ExternalConnectionState, Network}
-import fr.linkit.api.application.packet.channel.ChannelScope
-import fr.linkit.api.application.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.gnom.packet.channel.ChannelScope
+import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.{PacketSerializationResult, PacketTranslator}
-import fr.linkit.api.application.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
-import fr.linkit.api.application.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.gnom.persistence.{ObjectSerializationResult, ObjectTranslator}
+import fr.linkit.api.gnom.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
+import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
 import fr.linkit.api.application.{ApplicationContext, ExternalConnection}
 import fr.linkit.api.application.connection.ExternalConnection
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
@@ -37,9 +37,9 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     import session._
 
     override val currentIdentifier       : String            = server.currentIdentifier
-    override val traffic                 : PacketTraffic     = server.traffic
-    override val translator              : PacketTranslator  = server.translator
-    override val eventNotifier           : EventNotifier     = server.eventNotifier
+    override val traffic                 : PacketTraffic    = server.traffic
+    override val translator              : ObjectTranslator = server.translator
+    override val eventNotifier           : EventNotifier    = server.eventNotifier
     override val network                 : Network           = session.network
     override val port                    : Int               = server.port
     override val boundIdentifier         : String            = session.boundIdentifier
@@ -113,7 +113,7 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
         session.updateSocket(socket)
     }
 
-    def send(result: PacketSerializationResult): Unit = {
+    def send(result: ObjectSerializationResult): Unit = {
         session.send(result)
     }
 

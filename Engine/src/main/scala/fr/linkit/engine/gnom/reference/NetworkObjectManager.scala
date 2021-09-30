@@ -12,14 +12,14 @@
 
 package fr.linkit.engine.gnom.reference
 
-import fr.linkit.api.application.packet.Packet
-import fr.linkit.api.application.packet.channel.request.{RequestPacketBundle, RequestPacketChannel}
+import fr.linkit.api.gnom.packet.Packet
+import fr.linkit.api.gnom.packet.channel.request.{RequestPacketBundle, RequestPacketChannel}
 import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
 import fr.linkit.api.gnom.reference.presence.{NetworkPresenceHandler, ObjectPresenceType}
 import fr.linkit.api.gnom.reference.{NetworkReferenceLocation, ObjectManager}
-import fr.linkit.engine.application.packet.fundamental.RefPacket.AnyRefPacket
-import fr.linkit.engine.application.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.engine.application.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket.AnyRefPacket
+import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkPresence, InternalNetworkPresence}
 
 import scala.collection.mutable

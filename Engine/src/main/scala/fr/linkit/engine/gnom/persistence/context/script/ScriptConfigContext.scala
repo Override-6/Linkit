@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.gnom.persistence.context.script
 
-import fr.linkit.api.application.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.api.internal.script.{ScriptContext, ScriptFile}
 import fr.linkit.engine.gnom.persistence.context.script.ScriptConfigContext.{DefaultScriptConfigParameter, EndOfContext, LineComment, StartOfContext}
 import fr.linkit.engine.internal.LinkitApplication

@@ -14,7 +14,7 @@ package fr.linkit.api.gnom.persistence.context
 
 import fr.linkit.api.application.ApplicationContext
 import fr.linkit.api.application.network.Network
-import fr.linkit.api.application.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 
 import java.lang.reflect.Constructor
 

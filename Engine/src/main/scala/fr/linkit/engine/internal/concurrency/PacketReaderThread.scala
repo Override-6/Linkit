@@ -13,7 +13,7 @@
 package fr.linkit.engine.internal.concurrency
 
 import fr.linkit.api.gnom.persistence.PacketTransferResult
-import fr.linkit.api.application.packet.traffic.PacketReader
+import fr.linkit.api.gnom.packet.traffic.PacketReader
 import fr.linkit.api.internal.concurrency.{IllegalThreadException, ProcrastinatorControl, packetWorkerExecution}
 import fr.linkit.api.internal.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread.packetReaderThreadGroup

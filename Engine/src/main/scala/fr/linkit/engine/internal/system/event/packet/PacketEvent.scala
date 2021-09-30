@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.internal.system.event.packet
 
-import fr.linkit.api.application.packet.Packet
+import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.internal.system.event.{Event, EventHook}
 
 trait PacketEvent extends Event[PacketEventHooks, PacketEventListener] {

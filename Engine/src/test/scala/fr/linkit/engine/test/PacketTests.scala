@@ -12,13 +12,13 @@
 
 package fr.linkit.engine.test
 
-import fr.linkit.api.application.packet.DedicatedPacketCoordinates
+import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.engine.application.packet.SimplePacketAttributes
-import fr.linkit.engine.application.packet.fundamental.ValPacket.IntPacket
+import fr.linkit.engine.gnom.packet.SimplePacketAttributes
+import fr.linkit.engine.gnom.packet.fundamental.ValPacket.IntPacket
 import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder}
-import fr.linkit.engine.gnom.persistence.serializor.DefaultPacketSerializer
-import fr.linkit.engine.application.packet.traffic.channel.request.RequestPacket
+import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
+import fr.linkit.engine.gnom.packet.traffic.channel.request.RequestPacket
 import fr.linkit.engine.internal.LinkitApplication
 import fr.linkit.engine.internal.system.fsa.LocalFileSystemAdapters
 import fr.linkit.engine.internal.utils.{ClassMap, ScalaUtils}
@@ -29,7 +29,7 @@ import java.io.File
 import java.nio.ByteBuffer
 
 import fr.linkit.api.gnom.cache.sync.SynchronizedObjectCache
-import fr.linkit.engine.application.packet.fundamental.RefPacket.ObjectPacket
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket.ObjectPacket
 
 import scala.collection.mutable.ArrayBuffer
 
@@ -97,7 +97,7 @@ object PacketTests {
             t.perfTests()
     }
 
-    private val serializer = new DefaultPacketSerializer(null)
+    private val serializer = new DefaultObjectPersistence(null)
 
     def testPacket(obj: Array[AnyRef]): Unit = {
         testPacket(obj, new PersistenceConfigBuilder().build(ImmutablePersistenceContext(null, new ClassMap, new ClassMap)))

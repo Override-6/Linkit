@@ -13,9 +13,9 @@
 package fr.linkit.client.config
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.internal.system.security.BytesHasher
-import fr.linkit.engine.gnom.persistence.DefaultPacketTranslator
+import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator
 
 import java.net.{InetSocketAddress, Socket, URL}
 
@@ -25,7 +25,7 @@ abstract class ClientConnectionConfigBuilder {
     var socketFactory                 : InetSocketAddress => Socket            = s => new Socket(s.getAddress, s.getPort)
     var configName                    : String                                 = "simple-config"
     var hasher                        : BytesHasher                            = BytesHasher.inactive
-    var translatorFactory             : ApplicationContext => PacketTranslator = new DefaultPacketTranslator(_)
+    var translatorFactory             : ApplicationContext => ObjectTranslator = new DefaultObjectTranslator(_)
     var defaultPersistenceConfigScript: Option[URL]                            = None
     val identifier   : String
     val remoteAddress: InetSocketAddress
@@ -42,7 +42,7 @@ abstract class ClientConnectionConfigBuilder {
             override val configName                    : String                                 = builder.configName
             override val identifier                    : String                                 = builder.identifier
             override val hasher                        : BytesHasher                            = builder.hasher
-            override val translatorFactory             : ApplicationContext => PacketTranslator = builder.translatorFactory
+            override val translatorFactory             : ApplicationContext => ObjectTranslator = builder.translatorFactory
             override val defaultPersistenceConfigScript: Option[URL]                            = builder.defaultPersistenceConfigScript
         }: ClientConnectionConfiguration
     }

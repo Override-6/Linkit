@@ -13,9 +13,9 @@
 package fr.linkit.engine.gnom.cache.obj.tree.node
 
 import fr.linkit.api.gnom.cache.sync.tree.SyncNode
-import fr.linkit.api.application.packet.channel.request.Submitter
+import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.engine.gnom.cache.obj.invokation.remote.InvocationPacket
-import fr.linkit.engine.application.packet.traffic.channel.request.ResponseSubmitter
+import fr.linkit.engine.gnom.packet.traffic.channel.request.ResponseSubmitter
 
 trait TrafficInterestedSyncNode[A <: AnyRef] extends SyncNode[A] {
 

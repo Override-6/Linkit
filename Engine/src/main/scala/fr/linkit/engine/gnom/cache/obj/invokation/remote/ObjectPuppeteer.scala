@@ -17,12 +17,12 @@ import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehavior
 import fr.linkit.api.gnom.cache.sync.invokation.remote.{DispatchableRemoteMethodInvocation, Puppeteer}
 import fr.linkit.api.gnom.cache.sync.tree.SyncNodeLocation
 import fr.linkit.api.application.network.Network
-import fr.linkit.api.application.packet.channel.ChannelScope
-import fr.linkit.api.application.packet.channel.request.{RequestPacketChannel, ResponseHolder}
+import fr.linkit.api.gnom.packet.channel.ChannelScope
+import fr.linkit.api.gnom.packet.channel.request.{RequestPacketChannel, ResponseHolder}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.obj.RMIExceptionString
-import fr.linkit.engine.application.packet.fundamental.RefPacket
-import fr.linkit.engine.application.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.internal.utils.JavaUtils
 import org.jetbrains.annotations.Nullable
 

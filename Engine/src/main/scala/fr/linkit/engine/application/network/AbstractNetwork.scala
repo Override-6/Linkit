@@ -20,15 +20,15 @@ import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterM
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.application.network.{Engine, Network, NetworkInitialisable}
-import fr.linkit.api.application.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder, ObjectBehaviorStoreBuilder}
 import fr.linkit.engine.gnom.cache.obj.invokation.ExecutorEngine
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.application.network.AbstractNetwork.GlobalCacheID
-import fr.linkit.engine.application.packet.traffic.ChannelScopes
-import fr.linkit.engine.application.packet.traffic.channel.request.SimpleRequestPacketChannel
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 import java.sql.Timestamp
 import fr.linkit.api.gnom.reference.MutableReferencedObjectStore

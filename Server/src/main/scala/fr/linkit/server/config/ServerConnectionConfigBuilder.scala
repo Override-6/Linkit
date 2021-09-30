@@ -13,9 +13,9 @@
 package fr.linkit.server.config
 
 import fr.linkit.api.application.ApplicationContext
-import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.internal.system.security.BytesHasher
-import fr.linkit.engine.gnom.persistence.DefaultPacketTranslator
+import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator
 import ServerConnectionConfigBuilder.count
 
 import java.net.URL
@@ -33,7 +33,7 @@ abstract class ServerConnectionConfigBuilder {
     val port      : Int
 
     //Can't be configurable for now
-    val translatorFactory: ApplicationContext => PacketTranslator = new DefaultPacketTranslator(_)
+    val translatorFactory: ApplicationContext => ObjectTranslator = new DefaultObjectTranslator(_)
 
     def build(): ServerConnectionConfiguration = {
         val builder = this
@@ -46,7 +46,7 @@ abstract class ServerConnectionConfigBuilder {
             override val nWorkerThreadFunction         : Int => Int                             = builder.nWorkerThreadFunction
             override val configName                    : String                                 = builder.configName
             override val hasher                        : BytesHasher                            = builder.hasher
-            override val translatorFactory             : ApplicationContext => PacketTranslator = builder.translatorFactory
+            override val translatorFactory             : ApplicationContext => ObjectTranslator = builder.translatorFactory
             override val identifierAmbiguityStrategy   : AmbiguityStrategy                      = builder.identifierAmbiguityStrategy
         }
     }

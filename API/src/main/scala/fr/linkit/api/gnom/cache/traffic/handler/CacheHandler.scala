@@ -12,7 +12,7 @@
 
 package fr.linkit.api.gnom.cache.traffic.handler
 
-import fr.linkit.api.application.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 
 /**
  * The main class that handles the network operations of a cache.

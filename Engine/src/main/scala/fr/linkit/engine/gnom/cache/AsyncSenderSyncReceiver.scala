@@ -12,11 +12,11 @@
 
 package fr.linkit.engine.gnom.cache
 
-import fr.linkit.api.application.packet.channel.ChannelScope
-import fr.linkit.api.application.packet.traffic.{PacketInjectableStore, PacketSender, PacketSyncReceiver}
-import fr.linkit.api.application.packet.{Packet, PacketAttributes}
-import fr.linkit.engine.application.packet.SimplePacketAttributes
-import fr.linkit.engine.application.packet.traffic.channel.SyncAsyncPacketChannel
+import fr.linkit.api.gnom.packet.channel.ChannelScope
+import fr.linkit.api.gnom.packet.traffic.{PacketInjectableStore, PacketSender, PacketSyncReceiver}
+import fr.linkit.api.gnom.packet.{Packet, PacketAttributes}
+import fr.linkit.engine.gnom.packet.SimplePacketAttributes
+import fr.linkit.engine.gnom.packet.traffic.channel.SyncAsyncPacketChannel
 
 import scala.reflect.ClassTag
 

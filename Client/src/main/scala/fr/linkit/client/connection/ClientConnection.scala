@@ -13,12 +13,12 @@
 package fr.linkit.client.connection
 
 import fr.linkit.api.application.network.{ExternalConnectionState, Network}
-import fr.linkit.api.application.packet._
-import fr.linkit.api.application.packet.channel.ChannelScope
-import fr.linkit.api.application.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.gnom.persistence.PacketTranslator
+import fr.linkit.api.gnom.packet._
+import fr.linkit.api.gnom.packet.channel.ChannelScope
+import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.gnom.persistence.ObjectTranslator
 import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.application.packet.traffic._
+import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.application.{ApplicationContext, ExternalConnection}
 import fr.linkit.api.application.connection.{ConnectionInitialisationException, ExternalConnection}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, packetWorkerExecution, workerExecution}
@@ -27,8 +27,8 @@ import fr.linkit.api.internal.system.event.EventNotifier
 import fr.linkit.client.ClientApplication
 import fr.linkit.client.config.ClientConnectionConfiguration
 import fr.linkit.client.network.ClientSideNetwork
-import fr.linkit.engine.application.packet.fundamental.ValPacket.BooleanPacket
-import fr.linkit.engine.application.packet.traffic.DynamicSocket
+import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
+import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.utils.{NumberSerializer, ScalaUtils}
 import org.jetbrains.annotations.NotNull
@@ -43,9 +43,9 @@ class ClientConnection private(session: ClientConnectionSession) extends Externa
     init()
 
     override val currentIdentifier       : String            = configuration.identifier
-    override val port                    : Int               = configuration.remoteAddress.getPort
-    override val translator              : PacketTranslator  = session.translator
-    override val eventNotifier           : EventNotifier     = session.eventNotifier
+    override val port                    : Int              = configuration.remoteAddress.getPort
+    override val translator              : ObjectTranslator = session.translator
+    override val eventNotifier           : EventNotifier    = session.eventNotifier
     override val traffic                 : PacketTraffic     = session.traffic
     override val boundIdentifier         : String            = serverIdentifier
     override val defaultPersistenceConfig: PersistenceConfig = traffic.defaultPersistenceConfig

@@ -16,12 +16,12 @@ import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
 import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeLocation, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
-import fr.linkit.api.application.packet.channel.request.Submitter
+import fr.linkit.api.gnom.packet.channel.request.Submitter
 import fr.linkit.api.gnom.reference.presence.ObjectNetworkPresence
 import fr.linkit.engine.gnom.cache.obj.RMIExceptionString
 import fr.linkit.engine.gnom.cache.obj.invokation.remote.InvocationPacket
-import fr.linkit.engine.application.packet.UnexpectedPacketException
-import fr.linkit.engine.application.packet.fundamental.RefPacket
+import fr.linkit.engine.gnom.packet.UnexpectedPacketException
+import fr.linkit.engine.gnom.packet.fundamental.RefPacket
 import org.jetbrains.annotations.Nullable
 
 import java.util.concurrent.ThreadLocalRandom

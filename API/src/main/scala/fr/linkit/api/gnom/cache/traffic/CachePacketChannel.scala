@@ -14,7 +14,7 @@ package fr.linkit.api.gnom.cache.traffic
 
 import fr.linkit.api.gnom.cache.{CacheContent, SharedCacheManager}
 import fr.linkit.api.gnom.cache.traffic.handler.CacheHandler
-import fr.linkit.api.application.packet.channel.request.RequestPacketChannel
+import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
 
 /**
  * This channel is given to any [[fr.linkit.api.gnom.cache.SharedCache]]

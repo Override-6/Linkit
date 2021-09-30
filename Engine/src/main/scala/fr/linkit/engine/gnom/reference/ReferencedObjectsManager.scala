@@ -1,8 +1,8 @@
 package fr.linkit.engine.gnom.reference
 
-import fr.linkit.api.application.packet.channel.request.RequestPacketChannel
+import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
 import fr.linkit.api.gnom.reference.ReferencedObjectLocation
-import fr.linkit.engine.application.packet.traffic.InternalPacketInjectableStore
+import fr.linkit.engine.gnom.packet.traffic.InternalPacketInjectableStore
 
 private class ReferencedObjectsManager(channel: RequestPacketChannel, root: InternalPacketInjectableStore)
     extends NetworkObjectManager[ReferencedObject, ReferencedObjectLocation](channel) {

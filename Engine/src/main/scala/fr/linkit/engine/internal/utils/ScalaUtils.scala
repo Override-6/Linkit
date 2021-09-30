@@ -16,8 +16,8 @@ import java.io.File
 import java.lang.reflect.{Field, InaccessibleObjectException, Modifier}
 import java.nio.ByteBuffer
 
-import fr.linkit.api.application.packet.Packet
-import fr.linkit.engine.application.packet.UnexpectedPacketException
+import fr.linkit.api.gnom.packet.Packet
+import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import sun.misc.Unsafe
 
 import scala.annotation.switch

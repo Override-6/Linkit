@@ -16,15 +16,15 @@ import fr.linkit.api.gnom.cache._
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.ContentHandler
 import fr.linkit.api.application.network.Network
-import fr.linkit.api.application.packet.channel.ChannelScope
-import fr.linkit.api.application.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.application.packet.channel.request.RequestPacketBundle
-import fr.linkit.api.application.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.packet.channel.ChannelScope
+import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
+import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.traffic.DefaultCachePacketChannel
-import fr.linkit.engine.application.packet.traffic.ChannelScopes
-import fr.linkit.engine.application.packet.traffic.channel.request.SimpleRequestPacketChannel
+import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
+import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}

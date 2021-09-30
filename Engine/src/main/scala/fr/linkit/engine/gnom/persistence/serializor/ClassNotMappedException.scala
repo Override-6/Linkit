@@ -12,7 +12,7 @@
 
 package fr.linkit.engine.gnom.persistence.serializor
 
-import fr.linkit.api.application.packet.PacketException
+import fr.linkit.api.gnom.packet.PacketException
 
 class ClassNotMappedException(msg: String) extends PacketException(msg) {
 
