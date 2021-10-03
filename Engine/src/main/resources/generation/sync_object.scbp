@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -14,7 +14,7 @@ package $ClassPackage$
 
 import $WrappedClassName$
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.engine.gnom.cache.obj.AbstractSynchronizedObject
+import fr.linkit.engine.gnom.cache.sync.AbstractSynchronizedObject
 import fr.linkit.engine.internal.utils.JavaUtils.nl
 
 /*

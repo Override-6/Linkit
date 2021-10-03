@@ -6,19 +6,20 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.network.Updatable
+import fr.linkit.api.gnom.reference.NetworkObject
 
 /**
  * The shared cache trait that depicts the information a cache must contain
  * In order to be correctly managed by its [[SharedCacheManager]]
  */
-trait SharedCache extends Updatable {
+trait SharedCache extends NetworkObject[SharedCacheReference] with Updatable {
 
     /**
      * The [[SharedCacheManager]] family that manages this cache.

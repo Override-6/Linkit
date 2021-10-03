@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -16,7 +16,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
-import fr.linkit.api.gnom.reference.NetworkReferenceLocation
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
 import fr.linkit.engine.gnom.persistence.pool.SimpleReferencedNetworkObject
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
@@ -97,8 +97,8 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
     private def readContextObject(): ReferencedNetworkObject = {
         val poolLoc  = buff.getInt()
         val location = pool.getAny(poolLoc) match {
-            case l: NetworkReferenceLocation => l
-            case o => throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
+            case l: NetworkObjectReference => l
+            case o                         => throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
         }
         val obj      = gnol.findObject(coordinates, location).getOrElse {
             throw new NoSuchElementException(s"Could not find contextual object of identifier '$poolLoc' in provided configuration.")

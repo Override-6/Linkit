@@ -6,13 +6,13 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.engine.test
 
-import fr.linkit.engine.gnom.cache.obj.invokation.SimpleRMIRulesAgreementBuilder
+import fr.linkit.engine.gnom.cache.sync.invokation.SimpleRMIRulesAgreementBuilder
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api.{Assertions, Test, TestInstance}
 

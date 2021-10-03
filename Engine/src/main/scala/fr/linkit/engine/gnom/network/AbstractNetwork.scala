@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -23,8 +23,8 @@ import fr.linkit.api.gnom.network.{Engine, Network, NetworkInitialisable}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder, ObjectBehaviorStoreBuilder}
-import fr.linkit.engine.gnom.cache.obj.invokation.ExecutorEngine
+import fr.linkit.engine.gnom.cache.sync.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder, ObjectBehaviorStoreBuilder}
+import fr.linkit.engine.gnom.cache.sync.invokation.ExecutorEngine
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
@@ -32,19 +32,19 @@ import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketC
 
 import java.sql.Timestamp
 import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
+import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 
 abstract class AbstractNetwork(override val connection: ConnectionContext,
-                               override val rootRefStore: MutableReferencedObjectStore,
                                privilegedInitialisables: Array[NetworkInitialisable]) extends Network { network =>
 
-    rootRefStore += (10, this)
+    //rootRefStore += (10, this)
     privilegedInitialisables.foreach(_.initNetwork(this))
     protected val networkStore    : PacketInjectableStore = connection.createStore(0)
     private   val currentIdentifier                       = connection.currentIdentifier
     override  val globalCache     : SharedCacheManager    = createGlobalCache
     protected val trunk           : NetworkDataTrunk      = retrieveDataTrunk(getEngineStoreBehaviors)
     override  val connectionEngine: Engine                = trunk.newEngine(currentIdentifier)
-    runContract()
+    postInit()
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {
         throw new NoSuchElementException("Server Engine not found.")
@@ -66,7 +66,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
         trunk.findCache(family)
     }
 
-    override def attachToCacheManager(family: String): SharedCacheManager = {
+    override def getCacheManager(family: String): SharedCacheManager = {
         findCacheManager(family).getOrElse(declareNewCacheManager(family))
     }
 
@@ -89,13 +89,7 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
 
     protected def createGlobalCache: SharedCacheManager
 
-    /*protected def handleRequest(bundle: RequestPacketBundle): Unit = {
-        bundle.packet.nextPacket[Packet] match {
-            case other => throw UnexpectedPacketException(s"Unknown request '$other'.")
-        }
-    }*/
-
-    private def runContract(): Unit = {
+    private def postInit(): Unit = {
         ExecutorEngine.setCurrentEngine(connectionEngine)
         //cacheManagerChannel.addRequestListener(handleRequest)
     }

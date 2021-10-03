@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -34,7 +34,7 @@ import fr.linkit.api.gnom.packet.PacketAttributesPresence
  *
  * @tparam A the type of root objects.
  * */
-trait SynchronizedObjectCache[A <: AnyRef] extends PacketAttributesPresence with SharedCache {
+trait SynchronizedObjectCache[A <: AnyRef] extends SharedCache with PacketAttributesPresence {
 
     val network: Network
 

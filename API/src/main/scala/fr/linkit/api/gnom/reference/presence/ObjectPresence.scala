@@ -6,15 +6,15 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.api.gnom.reference.presence
 
-import fr.linkit.api.gnom.reference.NetworkReferenceLocation
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-trait ObjectPresence[L <: NetworkReferenceLocation[ObjectPresence[L]]] {
+trait ObjectPresence[L <: NetworkObjectReference] {
 
     def networkPresence: ObjectNetworkPresence
 

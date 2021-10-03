@@ -6,18 +6,19 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.api.gnom.reference.presence
 
-import fr.linkit.api.gnom.reference.NetworkReferenceLocation
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-trait NetworkPresenceHandler[L <: NetworkReferenceLocation] {
+trait NetworkPresenceHandler[L <: NetworkObjectReference] {
 
     def registerLocation(location: L): Unit
 
     def unregisterLocation(location: L): Unit
 
+    def isPresentOnEngine(engineId: String, location: L): Boolean
 }

@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -17,13 +17,15 @@ import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.network.NetworkInitialisable
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
 import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
-import fr.linkit.engine.gnom.cache.obj.DefaultSynchronizedObjectCenter
-import fr.linkit.engine.gnom.cache.obj.instantiation.SyncConstructor
+import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.gnom.cache.sync.instantiation.SyncConstructor
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
+import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.server.connection.ServerConnection
 
-class ServerSideNetwork(serverConnection: ServerConnection, privilegedInitialisables: Array[NetworkInitialisable])(implicit traffic: PacketTraffic)
+class ServerSideNetwork(serverConnection: ServerConnection,
+                        privilegedInitialisables: Array[NetworkInitialisable])(implicit traffic: AbstractPacketTraffic)
         extends AbstractNetwork(serverConnection, traffic.defaultPersistenceConfig.getReferenceStore, privilegedInitialisables) {
 
     trunk.addCacheManager(globalCache)

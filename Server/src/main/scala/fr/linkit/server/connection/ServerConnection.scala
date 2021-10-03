@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -17,25 +17,23 @@ import fr.linkit.api.application.connection.CentralConnection
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.gnom.persistence.ObjectTranslator
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
 import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, Packet, PacketAttributes}
+import fr.linkit.api.gnom.persistence.ObjectTranslator
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.internal.system.event.EventNotifier
-import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.gnom.packet.traffic.DynamicSocket
+import fr.linkit.engine.gnom.persistence.SimpleTransferInfo
 import fr.linkit.engine.internal.concurrency.pool.BusyWorkerPool
 import fr.linkit.engine.internal.system.Rules
 import fr.linkit.engine.internal.system.event.DefaultEventNotifier
 import fr.linkit.engine.internal.utils.NumberSerializer.serializeInt
-import fr.linkit.server.local.config.AmbiguityStrategy
-import fr.linkit.server.{ServerApplication, ServerException}
-import fr.linkit.server.application.ServerException
 import fr.linkit.server.config.ServerConnectionConfiguration
 import fr.linkit.server.connection.packet.ServerPacketTraffic
 import fr.linkit.server.network.ServerSideNetwork
+import fr.linkit.server.{ServerApplication, ServerException}
 import org.jetbrains.annotations.Nullable
 
 import java.net.{ServerSocket, SocketException}
@@ -45,9 +43,9 @@ import scala.util.control.NonFatal
 class ServerConnection(applicationContext: ServerApplication,
                        val configuration: ServerConnectionConfiguration) extends CentralConnection {
 
-    override val currentIdentifier       : String           = configuration.identifier
-    override val translator              : ObjectTranslator = configuration.translatorFactory(applicationContext)
-    override val port                    : Int              = configuration.port
+    override val currentIdentifier       : String                     = configuration.identifier
+    override val translator              : ObjectTranslator           = configuration.translatorFactory(applicationContext)
+    override val port                    : Int                        = configuration.port
     private  val workerPool              : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
     private  val serverSocket            : ServerSocket               = new ServerSocket(configuration.port)
     private  val connectionsManager      : ExternalConnectionsManager = new ExternalConnectionsManager(this)

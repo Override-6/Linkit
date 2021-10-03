@@ -4,7 +4,7 @@ import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
 import java.util
 import java.util.Map.Entry
 
-import fr.linkit.api.gnom.reference.{MutableReferencedObjectStore, ReferencedObjectLocation}
+import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
 
 class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends MutableReferencedObjectStore {
 

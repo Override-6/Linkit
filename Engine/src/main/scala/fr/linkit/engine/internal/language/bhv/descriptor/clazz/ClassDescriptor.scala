@@ -6,13 +6,13 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.engine.internal.language.bhv.descriptor.clazz
 
-import fr.linkit.engine.gnom.cache.obj.description.SimpleSyncObjectSuperClassDescription
+import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription
 import fr.linkit.engine.internal.language.bhv.descriptor.{DescriptionResult, Descriptor}
 
 import java.util.Scanner

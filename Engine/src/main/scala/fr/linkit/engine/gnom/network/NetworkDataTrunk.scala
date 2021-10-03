@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.annotation.{MethodControl, Synchro
 import fr.linkit.api.gnom.network.Engine
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
-import fr.linkit.engine.gnom.cache.obj.invokation.ExecutorEngine
+import fr.linkit.engine.gnom.cache.sync.invokation.ExecutorEngine
 import fr.linkit.engine.gnom.network.NetworkDataTrunk.CacheManagerInfo
 
 import java.sql.Timestamp

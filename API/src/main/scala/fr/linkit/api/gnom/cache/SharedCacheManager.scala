@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -14,6 +14,7 @@ package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.network.{Network, Updatable}
 import fr.linkit.api.gnom.packet.traffic.TrafficPresence
+import fr.linkit.api.gnom.reference.NetworkObject
 
 import scala.reflect.ClassTag
 
@@ -23,7 +24,7 @@ import scala.reflect.ClassTag
  * For example, you can synchronise a list between engine A and engine B, in which each modification will be send to the other engine
  * in order to have the same list with the same items in the same orders.
  * */
-trait SharedCacheManager extends Updatable with TrafficPresence {
+trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] with Updatable /*with TrafficPresence*/ {
 
     /**
      * Each Cache manager have a family string, it's in fact the identifier of the cache manager.

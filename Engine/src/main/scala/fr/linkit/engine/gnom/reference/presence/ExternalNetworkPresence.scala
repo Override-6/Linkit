@@ -6,20 +6,20 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.engine.gnom.reference.presence
 
-import fr.linkit.api.gnom.reference.NetworkReferenceLocation
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
 import fr.linkit.api.gnom.reference.presence.{ObjectNetworkPresence, ObjectPresenceType}
-import fr.linkit.engine.gnom.reference.NetworkObjectManager
+import fr.linkit.engine.gnom.reference.AbstractNetworkObjectLinker
 
 import scala.collection.mutable
 
-class ExternalNetworkPresence[R <: AnyRef, L <: NetworkReferenceLocation](handler: NetworkObjectManager[R, L], val location: L)
+class ExternalNetworkPresence[L <: NetworkObjectReference](handler: AbstractNetworkObjectLinker[_, L, _ <: L], val location: L)
         extends ObjectNetworkPresence {
 
     private val presences = mutable.HashMap.empty[String, ObjectPresenceType]

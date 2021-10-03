@@ -6,19 +6,19 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.api.gnom.persistence.obj
 
-import fr.linkit.api.gnom.reference.NetworkReferenceLocation
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 trait ReferencedNetworkObject extends PoolObject[AnyRef] {
 
     /**
-     * The [[NetworkReferenceLocation]] index in the object pool.
+     * The [[NetworkObjectReference]] index in the object pool.
      * */
     val locationIdx: Int
-    val location   : NetworkReferenceLocation
+    val location   : NetworkObjectReference
 }

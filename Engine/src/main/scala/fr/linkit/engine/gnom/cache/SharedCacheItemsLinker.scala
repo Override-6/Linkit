@@ -6,18 +6,18 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.engine.gnom.cache
 
-import fr.linkit.api.gnom.cache.traffic.content.SharedCacheItemLocation
+import fr.linkit.api.gnom.cache.traffic.content.SharedCacheItemReference
 import fr.linkit.api.gnom.packet.PacketCoordinates
-import fr.linkit.api.gnom.reference.NetworkObjectsLinker
+import fr.linkit.api.gnom.reference.NetworkObjectLinker
 import fr.linkit.api.gnom.reference.presence.ObjectNetworkPresence
 
-class SharedCacheItemsLinker[R <: AnyRef] extends NetworkObjectsLinker[SharedCacheItemLocation, R] {
+class SharedCacheItemsLinker[R <: AnyRef] extends NetworkObjectLinker[SharedCacheItemReference, R] {
 
     override def isObjectReferencedOnCurrent(ref: R): Boolean = ???
 
@@ -25,9 +25,9 @@ class SharedCacheItemsLinker[R <: AnyRef] extends NetworkObjectsLinker[SharedCac
 
     override def findObjectPresence(ref: R): Option[ObjectNetworkPresence] = ???
 
-    override def findObjectLocation(coordsOrigin: PacketCoordinates, ref: R): Option[SharedCacheItemLocation] = ???
+    override def findObjectLocation(coordsOrigin: PacketCoordinates, ref: R): Option[SharedCacheItemReference] = ???
 
-    override def findObjectLocation(ref: R): Option[SharedCacheItemLocation] = ???
+    override def findObjectLocation(ref: R): Option[SharedCacheItemReference] = ???
 
-    override def findObject(coordsOrigin: PacketCoordinates, location: SharedCacheItemLocation): Option[R] = ???
+    override def findObject(coordsOrigin: PacketCoordinates, location: SharedCacheItemReference): Option[R] = ???
 }

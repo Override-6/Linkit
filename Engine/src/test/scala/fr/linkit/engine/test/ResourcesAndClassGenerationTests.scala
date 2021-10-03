@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -17,18 +17,18 @@ import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.Synchronized
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceInstantiator, SyncInstanceGetter}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
-import fr.linkit.api.gnom.cache.sync.tree.SyncNodeLocation
+import fr.linkit.api.gnom.cache.sync.tree.SyncNodeReference
 import fr.linkit.api.internal.generation.TypeVariableTranslator
 import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.application.config.ApplicationConfiguration
 import fr.linkit.api.internal.system.fsa.FileSystemAdapter
 import fr.linkit.api.internal.system.security.ApplicationSecurityManager
 import fr.linkit.api.internal.system.{AppLogger, Version}
-import fr.linkit.engine.gnom.cache.obj.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultObjectBehavior, DefaultObjectBehaviorStore}
-import fr.linkit.engine.gnom.cache.obj.description.SimpleSyncObjectSuperClassDescription
-import fr.linkit.engine.gnom.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
-import fr.linkit.engine.gnom.cache.obj.instantiation.ContentSwitcher
-import fr.linkit.engine.gnom.cache.obj.invokation.remote.ObjectPuppeteer
+import fr.linkit.engine.gnom.cache.sync.behavior.{AnnotationBasedMemberBehaviorFactory, DefaultObjectBehavior, DefaultObjectBehaviorStore}
+import fr.linkit.engine.gnom.cache.sync.description.SimpleSyncObjectSuperClassDescription
+import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
+import fr.linkit.engine.gnom.cache.sync.instantiation.ContentSwitcher
+import fr.linkit.engine.gnom.cache.sync.invokation.remote.ObjectPuppeteer
 import fr.linkit.engine.internal.LinkitApplication
 import fr.linkit.engine.internal.generation.compilation.access.DefaultCompilerCenter
 import fr.linkit.engine.application.resource.external.LocalResourceFolder._
@@ -144,7 +144,7 @@ class ResourcesAndClassGenerationTests {
     def forObject[A <: AnyRef : TypeTag](obj: A, tree: ObjectBehaviorStore = new DefaultObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory)): A with SynchronizedObject[A] = {
         Assertions.assertNotNull(resources)
 
-        val info         = SyncNodeLocation("", 8, "", Array(1))
+        val info         = SyncNodeReference("", 8, "", Array(1))
         val wrapper = TestWrapperInstantiator.newWrapper[A](new ContentSwitcher[A](obj))
         wrapper.getChoreographer.forceLocalInvocation {
             println(s"wrapper = ${wrapper}")

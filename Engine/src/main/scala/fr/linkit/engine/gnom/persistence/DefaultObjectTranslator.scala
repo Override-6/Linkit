@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -18,7 +18,7 @@ import java.nio.ByteBuffer
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence._
 import fr.linkit.api.gnom.packet.traffic.PacketTraffic
-import fr.linkit.engine.gnom.cache.obj.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
+import fr.linkit.engine.gnom.cache.sync.generation.{DefaultSyncClassCenter, SyncObjectClassResource}
 import fr.linkit.engine.gnom.persistence.DefaultObjectTranslator.ClassesResourceDirectory
 import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence
 import fr.linkit.engine.internal.LinkitApplication

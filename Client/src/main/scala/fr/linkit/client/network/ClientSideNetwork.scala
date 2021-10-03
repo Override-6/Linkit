@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.network.NetworkInitialisable
 import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
 import fr.linkit.client.connection.ClientConnection
 import fr.linkit.engine.gnom.cache.SharedCacheDistantManager
-import fr.linkit.engine.gnom.cache.obj.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 

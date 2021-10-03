@@ -6,17 +6,17 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.engine.gnom.persistence.pool
 
 import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
-import fr.linkit.api.gnom.reference.NetworkReferenceLocation
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
 class SimpleReferencedNetworkObject(override val locationIdx: Int,
-                                    override val location: NetworkReferenceLocation,
+                                    override val location: NetworkObjectReference,
                                     override val value: AnyRef) extends ReferencedNetworkObject {
 
     override def equals(obj: Any): Boolean = {

@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -15,7 +15,7 @@ package fr.linkit.api.gnom.cache.sync
 import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehavior, ObjectBehaviorStore}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncNodeLocation}
+import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncNodeReference}
 import fr.linkit.api.gnom.reference.presence.ObjectPresence
 
 import java.io.Serializable
@@ -28,7 +28,7 @@ import java.io.Serializable
  * @see fr.linkit.api.gnom.cache.obj.generation.SyncClassCenter
  * @see SyncInstanceInstantiator
  */
-trait SynchronizedObject[T <: AnyRef] extends ObjectPresence[SyncNodeLocation] with Serializable {
+trait SynchronizedObject[T <: AnyRef] extends ObjectPresence[SyncNodeReference] with Serializable {
 
     /**
      * Initialize the puppeteer of the synchronized object.

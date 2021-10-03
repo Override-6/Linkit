@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'scala'
     id 'maven-publish'
+    id 'org.javamodularity.moduleplugin' version '1.5.0'
 }
 
 group 'fr.override.linkit'
@@ -12,8 +13,12 @@ repositories {
 }
 
 subprojects {
+    apply plugin: 'org.javamodularity.moduleplugin'
+    apply plugin: 'java'
     apply plugin: 'scala'
     apply plugin: 'maven-publish'
+
+
 
     sourceCompatibility = 14
     targetCompatibility = 14
@@ -37,6 +42,7 @@ subprojects {
         useJUnitPlatform()
     }
 
+
     tasks.withType(ScalaCompile) {
         scalaCompileOptions.additionalParameters = [
                 "-feature",
@@ -44,7 +50,6 @@ subprojects {
                 "-language:experimental.macros"
         ]
     }
-
 }
 
 wrapper {

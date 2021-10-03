@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -14,12 +14,12 @@ package fr.linkit.engine.gnom.persistence.serializor.read
 
 import fr.linkit.api.gnom.persistence.context.TypeProfile
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, PoolObject}
-import fr.linkit.api.gnom.reference.{NetworkObjectsLinker, NetworkReferenceLocation}
+import fr.linkit.api.gnom.reference.{NetworkObjectLinker, NetworkObjectReference}
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol.Object
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 
 class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
-                                         gnol: NetworkObjectsLinker,
+                                         gnol: NetworkObjectLinker,
                                          content: Array[Int],
                                          pool: DeserializerObjectPool) extends InstanceObject[T] {
 

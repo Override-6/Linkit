@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -14,13 +14,13 @@ package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
 import fr.linkit.api.gnom.cache.NoSuchCacheException
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.tree.SyncNodeLocation
+import fr.linkit.api.gnom.cache.sync.tree.SyncNodeReference
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence.context.TypePersistence
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
 import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
 import fr.linkit.api.internal.system.AppLogger
-import fr.linkit.engine.gnom.cache.obj.DefaultSynchronizedObjectCenter
+import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.gnom.persistence.context.structure.SyncObjectStructure
 
 class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersistence: TypePersistence[T], network: Network) extends TypePersistence[T] {
@@ -29,7 +29,7 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
 
     override def initInstance(syncObj: T, args: Array[Any]): Unit = {
         objectPersistence.initInstance(syncObj, args)
-        val info = args.last.asInstanceOf[SyncNodeLocation]
+        val info = args.last.asInstanceOf[SyncNodeReference]
         val path = info.nodePath
         val center  = findCache(info)
                 .getOrElse {
@@ -53,13 +53,13 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
         (objectPersistence.toArray(t): Array[Any]) :+ (t.getLocation: Any)
     }
 
-    private def findCache(info: SyncNodeLocation): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
+    private def findCache(info: SyncNodeReference): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
         val family = info.cacheFamily
         network.findCacheManager(family)
                 .map(_.getCacheInStore[DefaultSynchronizedObjectCenter[AnyRef]](info.cacheID))
     }
 
-    private def throwNoSuchCacheException(info: SyncNodeLocation, wrappedClass: Option[Class[_]]): Nothing = {
+    private def throwNoSuchCacheException(info: SyncNodeReference, wrappedClass: Option[Class[_]]): Nothing = {
         throw new NoSuchCacheException(s"Could not find object tree of id ${info.nodePath.head} in synchronized object cache id ${info.cacheID} from cache manager ${info.cacheFamily} " +
                 s": could not properly deserialize and synchronize Wrapper object of class \"${wrappedClass.map(_.getName).getOrElse("(Unknown Wrapped class)")}\".")
     }

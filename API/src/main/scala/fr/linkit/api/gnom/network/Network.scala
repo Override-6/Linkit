@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -16,15 +16,13 @@ import fr.linkit.api.application.connection.ConnectionContext
 import fr.linkit.api.gnom.cache.SharedCacheManager
 
 import java.sql.Timestamp
-import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
+import fr.linkit.api.gnom.reference.{MutableReferencedObjectStore, NetworkObject}
 
-trait Network {
+trait Network extends NetworkObject[NetworkReference] {
 
     val connectionEngine: Engine
 
     val connection: ConnectionContext
-
-    val rootRefStore: MutableReferencedObjectStore
 
     def globalCache: SharedCacheManager
 
@@ -42,7 +40,7 @@ trait Network {
 
     def startUpDate: Timestamp
 
-    def attachToCacheManager(family: String): SharedCacheManager
+    def getCacheManager(family: String): SharedCacheManager
 
     def declareNewCacheManager(family: String): SharedCacheManager
 

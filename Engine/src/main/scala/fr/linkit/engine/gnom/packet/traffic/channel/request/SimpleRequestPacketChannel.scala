@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -32,7 +32,7 @@ import java.util.concurrent.LinkedBlockingQueue
 class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelScope) extends AbstractPacketChannel(store, scope) with RequestPacketChannel {
 
     private val requestHolders         = new util.LinkedHashMap[Int, WeakReference[SimpleResponseHolder]]()
-    private val requestConsumers       = ConsumerContainer[DefaultRequestChannelPacketBundle]()
+    private val requestConsumers       = ConsumerContainer[DefaultRequestBundle]()
     @volatile private var requestCount = 0
 
     //debug only
@@ -51,7 +51,7 @@ class SimpleRequestPacketChannel(store: PacketInjectableStore, scope: ChannelSco
                 val submitterScope = scope.shareWriter(ChannelScopes.include(coords.senderID))
                 val submitter      = new ResponseSubmitter(request.id, submitterScope)
 
-                requestConsumers.applyAllLater(DefaultRequestChannelPacketBundle(this, request, coords, submitter))
+                requestConsumers.applyAllLater(DefaultRequestBundle(this, request, coords, submitter))
 
             case response: ResponsePacket =>
                 AppLogger.vDebug(s"${currentTasksId} <> $source: INJECTING RESPONSE $response with attributes ${response.getAttributes}" + this)

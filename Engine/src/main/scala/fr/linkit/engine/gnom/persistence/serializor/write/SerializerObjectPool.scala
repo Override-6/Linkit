@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
-import fr.linkit.api.gnom.reference.NetworkReferenceLocation
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.persistence.pool.{ObjectPool, PoolChunk, SimpleReferencedNetworkObject}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
@@ -137,7 +137,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
 
     private def addObj0(ref: AnyRef): Unit = {
         val profile = config.getProfile[AnyRef](ref.getClass)
-        val nrlOpt  = gnol.findObjectLocation[NetworkReferenceLocation](coordinates, ref)
+        val nrlOpt  = gnol.findObjectLocation[NetworkObjectReference](coordinates, ref)
         if (nrlOpt.isEmpty) {
             addTypeOfIfAbsent(ref)
             val persistence = profile.getPersistence(ref)

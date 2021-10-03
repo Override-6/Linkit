@@ -6,14 +6,14 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
 package fr.linkit.engine.internal.language.bhv.descriptor.method
 
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.BasicInvocationRule
-import fr.linkit.engine.gnom.cache.obj.behavior.AnnotationBasedMemberBehaviorFactory.DefaultMethodControl
+import fr.linkit.engine.gnom.cache.sync.behavior.AnnotationBasedMemberBehaviorFactory.DefaultMethodControl
 import fr.linkit.engine.internal.language.bhv.ParserAssertions
 import fr.linkit.engine.internal.language.bhv.descriptor.clazz.ClassDescriptionResultBuilder
 

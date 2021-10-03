@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -34,43 +34,44 @@ abstract class AbstractSharedCacheManager(override val family: String,
                                           store: PacketInjectableStore) extends SharedCacheManager {
 
     println(s"New SharedCacheManager created ! $family")
-    protected val channel          : SimpleRequestPacketChannel = store.getInjectable(family.hashCode - 5, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
-    protected val broadcastScope   : ChannelScope               = prepareScope(ChannelScopes.broadcast)
-    protected val currentIdentifier: String                     = network.connection.currentIdentifier
-    override  val trafficPath      : Array[Int]                 = store.trafficPath
+    protected val channel          : SimpleRequestPacketChannel  = store.getInjectable(family.hashCode - 5, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
+    protected val broadcastScope   : ChannelScope                = prepareScope(ChannelScopes.broadcast)
+    protected val currentIdentifier: String                      = network.connection.currentIdentifier
+    override  val reference        : SharedCacheManagerReference = SharedCacheManagerReference(family)
+    //override  val trafficPath      : Array[Int]                 = store.trafficPath
 
     postInit()
 
     override def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchBehavior): A = {
         LocalCachesStore
-            .findCache[A](cacheID)
-            .getOrElse {
-                preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
-                val channel     = store.getInjectable(cacheID, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
-                val sharedCache = factory.createNew(channel)
-                LocalCachesStore.store(cacheID, sharedCache, channel)
+                .findCache[A](cacheID)
+                .getOrElse {
+                    preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
+                    val channel     = store.getInjectable(cacheID, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
+                    val sharedCache = factory.createNew(channel)
+                    LocalCachesStore.store(cacheID, sharedCache, channel)
 
-                println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
-                val baseContent = retrieveCacheContent(cacheID, behavior).orNull
-                println(s"CONTENT RECEIVED (${baseContent}) FOR CACHE $cacheID")
+                    println(s"OPENING CACHE $cacheID OF TYPE ${classTag[A].runtimeClass}")
+                    val baseContent = retrieveCacheContent(cacheID, behavior).orNull
+                    println(s"CONTENT RECEIVED (${baseContent}) FOR CACHE $cacheID")
 
-                if (baseContent != null) {
-                    channel.getHandler.foreach {
-                        case e: ContentHandler[CacheContent] => e.initializeContent(baseContent)
-                        case _                               => //Simply don't set the content
+                    if (baseContent != null) {
+                        channel.getHandler.foreach {
+                            case e: ContentHandler[CacheContent] => e.initializeContent(baseContent)
+                            case _                               => //Simply don't set the content
+                        }
                     }
+                    channel.injectStoredBundles()
+                    sharedCache
                 }
-                channel.injectStoredBundles()
-                sharedCache
-            }
     }
 
     override def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A = {
         LocalCachesStore
-            .findCache[A](cacheID)
-            .getOrElse {
-                throw new NoSuchCacheException(s"No cache was found in the local cache manager for cache identifier $cacheID.")
-            }
+                .findCache[A](cacheID)
+                .getOrElse {
+                    throw new NoSuchCacheException(s"No cache was found in the local cache manager for cache identifier $cacheID.")
+                }
     }
 
     override def update(): this.type = {
@@ -107,7 +108,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
         def updateAll(): Unit = {
             println(s"updating cache ($localRegisteredHandlers)...")
             localRegisteredHandlers
-                .foreach(_._2.cache.update())
+                    .foreach(_._2.cache.update())
             println(s"cache updated ! ($localRegisteredHandlers)")
         }
 
@@ -133,9 +134,9 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
         def findCache[A: ClassTag](cacheID: Int): Option[A] = {
             val opt            = localRegisteredHandlers
-                .get(cacheID)
-                .map(_.cache)
-                .asInstanceOf[Option[A]]
+                    .get(cacheID)
+                    .map(_.cache)
+                    .asInstanceOf[Option[A]]
             val requestedClass = classTag[A].runtimeClass
             opt match {
                 case Some(c: SharedCache) if c.getClass != requestedClass => throw new CacheNotAcceptedException(s"Attempted to open a cache of type '$cacheID' while a cache with the same id is already registered, but does not have the same type. (${c.getClass} vs $requestedClass)")
@@ -151,15 +152,14 @@ abstract class AbstractSharedCacheManager(override val family: String,
         AppLogger.trace(s"$currentTasksId <> <$family, $ownerID> $msg")
     }
 
-
     private def postInit(): Unit = {
-        val refStore = network.rootRefStore
+        /*val refStore = network.rootRefStore
         val shift    = family.hashCode
         refStore putAllNotContained Map(
             shift + 1 -> channel,
             shift + 2 -> broadcastScope,
             shift + 3 -> store
-        )
+        )*/
         channel.addRequestListener(handleRequest)
     }
 }

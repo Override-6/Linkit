@@ -6,7 +6,7 @@
  *  You can download this source code, and modify it ONLY FOR PERSONAL USE and you
  *  ARE NOT ALLOWED to distribute your MODIFIED VERSION.
  *
- *  Please contact maximebatista18@gmail.com if you need additional information or have any
+ *  Please contact overridelinkit@gmail.com if you need additional information or have any
  *  questions.
  */
 
@@ -27,10 +27,8 @@ abstract class AbstractSharedCache(channel: CachePacketChannel) extends Abstract
         if (manager == null)
             return this
 
-        //println(s"<$family> UPDATING CACHE $identifier")
         val content = channel.getCacheOfOwner
         val handler = channel.getHandler
-        //println(s"<$family> RECEIVED UPDATED CONTENT FOR CACHE $identifier : ${content.mkString("Array(", ", ", ")")}")
         if (handler.isDefined) {
             handler.get match { //TODO ensure that the content cache is the expected type.
                 case c: ContentHandler[CacheContent] => c.initializeContent(content)
@@ -39,8 +37,5 @@ abstract class AbstractSharedCache(channel: CachePacketChannel) extends Abstract
         }
         this
     }
-
-    /*addDefaultAttribute("family", family)
-    addDefaultAttribute("cache", cacheID)*/
 
 }
