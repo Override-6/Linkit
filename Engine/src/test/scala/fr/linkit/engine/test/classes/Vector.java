@@ -1,18 +1,15 @@
-/*******************************************************************************
- * Copyright 2011 See AUTHORS file.
+/*
+ * Copyright (c) 2021. Linkit and or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR FILE HEADERS.
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This code is free software; you can only use it for personal uses, studies or documentation.
+ * You can download this source code, and modify it ONLY FOR PERSONAL USE and you
+ * ARE NOT ALLOWED to distribute your MODIFIED VERSION.
+ * For any professional use, please contact me at overridelinkit@gmail.com.
  *
- *   http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- ******************************************************************************/
+ * Please contact overridelinkit@gmail.com if you need additional information or have any
+ * questions.
+ */
 
 package fr.linkit.engine.test.classes;
 
