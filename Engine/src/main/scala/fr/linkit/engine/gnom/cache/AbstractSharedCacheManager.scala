@@ -21,6 +21,7 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.reference.NetworkObjectLinker
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.traffic.DefaultCachePacketChannel
@@ -42,6 +43,10 @@ abstract class AbstractSharedCacheManager(override val family: String,
     //override  val trafficPath      : Array[Int]                 = store.trafficPath
 
     postInit()
+
+    override def getCachesLinker: NetworkObjectLinker[SharedCacheReference] = {
+
+    }
 
     override def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchBehavior): A = {
         LocalCachesStore

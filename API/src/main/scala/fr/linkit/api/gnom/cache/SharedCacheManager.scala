@@ -14,8 +14,7 @@
 package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.network.{Network, Updatable}
-import fr.linkit.api.gnom.packet.traffic.TrafficPresence
-import fr.linkit.api.gnom.reference.NetworkObject
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker}
 
 import scala.reflect.ClassTag
 
@@ -43,44 +42,7 @@ trait SharedCacheManager extends NetworkObject[SharedCacheManagerReference] with
      * */
     val network: Network
 
-
-    /*
-    /**
-     * A quick way to place instances in a shared cache manager then retrieve it in another engine
-     * with [[findInstance()]].
-     *
-     * @param key the instance key, used to retrieve the value
-     * @param value the value to place in the quick cache map.
-     * @return the value parameter.
-     * */
-    def postInstance[A <: Serializable](key: Int, value: A): value.type
-
-    /**
-     * retrieve an instance bounded to a key in the quick cache map
-     * @param key the key
-     * @return Some(value) if a value bound with the given key has been found on the cache, None instead.
-     * @throws ClassCastException if the value is not an instance of A
-     * */
-    def findInstance[A <: Serializable](key: Int): Option[A]
-
-    /**
-     * Will work as [[findInstance()]] except that the current thread will be paused until a value is placed in the map
-     * with the given key
-     * @param key the key
-     * @return Some(value) if a value bound with the given key has been found on the cache, None instead.
-     * @throws ClassCastException if the value is not an instance of A
-     * */
-    def getInstanceOrWait[A <: Serializable](key: Int): A
-
-    /**
-     * Retrieve an instance bounded to a key in the quick cache map
-     * @param key the key
-     * @return the value bound with the given key
-     * @throws ClassCastException if the value is not an instance of A
-     * @throws NoSuchElementException if no value bound with the key was found in the quick cache map
-     * */
-    def apply[A <: Serializable](key: Int): A
-*/
+    def getCachesLinker: NetworkObjectLinker[SharedCacheReference]
 
     def attachToCache[A <: SharedCache : ClassTag](cacheID: Int)(implicit factory: SharedCacheFactory[A]): A = {
         attachToCache[A](cacheID, CacheSearchBehavior.GET_OR_OPEN)

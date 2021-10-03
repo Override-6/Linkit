@@ -264,16 +264,15 @@ class ServerConnection(applicationContext: ServerApplication,
         val strategy = configuration.identifierAmbiguityStrategy
         AppLogger.trace(s"Connection '$identifier' conflicts with socket $socket. Applying Ambiguity Strategy '$strategy'...")
 
-        val rejectMsg = s"Another relay point with id '$identifier' is currently connected on the targeted network."
+        val rejectMsg = s"Another engine with id '$identifier' is currently connected on the targeted network."
         import fr.linkit.server.config.AmbiguityStrategy._
         configuration.identifierAmbiguityStrategy match {
             case CLOSE_SERVER =>
                 sendRefusedConnection(socket, rejectMsg + " Consequences: Closing Server...")
-                //broadcastMessage(true, "RelayServer will close your connection because of a critical error")
                 shutdown()
 
             case REJECT_NEW =>
-                Console.err.println("Rejected connection of a client because it gave an already registered relay identifier.")
+                Console.err.println(s"Rejected connection of a client because it gave an invalid identifier (identifier '${identifier}' is already registered).")
                 sendRefusedConnection(socket, rejectMsg)
 
             case REPLACE =>

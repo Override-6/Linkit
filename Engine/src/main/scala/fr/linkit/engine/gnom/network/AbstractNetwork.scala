@@ -22,24 +22,24 @@ import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
 import fr.linkit.api.gnom.network.{Engine, Network, NetworkInitialisable}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
+import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder, ObjectBehaviorStoreBuilder}
 import fr.linkit.engine.gnom.cache.sync.invokation.ExecutorEngine
 import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
-import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
-import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
 
 import java.sql.Timestamp
-import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 
 abstract class AbstractNetwork(override val connection: ConnectionContext,
-                               privilegedInitialisables: Array[NetworkInitialisable]) extends Network { network =>
+                               omc: ObjectManagementChannel,
+                               privilegedInitialisables: Array[NetworkInitialisable]) extends Network {
 
     //rootRefStore += (10, this)
     privilegedInitialisables.foreach(_.initNetwork(this))
+    protected val cnol
+    private   val gnol                                    = new GeneralNetworkObjectLinker(omc, this,)
     protected val networkStore    : PacketInjectableStore = connection.createStore(0)
     private   val currentIdentifier                       = connection.currentIdentifier
     override  val globalCache     : SharedCacheManager    = createGlobalCache

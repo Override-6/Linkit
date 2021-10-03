@@ -27,7 +27,7 @@ import fr.linkit.server.connection.ServerConnection
 
 class ServerSideNetwork(serverConnection: ServerConnection,
                         privilegedInitialisables: Array[NetworkInitialisable])(implicit traffic: AbstractPacketTraffic)
-        extends AbstractNetwork(serverConnection, traffic.defaultPersistenceConfig.getReferenceStore, privilegedInitialisables) {
+        extends AbstractNetwork(serverConnection, , privilegedInitialisables) {
 
     trunk.addCacheManager(globalCache)
 

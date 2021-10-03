@@ -119,7 +119,7 @@ class SimpleFragmentManager() extends FragmentManager {
         }
 
         /**
-         * Fragments must be destroyed only once the relay is closed.
+         * Fragments must be destroyed only once the app is closed.
          * */
         def destroyAll(): Unit = {
             fragments.values.foreach(_.destroy())

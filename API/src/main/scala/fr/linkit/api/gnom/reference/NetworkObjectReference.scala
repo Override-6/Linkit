@@ -13,5 +13,5 @@
 
 package fr.linkit.api.gnom.reference
 
-trait NetworkObjectReference {
+trait NetworkObjectReference extends Serializable {
 }

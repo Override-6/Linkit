@@ -24,6 +24,7 @@ import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker, Network
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinker.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.traffic.channel.request.DefaultRequestBundle
+import fr.linkit.engine.gnom.reference.NOLUtils.{throwUnknownObject, throwUnknownRef, trustedCast}
 
 class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
                                  network: Network,
@@ -71,14 +72,13 @@ class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
         }
     }
 
-    override def findObject(coordsOrigin: PacketCoordinates, location: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = {
-        location match {
+    override def findObject(coordsOrigin: PacketCoordinates, reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = {
+        reference match {
             case _: NetworkReference                => Some(network)
             case ref: EngineReference               => network.findEngine(ref.engineID)
             case ref: SharedCacheManagerReference   => cacheNOL.findObject(coordsOrigin, ref)
             case ref: TrafficNetworkObjectReference => trafficNOL.findObject(coordsOrigin, ref)
-            case _                                  =>
-                throwUnknownRef(location)
+            case _                                  => throwUnknownRef(reference)
         }
     }
 
@@ -89,14 +89,6 @@ class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
         case _                           => throwUnknownObject(obj)
     }
 
-    @inline
-    private def trustedCast[T <: NetworkObjectReference](obj: NetworkObject[_]): NetworkObject[T] = {
-        obj.asInstanceOf[NetworkObject[T]]
-    }
-
-    private def startObjectManagement(): Unit = {
-        omc.addRequestListener(handleRequest)
-    }
 
     private def handleRequest(request: RequestPacketBundle): Unit = {
         val ref       = request.attributes.getAttribute[NetworkObjectReference](ReferenceAttributeKey).getOrElse {
@@ -113,19 +105,12 @@ class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
         }
     }
 
-    @inline
-    private def throwUnknownObject(ref: AnyRef): Nothing = {
-        throw new IllegalArgumentException(s"Unknown object '$ref' for the General Network Object Linker")
-    }
-
-    @inline
-    private def throwUnknownRef(ref: NetworkObjectReference): Nothing = {
-        throw new IllegalArgumentException(s"Unknown object reference '$ref' for the General Network Object Linker")
+    private def startObjectManagement(): Unit = {
+        omc.addRequestListener(handleRequest)
     }
 
 }
 
 object GeneralNetworkObjectLinker {
-
-    private final val ReferenceAttributeKey: String = "ref"
+    final val ReferenceAttributeKey: String = "ref"
 }

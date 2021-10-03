@@ -26,16 +26,11 @@ import scala.collection.mutable
 import scala.util.control.NonFatal
 
 /**
- * TeamMate of RelayServer, handles the RelayPoint Connections.
- *
  * @see [[ServerConnection]]
  * @see [[ServerExternalConnection]]
  * */
 class ExternalConnectionsManager(server: ServerConnection) extends JustifiedCloseable {
 
-    /**
-     * java map containing all RelayPointConnection instances
-     * */
     private val connections: mutable.Map[String, ServerExternalConnection] = mutable.Map.empty
     private val maxConnection                                              = server.configuration.maxConnection
 
@@ -132,7 +127,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     }
 
     /**
-     * unregisters a Relay point
+     * unregisters a [[ServerExternalConnection]]
      *
      * @param identifier the identifier to disconnect
      * */
@@ -141,7 +136,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
     }
 
     /**
-     * retrieves a RelayPointConnection based on the address
+     * retrieves a [[ServerExternalConnection]] based on the address
      *
      * @param identifier the identifier linked [[ServerExternalConnection]]
      * @return the found [[ServerExternalConnection]] bound with the identifier
@@ -165,7 +160,7 @@ class ExternalConnectionsManager(server: ServerConnection) extends JustifiedClos
 
     /**
      * @param identifier the identifier to test
-     * @return true if any connected Relay have the specified identifier
+     * @return true if any connected Engine have the specified identifier
      * */
     def isRegistered(identifier: String): Boolean = {
         identifier == server.currentIdentifier || connections.contains(identifier) //reserved server identifier

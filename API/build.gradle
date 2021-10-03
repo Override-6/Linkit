@@ -10,14 +10,6 @@
  * Please contact overridelinkit@gmail.com if you need additional information or have any
  * questions.
  */
-
-import java.sql.Timestamp
-import java.text.DateFormat
-import java.time.Instant
-import java.time.format.DateTimeFormatter
-
-
-
 plugins {
     id 'java-library'
     id 'scala'
@@ -46,8 +38,4 @@ dependencies {
 
 tasks.withType(ScalaCompile) {
     scalaCompileOptions.additionalParameters = ["-feature", "-language:implicitConversions", "-language:postfixOps", "-language:existentials"]
-}
-
-static String nowFormat() {
-    new Date().format("yyyyMMdd HH-mm-ss")
 }

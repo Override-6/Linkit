@@ -74,7 +74,7 @@ class PluginClassLoader(private[plugin] val pluginFiles: Array[FileAdapter], bri
 
     private def assertPluginClass(clazz: Class[_]): Class[_ <: LinkitPlugin] = {
         if (!classOf[LinkitPlugin].isAssignableFrom(clazz)) {
-            throw new AppException(s"Class '$clazz' must extends '${classOf[LinkitPlugin]}' to be loaded as a Relay extension.")
+            throw new AppException(s"Class '$clazz' must extends '${classOf[LinkitPlugin]}' to be loaded as an extension.")
         }
         clazz.asInstanceOf[Class[_ <: LinkitPlugin]]
     }

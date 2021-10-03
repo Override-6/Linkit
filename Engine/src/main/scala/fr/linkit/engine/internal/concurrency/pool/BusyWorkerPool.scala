@@ -312,7 +312,7 @@ class BusyWorkerPool(initialThreadCount: Int, val name: String) extends WorkerPo
      * */
     @workerExecution
     def currentTaskExecutionDepth: Int = {
-        ensureCurrentThreadOwned(s"This action is only permitted to relay threads of thread pool $name")
+        ensureCurrentThreadOwned(s"This action is only permitted to worker threads of thread pool $name")
         currentWorker.taskRecursionDepth
     }
 

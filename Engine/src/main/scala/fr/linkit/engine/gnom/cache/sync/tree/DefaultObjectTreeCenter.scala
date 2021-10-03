@@ -20,12 +20,12 @@ import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.cache.sync.CacheRepoContent
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter.ObjectTreeProfile
-import fr.linkit.engine.gnom.reference.AbstractNetworkObjectLinker
+import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 
 class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], omc: ObjectManagementChannel)
-        extends AbstractNetworkObjectLinker[SynchronizedObject[_], SyncNodeReference](omc) with SynchronizedObjectTreeStore[A] {
+        extends AbstractNetworkPresenceHandler[SynchronizedObject[_], SyncNodeReference](omc) with SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 
@@ -44,7 +44,7 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], o
         new CacheRepoContent[A](array)
     }
 
-    override def isPresent(location: SyncNodeReference): Boolean = {
+    override def findObject(location: SyncNodeReference): Boolean = {
         location.cacheID == center.cacheID && location.cacheFamily == center.family && {
             val path = location.nodePath
             trees.get(path.head).exists(_.findNode(path).isDefined)

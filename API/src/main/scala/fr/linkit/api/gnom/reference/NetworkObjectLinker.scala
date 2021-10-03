@@ -27,18 +27,18 @@ trait NetworkObjectLinker[R <: NetworkObjectReference] {
 
     /**
      * checks if the current ref object is referenced (bound to a [[NetworkObjectReference]]) in this Linker.
-     * @param ref the object to test
+     * @param obj the object to test
      * @return true if there is a [[NetworkObjectReference]] bound with this reference contained into this Linker
      */
-    def isObjectReferencedOnCurrent(ref: NetworkObject[R]): Boolean
+    def isObjectReferencedOnCurrent(obj: NetworkObject[R]): Boolean
 
     /**
      * Checks if the current ref object is referenced (bound to a [[NetworkObjectReference]])
      * */
-    def isObjectReferencedOnEngine(engineID: String, ref: NetworkObject[R]): Boolean
+    def isObjectReferencedOnEngine(engineID: String, obj: NetworkObject[R]): Boolean
 
-    def findObjectPresence(ref: NetworkObject[R]): Option[ObjectNetworkPresence]
+    def findObjectPresence(obj: NetworkObject[R]): Option[ObjectNetworkPresence]
 
-    def findObject(coordsOrigin: PacketCoordinates, location: R): Option[NetworkObject[_ <: R]]
+    def findObject(coordsOrigin: PacketCoordinates, reference: R): Option[NetworkObject[_ <: R]]
 
 }
