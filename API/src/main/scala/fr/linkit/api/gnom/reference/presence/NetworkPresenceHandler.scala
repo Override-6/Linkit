@@ -15,11 +15,9 @@ package fr.linkit.api.gnom.reference.presence
 
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-trait NetworkPresenceHandler[L <: NetworkObjectReference] {
+trait NetworkPresenceHandler[R <: NetworkObjectReference] {
 
-    def registerLocation(location: L): Unit
+    def getPresence(ref: R): Option[NetworkObjectPresence]
 
-    def unregisterLocation(location: L): Unit
-
-    def isPresentOnEngine(engineId: String, location: L): Boolean
+    def isPresentOnEngine(engineId: String, ref: R): Boolean
 }

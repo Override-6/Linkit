@@ -16,12 +16,12 @@ package fr.linkit.engine.gnom.cache.sync.tree.node
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{SyncNodeReference, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.tree.{SyncObjectReference, SynchronizedObjectTree}
 
 class ObjectNodeData[A <: AnyRef](val puppeteer: Puppeteer[A], //Remote invocation
                                   val chip: Chip[A], //Reflective invocation
                                   val tree: SynchronizedObjectTree[_],
-                                  val location: SyncNodeReference,
+                                  val location: SyncObjectReference,
                                   val synchronizedObject: A with SynchronizedObject[A],
                                   val currentIdentifier: String) {
 

@@ -50,14 +50,14 @@ class ServerConnection(applicationContext: ServerApplication,
     private  val workerPool              : BusyWorkerPool             = new BusyWorkerPool(configuration.nWorkerThreadFunction(0), currentIdentifier)
     private  val serverSocket            : ServerSocket               = new ServerSocket(configuration.port)
     private  val connectionsManager      : ExternalConnectionsManager = new ExternalConnectionsManager(this)
-    private  val serverTraffic                                        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
+    private  val serverTraffic           : ServerPacketTraffic        = new ServerPacketTraffic(this, configuration.defaultPersistenceConfigScript)
     override val traffic                 : PacketTraffic              = serverTraffic
     override val defaultPersistenceConfig: PersistenceConfig          = traffic.defaultPersistenceConfig
     override val eventNotifier           : EventNotifier              = new DefaultEventNotifier
-    private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(this, Array(serverTraffic.context))(traffic)
+    private  val sideNetwork             : ServerSideNetwork          = new ServerSideNetwork(this, serverTraffic)
     override val network                 : Network                    = sideNetwork
     override val trafficPath             : Array[Int]                 = traffic.trafficPath
-    @volatile private var alive                                       = false
+    @volatile private var alive          : Boolean                    = false
 
     override def getApp: ApplicationContext = applicationContext
 
@@ -202,9 +202,6 @@ class ServerConnection(applicationContext: ServerApplication,
 
             if (!(configuration.hasher.signature sameElements hasherSignature))
                 return WelcomePacketVerdict(identifier, false, "Hasher signatures mismatches !")
-
-            if (!(translator.signature sameElements translatorSignature))
-                return WelcomePacketVerdict(identifier, false, "Translator signatures mismatches !")
 
             if (!Rules.IdentifierPattern.matcher(identifier).matches())
                 return WelcomePacketVerdict(identifier, false, "Provided identifier does not matches server's rules.")

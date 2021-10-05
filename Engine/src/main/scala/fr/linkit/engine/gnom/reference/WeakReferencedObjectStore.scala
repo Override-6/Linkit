@@ -13,11 +13,11 @@
 
 package fr.linkit.engine.gnom.reference
 
+import fr.linkit.api.gnom.reference.{MutableReferencedObjectStore, NetworkObjectReference}
+
 import java.lang.ref.{Reference, ReferenceQueue, WeakReference}
 import java.util
 import java.util.Map.Entry
-
-import fr.linkit.api.gnom.reference.MutableReferencedObjectStore
 
 class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends MutableReferencedObjectStore {
 
@@ -35,12 +35,13 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
         Option(found)
     }
 
-    override def findObject(location: ReferencedObjectLocation): Option[AnyRef] = {
-        val code = location.refCode
+    override def findObject(location: NetworkObjectReference): Option[AnyRef] = {
+        /*val code = location.refCode
         val found = codeToRef.get(code)
         if (found == null && parent != null)
             return parent.findObject(location)
-        Option(found)
+        Option(found)*/
+        ???
     }
 
     override def ++=(refs: Map[Int, AnyRef]): this.type = {
@@ -59,10 +60,10 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
 
     def ++=(other: WeakReferencedObjectStore): this.type = {
         ++=(other.codeToRef
-            .entrySet()
-            .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
-            .map(p => (p.getKey, p.getValue.get()))
-            .toMap)
+                .entrySet()
+                .toArray(new Array[Entry[Int, WeakReference[AnyRef]]](_))
+                .map(p => (p.getKey, p.getValue.get()))
+                .toMap)
         this
     }
 
@@ -74,9 +75,10 @@ class WeakReferencedObjectStore(parent: WeakReferencedObjectStore) extends Mutab
     }
 
     override def +=(code: Int, anyRef: AnyRef): this.type = {
-        if (refToCode.put(anyRef, code) == null) {
+        if (codeToRef.containsKey(code)) {
             throw new ObjectAlreadyReferencedException(s"Object $anyRef is already referenced with identifier '${codeToRef.get(code)}'.")
         }
+        refToCode.put(anyRef, code)
         codeToRef.put(code, newWeakReference(anyRef))
         this
     }

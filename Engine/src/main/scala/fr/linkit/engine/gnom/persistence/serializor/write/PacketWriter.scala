@@ -16,7 +16,7 @@ package fr.linkit.engine.gnom.persistence.serializor.write
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
 import fr.linkit.api.gnom.persistence.{Freezable, PersistenceBundle}
-import fr.linkit.engine.gnom.persistence.pool.{PoolChunk, SimpleReferencedNetworkObject}
+import fr.linkit.engine.gnom.persistence.obj.{PoolChunk, SimpleReferencedNetworkObject}
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.write.PacketWriter.{Sizes2B, Sizes4B}
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, PacketPoolTooLongException}

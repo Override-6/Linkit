@@ -15,6 +15,6 @@ package fr.linkit.api.gnom.cache
 
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-case class SharedCacheManagerReference(family: String) extends NetworkObjectReference {
+class SharedCacheManagerReference(val family: String) extends NetworkObjectReference {
 
 }

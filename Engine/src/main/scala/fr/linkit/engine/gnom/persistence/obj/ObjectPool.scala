@@ -11,7 +11,7 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.pool
+package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.Freezable
 import fr.linkit.api.gnom.persistence.obj.{ReferencedNetworkObject, InstanceObject}

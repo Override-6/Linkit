@@ -19,5 +19,5 @@ trait ReferencedObjectStore {
 
     def isPresent(l: Int): Boolean
 
-    def findObject(location: ReferencedObjectLocation): Option[AnyRef]
+    def findObject(location: NetworkObjectReference): Option[AnyRef]
 }

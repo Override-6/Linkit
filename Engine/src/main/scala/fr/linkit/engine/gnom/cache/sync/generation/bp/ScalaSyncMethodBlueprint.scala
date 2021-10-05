@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.description.MethodDescription
 import fr.linkit.engine.gnom.cache.sync.generation.bp.ScalaBlueprintUtilities._
 import fr.linkit.engine.internal.language.cbp.AbstractValueScope
 
-object ScalaWrapperMethodBlueprint {
+object ScalaSyncMethodBlueprint {
 
     class ValueScope(name: String, blueprint: String, pos: Int) extends AbstractValueScope[MethodDescription](name, pos, blueprint) {
 
@@ -41,11 +41,10 @@ object ScalaWrapperMethodBlueprint {
         val method = desc.method
         val params = method.getParameterTypes
         method.getName match {
-            case "toString" | "clone" | "hashCode" if params.isEmpty              => "override"
-            case "equals" if params.length == 1 && (params(0) eq classOf[Object]) => "override"
-            case _                                                                => ""
+            case "toString" | "clone" | "hashCode" | "reference" if params.isEmpty => "override"
+            case "equals" if params.length == 1 && (params(0) eq classOf[Object])  => "override"
+            case _                                                                 => ""
         }
     }
-
 }
 

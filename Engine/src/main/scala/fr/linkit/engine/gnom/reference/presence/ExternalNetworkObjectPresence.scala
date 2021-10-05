@@ -15,13 +15,13 @@ package fr.linkit.engine.gnom.reference.presence
 
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
-import fr.linkit.api.gnom.reference.presence.{ObjectNetworkPresence, ObjectPresenceType}
+import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, ObjectPresenceType}
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 
-class ExternalNetworkPresence[L <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[_, L], val location: L)
-        extends ObjectNetworkPresence {
+class ExternalNetworkObjectPresence[L <: NetworkObjectReference](handler: AbstractNetworkPresenceHandler[_, L], val location: L)
+        extends NetworkObjectPresence {
 
     private val presences = mutable.HashMap.empty[String, ObjectPresenceType]
 

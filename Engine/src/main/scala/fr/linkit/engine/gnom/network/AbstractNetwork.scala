@@ -20,14 +20,14 @@ import fr.linkit.api.gnom.cache.sync.behavior.member.field.FieldModifier
 import fr.linkit.api.gnom.cache.sync.behavior.member.method.parameter.ParameterModifier
 import fr.linkit.api.gnom.cache.sync.invokation.local.LocalMethodInvocation
 import fr.linkit.api.gnom.cache.{CacheManagerAlreadyDeclaredException, SharedCacheManager}
-import fr.linkit.api.gnom.network.{Engine, Network, NetworkInitialisable}
+import fr.linkit.api.gnom.network.{Engine, Network, NetworkInitialisable, NetworkReference}
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
 import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.sync.behavior.{AnnotationBasedMemberBehaviorFactory, ObjectBehaviorBuilder, ObjectBehaviorStoreBuilder}
 import fr.linkit.engine.gnom.cache.sync.invokation.ExecutorEngine
-import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheOriginManager}
+import fr.linkit.engine.gnom.cache.{SharedCacheDistantManager, SharedCacheManagerLinker, SharedCacheOriginManager}
 import fr.linkit.engine.gnom.network.AbstractNetwork.GlobalCacheID
 
 import java.sql.Timestamp
@@ -38,13 +38,15 @@ abstract class AbstractNetwork(override val connection: ConnectionContext,
 
     //rootRefStore += (10, this)
     privilegedInitialisables.foreach(_.initNetwork(this))
-    protected val cnol
-    private   val gnol                                    = new GeneralNetworkObjectLinker(omc, this,)
-    protected val networkStore    : PacketInjectableStore = connection.createStore(0)
-    private   val currentIdentifier                       = connection.currentIdentifier
-    override  val globalCache     : SharedCacheManager    = createGlobalCache
-    protected val trunk           : NetworkDataTrunk      = retrieveDataTrunk(getEngineStoreBehaviors)
-    override  val connectionEngine: Engine                = trunk.newEngine(currentIdentifier)
+    override  val objectManagementChannel: ObjectManagementChannel    = omc
+    private   val scnol                  : SharedCacheManagerLinker   = new SharedCacheManagerLinker(this, omc)
+    private   val gnol                   : GeneralNetworkObjectLinker = new GeneralNetworkObjectLinker(omc, this, scnol, null)
+    protected val networkStore           : PacketInjectableStore      = connection.createStore(0)
+    private   val currentIdentifier      : String                     = connection.currentIdentifier
+    override  val globalCache            : SharedCacheManager         = createGlobalCache
+    protected val trunk                  : NetworkDataTrunk           = retrieveDataTrunk(getEngineStoreBehaviors)
+    override  val connectionEngine       : Engine                     = trunk.newEngine(currentIdentifier)
+    override  val reference              : NetworkReference           = new NetworkReference()
     postInit()
 
     override def serverEngine: Engine = trunk.findEngine(serverIdentifier).getOrElse {

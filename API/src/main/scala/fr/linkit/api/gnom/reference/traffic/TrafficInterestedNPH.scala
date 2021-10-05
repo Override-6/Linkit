@@ -11,14 +11,8 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.reference.presence
+package fr.linkit.api.gnom.reference.traffic
 
-import fr.linkit.api.gnom.reference.NetworkObjectReference
-
-trait ObjectPresence[L <: NetworkObjectReference] {
-
-    def networkPresence: ObjectNetworkPresence
-
-    def getLocation: L
-
+trait TrafficInterestedNPH {
+    def injectRequest(bundle: LinkerRequestBundle): Unit
 }

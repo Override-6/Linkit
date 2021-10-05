@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.{InstanceObject, ReferencedNetworkObject}
 import fr.linkit.api.gnom.reference.NetworkObjectReference
-import fr.linkit.engine.gnom.persistence.pool.{ObjectPool, PoolChunk, SimpleReferencedNetworkObject}
+import fr.linkit.engine.gnom.persistence.obj.{ObjectPool, ObjectSelector, PoolChunk, SimpleReferencedNetworkObject}
 import fr.linkit.engine.gnom.persistence.serializor.ArrayPersistence
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.internal.utils.UnWrapper
@@ -26,7 +26,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
 
     private         val config          = bundle.config
     private         val coordinates     = bundle.coordinates
-    private         val gnol            = bundle.gnol
+    private         val selector        = new ObjectSelector(bundle)
     protected final val chunksPositions = new Array[Int](chunks.length)
 
     def getChunk[T](ref: Any): PoolChunk[T] = {
@@ -138,7 +138,7 @@ class SerializerObjectPool(bundle: PersistenceBundle, sizes: Array[Int]) extends
 
     private def addObj0(ref: AnyRef): Unit = {
         val profile = config.getProfile[AnyRef](ref.getClass)
-        val nrlOpt  = gnol.findObjectLocation[NetworkObjectReference](coordinates, ref)
+        val nrlOpt  = selector.findObjectReference(ref)
         if (nrlOpt.isEmpty) {
             addTypeOfIfAbsent(ref)
             val persistence = profile.getPersistence(ref)

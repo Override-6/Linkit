@@ -14,25 +14,23 @@
 package fr.linkit.engine.gnom.persistence
 
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.{ObjectPersistence, TransferInfo}
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle, TransferInfo}
+import fr.linkit.api.gnom.reference.{NetworkObjectLinker, NetworkObjectReference}
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
-import fr.linkit.engine.gnom.persistence.context.{ImmutablePersistenceContext, PersistenceConfigBuilder, SimplePersistenceConfig}
-import fr.linkit.engine.internal.utils.ClassMap
 
-import java.io.File
 import java.nio.ByteBuffer
 import scala.collection.mutable.ArrayBuffer
 
 case class SimpleTransferInfo(override val coords: PacketCoordinates,
                               override val attributes: PacketAttributes,
                               override val packet: Packet,
-                              config: PersistenceConfig) extends TransferInfo {
+                              config: PersistenceConfig) extends TransferInfo { info =>
 
-    override def makeSerial(serializer: ObjectPersistence, buff: ByteBuffer): Unit = {
+    override def makeSerial(serializer: ObjectPersistence, b: ByteBuffer): Unit = {
         val packetBuff = ArrayBuffer.empty[AnyRef]
         if (attributes.nonEmpty)
             packetBuff += attributes
@@ -42,6 +40,11 @@ case class SimpleTransferInfo(override val coords: PacketCoordinates,
             AppLogger.debug(s"$currentTasksId <> Making simple serialize $coords, $packetBuff...")
         }
         val content = packetBuff.toArray[AnyRef]
-        serializer.serializeObjects(content, coords, buff)(config)
+        serializer.serializeObjects(content)(new PersistenceBundle {
+            override val buff       : ByteBuffer                                  = b
+            override val coordinates: PacketCoordinates                           = coords
+            override val config     : PersistenceConfig                           = info.config
+            override val gnol       : NetworkObjectLinker[NetworkObjectReference] = null
+        })
     }
 }

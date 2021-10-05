@@ -19,7 +19,7 @@ import fr.linkit.api.gnom.persistence.PersistenceBundle
 import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
 import fr.linkit.api.gnom.reference.NetworkObjectReference
 import fr.linkit.engine.gnom.persistence.UnexpectedObjectException
-import fr.linkit.engine.gnom.persistence.pool.SimpleReferencedNetworkObject
+import fr.linkit.engine.gnom.persistence.obj.{ObjectSelector, SimpleReferencedNetworkObject}
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 import fr.linkit.engine.gnom.persistence.serializor.{ArrayPersistence, ClassNotMappedException}
 import fr.linkit.engine.internal.mapping.ClassMappings
@@ -32,7 +32,7 @@ import scala.reflect.ClassTag
 class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
 
     val buff: ByteBuffer = bundle.buff
-    private val gnol                               = bundle.gnol
+    private val selector                           = new ObjectSelector(bundle)
     private val config                             = bundle.config
     private val coordinates                        = bundle.coordinates
     private val (widePacket: Boolean, sizes, pool) = preReadPool()
@@ -101,7 +101,7 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
             case l: NetworkObjectReference => l
             case o                         => throw new UnexpectedObjectException(s"Received object '$o' which seems to be used as a network reference location, but does not extends NetworkReferenceLocation.")
         }
-        val obj      = gnol.findObject(coordinates, location).getOrElse {
+        val obj      = selector.findObject(location).getOrElse {
             throw new NoSuchElementException(s"Could not find contextual object of identifier '$poolLoc' in provided configuration.")
         }
         new SimpleReferencedNetworkObject(poolLoc, location, obj)
@@ -138,7 +138,7 @@ class PacketReader(bundle: PersistenceBundle, center: SyncClassCenter) {
         val profile     = config.getProfile[AnyRef](clazz)
         val contentSize = buff.getInt
         val content     = readObjectContent(contentSize)
-        new NotInstantiatedObject[AnyRef](profile, gnol, content, pool)
+        new NotInstantiatedObject[AnyRef](profile, content, pool)
     }
 
     private def readObjectContent(length: Int): Array[Int] = {

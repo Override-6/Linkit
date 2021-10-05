@@ -13,10 +13,9 @@
 
 package fr.linkit.server.connection
 
+import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.gnom.packet.DedicatedPacketCoordinates
 import fr.linkit.api.gnom.persistence.PacketTransferResult
-import fr.linkit.api.application.NoSuchConnectionException
-import fr.linkit.api.application.connection.{ConnectionException, NoSuchConnectionException}
 import fr.linkit.api.internal.system.{AppLogger, JustifiedCloseable, Reason}
 import fr.linkit.engine.internal.concurrency.PacketReaderThread
 import fr.linkit.server.ServerException

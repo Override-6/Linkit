@@ -13,11 +13,10 @@
 
 package fr.linkit.engine.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.tree.{SyncNodeReference, SynchronizedObjectTree, SynchronizedObjectTreeStore}
+import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference, SynchronizedObjectTree, SynchronizedObjectTreeStore}
 import fr.linkit.api.gnom.cache.sync.{SynchronizedObject, SynchronizedObjectCache}
-import fr.linkit.api.gnom.packet.PacketCoordinates
-import fr.linkit.api.gnom.packet.channel.request.RequestPacketChannel
-import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
+import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker}
 import fr.linkit.engine.gnom.cache.sync.CacheRepoContent
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter.ObjectTreeProfile
 import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
@@ -25,13 +24,18 @@ import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 import scala.collection.mutable
 
 class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], omc: ObjectManagementChannel)
-        extends AbstractNetworkPresenceHandler[SynchronizedObject[_], SyncNodeReference](omc) with SynchronizedObjectTreeStore[A] {
+        extends AbstractNetworkPresenceHandler[SynchronizedObject[_], SyncObjectReference](omc)
+                with NetworkObjectLinker[SyncObjectReference] with SynchronizedObjectTreeStore[A] {
 
     private val trees = new mutable.HashMap[Int, DefaultSynchronizedObjectTree[A]]
 
     override def findTree(id: Int): Option[SynchronizedObjectTree[A]] = {
         trees.get(id)
     }
+
+    override def registerLocation(ref: SyncObjectReference): Unit = super.registerLocation(ref)
+
+    override def unregisterLocation(ref: SyncObjectReference): Unit = super.unregisterLocation(ref)
 
     override def snapshotContent: CacheRepoContent[A] = {
         def toProfile(tree: SynchronizedObjectTree[A]): ObjectTreeProfile[A] = {
@@ -44,12 +48,16 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], o
         new CacheRepoContent[A](array)
     }
 
-    override def findObject(location: SyncNodeReference): Boolean = {
-        location.cacheID == center.cacheID && location.cacheFamily == center.family && {
-            val path = location.nodePath
-            trees.get(path.head).exists(_.findNode(path).isDefined)
-        }
+    override def findObject(location: SyncObjectReference): Option[NetworkObject[SyncObjectReference]] = {
+        if (location.cacheID != center.cacheID || location.family != center.family)
+            return None
+        val path = location.nodePath
+        trees.get(path.head)
+                .flatMap(_.findNode(path)
+                        .map((_: SyncNode[_]).synchronizedObject))
     }
+
+    override def injectRequest(bundle: LinkerRequestBundle): Unit = handleBundle(bundle)
 
     def addTree(id: Int, tree: DefaultSynchronizedObjectTree[A]): Unit = {
         if (trees.contains(id))
@@ -62,30 +70,4 @@ class DefaultObjectTreeCenter[A <: AnyRef](center: SynchronizedObjectCache[A], o
     def findTreeInternal(id: Int): Option[DefaultSynchronizedObjectTree[A]] = {
         trees.get(id)
     }
-
-
-
-/*
-    override def findLocation(obj: SynchronizedObject[_]): Option[SyncNodeLocation] = {
-        Some(obj.getLocation)
-    }
-
-    override def findObject(location: SyncNodeLocation): Option[SynchronizedObject[_]] = {
-        if (location.cacheFamily == center.family && location.cacheID == center.cacheID) {
-            val path = location.nodePath
-            return trees.get(path.head).flatMap(_.findNode[AnyRef](path).map(_.synchronizedObject))
-        }
-        None
-    }*/
-
-    override def findObjectLocation(coordsOrigin: PacketCoordinates, ref: SynchronizedObject[_]): Option[SyncNodeReference] = {
-        //The ref origin does not change its location
-        Some(ref.getLocation)
-    }
-
-    override def findObjectLocation(ref: SynchronizedObject[_]): Option[SyncNodeReference] = {
-        Some(ref.getLocation)
-    }
-
-    override def findObject(coordsOrigin: PacketCoordinates, location: SyncNodeReference): Option[SynchronizedObject[_]] = ???
 }

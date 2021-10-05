@@ -21,12 +21,15 @@ import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.packet.traffic.PacketInjectableStore
-import fr.linkit.api.gnom.reference.NetworkObjectLinker
+import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, TrafficInterestedNPH}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker}
 import fr.linkit.api.internal.concurrency.WorkerPools.currentTasksId
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.traffic.DefaultCachePacketChannel
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
 import fr.linkit.engine.gnom.packet.traffic.channel.request.SimpleRequestPacketChannel
+import fr.linkit.engine.gnom.reference.AbstractNetworkPresenceHandler
 
 import scala.collection.mutable
 import scala.reflect.{ClassTag, classTag}
@@ -39,18 +42,16 @@ abstract class AbstractSharedCacheManager(override val family: String,
     protected val channel          : SimpleRequestPacketChannel  = store.getInjectable(family.hashCode - 5, SimpleRequestPacketChannel, ChannelScopes.discardCurrent)
     protected val broadcastScope   : ChannelScope                = prepareScope(ChannelScopes.broadcast)
     protected val currentIdentifier: String                      = network.connection.currentIdentifier
-    override  val reference        : SharedCacheManagerReference = SharedCacheManagerReference(family)
-    //override  val trafficPath      : Array[Int]                 = store.trafficPath
+    override  val reference        : SharedCacheManagerReference = new SharedCacheManagerReference(family)
+    override  val trafficPath      : Array[Int]                  = store.trafficPath
 
     postInit()
 
-    override def getCachesLinker: NetworkObjectLinker[SharedCacheReference] = {
-
-    }
+    override def getCachesLinker: NetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH = ManagerCachesLinker
 
     override def attachToCache[A <: SharedCache : ClassTag](cacheID: Int, factory: SharedCacheFactory[A], behavior: CacheSearchBehavior): A = {
         LocalCachesStore
-                .findCache[A](cacheID)
+                .findCacheSecure[A](cacheID)
                 .getOrElse {
                     preCacheOpenChecks(cacheID, classTag[A].runtimeClass)
                     val channel     = store.getInjectable(cacheID, DefaultCachePacketChannel(cacheID, this), ChannelScopes.broadcast)
@@ -74,7 +75,7 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
     override def getCacheInStore[A <: SharedCache : ClassTag](cacheID: Int): A = {
         LocalCachesStore
-                .findCache[A](cacheID)
+                .findCacheSecure[A](cacheID)
                 .getOrElse {
                     throw new NoSuchCacheException(s"No cache was found in the local cache manager for cache identifier $cacheID.")
                 }
@@ -101,6 +102,13 @@ abstract class AbstractSharedCacheManager(override val family: String,
     protected object LocalCachesStore {
 
         case class RegisteredCache(cache: SharedCache, channel: CachePacketChannel) {
+
+            val objectLinker: Option[NetworkObjectLinker[_ <: SharedCacheReference] with TrafficInterestedNPH] = {
+                channel.getHandler.flatMap {
+                    case handler: ContentHandler[_] => handler.objectLinker
+                    case _                          => None
+                }
+            }
 
             def getContent: Option[CacheContent] = channel.getHandler.map {
                 //TODO don't let the content be retrieved by any engine.
@@ -131,14 +139,14 @@ abstract class AbstractSharedCacheManager(override val family: String,
         }
 
         def getContent(cacheID: Int): Option[CacheContent] = {
-            getCache(cacheID).flatMap(_.getContent)
+            findCache(cacheID).flatMap(_.getContent)
         }
 
-        def getCache(cacheID: Int): Option[RegisteredCache] = {
+        def findCache(cacheID: Int): Option[RegisteredCache] = {
             localRegisteredHandlers.get(cacheID)
         }
 
-        def findCache[A: ClassTag](cacheID: Int): Option[A] = {
+        def findCacheSecure[A: ClassTag](cacheID: Int): Option[A] = {
             val opt            = localRegisteredHandlers
                     .get(cacheID)
                     .map(_.cache)
@@ -152,6 +160,44 @@ abstract class AbstractSharedCacheManager(override val family: String,
 
         override def toString: String = localRegisteredHandlers.toString()
 
+    }
+
+    protected object ManagerCachesLinker
+            extends AbstractNetworkPresenceHandler[SharedCache, SharedCacheReference](network.objectManagementChannel)
+                    with NetworkObjectLinker[SharedCacheReference] with TrafficInterestedNPH {
+
+        override def getPresence(reference: SharedCacheReference): Option[NetworkObjectPresence] = {
+            if (reference.getClass == classOf[SharedCacheReference])
+                super.getPresence(reference)
+            else {
+                LocalCachesStore.findCache(reference.cacheID)
+                        .flatMap(_.objectLinker.flatMap(_.getPresence(silentCast(reference))))
+            }
+        }
+
+        override def findObject(reference: SharedCacheReference): Option[NetworkObject[_ <: SharedCacheReference]] = {
+            val cacheOpt = LocalCachesStore.findCache(reference.cacheID)
+            if (reference.getClass == classOf[SharedCacheReference])
+                cacheOpt.map(_.cache)
+            else
+                cacheOpt.flatMap(_.objectLinker.flatMap(_.findObject(silentCast(reference))))
+        }
+
+        private def silentCast[X](t: AnyRef): X = t.asInstanceOf[X]
+
+        override def injectRequest(bundle: LinkerRequestBundle): Unit = {
+            val reference = bundle.linkerReference
+            if (reference.getClass eq classOf[SharedCacheReference])
+                handleBundle(bundle)
+            else {
+                reference match {
+                    case ref: SharedCacheReference =>
+                        LocalCachesStore.findCache(ref.cacheID).fold() { cacheProfile =>
+                            cacheProfile.objectLinker.fold()(_.injectRequest(bundle))
+                        }
+                }
+            }
+        }
     }
 
     protected def println(msg: => String): Unit = {

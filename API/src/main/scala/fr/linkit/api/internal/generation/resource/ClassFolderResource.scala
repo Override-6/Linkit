@@ -17,5 +17,5 @@ import fr.linkit.api.application.resource.representation.FolderRepresentation
 
 trait ClassFolderResource[C] extends FolderRepresentation {
 
-    def findClass[S](className: String, loader: ClassLoader): Option[Class[S with C]]
+    def findClass[S<: AnyRef](className: String, loader: ClassLoader): Option[Class[S with C]]
 }

@@ -15,10 +15,10 @@ package fr.linkit.engine.gnom.cache.sync.tree.node
 
 import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeReference, SynchronizedObjectTree}
+import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncObjectReference, SynchronizedObjectTree}
 import fr.linkit.api.gnom.cache.sync.{CanNotSynchronizeException, SynchronizedObject}
 import fr.linkit.api.gnom.packet.channel.request.Submitter
-import fr.linkit.api.gnom.reference.presence.ObjectNetworkPresence
+import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.RMIExceptionString
 import fr.linkit.engine.gnom.cache.sync.invokation.remote.InvocationPacket
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
@@ -33,7 +33,7 @@ import scala.util.{Failure, Success, Try}
 class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
                                   data: ObjectNodeData[A]) extends TrafficInterestedSyncNode[A] {
 
-    override  val location          : SyncNodeReference         = data.location
+    override  val location          : SyncObjectReference       = data.location
     override  val tree              : SynchronizedObjectTree[_] = data.tree
     override  val puppeteer         : Puppeteer[A]                 = data.puppeteer
     override  val chip              : Chip[A]                      = data.chip
@@ -52,8 +52,8 @@ class ObjectSyncNode[A <: AnyRef](@Nullable override val parent: SyncNode[_],
     /**
      * This set stores every engine where this object is synchronized.
      * */
-    private   val presences                                        = mutable.HashSet[String](ownerID, currentIdentifier)
-    override  val objectPresence    : ObjectNetworkPresence        = null
+    private   val presences                                 = mutable.HashSet[String](ownerID, currentIdentifier)
+    override  val objectPresence    : NetworkObjectPresence = null
 
     synchronizedObject.initialize(this)
 

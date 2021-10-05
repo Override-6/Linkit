@@ -33,10 +33,8 @@ import fr.linkit.engine.test.EngineTests
 import fr.linkit.plugin.controller.ControllerExtension
 import fr.linkit.plugin.debug.DebugPlugin
 import fr.linkit.server.ServerApplication
-import fr.linkit.server.application.config.ServerApplicationConfigBuilder
-import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
-import fr.linkit.server.local.config.ServerApplicationConfigBuilder
+import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 import org.junit.jupiter.api.TestInstance.Lifecycle
 import org.junit.jupiter.api._
 

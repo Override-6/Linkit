@@ -20,7 +20,6 @@ import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol.Object
 import fr.linkit.engine.internal.utils.{JavaUtils, ScalaUtils}
 
 class NotInstantiatedObject[T <: AnyRef](override val profile: TypeProfile[T],
-                                         gnol: NetworkObjectLinker,
                                          content: Array[Int],
                                          pool: DeserializerObjectPool) extends InstanceObject[T] {
 

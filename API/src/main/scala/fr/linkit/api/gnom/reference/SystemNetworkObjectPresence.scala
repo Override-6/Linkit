@@ -13,8 +13,8 @@
 
 package fr.linkit.api.gnom.reference
 
-trait NetworkObject[R <: NetworkObjectReference] {
+import fr.linkit.api.gnom.reference.presence.{NetworkObjectPresence, ObjectPresenceType}
 
-    def reference: R
-
+class SystemNetworkObjectPresence extends NetworkObjectPresence {
+    override def getPresenceFor(engineId: String): ObjectPresenceType = ObjectPresenceType.PRESENT
 }

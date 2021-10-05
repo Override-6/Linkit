@@ -13,8 +13,8 @@
 
 package fr.linkit.engine.gnom.packet.traffic
 
-import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.channel.ChannelScope
+import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
 import fr.linkit.api.gnom.packet.traffic._
 import fr.linkit.api.gnom.packet.traffic.injection.PacketInjectionController
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes, PacketBundle}
@@ -44,7 +44,7 @@ abstract class AbstractPacketTraffic(override val currentIdentifier: String,
     override  val trafficPath: Array[Int] = Array.empty
     protected val rootStore               = new SimplePacketInjectableStore(this, defaultPersistenceConfig, trafficPath)
     private   val injectionContainer      = new ParallelInjectionContainer()
-    protected val objectChannel           = new DefaultObjectManagementChannel(rootStore, ChannelScopes.BroadcastScope(newWriter(Array.empty, defaultPersistenceConfig), Array.empty))
+    val objectChannel = new DefaultObjectManagementChannel(rootStore, ChannelScopes.BroadcastScope(newWriter(Array.empty, defaultPersistenceConfig), Array.empty))
 
     override def getInjectable[C <: PacketInjectable : ClassTag](injectableID: Int, config: PersistenceConfig, factory: PacketInjectableFactory[C], scopeFactory: ScopeFactory[_ <: ChannelScope]): C = {
         rootStore.getInjectable[C](injectableID, config, factory, scopeFactory)

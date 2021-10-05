@@ -18,20 +18,20 @@ import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehavior, ObjectBehaviorSto
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.local.CallableLocalMethodInvocation
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncNodeReference}
+import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.cache.sync.{SyncObjectAlreadyInitialisedException, SynchronizedObject}
-import fr.linkit.api.gnom.reference.presence.ObjectNetworkPresence
+import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import fr.linkit.engine.gnom.cache.sync.invokation.AbstractMethodInvocation
 
 trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
-    @transient final protected var location         : SyncNodeReference = _
-    @transient final protected var puppeteer        : Puppeteer[A]      = _
+    @transient final protected var location         : SyncObjectReference = _
+    @transient final protected var puppeteer        : Puppeteer[A]        = _
     @transient final protected var behavior         : ObjectBehavior[A]       = _
     @transient final protected var choreographer    : InvocationChoreographer = _
-    @transient final protected var store            : ObjectBehaviorStore     = _
-    @transient private         var presenceOnNetwork: ObjectNetworkPresence   = _
-    @transient private         var node             : SyncNode[A]             = _
+    @transient final protected var store            : ObjectBehaviorStore   = _
+    @transient private         var presenceOnNetwork: NetworkObjectPresence = _
+    @transient private         var node             : SyncNode[A]           = _
     //fast cache for handleCall
     @transient private         var currentIdentifier: String                  = _
     @transient private         var ownerID          : String                  = _
@@ -55,9 +55,7 @@ trait AbstractSynchronizedObject[A <: AnyRef] extends SynchronizedObject[A] {
 
     @transient override def isOwnedByCurrent: Boolean = currentIdentifier == ownerID
 
-    override def networkPresence: ObjectNetworkPresence = presenceOnNetwork
-
-    override def getLocation: SyncNodeReference = location
+    override def reference: SyncObjectReference = location
 
     override def getSuperClass: Class[A] = wrappedClass.asInstanceOf[Class[A]]
 

@@ -24,6 +24,6 @@ trait PersistenceBundle {
     val buff       : ByteBuffer
     val coordinates: PacketCoordinates
     val config     : PersistenceConfig
-    val gnol       : NetworkObjectLinker[NetworkObjectReference, AnyRef]
+    val gnol       : NetworkObjectLinker[NetworkObjectReference]
 
 }

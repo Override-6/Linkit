@@ -17,7 +17,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceGetter
 import fr.linkit.engine.internal.utils.ScalaUtils
 
-class ContentSwitcher[T](theObject: T) extends SyncInstanceGetter[T] {
+class ContentSwitcher[T <: AnyRef](theObject: T) extends SyncInstanceGetter[T] {
 
     override val tpeClass: Class[_] = theObject.getClass
 

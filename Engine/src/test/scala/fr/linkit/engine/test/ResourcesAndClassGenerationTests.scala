@@ -18,7 +18,7 @@ import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.Synchronized
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceInstantiator, SyncInstanceGetter}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
-import fr.linkit.api.gnom.cache.sync.tree.SyncNodeReference
+import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.internal.generation.TypeVariableTranslator
 import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.application.config.ApplicationConfiguration
@@ -145,7 +145,7 @@ class ResourcesAndClassGenerationTests {
     def forObject[A <: AnyRef : TypeTag](obj: A, tree: ObjectBehaviorStore = new DefaultObjectBehaviorStore(AnnotationBasedMemberBehaviorFactory)): A with SynchronizedObject[A] = {
         Assertions.assertNotNull(resources)
 
-        val info         = SyncNodeReference("", 8, "", Array(1))
+        val info         = new SyncObjectReference("", 8, "", Array(1))
         val wrapper = TestWrapperInstantiator.newWrapper[A](new ContentSwitcher[A](obj))
         wrapper.getChoreographer.forceLocalInvocation {
             println(s"wrapper = ${wrapper}")

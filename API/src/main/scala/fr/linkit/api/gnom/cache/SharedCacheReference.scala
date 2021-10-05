@@ -13,6 +13,5 @@
 
 package fr.linkit.api.gnom.cache
 
-case class SharedCacheReference(cacheID: Int, private val family: String) extends SharedCacheManagerReference(family) {
-
-}
+class SharedCacheReference(val cacheID: Int,
+                           family: String) extends SharedCacheManagerReference(family)

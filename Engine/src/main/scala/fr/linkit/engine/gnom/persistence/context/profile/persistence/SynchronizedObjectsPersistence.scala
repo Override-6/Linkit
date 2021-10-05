@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.persistence.context.profile.persistence
 
 import fr.linkit.api.gnom.cache.NoSuchCacheException
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
-import fr.linkit.api.gnom.cache.sync.tree.SyncNodeReference
+import fr.linkit.api.gnom.cache.sync.tree.SyncObjectReference
 import fr.linkit.api.gnom.network.Network
 import fr.linkit.api.gnom.persistence.context.TypePersistence
 import fr.linkit.api.gnom.persistence.obj.ObjectStructure
@@ -30,7 +30,7 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
 
     override def initInstance(syncObj: T, args: Array[Any]): Unit = {
         objectPersistence.initInstance(syncObj, args)
-        val info = args.last.asInstanceOf[SyncNodeReference]
+        val info = args.last.asInstanceOf[SyncObjectReference]
         val path = info.nodePath
         val center  = findCache(info)
                 .getOrElse {
@@ -51,17 +51,17 @@ class SynchronizedObjectsPersistence[T <: SynchronizedObject[T]](objectPersisten
     }
 
     override def toArray(t: T): Array[Any] = {
-        (objectPersistence.toArray(t): Array[Any]) :+ (t.getLocation: Any)
+        (objectPersistence.toArray(t): Array[Any]) :+ (t.reference: Any)
     }
 
-    private def findCache(info: SyncNodeReference): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
-        val family = info.cacheFamily
+    private def findCache(info: SyncObjectReference): Option[DefaultSynchronizedObjectCenter[AnyRef]] = {
+        val family = info.family
         network.findCacheManager(family)
                 .map(_.getCacheInStore[DefaultSynchronizedObjectCenter[AnyRef]](info.cacheID))
     }
 
-    private def throwNoSuchCacheException(info: SyncNodeReference, wrappedClass: Option[Class[_]]): Nothing = {
-        throw new NoSuchCacheException(s"Could not find object tree of id ${info.nodePath.head} in synchronized object cache id ${info.cacheID} from cache manager ${info.cacheFamily} " +
+    private def throwNoSuchCacheException(info: SyncObjectReference, wrappedClass: Option[Class[_]]): Nothing = {
+        throw new NoSuchCacheException(s"Could not find object tree of id ${info.nodePath.head} in synchronized object cache id ${info.cacheID} from cache manager ${info.family} " +
                 s": could not properly deserialize and synchronize Wrapper object of class \"${wrappedClass.map(_.getName).getOrElse("(Unknown Wrapped class)")}\".")
     }
 }

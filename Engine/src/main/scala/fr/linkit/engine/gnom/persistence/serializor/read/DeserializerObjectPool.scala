@@ -13,7 +13,7 @@
 
 package fr.linkit.engine.gnom.persistence.serializor.read
 
-import fr.linkit.engine.gnom.persistence.pool.ObjectPool
+import fr.linkit.engine.gnom.persistence.obj.ObjectPool
 import fr.linkit.engine.gnom.persistence.serializor.ConstantProtocol._
 
 class DeserializerObjectPool(sizes: Array[Int]) extends ObjectPool(sizes) {

@@ -117,7 +117,7 @@ class PersistenceConfigBuilder {
             }
         }
         val profiles                  = collectProfiles(store)
-        config = new SimplePersistenceConfig(context, profiles, referenceStore, unsafeUse, referenceAllObjects, wide)
+        config = new SimplePersistenceConfig(context, profiles, unsafeUse, referenceAllObjects, wide)
         config
     }
 

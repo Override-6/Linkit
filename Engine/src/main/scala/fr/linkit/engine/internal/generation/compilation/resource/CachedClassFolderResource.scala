@@ -13,10 +13,10 @@
 
 package fr.linkit.engine.internal.generation.compilation.resource
 
-import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
-import fr.linkit.api.internal.generation.resource.ClassFolderResource
 import fr.linkit.api.application.resource.external.ResourceFolder
 import fr.linkit.api.application.resource.representation.ResourceRepresentationFactory
+import fr.linkit.api.gnom.cache.sync.generation.GeneratedClassLoader
+import fr.linkit.api.internal.generation.resource.ClassFolderResource
 import fr.linkit.engine.internal.LinkitApplication
 import fr.linkit.engine.internal.mapping.ClassMappings
 
@@ -29,7 +29,7 @@ class CachedClassFolderResource[C](override val resource: ResourceFolder) extend
     private val folderPath       = Path.of(resource.getAdapter.getAbsolutePath)
     private val generatedClasses = mutable.Map.empty[String, Class[_ <: C]]
 
-    override def findClass[S](className: String, loader: ClassLoader): Option[Class[S with C]] = {
+    override def findClass[S <: AnyRef](className: String, loader: ClassLoader): Option[Class[S with C]] = {
         generatedClasses.getOrElse(className, {
             val wrapperClassPath = folderPath.resolve(className.replace('.', File.separatorChar) + ".class")
             if (Files.notExists(wrapperClassPath))

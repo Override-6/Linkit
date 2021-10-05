@@ -13,14 +13,14 @@
 
 package fr.linkit.engine.gnom.persistence
 
-import fr.linkit.api.gnom.persistence.{ObjectSerializationResult, ObjectPersistence, TransferInfo}
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.api.gnom.persistence.{ObjectPersistence, ObjectSerializationResult, TransferInfo}
 import fr.linkit.engine.internal.utils.NumberSerializer
 
 import java.nio.ByteBuffer
 
-case class LazyObjectSerializationResult(info: TransferInfo,
-                                         private val serializer: ObjectPersistence) extends ObjectSerializationResult {
+abstract class LazyObjectSerializationResult(info: TransferInfo,
+                                             private val serializer: ObjectPersistence) extends ObjectSerializationResult {
 
     override val coords: PacketCoordinates = info.coords
 
@@ -28,9 +28,12 @@ case class LazyObjectSerializationResult(info: TransferInfo,
 
     override val packet: Packet = info.packet
 
+    def writeCoords(): Unit
+
     override lazy val buff: ByteBuffer = {
         val buff = ByteBuffer.allocate(10000)
         buff.position(4)
+        writeCoords()
         info.makeSerial(serializer, buff)
         val length = NumberSerializer.serializeInt(buff.position() - 4)
         buff.put(0, length) //write the packet's length

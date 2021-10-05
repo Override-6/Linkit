@@ -13,13 +13,15 @@
 
 package fr.linkit.engine.gnom.reference
 
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
+import fr.linkit.api.gnom.reference.NetworkObjectReference
+
+import scala.language.existentials
 
 object NOLUtils {
 
     @inline
-    def trustedCast[T <: NetworkObjectReference](obj: NetworkObject[_]): NetworkObject[T] = {
-        obj.asInstanceOf[NetworkObject[T]]
+    def trustedCast[T <: NetworkObjectReference](ref: X forSome {type X >: T}): T = {
+        ref.asInstanceOf[T]
     }
 
     @inline

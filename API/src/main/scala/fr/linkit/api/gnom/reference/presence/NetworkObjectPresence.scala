@@ -11,10 +11,10 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.reference
+package fr.linkit.api.gnom.reference.presence
 
-import fr.linkit.api.gnom.reference.presence.{ObjectNetworkPresence, ObjectPresenceType}
+trait NetworkObjectPresence {
 
-class SystemObjectNetworkPresence extends ObjectNetworkPresence {
-    override def getPresenceFor(engineId: String): ObjectPresenceType = ObjectPresenceType.PRESENT
+    def getPresenceFor(engineId: String): ObjectPresenceType
+
 }

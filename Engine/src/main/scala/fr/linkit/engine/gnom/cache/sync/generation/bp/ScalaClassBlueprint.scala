@@ -32,7 +32,7 @@ class ScalaClassBlueprint(in: InputStream) extends AbstractClassBlueprint[SyncOb
         bindValue("TParamsOut" ~> (getGenericParams(_, _.getName)))
         bindValue("TParamsInBusted" ~> (getGenericParams(_, _ => "_")))
 
-        bindSubScope(new ScalaWrapperMethodBlueprint.ValueScope("INHERITED_METHODS", _, _), (desc, action: MethodDescription => Unit) => {
+        bindSubScope(new ScalaSyncMethodBlueprint.ValueScope("INHERITED_METHODS", _, _), (desc, action: MethodDescription => Unit) => {
             desc.listMethods()
                     .toSeq
                     .distinctBy(_.methodId)

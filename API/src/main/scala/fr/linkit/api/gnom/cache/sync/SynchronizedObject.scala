@@ -16,8 +16,8 @@ package fr.linkit.api.gnom.cache.sync
 import fr.linkit.api.gnom.cache.sync.behavior.{ObjectBehavior, ObjectBehaviorStore}
 import fr.linkit.api.gnom.cache.sync.invokation.InvocationChoreographer
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
-import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncNodeReference}
-import fr.linkit.api.gnom.reference.presence.ObjectPresence
+import fr.linkit.api.gnom.cache.sync.tree.{SyncNode, SyncObjectReference}
+import fr.linkit.api.gnom.reference.NetworkObject
 
 import java.io.Serializable
 
@@ -29,7 +29,7 @@ import java.io.Serializable
  * @see fr.linkit.api.gnom.cache.obj.generation.SyncClassCenter
  * @see SyncInstanceInstantiator
  */
-trait SynchronizedObject[T <: AnyRef] extends ObjectPresence[SyncNodeReference] with Serializable {
+trait SynchronizedObject[T <: AnyRef] extends NetworkObject[SyncObjectReference] with Serializable {
 
     /**
      * Initialize the puppeteer of the synchronized object.

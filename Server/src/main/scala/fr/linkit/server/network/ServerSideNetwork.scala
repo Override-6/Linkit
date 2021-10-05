@@ -16,7 +16,7 @@ package fr.linkit.server.network
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.network.NetworkInitialisable
-import fr.linkit.api.gnom.packet.traffic.PacketTraffic
+import fr.linkit.api.gnom.reference.traffic.ObjectManagementChannel
 import fr.linkit.engine.gnom.cache.SharedCacheOriginManager
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter
 import fr.linkit.engine.gnom.cache.sync.instantiation.SyncConstructor
@@ -25,9 +25,8 @@ import fr.linkit.engine.gnom.network.{AbstractNetwork, NetworkDataTrunk}
 import fr.linkit.engine.gnom.packet.traffic.AbstractPacketTraffic
 import fr.linkit.server.connection.ServerConnection
 
-class ServerSideNetwork(serverConnection: ServerConnection,
-                        privilegedInitialisables: Array[NetworkInitialisable])(implicit traffic: AbstractPacketTraffic)
-        extends AbstractNetwork(serverConnection, , privilegedInitialisables) {
+class ServerSideNetwork(serverConnection: ServerConnection, traffic: AbstractPacketTraffic)
+        extends AbstractNetwork(serverConnection, traffic.objectChannel, Array(traffic.context)) {
 
     trunk.addCacheManager(globalCache)
 

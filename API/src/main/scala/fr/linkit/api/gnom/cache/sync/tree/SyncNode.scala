@@ -16,7 +16,7 @@ package fr.linkit.api.gnom.cache.sync.tree
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.invokation.local.Chip
 import fr.linkit.api.gnom.cache.sync.invokation.remote.Puppeteer
-import fr.linkit.api.gnom.reference.presence.ObjectNetworkPresence
+import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
 import org.jetbrains.annotations.Nullable
 
 import scala.collection.mutable.ListBuffer
@@ -37,9 +37,9 @@ trait SyncNode[A <: AnyRef] {
         buff.toArray.reverse
     }
 
-    val objectPresence: ObjectNetworkPresence
+    val objectPresence: NetworkObjectPresence
 
-    val location: SyncNodeReference
+    val location: SyncObjectReference
 
     /**
      * The tree in which this node is stored.

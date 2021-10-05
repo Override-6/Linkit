@@ -13,23 +13,18 @@
 
 package fr.linkit.engine.gnom.persistence
 
-import java.nio.ByteBuffer
-
-import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
-import fr.linkit.api.gnom.persistence.ObjectPersistence.PacketDeserial
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
 import fr.linkit.api.gnom.packet.{Packet, PacketAttributes, PacketCoordinates}
+import fr.linkit.api.gnom.persistence.ObjectDeserializationResult
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.packet.SimplePacketAttributes
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 
+import java.nio.ByteBuffer
 import scala.reflect.{ClassTag, classTag}
 
 class LazyObjectDeserializationResult(override val buff: ByteBuffer,
-                                      deserial: PacketDeserial,
-                                      config: PersistenceConfig) extends ObjectDeserializationResult {
-
-    override val coords: PacketCoordinates = deserial.getCoordinates
+                                      override val coords: PacketCoordinates)
+                                     (forEachObjects: (AnyRef => Unit) => Unit) extends ObjectDeserializationResult {
 
     private lazy  val cache     : Array[AnyRef]    = createCache()
     override lazy val attributes: PacketAttributes = extract[PacketAttributes](SimplePacketAttributes.empty)
@@ -54,7 +49,7 @@ class LazyObjectDeserializationResult(override val buff: ByteBuffer,
     private def createCache(): Array[AnyRef] = {
         AppLogger.debug("Deserializing Packet and Attributes...")
         val cache = new Array[AnyRef](2)
-        deserial.forEachObjects(config) {
+        forEachObjects {
             case attributes: PacketAttributes => cache(0) = attributes
             case packet: Packet               => cache(1) = packet
         }

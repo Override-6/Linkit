@@ -11,10 +11,18 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.reference.presence
+package fr.linkit.engine.gnom.persistence.obj
 
-trait ObjectNetworkPresence {
+import fr.linkit.api.gnom.persistence.PersistenceBundle
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
-    def getPresenceFor(engineId: String): ObjectPresenceType
+class ObjectSelector(bundle: PersistenceBundle) {
+
+    private val gnol   = bundle.gnol
+    private val coords = bundle.coordinates
+
+    def findObjectReference(obj: AnyRef):  Option[NetworkObjectReference] = ???
+
+    def findObject(reference: NetworkObjectReference): Option[AnyRef] = ???
 
 }

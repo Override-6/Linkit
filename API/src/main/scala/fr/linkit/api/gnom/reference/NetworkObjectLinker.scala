@@ -13,8 +13,7 @@
 
 package fr.linkit.api.gnom.reference
 
-import fr.linkit.api.gnom.packet.PacketCoordinates
-import fr.linkit.api.gnom.reference.presence.ObjectNetworkPresence
+import fr.linkit.api.gnom.reference.presence.NetworkPresenceHandler
 
 /**
  * Depicts any class that is responsible for object linkage between all engines for the [[fr.linkit.api.gnom.network.Network]]. <br>
@@ -23,22 +22,8 @@ import fr.linkit.api.gnom.reference.presence.ObjectNetworkPresence
  * Network Objects Linkers guarantees that the presence of an object's location is synchronized between each Engines.<br>
  * @tparam R the location kind of this NetworkObjectLinker
  * */
-trait NetworkObjectLinker[R <: NetworkObjectReference] {
+trait NetworkObjectLinker[R <: NetworkObjectReference] extends NetworkPresenceHandler[R] {
 
-    /**
-     * checks if the current ref object is referenced (bound to a [[NetworkObjectReference]]) in this Linker.
-     * @param obj the object to test
-     * @return true if there is a [[NetworkObjectReference]] bound with this reference contained into this Linker
-     */
-    def isObjectReferencedOnCurrent(obj: NetworkObject[R]): Boolean
-
-    /**
-     * Checks if the current ref object is referenced (bound to a [[NetworkObjectReference]])
-     * */
-    def isObjectReferencedOnEngine(engineID: String, obj: NetworkObject[R]): Boolean
-
-    def findObjectPresence(obj: NetworkObject[R]): Option[ObjectNetworkPresence]
-
-    def findObject(coordsOrigin: PacketCoordinates, reference: R): Option[NetworkObject[_ <: R]]
+    def findObject(reference: R): Option[NetworkObject[_ <: R]]
 
 }

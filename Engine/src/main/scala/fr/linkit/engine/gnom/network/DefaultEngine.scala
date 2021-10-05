@@ -15,7 +15,7 @@ package fr.linkit.engine.gnom.network
 
 import fr.linkit.api.gnom.cache.SharedCacheManager
 import fr.linkit.api.gnom.cache.sync.behavior.annotation.{BasicInvocationRule, MethodControl}
-import fr.linkit.api.gnom.network.{Engine, ExternalConnectionState, Network, StaticAccessor}
+import fr.linkit.api.gnom.network._
 import fr.linkit.api.internal.system.Versions
 import fr.linkit.engine.internal.system.StaticVersions
 
@@ -25,10 +25,10 @@ class DefaultEngine(override val identifier: String,
                     override val cache: SharedCacheManager) extends Engine {
 
     override val network       : Network        = cache.network
-    private  val rootRefStore                   = network.rootRefStore
     override val staticAccessor: StaticAccessor = null
 
-    override val versions: Versions = StaticVersions.currentVersions
+    override final val reference: EngineReference = new EngineReference(identifier)
+    override val versions : Versions        = StaticVersions.currentVersions
 
     override val connectionDate: Timestamp = new Timestamp(System.currentTimeMillis())
 
@@ -49,7 +49,7 @@ class DefaultEngine(override val identifier: String,
 
     @MethodControl(BasicInvocationRule.ONLY_OWNER)
     override def findRootReference[T](refId: Int): Option[T] = {
-        ???//rootRefStore.getReferenced(refId).asInstanceOf[Option[T]]
+        ??? //rootRefStore.getReferenced(refId).asInstanceOf[Option[T]]
     }
 
     override def getConnectionState: ExternalConnectionState = connectionState

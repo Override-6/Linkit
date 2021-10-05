@@ -11,10 +11,18 @@
  * questions.
  */
 
-package fr.linkit.api.gnom.reference.traffic
+package fr.linkit.engine.gnom.persistence.obj
 
-trait TrafficInterestedNOL {
+import fr.linkit.api.gnom.persistence.obj.ReferencedNetworkObject
+import fr.linkit.api.gnom.reference.NetworkObjectReference
 
+class SimpleReferencedNetworkObject(override val locationIdx: Int,
+                                    override val location: NetworkObjectReference,
+                                    override val value: AnyRef) extends ReferencedNetworkObject {
 
-    def injectRequest(bundle: LinkerRequestBundle): Unit
+    override def equals(obj: Any): Boolean = {
+        obj match {
+            case ref: AnyRef => (ref eq value) || (ref eq this)
+        }
+    }
 }

@@ -13,16 +13,16 @@
 
 package fr.linkit.engine.gnom.cache.sync.instantiation
 
-import java.lang.reflect.{Constructor, Modifier}
-
 import fr.linkit.api.gnom.cache.sync.SynchronizedObject
 import fr.linkit.api.gnom.cache.sync.instantiation.SyncInstanceGetter
 import fr.linkit.engine.gnom.cache.sync.instantiation.SyncConstructor.getAssignableConstructor
 import fr.linkit.engine.gnom.persistence.context.structure.ArrayObjectStructure
 
+import java.lang.reflect.{Constructor, Modifier}
 import scala.reflect.{ClassTag, classTag}
 
-class SyncConstructor[T](clazz: Class[_], arguments: Array[Any]) extends SyncInstanceGetter[T] {
+class SyncConstructor[T <: AnyRef](clazz: Class[_], arguments: Array[Any]) extends SyncInstanceGetter[T] {
+
     override val tpeClass: Class[_] = clazz
 
     override def getInstance(syncClass: Class[T with SynchronizedObject[T]]): T with SynchronizedObject[T] = {
@@ -33,8 +33,7 @@ class SyncConstructor[T](clazz: Class[_], arguments: Array[Any]) extends SyncIns
 
 object SyncConstructor {
 
-
-    def apply[T: ClassTag](params: Any*): SyncConstructor[T] = {
+    def apply[T <: AnyRef : ClassTag](params: Any*): SyncConstructor[T] = {
         val clazz        = classTag[T].runtimeClass
         val objectsArray = params.toArray
         new SyncConstructor[T](clazz, objectsArray)

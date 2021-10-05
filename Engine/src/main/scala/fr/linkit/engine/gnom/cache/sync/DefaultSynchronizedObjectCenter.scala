@@ -17,13 +17,15 @@ import fr.linkit.api.gnom.cache.sync._
 import fr.linkit.api.gnom.cache.sync.behavior.ObjectBehaviorStore
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
 import fr.linkit.api.gnom.cache.sync.instantiation.{SyncInstanceGetter, SyncInstanceInstantiator}
-import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncNodeReference}
+import fr.linkit.api.gnom.cache.sync.tree.{NoSuchSyncNodeException, SyncNode, SyncObjectReference}
 import fr.linkit.api.gnom.cache.traffic.CachePacketChannel
 import fr.linkit.api.gnom.cache.traffic.handler.{AttachHandler, CacheHandler, ContentHandler}
 import fr.linkit.api.gnom.cache.{SharedCache, SharedCacheFactory, SharedCacheReference}
 import fr.linkit.api.gnom.network.{Engine, Network}
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
+import fr.linkit.api.gnom.reference.NetworkObjectLinker
+import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.engine.gnom.cache.AbstractSharedCache
 import fr.linkit.engine.gnom.cache.sync.DefaultSynchronizedObjectCenter.ObjectTreeProfile
@@ -47,9 +49,9 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
                                                                  override val network: Network)
         extends AbstractSharedCache(channel) with SynchronizedObjectCache[A] with SyncNodeDataFactory {
 
-    override val reference : SharedCacheReference       = SharedCacheReference(cacheID, family)
-    private  val currentIdentifier                      = channel.traffic.connection.currentIdentifier
-    override val treeCenter: DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this, channel)
+    override val reference        : SharedCacheReference       = new SharedCacheReference(cacheID, family)
+    private  val currentIdentifier: String                     = channel.traffic.connection.currentIdentifier
+    override val treeCenter       : DefaultObjectTreeCenter[A] = new DefaultObjectTreeCenter[A](this, network.objectManagementChannel)
     channel.setHandler(CenterHandler)
 
     override def syncObject(id: Int, creator: SyncInstanceGetter[A]): A with SynchronizedObject[A] = {
@@ -69,7 +71,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
     }
 
     private def createNewTree(id: Int, rootObjectOwner: String, creator: SyncInstanceGetter[A], behaviorTree: ObjectBehaviorStore = defaultTreeViewBehavior): DefaultSynchronizedObjectTree[A] = {
-        val nodeLocation = SyncNodeReference(family, cacheID, rootObjectOwner, Array(id))
+        val nodeLocation = new SyncObjectReference(family, cacheID, rootObjectOwner, Array(id))
         val rootBehavior = behaviorTree.getFromClass[A](creator.tpeClass)
         val root         = DefaultInstantiator.newWrapper[A](creator)
         val chip         = ObjectChip[A](rootBehavior, network, root)
@@ -92,7 +94,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         val behaviorStore = tree.behaviorStore
         val behavior      = behaviorStore.getFromClass[B](syncObject.getSuperClass)
         val chip          = ObjectChip[B](behavior, network, syncObject)
-        val nodeLocation  = SyncNodeReference(family, cacheID, ownerID, path)
+        val nodeLocation  = new SyncObjectReference(family, cacheID, ownerID, path)
         val puppeteer     = new ObjectPuppeteer[B](channel, this, nodeLocation, behavior)
         new ObjectNodeData[B](puppeteer, chip, tree, nodeLocation, syncObject, currentIdentifier)
     }
@@ -101,8 +103,8 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
         treeCenter.findTree(id).map(_.rootNode.synchronizedObject)
     }
 
-    def isObjectPresent(location: SyncNodeReference): Boolean = {
-        (location.cacheID == cacheID) && location.cacheFamily == family && {
+    def isObjectPresent(location: SyncObjectReference): Boolean = {
+        (location.cacheID == cacheID) && location.family == family && {
             val path = location.nodePath
             treeCenter.findTree(path.head).exists(_.findNode(path).isDefined)
         }
@@ -156,9 +158,9 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
             //AppLogger.debug(s"Processing bundle : ${bundle}")
             val response = bundle.packet
             response.nextPacket[Packet] match {
-                case ip: InvocationPacket                      =>
+                case ip: InvocationPacket                        =>
                     handleInvocationPacket(ip, bundle)
-                case ObjectPacket(location: SyncNodeReference) =>
+                case ObjectPacket(location: SyncObjectReference) =>
                     bundle.responseSubmitter
                             .addPacket(BooleanPacket(isObjectPresent(location)))
                             .submit()
@@ -209,6 +211,7 @@ final class DefaultSynchronizedObjectCenter[A <: AnyRef] private(channel: CacheP
             AppLogger.debug(s"Engine ${engine.identifier} detached to this synchronized object cache !")
         }
 
+        override val objectLinker: Option[NetworkObjectLinker[_ <: SharedCacheReference] with TrafficInterestedNPH] = Some(treeCenter)
     }
 
 }

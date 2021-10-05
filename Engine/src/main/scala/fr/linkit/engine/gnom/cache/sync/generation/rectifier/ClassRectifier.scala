@@ -23,11 +23,11 @@ import java.lang.reflect.{Method, Modifier}
 
 import scala.collection.mutable.ListBuffer
 
-class ClassRectifier(desc: SyncObjectSuperclassDescription[_], puppetClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
+class ClassRectifier(desc: SyncObjectSuperclassDescription[_], syncClassName: String, classLoader: GeneratedClassLoader, superClass: Class[_]) {
 
     private val pool = ClassPool.getDefault
     pool.appendClassPath(new LoaderClassPath(classLoader))
-    private val ctClass = pool.get(puppetClassName)
+    private val ctClass = pool.get(syncClassName)
 
     ctClass.setSuperclass(pool.get(superClass.getName))
     fixAllMethods()

@@ -14,12 +14,9 @@
 package fr.linkit.engine.gnom.persistence.serializor
 
 import fr.linkit.api.gnom.cache.sync.generation.SyncClassCenter
-import fr.linkit.api.gnom.packet.{BroadcastPacketCoordinates, DedicatedPacketCoordinates, PacketCoordinates}
 import fr.linkit.api.gnom.persistence.obj.PoolObject
 import fr.linkit.api.gnom.persistence.{ObjectPersistence, PersistenceBundle}
-import fr.linkit.engine.gnom.persistence.MalFormedPacketException
-import fr.linkit.engine.gnom.persistence.serializor.DefaultObjectPersistence.{BroadcastedFlag, DedicatedFlag}
-import fr.linkit.engine.gnom.persistence.serializor.read.{NotInstantiatedObject, PacketReader}
+import fr.linkit.engine.gnom.persistence.serializor.read.PacketReader
 import fr.linkit.engine.gnom.persistence.serializor.write.{PacketWriter, SerializerObjectPool}
 
 import java.nio.ByteBuffer
@@ -74,55 +71,6 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         }
     }
 
-    private def writeCoords(buff: ByteBuffer, coords: PacketCoordinates): Unit = coords match {
-        case BroadcastPacketCoordinates(path, senderID, discardTargets, targetIDs) =>
-            buff.put(BroadcastedFlag) //set the broadcast flag
-            buff.putInt(path.length) //path length
-            path.foreach(buff.putInt) //path content
-            putString(senderID, buff) //senderID String
-            buff.put((if (discardTargets) 1 else 0): Byte) //discardTargets boolean
-            buff.putInt(targetIDs.length) //targetIds length
-            targetIDs.foreach(putString(_, buff)) //targetIds content
-
-        case DedicatedPacketCoordinates(path, targetID, senderID) =>
-            buff.put(DedicatedFlag) //set the dedicated flag
-            buff.putInt(path.length) //path length
-            path.foreach(buff.putInt) //path content
-            putString(targetID, buff) // targetID String
-            putString(senderID, buff) // senderID String
-        case _                                                    => throw new UnsupportedOperationException(s"Coordinates of type '${coords.getClass.getName}' are not supported.")
-    }
-
-    private def readCoordinates(buff: ByteBuffer): PacketCoordinates = {
-        buff.get() match {
-            case BroadcastedFlag =>
-                val path = new Array[Int](buff.getInt) //init path array
-                for (i <- path.indices) path(i) = buff.getInt() //fill path content
-                val senderId       = getString(buff) //senderID string
-                val discardTargets = buff.get == 1 //discardTargets boolean
-                val targetIds      = new Array[String](buff.getInt) //init targetIds array
-                for (i <- targetIds.indices) targetIds(i) = getString(buff) //fill path content
-                BroadcastPacketCoordinates(path, senderId, discardTargets, targetIds)
-            case DedicatedFlag   =>
-                val path = new Array[Int](buff.getInt) //init path array
-                for (i <- path.indices) path(i) = buff.getInt() //fill path content
-                val targetID = getString(buff) //targetID string
-                val senderID = getString(buff) //senderID string
-                DedicatedPacketCoordinates(path, targetID, senderID)
-            case unknown         => throw new MalFormedPacketException(s"Unknown packet coordinates flag '$unknown'")
-        }
-    }
-
-    private def putString(str: String, buff: ByteBuffer): Unit = {
-        buff.putInt(str.length).put(str.getBytes())
-    }
-
-    private def getString(buff: ByteBuffer): String = {
-        val size  = buff.getInt()
-        val array = new Array[Byte](size)
-        buff.get(array)
-        new String(array)
-    }
 
     private def checkSignature(buff: ByteBuffer): Unit = {
         if (!isSameSignature(buff))
@@ -130,10 +78,4 @@ class DefaultObjectPersistence(center: SyncClassCenter) extends ObjectPersistenc
         buff.position(buff.position() + signature.length)
     }
 
-}
-
-object DefaultObjectPersistence {
-
-    private val DedicatedFlag  : Byte = -20
-    private val BroadcastedFlag: Byte = -21
 }

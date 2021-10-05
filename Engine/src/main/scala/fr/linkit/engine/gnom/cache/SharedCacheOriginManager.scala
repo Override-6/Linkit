@@ -78,7 +78,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
             break
         }
 
-        LocalCachesStore.getCache(cacheID) match {
+        LocalCachesStore.findCache(cacheID) match {
             case None                  =>
                 //The cache is accepted because it is not yet opened.
                 //TODO Make a "blacklist" or a "whitelist" of caches types that can or cannot be opened on a SharedCacheManager
@@ -139,7 +139,7 @@ final class SharedCacheOriginManager @Persist()(family: String,
             }
         }
 
-        LocalCachesStore.getCache(cacheID)
+        LocalCachesStore.findCache(cacheID)
                 .fold(handleContentNotAvailable()) { storedCache =>
                     val content       = storedCache.getContent
                     val isSystemCache = SystemCacheRange contains cacheID

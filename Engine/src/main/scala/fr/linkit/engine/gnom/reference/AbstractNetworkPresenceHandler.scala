@@ -15,32 +15,32 @@ package fr.linkit.engine.gnom.reference
 
 import fr.linkit.api.gnom.packet.Packet
 import fr.linkit.api.gnom.reference.presence.ObjectPresenceType._
-import fr.linkit.api.gnom.reference.presence.{NetworkPresenceHandler, ObjectNetworkPresence, ObjectPresenceType}
-import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel}
+import fr.linkit.api.gnom.reference.presence.{NetworkPresenceHandler, NetworkObjectPresence, ObjectPresenceType}
+import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
 import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectReference}
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinker.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.fundamental.EmptyPacket
 import fr.linkit.engine.gnom.packet.fundamental.RefPacket.AnyRefPacket
 import fr.linkit.engine.gnom.packet.fundamental.ValPacket.BooleanPacket
 import fr.linkit.engine.gnom.packet.traffic.ChannelScopes
-import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkPresence, InternalNetworkPresence}
+import fr.linkit.engine.gnom.reference.presence.{ExternalNetworkObjectPresence, InternalNetworkObjectPresence}
 
 import scala.collection.mutable
 
 abstract class AbstractNetworkPresenceHandler[O <: NetworkObject[R], R <: NetworkObjectReference](channel: ObjectManagementChannel)
-        extends NetworkPresenceHandler[R] {
+        extends NetworkPresenceHandler[R] with TrafficInterestedNPH {
 
     //What other engines thinks about current engine references states
-    private val internalPresences = mutable.HashMap.empty[R, InternalNetworkPresence[R]]
+    private val internalPresences = mutable.HashMap.empty[R, InternalNetworkObjectPresence[R]]
     //What current engine thinks about other engines references states
-    private val externalPresences = mutable.HashMap.empty[R, ExternalNetworkPresence[R]]
+    private val externalPresences = mutable.HashMap.empty[R, ExternalNetworkObjectPresence[R]]
 
-    override def isPresentOnEngine(engineId: String, location: R): Boolean = {
-        externalPresences(location).getPresenceFor(engineId) eq PRESENT
+    override def isPresentOnEngine(engineId: String, ref: R): Boolean = {
+        externalPresences(ref).getPresenceFor(engineId) eq PRESENT
     }
 
-    def getPresence(location: R): ObjectNetworkPresence = {
-        externalPresences.getOrElseUpdate(location, new ExternalNetworkPresence[R](this, location))
+    def getPresence(ref: R): Option[NetworkObjectPresence] = {
+        Some(externalPresences.getOrElseUpdate(ref, new ExternalNetworkObjectPresence[R](this, ref)))
     }
 
     def askIfPresent(engineId: String, location: R): Boolean = {
@@ -63,25 +63,25 @@ abstract class AbstractNetworkPresenceHandler[O <: NetworkObject[R], R <: Networ
                 .submit()
     }
 
-    def bindListener(location: R, listener: ExternalNetworkPresence[R]): Unit = {
+    def bindListener(location: R, listener: ExternalNetworkObjectPresence[R]): Unit = {
         if (externalPresences.contains(location))
             throw new IllegalArgumentException(s"A listener is already bound for location '$location'.")
         externalPresences.put(location, listener)
     }
 
-    override def registerLocation(location: R): Unit = {
-        if (!internalPresences.contains(location)) {
-            internalPresences(location) = new InternalNetworkPresence[R](this, location)
+    protected def registerLocation(ref: R): Unit = {
+        if (!internalPresences.contains(ref)) {
+            internalPresences(ref) = new InternalNetworkObjectPresence[R](this, ref)
         } else {
-            internalPresences(location).setPresent()
+            internalPresences(ref).setPresent()
         }
     }
 
-    override def unregisterLocation(location: R): Unit = {
-        val opt = internalPresences.get(location)
+    protected def unregisterLocation(ref: R): Unit = {
+        val opt = internalPresences.get(ref)
         if (opt.isDefined) {
             opt.get.setNotPresent()
-            internalPresences -= location
+            internalPresences -= ref
         }
     }
 
@@ -107,12 +107,12 @@ abstract class AbstractNetworkPresenceHandler[O <: NetworkObject[R], R <: Networ
         }
     }
 
-    def findObject(location: R): Option[O]
+    def findObject(location: R): Option[NetworkObject[_ <: R]]
 
     private def isLocationReferenced(location: R): Boolean = {
         val opt = internalPresences.get(location)
         if (opt.isEmpty) {
-            val presence = new InternalNetworkPresence[R](this, location)
+            val presence = new InternalNetworkObjectPresence[R](this, location)
             internalPresences(location) = presence
             val present = findObject(location).isDefined
             if (present)

@@ -13,82 +13,51 @@
 
 package fr.linkit.engine.gnom.network
 
-import fr.linkit.api.gnom.cache.{SharedCacheManager, SharedCacheManagerReference}
-import fr.linkit.api.gnom.network.{Engine, EngineReference, Network, NetworkReference}
-import fr.linkit.api.gnom.packet.PacketCoordinates
+import fr.linkit.api.gnom.cache.SharedCacheManagerReference
+import fr.linkit.api.gnom.network.{EngineReference, Network, NetworkReference}
 import fr.linkit.api.gnom.packet.channel.request.RequestPacketBundle
 import fr.linkit.api.gnom.persistence.obj.TrafficNetworkObjectReference
-import fr.linkit.api.gnom.reference.presence.ObjectNetworkPresence
-import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNOL}
-import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker, NetworkObjectReference, SystemObjectNetworkPresence}
+import fr.linkit.api.gnom.reference.presence.NetworkObjectPresence
+import fr.linkit.api.gnom.reference.traffic.{LinkerRequestBundle, ObjectManagementChannel, TrafficInterestedNPH}
+import fr.linkit.api.gnom.reference.{NetworkObject, NetworkObjectLinker, NetworkObjectReference, SystemNetworkObjectPresence}
 import fr.linkit.engine.gnom.network.GeneralNetworkObjectLinker.ReferenceAttributeKey
 import fr.linkit.engine.gnom.packet.UnexpectedPacketException
 import fr.linkit.engine.gnom.packet.traffic.channel.request.DefaultRequestBundle
-import fr.linkit.engine.gnom.reference.NOLUtils.{throwUnknownObject, throwUnknownRef, trustedCast}
+import fr.linkit.engine.gnom.reference.NOLUtils.throwUnknownRef
 
 class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
                                  network: Network,
-                                 cacheNOL: NetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNOL,
-                                 trafficNOL: NetworkObjectLinker[TrafficNetworkObjectReference] with TrafficInterestedNOL) extends NetworkObjectLinker[NetworkObjectReference] {
+                                 cacheNOL: NetworkObjectLinker[SharedCacheManagerReference] with TrafficInterestedNPH,
+                                 trafficNOL: NetworkObjectLinker[TrafficNetworkObjectReference] with TrafficInterestedNPH) extends NetworkObjectLinker[NetworkObjectReference] {
 
     startObjectManagement()
 
-    override def isObjectReferencedOnCurrent(obj: NetworkObject[NetworkObjectReference]): Boolean = {
-        obj.reference match {
-            case _: NetworkReference              =>
-                isSystemObject(obj)
-            case _: SharedCacheManagerReference   => cacheNOL.isObjectReferencedOnCurrent(trustedCast(obj))
-            case _: TrafficNetworkObjectReference => trafficNOL.isObjectReferencedOnCurrent(trustedCast(obj))
-            case _                                => throwUnknownObject(obj)
-        }
-
+    override def isPresentOnEngine(engineID: String, reference: NetworkObjectReference): Boolean = reference match {
+        case _: NetworkReference                => true //Network references are guaranteed to be present on every remote engines
+        case ref: SharedCacheManagerReference   => cacheNOL.isPresentOnEngine(engineID, ref)
+        case ref: TrafficNetworkObjectReference => trafficNOL.isPresentOnEngine(engineID, ref)
+        case _                                  => throwUnknownRef(reference)
     }
 
-    override def isObjectReferencedOnEngine(engineID: String, obj: NetworkObject[NetworkObjectReference]): Boolean = {
-        obj.reference match {
-            case _: NetworkReference              =>
-                /* As Network, Engine and SCM are guaranteed
-                 * to be present on every engines as long as they come from the framework's system,
-                 * The result of their presence on any engine can be determined by their registration status onto this engine.
-                 */
-                isSystemObject(obj)
-            case _: SharedCacheManagerReference   => cacheNOL.isObjectReferencedOnEngine(engineID, trustedCast(obj))
-            case _: TrafficNetworkObjectReference => trafficNOL.isObjectReferencedOnEngine(engineID, trustedCast(obj))
-            case _                                => throwUnknownObject(obj)
-        }
+    override def getPresence(reference: NetworkObjectReference): Option[NetworkObjectPresence] = reference match {
+        case _: NetworkReference                =>
+            /* As Network, Engine and SCM are guaranteed
+            * to be present on every engines as long as they come from the framework's system,
+            * The result of their presence on any engine will be always present if they are legit objects.
+            */
+            Some(new SystemNetworkObjectPresence())
+        case ref: SharedCacheManagerReference   => cacheNOL.getPresence(ref)
+        case ref: TrafficNetworkObjectReference => trafficNOL.getPresence(ref)
+        case _                                  => throwUnknownRef(reference)
     }
 
-    override def findObjectPresence(obj: NetworkObject[NetworkObjectReference]): Option[ObjectNetworkPresence] = {
-        obj.reference match {
-            case _: NetworkReference if isSystemObject(obj) =>
-                /* As Network, Engine and SCM are guaranteed
-                * to be present on every engines as long as they come from the framework's system,
-                * The result of their presence on any engine will be always present if they are legit objects.
-                */
-                Some(new SystemObjectNetworkPresence())
-            case _: SharedCacheManagerReference             => cacheNOL.findObjectPresence(trustedCast(obj))
-            case _: TrafficNetworkObjectReference           => trafficNOL.findObjectPresence(trustedCast(obj))
-            case _                                          => throwUnknownObject(obj)
-        }
+    override def findObject(reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = reference match {
+        case _: NetworkReference                => Some(network)
+        case ref: EngineReference               => network.findEngine(ref.engineID)
+        case ref: SharedCacheManagerReference   => cacheNOL.findObject(ref)
+        case ref: TrafficNetworkObjectReference => trafficNOL.findObject(ref)
+        case _                                  => throwUnknownRef(reference)
     }
-
-    override def findObject(coordsOrigin: PacketCoordinates, reference: NetworkObjectReference): Option[NetworkObject[_ <: NetworkObjectReference]] = {
-        reference match {
-            case _: NetworkReference                => Some(network)
-            case ref: EngineReference               => network.findEngine(ref.engineID)
-            case ref: SharedCacheManagerReference   => cacheNOL.findObject(coordsOrigin, ref)
-            case ref: TrafficNetworkObjectReference => trafficNOL.findObject(coordsOrigin, ref)
-            case _                                  => throwUnknownRef(reference)
-        }
-    }
-
-    private def isSystemObject(obj: NetworkObject[_]): Boolean = obj match {
-        case network: Network            => network eq this.network
-        case engine: Engine              => network.findEngine(engine.identifier).exists(_ eq engine)
-        case manager: SharedCacheManager => network.findCacheManager(manager.family).exists(_ eq manager)
-        case _                           => throwUnknownObject(obj)
-    }
-
 
     private def handleRequest(request: RequestPacketBundle): Unit = {
         val ref       = request.attributes.getAttribute[NetworkObjectReference](ReferenceAttributeKey).getOrElse {
@@ -112,5 +81,6 @@ class GeneralNetworkObjectLinker(omc: ObjectManagementChannel,
 }
 
 object GeneralNetworkObjectLinker {
+
     final val ReferenceAttributeKey: String = "ref"
 }

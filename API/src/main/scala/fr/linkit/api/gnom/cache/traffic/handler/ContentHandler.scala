@@ -13,8 +13,10 @@
 
 package fr.linkit.api.gnom.cache.traffic.handler
 
-import fr.linkit.api.gnom.cache.CacheContent
+import fr.linkit.api.gnom.cache.{CacheContent, SharedCacheReference}
 import fr.linkit.api.gnom.network.Engine
+import fr.linkit.api.gnom.reference.NetworkObjectLinker
+import fr.linkit.api.gnom.reference.traffic.TrafficInterestedNPH
 
 /**
  * Handles the local content of the cache instance. <br>
@@ -40,5 +42,7 @@ trait ContentHandler[C <: CacheContent] extends CacheHandler {
      * @return true if the engine can access to the content, false instead
      * */
     def canAccessToContent(engine: Engine): Boolean = true
+
+    val objectLinker: Option[NetworkObjectLinker[_ <: SharedCacheReference] with TrafficInterestedNPH]
 
 }

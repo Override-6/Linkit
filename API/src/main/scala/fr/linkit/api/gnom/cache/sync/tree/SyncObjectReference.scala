@@ -13,7 +13,7 @@
 
 package fr.linkit.api.gnom.cache.sync.tree
 
-import fr.linkit.api.gnom.cache.sync.SynchronizedObject
+import fr.linkit.api.gnom.cache.SharedCacheReference
 
 /**
  * All the information that allows to retrieve the synchronized object node.
@@ -22,7 +22,7 @@ import fr.linkit.api.gnom.cache.sync.SynchronizedObject
  * @param owner the owner of the object (the engine's identifier that created the object)
  * @param nodePath the path of the object's node in its [[fr.linkit.api.gnom.cache.sync.tree.SynchronizedObjectTree]]
  */
-case class SyncNodeReference(override val cacheFamily: String,
-                             override val cacheID: Int,
-                             owner: String,
-                             nodePath: Array[Int]) extends CacheItemReference[SynchronizedObject[_]]
+class SyncObjectReference(family: String,
+                          cacheID: Int,
+                          val owner: String,
+                          val nodePath: Array[Int]) extends SharedCacheReference(cacheID, family)

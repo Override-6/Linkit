@@ -18,10 +18,8 @@ import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.plugin.controller.ControllerExtension
 import fr.linkit.plugin.debug.DebugPlugin
 import fr.linkit.server.ServerApplication
-import fr.linkit.server.application.config.ServerApplicationConfigBuilder
-import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 import fr.linkit.server.config.schematic.ScalaServerAppSchematic
-import fr.linkit.server.local.config.ServerApplicationConfigBuilder
+import fr.linkit.server.config.{ServerApplicationConfigBuilder, ServerConnectionConfigBuilder}
 
 import java.io.File
 import java.nio.file.{Files, Path}

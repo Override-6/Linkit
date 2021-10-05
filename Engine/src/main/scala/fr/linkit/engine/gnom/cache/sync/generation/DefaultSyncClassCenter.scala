@@ -26,11 +26,11 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
     val GeneratedClassesPackage: String = "fr.linkit.core.generated.puppet"
     val requestFactory                  = new SyncClassCompilationRequestFactory
 
-    override def getSyncClass[S](clazz: Class[S]): Class[S with SynchronizedObject[S]] = {
+    override def getSyncClass[S <: AnyRef](clazz: Class[_]): Class[S with SynchronizedObject[S]] = {
         getSyncClassFromDesc[S](SimpleSyncObjectSuperClassDescription[S](clazz))
     }
 
-    override def getSyncClassFromDesc[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = {
+    override def getSyncClassFromDesc[S <: AnyRef](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = {
         val clazz = desc.clazz
         if (clazz.isInterface)
             throw new InvalidPuppetDefException("Provided class is abstract.")
@@ -39,7 +39,7 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         getOrGenClass[S](desc)
     }
 
-    private def getOrGenClass[S](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = desc.clazz.synchronized {
+    private def getOrGenClass[S <: AnyRef](desc: SyncObjectSuperclassDescription[S]): Class[S with SynchronizedObject[S]] = desc.clazz.synchronized {
         val clazz = desc.clazz
         val opt   = resources
                 .findClass[S](clazz)
@@ -51,11 +51,11 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
                 requestFactory.makeRequest(desc)
             }
             AppLogger.debug(s"Compilation done. (${result.getCompileTime} ms).")
-            val puppetClass = result.getResult
+            val syncClass = result.getResult
                     .get
                     .asInstanceOf[Class[S with SynchronizedObject[S]]]
-            ClassMappings.putClass(puppetClass)
-            puppetClass
+            ClassMappings.putClass(syncClass)
+            syncClass
         }
     }
 
@@ -74,8 +74,8 @@ class DefaultSyncClassCenter(center: CompilerCenter, resources: SyncObjectClassR
         AppLogger.debug(s"Compilation done in $ct ms.")
     }
 
-    override def isWrapperClassGenerated[S](clazz: Class[S]): Boolean = {
-        resources.findClass[S](clazz).isDefined
+    override def isWrapperClassGenerated(clazz: Class[_]): Boolean = {
+        resources.findClass[AnyRef](clazz).isDefined
     }
 
     override def isClassGenerated[S <: SynchronizedObject[S]](clazz: Class[S]): Boolean = {

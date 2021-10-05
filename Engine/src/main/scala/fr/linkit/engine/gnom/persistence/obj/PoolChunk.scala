@@ -11,10 +11,10 @@
  * questions.
  */
 
-package fr.linkit.engine.gnom.persistence.pool
+package fr.linkit.engine.gnom.persistence.obj
 
 import fr.linkit.api.gnom.persistence.Freezable
-import fr.linkit.engine.gnom.persistence.pool.PoolChunk.BuffSteps
+import fr.linkit.engine.gnom.persistence.obj.PoolChunk.BuffSteps
 
 import scala.reflect.ClassTag
 

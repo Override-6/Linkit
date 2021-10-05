@@ -13,15 +13,15 @@
 
 package fr.linkit.server.connection
 
+import fr.linkit.api.application.ApplicationContext
+import fr.linkit.api.application.connection.{ConnectionException, ExternalConnection}
 import fr.linkit.api.gnom.network.{ExternalConnectionState, Network}
 import fr.linkit.api.gnom.packet.channel.ChannelScope
 import fr.linkit.api.gnom.packet.channel.ChannelScope.ScopeFactory
-import fr.linkit.api.gnom.persistence.context.PersistenceConfig
-import fr.linkit.api.gnom.persistence.{ObjectSerializationResult, ObjectTranslator}
 import fr.linkit.api.gnom.packet.traffic.{PacketInjectable, PacketInjectableFactory, PacketInjectableStore, PacketTraffic}
 import fr.linkit.api.gnom.packet.{DedicatedPacketCoordinates, Packet, PacketAttributes}
-import fr.linkit.api.application.{ApplicationContext, ExternalConnection}
-import fr.linkit.api.application.connection.ExternalConnection
+import fr.linkit.api.gnom.persistence.context.PersistenceConfig
+import fr.linkit.api.gnom.persistence.{ObjectSerializationResult, ObjectTranslator}
 import fr.linkit.api.internal.concurrency.{AsyncTask, WorkerPools, workerExecution}
 import fr.linkit.api.internal.system.AppLogger
 import fr.linkit.api.internal.system.event.EventNotifier
@@ -38,9 +38,9 @@ class ServerExternalConnection private(val session: ExternalConnectionSession) e
     import session._
 
     override val currentIdentifier       : String            = server.currentIdentifier
-    override val traffic                 : PacketTraffic    = server.traffic
-    override val translator              : ObjectTranslator = server.translator
-    override val eventNotifier           : EventNotifier    = server.eventNotifier
+    override val traffic                 : PacketTraffic     = server.traffic
+    override val translator              : ObjectTranslator  = server.translator
+    override val eventNotifier           : EventNotifier     = server.eventNotifier
     override val network                 : Network           = session.network
     override val port                    : Int               = server.port
     override val boundIdentifier         : String            = session.boundIdentifier

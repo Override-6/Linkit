@@ -57,11 +57,8 @@ class SimplePacketInjectableStore(traffic: PacketTraffic,
         injectable
     }
 
-    override def getPersistenceConfig(path: Array[Int]): PersistenceConfig = {
-        getPersistenceConfig(path, 0)
-    }
 
-    override protected def getPersistenceConfig(path: Array[Int], pos: Int): PersistenceConfig = {
+    override def getPersistenceConfig(path: Array[Int], pos: Int): PersistenceConfig = {
         val len = path.length
         if (pos >= len) {
             return failPresence(path)

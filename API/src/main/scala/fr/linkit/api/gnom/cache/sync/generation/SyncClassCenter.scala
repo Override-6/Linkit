@@ -34,9 +34,9 @@ trait SyncClassCenter {
 
     def preGenerateClasses(classes: Seq[Class[_]]): Unit
 
-    def isClassGenerated[T: ClassTag]: Boolean = isWrapperClassGenerated(classTag[T].runtimeClass)
+    def isClassGenerated[T<: AnyRef: ClassTag]: Boolean = isWrapperClassGenerated(classTag[T].runtimeClass)
 
-    def isWrapperClassGenerated[T](clazz: Class[T]): Boolean
+    def isWrapperClassGenerated(clazz: Class[_]): Boolean
 
     def isClassGenerated[S <: SynchronizedObject[S]](clazz: Class[S]): Boolean
 }
